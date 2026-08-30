@@ -1,0 +1,3 @@
+Update CATALOG_DATA with 52 new entries and handle SC range averaging
+
+Added 52 new entries from the provided list, resolving missing fields (defaulting speedHours to 24) to meet the strict S/A/B/C constraints and ensuring dailySC is numeric. Handled SC range averaging specifically as requested by mapping the `scIsAveraged` and `scRange` flags, copying them when tracked, appending an asterisk on the `card-status` display and including an explanation line inside the Keen Info popovers for both catalog and tracked items without breaking existing structures. Validated against the strict constraints.
