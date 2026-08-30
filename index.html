@@ -2,389 +2,423 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sweeps Freebie Hub & Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Freebie Ledger</title>
   <style>
     :root {
-      --bg-main: #0f172a;
-      --bg-card: #1e293b;
-      --bg-card-hover: #334155;
-      --border-color: #334155;
-      --accent-gold: #f59e0b;
-      --accent-gold-hover: #d97706;
-      --accent-blue: #38bdf8;
-      --accent-green: #10b981;
-      --accent-red: #ef4444;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
+      --bg-base: #11141a;
+      --bg-surface: #181d26;
+      --bg-card: #1c222e;
+      --bg-card-active: #222a3a;
+      --border-subtle: #293244;
+      --border-focus: #4b5563;
+      
+      --accent-gold: #eab308;
+      --accent-gold-hover: #ca8a04;
+      --accent-gold-dim: rgba(234, 179, 8, 0.12);
+      --accent-gold-ring: #d97706;
+
+      --text-main: #f3f4f6;
+      --text-muted: #8b9bb4;
+      --text-dim: #5c6b84;
+      
+      --tier-s: #ef4444;
+      --tier-a: #f97316;
+      --tier-b: #3b82f6;
+      --tier-c: #6b7280;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
 
     body {
-      background-color: var(--bg-main);
+      background-color: var(--bg-base);
       color: var(--text-main);
       min-height: 100vh;
-      padding-bottom: 90px;
+      padding: 24px 16px 100px;
     }
 
-    header {
-      background-color: #111827;
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border-color);
+    .app-container {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .date-header {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    .app-title {
+      font-family: "Georgia", serif;
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 20px;
+      letter-spacing: -0.02em;
+    }
+
+    /* Hero Card */
+    .hero-stat-card {
+      background: linear-gradient(145deg, #222938 0%, #171d27 100%);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 24px 20px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 40;
+      gap: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     }
 
-    .header-title h1 {
-      font-size: 1.25rem;
-      color: var(--accent-gold);
+    .hero-ring-wrapper {
+      position: relative;
+      width: 76px;
+      height: 76px;
+      flex-shrink: 0;
     }
 
-    .header-title p {
+    .hero-ring-circle {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 4px solid var(--accent-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #ffffff;
+      background: #19202c;
+      box-shadow: 0 0 16px rgba(234, 179, 8, 0.25);
+    }
+
+    .hero-details h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .hero-details p {
       font-size: 0.8rem;
       color: var(--text-muted);
+      font-family: monospace;
     }
 
-    .ready-counter {
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid var(--accent-green);
-      color: var(--accent-green);
-      padding: 6px 12px;
-      border-radius: 9999px;
-      font-size: 0.85rem;
-      font-weight: bold;
-    }
-
-    /* Navigation Bar */
-    nav {
+    /* Navigation Tabs */
+    .nav-pill-group {
       display: flex;
-      background: #1e293b;
-      border-bottom: 1px solid var(--border-color);
-      position: sticky;
-      top: 61px;
-      z-index: 39;
+      gap: 8px;
+      margin-bottom: 12px;
+      background: var(--bg-surface);
+      padding: 4px;
+      border-radius: 30px;
+      border: 1px solid var(--border-subtle);
     }
 
-    .nav-btn {
+    .nav-tab {
       flex: 1;
-      padding: 12px;
+      padding: 8px 12px;
       background: transparent;
       border: none;
+      border-radius: 24px;
       color: var(--text-muted);
-      font-size: 0.9rem;
+      font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       transition: all 0.2s;
     }
 
-    .nav-btn.active {
-      color: var(--accent-gold);
-      border-bottom: 2px solid var(--accent-gold);
-      background: rgba(245, 158, 11, 0.05);
+    .nav-tab.active {
+      background: #ffffff;
+      color: #11141a;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
-    /* Container & Views */
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 16px;
+    /* Filter Chips */
+    .filter-chips {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 4px 2px 16px;
+      scrollbar-width: none;
     }
 
-    .view-panel {
+    .filter-chips::-webkit-scrollbar {
       display: none;
     }
 
-    .view-panel.active {
-      display: block;
-    }
-
-    /* Filter Bar */
-    .filter-bar {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 16px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-    }
-
-    .filter-chip {
+    .filter-btn {
       padding: 6px 14px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
       border-radius: 20px;
       color: var(--text-muted);
-      font-size: 0.8rem;
+      font-size: 0.78rem;
+      font-weight: 500;
       cursor: pointer;
       white-space: nowrap;
+      transition: all 0.15s;
     }
 
-    .filter-chip.active {
-      background: var(--accent-gold);
-      color: #000;
+    .filter-btn.active {
+      background: #ffffff;
+      color: #11141a;
+      border-color: #ffffff;
       font-weight: 600;
-      border-color: var(--accent-gold);
     }
 
-    /* Cards */
-    .game-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 12px;
-    }
-
-    .game-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      padding: 14px;
+    /* Ledger Rows / Cards */
+    .game-list {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      transition: border-color 0.2s, transform 0.1s;
+      gap: 8px;
     }
 
-    .game-card:hover {
-      border-color: var(--accent-blue);
-    }
-
-    .game-card.ready {
-      border-color: var(--accent-green);
-      background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, var(--bg-card) 100%);
-    }
-
-    .card-header {
+    .ledger-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 12px 14px;
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: flex-start;
+      gap: 12px;
+      transition: transform 0.1s, border-color 0.2s, background 0.2s;
     }
 
-    .game-meta {
+    .ledger-card:active {
+      background: var(--bg-card-active);
+    }
+
+    .card-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* Avatar Monogram Icon */
+    .casino-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid var(--accent-gold);
+      background: #161b24;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Georgia", serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--accent-gold);
+      flex-shrink: 0;
+      box-shadow: 0 0 8px rgba(234, 179, 8, 0.15);
+    }
+
+    .card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+    }
+
+    .card-title-row {
       display: flex;
       align-items: center;
       gap: 6px;
-      flex-wrap: wrap;
     }
 
-    .game-title {
-      font-size: 1rem;
-      font-weight: bold;
+    .casino-name {
+      font-size: 0.95rem;
+      font-weight: 600;
       color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .tier-badge {
-      font-size: 0.7rem;
-      padding: 2px 6px;
-      border-radius: 4px;
+      font-size: 0.65rem;
       font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      text-transform: uppercase;
     }
 
-    .tier-S { background: #dc2626; color: white; }
-    .tier-A { background: #ea580c; color: white; }
-    .tier-B { background: #2563eb; color: white; }
-    .tier-C { background: #4b5563; color: white; }
+    .tier-S { background: var(--tier-s); color: #fff; }
+    .tier-A { background: var(--tier-a); color: #fff; }
+    .tier-B { background: var(--tier-b); color: #fff; }
+    .tier-C { background: var(--tier-c); color: #fff; }
     .tier-Unranked { background: #374151; color: #9ca3af; }
 
-    .card-actions {
+    .card-status {
       display: flex;
-      gap: 8px;
-      margin-top: auto;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
     }
 
-    .btn {
-      padding: 8px 12px;
-      border-radius: 6px;
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-gold);
+      display: inline-block;
+    }
+
+    .status-dot.cooldown {
+      background: var(--text-dim);
+    }
+
+    /* Actions */
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-open {
+      padding: 7px 18px;
+      background: var(--accent-gold);
+      color: #14171f;
       border: none;
-      font-size: 0.85rem;
-      font-weight: 600;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
       cursor: pointer;
+      text-decoration: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      text-decoration: none;
-      transition: background 0.15s, transform 0.1s;
+      transition: background 0.15s;
     }
 
-    .btn:active {
-      transform: scale(0.97);
-    }
-
-    .btn-collect {
-      flex: 2;
-      background: var(--accent-gold);
-      color: #000;
-    }
-
-    .btn-collect.cooldown {
-      background: #334155;
+    .btn-open.cooldown {
+      background: #252e3e;
       color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.72rem;
+      padding: 7px 12px;
     }
 
-    .btn-join {
-      flex: 1;
-      background: #0ea5e9;
-      color: #fff;
-    }
-
-    .btn-icon {
+    .btn-dots {
       background: transparent;
-      color: var(--text-muted);
-      padding: 6px 8px;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1.1rem;
+      padding: 4px 6px;
+      cursor: pointer;
     }
 
-    .btn-icon:hover {
+    .btn-dots:hover {
       color: var(--text-main);
     }
 
-    /* Expandable Notes */
-    .card-notes {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      background: rgba(0, 0, 0, 0.2);
-      padding: 8px;
-      border-radius: 6px;
-      border-left: 3px solid var(--accent-blue);
-      line-height: 1.4;
-    }
-
-    /* Catalog Styling */
+    /* Catalog View */
     .catalog-search {
       width: 100%;
-      padding: 10px 14px;
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-      background: var(--bg-card);
+      padding: 10px 16px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
       color: var(--text-main);
+      font-size: 0.9rem;
       margin-bottom: 16px;
-      font-size: 0.95rem;
+      outline: none;
     }
 
-    .tier-group {
-      margin-bottom: 24px;
-    }
-
-    .tier-header {
+    .tier-section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin: 16px 0 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
-      padding-bottom: 4px;
-      border-bottom: 1px solid var(--border-color);
     }
 
-    .tier-header h2 {
-      font-size: 1rem;
-      color: var(--accent-gold);
-    }
-
-    .catalog-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 14px;
+    .catalog-item-row {
       background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       margin-bottom: 6px;
       cursor: pointer;
-      transition: transform 0.15s, background 0.15s;
     }
 
-    .catalog-row:hover {
-      background: var(--bg-card-hover);
-    }
-
-    .catalog-row.pop-anim {
-      animation: pop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-
-    @keyframes pop {
-      0% { transform: scale(0.98); }
-      50% { transform: scale(1.02); }
-      100% { transform: scale(1); }
-    }
-
-    .catalog-check {
-      font-weight: bold;
-      font-size: 1.1rem;
-      color: var(--accent-gold);
-    }
-
-    /* Resources View */
-    .resource-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      padding: 16px;
-      border-radius: 8px;
-      margin-bottom: 12px;
-    }
-
-    .resource-card h3 {
-      font-size: 1rem;
-      margin-bottom: 6px;
-      color: var(--accent-gold);
-    }
-
-    .resource-card p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-    }
-
-    .resource-links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .resource-link-btn {
-      background: #334155;
-      color: var(--text-main);
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      text-decoration: none;
-    }
-
-    .resource-link-btn:hover {
-      background: var(--accent-gold);
-      color: #000;
+    .catalog-item-row.tracked {
+      border-color: rgba(234, 179, 8, 0.4);
     }
 
     /* Fixed Bottom Action Bar */
-    .bottom-bar {
+    .docked-footer {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      background: #111827;
-      border-top: 1px solid var(--border-color);
-      padding: 12px 20px;
+      background: rgba(17, 20, 26, 0.94);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border-subtle);
+      padding: 12px 16px;
       display: flex;
       justify-content: center;
-      gap: 12px;
-      z-index: 40;
+      gap: 10px;
+      z-index: 50;
     }
 
-    /* Sheet / Modals */
+    .btn-dock {
+      flex: 1;
+      max-width: 240px;
+      padding: 11px 16px;
+      background: #252d3d;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      color: var(--text-main);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-dock:hover {
+      background: #2c3649;
+    }
+
+    /* Modals & Popovers */
     .sheet-backdrop {
       display: none;
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(2px);
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
       z-index: 100;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       padding: 16px;
     }
 
@@ -393,19 +427,19 @@
     }
 
     .sheet-modal {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
+      background: #1c222e;
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
       width: 100%;
-      max-width: 500px;
-      max-height: 90vh;
-      overflow-y: auto;
+      max-width: 440px;
       padding: 20px;
     }
 
     .sheet-modal h3 {
+      font-size: 1.1rem;
+      color: var(--text-main);
       margin-bottom: 14px;
-      color: var(--accent-gold);
+      font-family: "Georgia", serif;
     }
 
     .form-group {
@@ -414,457 +448,397 @@
 
     .form-group label {
       display: block;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--text-muted);
       margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .form-group input, .form-group textarea, .form-group select {
       width: 100%;
-      padding: 8px 12px;
-      border-radius: 6px;
-      border: 1px solid var(--border-color);
-      background: #0f172a;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      background: #14171f;
       color: var(--text-main);
-      font-size: 0.9rem;
+      font-size: 0.88rem;
     }
 
-    .modal-btns {
+    .modal-actions {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       margin-top: 16px;
+    }
+
+    .btn-primary {
+      flex: 1;
+      padding: 10px;
+      background: var(--accent-gold);
+      color: #11141a;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-cancel {
+      flex: 1;
+      padding: 10px;
+      background: #252d3d;
+      color: var(--text-muted);
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-  <header>
-    <div class="header-title">
-      <h1>Sweeps Collector Hub</h1>
-      <p>Daily Bonus & Link Tracker</p>
+  <div class="app-container">
+    <div class="date-header" id="currentDateDisplay">TODAY</div>
+    <h1 class="app-title">Freebie Ledger</h1>
+
+    <!-- Hero Counter -->
+    <div class="hero-stat-card">
+      <div class="hero-ring-wrapper">
+        <div class="hero-ring-circle" id="heroCount">0</div>
+      </div>
+      <div class="hero-details">
+        <h2 id="heroReadyText">0 ready to collect</h2>
+        <p><span id="heroCooldownText">0 on cooldown</span> • <span id="heroDoneText">0 done today</span></p>
+      </div>
     </div>
-    <div id="readyBadge" class="ready-counter">0 Ready to Collect</div>
-  </header>
 
-  <nav>
-    <button class="nav-btn active" onclick="switchTab('games')">🎮 Tracked Games</button>
-    <button class="nav-btn" onclick="switchTab('catalog')">🗂️ Catalog</button>
-    <button class="nav-btn" onclick="switchTab('resources')">📚 Guides & Resources</button>
-  </nav>
+    <!-- Navigation Tabs -->
+    <div class="nav-pill-group">
+      <button class="nav-tab active" onclick="switchMainTab('games', this)">🎰 Games</button>
+      <button class="nav-tab" onclick="switchMainTab('catalog', this)">📁 Catalog</button>
+      <button class="nav-tab" onclick="switchMainTab('resources', this)">📚 Resources</button>
+    </div>
 
-  <main class="container">
-    <!-- View 1: Tracked Games -->
-    <section id="gamesView" class="view-panel active">
-      <div class="filter-bar">
-        <button class="filter-chip active" onclick="filterGames('all', this)">All Tracked</button>
-        <button class="filter-chip" onclick="filterGames('ready', this)">⚡ Ready Now</button>
-        <button class="filter-chip" onclick="filterGames('referral', this)">🎁 Has Referral</button>
+    <!-- View: Tracked Games -->
+    <section id="viewGames">
+      <div class="filter-chips">
+        <button class="filter-btn active" onclick="applyFilter('all', this)">All</button>
+        <button class="filter-btn" onclick="applyFilter('ready', this)">Ready</button>
+        <button class="filter-btn" onclick="applyFilter('cooldown', this)">Cooldown</button>
+        <button class="filter-btn" onclick="applyFilter('referral', this)">Has referral</button>
       </div>
-      <div id="gamesGrid" class="game-grid"></div>
+      <div class="game-list" id="gamesContainer"></div>
     </section>
 
-    <!-- View 2: Catalog -->
-    <section id="catalogView" class="view-panel">
-      <input type="text" id="catalogSearch" class="catalog-search" placeholder="Search 85+ verified social casinos..." oninput="renderCatalog()" />
-      <div id="catalogContainer"></div>
+    <!-- View: Catalog -->
+    <section id="viewCatalog" style="display: none;">
+      <input type="text" id="catalogSearchInput" class="catalog-search" placeholder="Search platforms..." oninput="renderCatalogList()" />
+      <div id="catalogGroupContainer"></div>
     </section>
 
-    <!-- View 3: Guides & Resources -->
-    <section id="resourcesView" class="view-panel">
-      <div class="resource-card">
-        <h3>📖 SweepsGrail VIP & Farming Guides</h3>
-        <p>Verified leveling guides, AMOE guidelines, and VIP reward strategies.</p>
-        <div class="resource-links">
-          <a href="https://sweepsgrail.com/guides/shuffle-vip-leveling-guide/" target="_blank" class="resource-link-btn">Shuffle VIP</a>
-          <a href="https://sweepsgrail.com/guides/crowncoins-vip-leveling-guide/" target="_blank" class="resource-link-btn">Crown Coins VIP</a>
-          <a href="https://sweepsgrail.com/guides/modo-vip-leveling-guide/" target="_blank" class="resource-link-btn">Modo VIP</a>
-          <a href="https://sweepsgrail.com/guides/wow-vegas-beginners-guide/" target="_blank" class="resource-link-btn">WOW Vegas Guide</a>
-          <a href="https://sweepsgrail.com/guides/rebet-daily-farming-guide/" target="_blank" class="resource-link-btn">Rebet Farming</a>
-          <a href="https://sweepsgrail.com/guides/stake-and-luckybird-vip-farming-guide/" target="_blank" class="resource-link-btn">Stake & LuckyBird</a>
-          <a href="https://sweepsgrail.com/guides/amoe-101-guide/" target="_blank" class="resource-link-btn">AMOE 101 Guide</a>
-          <a href="https://sweepsgrail.com/guides/blackjack-basic-strategy-guide-for-sweepstakes-casinos/" target="_blank" class="resource-link-btn">Blackjack Strategy</a>
-        </div>
-      </div>
-
-      <div class="resource-card">
-        <h3>💬 Active Communities & Spreadsheets</h3>
-        <p>Live community aggregators and real-time trackers.</p>
-        <div class="resource-links">
-          <a href="https://docs.google.com/spreadsheets/d/1CcQhgeod8UEECb2H6qcFxiPhjMFxdzlxXsFYHfS4UlQ/edit" target="_blank" class="resource-link-btn">TheSweepsGuy Master Sheet</a>
-          <a href="https://www.reddit.com/r/SweepstakeSideHustle/" target="_blank" class="resource-link-btn">r/SweepstakeSideHustle</a>
-          <a href="https://elite-sweeps.lovable.app/dashboard" target="_blank" class="resource-link-btn">Elite Sweeps Dashboard</a>
-        </div>
+    <!-- View: Resources -->
+    <section id="viewResources" style="display: none;">
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <a href="https://docs.google.com/spreadsheets/d/1CcQhgeod8UEECb2H6qcFxiPhjMFxdzlxXsFYHfS4UlQ/edit" target="_blank" class="ledger-card" style="text-decoration:none;">
+          <div class="card-left">
+            <div class="casino-avatar">📊</div>
+            <div>
+              <div class="casino-name">TheSweepsGuy Master Sheet</div>
+              <div class="card-status">Community tracked live spreadsheet</div>
+            </div>
+          </div>
+          <span class="btn-dots">↗</span>
+        </a>
+        <a href="https://sweepsgrail.com/guides/" target="_blank" class="ledger-card" style="text-decoration:none;">
+          <div class="card-left">
+            <div class="casino-avatar">📖</div>
+            <div>
+              <div class="casino-name">SweepsGrail Strategy Guides</div>
+              <div class="card-status">VIP Leveling, AMOE, and Playthrough guides</div>
+            </div>
+          </div>
+          <span class="btn-dots">↗</span>
+        </a>
+        <a href="https://www.reddit.com/r/SweepstakeSideHustle/" target="_blank" class="ledger-card" style="text-decoration:none;">
+          <div class="card-left">
+            <div class="casino-avatar">💬</div>
+            <div>
+              <div class="casino-name">r/SweepstakeSideHustle</div>
+              <div class="card-status">Reddit community discussions & links</div>
+            </div>
+          </div>
+          <span class="btn-dots">↗</span>
+        </a>
       </div>
     </section>
-  </main>
-
-  <div class="bottom-bar">
-    <button class="btn btn-collect" onclick="openAddGameModal()">+ Add Custom Game</button>
-    <button class="btn btn-join" onclick="openBulkImportModal()">📥 Bulk Import</button>
   </div>
 
-  <!-- Modals & Sheets placed BEFORE script tag to prevent DOM query errors -->
-  <div id="gameEditModal" class="sheet-backdrop">
+  <!-- Docked Action Footer -->
+  <div class="docked-footer">
+    <button class="btn-dock" onclick="openAddModal()">+ Add a game</button>
+    <button class="btn-dock" onclick="openImportModal()">⇩ Import list</button>
+  </div>
+
+  <!-- Edit / Add Modal -->
+  <div id="gameModal" class="sheet-backdrop">
     <div class="sheet-modal">
-      <h3 id="modalTitle">Edit Game Details</h3>
-      <input type="hidden" id="editGameId" />
+      <h3 id="modalHeading">Edit Ledger Entry</h3>
+      <input type="hidden" id="modalGameId" />
       <div class="form-group">
         <label>Platform Name</label>
-        <input type="text" id="editGameName" />
+        <input type="text" id="modalGameName" />
       </div>
       <div class="form-group">
-        <label>Daily Collect URL</label>
-        <input type="url" id="editGameUrl" />
+        <label>Collect URL</label>
+        <input type="url" id="modalGameUrl" />
       </div>
       <div class="form-group">
-        <label>Referral / Signup URL</label>
-        <input type="url" id="editReferralUrl" placeholder="Optional" />
+        <label>Referral / Signup Link</label>
+        <input type="url" id="modalReferralUrl" placeholder="Optional" />
       </div>
       <div class="form-group">
-        <label>Cooldown Period (Hours)</label>
-        <input type="number" id="editCooldownHours" value="24" min="1" max="72" />
+        <label>Cooldown (Hours)</label>
+        <input type="number" id="modalCooldown" value="24" />
       </div>
-      <div class="form-group">
-        <label>Tier</label>
-        <select id="editGameTier">
-          <option value="S">🔥 S-Tier</option>
-          <option value="A">✅ A-Tier</option>
-          <option value="B">💼 B-Tier</option>
-          <option value="C">🤏 C-Tier</option>
-          <option value="Unranked">📎 Unranked</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Min Redemption / Notes</label>
-        <textarea id="editGameNotes" rows="3"></textarea>
-      </div>
-      <div class="modal-btns">
-        <button class="btn btn-collect" onclick="saveGameEdit()">Save Changes</button>
-        <button class="btn btn-join" style="background:#4b5563" onclick="closeModals()">Cancel</button>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="saveModalEntry()">Save</button>
+        <button class="btn-cancel" onclick="closeModals()">Cancel</button>
       </div>
     </div>
   </div>
 
-  <div id="bulkImportModal" class="sheet-backdrop">
+  <!-- Import Modal -->
+  <div id="importModal" class="sheet-backdrop">
     <div class="sheet-modal">
-      <h3>Bulk Import Platforms</h3>
-      <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px;">Paste a list of URLs (one per line). Names and tiers will be automatically generated.</p>
+      <h3>Bulk Import</h3>
       <div class="form-group">
-        <textarea id="bulkImportInput" rows="8" placeholder="https://chumbacasino.com/&#10;https://luckylandcasino.com/"></textarea>
+        <label>Paste URLs (one per line)</label>
+        <textarea id="importUrlsText" rows="6" placeholder="https://chumbacasino.com/&#10;https://luckylandcasino.com/"></textarea>
       </div>
-      <div class="modal-btns">
-        <button class="btn btn-collect" onclick="processBulkImport()">Import All</button>
-        <button class="btn btn-join" style="background:#4b5563" onclick="closeModals()">Cancel</button>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="executeBulkImport()">Import</button>
+        <button class="btn-cancel" onclick="closeModals()">Cancel</button>
       </div>
     </div>
   </div>
 
   <script>
-    // Unique ID helper
-    function uid() {
-      return 'uid_' + Math.random().toString(36).substr(2, 9);
+    // ID Generator
+    const uid = () => 'id_' + Math.random().toString(36).substr(2, 9);
+
+    // Helpers
+    function getInitials(name) {
+      if (!name) return '??';
+      const clean = name.replace(/[^a-zA-Z0-9 ]/g, '').trim();
+      const parts = clean.split(' ').filter(Boolean);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return clean.slice(0, 2).toUpperCase();
     }
 
-    // Complete 89-Platform Verified Database
-    const DEFAULT_CATALOG = [
-      // S-TIER
-      { name: "McLuck", url: "https://www.mcluck.com/home", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 75 (Cash)", notes: "Tons of great sales. Nice VIP system. Can use GC to farm VIP, spend it before you spin SC since SC taxes GC on each spin", cooldownHours: 24, guide: "" },
-      { name: "Spree", url: "https://spree.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 100 (Cash)", notes: "Lots of sales and regular extra free spins given away. Great selection of games and highly reputable casino", cooldownHours: 24, guide: "" },
-      { name: "Pulsz", url: "https://pulsz.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 100 (Cash)", notes: "One of my favorites to start with. Huge welcome offers and sales, great selection of games", cooldownHours: 24, guide: "" },
-      { name: "Crown Coins", url: "https://crowncoinscasino.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Top tier, tons of freebies, nice daily streak that increases with VIP level, awesome sales and the best games", cooldownHours: 24, guide: "https://sweepsgrail.com/guides/crowncoins-vip-leveling-guide/" },
-      { name: "PlayFame", url: "https://playfame.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 75 (Cash)", notes: "Huge selection of games, has some great welcome offers & sales", cooldownHours: 24, guide: "" },
-      { name: "Jackpota", url: "https://www.jackpota.com/home", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 75 (Cash)", notes: "One of my favorites - Jackpota does a ton of juicy sales", cooldownHours: 24, guide: "" },
-      { name: "Stake", url: "https://stake.us/?tab=dailyBonus&currency=ltc&modal=wallet", tier: "S", scPerDay: "Daily SC", minRedeem: "50 (Crypto)", notes: "No playthrough requirement on daily SC. Just farm and redeem. Don't skip this one, it is literally free money!", cooldownHours: 24, guide: "https://sweepsgrail.com/guides/stake-and-luckybird-vip-farming-guide/" },
-      { name: "HelloMillions", url: "https://www.hellomillions.com/home", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 75 (Cash)", notes: "Solid games & sales, lots of offers", cooldownHours: 24, guide: "" },
-      { name: "Shuffle", url: "https://shuffle.us/", tier: "S", scPerDay: "Daily SC", minRedeem: "100 (Crypto)", notes: "New US Sweeps site of Shuffle. 1 SC per day after streak, crypto purchases and redeem, near instant. Tons of games.", cooldownHours: 24, guide: "https://sweepsgrail.com/guides/shuffle-vip-leveling-guide/" },
-      { name: "MyPrize", url: "https://myprize.us/", tier: "S", scPerDay: "Daily SC", minRedeem: "100 (Cash / Crypto)", notes: "Recently added a daily streak and lowered playthrough to 1x! MyPrize has a great selection of games too.", cooldownHours: 24, guide: "" },
-      { name: "Lonestar", url: "https://www.lonestarcasino.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "45 (Gift Card) / 100 (Cash)", notes: "Currently dealing with delayed redeem speeds! RealPrize clone, lots of extra freebies and a ton of games.", cooldownHours: 24, guide: "" },
-      { name: "RealPrize", url: "https://realprize.com/#", tier: "S", scPerDay: "Daily SC", minRedeem: "45 (Gift Card) / 100 (Cash)", notes: "Currently dealing with delayed redeem speeds! More like $1-2 a day since they give free SC links daily.", cooldownHours: 24, guide: "" },
-      { name: "WOW Vegas", url: "https://www.wowvegas.com/promotions/daily-coin-reward", tier: "S", scPerDay: "Daily SC", minRedeem: "20 (Gift Card) / 50 (Cash)", notes: "Free spins given away daily add a ton of value here. Great sales from time to time. One of the OG casinos", cooldownHours: 24, guide: "https://sweepsgrail.com/guides/wow-vegas-beginners-guide/" },
-      { name: "Modo", url: "https://modo.us/", tier: "S", scPerDay: "Daily SC", minRedeem: "20 (Gift Card) / 100 (Cash)", notes: "Excellent casino, quick redemptions. Great selection of games. Good welcome offers. Great reputation", cooldownHours: 24, guide: "https://sweepsgrail.com/guides/modo-vip-leveling-guide/" },
-      { name: "SpinBlitz", url: "https://www.spinblitz.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 50 (Cash)", notes: "Formerly known as 'Scratchful' - they're one of the older sites - they're legit!", cooldownHours: 24, guide: "" },
-      { name: "ReBet", url: "https://rebet.page.link/x3U9G9CNNoFQMzhP7", tier: "S", scPerDay: "Daily SC", minRedeem: "20 (Cash)", notes: "Social casino/sports book. 15C daily caps at 1, but theres a trick! Collect 15C bets on a future matchs & use cash out option to claim later!", cooldownHours: 24, guide: "https://sweepsgrail.com/guides/rebet-daily-farming-guide/" },
-      { name: "Pulsz Bingo", url: "https://pulszbingo.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "25 (Gift Card) / 100 (Cash)", notes: "Pulsz owns with the addition of Bingo! If you don't have SC, go to this link to activate.", cooldownHours: 24, guide: "" },
-      { name: "Legendz", url: "https://www.legendz.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 100 (Cash)", notes: "Instant SC/All redeem, nice daily reward but need to buy a pack to maintain it. Tons of games. Solid casino", cooldownHours: 24, guide: "" },
-      { name: "LuckyHands", url: "https://luckyhands.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Very fast redemptions, 50SC minimum redeem, easy to hit with welcome offers - don't skip them", cooldownHours: 24, guide: "" },
-      { name: "MegaBonanza", url: "https://www.megabonanza.com/home", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 50 (Cash)", notes: "Some really big sales on this one, definitely not one to miss", cooldownHours: 24, guide: "" },
-      { name: "Card Crush", url: "https://www.cardcrush.com/home", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 75 (Cash)", notes: "New for CA and NY players only! Operating under a new gaming model. 2 MC on signup, tiered welcome offers.", cooldownHours: 24, guide: "" },
-      { name: "Dogg House", url: "https://www.play.dogghousecasino.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "20 (Cash)", notes: "All the games and a full sports book. Running on ReBet engine. Snoop Dogg theme throughout the casino.", cooldownHours: 24, guide: "" },
-      { name: "Zula", url: "https://zulacasino.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Overall rock-solid casino, generous daily, lots of freebies, and great sales", cooldownHours: 24, guide: "" },
-      { name: "Fortune Wins", url: "https://fortunewins.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Zula sister - generous daily, lots of freebies, and great sales", cooldownHours: 24, guide: "" },
-      { name: "Sportzino", url: "https://sportzino.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Everything from Zula, plus a sports book. Lots of sales and promos", cooldownHours: 24, guide: "" },
-      { name: "LuckyLand Casino", url: "https://luckylandcasino.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "New LuckyLand sister site! Great daily bonus streak.", cooldownHours: 24, guide: "https://sweepsgrail.com/guides/luckyland-diamond-duck-vip-guide/" },
-      { name: "Chumba", url: "https://www.chumbacasino.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 100 (Cash)", notes: "Tons of value from their weekly 'scratcher' giveaways. Make sure you're signed up to participate!", cooldownHours: 24, guide: "" },
-
-      // A-TIER
-      { name: "CoinsBack Casino", url: "https://www.coinsbackcasino.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Free 10 SC on signup! New site owned by WowVegas group - 30 SC for $10 welcome offer.", cooldownHours: 24, guide: "" },
-      { name: "Crazy Coins", url: "https://crazycoins.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "75 (Cash)", notes: "Free 1 SC on signup, nice welcome offers, and a daily 10% coin boost. 1x playthrough.", cooldownHours: 24, guide: "" },
-      { name: "Coins Royale", url: "https://www.coinsroyale.com/en#login", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Free 1 SC on signup and a daily wheel spin. 1x playthrough and good feedback so far", cooldownHours: 24, guide: "" },
-      { name: "AceBet", url: "https://acebet.cc/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "1 SC signup bonus and 1 SC daily - balance needs to be zero to claim! Beware of high playthrough on bonus SC.", cooldownHours: 24, guide: "" },
-      { name: "FortunePurple", url: "https://fortunepurple.com/welcome", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "An exciting new casino with a familiar look. Proceed with some caution and don't overdo it!", cooldownHours: 24, guide: "" },
-      { name: "Jackpot Go", url: "https://jackpotgo.club/", tier: "A", scPerDay: "Daily SC", minRedeem: "2 (Cash)", notes: "The 90 SC for $90 Subscription is a huge value that gives 5.5 SC a day for 7 days. 5% service charge on redeem.", cooldownHours: 24, guide: "" },
-      { name: "SweetSweeps", url: "https://sweetsweeps.com/", tier: "A", scPerDay: "No", minRedeem: "100 (Cash)", notes: "New site, 3SC on signup plus a 40SC for $20 welcome offer. Live games including roulette and blackjack", cooldownHours: 24, guide: "" },
-      { name: "SweepstakesCasino", url: "https://sweepstakescasino.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash / Crypto)", notes: "The latest speed-sister site. Tons of sales but playthrough applies to slots only!", cooldownHours: 24, guide: "" },
-      { name: "Jackpot Daily", url: "https://jackpotdaily.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Super juicy new site! Up to 134 SC for $60 with stacked welcome offers. Playthrough between 1x and 2x.", cooldownHours: 24, guide: "" },
-      { name: "Cider Casino", url: "https://game.cidercasino.com/?channel=official_website&campaign=official_website%2F#/home/rewards", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "New JackpotGo clone! 7 day daily bonus streak. Weekly subscription gives 90 SC for $90 + 5.5 SC per day! Beware of 5% paypal redeem fee.", cooldownHours: 24, guide: "" },
-      { name: "TheWinZone", url: "https://thewinzone.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Nice new site with fairly regular sales. Daily missions give some extra SC. Instant debit redeems.", cooldownHours: 24, guide: "" },
-      { name: "Coin Wizard", url: "https://www.coinwizardgames.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Gift Card) / 100 (Cash)", notes: "Free 2.5 SC on signup! New site owned by GoldenHearts group - 25 SC for $10 welcome offer.", cooldownHours: 24, guide: "" },
-      { name: "ChipNWin", url: "https://chipnwin.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Gift Card) / 100 (Cash)", notes: "Neat little casino, nice freebies, extra 'crystal' feature. Decent sales and welcome offers.", cooldownHours: 24, guide: "" },
-      { name: "Clash5", url: "https://clash5.com/", tier: "A", scPerDay: "No", minRedeem: "100 (Cash)", notes: "CA & NY friendly! Free 5 Clash Coins on signup! Digital trading card system similar to Card Crush.", cooldownHours: 24, guide: "" },
-      { name: "ThrillCoins", url: "https://thrillcoins.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash / Crypto)", notes: "Speed-sister site! Instant redeems, instant verification. Be aware: only slots contribute to playthrough.", cooldownHours: 24, guide: "" },
-      { name: "Reel Zappy", url: "https://reelzappy.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Latest from Priority Play (Zula sister). Free 3.5 SC on signup, nice daily streak.", cooldownHours: 24, guide: "" },
-      { name: "Rolla", url: "https://www.rolla.com/login?redirect=/promotions/welcome-coins", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Gift Card) / 100 (Cash)", notes: "WowVegas sister site, really nice welcome offers, daily login bonus, and regular extra freebies.", cooldownHours: 24, guide: "" },
-      { name: "FortunaRush", url: "https://fortunarush.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "LuckyRush clone with Pragmatic Games. Small fees on purchase and redeems, stacks packs up to 100 SC.", cooldownHours: 24, guide: "" },
-      { name: "BangCoins", url: "https://bangcoins.com/", tier: "A", scPerDay: "Random", minRedeem: "100 (Cash / Crypto)", notes: "SpeedSweeps sister site! Regular sales and juicy welcome offers. 1x PT but slots only!", cooldownHours: 24, guide: "" },
-      { name: "FreeSpin", url: "https://freespin.com/?modal=sign-in", tier: "A", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 100 (Cash)", notes: "Casino Click sister. Good value, but be prepared for occasional redeem delays.", cooldownHours: 24, guide: "" },
-      { name: "Stackr", url: "https://www.stackrcasino.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Crypto)", notes: "2x playthrough requirements! Great sales and consistent daily bonus.", cooldownHours: 24, guide: "" },
-      { name: "LuckyRush", url: "https://luckyrush.io/wallet", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "100 SC for $50 with 1x playthrough, plinko, live games, fast redeems.", cooldownHours: 24, guide: "" },
-      { name: "DimeSweeps", url: "https://dimesweeps.com/", tier: "A", scPerDay: "Random", minRedeem: "100 (Cash / Crypto)", notes: "Speed/RichSweeps sister site. Tons of games but only slots count towards playthrough!", cooldownHours: 24, guide: "" },
-      { name: "SweepsRoyal", url: "https://sweepsroyal.com/", tier: "A", scPerDay: "Random", minRedeem: "100 (Cash / Crypto)", notes: "SpeedRichSweeps sister site. Slots only for playthrough. Redeems are near instant.", cooldownHours: 24, guide: "" },
-      { name: "RichSweeps", url: "https://richsweeps.com/", tier: "A", scPerDay: "Random", minRedeem: "100 (Cash / Crypto)", notes: "SpeedSweeps sister site. Great selection of games, slots only for PT.", cooldownHours: 24, guide: "" },
-      { name: "SpeedSweeps", url: "https://speedsweeps.com/", tier: "A", scPerDay: "Random", minRedeem: "100 (Cash / Crypto)", notes: "Crypto and card redeems. Tons of games but only slots count towards playthrough.", cooldownHours: 24, guide: "" },
-      { name: "WinBonanza", url: "https://winbonanza.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "New Zula sister site! Daily streak, sales, and freebies.", cooldownHours: 24, guide: "" },
-      { name: "Baba", url: "https://play.babacasino.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Gift Card) / 100 (Cash)", notes: "Decent daily streak, some occasional sales. Good to farm.", cooldownHours: 24, guide: "" },
-      { name: "Novig", url: "https://novig.us/", tier: "A", scPerDay: "Daily SC", minRedeem: "20 (Cash)", notes: "5SC signup bonus! Sweepstakes sportsbook with challenges for extra SC.", cooldownHours: 24, guide: "" },
-      { name: "Dara", url: "https://daracasino.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Good sales and decent daily. Play Crazy 777 for quick playthrough.", cooldownHours: 24, guide: "" },
-      { name: "Clubs", url: "https://play.clubs.poker/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Gift Card) / 100 (Cash)", notes: "Aka Clubs Poker, same login works on both sites. Great welcome offers.", cooldownHours: 24, guide: "" },
-      { name: "Legacy Arcade", url: "https://legacyarcade.com/", tier: "A", scPerDay: "No", minRedeem: "20 (Cash)", notes: "100% first purchase match + free wheel spin. Instant redeems and arcade games.", cooldownHours: 24, guide: "" },
-      { name: "Ace", url: "https://ace.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 75 (Cash)", notes: "McLuck sister site. Nice streak and huge welcome offers.", cooldownHours: 24, guide: "" },
-      { name: "Golden Hearts", url: "https://goldenheartsgames.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Gift Card) / 100 (Cash)", notes: "One of the OG casinos. Daily streak added recently. Great consistent sales.", cooldownHours: 24, guide: "" },
-      { name: "Fliff", url: "https://www.getfliff.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Sweeps sports book. $1 a day but caps at $2, use it so you can keep farming!", cooldownHours: 24, guide: "" },
-      { name: "Thrillz", url: "https://thrillzz.com/", tier: "A", scPerDay: "No", minRedeem: "50 (Cash)", notes: "Challenge system with a ton of betting lines.", cooldownHours: 24, guide: "" },
-      { name: "Global Poker", url: "https://play.globalpoker.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Random dailies, owned by VGW (Chumba/Luckyland), fully legit.", cooldownHours: 24, guide: "" },
-      { name: "American Luck", url: "https://americanluck.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "New Zula sister site! Good game selection and sales.", cooldownHours: 24, guide: "" },
-      { name: "Moozi", url: "https://moozi.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Easy verification, great sales, lots of games.", cooldownHours: 24, guide: "" },
-      { name: "Yay", url: "https://www.yaycasino.com/lobby", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "5SC signup bonus - decent daily. Owned by Priority Play (Zula sister).", cooldownHours: 24, guide: "" },
-
-      // B-TIER
-      { name: "Courtside", url: "https://courtside.com/", tier: "B", scPerDay: "No", minRedeem: "50 (Cash)", notes: "New sweeps sportsbook app with casino games as well!", cooldownHours: 24, guide: "" },
-      { name: "Coin Frenzy", url: "https://coinfrenzy.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "1 SC Daily login bonus! Promising new site. Watch for 3x playthrough!", cooldownHours: 24, guide: "" },
-      { name: "Zumo", url: "https://zumo.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Free 2 SC on signup! Kinetix sister site (SweepJungle/66).", cooldownHours: 24, guide: "" },
-      { name: "Wild", url: "https://wildworldcasino.com/", tier: "B", scPerDay: "No", minRedeem: "10 (Crypto)", notes: "Watch out for high playthrough requirements on bonuses.", cooldownHours: 24, guide: "" },
-      { name: "SweepJungle", url: "https://sweepjungle.com/", tier: "B", scPerDay: "Random", minRedeem: "100 (Cash)", notes: "2SC on signup, Sixty6 sister site. 1x playthrough.", cooldownHours: 24, guide: "" },
-      { name: "TaoSweeps", url: "https://taosweeps.com/wallet", tier: "B", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Sister-site to LuckyRush. 80 SC for $40 with 1x playthrough, 50 SC min redeem.", cooldownHours: 24, guide: "" },
-      { name: "OceanKing", url: "https://oceanking.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Formerly Viking Riches. Joker's Jewels with .05 spins. Beware of purchase and redeem fees!", cooldownHours: 24, guide: "" },
-      { name: "Scoop", url: "https://scoop.com/", tier: "B", scPerDay: "Random", minRedeem: "100 (Cash)", notes: "Speed-sister feel with occasional promos.", cooldownHours: 24, guide: "" },
-      { name: "High5", url: "https://fun.high5casino.com/gc/?originId=2&accountTypeId=1", tier: "B", scPerDay: "Daily SC", minRedeem: "50 (Gift Card) / 100 (Cash)", notes: "4-Hour reload timer! High 5 Plinko is top tier, but watch out for high bonus playthrough.", cooldownHours: 4, guide: "" },
-      { name: "LuckyBits Vegas", url: "https://luckybitsvegas.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "100 (Crypto)", notes: "High5 sister site - watch out for high playthrough reqs on bonus SC. 10SC signup bonus.", cooldownHours: 24, guide: "" },
-      { name: "Lavish Luck", url: "https://lavishluck.net/", tier: "B", scPerDay: "Daily SC", minRedeem: "25 (Cash)", notes: "Great welcome offers and covered baccarat! Lots of missions.", cooldownHours: 24, guide: "" },
-      { name: "OnyxOdds", url: "https://onyxodds.com/", tier: "B", scPerDay: "No", minRedeem: "100 (Cash)", notes: "Decent little sportsbook with a couple welcome offers.", cooldownHours: 24, guide: "" },
-      { name: "AcornFun", url: "https://wap.acornfun.com/", tier: "B", scPerDay: "Random", minRedeem: "50 (Cash)", notes: "5% ACH fee lands them on B list. Nice welcome offers.", cooldownHours: 24, guide: "" },
-      { name: "LunaLand", url: "https://lunalandcasino.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Great welcome offers and sales here, lots of games.", cooldownHours: 24, guide: "" },
-      { name: "LuckParty", url: "https://luckparty.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Zula sister site! 6 SC on signup and verification, 1x playthrough.", cooldownHours: 24, guide: "" },
-      { name: "PeakPlay", url: "https://peakplay.com/", tier: "B", scPerDay: "No", minRedeem: "50 (Cash)", notes: "Owned by the same group as RubySweeps. 100% welcome offers.", cooldownHours: 24, guide: "" },
-      { name: "Ruby Sweeps", url: "https://rubysweeps.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "RubySweeps has huge welcome offers and 100% sales regularly.", cooldownHours: 24, guide: "" },
-      { name: "BlitzMania", url: "https://blitzmania.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Free 2 SC on signup! Login streak, easy verification and fast redeems.", cooldownHours: 24, guide: "" },
-      { name: "SorceryReels", url: "https://sorceryreels.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Small daily login reward. Challenges and missions for extra value.", cooldownHours: 24, guide: "" },
-      { name: "Betr", url: "https://betr.app/", tier: "B", scPerDay: "No", minRedeem: "100 (Cash)", notes: "$10 bonus + 50% first purchase. Hybrid sweeps/fiat sportsbook and arcade.", cooldownHours: 24, guide: "" },
-      { name: "SpinPals", url: "https://www.spinpals.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Daily login streak + daily wheel spin under Account > Promotions!", cooldownHours: 24, guide: "" },
-      { name: "Sidepot", url: "https://sidepot.us/", tier: "B", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Sister casino to Fliff. Good promos and big selection of games.", cooldownHours: 24, guide: "" }
+    // Default Seed Catalog
+    const CATALOG_DATA = [
+      { name: "Ace", url: "https://ace.com/", tier: "A", cooldown: 24 },
+      { name: "Ace Bet", url: "https://acebet.cc/", tier: "A", cooldown: 24 },
+      { name: "Acornfun", url: "https://wap.acornfun.com/", tier: "B", cooldown: 24 },
+      { name: "American Luck", url: "https://americanluck.com/", tier: "A", cooldown: 24 },
+      { name: "Baba", url: "https://play.babacasino.com/", tier: "A", cooldown: 24 },
+      { name: "BangCoins", url: "https://bangcoins.com/", tier: "A", cooldown: 24 },
+      { name: "Card Crush", url: "https://www.cardcrush.com/home", tier: "S", cooldown: 24 },
+      { name: "Chanced", url: "https://chanced.com/", tier: "C", cooldown: 24 },
+      { name: "Chumba", url: "https://www.chumbacasino.com/", tier: "S", cooldown: 24 },
+      { name: "Cider Casino", url: "https://game.cidercasino.com/", tier: "A", cooldown: 24 },
+      { name: "Clubs", url: "https://play.clubs.poker/", tier: "A", cooldown: 24 },
+      { name: "Coin Wizard", url: "https://www.coinwizardgames.com/", tier: "A", cooldown: 24 },
+      { name: "Coins Royale", url: "https://www.coinsroyale.com/en#login", tier: "A", cooldown: 24 },
+      { name: "CoinsBack Casino", url: "https://www.coinsbackcasino.com/", tier: "A", cooldown: 24 },
+      { name: "Crown Coins", url: "https://crowncoinscasino.com/", tier: "S", cooldown: 24 },
+      { name: "Dara", url: "https://daracasino.com/", tier: "A", cooldown: 24 },
+      { name: "Dogg House", url: "https://www.play.dogghousecasino.com/", tier: "S", cooldown: 24 },
+      { name: "Fliff", url: "https://www.getfliff.com/", tier: "A", cooldown: 24 },
+      { name: "Fortune Wins", url: "https://fortunewins.com/", tier: "S", cooldown: 24 },
+      { name: "Global Poker", url: "https://play.globalpoker.com/", tier: "A", cooldown: 24 },
+      { name: "Golden Hearts", url: "https://goldenheartsgames.com/", tier: "A", cooldown: 24 },
+      { name: "HelloMillions", url: "https://www.hellomillions.com/home", tier: "S", cooldown: 24 },
+      { name: "High5", url: "https://fun.high5casino.com/gc/?originId=2&accountTypeId=1", tier: "B", cooldown: 4 },
+      { name: "Jackpot Daily", url: "https://jackpotdaily.com/", tier: "A", cooldown: 24 },
+      { name: "Jackpot Go", url: "https://jackpotgo.club/", tier: "A", cooldown: 24 },
+      { name: "Jackpota", url: "https://www.jackpota.com/home", tier: "S", cooldown: 24 },
+      { name: "Legendz", url: "https://www.legendz.com/", tier: "S", cooldown: 24 },
+      { name: "Lonestar", url: "https://www.lonestarcasino.com/", tier: "S", cooldown: 24 },
+      { name: "LuckyBits Vegas", url: "https://luckybitsvegas.com/", tier: "B", cooldown: 24 },
+      { name: "LuckyHands", url: "https://luckyhands.com/", tier: "S", cooldown: 24 },
+      { name: "LuckyLand Casino", url: "https://luckylandcasino.com/", tier: "S", cooldown: 24 },
+      { name: "LuckyRush", url: "https://luckyrush.io/wallet", tier: "A", cooldown: 24 },
+      { name: "McLuck", url: "https://www.mcluck.com/home", tier: "S", cooldown: 24 },
+      { name: "MegaBonanza", url: "https://www.megabonanza.com/home", tier: "S", cooldown: 24 },
+      { name: "Modo", url: "https://modo.us/", tier: "S", cooldown: 24 },
+      { name: "Moozi", url: "https://moozi.com/", tier: "A", cooldown: 24 },
+      { name: "MyPrize", url: "https://myprize.us/", tier: "S", cooldown: 24 },
+      { name: "PlayFame", url: "https://playfame.com/", tier: "S", cooldown: 24 },
+      { name: "Pulsz", url: "https://pulsz.com/", tier: "S", cooldown: 24 },
+      { name: "Pulsz Bingo", url: "https://pulszbingo.com/", tier: "S", cooldown: 24 },
+      { name: "RealPrize", url: "https://realprize.com/#", tier: "S", cooldown: 24 },
+      { name: "ReBet", url: "https://rebet.page.link/x3U9G9CNNoFQMzhP7", tier: "S", cooldown: 24 },
+      { name: "Shuffle", url: "https://shuffle.us/", tier: "S", cooldown: 24 },
+      { name: "SpinBlitz", url: "https://www.spinblitz.com/", tier: "S", cooldown: 24 },
+      { name: "Spree", url: "https://spree.com/", tier: "S", cooldown: 24 },
+      { name: "Stake", url: "https://stake.us/?tab=dailyBonus&currency=ltc&modal=wallet", tier: "S", cooldown: 24 },
+      { name: "WOW Vegas", url: "https://www.wowvegas.com/promotions/daily-coin-reward", tier: "S", cooldown: 24 },
+      { name: "Zula", url: "https://zulacasino.com/", tier: "S", cooldown: 24 }
     ];
 
     // State
-    let trackedGames = JSON.parse(localStorage.getItem('tracked_games_data_v2') || '[]');
+    let trackedGames = JSON.parse(localStorage.getItem('claude_freebie_ledger') || '[]');
     let currentFilter = 'all';
 
-    // Seed tracked list with S-Tier games on initial load
+    // Seed on fresh load
     if (trackedGames.length === 0) {
-      trackedGames = DEFAULT_CATALOG.filter(c => c.tier === 'S').map(item => ({
+      trackedGames = CATALOG_DATA.slice(0, 15).map(c => ({
         id: uid(),
-        name: item.name,
-        url: item.url,
-        referralUrl: "",
-        tier: item.tier,
-        scPerDay: item.scPerDay,
-        minRedeem: item.minRedeem,
-        notes: item.notes,
-        guide: item.guide || "",
-        cooldownHours: item.cooldownHours || 24,
+        name: c.name,
+        url: c.url,
+        tier: c.tier,
+        referralUrl: '',
+        cooldownHours: c.cooldown,
         lastCollected: 0
       }));
-      saveState();
+      persist();
     }
 
-    function saveState() {
-      localStorage.setItem('tracked_games_data_v2', JSON.stringify(trackedGames));
+    function persist() {
+      localStorage.setItem('claude_freebie_ledger', JSON.stringify(trackedGames));
       renderGames();
-      updateReadyCount();
+      updateHeroStats();
     }
 
-    function switchTab(tabId) {
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
-      
-      if (tabId === 'games') {
-        document.querySelector("button[onclick=\"switchTab('games')\"]").classList.add('active');
-        document.getElementById('gamesView').classList.add('active');
-        renderGames();
-      } else if (tabId === 'catalog') {
-        document.querySelector("button[onclick=\"switchTab('catalog')\"]").classList.add('active');
-        document.getElementById('catalogView').classList.add('active');
-        renderCatalog();
-      } else {
-        document.querySelector("button[onclick=\"switchTab('resources')\"]").classList.add('active');
-        document.getElementById('resourcesView').classList.add('active');
-      }
+    function switchMainTab(tab, el) {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+
+      document.getElementById('viewGames').style.display = (tab === 'games') ? 'block' : 'none';
+      document.getElementById('viewCatalog').style.display = (tab === 'catalog') ? 'block' : 'none';
+      document.getElementById('viewResources').style.display = (tab === 'resources') ? 'block' : 'none';
+
+      if (tab === 'catalog') renderCatalogList();
+      if (tab === 'games') renderGames();
     }
 
-    function filterGames(filter, el) {
-      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    function applyFilter(filter, el) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       el.classList.add('active');
       currentFilter = filter;
       renderGames();
     }
 
-    function getRemainingCooldown(game) {
+    function getCooldownState(game) {
       const now = Date.now();
-      const cooldownMs = (game.cooldownHours || 24) * 3600 * 1000;
+      const durationMs = (game.cooldownHours || 24) * 3600 * 1000;
       const elapsed = now - (game.lastCollected || 0);
-      return Math.max(0, cooldownMs - elapsed);
+      const remaining = Math.max(0, durationMs - elapsed);
+      return {
+        isReady: remaining === 0,
+        remainingMs: remaining
+      };
     }
 
-    function formatTimeRemaining(ms) {
+    function formatTime(ms) {
       const totalSec = Math.floor(ms / 1000);
       const h = Math.floor(totalSec / 3600);
       const m = Math.floor((totalSec % 3600) / 60);
-      return `${h}h ${m}m remaining`;
+      return `${h}h ${m}m`;
     }
 
-    function collectGame(id) {
+    function collect(id) {
       const game = trackedGames.find(g => g.id === id);
       if (!game) return;
-
       window.open(game.url, '_blank');
       game.lastCollected = Date.now();
-      saveState();
+      persist();
     }
 
     function renderGames() {
-      const grid = document.getElementById('gamesGrid');
-      grid.innerHTML = '';
+      const container = document.getElementById('gamesContainer');
+      container.innerHTML = '';
 
-      let filtered = trackedGames.slice();
+      let list = trackedGames.slice();
 
       if (currentFilter === 'ready') {
-        filtered = filtered.filter(g => getRemainingCooldown(g) === 0);
+        list = list.filter(g => getCooldownState(g).isReady);
+      } else if (currentFilter === 'cooldown') {
+        list = list.filter(g => !getCooldownState(g).isReady);
       } else if (currentFilter === 'referral') {
-        filtered = filtered.filter(g => g.referralUrl && g.referralUrl.trim().length > 0);
+        list = list.filter(g => g.referralUrl && g.referralUrl.trim().length > 0);
       }
 
-      // Sort ready first, then shortest remaining time
-      filtered.sort((a, b) => getRemainingCooldown(a) - getRemainingCooldown(b));
+      list.sort((a, b) => getCooldownState(a).remainingMs - getCooldownState(b).remainingMs);
 
-      filtered.forEach(game => {
-        const remaining = getRemainingCooldown(game);
-        const isReady = remaining === 0;
-
+      list.forEach(game => {
+        const { isReady, remainingMs } = getCooldownState(game);
         const card = document.createElement('div');
-        card.className = `game-card ${isReady ? 'ready' : ''}`;
+        card.className = 'ledger-card';
         card.innerHTML = `
-          <div class="card-header">
-            <div>
-              <div class="game-meta">
-                <span class="game-title">${game.name}</span>
-                <span class="tier-badge tier-${game.tier || 'Unranked'}">${game.tier || 'Unranked'}</span>
+          <div class="card-left">
+            <div class="casino-avatar">${getInitials(game.name)}</div>
+            <div class="card-body">
+              <div class="card-title-row">
+                <span class="casino-name">${game.name}</span>
+                <span class="tier-badge tier-${game.tier || 'Unranked'}">${game.tier || 'A'}</span>
               </div>
-              <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
-                Min Redeem: ${game.minRedeem || 'Varies'} • ${game.cooldownHours}h Timer
-              </p>
+              <div class="card-status">
+                <span class="status-dot ${isReady ? '' : 'cooldown'}"></span>
+                <span>${isReady ? 'ready now' : formatTime(remainingMs) + ' left'}</span>
+              </div>
             </div>
-            <button class="btn btn-icon" onclick="editGame('${game.id}')">✎</button>
           </div>
-
-          ${game.notes ? `
-            <div class="card-notes">
-              ${game.notes}
-            </div>
-          ` : ''}
-
-          ${game.guide ? `
-            <div class="card-notes" style="margin-top: -4px;">
-              <a href="${game.guide}" target="_blank" style="color:var(--accent-blue); text-decoration:none;">
-                📚 Read SweepsGrail Guide →
-              </a>
-            </div>
-          ` : ''}
-
           <div class="card-actions">
-            <button class="btn btn-collect ${isReady ? '' : 'cooldown'}" onclick="collectGame('${game.id}')">
-              ${isReady ? '⚡ Collect Now' : formatTimeRemaining(remaining)}
+            <button class="btn-open ${isReady ? '' : 'cooldown'}" onclick="collect('${game.id}')">
+              ${isReady ? 'Open' : formatTime(remainingMs)}
             </button>
-            ${game.referralUrl ? `
-              <a href="${game.referralUrl}" target="_blank" class="btn btn-join">🎁 Join</a>
-            ` : ''}
+            <button class="btn-dots" onclick="openEditModal('${game.id}')">⋯</button>
           </div>
         `;
-        grid.appendChild(card);
+        container.appendChild(card);
       });
     }
 
-    function updateReadyCount() {
-      const readyCount = trackedGames.filter(g => getRemainingCooldown(g) === 0).length;
-      const badge = document.getElementById('readyBadge');
-      badge.textContent = `${readyCount} Ready to Collect`;
-      badge.style.borderColor = readyCount > 0 ? 'var(--accent-green)' : 'var(--border-color)';
-      badge.style.color = readyCount > 0 ? 'var(--accent-green)' : 'var(--text-muted)';
+    function updateHeroStats() {
+      const total = trackedGames.length;
+      const ready = trackedGames.filter(g => getCooldownState(g).isReady).length;
+      const cooldown = total - ready;
+
+      document.getElementById('heroCount').textContent = ready;
+      document.getElementById('heroReadyText').textContent = `${ready} ready to collect`;
+      document.getElementById('heroCooldownText').textContent = `${cooldown} on cooldown`;
+      document.getElementById('heroDoneText').textContent = `${cooldown} done today`;
     }
 
-    // Catalog Operations
-    function renderCatalog() {
-      const container = document.getElementById('catalogContainer');
-      const searchQuery = (document.getElementById('catalogSearch').value || '').toLowerCase();
+    // Catalog Rendering
+    function renderCatalogList() {
+      const container = document.getElementById('catalogGroupContainer');
+      const query = (document.getElementById('catalogSearchInput').value || '').toLowerCase();
       container.innerHTML = '';
 
-      const tiers = ['S', 'A', 'B', 'C', 'Unranked'];
-      const tierLabels = {
-        'S': '🔥 S-Tier (Top Priority)',
-        'A': '✅ A-Tier (Consistent Value)',
-        'B': '💼 B-Tier (Secondary / Slower)',
-        'C': '🤏 C-Tier',
-        'Unranked': '📎 Unranked'
-      };
+      const filtered = CATALOG_DATA.filter(item => item.name.toLowerCase().includes(query));
 
-      tiers.forEach(tier => {
-        const items = DEFAULT_CATALOG.filter(item => {
-          const matchesTier = (item.tier || 'Unranked') === tier;
-          const matchesSearch = item.name.toLowerCase().includes(searchQuery) || (item.notes && item.notes.toLowerCase().includes(searchQuery));
-          return matchesTier && matchesSearch;
-        });
-
-        if (items.length === 0) return;
-
-        const allTrackedInTier = items.every(item => trackedGames.some(g => g.name.toLowerCase() === item.name.toLowerCase()));
-
-        const section = document.createElement('div');
-        section.className = 'tier-group';
-        section.innerHTML = `
-          <div class="tier-header">
-            <h2>${tierLabels[tier]} (${items.length})</h2>
-            <button class="btn btn-icon" style="font-size:0.8rem; color:var(--accent-gold);" onclick="toggleTier('${tier}', ${allTrackedInTier})">
-              ${allTrackedInTier ? '✕ Remove All' : '+ Add All'}
-            </button>
-          </div>
-        `;
-
-        items.forEach(item => {
-          const isTracked = trackedGames.some(g => g.name.toLowerCase() === item.name.toLowerCase());
-          const row = document.createElement('div');
-          row.className = 'catalog-row';
-          row.innerHTML = `
+      filtered.forEach(item => {
+        const isTracked = trackedGames.some(g => g.name.toLowerCase() === item.name.toLowerCase());
+        const row = document.createElement('div');
+        row.className = `catalog-item-row ${isTracked ? 'tracked' : ''}`;
+        row.innerHTML = `
+          <div class="card-left">
+            <div class="casino-avatar" style="width:36px; height:36px; font-size:0.8rem;">${getInitials(item.name)}</div>
             <div>
-              <span style="font-weight: 600;">${item.name}</span>
-              <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 6px;">(${item.minRedeem})</span>
+              <div class="casino-name" style="font-size:0.9rem;">${item.name}</div>
+              <div class="card-status">${item.tier}-Tier • ${item.cooldown}h</div>
             </div>
-            <span class="catalog-check">${isTracked ? '✓' : '+'}</span>
-          `;
-          row.onclick = () => {
-            row.classList.add('pop-anim');
-            toggleCatalogItem(item);
-          };
-          section.appendChild(row);
-        });
-
-        container.appendChild(section);
+          </div>
+          <span style="font-size:1.1rem; color:${isTracked ? 'var(--accent-gold)' : 'var(--text-dim)'}; font-weight:bold;">
+            ${isTracked ? '✓' : '+'}
+          </span>
+        `;
+        row.onclick = () => toggleCatalogItem(item);
+        container.appendChild(row);
       });
     }
 
@@ -877,85 +851,49 @@
           id: uid(),
           name: item.name,
           url: item.url,
-          referralUrl: "",
           tier: item.tier,
-          scPerDay: item.scPerDay,
-          minRedeem: item.minRedeem,
-          notes: item.notes,
-          guide: item.guide || "",
-          cooldownHours: item.cooldownHours || 24,
+          referralUrl: '',
+          cooldownHours: item.cooldown,
           lastCollected: 0
         });
       }
-      saveState();
-      renderCatalog();
+      persist();
+      renderCatalogList();
     }
 
-    function toggleTier(tier, shouldRemove) {
-      const items = DEFAULT_CATALOG.filter(i => (i.tier || 'Unranked') === tier);
-      if (shouldRemove) {
-        trackedGames = trackedGames.filter(g => !items.some(i => i.name.toLowerCase() === g.name.toLowerCase()));
-      } else {
-        items.forEach(item => {
-          if (!trackedGames.some(g => g.name.toLowerCase() === item.name.toLowerCase())) {
-            trackedGames.push({
-              id: uid(),
-              name: item.name,
-              url: item.url,
-              referralUrl: "",
-              tier: item.tier,
-              scPerDay: item.scPerDay,
-              minRedeem: item.minRedeem,
-              notes: item.notes,
-              guide: item.guide || "",
-              cooldownHours: item.cooldownHours || 24,
-              lastCollected: 0
-            });
-          }
-        });
-      }
-      saveState();
-      renderCatalog();
+    // Modal Operations
+    function openAddModal() {
+      document.getElementById('modalHeading').textContent = 'Add a Game';
+      document.getElementById('modalGameId').value = '';
+      document.getElementById('modalGameName').value = '';
+      document.getElementById('modalGameUrl').value = '';
+      document.getElementById('modalReferralUrl').value = '';
+      document.getElementById('modalCooldown').value = '24';
+      document.getElementById('gameModal').classList.add('open');
     }
 
-    // Edit Modal Logic
-    function editGame(id) {
+    function openEditModal(id) {
       const game = trackedGames.find(g => g.id === id);
       if (!game) return;
 
-      document.getElementById('editGameId').value = game.id;
-      document.getElementById('editGameName').value = game.name;
-      document.getElementById('editGameUrl').value = game.url;
-      document.getElementById('editReferralUrl').value = game.referralUrl || '';
-      document.getElementById('editCooldownHours').value = game.cooldownHours || 24;
-      document.getElementById('editGameTier').value = game.tier || 'Unranked';
-      document.getElementById('editGameNotes').value = game.notes || '';
-
-      document.getElementById('gameEditModal').classList.add('open');
+      document.getElementById('modalHeading').textContent = 'Edit Game';
+      document.getElementById('modalGameId').value = game.id;
+      document.getElementById('modalGameName').value = game.name;
+      document.getElementById('modalGameUrl').value = game.url;
+      document.getElementById('modalReferralUrl').value = game.referralUrl || '';
+      document.getElementById('modalCooldown').value = game.cooldownHours || 24;
+      document.getElementById('gameModal').classList.add('open');
     }
 
-    function openAddGameModal() {
-      document.getElementById('editGameId').value = '';
-      document.getElementById('editGameName').value = '';
-      document.getElementById('editGameUrl').value = '';
-      document.getElementById('editReferralUrl').value = '';
-      document.getElementById('editCooldownHours').value = '24';
-      document.getElementById('editGameTier').value = 'Unranked';
-      document.getElementById('editGameNotes').value = '';
-      document.getElementById('gameEditModal').classList.add('open');
-    }
-
-    function saveGameEdit() {
-      const id = document.getElementById('editGameId').value;
-      const name = document.getElementById('editGameName').value.trim();
-      const url = document.getElementById('editGameUrl').value.trim();
-      const referralUrl = document.getElementById('editReferralUrl').value.trim();
-      const cooldownHours = parseInt(document.getElementById('editCooldownHours').value) || 24;
-      const tier = document.getElementById('editGameTier').value;
-      const notes = document.getElementById('editGameNotes').value.trim();
+    function saveModalEntry() {
+      const id = document.getElementById('modalGameId').value;
+      const name = document.getElementById('modalGameName').value.trim();
+      const url = document.getElementById('modalGameUrl').value.trim();
+      const referralUrl = document.getElementById('modalReferralUrl').value.trim();
+      const cooldownHours = parseInt(document.getElementById('modalCooldown').value) || 24;
 
       if (!name || !url) {
-        alert('Please specify both a name and an active URL.');
+        alert('Please provide a name and URL');
         return;
       }
 
@@ -966,8 +904,6 @@
           game.url = url;
           game.referralUrl = referralUrl;
           game.cooldownHours = cooldownHours;
-          game.tier = tier;
-          game.notes = notes;
         }
       } else {
         trackedGames.push({
@@ -976,28 +912,24 @@
           url,
           referralUrl,
           cooldownHours,
-          tier,
-          scPerDay: "Custom",
-          minRedeem: "Custom",
-          notes,
+          tier: 'A',
           lastCollected: 0
         });
       }
 
-      saveState();
+      persist();
       closeModals();
     }
 
-    // Bulk Import Logic
-    function openBulkImportModal() {
-      document.getElementById('bulkImportModal').classList.add('open');
+    function openImportModal() {
+      document.getElementById('importModal').classList.add('open');
     }
 
-    function processBulkImport() {
-      const text = document.getElementById('bulkImportInput').value;
-      const lines = text.split('\n').map(l => l.trim()).filter(l => l.startsWith('http'));
+    function executeBulkImport() {
+      const text = document.getElementById('importUrlsText').value;
+      const urls = text.split('\n').map(u => u.trim()).filter(u => u.startsWith('http'));
 
-      lines.forEach(urlStr => {
+      urls.forEach(urlStr => {
         try {
           const parsed = new URL(urlStr);
           const domain = parsed.hostname.replace('www.', '').split('.')[0];
@@ -1008,37 +940,37 @@
               id: uid(),
               name: cleanName,
               url: urlStr,
-              referralUrl: "",
+              referralUrl: '',
               cooldownHours: 24,
-              tier: "Unranked",
-              minRedeem: "Custom",
-              notes: "Imported via bulk paste",
+              tier: 'A',
               lastCollected: 0
             });
           }
-        } catch(e) {
-          console.error("Invalid URL format:", urlStr);
-        }
+        } catch(e) {}
       });
 
-      saveState();
+      persist();
       closeModals();
-      document.getElementById('bulkImportInput').value = '';
     }
 
     function closeModals() {
-      document.querySelectorAll('.sheet-backdrop').forEach(m => m.classList.remove('open'));
+      document.querySelectorAll('.sheet-backdrop').forEach(b => b.classList.remove('open'));
     }
 
-    // Timer interval update
+    // Set Date Header
+    const d = new Date();
+    const options = { weekday: 'long', month: 'long', day: 'numeric' };
+    document.getElementById('currentDateDisplay').textContent = d.toLocaleDateString('en-US', options).toUpperCase();
+
+    // Auto-refresh timers every minute
     setInterval(() => {
       renderGames();
-      updateReadyCount();
+      updateHeroStats();
     }, 60000);
 
-    // Initial render
+    // Initial Load
     renderGames();
-    updateReadyCount();
+    updateHeroStats();
   </script>
 </body>
 </html>
