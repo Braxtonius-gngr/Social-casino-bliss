@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Freebie Ledger</title>
+  <title>The Casino Almanac</title>
   <style>
     :root {
       --bg-base: #11141a;
@@ -46,6 +46,7 @@
     .app-container {
       max-width: 640px;
       margin: 0 auto;
+      position: relative;
     }
 
     /* Header */
@@ -118,28 +119,29 @@
     /* Navigation Tabs */
     .nav-pill-group {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       margin-bottom: 12px;
       background: var(--bg-surface);
       padding: 4px;
       border-radius: 30px;
       border: 1px solid var(--border-subtle);
+      position: relative;
     }
 
     .nav-tab {
       flex: 1;
-      padding: 8px 12px;
+      padding: 9px 8px;
       background: transparent;
       border: none;
       border-radius: 24px;
       color: var(--text-muted);
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 4px;
       transition: all 0.2s;
     }
 
@@ -171,12 +173,12 @@
     }
 
     .filter-btn {
-      padding: 6px 14px;
+      padding: 6px 12px;
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: 20px;
       color: var(--text-muted);
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 500;
       cursor: pointer;
       white-space: nowrap;
@@ -248,9 +250,6 @@
       font-size: 0.76rem;
       text-align: left;
       cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
 
     .sort-option-btn.active {
@@ -318,6 +317,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      flex-wrap: wrap;
     }
 
     .casino-name {
@@ -335,6 +335,15 @@
       padding: 1px 5px;
       border-radius: 4px;
       text-transform: uppercase;
+    }
+
+    .type-badge {
+      font-size: 0.65rem;
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
     }
 
     .tier-S { background: var(--tier-s); color: #fff; }
@@ -404,10 +413,6 @@
       cursor: pointer;
     }
 
-    .btn-dots:hover {
-      color: var(--text-main);
-    }
-
     /* Catalog View */
     .catalog-search {
       width: 100%;
@@ -417,7 +422,7 @@
       border-radius: 12px;
       color: var(--text-main);
       font-size: 0.9rem;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       outline: none;
     }
 
@@ -497,9 +502,9 @@
     }
 
     .sheet-modal h3 {
-      font-size: 1.1rem;
-      color: var(--text-main);
-      margin-bottom: 14px;
+      font-size: 1.25rem;
+      color: var(--accent-gold);
+      margin-bottom: 8px;
       font-family: "Georgia", serif;
     }
 
@@ -553,13 +558,44 @@
       font-weight: 600;
       cursor: pointer;
     }
+
+    /* Onboarding Tour Overlay */
+    .tour-tooltip {
+      position: absolute;
+      background: #eab308;
+      color: #11141a;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      pointer-events: none;
+      z-index: 90;
+      animation: bounce 1.5s infinite;
+      display: none;
+    }
+
+    .tour-tooltip::after {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 20px;
+      border-width: 0 6px 6px 6px;
+      border-style: solid;
+      border-color: transparent transparent #eab308 transparent;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
   </style>
 </head>
 <body>
 
   <div class="app-container">
     <div class="date-header" id="currentDateDisplay">TODAY</div>
-    <h1 class="app-title">Freebie Ledger</h1>
+    <h1 class="app-title">The Casino Almanac</h1>
 
     <!-- Hero Counter -->
     <div class="hero-stat-card">
@@ -573,45 +609,75 @@
     </div>
 
     <!-- Navigation Tabs -->
-    <div class="nav-pill-group">
-      <button class="nav-tab active" onclick="switchMainTab('games', this)">🎰 Games</button>
-      <button class="nav-tab" onclick="switchMainTab('catalog', this)">📁 Catalog</button>
-      <button class="nav-tab" onclick="switchMainTab('resources', this)">📚 Resources</button>
+    <div class="nav-pill-group" id="navGroup">
+      <button class="nav-tab active" id="tabPlatforms" onclick="switchMainTab('games', this)">🎰 Platforms</button>
+      <button class="nav-tab" id="tabCatalog" onclick="switchMainTab('catalog', this)">📁 Casino Catalogue</button>
+      <button class="nav-tab" id="tabResources" onclick="switchMainTab('resources', this)">📚 Resources</button>
     </div>
 
-    <!-- View: Tracked Games -->
+    <!-- Tour Tooltip Pointer -->
+    <div id="tourPointer" class="tour-tooltip">Tap here to browse all 85+ sites! ↗</div>
+
+    <!-- View: Tracked Sweepstakes Platforms -->
     <section id="viewGames">
       <div class="filter-sort-row">
         <div class="filter-chips">
           <button class="filter-btn active" onclick="applyFilter('all', this)">All</button>
           <button class="filter-btn" onclick="applyFilter('ready', this)">Ready</button>
+          <button class="filter-btn" onclick="applyFilter('live', this)">🔴 Live Play</button>
           <button class="filter-btn" onclick="applyFilter('cooldown', this)">Cooldown</button>
           <button class="filter-btn" onclick="applyFilter('referral', this)">Has referral</button>
         </div>
-        <button class="sort-trigger-btn" onclick="toggleSortDrawer()">
+        <button class="sort-trigger-btn" onclick="toggleSortDrawer('games')">
           <span>⇅ Sort</span>
         </button>
       </div>
 
-      <!-- Collapsible Sort Options -->
-      <div id="sortDrawer" class="sort-drawer">
-        <div class="sort-drawer-header">Sort Order</div>
+      <!-- Collapsible Sort Options for Tracked Platforms -->
+      <div id="sortDrawerGames" class="sort-drawer">
+        <div class="sort-drawer-header">Sort Tracked Platforms</div>
         <div class="sort-options-grid">
-          <button class="sort-option-btn active" onclick="setSortCriteria('name', 'asc', this)">Name (A → Z)</button>
-          <button class="sort-option-btn" onclick="setSortCriteria('name', 'desc', this)">Name (Z → A)</button>
-          <button class="sort-option-btn" onclick="setSortCriteria('tier', 'asc', this)">Tier (S → C)</button>
-          <button class="sort-option-btn" onclick="setSortCriteria('dailySC', 'desc', this)">Daily SC (High → Low)</button>
-          <button class="sort-option-btn" onclick="setSortCriteria('speed', 'asc', this)">Redeem Speed</button>
-          <button class="sort-option-btn" onclick="setSortCriteria('reliability', 'desc', this)">Reliability Index</button>
+          <button class="sort-option-btn active" onclick="setSortCriteria('name', 'asc', this, 'games')">Name (A → Z)</button>
+          <button class="sort-option-btn" onclick="setSortCriteria('name', 'desc', this, 'games')">Name (Z → A)</button>
+          <button class="sort-option-btn" onclick="setSortCriteria('tier', 'asc', this, 'games')">Tier (S → C)</button>
+          <button class="sort-option-btn" onclick="setSortCriteria('dailySC', 'desc', this, 'games')">Daily SC (High → Low)</button>
+          <button class="sort-option-btn" onclick="setSortCriteria('speed', 'asc', this, 'games')">Redeem Speed</button>
+          <button class="sort-option-btn" onclick="setSortCriteria('live', 'desc', this, 'games')">🔴 Has Live Dealer</button>
         </div>
       </div>
 
       <div class="game-list" id="gamesContainer"></div>
     </section>
 
-    <!-- View: Catalog -->
+    <!-- View: Casino Catalogue -->
     <section id="viewCatalog" style="display: none;">
-      <input type="text" id="catalogSearchInput" class="catalog-search" placeholder="Search 85+ verified casinos..." oninput="renderCatalogList()" />
+      <input type="text" id="catalogSearchInput" class="catalog-search" placeholder="Search 85+ verified sweepstakes platforms..." oninput="renderCatalogList()" />
+      
+      <div class="filter-sort-row">
+        <div class="filter-chips">
+          <button class="filter-btn active" onclick="applyCatalogFilter('all', this)">All</button>
+          <button class="filter-btn" onclick="applyCatalogFilter('S', this)">🔥 S-Tier</button>
+          <button class="filter-btn" onclick="applyCatalogFilter('A', this)">✅ A-Tier</button>
+          <button class="filter-btn" onclick="applyCatalogFilter('live', this)">🔴 Live Play</button>
+        </div>
+        <button class="sort-trigger-btn" onclick="toggleSortDrawer('catalog')">
+          <span>⇅ Sort</span>
+        </button>
+      </div>
+
+      <!-- Collapsible Sort Options for Catalogue -->
+      <div id="sortDrawerCatalog" class="sort-drawer">
+        <div class="sort-drawer-header">Sort Catalogue</div>
+        <div class="sort-options-grid">
+          <button class="sort-option-btn active" onclick="setSortCriteria('name', 'asc', this, 'catalog')">Name (A → Z)</button>
+          <button class="sort-option-btn" onclick="setSortCriteria('name', 'desc', this, 'catalog')">Name (Z → A)</button>
+          <button class="sort-option-btn" onclick="setSortCriteria('tier', 'asc', this, 'catalog')">Tier (S → C)</button>
+          <button class="sort-option-btn" onclick="setSortCriteria('dailySC', 'desc', this, 'catalog')">Daily SC (High → Low)</button>
+          <button class="sort-option-btn" onclick="setSortCriteria('reliability', 'desc', this, 'catalog')">Reliability Score</button>
+          <button class="sort-option-btn" onclick="setSortCriteria('live', 'desc', this, 'catalog')">🔴 Has Live Dealer</button>
+        </div>
+      </div>
+
       <div id="catalogGroupContainer"></div>
     </section>
 
@@ -654,14 +720,25 @@
 
   <!-- Docked Action Footer -->
   <div class="docked-footer">
-    <button class="btn-dock" onclick="openAddModal()">+ Add a game</button>
-    <button class="btn-dock" onclick="openImportModal()">⇩ Import list</button>
+    <button class="btn-dock" onclick="openAddModal()">+ Add platform</button>
+    <button class="btn-dock" onclick="openImportModal()">⇩ Bulk Import</button>
+  </div>
+
+  <!-- Welcome Landing Screen Modal -->
+  <div id="welcomeModal" class="sheet-backdrop">
+    <div class="sheet-modal" style="text-align: center;">
+      <h3>The Casino Almanac</h3>
+      <p style="font-size:0.85rem; color:var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+        Your master ledger for tracking daily sweepstakes coin drops, cooldown resets, live dealer availability, and high-speed cash redemptions across 85+ verified platforms.
+      </p>
+      <button class="btn-primary" style="width: 100%;" onclick="dismissWelcomeModal()">Enter Almanac →</button>
+    </div>
   </div>
 
   <!-- Edit / Add Modal -->
   <div id="gameModal" class="sheet-backdrop">
     <div class="sheet-modal">
-      <h3 id="modalHeading">Edit Ledger Entry</h3>
+      <h3 id="modalHeading">Edit Platform</h3>
       <input type="hidden" id="modalGameId" />
       <div class="form-group">
         <label>Platform Name</label>
@@ -714,51 +791,54 @@
       return clean.slice(0, 2).toUpperCase();
     }
 
-    // Complete Database with Sort Keys
+    // Complete Database with Live Play & Game Type Flags
     const CATALOG_DATA = [
-      { name: "McLuck", url: "https://www.mcluck.com/home", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24 },
-      { name: "Spree", url: "https://spree.com/", tier: "S", dailySC: 0.4, speedHours: 24, reliability: 92, cooldown: 24 },
-      { name: "Pulsz", url: "https://pulsz.com/", tier: "S", dailySC: 0.3, speedHours: 12, reliability: 98, cooldown: 24 },
-      { name: "Crown Coins", url: "https://crowncoinscasino.com/", tier: "S", dailySC: 1.5, speedHours: 6, reliability: 99, cooldown: 24 },
-      { name: "PlayFame", url: "https://playfame.com/", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 90, cooldown: 24 },
-      { name: "Jackpota", url: "https://www.jackpota.com/home", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 91, cooldown: 24 },
-      { name: "Stake", url: "https://stake.us/?tab=dailyBonus&currency=ltc&modal=wallet", tier: "S", dailySC: 1.0, speedHours: 1, reliability: 100, cooldown: 24 },
-      { name: "HelloMillions", url: "https://www.hellomillions.com/home", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 93, cooldown: 24 },
-      { name: "Shuffle", url: "https://shuffle.us/", tier: "S", dailySC: 1.0, speedHours: 1, reliability: 96, cooldown: 24 },
-      { name: "MyPrize", url: "https://myprize.us/", tier: "S", dailySC: 1.0, speedHours: 4, reliability: 94, cooldown: 24 },
-      { name: "Lonestar", url: "https://www.lonestarcasino.com/", tier: "S", dailySC: 0.5, speedHours: 72, reliability: 80, cooldown: 24 },
-      { name: "RealPrize", url: "https://realprize.com/#", tier: "S", dailySC: 1.0, speedHours: 72, reliability: 82, cooldown: 24 },
-      { name: "WOW Vegas", url: "https://www.wowvegas.com/promotions/daily-coin-reward", tier: "S", dailySC: 0.5, speedHours: 12, reliability: 97, cooldown: 24 },
-      { name: "Modo", url: "https://modo.us/", tier: "S", dailySC: 0.5, speedHours: 6, reliability: 98, cooldown: 24 },
-      { name: "SpinBlitz", url: "https://www.spinblitz.com/", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 90, cooldown: 24 },
-      { name: "ReBet", url: "https://rebet.page.link/x3U9G9CNNoFQMzhP7", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 95, cooldown: 24 },
-      { name: "Pulsz Bingo", url: "https://pulszbingo.com/", tier: "S", dailySC: 0.3, speedHours: 12, reliability: 96, cooldown: 24 },
-      { name: "Legendz", url: "https://www.legendz.com/", tier: "S", dailySC: 0.5, speedHours: 2, reliability: 94, cooldown: 24 },
-      { name: "LuckyHands", url: "https://luckyhands.com/", tier: "S", dailySC: 0.5, speedHours: 2, reliability: 92, cooldown: 24 },
-      { name: "MegaBonanza", url: "https://www.megabonanza.com/home", tier: "S", dailySC: 0.2, speedHours: 24, reliability: 90, cooldown: 24 },
-      { name: "Card Crush", url: "https://www.cardcrush.com/home", tier: "S", dailySC: 0.5, speedHours: 24, reliability: 91, cooldown: 24 },
-      { name: "Dogg House", url: "https://www.play.dogghousecasino.com/", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 93, cooldown: 24 },
-      { name: "Zula", url: "https://zulacasino.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 96, cooldown: 24 },
-      { name: "Fortune Wins", url: "https://fortunewins.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24 },
-      { name: "Sportzino", url: "https://sportzino.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 96, cooldown: 24 },
-      { name: "LuckyLand Casino", url: "https://luckylandcasino.com/", tier: "S", dailySC: 0.5, speedHours: 12, reliability: 99, cooldown: 24 },
-      { name: "Chumba", url: "https://www.chumbacasino.com/", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 99, cooldown: 24 },
-      { name: "Coins Royale", url: "https://www.coinsroyale.com/en#login", tier: "A", dailySC: 1.0, speedHours: 12, reliability: 88, cooldown: 24 },
-      { name: "Jackpot Go", url: "https://jackpotgo.club/", tier: "A", dailySC: 0.8, speedHours: 12, reliability: 89, cooldown: 24 },
-      { name: "Cider Casino", url: "https://game.cidercasino.com/", tier: "A", dailySC: 0.8, speedHours: 12, reliability: 87, cooldown: 24 },
-      { name: "High5", url: "https://fun.high5casino.com/gc/?originId=2&accountTypeId=1", tier: "B", dailySC: 0.5, speedHours: 12, reliability: 90, cooldown: 4 },
-      { name: "Fliff", url: "https://www.getfliff.com/", tier: "A", dailySC: 1.0, speedHours: 12, reliability: 95, cooldown: 24 },
-      { name: "Golden Hearts", url: "https://goldenheartsgames.com/", tier: "A", dailySC: 0.25, speedHours: 24, reliability: 94, cooldown: 24 }
+      { name: "McLuck", url: "https://www.mcluck.com/home", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
+      { name: "Spree", url: "https://spree.com/", tier: "S", dailySC: 0.4, speedHours: 24, reliability: 92, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
+      { name: "Pulsz", url: "https://pulsz.com/", tier: "S", dailySC: 0.3, speedHours: 12, reliability: 98, cooldown: 24, hasLive: false, hasSlots: true, hasTables: true },
+      { name: "Crown Coins", url: "https://crowncoinscasino.com/", tier: "S", dailySC: 1.5, speedHours: 6, reliability: 99, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
+      { name: "PlayFame", url: "https://playfame.com/", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 90, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
+      { name: "Jackpota", url: "https://www.jackpota.com/home", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 91, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
+      { name: "Stake", url: "https://stake.us/?tab=dailyBonus&currency=ltc&modal=wallet", tier: "S", dailySC: 1.0, speedHours: 1, reliability: 100, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
+      { name: "HelloMillions", url: "https://www.hellomillions.com/home", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 93, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
+      { name: "Shuffle", url: "https://shuffle.us/", tier: "S", dailySC: 1.0, speedHours: 1, reliability: 96, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
+      { name: "MyPrize", url: "https://myprize.us/", tier: "S", dailySC: 1.0, speedHours: 4, reliability: 94, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
+      { name: "Lonestar", url: "https://www.lonestarcasino.com/", tier: "S", dailySC: 0.5, speedHours: 72, reliability: 80, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
+      { name: "RealPrize", url: "https://realprize.com/#", tier: "S", dailySC: 1.0, speedHours: 72, reliability: 82, cooldown: 24, hasLive: false, hasSlots: true, hasTables: true },
+      { name: "WOW Vegas", url: "https://www.wowvegas.com/promotions/daily-coin-reward", tier: "S", dailySC: 0.5, speedHours: 12, reliability: 97, cooldown: 24, hasLive: true, hasSlots: true, hasTables: false },
+      { name: "Modo", url: "https://modo.us/", tier: "S", dailySC: 0.5, speedHours: 6, reliability: 98, cooldown: 24, hasLive: false, hasSlots: true, hasTables: true },
+      { name: "SpinBlitz", url: "https://www.spinblitz.com/", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 90, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
+      { name: "ReBet", url: "https://rebet.page.link/x3U9G9CNNoFQMzhP7", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 95, cooldown: 24, hasLive: false, hasSlots: false, hasTables: false },
+      { name: "Pulsz Bingo", url: "https://pulszbingo.com/", tier: "S", dailySC: 0.3, speedHours: 12, reliability: 96, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
+      { name: "Legendz", url: "https://www.legendz.com/", tier: "S", dailySC: 0.5, speedHours: 2, reliability: 94, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
+      { name: "LuckyHands", url: "https://luckyhands.com/", tier: "S", dailySC: 0.5, speedHours: 2, reliability: 92, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
+      { name: "MegaBonanza", url: "https://www.megabonanza.com/home", tier: "S", dailySC: 0.2, speedHours: 24, reliability: 90, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
+      { name: "Card Crush", url: "https://www.cardcrush.com/home", tier: "S", dailySC: 0.5, speedHours: 24, reliability: 91, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
+      { name: "Dogg House", url: "https://www.play.dogghousecasino.com/", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 93, cooldown: 24, hasLive: false, hasSlots: true, hasTables: true },
+      { name: "Zula", url: "https://zulacasino.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 96, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
+      { name: "Fortune Wins", url: "https://fortunewins.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
+      { name: "Sportzino", url: "https://sportzino.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 96, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
+      { name: "LuckyLand Casino", url: "https://luckylandcasino.com/", tier: "S", dailySC: 0.5, speedHours: 12, reliability: 99, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
+      { name: "Chumba", url: "https://www.chumbacasino.com/", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 99, cooldown: 24, hasLive: false, hasSlots: true, hasTables: true },
+      { name: "Coins Royale", url: "https://www.coinsroyale.com/en#login", tier: "A", dailySC: 1.0, speedHours: 12, reliability: 88, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
+      { name: "Jackpot Go", url: "https://jackpotgo.club/", tier: "A", dailySC: 0.8, speedHours: 12, reliability: 89, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
+      { name: "SweetSweeps", url: "https://sweetsweeps.com/", tier: "A", dailySC: 0.0, speedHours: 24, reliability: 86, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
+      { name: "LuckyRush", url: "https://luckyrush.io/wallet", tier: "A", dailySC: 0.5, speedHours: 12, reliability: 90, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
+      { name: "High5", url: "https://fun.high5casino.com/gc/?originId=2&accountTypeId=1", tier: "B", dailySC: 0.5, speedHours: 12, reliability: 90, cooldown: 4, hasLive: true, hasSlots: true, hasTables: true },
+      { name: "Lavish Luck", url: "https://lavishluck.net/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 86, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true }
     ];
 
     // State
-    let trackedGames = JSON.parse(localStorage.getItem('freebie_ledger_v3') || '[]');
+    let trackedGames = JSON.parse(localStorage.getItem('the_casino_almanac_v4') || '[]');
     let currentFilter = 'all';
-    let sortField = 'name';
-    let sortDirection = 'asc';
+    let currentCatalogFilter = 'all';
+    let sortFieldGames = 'name';
+    let sortDirectionGames = 'asc';
+    let sortFieldCatalog = 'name';
+    let sortDirectionCatalog = 'asc';
 
     function persist() {
-      localStorage.setItem('freebie_ledger_v3', JSON.stringify(trackedGames));
+      localStorage.setItem('the_casino_almanac_v4', JSON.stringify(trackedGames));
       renderGames();
       updateHeroStats();
     }
@@ -776,22 +856,41 @@
     }
 
     function applyFilter(filter, el) {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#viewGames .filter-btn').forEach(b => b.classList.remove('active'));
       el.classList.add('active');
       currentFilter = filter;
       renderGames();
     }
 
-    function toggleSortDrawer() {
-      document.getElementById('sortDrawer').classList.toggle('open');
+    function applyCatalogFilter(filter, el) {
+      document.querySelectorAll('#viewCatalog .filter-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      currentCatalogFilter = filter;
+      renderCatalogList();
     }
 
-    function setSortCriteria(field, direction, el) {
-      document.querySelectorAll('.sort-option-btn').forEach(b => b.classList.remove('active'));
+    function toggleSortDrawer(view) {
+      if (view === 'games') {
+        document.getElementById('sortDrawerGames').classList.toggle('open');
+      } else {
+        document.getElementById('sortDrawerCatalog').classList.toggle('open');
+      }
+    }
+
+    function setSortCriteria(field, direction, el, view) {
+      const drawer = view === 'games' ? document.getElementById('sortDrawerGames') : document.getElementById('sortDrawerCatalog');
+      drawer.querySelectorAll('.sort-option-btn').forEach(b => b.classList.remove('active'));
       el.classList.add('active');
-      sortField = field;
-      sortDirection = direction;
-      renderGames();
+
+      if (view === 'games') {
+        sortFieldGames = field;
+        sortDirectionGames = direction;
+        renderGames();
+      } else {
+        sortFieldCatalog = field;
+        sortDirectionCatalog = direction;
+        renderCatalogList();
+      }
     }
 
     function getCooldownState(game) {
@@ -828,37 +927,27 @@
 
       if (currentFilter === 'ready') {
         list = list.filter(g => getCooldownState(g).isReady);
+      } else if (currentFilter === 'live') {
+        list = list.filter(g => g.hasLive);
       } else if (currentFilter === 'cooldown') {
         list = list.filter(g => !getCooldownState(g).isReady);
       } else if (currentFilter === 'referral') {
         list = list.filter(g => g.referralUrl && g.referralUrl.trim().length > 0);
       }
 
-      // Multi-attribute sorting engine
       const tierRank = { 'S': 4, 'A': 3, 'B': 2, 'C': 1, 'Unranked': 0 };
 
       list.sort((a, b) => {
-        let valA, valB;
-        if (sortField === 'name') {
-          valA = a.name.toLowerCase();
-          valB = b.name.toLowerCase();
-          return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-        } else if (sortField === 'tier') {
-          valA = tierRank[a.tier] || 0;
-          valB = tierRank[b.tier] || 0;
-          return sortDirection === 'asc' ? valB - valA : valA - valB;
-        } else if (sortField === 'dailySC') {
-          valA = a.dailySC || 0;
-          valB = b.dailySC || 0;
-          return sortDirection === 'desc' ? valB - valA : valA - valB;
-        } else if (sortField === 'speed') {
-          valA = a.speedHours || 24;
-          valB = b.speedHours || 24;
-          return sortDirection === 'asc' ? valA - valB : valB - valA;
-        } else if (sortField === 'reliability') {
-          valA = a.reliability || 80;
-          valB = b.reliability || 80;
-          return sortDirection === 'desc' ? valB - valA : valA - valB;
+        if (sortFieldGames === 'name') {
+          return sortDirectionGames === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+        } else if (sortFieldGames === 'tier') {
+          return (tierRank[b.tier] || 0) - (tierRank[a.tier] || 0);
+        } else if (sortFieldGames === 'dailySC') {
+          return (b.dailySC || 0) - (a.dailySC || 0);
+        } else if (sortFieldGames === 'speed') {
+          return (a.speedHours || 24) - (b.speedHours || 24);
+        } else if (sortFieldGames === 'live') {
+          return (b.hasLive ? 1 : 0) - (a.hasLive ? 1 : 0);
         }
         return 0;
       });
@@ -866,8 +955,8 @@
       if (list.length === 0) {
         container.innerHTML = `
           <div style="text-align:center; padding: 40px 16px; color:var(--text-dim);">
-            <p style="font-size:1.1rem; margin-bottom:6px;">Nothing tracked yet</p>
-            <p style="font-size:0.8rem;">Select platforms from the Catalog tab or tap Add below</p>
+            <p style="font-size:1.1rem; margin-bottom:6px;">No platforms tracked yet</p>
+            <p style="font-size:0.8rem;">Select platforms from the Casino Catalogue or tap + Add below</p>
           </div>
         `;
         return;
@@ -884,6 +973,7 @@
               <div class="card-title-row">
                 <span class="casino-name">${game.name}</span>
                 <span class="tier-badge tier-${game.tier || 'Unranked'}">${game.tier || 'A'}</span>
+                ${game.hasLive ? '<span class="type-badge">🔴 LIVE</span>' : ''}
               </div>
               <div class="card-status">
                 <span class="status-dot ${isReady ? '' : 'cooldown'}"></span>
@@ -913,13 +1003,36 @@
       document.getElementById('heroDoneText').textContent = `${cooldown} done today`;
     }
 
-    // Catalog Rendering
+    // Casino Catalogue Rendering & Sorting
     function renderCatalogList() {
       const container = document.getElementById('catalogGroupContainer');
       const query = (document.getElementById('catalogSearchInput').value || '').toLowerCase();
       container.innerHTML = '';
 
-      const filtered = CATALOG_DATA.filter(item => item.name.toLowerCase().includes(query));
+      let filtered = CATALOG_DATA.filter(item => {
+        const matchesQuery = item.name.toLowerCase().includes(query);
+        if (currentCatalogFilter === 'S') return matchesQuery && item.tier === 'S';
+        if (currentCatalogFilter === 'A') return matchesQuery && item.tier === 'A';
+        if (currentCatalogFilter === 'live') return matchesQuery && item.hasLive;
+        return matchesQuery;
+      });
+
+      const tierRank = { 'S': 4, 'A': 3, 'B': 2, 'C': 1, 'Unranked': 0 };
+
+      filtered.sort((a, b) => {
+        if (sortFieldCatalog === 'name') {
+          return sortDirectionCatalog === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+        } else if (sortFieldCatalog === 'tier') {
+          return (tierRank[b.tier] || 0) - (tierRank[a.tier] || 0);
+        } else if (sortFieldCatalog === 'dailySC') {
+          return (b.dailySC || 0) - (a.dailySC || 0);
+        } else if (sortFieldCatalog === 'reliability') {
+          return (b.reliability || 80) - (a.reliability || 80);
+        } else if (sortFieldCatalog === 'live') {
+          return (b.hasLive ? 1 : 0) - (a.hasLive ? 1 : 0);
+        }
+        return 0;
+      });
 
       filtered.forEach(item => {
         const isTracked = trackedGames.some(g => g.name.toLowerCase() === item.name.toLowerCase());
@@ -929,8 +1042,12 @@
           <div class="card-left">
             <div class="casino-avatar" style="width:36px; height:36px; font-size:0.8rem;">${getInitials(item.name)}</div>
             <div>
-              <div class="casino-name" style="font-size:0.9rem;">${item.name}</div>
-              <div class="card-status">${item.tier}-Tier • ${item.cooldown}h • Score: ${item.reliability}%</div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span class="casino-name" style="font-size:0.9rem;">${item.name}</span>
+                <span class="tier-badge tier-${item.tier}">${item.tier}</span>
+                ${item.hasLive ? '<span class="type-badge" style="font-size:0.6rem;">🔴 LIVE</span>' : ''}
+              </div>
+              <div class="card-status">$${item.dailySC.toFixed(2)} daily • ${item.cooldown}h • Score: ${item.reliability}%</div>
             </div>
           </div>
           <span style="font-size:1.1rem; color:${isTracked ? 'var(--accent-gold)' : 'var(--text-dim)'}; font-weight:bold;">
@@ -955,6 +1072,7 @@
           dailySC: item.dailySC,
           speedHours: item.speedHours,
           reliability: item.reliability,
+          hasLive: item.hasLive,
           referralUrl: '',
           cooldownHours: item.cooldown,
           lastCollected: 0
@@ -966,7 +1084,7 @@
 
     // Modal Handlers
     function openAddModal() {
-      document.getElementById('modalHeading').textContent = 'Add a Game';
+      document.getElementById('modalHeading').textContent = 'Add Platform';
       document.getElementById('modalGameId').value = '';
       document.getElementById('modalGameName').value = '';
       document.getElementById('modalGameUrl').value = '';
@@ -979,7 +1097,7 @@
       const game = trackedGames.find(g => g.id === id);
       if (!game) return;
 
-      document.getElementById('modalHeading').textContent = 'Edit Game';
+      document.getElementById('modalHeading').textContent = 'Edit Platform';
       document.getElementById('modalGameId').value = game.id;
       document.getElementById('modalGameName').value = game.name;
       document.getElementById('modalGameUrl').value = game.url;
@@ -1019,6 +1137,7 @@
           dailySC: 1.0,
           speedHours: 24,
           reliability: 90,
+          hasLive: false,
           lastCollected: 0
         });
       }
@@ -1052,6 +1171,7 @@
               dailySC: 0.5,
               speedHours: 24,
               reliability: 85,
+              hasLive: false,
               lastCollected: 0
             });
           }
@@ -1066,17 +1186,43 @@
       document.querySelectorAll('.sheet-backdrop').forEach(b => b.classList.remove('open'));
     }
 
-    // Set Date
+    // Welcome Screen & Pointer Animation Logic
+    function dismissWelcomeModal() {
+      localStorage.setItem('almanac_intro_seen', 'true');
+      document.getElementById('welcomeModal').classList.remove('open');
+      runTourAnimation();
+    }
+
+    function runTourAnimation() {
+      const pointer = document.getElementById('tourPointer');
+      const catalogTab = document.getElementById('tabCatalog');
+      const rect = catalogTab.getBoundingClientRect();
+
+      pointer.style.display = 'block';
+      pointer.style.top = (rect.bottom + 8) + 'px';
+      pointer.style.left = (rect.left - 20) + 'px';
+
+      setTimeout(() => {
+        pointer.style.display = 'none';
+      }, 5000);
+    }
+
+    // Initialize Date
     const d = new Date();
     const options = { weekday: 'long', month: 'long', day: 'numeric' };
     document.getElementById('currentDateDisplay').textContent = d.toLocaleDateString('en-US', options).toUpperCase();
+
+    // Check first-time intro
+    if (!localStorage.getItem('almanac_intro_seen')) {
+      document.getElementById('welcomeModal').classList.add('open');
+    }
 
     setInterval(() => {
       renderGames();
       updateHeroStats();
     }, 60000);
 
-    // Initial Empty Load
+    // Initial render
     renderGames();
     updateHeroStats();
   </script>
