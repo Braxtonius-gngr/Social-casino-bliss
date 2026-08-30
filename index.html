@@ -173,7 +173,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .filter-chips {
@@ -223,6 +223,37 @@
       flex-shrink: 0;
     }
 
+    /* Active Multi-Sort Priority Stack Display */
+    .active-sort-stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+      min-height: 24px;
+    }
+
+    .sort-stack-chip {
+      background: var(--accent-gold-dim);
+      border: 1px solid rgba(234, 179, 8, 0.35);
+      color: var(--accent-gold);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sort-stack-chip .btn-remove-sort {
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    .sort-stack-chip .btn-remove-sort:hover {
+      opacity: 1;
+    }
+
     /* Expandable Sort Drawer */
     .sort-drawer {
       display: none;
@@ -249,6 +280,8 @@
       letter-spacing: 0.05em;
       color: var(--text-dim);
       margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
     }
 
     .sort-options-grid {
@@ -266,12 +299,28 @@
       font-size: 0.76rem;
       text-align: left;
       cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .sort-option-btn.active {
       border-color: var(--accent-gold);
       color: var(--accent-gold);
       background: var(--accent-gold-dim);
+    }
+
+    .sort-priority-num {
+      background: var(--accent-gold);
+      color: #11141a;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      font-size: 0.62rem;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* Ledger Rows & Keen Info */
@@ -296,7 +345,6 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      transition: background 0.15s;
     }
 
     .card-left {
@@ -568,16 +616,16 @@
       box-shadow: 0 4px 20px rgba(234, 179, 8, 0.25);
     }
 
-    /* Tooltip System with Fixed Relative Alignment */
+    /* Tour Tooltip with Precise Upward Pointing Arrow */
     .tour-tooltip-box {
       position: fixed;
       background: var(--accent-gold);
       color: #11141a;
-      padding: 10px 14px;
-      border-radius: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
       font-size: 0.82rem;
       font-weight: 700;
-      box-shadow: 0 8px 28px rgba(0,0,0,0.7);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
       z-index: 150;
       cursor: pointer;
       display: none;
@@ -586,21 +634,26 @@
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .tour-arrow-pointer {
-      font-size: 1rem;
-      margin-right: 4px;
-      display: inline-block;
+    .tour-tooltip-box::before {
+      content: "";
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 0 8px 8px 8px;
+      border-style: solid;
+      border-color: transparent transparent var(--accent-gold) transparent;
     }
 
     .tour-advance-subtext {
       display: block;
       font-size: 0.65rem;
-      font-weight: 600;
+      font-weight: 700;
       color: rgba(17, 20, 26, 0.7);
       text-transform: uppercase;
       letter-spacing: 0.04em;
       margin-top: 6px;
-      border-top: 1px solid rgba(0, 0, 0, 0.12);
+      border-top: 1px solid rgba(0, 0, 0, 0.15);
       padding-top: 4px;
     }
 
@@ -713,10 +766,10 @@
     <button class="landing-btn" onclick="dismissLanding()">Enter Almanac →</button>
   </div>
 
-  <!-- Dynamic Anchor Tour Pointer -->
+  <!-- Dynamic Anchor Tour Pointer with Physical Arrow -->
   <div id="tourBox" class="tour-tooltip-box" onclick="advanceTourStep()">
     <div id="tourBody"></div>
-    <span class="tour-advance-subtext" id="tourSubtext">Click anywhere to advance</span>
+    <span class="tour-advance-subtext" id="tourSubtext">Click to advance</span>
   </div>
 
   <div class="app-container">
@@ -759,16 +812,40 @@
         </button>
       </div>
 
-      <!-- Collapsible Sort Options for Tracked Platforms -->
+      <!-- Active Stack Row -->
+      <div id="sortStackGames" class="active-sort-stack"></div>
+
+      <!-- Collapsible Multi-Sort Drawer (Games) -->
       <div id="sortDrawerGames" class="sort-drawer">
-        <div class="sort-drawer-header">Sort Tracked Platforms</div>
+        <div class="sort-drawer-header">
+          <span>Sort Stack (Priority: First Clicked)</span>
+          <span style="cursor:pointer; color:var(--accent-gold);" onclick="clearSortStack('games')">Clear All</span>
+        </div>
         <div class="sort-options-grid">
-          <button class="sort-option-btn active" onclick="setSortCriteria('name', 'asc', this, 'games')">Name (A → Z)</button>
-          <button class="sort-option-btn" onclick="setSortCriteria('name', 'desc', this, 'games')">Name (Z → A)</button>
-          <button class="sort-option-btn" onclick="setSortCriteria('tier', 'asc', this, 'games')">Tier (S → C)</button>
-          <button class="sort-option-btn" onclick="setSortCriteria('dailySC', 'desc', this, 'games')">Daily SC (High → Low)</button>
-          <button class="sort-option-btn" onclick="setSortCriteria('speed', 'asc', this, 'games')">Redeem Speed</button>
-          <button class="sort-option-btn" onclick="setSortCriteria('live', 'desc', this, 'games')">🔴 Has Live Dealer</button>
+          <button class="sort-option-btn" data-key="tier" onclick="toggleSortKey('tier', 'games')">
+            <span>Tier (S → C)</span>
+            <span class="sort-priority-num" style="display:none;"></span>
+          </button>
+          <button class="sort-option-btn" data-key="reliability" onclick="toggleSortKey('reliability', 'games')">
+            <span>Reliability Index</span>
+            <span class="sort-priority-num" style="display:none;"></span>
+          </button>
+          <button class="sort-option-btn" data-key="dailySC" onclick="toggleSortKey('dailySC', 'games')">
+            <span>Daily SC (High → Low)</span>
+            <span class="sort-priority-num" style="display:none;"></span>
+          </button>
+          <button class="sort-option-btn" data-key="speed" onclick="toggleSortKey('speed', 'games')">
+            <span>Redeem Speed (Fastest)</span>
+            <span class="sort-priority-num" style="display:none;"></span>
+          </button>
+          <button class="sort-option-btn" data-key="live" onclick="toggleSortKey('live', 'games')">
+            <span>🔴 Live Play Available</span>
+            <span class="sort-priority-num" style="display:none;"></span>
+          </button>
+          <button class="sort-option-btn" data-key="name" onclick="toggleSortKey('name', 'games')">
+            <span>Name (A → Z)</span>
+            <span class="sort-priority-num" style="display:none;"></span>
+          </button>
         </div>
       </div>
 
@@ -791,16 +868,40 @@
         </button>
       </div>
 
-      <!-- Collapsible Sort Options for Catalogue -->
+      <!-- Active Stack Row -->
+      <div id="sortStackCatalog" class="active-sort-stack"></div>
+
+      <!-- Collapsible Multi-Sort Drawer (Catalog) -->
       <div id="sortDrawerCatalog" class="sort-drawer">
-        <div class="sort-drawer-header">Sort Catalogue</div>
+        <div class="sort-drawer-header">
+          <span>Sort Stack (Priority: First Clicked)</span>
+          <span style="cursor:pointer; color:var(--accent-gold);" onclick="clearSortStack('catalog')">Clear All</span>
+        </div>
         <div class="sort-options-grid">
-          <button class="sort-option-btn active" onclick="setSortCriteria('name', 'asc', this, 'catalog')">Name (A → Z)</button>
-          <button class="sort-option-btn" onclick="setSortCriteria('name', 'desc', this, 'catalog')">Name (Z → A)</button>
-          <button class="sort-option-btn" onclick="setSortCriteria('tier', 'asc', this, 'catalog')">Tier (S → C)</button>
-          <button class="sort-option-btn" onclick="setSortCriteria('dailySC', 'desc', this, 'catalog')">Daily SC (High → Low)</button>
-          <button class="sort-option-btn" onclick="setSortCriteria('reliability', 'desc', this, 'catalog')">Reliability Score</button>
-          <button class="sort-option-btn" onclick="setSortCriteria('live', 'desc', this, 'catalog')">🔴 Has Live Dealer</button>
+          <button class="sort-option-btn" data-key="tier" onclick="toggleSortKey('tier', 'catalog')">
+            <span>Tier (S → C)</span>
+            <span class="sort-priority-num" style="display:none;"></span>
+          </button>
+          <button class="sort-option-btn" data-key="reliability" onclick="toggleSortKey('reliability', 'catalog')">
+            <span>Reliability Index</span>
+            <span class="sort-priority-num" style="display:none;"></span>
+          </button>
+          <button class="sort-option-btn" data-key="dailySC" onclick="toggleSortKey('dailySC', 'catalog')">
+            <span>Daily SC (High → Low)</span>
+            <span class="sort-priority-num" style="display:none;"></span>
+          </button>
+          <button class="sort-option-btn" data-key="speed" onclick="toggleSortKey('speed', 'catalog')">
+            <span>Redeem Speed (Fastest)</span>
+            <span class="sort-priority-num" style="display:none;"></span>
+          </button>
+          <button class="sort-option-btn" data-key="live" onclick="toggleSortKey('live', 'catalog')">
+            <span>🔴 Live Play Available</span>
+            <span class="sort-priority-num" style="display:none;"></span>
+          </button>
+          <button class="sort-option-btn" data-key="name" onclick="toggleSortKey('name', 'catalog')">
+            <span>Name (A → Z)</span>
+            <span class="sort-priority-num" style="display:none;"></span>
+          </button>
         </div>
       </div>
 
@@ -959,18 +1060,25 @@
     ];
 
     // State
-    let trackedGames = JSON.parse(localStorage.getItem('the_casino_almanac_v6') || '[]');
+    let trackedGames = JSON.parse(localStorage.getItem('the_casino_almanac_v7') || '[]');
     let openKeenIds = new Set();
     let currentFilter = 'all';
     let currentCatalogFilter = 'all';
-    let sortFieldGames = 'name';
-    let sortDirectionGames = 'asc';
-    let sortFieldCatalog = 'name';
-    let sortDirectionCatalog = 'asc';
+    let sortStackGames = ['tier', 'reliability'];
+    let sortStackCatalog = ['tier', 'reliability'];
     let tourStep = 0;
 
+    const SORT_CONFIG = {
+      tier: { label: "Tier (S→C)" },
+      reliability: { label: "Reliability" },
+      dailySC: { label: "Daily SC" },
+      speed: { label: "Redeem Speed" },
+      live: { label: "Live Play" },
+      name: { label: "Name (A→Z)" }
+    };
+
     function persist() {
-      localStorage.setItem('the_casino_almanac_v6', JSON.stringify(trackedGames));
+      localStorage.setItem('the_casino_almanac_v7', JSON.stringify(trackedGames));
       renderGames();
       updateHeroStats();
     }
@@ -1020,20 +1128,79 @@
       }
     }
 
-    function setSortCriteria(field, direction, el, view) {
-      const drawer = view === 'games' ? document.getElementById('sortDrawerGames') : document.getElementById('sortDrawerCatalog');
-      drawer.querySelectorAll('.sort-option-btn').forEach(b => b.classList.remove('active'));
-      el.classList.add('active');
+    /* Stacked Multi-Sort Handler */
+    function toggleSortKey(key, view) {
+      const stack = view === 'games' ? sortStackGames : sortStackCatalog;
+      const idx = stack.indexOf(key);
 
-      if (view === 'games') {
-        sortFieldGames = field;
-        sortDirectionGames = direction;
-        renderGames();
+      if (idx >= 0) {
+        stack.splice(idx, 1);
       } else {
-        sortFieldCatalog = field;
-        sortDirectionCatalog = direction;
-        renderCatalogList();
+        stack.push(key);
       }
+
+      updateSortUI(view);
+      if (view === 'games') renderGames();
+      else renderCatalogList();
+    }
+
+    function clearSortStack(view) {
+      if (view === 'games') sortStackGames = [];
+      else sortStackCatalog = [];
+      updateSortUI(view);
+      if (view === 'games') renderGames();
+      else renderCatalogList();
+    }
+
+    function updateSortUI(view) {
+      const stack = view === 'games' ? sortStackGames : sortStackCatalog;
+      const drawer = view === 'games' ? document.getElementById('sortDrawerGames') : document.getElementById('sortDrawerCatalog');
+      const stackContainer = view === 'games' ? document.getElementById('sortStackGames') : document.getElementById('sortStackCatalog');
+
+      // Update Buttons inside drawer with priority numbers
+      drawer.querySelectorAll('.sort-option-btn').forEach(btn => {
+        const key = btn.getAttribute('data-key');
+        const pos = stack.indexOf(key);
+        const badge = btn.querySelector('.sort-priority-num');
+
+        if (pos >= 0) {
+          btn.classList.add('active');
+          badge.textContent = pos + 1;
+          badge.style.display = 'inline-flex';
+        } else {
+          btn.classList.remove('active');
+          badge.style.display = 'none';
+        }
+      });
+
+      // Render Visual Chips
+      stackContainer.innerHTML = '';
+      stack.forEach((key, index) => {
+        const chip = document.createElement('div');
+        chip.className = 'sort-stack-chip';
+        chip.innerHTML = `
+          <span>${index + 1}. ${SORT_CONFIG[key].label}</span>
+          <span class="btn-remove-sort" onclick="toggleSortKey('${key}', '${view}')">✕</span>
+        `;
+        stackContainer.appendChild(chip);
+      });
+    }
+
+    function compareByStack(a, b, stack) {
+      const tierRank = { 'S': 4, 'A': 3, 'B': 2, 'C': 1, 'Unranked': 0 };
+
+      for (let key of stack) {
+        let diff = 0;
+        if (key === 'tier') diff = (tierRank[b.tier] || 0) - (tierRank[a.tier] || 0);
+        else if (key === 'reliability') diff = (b.reliability || 80) - (a.reliability || 80);
+        else if (key === 'dailySC') diff = (b.dailySC || 0) - (a.dailySC || 0);
+        else if (key === 'speed') diff = (a.speedHours || 24) - (b.speedHours || 24);
+        else if (key === 'live') diff = (b.hasLive ? 1 : 0) - (a.hasLive ? 1 : 0);
+        else if (key === 'name') diff = a.name.localeCompare(b.name);
+
+        if (diff !== 0) return diff;
+      }
+      return 0;
     }
 
     function getCooldownState(game) {
@@ -1068,32 +1235,12 @@
 
       let list = trackedGames.slice();
 
-      if (currentFilter === 'ready') {
-        list = list.filter(g => getCooldownState(g).isReady);
-      } else if (currentFilter === 'live') {
-        list = list.filter(g => g.hasLive);
-      } else if (currentFilter === 'cooldown') {
-        list = list.filter(g => !getCooldownState(g).isReady);
-      } else if (currentFilter === 'referral') {
-        list = list.filter(g => g.referralUrl && g.referralUrl.trim().length > 0);
-      }
+      if (currentFilter === 'ready') list = list.filter(g => getCooldownState(g).isReady);
+      else if (currentFilter === 'live') list = list.filter(g => g.hasLive);
+      else if (currentFilter === 'cooldown') list = list.filter(g => !getCooldownState(g).isReady);
+      else if (currentFilter === 'referral') list = list.filter(g => g.referralUrl && g.referralUrl.trim().length > 0);
 
-      const tierRank = { 'S': 4, 'A': 3, 'B': 2, 'C': 1, 'Unranked': 0 };
-
-      list.sort((a, b) => {
-        if (sortFieldGames === 'name') {
-          return sortDirectionGames === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-        } else if (sortFieldGames === 'tier') {
-          return (tierRank[b.tier] || 0) - (tierRank[a.tier] || 0);
-        } else if (sortFieldGames === 'dailySC') {
-          return (b.dailySC || 0) - (a.dailySC || 0);
-        } else if (sortFieldGames === 'speed') {
-          return (a.speedHours || 24) - (b.speedHours || 24);
-        } else if (sortFieldGames === 'live') {
-          return (b.hasLive ? 1 : 0) - (a.hasLive ? 1 : 0);
-        }
-        return 0;
-      });
+      list.sort((a, b) => compareByStack(a, b, sortStackGames));
 
       if (list.length === 0) {
         container.innerHTML = `
@@ -1167,22 +1314,7 @@
         return matchesQuery;
       });
 
-      const tierRank = { 'S': 4, 'A': 3, 'B': 2, 'C': 1, 'Unranked': 0 };
-
-      filtered.sort((a, b) => {
-        if (sortFieldCatalog === 'name') {
-          return sortDirectionCatalog === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-        } else if (sortFieldCatalog === 'tier') {
-          return (tierRank[b.tier] || 0) - (tierRank[a.tier] || 0);
-        } else if (sortFieldCatalog === 'dailySC') {
-          return (b.dailySC || 0) - (a.dailySC || 0);
-        } else if (sortFieldCatalog === 'reliability') {
-          return (b.reliability || 80) - (a.reliability || 80);
-        } else if (sortFieldCatalog === 'live') {
-          return (b.hasLive ? 1 : 0) - (a.hasLive ? 1 : 0);
-        }
-        return 0;
-      });
+      filtered.sort((a, b) => compareByStack(a, b, sortStackCatalog));
 
       filtered.forEach((item, index) => {
         const isTracked = trackedGames.some(g => g.name.toLowerCase() === item.name.toLowerCase());
@@ -1373,7 +1505,7 @@
       document.querySelectorAll('.sheet-backdrop').forEach(b => b.classList.remove('open'));
     }
 
-    // Landing Screen & Interactive Tour
+    // Landing & Tour Handler
     function dismissLanding() {
       document.getElementById('landingScreen').classList.add('hidden');
       if (!localStorage.getItem('almanac_tour_completed')) {
@@ -1383,7 +1515,7 @@
 
     function startTour() {
       tourStep = 1;
-      positionTourBox('tabCatalog', '👉', 'Tap Casino Catalogue to browse & pick platforms', 'Step 1 of 4 • Tap to advance', 'bottom');
+      positionTourBox('tabCatalog', '☝️ Tap Casino Catalogue to browse & pick platforms');
     }
 
     function advanceTourStep() {
@@ -1391,71 +1523,61 @@
       if (tourStep === 2) {
         switchMainTab('catalog', document.getElementById('tabCatalog'));
         setTimeout(() => {
-          positionTourBox('tourAvatarTarget', '↖', 'Tap any circular avatar to view keen terms & limits', 'Step 2 of 4 • Tap to advance', 'bottom-left');
+          positionTourBox('tourAvatarTarget', '☝️ Tap any circular avatar to view keen terms & limits');
         }, 150);
       } else if (tourStep === 3) {
-        positionTourBox('tourAddTarget', '↗', 'Tap + anywhere to add the platform to your ledger', 'Step 3 of 4 • Tap to advance', 'bottom-right');
+        positionTourBox('tourAddTarget', '☝️ Tap + anywhere to add the platform to your ledger');
       } else if (tourStep === 4) {
-        positionTourBox('sortTriggerCatalog', '↙', 'Tap ⇅ Sort to reorder by speed, SC value, or live play', 'Step 4 of 4 • Tap to finish', 'bottom-right');
+        positionTourBox('sortTriggerCatalog', '☝️ Tap ⇅ Sort to stack multi-criteria priority orders');
       } else {
         localStorage.setItem('almanac_tour_completed', 'true');
         document.getElementById('tourBox').style.display = 'none';
       }
     }
 
-    function positionTourBox(targetId, arrowIcon, text, subtext, orientation) {
+    function positionTourBox(targetId, text) {
       const target = document.getElementById(targetId);
       const box = document.getElementById('tourBox');
       const body = document.getElementById('tourBody');
-      const sub = document.getElementById('tourSubtext');
       if (!target || !box) return;
 
-      body.innerHTML = `<span class="tour-arrow-pointer">${arrowIcon}</span> ${text}`;
-      sub.textContent = subtext || 'Click anywhere to advance';
+      body.textContent = text;
       box.style.display = 'block';
 
       const rect = target.getBoundingClientRect();
       const boxWidth = 230;
-      let top, left;
 
-      if (orientation === 'bottom-right') {
-        top = rect.bottom + 8;
-        left = rect.right - boxWidth + 10;
-      } else if (orientation === 'bottom-left') {
-        top = rect.bottom + 8;
-        left = rect.left - 10;
-      } else {
-        top = rect.bottom + 8;
-        left = rect.left + (rect.width / 2) - (boxWidth / 2);
-      }
+      // Position directly below target with centered pointer arrow
+      let top = rect.bottom + 10;
+      let left = rect.left + (rect.width / 2) - (boxWidth / 2);
 
-      // Safe viewport boundary clamping
+      // Clamp within viewport
       left = Math.max(12, Math.min(window.innerWidth - boxWidth - 16, left));
-      if (top + 80 > window.innerHeight) {
-        top = rect.top - 75;
-      }
 
       box.style.top = top + 'px';
       box.style.left = left + 'px';
     }
 
-    // Initialize Date
+    // Date Initializer
     const d = new Date();
     const options = { weekday: 'long', month: 'long', day: 'numeric' };
     document.getElementById('currentDateDisplay').textContent = d.toLocaleDateString('en-US', options).toUpperCase();
 
-    // Check Landing Persistence (Default is TRUE - shows every open unless turned off)
+    // Check Landing Persistence
     const showLanding = localStorage.getItem('almanac_show_landing') !== 'false';
     if (!showLanding) {
       document.getElementById('landingScreen').classList.add('hidden');
     }
+
+    // Initialize UI Sort Stack Display
+    updateSortUI('games');
+    updateSortUI('catalog');
 
     setInterval(() => {
       renderGames();
       updateHeroStats();
     }, 60000);
 
-    // Initial render
     renderGames();
     updateHeroStats();
   </script>
