@@ -40,7 +40,7 @@
       background-color: var(--bg-base);
       color: var(--text-main);
       min-height: 100vh;
-      padding: 24px 16px 100px;
+      padding: 20px 16px 100px;
       overflow-x: hidden;
     }
 
@@ -50,14 +50,29 @@
       position: relative;
     }
 
-    /* Header */
+    /* Top Bar */
+    .top-bar-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
     .date-header {
       font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--text-dim);
-      margin-bottom: 4px;
+    }
+
+    .btn-settings-gear {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 4px;
     }
 
     .app-title {
@@ -74,18 +89,18 @@
       background: linear-gradient(145deg, #222938 0%, #171d27 100%);
       border: 1px solid var(--border-subtle);
       border-radius: 20px;
-      padding: 24px 20px;
+      padding: 20px;
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 18px;
       margin-bottom: 20px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     }
 
     .hero-ring-wrapper {
       position: relative;
-      width: 76px;
-      height: 76px;
+      width: 72px;
+      height: 72px;
       flex-shrink: 0;
     }
 
@@ -97,7 +112,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.45rem;
+      font-size: 1.4rem;
       font-weight: 800;
       color: #ffffff;
       background: #19202c;
@@ -105,14 +120,14 @@
     }
 
     .hero-details h2 {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 700;
       color: #ffffff;
       margin-bottom: 4px;
     }
 
     .hero-details p {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--text-muted);
       font-family: monospace;
     }
@@ -131,12 +146,12 @@
 
     .nav-tab {
       flex: 1;
-      padding: 9px 8px;
+      padding: 9px 6px;
       background: transparent;
       border: none;
       border-radius: 24px;
       color: var(--text-muted);
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 600;
       cursor: pointer;
       display: flex;
@@ -229,7 +244,7 @@
     }
 
     .sort-drawer-header {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--text-dim);
@@ -259,7 +274,7 @@
       background: var(--accent-gold-dim);
     }
 
-    /* Ledger Rows & Keen Info Panels */
+    /* Ledger Rows & Keen Info */
     .game-list {
       display: flex;
       flex-direction: column;
@@ -281,11 +296,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      transition: transform 0.1s, border-color 0.2s, background 0.2s;
-    }
-
-    .ledger-card:active {
-      background: var(--bg-card-active);
+      transition: background 0.15s;
     }
 
     .card-left {
@@ -297,8 +308,8 @@
     }
 
     .casino-avatar {
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
       border: 2px solid var(--accent-gold);
       background: #161b24;
@@ -307,17 +318,16 @@
       justify-content: center;
       font-family: "Georgia", serif;
       font-weight: 700;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       color: var(--accent-gold);
       flex-shrink: 0;
       box-shadow: 0 0 8px rgba(234, 179, 8, 0.15);
       cursor: pointer;
-      transition: transform 0.15s, border-color 0.15s;
+      transition: transform 0.15s;
     }
 
     .casino-avatar:active {
       transform: scale(0.92);
-      border-color: #ffffff;
     }
 
     .keen-info-popover {
@@ -357,7 +367,7 @@
     }
 
     .casino-name {
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       font-weight: 600;
       color: var(--text-main);
       white-space: nowrap;
@@ -374,7 +384,7 @@
     }
 
     .type-badge {
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       padding: 1px 4px;
       border-radius: 4px;
       background: rgba(56, 189, 248, 0.15);
@@ -392,7 +402,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       color: var(--text-muted);
     }
 
@@ -417,7 +427,7 @@
     }
 
     .btn-open {
-      padding: 7px 18px;
+      padding: 7px 16px;
       background: var(--accent-gold);
       color: #14171f;
       border: none;
@@ -429,7 +439,6 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.15s;
     }
 
     .btn-open.cooldown {
@@ -457,7 +466,7 @@
       border: 1px solid var(--border-subtle);
       border-radius: 12px;
       color: var(--text-main);
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       margin-bottom: 12px;
       outline: none;
     }
@@ -522,7 +531,7 @@
       justify-content: center;
       padding: 32px;
       text-align: center;
-      transition: opacity 0.4s ease, visibility 0.4s;
+      transition: opacity 0.3s ease, visibility 0.3s;
     }
 
     .landing-screen.hidden {
@@ -540,7 +549,7 @@
     }
 
     .landing-subtitle {
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       color: var(--text-dim);
       margin-bottom: 36px;
       font-family: monospace;
@@ -559,30 +568,43 @@
       box-shadow: 0 4px 20px rgba(234, 179, 8, 0.25);
     }
 
-    /* Playful Angled Guide Tooltips */
+    /* Tooltip System with Fixed Relative Alignment */
     .tour-tooltip-box {
       position: fixed;
       background: var(--accent-gold);
       color: #11141a;
       padding: 10px 14px;
       border-radius: 10px;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 700;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.7);
       z-index: 150;
       cursor: pointer;
       display: none;
-      max-width: 240px;
+      max-width: 250px;
       line-height: 1.35;
-      animation: floatAngle 2s infinite ease-in-out;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    @keyframes floatAngle {
-      0%, 100% { transform: translateY(0) rotate(-2deg); }
-      50% { transform: translateY(-6px) rotate(2deg); }
+    .tour-arrow-pointer {
+      font-size: 1rem;
+      margin-right: 4px;
+      display: inline-block;
     }
 
-    /* Modals */
+    .tour-advance-subtext {
+      display: block;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: rgba(17, 20, 26, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-top: 6px;
+      border-top: 1px solid rgba(0, 0, 0, 0.12);
+      padding-top: 4px;
+    }
+
+    /* Modals & Popovers */
     .sheet-backdrop {
       display: none;
       position: fixed;
@@ -638,6 +660,21 @@
       font-size: 0.88rem;
     }
 
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.88rem;
+    }
+
+    .toggle-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent-gold);
+    }
+
     .modal-actions {
       display: flex;
       gap: 8px;
@@ -676,11 +713,17 @@
     <button class="landing-btn" onclick="dismissLanding()">Enter Almanac →</button>
   </div>
 
-  <!-- Playful Tour Pointer -->
-  <div id="tourBox" class="tour-tooltip-box" onclick="advanceTourStep()"></div>
+  <!-- Dynamic Anchor Tour Pointer -->
+  <div id="tourBox" class="tour-tooltip-box" onclick="advanceTourStep()">
+    <div id="tourBody"></div>
+    <span class="tour-advance-subtext" id="tourSubtext">Click anywhere to advance</span>
+  </div>
 
   <div class="app-container">
-    <div class="date-header" id="currentDateDisplay">TODAY</div>
+    <div class="top-bar-row">
+      <div class="date-header" id="currentDateDisplay">TODAY</div>
+      <button class="btn-settings-gear" onclick="openSettingsModal()">⚙️</button>
+    </div>
     <h1 class="app-title">The Casino Almanac</h1>
 
     <!-- Hero Counter -->
@@ -807,6 +850,24 @@
     <button class="btn-dock" onclick="openImportModal()">⇩ Bulk Import</button>
   </div>
 
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="sheet-backdrop">
+    <div class="sheet-modal">
+      <h3>Ledger Settings</h3>
+      <div class="toggle-row">
+        <span>Show Landing Page on Open</span>
+        <input type="checkbox" id="settingLandingToggle" onchange="toggleLandingSetting()" checked />
+      </div>
+      <div style="margin-top: 14px;">
+        <button class="btn-dock" style="max-width:100%; width:100%; margin-bottom:8px;" onclick="restartTourFromSettings()">Restart Interactive Tour</button>
+        <button class="btn-dock" style="max-width:100%; width:100%; color:var(--tier-s);" onclick="resetTrackerData()">Reset All Tracked Data</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="closeModals()">Done</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit / Add Modal -->
   <div id="gameModal" class="sheet-backdrop">
     <div class="sheet-modal">
@@ -863,7 +924,7 @@
       return clean.slice(0, 2).toUpperCase();
     }
 
-    // Master Catalog Data with Keen Info Notes
+    // Master Catalog Data
     const CATALOG_DATA = [
       { name: "McLuck", url: "https://www.mcluck.com/home", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24, hasLive: true, minRedeem: "10 GC / 75 Cash", notes: "Use GC to farm VIP level before spinning SC." },
       { name: "Spree", url: "https://spree.com/", tier: "S", dailySC: 0.4, speedHours: 24, reliability: 92, cooldown: 24, hasLive: true, minRedeem: "10 GC / 100 Cash", notes: "Regular extra free spins given away. Highly reputable." },
@@ -898,7 +959,7 @@
     ];
 
     // State
-    let trackedGames = JSON.parse(localStorage.getItem('the_casino_almanac_v5') || '[]');
+    let trackedGames = JSON.parse(localStorage.getItem('the_casino_almanac_v6') || '[]');
     let openKeenIds = new Set();
     let currentFilter = 'all';
     let currentCatalogFilter = 'all';
@@ -909,7 +970,7 @@
     let tourStep = 0;
 
     function persist() {
-      localStorage.setItem('the_casino_almanac_v5', JSON.stringify(trackedGames));
+      localStorage.setItem('the_casino_almanac_v6', JSON.stringify(trackedGames));
       renderGames();
       updateHeroStats();
     }
@@ -1092,7 +1153,7 @@
       document.getElementById('heroDoneText').textContent = `${cooldown} done today`;
     }
 
-    // Casino Catalogue Rendering & Keen Info
+    // Casino Catalogue Rendering
     function renderCatalogList() {
       const container = document.getElementById('catalogGroupContainer');
       const query = (document.getElementById('catalogSearchInput').value || '').toLowerCase();
@@ -1284,20 +1345,45 @@
       closeModals();
     }
 
+    function openSettingsModal() {
+      const isEnabled = localStorage.getItem('almanac_show_landing') !== 'false';
+      document.getElementById('settingLandingToggle').checked = isEnabled;
+      document.getElementById('settingsModal').classList.add('open');
+    }
+
+    function toggleLandingSetting() {
+      const checked = document.getElementById('settingLandingToggle').checked;
+      localStorage.setItem('almanac_show_landing', checked ? 'true' : 'false');
+    }
+
+    function restartTourFromSettings() {
+      closeModals();
+      startTour();
+    }
+
+    function resetTrackerData() {
+      if (confirm("Reset all tracked platforms and clear your saved progress?")) {
+        trackedGames = [];
+        persist();
+        closeModals();
+      }
+    }
+
     function closeModals() {
       document.querySelectorAll('.sheet-backdrop').forEach(b => b.classList.remove('open'));
     }
 
-    // Landing Screen & Sequential Guided Tour Logic
+    // Landing Screen & Interactive Tour
     function dismissLanding() {
       document.getElementById('landingScreen').classList.add('hidden');
-      localStorage.setItem('almanac_landing_seen', 'true');
-      startTour();
+      if (!localStorage.getItem('almanac_tour_completed')) {
+        startTour();
+      }
     }
 
     function startTour() {
       tourStep = 1;
-      positionTourBox('tabCatalog', '👉 Tap Casino Catalogue to pick platforms! (Tap to continue)');
+      positionTourBox('tabCatalog', '👉', 'Tap Casino Catalogue to browse & pick platforms', 'Step 1 of 4 • Tap to advance', 'bottom');
     }
 
     function advanceTourStep() {
@@ -1305,41 +1391,52 @@
       if (tourStep === 2) {
         switchMainTab('catalog', document.getElementById('tabCatalog'));
         setTimeout(() => {
-          positionTourBox('tourAvatarTarget', '↖ Tap any avatar circle for keen terms & min redemption rules!');
+          positionTourBox('tourAvatarTarget', '↖', 'Tap any circular avatar to view keen terms & limits', 'Step 2 of 4 • Tap to advance', 'bottom-left');
         }, 150);
       } else if (tourStep === 3) {
-        positionTourBox('tourAddTarget', '↗ Tap + anywhere on the card to add it to your daily ledger!');
+        positionTourBox('tourAddTarget', '↗', 'Tap + anywhere to add the platform to your ledger', 'Step 3 of 4 • Tap to advance', 'bottom-right');
       } else if (tourStep === 4) {
-        positionTourBox('sortTriggerCatalog', '↙ Tap ⇅ Sort to reorder by speed, SC value, or live play!');
-      } else if (tourStep === 5) {
-        positionTourBox('tabResources', '↗ Check Resources for active Discord, Reddit, & strategy guides! (Tap to finish)');
+        positionTourBox('sortTriggerCatalog', '↙', 'Tap ⇅ Sort to reorder by speed, SC value, or live play', 'Step 4 of 4 • Tap to finish', 'bottom-right');
       } else {
+        localStorage.setItem('almanac_tour_completed', 'true');
         document.getElementById('tourBox').style.display = 'none';
       }
     }
 
-    function positionTourBox(targetId, text) {
+    function positionTourBox(targetId, arrowIcon, text, subtext, orientation) {
       const target = document.getElementById(targetId);
       const box = document.getElementById('tourBox');
+      const body = document.getElementById('tourBody');
+      const sub = document.getElementById('tourSubtext');
       if (!target || !box) return;
 
-      const rect = target.getBoundingClientRect();
-      box.textContent = text;
+      body.innerHTML = `<span class="tour-arrow-pointer">${arrowIcon}</span> ${text}`;
+      sub.textContent = subtext || 'Click anywhere to advance';
       box.style.display = 'block';
 
-      // Smart responsive positioning
-      let top = rect.bottom + 8;
-      let left = rect.left;
+      const rect = target.getBoundingClientRect();
+      const boxWidth = 230;
+      let top, left;
 
-      if (left + 220 > window.innerWidth) {
-        left = window.innerWidth - 240;
+      if (orientation === 'bottom-right') {
+        top = rect.bottom + 8;
+        left = rect.right - boxWidth + 10;
+      } else if (orientation === 'bottom-left') {
+        top = rect.bottom + 8;
+        left = rect.left - 10;
+      } else {
+        top = rect.bottom + 8;
+        left = rect.left + (rect.width / 2) - (boxWidth / 2);
       }
+
+      // Safe viewport boundary clamping
+      left = Math.max(12, Math.min(window.innerWidth - boxWidth - 16, left));
       if (top + 80 > window.innerHeight) {
-        top = rect.top - 65;
+        top = rect.top - 75;
       }
 
       box.style.top = top + 'px';
-      box.style.left = Math.max(12, left) + 'px';
+      box.style.left = left + 'px';
     }
 
     // Initialize Date
@@ -1347,8 +1444,9 @@
     const options = { weekday: 'long', month: 'long', day: 'numeric' };
     document.getElementById('currentDateDisplay').textContent = d.toLocaleDateString('en-US', options).toUpperCase();
 
-    // Check Landing Persistence
-    if (localStorage.getItem('almanac_landing_seen')) {
+    // Check Landing Persistence (Default is TRUE - shows every open unless turned off)
+    const showLanding = localStorage.getItem('almanac_show_landing') !== 'false';
+    if (!showLanding) {
       document.getElementById('landingScreen').classList.add('hidden');
     }
 
