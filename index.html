@@ -41,6 +41,7 @@
       color: var(--text-main);
       min-height: 100vh;
       padding: 24px 16px 100px;
+      overflow-x: hidden;
     }
 
     .app-container {
@@ -207,7 +208,7 @@
       flex-shrink: 0;
     }
 
-    /* Sleek Expandable Sort Drawer */
+    /* Expandable Sort Drawer */
     .sort-drawer {
       display: none;
       background: var(--bg-surface);
@@ -258,11 +259,17 @@
       background: var(--accent-gold-dim);
     }
 
-    /* Ledger Rows */
+    /* Ledger Rows & Keen Info Panels */
     .game-list {
       display: flex;
       flex-direction: column;
       gap: 8px;
+    }
+
+    .ledger-card-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     .ledger-card {
@@ -304,6 +311,35 @@
       color: var(--accent-gold);
       flex-shrink: 0;
       box-shadow: 0 0 8px rgba(234, 179, 8, 0.15);
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .casino-avatar:active {
+      transform: scale(0.92);
+      border-color: #ffffff;
+    }
+
+    .keen-info-popover {
+      display: none;
+      background: #151a24;
+      border: 1px dashed var(--accent-gold);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    .keen-info-popover.open {
+      display: block;
+    }
+
+    .keen-title {
+      font-weight: 700;
+      color: var(--accent-gold);
+      margin-bottom: 2px;
     }
 
     .card-body {
@@ -434,7 +470,6 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 6px;
       cursor: pointer;
     }
 
@@ -473,6 +508,78 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
+    }
+
+    /* Landing Screen Overlay */
+    .landing-screen {
+      position: fixed;
+      inset: 0;
+      background: #0d1017;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      text-align: center;
+      transition: opacity 0.4s ease, visibility 0.4s;
+    }
+
+    .landing-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .landing-title {
+      font-family: "Georgia", serif;
+      font-size: 2.2rem;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .landing-subtitle {
+      font-size: 0.88rem;
+      color: var(--text-dim);
+      margin-bottom: 36px;
+      font-family: monospace;
+      letter-spacing: 0.05em;
+    }
+
+    .landing-btn {
+      padding: 12px 32px;
+      background: var(--accent-gold);
+      color: #11141a;
+      border: none;
+      border-radius: 30px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(234, 179, 8, 0.25);
+    }
+
+    /* Playful Angled Guide Tooltips */
+    .tour-tooltip-box {
+      position: fixed;
+      background: var(--accent-gold);
+      color: #11141a;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      z-index: 150;
+      cursor: pointer;
+      display: none;
+      max-width: 240px;
+      line-height: 1.35;
+      animation: floatAngle 2s infinite ease-in-out;
+    }
+
+    @keyframes floatAngle {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-6px) rotate(2deg); }
     }
 
     /* Modals */
@@ -558,40 +665,19 @@
       font-weight: 600;
       cursor: pointer;
     }
-
-    /* Onboarding Tour Overlay */
-    .tour-tooltip {
-      position: absolute;
-      background: #eab308;
-      color: #11141a;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-      pointer-events: none;
-      z-index: 90;
-      animation: bounce 1.5s infinite;
-      display: none;
-    }
-
-    .tour-tooltip::after {
-      content: '';
-      position: absolute;
-      top: -6px;
-      left: 20px;
-      border-width: 0 6px 6px 6px;
-      border-style: solid;
-      border-color: transparent transparent #eab308 transparent;
-    }
-
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
-    }
   </style>
 </head>
 <body>
+
+  <!-- Full-Screen Minimal Landing Page -->
+  <div id="landingScreen" class="landing-screen">
+    <h1 class="landing-title">The Casino Almanac</h1>
+    <p class="landing-subtitle">DAILY DROPS • TIMERS • REDEMPTIONS</p>
+    <button class="landing-btn" onclick="dismissLanding()">Enter Almanac →</button>
+  </div>
+
+  <!-- Playful Tour Pointer -->
+  <div id="tourBox" class="tour-tooltip-box" onclick="advanceTourStep()"></div>
 
   <div class="app-container">
     <div class="date-header" id="currentDateDisplay">TODAY</div>
@@ -614,9 +700,6 @@
       <button class="nav-tab" id="tabCatalog" onclick="switchMainTab('catalog', this)">📁 Casino Catalogue</button>
       <button class="nav-tab" id="tabResources" onclick="switchMainTab('resources', this)">📚 Resources</button>
     </div>
-
-    <!-- Tour Tooltip Pointer -->
-    <div id="tourPointer" class="tour-tooltip">Tap here to browse all 85+ sites! ↗</div>
 
     <!-- View: Tracked Sweepstakes Platforms -->
     <section id="viewGames">
@@ -660,7 +743,7 @@
           <button class="filter-btn" onclick="applyCatalogFilter('A', this)">✅ A-Tier</button>
           <button class="filter-btn" onclick="applyCatalogFilter('live', this)">🔴 Live Play</button>
         </div>
-        <button class="sort-trigger-btn" onclick="toggleSortDrawer('catalog')">
+        <button class="sort-trigger-btn" id="sortTriggerCatalog" onclick="toggleSortDrawer('catalog')">
           <span>⇅ Sort</span>
         </button>
       </div>
@@ -678,7 +761,7 @@
         </div>
       </div>
 
-      <div id="catalogGroupContainer"></div>
+      <div id="catalogGroupContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
     </section>
 
     <!-- View: Resources -->
@@ -722,17 +805,6 @@
   <div class="docked-footer">
     <button class="btn-dock" onclick="openAddModal()">+ Add platform</button>
     <button class="btn-dock" onclick="openImportModal()">⇩ Bulk Import</button>
-  </div>
-
-  <!-- Welcome Landing Screen Modal -->
-  <div id="welcomeModal" class="sheet-backdrop">
-    <div class="sheet-modal" style="text-align: center;">
-      <h3>The Casino Almanac</h3>
-      <p style="font-size:0.85rem; color:var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
-        Your master ledger for tracking daily sweepstakes coin drops, cooldown resets, live dealer availability, and high-speed cash redemptions across 85+ verified platforms.
-      </p>
-      <button class="btn-primary" style="width: 100%;" onclick="dismissWelcomeModal()">Enter Almanac →</button>
-    </div>
   </div>
 
   <!-- Edit / Add Modal -->
@@ -791,56 +863,66 @@
       return clean.slice(0, 2).toUpperCase();
     }
 
-    // Complete Database with Live Play & Game Type Flags
+    // Master Catalog Data with Keen Info Notes
     const CATALOG_DATA = [
-      { name: "McLuck", url: "https://www.mcluck.com/home", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
-      { name: "Spree", url: "https://spree.com/", tier: "S", dailySC: 0.4, speedHours: 24, reliability: 92, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
-      { name: "Pulsz", url: "https://pulsz.com/", tier: "S", dailySC: 0.3, speedHours: 12, reliability: 98, cooldown: 24, hasLive: false, hasSlots: true, hasTables: true },
-      { name: "Crown Coins", url: "https://crowncoinscasino.com/", tier: "S", dailySC: 1.5, speedHours: 6, reliability: 99, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
-      { name: "PlayFame", url: "https://playfame.com/", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 90, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
-      { name: "Jackpota", url: "https://www.jackpota.com/home", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 91, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
-      { name: "Stake", url: "https://stake.us/?tab=dailyBonus&currency=ltc&modal=wallet", tier: "S", dailySC: 1.0, speedHours: 1, reliability: 100, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
-      { name: "HelloMillions", url: "https://www.hellomillions.com/home", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 93, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
-      { name: "Shuffle", url: "https://shuffle.us/", tier: "S", dailySC: 1.0, speedHours: 1, reliability: 96, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
-      { name: "MyPrize", url: "https://myprize.us/", tier: "S", dailySC: 1.0, speedHours: 4, reliability: 94, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
-      { name: "Lonestar", url: "https://www.lonestarcasino.com/", tier: "S", dailySC: 0.5, speedHours: 72, reliability: 80, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
-      { name: "RealPrize", url: "https://realprize.com/#", tier: "S", dailySC: 1.0, speedHours: 72, reliability: 82, cooldown: 24, hasLive: false, hasSlots: true, hasTables: true },
-      { name: "WOW Vegas", url: "https://www.wowvegas.com/promotions/daily-coin-reward", tier: "S", dailySC: 0.5, speedHours: 12, reliability: 97, cooldown: 24, hasLive: true, hasSlots: true, hasTables: false },
-      { name: "Modo", url: "https://modo.us/", tier: "S", dailySC: 0.5, speedHours: 6, reliability: 98, cooldown: 24, hasLive: false, hasSlots: true, hasTables: true },
-      { name: "SpinBlitz", url: "https://www.spinblitz.com/", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 90, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
-      { name: "ReBet", url: "https://rebet.page.link/x3U9G9CNNoFQMzhP7", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 95, cooldown: 24, hasLive: false, hasSlots: false, hasTables: false },
-      { name: "Pulsz Bingo", url: "https://pulszbingo.com/", tier: "S", dailySC: 0.3, speedHours: 12, reliability: 96, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
-      { name: "Legendz", url: "https://www.legendz.com/", tier: "S", dailySC: 0.5, speedHours: 2, reliability: 94, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
-      { name: "LuckyHands", url: "https://luckyhands.com/", tier: "S", dailySC: 0.5, speedHours: 2, reliability: 92, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
-      { name: "MegaBonanza", url: "https://www.megabonanza.com/home", tier: "S", dailySC: 0.2, speedHours: 24, reliability: 90, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
-      { name: "Card Crush", url: "https://www.cardcrush.com/home", tier: "S", dailySC: 0.5, speedHours: 24, reliability: 91, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
-      { name: "Dogg House", url: "https://www.play.dogghousecasino.com/", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 93, cooldown: 24, hasLive: false, hasSlots: true, hasTables: true },
-      { name: "Zula", url: "https://zulacasino.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 96, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
-      { name: "Fortune Wins", url: "https://fortunewins.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
-      { name: "Sportzino", url: "https://sportzino.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 96, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
-      { name: "LuckyLand Casino", url: "https://luckylandcasino.com/", tier: "S", dailySC: 0.5, speedHours: 12, reliability: 99, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
-      { name: "Chumba", url: "https://www.chumbacasino.com/", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 99, cooldown: 24, hasLive: false, hasSlots: true, hasTables: true },
-      { name: "Coins Royale", url: "https://www.coinsroyale.com/en#login", tier: "A", dailySC: 1.0, speedHours: 12, reliability: 88, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
-      { name: "Jackpot Go", url: "https://jackpotgo.club/", tier: "A", dailySC: 0.8, speedHours: 12, reliability: 89, cooldown: 24, hasLive: false, hasSlots: true, hasTables: false },
-      { name: "SweetSweeps", url: "https://sweetsweeps.com/", tier: "A", dailySC: 0.0, speedHours: 24, reliability: 86, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
-      { name: "LuckyRush", url: "https://luckyrush.io/wallet", tier: "A", dailySC: 0.5, speedHours: 12, reliability: 90, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true },
-      { name: "High5", url: "https://fun.high5casino.com/gc/?originId=2&accountTypeId=1", tier: "B", dailySC: 0.5, speedHours: 12, reliability: 90, cooldown: 4, hasLive: true, hasSlots: true, hasTables: true },
-      { name: "Lavish Luck", url: "https://lavishluck.net/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 86, cooldown: 24, hasLive: true, hasSlots: true, hasTables: true }
+      { name: "McLuck", url: "https://www.mcluck.com/home", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24, hasLive: true, minRedeem: "10 GC / 75 Cash", notes: "Use GC to farm VIP level before spinning SC." },
+      { name: "Spree", url: "https://spree.com/", tier: "S", dailySC: 0.4, speedHours: 24, reliability: 92, cooldown: 24, hasLive: true, minRedeem: "10 GC / 100 Cash", notes: "Regular extra free spins given away. Highly reputable." },
+      { name: "Pulsz", url: "https://pulsz.com/", tier: "S", dailySC: 0.3, speedHours: 12, reliability: 98, cooldown: 24, hasLive: false, minRedeem: "10 GC / 100 Cash", notes: "Huge welcome offers & sales. Top starter casino." },
+      { name: "Crown Coins", url: "https://crowncoinscasino.com/", tier: "S", dailySC: 1.5, speedHours: 6, reliability: 99, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Top tier, daily streak increases with VIP level. Fast redemptions." },
+      { name: "PlayFame", url: "https://playfame.com/", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 90, cooldown: 24, hasLive: true, minRedeem: "10 GC / 75 Cash", notes: "Great welcome deals and expansive Pragmatic catalog." },
+      { name: "Jackpota", url: "https://www.jackpota.com/home", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 91, cooldown: 24, hasLive: true, minRedeem: "10 GC / 75 Cash", notes: "Juicy daily coin sales and quick debit payouts." },
+      { name: "Stake", url: "https://stake.us/?tab=dailyBonus&currency=ltc&modal=wallet", tier: "S", dailySC: 1.0, speedHours: 1, reliability: 100, cooldown: 24, hasLive: true, minRedeem: "50 Crypto", notes: "Zero playthrough on daily SC! Instant crypto payouts." },
+      { name: "HelloMillions", url: "https://www.hellomillions.com/home", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 93, cooldown: 24, hasLive: true, minRedeem: "10 GC / 75 Cash", notes: "Solid Pragmatic games & regular discount bundles." },
+      { name: "Shuffle", url: "https://shuffle.us/", tier: "S", dailySC: 1.0, speedHours: 1, reliability: 96, cooldown: 24, hasLive: true, minRedeem: "100 Crypto", notes: "1 SC daily streak. Instant near-zero fee crypto redeem." },
+      { name: "MyPrize", url: "https://myprize.us/", tier: "S", dailySC: 1.0, speedHours: 4, reliability: 94, cooldown: 24, hasLive: true, minRedeem: "100 Cash / Crypto", notes: "1x playthrough requirement with live multipliers." },
+      { name: "Lonestar", url: "https://www.lonestarcasino.com/", tier: "S", dailySC: 0.5, speedHours: 72, reliability: 80, cooldown: 24, hasLive: false, minRedeem: "45 GC / 100 Cash", notes: "RealPrize clone. Watch for occasional redeem queue delays." },
+      { name: "RealPrize", url: "https://realprize.com/#", tier: "S", dailySC: 1.0, speedHours: 72, reliability: 82, cooldown: 24, hasLive: false, minRedeem: "45 GC / 100 Cash", notes: "Free SC links posted daily across community channels." },
+      { name: "WOW Vegas", url: "https://www.wowvegas.com/promotions/daily-coin-reward", tier: "S", dailySC: 0.5, speedHours: 12, reliability: 97, cooldown: 24, hasLive: true, minRedeem: "20 GC / 50 Cash", notes: "Free spins given away daily. OG trusted platform." },
+      { name: "Modo", url: "https://modo.us/", tier: "S", dailySC: 0.5, speedHours: 6, reliability: 98, cooldown: 24, hasLive: false, minRedeem: "20 GC / 100 Cash", notes: "Extremely reliable redemptions with great loyalty perks." },
+      { name: "SpinBlitz", url: "https://www.spinblitz.com/", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 90, cooldown: 24, hasLive: false, minRedeem: "10 GC / 50 Cash", notes: "Formerly Scratchful. Dependable daily farm." },
+      { name: "ReBet", url: "https://rebet.page.link/x3U9G9CNNoFQMzhP7", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 95, cooldown: 24, hasLive: false, minRedeem: "20 Cash", notes: "Place bets on future match lines and cash out later to bypass cap." },
+      { name: "Pulsz Bingo", url: "https://pulszbingo.com/", tier: "S", dailySC: 0.3, speedHours: 12, reliability: 96, cooldown: 24, hasLive: false, minRedeem: "25 GC / 100 Cash", notes: "Free daily bingo room tickets on login." },
+      { name: "Legendz", url: "https://www.legendz.com/", tier: "S", dailySC: 0.5, speedHours: 2, reliability: 94, cooldown: 24, hasLive: true, minRedeem: "10 GC / 100 Cash", notes: "Instant payouts. Small coin package maintains daily streak." },
+      { name: "LuckyHands", url: "https://luckyhands.com/", tier: "S", dailySC: 0.5, speedHours: 2, reliability: 92, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Very fast payout processing and accessible welcome tiers." },
+      { name: "MegaBonanza", url: "https://www.megabonanza.com/home", tier: "S", dailySC: 0.2, speedHours: 24, reliability: 90, cooldown: 24, hasLive: false, minRedeem: "10 GC / 50 Cash", notes: "Huge 100%+ sales on small packages." },
+      { name: "Card Crush", url: "https://www.cardcrush.com/home", tier: "S", dailySC: 0.5, speedHours: 24, reliability: 91, cooldown: 24, hasLive: false, minRedeem: "10 GC / 75 Cash", notes: "CA & NY friendly digital cards system." },
+      { name: "Dogg House", url: "https://www.play.dogghousecasino.com/", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 93, cooldown: 24, hasLive: false, minRedeem: "20 Cash", notes: "Built on ReBet engine. Low $20 cashout minimum." },
+      { name: "Zula", url: "https://zulacasino.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 96, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Generous daily bonuses and frequent weekend sales." },
+      { name: "Fortune Wins", url: "https://fortunewins.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Zula sister site with identical daily streak value." },
+      { name: "Sportzino", url: "https://sportzino.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 96, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Full sportsbook + casino. 1 SC daily." },
+      { name: "LuckyLand Casino", url: "https://luckylandcasino.com/", tier: "S", dailySC: 0.5, speedHours: 12, reliability: 99, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "VGW sister to Chumba. Great daily streak." },
+      { name: "Chumba", url: "https://www.chumbacasino.com/", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 99, cooldown: 24, hasLive: false, minRedeem: "10 GC / 100 Cash", notes: "Weekly scratcher giveaways and rock-solid payouts." },
+      { name: "Coins Royale", url: "https://www.coinsroyale.com/en#login", tier: "A", dailySC: 1.0, speedHours: 12, reliability: 88, cooldown: 24, hasLive: true, minRedeem: "50 Cash", notes: "Daily wheel spin bonus and 1x playthrough." },
+      { name: "Jackpot Go", url: "https://jackpotgo.club/", tier: "A", dailySC: 0.8, speedHours: 12, reliability: 89, cooldown: 24, hasLive: false, minRedeem: "2 Cash", notes: "5.5 SC/day with weekly subscription. 5% redeem fee." },
+      { name: "High5", url: "https://fun.high5casino.com/gc/?originId=2&accountTypeId=1", tier: "B", dailySC: 0.5, speedHours: 12, reliability: 90, cooldown: 4, hasLive: true, minRedeem: "50 GC / 100 Cash", notes: "4-Hour reload diamonds timer! Watch for bonus playthrough." }
     ];
 
     // State
-    let trackedGames = JSON.parse(localStorage.getItem('the_casino_almanac_v4') || '[]');
+    let trackedGames = JSON.parse(localStorage.getItem('the_casino_almanac_v5') || '[]');
+    let openKeenIds = new Set();
     let currentFilter = 'all';
     let currentCatalogFilter = 'all';
     let sortFieldGames = 'name';
     let sortDirectionGames = 'asc';
     let sortFieldCatalog = 'name';
     let sortDirectionCatalog = 'asc';
+    let tourStep = 0;
 
     function persist() {
-      localStorage.setItem('the_casino_almanac_v4', JSON.stringify(trackedGames));
+      localStorage.setItem('the_casino_almanac_v5', JSON.stringify(trackedGames));
       renderGames();
       updateHeroStats();
+    }
+
+    function toggleKeenInfo(id, event) {
+      if (event) event.stopPropagation();
+      if (openKeenIds.has(id)) {
+        openKeenIds.delete(id);
+      } else {
+        openKeenIds.add(id);
+      }
+      const el = document.getElementById('keen_' + id);
+      if (el) el.classList.toggle('open');
     }
 
     function switchMainTab(tab, el) {
@@ -964,31 +1046,38 @@
 
       list.forEach(game => {
         const { isReady, remainingMs } = getCooldownState(game);
-        const card = document.createElement('div');
-        card.className = 'ledger-card';
-        card.innerHTML = `
-          <div class="card-left">
-            <div class="casino-avatar">${getInitials(game.name)}</div>
-            <div class="card-body">
-              <div class="card-title-row">
-                <span class="casino-name">${game.name}</span>
-                <span class="tier-badge tier-${game.tier || 'Unranked'}">${game.tier || 'A'}</span>
-                ${game.hasLive ? '<span class="type-badge">🔴 LIVE</span>' : ''}
-              </div>
-              <div class="card-status">
-                <span class="status-dot ${isReady ? '' : 'cooldown'}"></span>
-                <span>${isReady ? 'ready now' : formatTime(remainingMs) + ' left'}</span>
+        const cardWrapper = document.createElement('div');
+        cardWrapper.className = 'ledger-card-wrapper';
+
+        cardWrapper.innerHTML = `
+          <div class="ledger-card">
+            <div class="card-left">
+              <div class="casino-avatar" onclick="toggleKeenInfo('${game.id}', event)">${getInitials(game.name)}</div>
+              <div class="card-body">
+                <div class="card-title-row">
+                  <span class="casino-name">${game.name}</span>
+                  <span class="tier-badge tier-${game.tier || 'Unranked'}">${game.tier || 'A'}</span>
+                  ${game.hasLive ? '<span class="type-badge">🔴 LIVE</span>' : ''}
+                </div>
+                <div class="card-status">
+                  <span class="status-dot ${isReady ? '' : 'cooldown'}"></span>
+                  <span>${isReady ? 'ready now' : formatTime(remainingMs) + ' left'}</span>
+                </div>
               </div>
             </div>
+            <div class="card-actions">
+              <button class="btn-open ${isReady ? '' : 'cooldown'}" onclick="collect('${game.id}')">
+                ${isReady ? 'Open' : formatTime(remainingMs)}
+              </button>
+              <button class="btn-dots" onclick="openEditModal('${game.id}')">⋯</button>
+            </div>
           </div>
-          <div class="card-actions">
-            <button class="btn-open ${isReady ? '' : 'cooldown'}" onclick="collect('${game.id}')">
-              ${isReady ? 'Open' : formatTime(remainingMs)}
-            </button>
-            <button class="btn-dots" onclick="openEditModal('${game.id}')">⋯</button>
+          <div id="keen_${game.id}" class="keen-info-popover ${openKeenIds.has(game.id) ? 'open' : ''}">
+            <div class="keen-title">Keen Info • Min Redeem: ${game.minRedeem || 'Varies'}</div>
+            <div>${game.notes || 'No specific warning flags. 24h standard reset cycle.'}</div>
           </div>
         `;
-        container.appendChild(card);
+        container.appendChild(cardWrapper);
       });
     }
 
@@ -1003,7 +1092,7 @@
       document.getElementById('heroDoneText').textContent = `${cooldown} done today`;
     }
 
-    // Casino Catalogue Rendering & Sorting
+    // Casino Catalogue Rendering & Keen Info
     function renderCatalogList() {
       const container = document.getElementById('catalogGroupContainer');
       const query = (document.getElementById('catalogSearchInput').value || '').toLowerCase();
@@ -1034,28 +1123,35 @@
         return 0;
       });
 
-      filtered.forEach(item => {
+      filtered.forEach((item, index) => {
         const isTracked = trackedGames.some(g => g.name.toLowerCase() === item.name.toLowerCase());
-        const row = document.createElement('div');
-        row.className = `catalog-item-row ${isTracked ? 'tracked' : ''}`;
-        row.innerHTML = `
-          <div class="card-left">
-            <div class="casino-avatar" style="width:36px; height:36px; font-size:0.8rem;">${getInitials(item.name)}</div>
-            <div>
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span class="casino-name" style="font-size:0.9rem;">${item.name}</span>
-                <span class="tier-badge tier-${item.tier}">${item.tier}</span>
-                ${item.hasLive ? '<span class="type-badge" style="font-size:0.6rem;">🔴 LIVE</span>' : ''}
+        const catId = 'cat_' + item.name.replace(/[^a-zA-Z0-9]/g, '_');
+        const cardWrapper = document.createElement('div');
+        cardWrapper.className = 'ledger-card-wrapper';
+
+        cardWrapper.innerHTML = `
+          <div class="catalog-item-row ${isTracked ? 'tracked' : ''}" onclick="toggleCatalogItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+            <div class="card-left">
+              <div class="casino-avatar" ${index === 0 ? 'id="tourAvatarTarget"' : ''} style="width:36px; height:36px; font-size:0.8rem;" onclick="toggleKeenInfo('${catId}', event)">${getInitials(item.name)}</div>
+              <div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span class="casino-name" style="font-size:0.9rem;">${item.name}</span>
+                  <span class="tier-badge tier-${item.tier}">${item.tier}</span>
+                  ${item.hasLive ? '<span class="type-badge" style="font-size:0.6rem;">🔴 LIVE</span>' : ''}
+                </div>
+                <div class="card-status">$${item.dailySC.toFixed(2)} daily • ${item.cooldown}h • Score: ${item.reliability}%</div>
               </div>
-              <div class="card-status">$${item.dailySC.toFixed(2)} daily • ${item.cooldown}h • Score: ${item.reliability}%</div>
             </div>
+            <span ${index === 0 ? 'id="tourAddTarget"' : ''} style="font-size:1.1rem; color:${isTracked ? 'var(--accent-gold)' : 'var(--text-dim)'}; font-weight:bold; padding: 4px 8px;">
+              ${isTracked ? '✓' : '+'}
+            </span>
           </div>
-          <span style="font-size:1.1rem; color:${isTracked ? 'var(--accent-gold)' : 'var(--text-dim)'}; font-weight:bold;">
-            ${isTracked ? '✓' : '+'}
-          </span>
+          <div id="keen_${catId}" class="keen-info-popover ${openKeenIds.has(catId) ? 'open' : ''}">
+            <div class="keen-title">${item.name} • Min Redeem: ${item.minRedeem || 'Varies'}</div>
+            <div>${item.notes || 'No critical flags. Normal 1x playthrough.'}</div>
+          </div>
         `;
-        row.onclick = () => toggleCatalogItem(item);
-        container.appendChild(row);
+        container.appendChild(cardWrapper);
       });
     }
 
@@ -1073,6 +1169,8 @@
           speedHours: item.speedHours,
           reliability: item.reliability,
           hasLive: item.hasLive,
+          minRedeem: item.minRedeem,
+          notes: item.notes,
           referralUrl: '',
           cooldownHours: item.cooldown,
           lastCollected: 0
@@ -1138,6 +1236,8 @@
           speedHours: 24,
           reliability: 90,
           hasLive: false,
+          minRedeem: 'Custom',
+          notes: 'User created platform',
           lastCollected: 0
         });
       }
@@ -1172,6 +1272,8 @@
               speedHours: 24,
               reliability: 85,
               hasLive: false,
+              minRedeem: 'Custom',
+              notes: 'Bulk import entry',
               lastCollected: 0
             });
           }
@@ -1186,25 +1288,58 @@
       document.querySelectorAll('.sheet-backdrop').forEach(b => b.classList.remove('open'));
     }
 
-    // Welcome Screen & Pointer Animation Logic
-    function dismissWelcomeModal() {
-      localStorage.setItem('almanac_intro_seen', 'true');
-      document.getElementById('welcomeModal').classList.remove('open');
-      runTourAnimation();
+    // Landing Screen & Sequential Guided Tour Logic
+    function dismissLanding() {
+      document.getElementById('landingScreen').classList.add('hidden');
+      localStorage.setItem('almanac_landing_seen', 'true');
+      startTour();
     }
 
-    function runTourAnimation() {
-      const pointer = document.getElementById('tourPointer');
-      const catalogTab = document.getElementById('tabCatalog');
-      const rect = catalogTab.getBoundingClientRect();
+    function startTour() {
+      tourStep = 1;
+      positionTourBox('tabCatalog', '👉 Tap Casino Catalogue to pick platforms! (Tap to continue)');
+    }
 
-      pointer.style.display = 'block';
-      pointer.style.top = (rect.bottom + 8) + 'px';
-      pointer.style.left = (rect.left - 20) + 'px';
+    function advanceTourStep() {
+      tourStep++;
+      if (tourStep === 2) {
+        switchMainTab('catalog', document.getElementById('tabCatalog'));
+        setTimeout(() => {
+          positionTourBox('tourAvatarTarget', '↖ Tap any avatar circle for keen terms & min redemption rules!');
+        }, 150);
+      } else if (tourStep === 3) {
+        positionTourBox('tourAddTarget', '↗ Tap + anywhere on the card to add it to your daily ledger!');
+      } else if (tourStep === 4) {
+        positionTourBox('sortTriggerCatalog', '↙ Tap ⇅ Sort to reorder by speed, SC value, or live play!');
+      } else if (tourStep === 5) {
+        positionTourBox('tabResources', '↗ Check Resources for active Discord, Reddit, & strategy guides! (Tap to finish)');
+      } else {
+        document.getElementById('tourBox').style.display = 'none';
+      }
+    }
 
-      setTimeout(() => {
-        pointer.style.display = 'none';
-      }, 5000);
+    function positionTourBox(targetId, text) {
+      const target = document.getElementById(targetId);
+      const box = document.getElementById('tourBox');
+      if (!target || !box) return;
+
+      const rect = target.getBoundingClientRect();
+      box.textContent = text;
+      box.style.display = 'block';
+
+      // Smart responsive positioning
+      let top = rect.bottom + 8;
+      let left = rect.left;
+
+      if (left + 220 > window.innerWidth) {
+        left = window.innerWidth - 240;
+      }
+      if (top + 80 > window.innerHeight) {
+        top = rect.top - 65;
+      }
+
+      box.style.top = top + 'px';
+      box.style.left = Math.max(12, left) + 'px';
     }
 
     // Initialize Date
@@ -1212,9 +1347,9 @@
     const options = { weekday: 'long', month: 'long', day: 'numeric' };
     document.getElementById('currentDateDisplay').textContent = d.toLocaleDateString('en-US', options).toUpperCase();
 
-    // Check first-time intro
-    if (!localStorage.getItem('almanac_intro_seen')) {
-      document.getElementById('welcomeModal').classList.add('open');
+    // Check Landing Persistence
+    if (localStorage.getItem('almanac_landing_seen')) {
+      document.getElementById('landingScreen').classList.add('hidden');
     }
 
     setInterval(() => {
