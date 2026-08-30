@@ -253,6 +253,7 @@
       padding: 8px;
       border-radius: 6px;
       border-left: 3px solid var(--accent-blue);
+      line-height: 1.4;
     }
 
     /* Catalog Styling */
@@ -464,7 +465,7 @@
 
     <!-- View 2: Catalog -->
     <section id="catalogView" class="view-panel">
-      <input type="text" id="catalogSearch" class="catalog-search" placeholder="Search 130+ social casinos..." oninput="renderCatalog()" />
+      <input type="text" id="catalogSearch" class="catalog-search" placeholder="Search 85+ verified social casinos..." oninput="renderCatalog()" />
       <div id="catalogContainer"></div>
     </section>
 
@@ -472,7 +473,7 @@
     <section id="resourcesView" class="view-panel">
       <div class="resource-card">
         <h3>📖 SweepsGrail VIP & Farming Guides</h3>
-        <p>Strategies, AMOE guidelines, and VIP leveling workflows.</p>
+        <p>Verified leveling guides, AMOE guidelines, and VIP reward strategies.</p>
         <div class="resource-links">
           <a href="https://sweepsgrail.com/guides/shuffle-vip-leveling-guide/" target="_blank" class="resource-link-btn">Shuffle VIP</a>
           <a href="https://sweepsgrail.com/guides/crowncoins-vip-leveling-guide/" target="_blank" class="resource-link-btn">Crown Coins VIP</a>
@@ -486,8 +487,8 @@
       </div>
 
       <div class="resource-card">
-        <h3>💬 Active Communities & Dashboards</h3>
-        <p>Community trackers and daily free spin link aggregators.</p>
+        <h3>💬 Active Communities & Spreadsheets</h3>
+        <p>Live community aggregators and real-time trackers.</p>
         <div class="resource-links">
           <a href="https://docs.google.com/spreadsheets/d/1CcQhgeod8UEECb2H6qcFxiPhjMFxdzlxXsFYHfS4UlQ/edit" target="_blank" class="resource-link-btn">TheSweepsGuy Master Sheet</a>
           <a href="https://www.reddit.com/r/SweepstakeSideHustle/" target="_blank" class="resource-link-btn">r/SweepstakeSideHustle</a>
@@ -533,6 +534,10 @@
           <option value="Unranked">📎 Unranked</option>
         </select>
       </div>
+      <div class="form-group">
+        <label>Min Redemption / Notes</label>
+        <textarea id="editGameNotes" rows="3"></textarea>
+      </div>
       <div class="modal-btns">
         <button class="btn btn-collect" onclick="saveGameEdit()">Save Changes</button>
         <button class="btn btn-join" style="background:#4b5563" onclick="closeModals()">Cancel</button>
@@ -560,76 +565,128 @@
       return 'uid_' + Math.random().toString(36).substr(2, 9);
     }
 
-    // Default Catalog Seeds
+    // Complete 89-Platform Verified Database
     const DEFAULT_CATALOG = [
-      { name: "Stake.us", url: "https://stake.us/?tab=dailyBonus&currency=ltc&modal=wallet", tier: "S", scPerDay: "$1.00", guide: "https://sweepsgrail.com/guides/stake-and-luckybird-vip-farming-guide/" },
-      { name: "Chumba Casino", url: "https://www.chumbacasino.com/", tier: "S", scPerDay: "$1.00", guide: "" },
-      { name: "LuckyLand Slots", url: "https://luckylandcasino.com/", tier: "S", scPerDay: "$0.30 - $1.00", guide: "https://sweepsgrail.com/guides/luckyland-diamond-duck-vip-guide/" },
-      { name: "WOW Vegas", url: "https://www.wowvegas.com/promotions/daily-coin-reward", tier: "S", scPerDay: "$0.30 - $1.00", guide: "https://sweepsgrail.com/guides/wow-vegas-beginners-guide/" },
-      { name: "Crown Coins", url: "https://crowncoinscasino.com/", tier: "S", scPerDay: "$0.50+", guide: "https://sweepsgrail.com/guides/crowncoins-vip-leveling-guide/" },
-      { name: "Modo.us", url: "https://modo.us/", tier: "S", scPerDay: "$0.30 - $1.00", guide: "https://sweepsgrail.com/guides/modo-vip-leveling-guide/" },
-      { name: "Shuffle.us", url: "https://shuffle.us/", tier: "S", scPerDay: "$1.00+", guide: "https://sweepsgrail.com/guides/shuffle-vip-leveling-guide/" },
-      { name: "High 5 Casino", url: "https://fun.high5casino.com/gc/?originId=2&accountTypeId=1", tier: "S", scPerDay: "$0.50 (Every 4h)", guide: "" },
-      { name: "Pulsz", url: "https://pulsz.com/", tier: "A", scPerDay: "$0.30", guide: "" },
-      { name: "McLuck", url: "https://www.mcluck.com/home", tier: "A", scPerDay: "$0.25", guide: "" },
-      { name: "Hello Millions", url: "https://www.hellomillions.com/home", tier: "A", scPerDay: "$0.25", guide: "" },
-      { name: "Sportzino", url: "https://sportzino.com/", tier: "A", scPerDay: "$1.00", guide: "" },
-      { name: "Zula Casino", url: "https://zulacasino.com/", tier: "A", scPerDay: "$1.00", guide: "" },
-      { name: "Fortune Coins", url: "https://www.fortunecoins.com/", tier: "A", scPerDay: "$1.00", guide: "" },
-      { name: "Rebet", url: "https://rebet.page.link/x3U9G9CNNoFQMzhP7", tier: "A", scPerDay: "$1.00", guide: "https://sweepsgrail.com/guides/rebet-daily-farming-guide/" },
-      { name: "Spree", url: "https://spree.com/", tier: "A", scPerDay: "$0.40", guide: "" },
-      { name: "RealPrize", url: "https://realprize.com/#", tier: "A", scPerDay: "$0.30", guide: "" },
-      { name: "Mega Bonanza", url: "https://www.megabonanza.com/home", tier: "A", scPerDay: "$0.20", guide: "" },
-      { name: "PlayFame", url: "https://www.playfame.com/", tier: "A", scPerDay: "$0.25", guide: "" },
-      { name: "SpinBlitz", url: "https://www.spinblitz.com/", tier: "A", scPerDay: "$0.25", guide: "" },
-      { name: "Golden Hearts Games", url: "https://goldenheartsgames.com/", tier: "B", scPerDay: "$0.25", guide: "" },
-      { name: "Funzpoints", url: "https://funzcasino.com/", tier: "B", scPerDay: "$0.35", guide: "" },
-      { name: "Pulsz Bingo", url: "https://pulszbingo.com/", tier: "B", scPerDay: "$0.30", guide: "" },
-      { name: "Fliff", url: "https://www.getfliff.com/", tier: "B", scPerDay: "$1.00 (Reload)", guide: "" },
-      { name: "MyPrize.us", url: "https://myprize.us/", tier: "B", scPerDay: "$0.50", guide: "" },
-      { name: "Yay Casino", url: "https://www.yaycasino.com/lobby", tier: "B", scPerDay: "$0.50", guide: "" },
-      { name: "Clubs Poker", url: "https://play.clubs.poker/", tier: "B", scPerDay: "$0.50", guide: "" },
-      { name: "Global Poker", url: "https://play.globalpoker.com/", tier: "B", scPerDay: "$0.25", guide: "" },
-      { name: "Legendz", url: "https://www.legendz.com/", tier: "B", scPerDay: "$0.20", guide: "" },
-      { name: "Moozi", url: "https://moozi.com/", tier: "B", scPerDay: "$0.30", guide: "" },
-      { name: "Moonspin", url: "https://moonspin.us/", tier: "B", scPerDay: "$0.30", guide: "" },
-      { name: "Chanced", url: "https://chanced.com/", tier: "C", scPerDay: "$0.10/hr", guide: "" },
-      { name: "Punt.com", url: "https://punt.com/", tier: "C", scPerDay: "$0.10", guide: "" },
-      { name: "Jackpota", url: "https://www.jackpota.com/home", tier: "C", scPerDay: "$0.20", guide: "" },
-      { name: "Funrize", url: "https://funrize.com/", tier: "C", scPerDay: "Wheel Spin", guide: "" },
-      { name: "Tao Fortune", url: "http://taofortune.com/", tier: "C", scPerDay: "Quest / Box", guide: "" },
-      { name: "NoLimitCoins", url: "https://nolimitcoins.com/", tier: "C", scPerDay: "Wheel Spin", guide: "" },
-      { name: "ZitoBox", url: "https://m.zitobox.com/", tier: "C", scPerDay: "Loyalty points", guide: "" },
-      { name: "Card Crush", url: "https://www.cardcrush.com/home", tier: "Unranked", scPerDay: "Varies", guide: "" },
-      { name: "Ruby Sweeps", url: "https://rubysweeps.com/", tier: "Unranked", scPerDay: "Varies", guide: "" },
-      { name: "Stackr", url: "https://www.stackrcasino.com/", tier: "Unranked", scPerDay: "Varies", guide: "" },
-      { name: "Thrillzz", url: "https://thrillzz.com/", tier: "Unranked", scPerDay: "Varies", guide: "" }
+      // S-TIER
+      { name: "McLuck", url: "https://www.mcluck.com/home", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 75 (Cash)", notes: "Tons of great sales. Nice VIP system. Can use GC to farm VIP, spend it before you spin SC since SC taxes GC on each spin", cooldownHours: 24, guide: "" },
+      { name: "Spree", url: "https://spree.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 100 (Cash)", notes: "Lots of sales and regular extra free spins given away. Great selection of games and highly reputable casino", cooldownHours: 24, guide: "" },
+      { name: "Pulsz", url: "https://pulsz.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 100 (Cash)", notes: "One of my favorites to start with. Huge welcome offers and sales, great selection of games", cooldownHours: 24, guide: "" },
+      { name: "Crown Coins", url: "https://crowncoinscasino.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Top tier, tons of freebies, nice daily streak that increases with VIP level, awesome sales and the best games", cooldownHours: 24, guide: "https://sweepsgrail.com/guides/crowncoins-vip-leveling-guide/" },
+      { name: "PlayFame", url: "https://playfame.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 75 (Cash)", notes: "Huge selection of games, has some great welcome offers & sales", cooldownHours: 24, guide: "" },
+      { name: "Jackpota", url: "https://www.jackpota.com/home", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 75 (Cash)", notes: "One of my favorites - Jackpota does a ton of juicy sales", cooldownHours: 24, guide: "" },
+      { name: "Stake", url: "https://stake.us/?tab=dailyBonus&currency=ltc&modal=wallet", tier: "S", scPerDay: "Daily SC", minRedeem: "50 (Crypto)", notes: "No playthrough requirement on daily SC. Just farm and redeem. Don't skip this one, it is literally free money!", cooldownHours: 24, guide: "https://sweepsgrail.com/guides/stake-and-luckybird-vip-farming-guide/" },
+      { name: "HelloMillions", url: "https://www.hellomillions.com/home", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 75 (Cash)", notes: "Solid games & sales, lots of offers", cooldownHours: 24, guide: "" },
+      { name: "Shuffle", url: "https://shuffle.us/", tier: "S", scPerDay: "Daily SC", minRedeem: "100 (Crypto)", notes: "New US Sweeps site of Shuffle. 1 SC per day after streak, crypto purchases and redeem, near instant. Tons of games.", cooldownHours: 24, guide: "https://sweepsgrail.com/guides/shuffle-vip-leveling-guide/" },
+      { name: "MyPrize", url: "https://myprize.us/", tier: "S", scPerDay: "Daily SC", minRedeem: "100 (Cash / Crypto)", notes: "Recently added a daily streak and lowered playthrough to 1x! MyPrize has a great selection of games too.", cooldownHours: 24, guide: "" },
+      { name: "Lonestar", url: "https://www.lonestarcasino.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "45 (Gift Card) / 100 (Cash)", notes: "Currently dealing with delayed redeem speeds! RealPrize clone, lots of extra freebies and a ton of games.", cooldownHours: 24, guide: "" },
+      { name: "RealPrize", url: "https://realprize.com/#", tier: "S", scPerDay: "Daily SC", minRedeem: "45 (Gift Card) / 100 (Cash)", notes: "Currently dealing with delayed redeem speeds! More like $1-2 a day since they give free SC links daily.", cooldownHours: 24, guide: "" },
+      { name: "WOW Vegas", url: "https://www.wowvegas.com/promotions/daily-coin-reward", tier: "S", scPerDay: "Daily SC", minRedeem: "20 (Gift Card) / 50 (Cash)", notes: "Free spins given away daily add a ton of value here. Great sales from time to time. One of the OG casinos", cooldownHours: 24, guide: "https://sweepsgrail.com/guides/wow-vegas-beginners-guide/" },
+      { name: "Modo", url: "https://modo.us/", tier: "S", scPerDay: "Daily SC", minRedeem: "20 (Gift Card) / 100 (Cash)", notes: "Excellent casino, quick redemptions. Great selection of games. Good welcome offers. Great reputation", cooldownHours: 24, guide: "https://sweepsgrail.com/guides/modo-vip-leveling-guide/" },
+      { name: "SpinBlitz", url: "https://www.spinblitz.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 50 (Cash)", notes: "Formerly known as 'Scratchful' - they're one of the older sites - they're legit!", cooldownHours: 24, guide: "" },
+      { name: "ReBet", url: "https://rebet.page.link/x3U9G9CNNoFQMzhP7", tier: "S", scPerDay: "Daily SC", minRedeem: "20 (Cash)", notes: "Social casino/sports book. 15C daily caps at 1, but theres a trick! Collect 15C bets on a future matchs & use cash out option to claim later!", cooldownHours: 24, guide: "https://sweepsgrail.com/guides/rebet-daily-farming-guide/" },
+      { name: "Pulsz Bingo", url: "https://pulszbingo.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "25 (Gift Card) / 100 (Cash)", notes: "Pulsz owns with the addition of Bingo! If you don't have SC, go to this link to activate.", cooldownHours: 24, guide: "" },
+      { name: "Legendz", url: "https://www.legendz.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 100 (Cash)", notes: "Instant SC/All redeem, nice daily reward but need to buy a pack to maintain it. Tons of games. Solid casino", cooldownHours: 24, guide: "" },
+      { name: "LuckyHands", url: "https://luckyhands.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Very fast redemptions, 50SC minimum redeem, easy to hit with welcome offers - don't skip them", cooldownHours: 24, guide: "" },
+      { name: "MegaBonanza", url: "https://www.megabonanza.com/home", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 50 (Cash)", notes: "Some really big sales on this one, definitely not one to miss", cooldownHours: 24, guide: "" },
+      { name: "Card Crush", url: "https://www.cardcrush.com/home", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 75 (Cash)", notes: "New for CA and NY players only! Operating under a new gaming model. 2 MC on signup, tiered welcome offers.", cooldownHours: 24, guide: "" },
+      { name: "Dogg House", url: "https://www.play.dogghousecasino.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "20 (Cash)", notes: "All the games and a full sports book. Running on ReBet engine. Snoop Dogg theme throughout the casino.", cooldownHours: 24, guide: "" },
+      { name: "Zula", url: "https://zulacasino.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Overall rock-solid casino, generous daily, lots of freebies, and great sales", cooldownHours: 24, guide: "" },
+      { name: "Fortune Wins", url: "https://fortunewins.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Zula sister - generous daily, lots of freebies, and great sales", cooldownHours: 24, guide: "" },
+      { name: "Sportzino", url: "https://sportzino.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Everything from Zula, plus a sports book. Lots of sales and promos", cooldownHours: 24, guide: "" },
+      { name: "LuckyLand Casino", url: "https://luckylandcasino.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "New LuckyLand sister site! Great daily bonus streak.", cooldownHours: 24, guide: "https://sweepsgrail.com/guides/luckyland-diamond-duck-vip-guide/" },
+      { name: "Chumba", url: "https://www.chumbacasino.com/", tier: "S", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 100 (Cash)", notes: "Tons of value from their weekly 'scratcher' giveaways. Make sure you're signed up to participate!", cooldownHours: 24, guide: "" },
+
+      // A-TIER
+      { name: "CoinsBack Casino", url: "https://www.coinsbackcasino.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Free 10 SC on signup! New site owned by WowVegas group - 30 SC for $10 welcome offer.", cooldownHours: 24, guide: "" },
+      { name: "Crazy Coins", url: "https://crazycoins.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "75 (Cash)", notes: "Free 1 SC on signup, nice welcome offers, and a daily 10% coin boost. 1x playthrough.", cooldownHours: 24, guide: "" },
+      { name: "Coins Royale", url: "https://www.coinsroyale.com/en#login", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Free 1 SC on signup and a daily wheel spin. 1x playthrough and good feedback so far", cooldownHours: 24, guide: "" },
+      { name: "AceBet", url: "https://acebet.cc/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "1 SC signup bonus and 1 SC daily - balance needs to be zero to claim! Beware of high playthrough on bonus SC.", cooldownHours: 24, guide: "" },
+      { name: "FortunePurple", url: "https://fortunepurple.com/welcome", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "An exciting new casino with a familiar look. Proceed with some caution and don't overdo it!", cooldownHours: 24, guide: "" },
+      { name: "Jackpot Go", url: "https://jackpotgo.club/", tier: "A", scPerDay: "Daily SC", minRedeem: "2 (Cash)", notes: "The 90 SC for $90 Subscription is a huge value that gives 5.5 SC a day for 7 days. 5% service charge on redeem.", cooldownHours: 24, guide: "" },
+      { name: "SweetSweeps", url: "https://sweetsweeps.com/", tier: "A", scPerDay: "No", minRedeem: "100 (Cash)", notes: "New site, 3SC on signup plus a 40SC for $20 welcome offer. Live games including roulette and blackjack", cooldownHours: 24, guide: "" },
+      { name: "SweepstakesCasino", url: "https://sweepstakescasino.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash / Crypto)", notes: "The latest speed-sister site. Tons of sales but playthrough applies to slots only!", cooldownHours: 24, guide: "" },
+      { name: "Jackpot Daily", url: "https://jackpotdaily.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Super juicy new site! Up to 134 SC for $60 with stacked welcome offers. Playthrough between 1x and 2x.", cooldownHours: 24, guide: "" },
+      { name: "Cider Casino", url: "https://game.cidercasino.com/?channel=official_website&campaign=official_website%2F#/home/rewards", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "New JackpotGo clone! 7 day daily bonus streak. Weekly subscription gives 90 SC for $90 + 5.5 SC per day! Beware of 5% paypal redeem fee.", cooldownHours: 24, guide: "" },
+      { name: "TheWinZone", url: "https://thewinzone.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Nice new site with fairly regular sales. Daily missions give some extra SC. Instant debit redeems.", cooldownHours: 24, guide: "" },
+      { name: "Coin Wizard", url: "https://www.coinwizardgames.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Gift Card) / 100 (Cash)", notes: "Free 2.5 SC on signup! New site owned by GoldenHearts group - 25 SC for $10 welcome offer.", cooldownHours: 24, guide: "" },
+      { name: "ChipNWin", url: "https://chipnwin.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Gift Card) / 100 (Cash)", notes: "Neat little casino, nice freebies, extra 'crystal' feature. Decent sales and welcome offers.", cooldownHours: 24, guide: "" },
+      { name: "Clash5", url: "https://clash5.com/", tier: "A", scPerDay: "No", minRedeem: "100 (Cash)", notes: "CA & NY friendly! Free 5 Clash Coins on signup! Digital trading card system similar to Card Crush.", cooldownHours: 24, guide: "" },
+      { name: "ThrillCoins", url: "https://thrillcoins.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash / Crypto)", notes: "Speed-sister site! Instant redeems, instant verification. Be aware: only slots contribute to playthrough.", cooldownHours: 24, guide: "" },
+      { name: "Reel Zappy", url: "https://reelzappy.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Latest from Priority Play (Zula sister). Free 3.5 SC on signup, nice daily streak.", cooldownHours: 24, guide: "" },
+      { name: "Rolla", url: "https://www.rolla.com/login?redirect=/promotions/welcome-coins", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Gift Card) / 100 (Cash)", notes: "WowVegas sister site, really nice welcome offers, daily login bonus, and regular extra freebies.", cooldownHours: 24, guide: "" },
+      { name: "FortunaRush", url: "https://fortunarush.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "LuckyRush clone with Pragmatic Games. Small fees on purchase and redeems, stacks packs up to 100 SC.", cooldownHours: 24, guide: "" },
+      { name: "BangCoins", url: "https://bangcoins.com/", tier: "A", scPerDay: "Random", minRedeem: "100 (Cash / Crypto)", notes: "SpeedSweeps sister site! Regular sales and juicy welcome offers. 1x PT but slots only!", cooldownHours: 24, guide: "" },
+      { name: "FreeSpin", url: "https://freespin.com/?modal=sign-in", tier: "A", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 100 (Cash)", notes: "Casino Click sister. Good value, but be prepared for occasional redeem delays.", cooldownHours: 24, guide: "" },
+      { name: "Stackr", url: "https://www.stackrcasino.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Crypto)", notes: "2x playthrough requirements! Great sales and consistent daily bonus.", cooldownHours: 24, guide: "" },
+      { name: "LuckyRush", url: "https://luckyrush.io/wallet", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "100 SC for $50 with 1x playthrough, plinko, live games, fast redeems.", cooldownHours: 24, guide: "" },
+      { name: "DimeSweeps", url: "https://dimesweeps.com/", tier: "A", scPerDay: "Random", minRedeem: "100 (Cash / Crypto)", notes: "Speed/RichSweeps sister site. Tons of games but only slots count towards playthrough!", cooldownHours: 24, guide: "" },
+      { name: "SweepsRoyal", url: "https://sweepsroyal.com/", tier: "A", scPerDay: "Random", minRedeem: "100 (Cash / Crypto)", notes: "SpeedRichSweeps sister site. Slots only for playthrough. Redeems are near instant.", cooldownHours: 24, guide: "" },
+      { name: "RichSweeps", url: "https://richsweeps.com/", tier: "A", scPerDay: "Random", minRedeem: "100 (Cash / Crypto)", notes: "SpeedSweeps sister site. Great selection of games, slots only for PT.", cooldownHours: 24, guide: "" },
+      { name: "SpeedSweeps", url: "https://speedsweeps.com/", tier: "A", scPerDay: "Random", minRedeem: "100 (Cash / Crypto)", notes: "Crypto and card redeems. Tons of games but only slots count towards playthrough.", cooldownHours: 24, guide: "" },
+      { name: "WinBonanza", url: "https://winbonanza.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "New Zula sister site! Daily streak, sales, and freebies.", cooldownHours: 24, guide: "" },
+      { name: "Baba", url: "https://play.babacasino.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Gift Card) / 100 (Cash)", notes: "Decent daily streak, some occasional sales. Good to farm.", cooldownHours: 24, guide: "" },
+      { name: "Novig", url: "https://novig.us/", tier: "A", scPerDay: "Daily SC", minRedeem: "20 (Cash)", notes: "5SC signup bonus! Sweepstakes sportsbook with challenges for extra SC.", cooldownHours: 24, guide: "" },
+      { name: "Dara", url: "https://daracasino.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Good sales and decent daily. Play Crazy 777 for quick playthrough.", cooldownHours: 24, guide: "" },
+      { name: "Clubs", url: "https://play.clubs.poker/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Gift Card) / 100 (Cash)", notes: "Aka Clubs Poker, same login works on both sites. Great welcome offers.", cooldownHours: 24, guide: "" },
+      { name: "Legacy Arcade", url: "https://legacyarcade.com/", tier: "A", scPerDay: "No", minRedeem: "20 (Cash)", notes: "100% first purchase match + free wheel spin. Instant redeems and arcade games.", cooldownHours: 24, guide: "" },
+      { name: "Ace", url: "https://ace.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "10 (Gift Card) / 75 (Cash)", notes: "McLuck sister site. Nice streak and huge welcome offers.", cooldownHours: 24, guide: "" },
+      { name: "Golden Hearts", url: "https://goldenheartsgames.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Gift Card) / 100 (Cash)", notes: "One of the OG casinos. Daily streak added recently. Great consistent sales.", cooldownHours: 24, guide: "" },
+      { name: "Fliff", url: "https://www.getfliff.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Sweeps sports book. $1 a day but caps at $2, use it so you can keep farming!", cooldownHours: 24, guide: "" },
+      { name: "Thrillz", url: "https://thrillzz.com/", tier: "A", scPerDay: "No", minRedeem: "50 (Cash)", notes: "Challenge system with a ton of betting lines.", cooldownHours: 24, guide: "" },
+      { name: "Global Poker", url: "https://play.globalpoker.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Random dailies, owned by VGW (Chumba/Luckyland), fully legit.", cooldownHours: 24, guide: "" },
+      { name: "American Luck", url: "https://americanluck.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "New Zula sister site! Good game selection and sales.", cooldownHours: 24, guide: "" },
+      { name: "Moozi", url: "https://moozi.com/", tier: "A", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Easy verification, great sales, lots of games.", cooldownHours: 24, guide: "" },
+      { name: "Yay", url: "https://www.yaycasino.com/lobby", tier: "A", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "5SC signup bonus - decent daily. Owned by Priority Play (Zula sister).", cooldownHours: 24, guide: "" },
+
+      // B-TIER
+      { name: "Courtside", url: "https://courtside.com/", tier: "B", scPerDay: "No", minRedeem: "50 (Cash)", notes: "New sweeps sportsbook app with casino games as well!", cooldownHours: 24, guide: "" },
+      { name: "Coin Frenzy", url: "https://coinfrenzy.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "1 SC Daily login bonus! Promising new site. Watch for 3x playthrough!", cooldownHours: 24, guide: "" },
+      { name: "Zumo", url: "https://zumo.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Free 2 SC on signup! Kinetix sister site (SweepJungle/66).", cooldownHours: 24, guide: "" },
+      { name: "Wild", url: "https://wildworldcasino.com/", tier: "B", scPerDay: "No", minRedeem: "10 (Crypto)", notes: "Watch out for high playthrough requirements on bonuses.", cooldownHours: 24, guide: "" },
+      { name: "SweepJungle", url: "https://sweepjungle.com/", tier: "B", scPerDay: "Random", minRedeem: "100 (Cash)", notes: "2SC on signup, Sixty6 sister site. 1x playthrough.", cooldownHours: 24, guide: "" },
+      { name: "TaoSweeps", url: "https://taosweeps.com/wallet", tier: "B", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Sister-site to LuckyRush. 80 SC for $40 with 1x playthrough, 50 SC min redeem.", cooldownHours: 24, guide: "" },
+      { name: "OceanKing", url: "https://oceanking.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Formerly Viking Riches. Joker's Jewels with .05 spins. Beware of purchase and redeem fees!", cooldownHours: 24, guide: "" },
+      { name: "Scoop", url: "https://scoop.com/", tier: "B", scPerDay: "Random", minRedeem: "100 (Cash)", notes: "Speed-sister feel with occasional promos.", cooldownHours: 24, guide: "" },
+      { name: "High5", url: "https://fun.high5casino.com/gc/?originId=2&accountTypeId=1", tier: "B", scPerDay: "Daily SC", minRedeem: "50 (Gift Card) / 100 (Cash)", notes: "4-Hour reload timer! High 5 Plinko is top tier, but watch out for high bonus playthrough.", cooldownHours: 4, guide: "" },
+      { name: "LuckyBits Vegas", url: "https://luckybitsvegas.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "100 (Crypto)", notes: "High5 sister site - watch out for high playthrough reqs on bonus SC. 10SC signup bonus.", cooldownHours: 24, guide: "" },
+      { name: "Lavish Luck", url: "https://lavishluck.net/", tier: "B", scPerDay: "Daily SC", minRedeem: "25 (Cash)", notes: "Great welcome offers and covered baccarat! Lots of missions.", cooldownHours: 24, guide: "" },
+      { name: "OnyxOdds", url: "https://onyxodds.com/", tier: "B", scPerDay: "No", minRedeem: "100 (Cash)", notes: "Decent little sportsbook with a couple welcome offers.", cooldownHours: 24, guide: "" },
+      { name: "AcornFun", url: "https://wap.acornfun.com/", tier: "B", scPerDay: "Random", minRedeem: "50 (Cash)", notes: "5% ACH fee lands them on B list. Nice welcome offers.", cooldownHours: 24, guide: "" },
+      { name: "LunaLand", url: "https://lunalandcasino.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Great welcome offers and sales here, lots of games.", cooldownHours: 24, guide: "" },
+      { name: "LuckParty", url: "https://luckparty.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Zula sister site! 6 SC on signup and verification, 1x playthrough.", cooldownHours: 24, guide: "" },
+      { name: "PeakPlay", url: "https://peakplay.com/", tier: "B", scPerDay: "No", minRedeem: "50 (Cash)", notes: "Owned by the same group as RubySweeps. 100% welcome offers.", cooldownHours: 24, guide: "" },
+      { name: "Ruby Sweeps", url: "https://rubysweeps.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "RubySweeps has huge welcome offers and 100% sales regularly.", cooldownHours: 24, guide: "" },
+      { name: "BlitzMania", url: "https://blitzmania.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Free 2 SC on signup! Login streak, easy verification and fast redeems.", cooldownHours: 24, guide: "" },
+      { name: "SorceryReels", url: "https://sorceryreels.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Small daily login reward. Challenges and missions for extra value.", cooldownHours: 24, guide: "" },
+      { name: "Betr", url: "https://betr.app/", tier: "B", scPerDay: "No", minRedeem: "100 (Cash)", notes: "$10 bonus + 50% first purchase. Hybrid sweeps/fiat sportsbook and arcade.", cooldownHours: 24, guide: "" },
+      { name: "SpinPals", url: "https://www.spinpals.com/", tier: "B", scPerDay: "Daily SC", minRedeem: "100 (Cash)", notes: "Daily login streak + daily wheel spin under Account > Promotions!", cooldownHours: 24, guide: "" },
+      { name: "Sidepot", url: "https://sidepot.us/", tier: "B", scPerDay: "Daily SC", minRedeem: "50 (Cash)", notes: "Sister casino to Fliff. Good promos and big selection of games.", cooldownHours: 24, guide: "" }
     ];
 
     // State
-    let trackedGames = JSON.parse(localStorage.getItem('tracked_games_data') || '[]');
-    let catalogOverrides = JSON.parse(localStorage.getItem('catalog_overrides') || '{}');
+    let trackedGames = JSON.parse(localStorage.getItem('tracked_games_data_v2') || '[]');
     let currentFilter = 'all';
 
-    // Initialize Default State
+    // Seed tracked list with S-Tier games on initial load
     if (trackedGames.length === 0) {
-      trackedGames = DEFAULT_CATALOG.slice(0, 10).map(item => ({
+      trackedGames = DEFAULT_CATALOG.filter(c => c.tier === 'S').map(item => ({
         id: uid(),
         name: item.name,
         url: item.url,
         referralUrl: "",
         tier: item.tier,
         scPerDay: item.scPerDay,
+        minRedeem: item.minRedeem,
+        notes: item.notes,
         guide: item.guide || "",
-        cooldownHours: 24,
+        cooldownHours: item.cooldownHours || 24,
         lastCollected: 0
       }));
       saveState();
     }
 
     function saveState() {
-      localStorage.setItem('tracked_games_data', JSON.stringify(trackedGames));
-      localStorage.setItem('catalog_overrides', JSON.stringify(catalogOverrides));
+      localStorage.setItem('tracked_games_data_v2', JSON.stringify(trackedGames));
       renderGames();
       updateReadyCount();
     }
@@ -711,14 +768,20 @@
                 <span class="tier-badge tier-${game.tier || 'Unranked'}">${game.tier || 'Unranked'}</span>
               </div>
               <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
-                ${game.scPerDay ? game.scPerDay + ' daily' : '24h Cooldown'}
+                Min Redeem: ${game.minRedeem || 'Varies'} • ${game.cooldownHours}h Timer
               </p>
             </div>
             <button class="btn btn-icon" onclick="editGame('${game.id}')">✎</button>
           </div>
 
-          ${game.guide ? `
+          ${game.notes ? `
             <div class="card-notes">
+              ${game.notes}
+            </div>
+          ` : ''}
+
+          ${game.guide ? `
+            <div class="card-notes" style="margin-top: -4px;">
               <a href="${game.guide}" target="_blank" style="color:var(--accent-blue); text-decoration:none;">
                 📚 Read SweepsGrail Guide →
               </a>
@@ -754,17 +817,17 @@
 
       const tiers = ['S', 'A', 'B', 'C', 'Unranked'];
       const tierLabels = {
-        'S': '🔥 S-Tier Platforms',
-        'A': '✅ A-Tier Platforms',
-        'B': '💼 B-Tier Platforms',
-        'C': '🤏 C-Tier Platforms',
-        'Unranked': '📎 Unranked & Regional'
+        'S': '🔥 S-Tier (Top Priority)',
+        'A': '✅ A-Tier (Consistent Value)',
+        'B': '💼 B-Tier (Secondary / Slower)',
+        'C': '🤏 C-Tier',
+        'Unranked': '📎 Unranked'
       };
 
       tiers.forEach(tier => {
         const items = DEFAULT_CATALOG.filter(item => {
           const matchesTier = (item.tier || 'Unranked') === tier;
-          const matchesSearch = item.name.toLowerCase().includes(searchQuery);
+          const matchesSearch = item.name.toLowerCase().includes(searchQuery) || (item.notes && item.notes.toLowerCase().includes(searchQuery));
           return matchesTier && matchesSearch;
         });
 
@@ -777,8 +840,8 @@
         section.innerHTML = `
           <div class="tier-header">
             <h2>${tierLabels[tier]} (${items.length})</h2>
-            <button class="btn btn-icon" style="font-size:0.8rem;" onclick="toggleTier('${tier}', ${allTrackedInTier})">
-              ${allTrackedInTier ? 'Remove All' : '+ Add All'}
+            <button class="btn btn-icon" style="font-size:0.8rem; color:var(--accent-gold);" onclick="toggleTier('${tier}', ${allTrackedInTier})">
+              ${allTrackedInTier ? '✕ Remove All' : '+ Add All'}
             </button>
           </div>
         `;
@@ -790,7 +853,7 @@
           row.innerHTML = `
             <div>
               <span style="font-weight: 600;">${item.name}</span>
-              <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 6px;">(${item.scPerDay})</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 6px;">(${item.minRedeem})</span>
             </div>
             <span class="catalog-check">${isTracked ? '✓' : '+'}</span>
           `;
@@ -817,8 +880,10 @@
           referralUrl: "",
           tier: item.tier,
           scPerDay: item.scPerDay,
+          minRedeem: item.minRedeem,
+          notes: item.notes,
           guide: item.guide || "",
-          cooldownHours: 24,
+          cooldownHours: item.cooldownHours || 24,
           lastCollected: 0
         });
       }
@@ -840,8 +905,10 @@
               referralUrl: "",
               tier: item.tier,
               scPerDay: item.scPerDay,
+              minRedeem: item.minRedeem,
+              notes: item.notes,
               guide: item.guide || "",
-              cooldownHours: 24,
+              cooldownHours: item.cooldownHours || 24,
               lastCollected: 0
             });
           }
@@ -862,6 +929,7 @@
       document.getElementById('editReferralUrl').value = game.referralUrl || '';
       document.getElementById('editCooldownHours').value = game.cooldownHours || 24;
       document.getElementById('editGameTier').value = game.tier || 'Unranked';
+      document.getElementById('editGameNotes').value = game.notes || '';
 
       document.getElementById('gameEditModal').classList.add('open');
     }
@@ -873,6 +941,7 @@
       document.getElementById('editReferralUrl').value = '';
       document.getElementById('editCooldownHours').value = '24';
       document.getElementById('editGameTier').value = 'Unranked';
+      document.getElementById('editGameNotes').value = '';
       document.getElementById('gameEditModal').classList.add('open');
     }
 
@@ -883,6 +952,7 @@
       const referralUrl = document.getElementById('editReferralUrl').value.trim();
       const cooldownHours = parseInt(document.getElementById('editCooldownHours').value) || 24;
       const tier = document.getElementById('editGameTier').value;
+      const notes = document.getElementById('editGameNotes').value.trim();
 
       if (!name || !url) {
         alert('Please specify both a name and an active URL.');
@@ -897,6 +967,7 @@
           game.referralUrl = referralUrl;
           game.cooldownHours = cooldownHours;
           game.tier = tier;
+          game.notes = notes;
         }
       } else {
         trackedGames.push({
@@ -907,6 +978,8 @@
           cooldownHours,
           tier,
           scPerDay: "Custom",
+          minRedeem: "Custom",
+          notes,
           lastCollected: 0
         });
       }
@@ -938,7 +1011,8 @@
               referralUrl: "",
               cooldownHours: 24,
               tier: "Unranked",
-              scPerDay: "Custom",
+              minRedeem: "Custom",
+              notes: "Imported via bulk paste",
               lastCollected: 0
             });
           }
