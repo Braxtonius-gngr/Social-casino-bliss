@@ -149,13 +149,21 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
-    /* Filter Chips */
+    /* Filter Chips & Sort Trigger */
+    .filter-sort-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
     .filter-chips {
       display: flex;
       gap: 6px;
       overflow-x: auto;
-      padding: 4px 2px 16px;
       scrollbar-width: none;
+      flex: 1;
     }
 
     .filter-chips::-webkit-scrollbar {
@@ -182,7 +190,76 @@
       font-weight: 600;
     }
 
-    /* Ledger Rows / Cards */
+    .sort-trigger-btn {
+      padding: 6px 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      color: var(--accent-gold);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    /* Sleek Expandable Sort Drawer */
+    .sort-drawer {
+      display: none;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    .sort-drawer.open {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .sort-drawer-header {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .sort-options-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    .sort-option-btn {
+      padding: 8px 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-size: 0.76rem;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sort-option-btn.active {
+      border-color: var(--accent-gold);
+      color: var(--accent-gold);
+      background: var(--accent-gold-dim);
+    }
+
+    /* Ledger Rows */
     .game-list {
       display: flex;
       flex-direction: column;
@@ -213,7 +290,6 @@
       min-width: 0;
     }
 
-    /* Avatar Monogram Icon */
     .casino-avatar {
       width: 44px;
       height: 44px;
@@ -345,17 +421,6 @@
       outline: none;
     }
 
-    .tier-section-title {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin: 16px 0 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
     .catalog-item-row {
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
@@ -372,7 +437,7 @@
       border-color: rgba(234, 179, 8, 0.4);
     }
 
-    /* Fixed Bottom Action Bar */
+    /* Docked Footer */
     .docked-footer {
       position: fixed;
       bottom: 0;
@@ -405,11 +470,7 @@
       gap: 6px;
     }
 
-    .btn-dock:hover {
-      background: #2c3649;
-    }
-
-    /* Modals & Popovers */
+    /* Modals */
     .sheet-backdrop {
       display: none;
       position: fixed;
@@ -520,18 +581,37 @@
 
     <!-- View: Tracked Games -->
     <section id="viewGames">
-      <div class="filter-chips">
-        <button class="filter-btn active" onclick="applyFilter('all', this)">All</button>
-        <button class="filter-btn" onclick="applyFilter('ready', this)">Ready</button>
-        <button class="filter-btn" onclick="applyFilter('cooldown', this)">Cooldown</button>
-        <button class="filter-btn" onclick="applyFilter('referral', this)">Has referral</button>
+      <div class="filter-sort-row">
+        <div class="filter-chips">
+          <button class="filter-btn active" onclick="applyFilter('all', this)">All</button>
+          <button class="filter-btn" onclick="applyFilter('ready', this)">Ready</button>
+          <button class="filter-btn" onclick="applyFilter('cooldown', this)">Cooldown</button>
+          <button class="filter-btn" onclick="applyFilter('referral', this)">Has referral</button>
+        </div>
+        <button class="sort-trigger-btn" onclick="toggleSortDrawer()">
+          <span>⇅ Sort</span>
+        </button>
       </div>
+
+      <!-- Collapsible Sort Options -->
+      <div id="sortDrawer" class="sort-drawer">
+        <div class="sort-drawer-header">Sort Order</div>
+        <div class="sort-options-grid">
+          <button class="sort-option-btn active" onclick="setSortCriteria('name', 'asc', this)">Name (A → Z)</button>
+          <button class="sort-option-btn" onclick="setSortCriteria('name', 'desc', this)">Name (Z → A)</button>
+          <button class="sort-option-btn" onclick="setSortCriteria('tier', 'asc', this)">Tier (S → C)</button>
+          <button class="sort-option-btn" onclick="setSortCriteria('dailySC', 'desc', this)">Daily SC (High → Low)</button>
+          <button class="sort-option-btn" onclick="setSortCriteria('speed', 'asc', this)">Redeem Speed</button>
+          <button class="sort-option-btn" onclick="setSortCriteria('reliability', 'desc', this)">Reliability Index</button>
+        </div>
+      </div>
+
       <div class="game-list" id="gamesContainer"></div>
     </section>
 
     <!-- View: Catalog -->
     <section id="viewCatalog" style="display: none;">
-      <input type="text" id="catalogSearchInput" class="catalog-search" placeholder="Search platforms..." oninput="renderCatalogList()" />
+      <input type="text" id="catalogSearchInput" class="catalog-search" placeholder="Search 85+ verified casinos..." oninput="renderCatalogList()" />
       <div id="catalogGroupContainer"></div>
     </section>
 
@@ -622,10 +702,8 @@
   </div>
 
   <script>
-    // ID Generator
     const uid = () => 'id_' + Math.random().toString(36).substr(2, 9);
 
-    // Helpers
     function getInitials(name) {
       if (!name) return '??';
       const clean = name.replace(/[^a-zA-Z0-9 ]/g, '').trim();
@@ -636,78 +714,51 @@
       return clean.slice(0, 2).toUpperCase();
     }
 
-    // Default Seed Catalog
+    // Complete Database with Sort Keys
     const CATALOG_DATA = [
-      { name: "Ace", url: "https://ace.com/", tier: "A", cooldown: 24 },
-      { name: "Ace Bet", url: "https://acebet.cc/", tier: "A", cooldown: 24 },
-      { name: "Acornfun", url: "https://wap.acornfun.com/", tier: "B", cooldown: 24 },
-      { name: "American Luck", url: "https://americanluck.com/", tier: "A", cooldown: 24 },
-      { name: "Baba", url: "https://play.babacasino.com/", tier: "A", cooldown: 24 },
-      { name: "BangCoins", url: "https://bangcoins.com/", tier: "A", cooldown: 24 },
-      { name: "Card Crush", url: "https://www.cardcrush.com/home", tier: "S", cooldown: 24 },
-      { name: "Chanced", url: "https://chanced.com/", tier: "C", cooldown: 24 },
-      { name: "Chumba", url: "https://www.chumbacasino.com/", tier: "S", cooldown: 24 },
-      { name: "Cider Casino", url: "https://game.cidercasino.com/", tier: "A", cooldown: 24 },
-      { name: "Clubs", url: "https://play.clubs.poker/", tier: "A", cooldown: 24 },
-      { name: "Coin Wizard", url: "https://www.coinwizardgames.com/", tier: "A", cooldown: 24 },
-      { name: "Coins Royale", url: "https://www.coinsroyale.com/en#login", tier: "A", cooldown: 24 },
-      { name: "CoinsBack Casino", url: "https://www.coinsbackcasino.com/", tier: "A", cooldown: 24 },
-      { name: "Crown Coins", url: "https://crowncoinscasino.com/", tier: "S", cooldown: 24 },
-      { name: "Dara", url: "https://daracasino.com/", tier: "A", cooldown: 24 },
-      { name: "Dogg House", url: "https://www.play.dogghousecasino.com/", tier: "S", cooldown: 24 },
-      { name: "Fliff", url: "https://www.getfliff.com/", tier: "A", cooldown: 24 },
-      { name: "Fortune Wins", url: "https://fortunewins.com/", tier: "S", cooldown: 24 },
-      { name: "Global Poker", url: "https://play.globalpoker.com/", tier: "A", cooldown: 24 },
-      { name: "Golden Hearts", url: "https://goldenheartsgames.com/", tier: "A", cooldown: 24 },
-      { name: "HelloMillions", url: "https://www.hellomillions.com/home", tier: "S", cooldown: 24 },
-      { name: "High5", url: "https://fun.high5casino.com/gc/?originId=2&accountTypeId=1", tier: "B", cooldown: 4 },
-      { name: "Jackpot Daily", url: "https://jackpotdaily.com/", tier: "A", cooldown: 24 },
-      { name: "Jackpot Go", url: "https://jackpotgo.club/", tier: "A", cooldown: 24 },
-      { name: "Jackpota", url: "https://www.jackpota.com/home", tier: "S", cooldown: 24 },
-      { name: "Legendz", url: "https://www.legendz.com/", tier: "S", cooldown: 24 },
-      { name: "Lonestar", url: "https://www.lonestarcasino.com/", tier: "S", cooldown: 24 },
-      { name: "LuckyBits Vegas", url: "https://luckybitsvegas.com/", tier: "B", cooldown: 24 },
-      { name: "LuckyHands", url: "https://luckyhands.com/", tier: "S", cooldown: 24 },
-      { name: "LuckyLand Casino", url: "https://luckylandcasino.com/", tier: "S", cooldown: 24 },
-      { name: "LuckyRush", url: "https://luckyrush.io/wallet", tier: "A", cooldown: 24 },
-      { name: "McLuck", url: "https://www.mcluck.com/home", tier: "S", cooldown: 24 },
-      { name: "MegaBonanza", url: "https://www.megabonanza.com/home", tier: "S", cooldown: 24 },
-      { name: "Modo", url: "https://modo.us/", tier: "S", cooldown: 24 },
-      { name: "Moozi", url: "https://moozi.com/", tier: "A", cooldown: 24 },
-      { name: "MyPrize", url: "https://myprize.us/", tier: "S", cooldown: 24 },
-      { name: "PlayFame", url: "https://playfame.com/", tier: "S", cooldown: 24 },
-      { name: "Pulsz", url: "https://pulsz.com/", tier: "S", cooldown: 24 },
-      { name: "Pulsz Bingo", url: "https://pulszbingo.com/", tier: "S", cooldown: 24 },
-      { name: "RealPrize", url: "https://realprize.com/#", tier: "S", cooldown: 24 },
-      { name: "ReBet", url: "https://rebet.page.link/x3U9G9CNNoFQMzhP7", tier: "S", cooldown: 24 },
-      { name: "Shuffle", url: "https://shuffle.us/", tier: "S", cooldown: 24 },
-      { name: "SpinBlitz", url: "https://www.spinblitz.com/", tier: "S", cooldown: 24 },
-      { name: "Spree", url: "https://spree.com/", tier: "S", cooldown: 24 },
-      { name: "Stake", url: "https://stake.us/?tab=dailyBonus&currency=ltc&modal=wallet", tier: "S", cooldown: 24 },
-      { name: "WOW Vegas", url: "https://www.wowvegas.com/promotions/daily-coin-reward", tier: "S", cooldown: 24 },
-      { name: "Zula", url: "https://zulacasino.com/", tier: "S", cooldown: 24 }
+      { name: "McLuck", url: "https://www.mcluck.com/home", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24 },
+      { name: "Spree", url: "https://spree.com/", tier: "S", dailySC: 0.4, speedHours: 24, reliability: 92, cooldown: 24 },
+      { name: "Pulsz", url: "https://pulsz.com/", tier: "S", dailySC: 0.3, speedHours: 12, reliability: 98, cooldown: 24 },
+      { name: "Crown Coins", url: "https://crowncoinscasino.com/", tier: "S", dailySC: 1.5, speedHours: 6, reliability: 99, cooldown: 24 },
+      { name: "PlayFame", url: "https://playfame.com/", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 90, cooldown: 24 },
+      { name: "Jackpota", url: "https://www.jackpota.com/home", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 91, cooldown: 24 },
+      { name: "Stake", url: "https://stake.us/?tab=dailyBonus&currency=ltc&modal=wallet", tier: "S", dailySC: 1.0, speedHours: 1, reliability: 100, cooldown: 24 },
+      { name: "HelloMillions", url: "https://www.hellomillions.com/home", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 93, cooldown: 24 },
+      { name: "Shuffle", url: "https://shuffle.us/", tier: "S", dailySC: 1.0, speedHours: 1, reliability: 96, cooldown: 24 },
+      { name: "MyPrize", url: "https://myprize.us/", tier: "S", dailySC: 1.0, speedHours: 4, reliability: 94, cooldown: 24 },
+      { name: "Lonestar", url: "https://www.lonestarcasino.com/", tier: "S", dailySC: 0.5, speedHours: 72, reliability: 80, cooldown: 24 },
+      { name: "RealPrize", url: "https://realprize.com/#", tier: "S", dailySC: 1.0, speedHours: 72, reliability: 82, cooldown: 24 },
+      { name: "WOW Vegas", url: "https://www.wowvegas.com/promotions/daily-coin-reward", tier: "S", dailySC: 0.5, speedHours: 12, reliability: 97, cooldown: 24 },
+      { name: "Modo", url: "https://modo.us/", tier: "S", dailySC: 0.5, speedHours: 6, reliability: 98, cooldown: 24 },
+      { name: "SpinBlitz", url: "https://www.spinblitz.com/", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 90, cooldown: 24 },
+      { name: "ReBet", url: "https://rebet.page.link/x3U9G9CNNoFQMzhP7", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 95, cooldown: 24 },
+      { name: "Pulsz Bingo", url: "https://pulszbingo.com/", tier: "S", dailySC: 0.3, speedHours: 12, reliability: 96, cooldown: 24 },
+      { name: "Legendz", url: "https://www.legendz.com/", tier: "S", dailySC: 0.5, speedHours: 2, reliability: 94, cooldown: 24 },
+      { name: "LuckyHands", url: "https://luckyhands.com/", tier: "S", dailySC: 0.5, speedHours: 2, reliability: 92, cooldown: 24 },
+      { name: "MegaBonanza", url: "https://www.megabonanza.com/home", tier: "S", dailySC: 0.2, speedHours: 24, reliability: 90, cooldown: 24 },
+      { name: "Card Crush", url: "https://www.cardcrush.com/home", tier: "S", dailySC: 0.5, speedHours: 24, reliability: 91, cooldown: 24 },
+      { name: "Dogg House", url: "https://www.play.dogghousecasino.com/", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 93, cooldown: 24 },
+      { name: "Zula", url: "https://zulacasino.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 96, cooldown: 24 },
+      { name: "Fortune Wins", url: "https://fortunewins.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24 },
+      { name: "Sportzino", url: "https://sportzino.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 96, cooldown: 24 },
+      { name: "LuckyLand Casino", url: "https://luckylandcasino.com/", tier: "S", dailySC: 0.5, speedHours: 12, reliability: 99, cooldown: 24 },
+      { name: "Chumba", url: "https://www.chumbacasino.com/", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 99, cooldown: 24 },
+      { name: "Coins Royale", url: "https://www.coinsroyale.com/en#login", tier: "A", dailySC: 1.0, speedHours: 12, reliability: 88, cooldown: 24 },
+      { name: "Jackpot Go", url: "https://jackpotgo.club/", tier: "A", dailySC: 0.8, speedHours: 12, reliability: 89, cooldown: 24 },
+      { name: "Cider Casino", url: "https://game.cidercasino.com/", tier: "A", dailySC: 0.8, speedHours: 12, reliability: 87, cooldown: 24 },
+      { name: "High5", url: "https://fun.high5casino.com/gc/?originId=2&accountTypeId=1", tier: "B", dailySC: 0.5, speedHours: 12, reliability: 90, cooldown: 4 },
+      { name: "Fliff", url: "https://www.getfliff.com/", tier: "A", dailySC: 1.0, speedHours: 12, reliability: 95, cooldown: 24 },
+      { name: "Golden Hearts", url: "https://goldenheartsgames.com/", tier: "A", dailySC: 0.25, speedHours: 24, reliability: 94, cooldown: 24 }
     ];
 
     // State
-    let trackedGames = JSON.parse(localStorage.getItem('claude_freebie_ledger') || '[]');
+    let trackedGames = JSON.parse(localStorage.getItem('freebie_ledger_v3') || '[]');
     let currentFilter = 'all';
-
-    // Seed on fresh load
-    if (trackedGames.length === 0) {
-      trackedGames = CATALOG_DATA.slice(0, 15).map(c => ({
-        id: uid(),
-        name: c.name,
-        url: c.url,
-        tier: c.tier,
-        referralUrl: '',
-        cooldownHours: c.cooldown,
-        lastCollected: 0
-      }));
-      persist();
-    }
+    let sortField = 'name';
+    let sortDirection = 'asc';
 
     function persist() {
-      localStorage.setItem('claude_freebie_ledger', JSON.stringify(trackedGames));
+      localStorage.setItem('freebie_ledger_v3', JSON.stringify(trackedGames));
       renderGames();
       updateHeroStats();
     }
@@ -728,6 +779,18 @@
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       el.classList.add('active');
       currentFilter = filter;
+      renderGames();
+    }
+
+    function toggleSortDrawer() {
+      document.getElementById('sortDrawer').classList.toggle('open');
+    }
+
+    function setSortCriteria(field, direction, el) {
+      document.querySelectorAll('.sort-option-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      sortField = field;
+      sortDirection = direction;
       renderGames();
     }
 
@@ -771,7 +834,44 @@
         list = list.filter(g => g.referralUrl && g.referralUrl.trim().length > 0);
       }
 
-      list.sort((a, b) => getCooldownState(a).remainingMs - getCooldownState(b).remainingMs);
+      // Multi-attribute sorting engine
+      const tierRank = { 'S': 4, 'A': 3, 'B': 2, 'C': 1, 'Unranked': 0 };
+
+      list.sort((a, b) => {
+        let valA, valB;
+        if (sortField === 'name') {
+          valA = a.name.toLowerCase();
+          valB = b.name.toLowerCase();
+          return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        } else if (sortField === 'tier') {
+          valA = tierRank[a.tier] || 0;
+          valB = tierRank[b.tier] || 0;
+          return sortDirection === 'asc' ? valB - valA : valA - valB;
+        } else if (sortField === 'dailySC') {
+          valA = a.dailySC || 0;
+          valB = b.dailySC || 0;
+          return sortDirection === 'desc' ? valB - valA : valA - valB;
+        } else if (sortField === 'speed') {
+          valA = a.speedHours || 24;
+          valB = b.speedHours || 24;
+          return sortDirection === 'asc' ? valA - valB : valB - valA;
+        } else if (sortField === 'reliability') {
+          valA = a.reliability || 80;
+          valB = b.reliability || 80;
+          return sortDirection === 'desc' ? valB - valA : valA - valB;
+        }
+        return 0;
+      });
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding: 40px 16px; color:var(--text-dim);">
+            <p style="font-size:1.1rem; margin-bottom:6px;">Nothing tracked yet</p>
+            <p style="font-size:0.8rem;">Select platforms from the Catalog tab or tap Add below</p>
+          </div>
+        `;
+        return;
+      }
 
       list.forEach(game => {
         const { isReady, remainingMs } = getCooldownState(game);
@@ -830,7 +930,7 @@
             <div class="casino-avatar" style="width:36px; height:36px; font-size:0.8rem;">${getInitials(item.name)}</div>
             <div>
               <div class="casino-name" style="font-size:0.9rem;">${item.name}</div>
-              <div class="card-status">${item.tier}-Tier • ${item.cooldown}h</div>
+              <div class="card-status">${item.tier}-Tier • ${item.cooldown}h • Score: ${item.reliability}%</div>
             </div>
           </div>
           <span style="font-size:1.1rem; color:${isTracked ? 'var(--accent-gold)' : 'var(--text-dim)'}; font-weight:bold;">
@@ -852,6 +952,9 @@
           name: item.name,
           url: item.url,
           tier: item.tier,
+          dailySC: item.dailySC,
+          speedHours: item.speedHours,
+          reliability: item.reliability,
           referralUrl: '',
           cooldownHours: item.cooldown,
           lastCollected: 0
@@ -861,7 +964,7 @@
       renderCatalogList();
     }
 
-    // Modal Operations
+    // Modal Handlers
     function openAddModal() {
       document.getElementById('modalHeading').textContent = 'Add a Game';
       document.getElementById('modalGameId').value = '';
@@ -913,6 +1016,9 @@
           referralUrl,
           cooldownHours,
           tier: 'A',
+          dailySC: 1.0,
+          speedHours: 24,
+          reliability: 90,
           lastCollected: 0
         });
       }
@@ -943,6 +1049,9 @@
               referralUrl: '',
               cooldownHours: 24,
               tier: 'A',
+              dailySC: 0.5,
+              speedHours: 24,
+              reliability: 85,
               lastCollected: 0
             });
           }
@@ -957,18 +1066,17 @@
       document.querySelectorAll('.sheet-backdrop').forEach(b => b.classList.remove('open'));
     }
 
-    // Set Date Header
+    // Set Date
     const d = new Date();
     const options = { weekday: 'long', month: 'long', day: 'numeric' };
     document.getElementById('currentDateDisplay').textContent = d.toLocaleDateString('en-US', options).toUpperCase();
 
-    // Auto-refresh timers every minute
     setInterval(() => {
       renderGames();
       updateHeroStats();
     }, 60000);
 
-    // Initial Load
+    // Initial Empty Load
     renderGames();
     updateHeroStats();
   </script>
