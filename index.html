@@ -6,26 +6,33 @@
   <title>The Casino Almanac</title>
   <style>
     :root {
-      --bg-base: #11141a;
-      --bg-surface: #181d26;
-      --bg-card: #1c222e;
-      --bg-card-active: #222a3a;
-      --border-subtle: #293244;
-      --border-focus: #4b5563;
+      /* Deep Cyberpunk Backgrounds */
+      --bg-base: #05090f;
+      --bg-surface: rgba(14, 21, 28, 0.6);
+      --bg-card: rgba(17, 25, 35, 0.7);
+      --bg-card-active: rgba(25, 38, 51, 0.9);
       
-      --accent-gold: #eab308;
-      --accent-gold-hover: #ca8a04;
-      --accent-gold-dim: rgba(234, 179, 8, 0.12);
-      --accent-gold-ring: #d97706;
+      /* Neon Accents */
+      --accent-gold: #ffcc00;
+      --accent-gold-hover: #e6b800;
+      --accent-gold-dim: rgba(255, 204, 0, 0.15);
+      
+      --accent-green: #00ff66;
+      --accent-green-dim: rgba(0, 255, 102, 0.15);
+      
+      --border-subtle: rgba(0, 255, 102, 0.15);
+      --border-focus: rgba(0, 255, 102, 0.5);
 
-      --text-main: #f3f4f6;
-      --text-muted: #8b9bb4;
-      --text-dim: #5c6b84;
+      /* Text */
+      --text-main: #e2f1ec;
+      --text-muted: #829a91;
+      --text-dim: #4d665b;
       
-      --tier-s: #ef4444;
-      --tier-a: #f97316;
-      --tier-b: #3b82f6;
-      --tier-c: #6b7280;
+      /* Tiers (Retained Distinguishable Colors) */
+      --tier-s: #ff0055; /* Neon Red/Pink */
+      --tier-a: #ff8800; /* Neon Orange */
+      --tier-b: #00e5ff; /* Neon Cyan */
+      --tier-c: #8b5cf6; /* Neon Purple */
     }
 
     * {
@@ -37,7 +44,8 @@
     }
 
     body {
-      background-color: var(--bg-base);
+      background: linear-gradient(180deg, #05090f 0%, #0a1118 100%);
+      background-attachment: fixed;
       color: var(--text-main);
       min-height: 100vh;
       padding: 20px 16px 100px;
@@ -61,40 +69,53 @@
     .date-header {
       font-size: 0.72rem;
       font-weight: 700;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--text-dim);
+      color: var(--accent-green);
+      text-shadow: 0 0 8px rgba(0, 255, 102, 0.3);
     }
 
     .btn-settings-gear {
       background: transparent;
       border: none;
-      color: var(--text-dim);
+      color: var(--text-muted);
       font-size: 1.1rem;
       cursor: pointer;
       padding: 4px;
+      transition: color 0.2s;
+    }
+    
+    .btn-settings-gear:hover {
+      color: var(--accent-gold);
     }
 
     .app-title {
-      font-family: "Georgia", serif;
+      font-family: "Courier New", Courier, monospace;
       font-size: 1.85rem;
-      font-weight: 700;
+      font-weight: 800;
       color: var(--text-main);
       margin-bottom: 20px;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.05em;
+      text-transform: uppercase;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+    
+    .app-title span {
+      color: var(--accent-gold);
     }
 
-    /* Hero Card */
+    /* Cyberpunk Hero Card */
     .hero-stat-card {
-      background: linear-gradient(145deg, #222938 0%, #171d27 100%);
-      border: 1px solid var(--border-subtle);
+      background: linear-gradient(145deg, rgba(17, 25, 35, 0.8) 0%, rgba(10, 15, 20, 0.9) 100%);
+      border: 1px solid rgba(255, 204, 0, 0.2);
       border-radius: 20px;
       padding: 20px;
       display: flex;
       align-items: center;
       gap: 18px;
       margin-bottom: 20px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 204, 0, 0.05);
+      backdrop-filter: blur(8px);
     }
 
     .hero-ring-wrapper {
@@ -108,28 +129,30 @@
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      border: 4px solid var(--accent-gold);
+      border: 3px solid var(--accent-green);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.4rem;
+      font-size: 1.5rem;
       font-weight: 800;
       color: #ffffff;
-      background: #19202c;
-      box-shadow: 0 0 16px rgba(234, 179, 8, 0.25);
+      background: rgba(0, 255, 102, 0.05);
+      box-shadow: 0 0 15px rgba(0, 255, 102, 0.3), inset 0 0 10px rgba(0, 255, 102, 0.2);
+      text-shadow: 0 0 8px rgba(0, 255, 102, 0.5);
     }
 
     .hero-details h2 {
       font-size: 1.1rem;
       font-weight: 700;
-      color: #ffffff;
+      color: var(--accent-gold);
       margin-bottom: 4px;
+      text-shadow: 0 0 10px rgba(255, 204, 0, 0.2);
     }
 
     .hero-details p {
       font-size: 0.78rem;
       color: var(--text-muted);
-      font-family: monospace;
+      font-family: "Courier New", Courier, monospace;
     }
 
     /* Navigation Tabs */
@@ -137,11 +160,10 @@
       display: flex;
       gap: 6px;
       margin-bottom: 12px;
-      background: var(--bg-surface);
+      background: rgba(0,0,0,0.4);
       padding: 4px;
       border-radius: 30px;
       border: 1px solid var(--border-subtle);
-      position: relative;
     }
 
     .nav-tab {
@@ -162,9 +184,10 @@
     }
 
     .nav-tab.active {
-      background: #ffffff;
-      color: #11141a;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      background: rgba(0, 255, 102, 0.1);
+      color: var(--accent-green);
+      border: 1px solid rgba(0, 255, 102, 0.3);
+      box-shadow: 0 0 10px rgba(0, 255, 102, 0.1);
     }
 
     /* Filter Chips & Sort Trigger */
@@ -202,16 +225,17 @@
     }
 
     .filter-btn.active {
-      background: #ffffff;
-      color: #11141a;
-      border-color: #ffffff;
+      background: var(--accent-gold-dim);
+      color: var(--accent-gold);
+      border-color: var(--accent-gold);
       font-weight: 600;
+      box-shadow: 0 0 8px rgba(255, 204, 0, 0.2);
     }
 
     .sort-trigger-btn {
       padding: 6px 12px;
       background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
+      border: 1px solid var(--accent-gold);
       border-radius: 20px;
       color: var(--accent-gold);
       font-size: 0.78rem;
@@ -222,72 +246,13 @@
       gap: 4px;
       flex-shrink: 0;
       white-space: nowrap;
+      box-shadow: 0 0 8px rgba(255, 204, 0, 0.1);
     }
     
     .sort-trigger-btn.secondary {
       color: var(--text-main);
-      border-color: var(--border-focus);
-    }
-
-    /* Modal Tier Group Actions */
-    .tier-action-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-    }
-
-    .tier-action-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 8px 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
-    .tier-action-card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .tier-label-badge {
-      font-size: 0.76rem;
-      font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-
-    .tier-btn-pair {
-      display: flex;
-      gap: 4px;
-      width: 100%;
-    }
-
-    .btn-tier-toggle {
-      flex: 1;
-      padding: 6px;
-      border-radius: 6px;
-      border: 1px solid var(--border-subtle);
-      font-size: 0.72rem;
-      font-weight: 700;
-      cursor: pointer;
-      background: #252e3e;
-      color: var(--text-main);
-      transition: all 0.15s;
-    }
-
-    .btn-tier-toggle.add:hover {
-      background: var(--accent-gold);
-      color: #11141a;
-      border-color: var(--accent-gold);
-    }
-
-    .btn-tier-toggle.remove:hover {
-      background: var(--tier-s);
-      color: #ffffff;
-      border-color: var(--tier-s);
+      border-color: var(--border-subtle);
+      box-shadow: none;
     }
 
     /* Active Multi-Sort Priority Stack Display */
@@ -300,9 +265,9 @@
     }
 
     .sort-stack-chip {
-      background: var(--accent-gold-dim);
-      border: 1px solid rgba(234, 179, 8, 0.35);
-      color: var(--accent-gold);
+      background: var(--accent-green-dim);
+      border: 1px solid rgba(0, 255, 102, 0.3);
+      color: var(--accent-green);
       font-size: 0.7rem;
       font-weight: 600;
       padding: 3px 8px;
@@ -329,6 +294,7 @@
       border-radius: 14px;
       padding: 12px 14px;
       margin-bottom: 14px;
+      backdrop-filter: blur(8px);
       animation: fadeIn 0.2s ease-in-out;
     }
 
@@ -359,7 +325,7 @@
 
     .sort-option-btn {
       padding: 8px 10px;
-      background: var(--bg-card);
+      background: rgba(0,0,0,0.3);
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
       color: var(--text-muted);
@@ -369,17 +335,18 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      transition: all 0.2s;
     }
 
     .sort-option-btn.active {
-      border-color: var(--accent-gold);
-      color: var(--accent-gold);
-      background: var(--accent-gold-dim);
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+      background: var(--accent-green-dim);
     }
 
     .sort-priority-num {
-      background: var(--accent-gold);
-      color: #11141a;
+      background: var(--accent-green);
+      color: #05090f;
       width: 16px;
       height: 16px;
       border-radius: 50%;
@@ -412,6 +379,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      backdrop-filter: blur(4px);
     }
 
     .card-left {
@@ -427,27 +395,29 @@
       height: 42px;
       border-radius: 50%;
       border: 2px solid var(--accent-gold);
-      background: #161b24;
+      background: rgba(0,0,0,0.5);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: "Georgia", serif;
-      font-weight: 700;
+      font-family: "Courier New", Courier, monospace;
+      font-weight: 800;
       font-size: 0.9rem;
       color: var(--accent-gold);
       flex-shrink: 0;
-      box-shadow: 0 0 8px rgba(234, 179, 8, 0.15);
+      box-shadow: inset 0 0 10px rgba(255, 204, 0, 0.2);
       cursor: pointer;
-      transition: transform 0.15s;
+      transition: transform 0.15s, box-shadow 0.2s;
     }
 
     .casino-avatar:active {
       transform: scale(0.92);
+      box-shadow: inset 0 0 15px rgba(255, 204, 0, 0.5);
     }
 
     .keen-info-popover {
       display: none;
-      background: #151a24;
+      background: rgba(10, 16, 22, 0.85);
+      backdrop-filter: blur(10px);
       border: 1px dashed var(--accent-gold);
       border-radius: 10px;
       padding: 10px 14px;
@@ -476,8 +446,8 @@
     }
     
     .strategy-row {
-      background: rgba(0, 0, 0, 0.2);
-      border: 1px solid var(--border-subtle);
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(0, 255, 102, 0.2);
       border-radius: 6px;
       overflow: hidden;
       transition: all 0.2s;
@@ -488,8 +458,8 @@
     }
     
     .strategy-row.interactive:hover {
-      border-color: rgba(56, 189, 248, 0.4);
-      background: rgba(56, 189, 248, 0.05);
+      border-color: var(--accent-green);
+      background: rgba(0, 255, 102, 0.05);
     }
     
     .strategy-row-header {
@@ -498,7 +468,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      color: #38bdf8;
+      color: var(--accent-green);
     }
     
     .strategy-row-body {
@@ -506,8 +476,8 @@
       padding: 8px;
       font-size: 0.72rem;
       color: var(--text-main);
-      background: rgba(0,0,0,0.3);
-      border-top: 1px solid var(--border-subtle);
+      background: rgba(0,0,0,0.5);
+      border-top: 1px solid rgba(0, 255, 102, 0.2);
       line-height: 1.4;
     }
     
@@ -544,19 +514,20 @@
 
     .tier-badge {
       font-size: 0.65rem;
-      font-weight: 700;
+      font-weight: 800;
       padding: 1px 5px;
       border-radius: 4px;
       text-transform: uppercase;
+      box-shadow: 0 0 5px rgba(0,0,0,0.5);
     }
 
     .type-badge {
       font-size: 0.62rem;
       padding: 1px 4px;
       border-radius: 4px;
-      background: rgba(56, 189, 248, 0.15);
-      color: #38bdf8;
-      border: 1px solid rgba(56, 189, 248, 0.3);
+      background: rgba(0, 229, 255, 0.15);
+      color: #00e5ff;
+      border: 1px solid rgba(0, 229, 255, 0.3);
     }
 
     .tier-S { background: var(--tier-s); color: #fff; }
@@ -577,12 +548,14 @@
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background: var(--accent-gold);
+      background: var(--accent-green);
       display: inline-block;
+      box-shadow: 0 0 5px var(--accent-green);
     }
 
     .status-dot.cooldown {
       background: var(--text-dim);
+      box-shadow: none;
     }
 
     /* Actions */
@@ -596,24 +569,27 @@
     .btn-open {
       padding: 7px 16px;
       background: var(--accent-gold);
-      color: #14171f;
+      color: #05090f;
       border: none;
       border-radius: 20px;
       font-size: 0.8rem;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
     }
 
     .btn-open.cooldown {
-      background: #252e3e;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid var(--border-subtle);
       color: var(--text-muted);
       font-weight: 600;
       font-size: 0.72rem;
-      padding: 7px 12px;
+      padding: 6px 12px;
+      box-shadow: none;
     }
 
     .btn-dots {
@@ -629,13 +605,19 @@
     .catalog-search {
       width: 100%;
       padding: 10px 16px;
-      background: var(--bg-surface);
+      background: rgba(0,0,0,0.4);
       border: 1px solid var(--border-subtle);
       border-radius: 12px;
       color: var(--text-main);
       font-size: 0.88rem;
       margin-bottom: 12px;
       outline: none;
+      backdrop-filter: blur(4px);
+    }
+    
+    .catalog-search:focus {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 8px rgba(0, 255, 102, 0.2);
     }
 
     .catalog-item-row {
@@ -647,10 +629,13 @@
       align-items: center;
       justify-content: space-between;
       cursor: pointer;
+      backdrop-filter: blur(4px);
     }
 
     .catalog-item-row.tracked {
-      border-color: rgba(234, 179, 8, 0.4);
+      border-color: rgba(0, 255, 102, 0.5);
+      background: rgba(0, 255, 102, 0.03);
+      box-shadow: inset 0 0 10px rgba(0, 255, 102, 0.05);
     }
 
     /* Docked Footer */
@@ -659,8 +644,8 @@
       bottom: 0;
       left: 0;
       right: 0;
-      background: rgba(17, 20, 26, 0.94);
-      backdrop-filter: blur(10px);
+      background: rgba(5, 9, 15, 0.85);
+      backdrop-filter: blur(12px);
       border-top: 1px solid var(--border-subtle);
       padding: 12px 16px;
       display: flex;
@@ -673,10 +658,10 @@
       flex: 1;
       max-width: 240px;
       padding: 11px 16px;
-      background: #252d3d;
+      background: rgba(17, 25, 35, 0.8);
       border: 1px solid var(--border-subtle);
       border-radius: 10px;
-      color: var(--text-main);
+      color: var(--accent-green);
       font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
@@ -684,13 +669,20 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
+      transition: all 0.2s;
+    }
+    
+    .btn-dock:hover {
+      background: var(--accent-green-dim);
+      border-color: var(--accent-green);
+      box-shadow: 0 0 10px rgba(0, 255, 102, 0.2);
     }
 
     /* Landing Screen Overlay */
     .landing-screen {
       position: fixed;
       inset: 0;
-      background: #0d1017;
+      background: #05090f;
       z-index: 200;
       display: flex;
       flex-direction: column;
@@ -708,43 +700,242 @@
     }
 
     .landing-title {
-      font-family: "Georgia", serif;
+      font-family: "Courier New", Courier, monospace;
       font-size: 2.2rem;
-      color: #ffffff;
-      letter-spacing: -0.02em;
+      color: var(--text-main);
+      letter-spacing: -0.05em;
       margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    
+    .landing-title span {
+      color: var(--accent-gold);
     }
 
     .landing-subtitle {
       font-size: 0.85rem;
-      color: var(--text-dim);
+      color: var(--accent-green);
       margin-bottom: 36px;
       font-family: monospace;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.1em;
+      text-shadow: 0 0 8px rgba(0, 255, 102, 0.3);
     }
 
     .landing-btn {
       padding: 12px 32px;
       background: var(--accent-gold);
-      color: #11141a;
+      color: #05090f;
       border: none;
       border-radius: 30px;
       font-size: 0.9rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
+    }
+
+    /* Modals & Popovers (Glassmorphism) */
+    .sheet-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(2px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .sheet-backdrop.open {
+      display: flex;
+    }
+
+    /* Floating Transparent Adjustments for Group Add Modal */
+    #bulkTierModal.sheet-backdrop {
+      background: rgba(0, 0, 0, 0.15); /* Very light background */
+      backdrop-filter: blur(0px); /* No blur so list is visible */
+      align-items: flex-start;
+      padding-top: 15vh; /* Float near top */
+    }
+
+    .sheet-modal {
+      background: rgba(10, 16, 22, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--accent-green);
+      box-shadow: 0 0 30px rgba(0, 255, 102, 0.15);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 440px;
+      padding: 20px;
+    }
+
+    .sheet-modal h3 {
+      font-size: 1.25rem;
+      color: var(--accent-gold);
+      margin-bottom: 8px;
+      font-family: "Courier New", Courier, monospace;
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+    }
+
+    /* Modal Tier Group Actions */
+    .tier-action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .tier-action-card {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(0, 255, 102, 0.2);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .tier-action-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tier-btn-pair {
+      display: flex;
+      gap: 4px;
+      width: 100%;
+    }
+
+    .btn-tier-toggle {
+      flex: 1;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      font-size: 0.72rem;
       font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 4px 20px rgba(234, 179, 8, 0.25);
+      background: rgba(17, 25, 35, 0.8);
+      color: var(--text-main);
+      transition: all 0.15s;
+    }
+
+    .btn-tier-toggle.add:hover {
+      background: var(--accent-green);
+      color: #05090f;
+      border-color: var(--accent-green);
+      box-shadow: 0 0 10px rgba(0, 255, 102, 0.3);
+    }
+
+    .btn-tier-toggle.remove:hover {
+      background: var(--tier-s);
+      color: #ffffff;
+      border-color: var(--tier-s);
+      box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--accent-green);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(0,0,0,0.5);
+      color: var(--text-main);
+      font-size: 0.88rem;
+    }
+    
+    .form-group input:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 8px rgba(255, 204, 0, 0.2);
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.88rem;
+    }
+
+    .toggle-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent-green);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      flex: 1;
+      padding: 10px;
+      background: var(--accent-gold);
+      color: #05090f;
+      border: none;
+      border-radius: 8px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(255, 204, 0, 0.2);
+    }
+
+    .btn-cancel {
+      flex: 1;
+      padding: 10px;
+      background: rgba(17, 25, 35, 0.8);
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-danger {
+      flex: 1;
+      padding: 10px;
+      background: rgba(255, 0, 85, 0.15);
+      border: 1px solid var(--tier-s);
+      color: var(--tier-s);
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-danger:hover {
+      background: var(--tier-s);
+      color: #fff;
+      box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);
     }
 
     /* Tour Tooltip */
     .tour-tooltip-box {
       position: fixed;
-      background: var(--accent-gold);
-      color: #11141a;
+      background: var(--accent-green);
+      color: #05090f;
       padding: 12px 14px;
       border-radius: 12px;
       font-size: 0.82rem;
-      font-weight: 700;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      font-weight: 800;
+      box-shadow: 0 10px 30px rgba(0, 255, 102, 0.3);
       z-index: 150;
       cursor: pointer;
       display: none;
@@ -761,136 +952,19 @@
       transform: translateX(-50%);
       border-width: 0 8px 8px 8px;
       border-style: solid;
-      border-color: transparent transparent var(--accent-gold) transparent;
+      border-color: transparent transparent var(--accent-green) transparent;
     }
 
     .tour-advance-subtext {
       display: block;
       font-size: 0.65rem;
-      font-weight: 700;
-      color: rgba(17, 20, 26, 0.7);
+      font-weight: 800;
+      color: rgba(5, 9, 15, 0.7);
       text-transform: uppercase;
       letter-spacing: 0.04em;
       margin-top: 6px;
       border-top: 1px solid rgba(0, 0, 0, 0.15);
       padding-top: 4px;
-    }
-
-    /* Modals & Popovers */
-    .sheet-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(4px);
-      z-index: 100;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-    }
-
-    .sheet-backdrop.open {
-      display: flex;
-    }
-
-    .sheet-modal {
-      background: #1c222e;
-      border: 1px solid var(--border-subtle);
-      border-radius: 16px;
-      width: 100%;
-      max-width: 440px;
-      padding: 20px;
-    }
-
-    .sheet-modal h3 {
-      font-size: 1.25rem;
-      color: var(--accent-gold);
-      margin-bottom: 8px;
-      font-family: "Georgia", serif;
-    }
-
-    .form-group {
-      margin-bottom: 12px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-bottom: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .form-group input, .form-group textarea, .form-group select {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border-subtle);
-      background: #14171f;
-      color: var(--text-main);
-      font-size: 0.88rem;
-    }
-
-    .toggle-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border-subtle);
-      font-size: 0.88rem;
-    }
-
-    .toggle-row input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--accent-gold);
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 16px;
-      flex-wrap: wrap;
-    }
-
-    .btn-primary {
-      flex: 1;
-      padding: 10px;
-      background: var(--accent-gold);
-      color: #11141a;
-      border: none;
-      border-radius: 8px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .btn-cancel {
-      flex: 1;
-      padding: 10px;
-      background: #252d3d;
-      color: var(--text-muted);
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .btn-danger {
-      flex: 1;
-      padding: 10px;
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid var(--tier-s);
-      color: var(--tier-s);
-      border-radius: 8px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-
-    .btn-danger:hover {
-      background: var(--tier-s);
-      color: #fff;
     }
   </style>
 </head>
@@ -898,12 +972,12 @@
 
   <!-- Full-Screen Minimal Landing Page -->
   <div id="landingScreen" class="landing-screen">
-    <h1 class="landing-title">The Casino Almanac</h1>
+    <h1 class="landing-title">The Casino <span>Almanac</span></h1>
     <p class="landing-subtitle">DAILY DROPS • TIMERS • REDEMPTIONS</p>
-    <button class="landing-btn" onclick="dismissLanding()">Enter Almanac →</button>
+    <button class="landing-btn" onclick="dismissLanding()">ENTER ALMANAC →</button>
   </div>
 
-  <!-- Dynamic Anchor Tour Pointer with Physical Arrow -->
+  <!-- Dynamic Anchor Tour Pointer -->
   <div id="tourBox" class="tour-tooltip-box" onclick="advanceTourStep()">
     <div id="tourBody"></div>
     <span class="tour-advance-subtext" id="tourSubtext">Click to advance</span>
@@ -914,7 +988,7 @@
       <div class="date-header" id="currentDateDisplay">TODAY</div>
       <button class="btn-settings-gear" onclick="openSettingsModal()">⚙️</button>
     </div>
-    <h1 class="app-title">The Casino Almanac</h1>
+    <h1 class="app-title">The Casino <span>Almanac</span></h1>
 
     <!-- Hero Counter -->
     <div class="hero-stat-card">
@@ -930,7 +1004,7 @@
     <!-- Navigation Tabs -->
     <div class="nav-pill-group" id="navGroup">
       <button class="nav-tab active" id="tabPlatforms" onclick="switchMainTab('games', this)">🎰 Platforms</button>
-      <button class="nav-tab" id="tabCatalog" onclick="switchMainTab('catalog', this)">📁 Casino Catalogue</button>
+      <button class="nav-tab" id="tabCatalog" onclick="switchMainTab('catalog', this)">📁 Catalogue</button>
       <button class="nav-tab" id="tabResources" onclick="switchMainTab('resources', this)">📚 Resources</button>
     </div>
 
@@ -956,7 +1030,7 @@
       <div id="sortDrawerGames" class="sort-drawer">
         <div class="sort-drawer-header">
           <span>Sort Stack (Priority: First Clicked)</span>
-          <span style="cursor:pointer; color:var(--accent-gold);" onclick="clearSortStack('games')">Clear All</span>
+          <span style="cursor:pointer; color:var(--accent-green);" onclick="clearSortStack('games')">Clear All</span>
         </div>
         <div class="sort-options-grid">
           <button class="sort-option-btn" data-key="tier" onclick="toggleSortKey('tier', 'games')">
@@ -1017,7 +1091,7 @@
       <div id="sortDrawerCatalog" class="sort-drawer">
         <div class="sort-drawer-header">
           <span>Sort Stack (Priority: First Clicked)</span>
-          <span style="cursor:pointer; color:var(--accent-gold);" onclick="clearSortStack('catalog')">Clear All</span>
+          <span style="cursor:pointer; color:var(--accent-green);" onclick="clearSortStack('catalog')">Clear All</span>
         </div>
         <div class="sort-options-grid">
           <button class="sort-option-btn" data-key="tier" onclick="toggleSortKey('tier', 'catalog')">
@@ -1054,21 +1128,21 @@
     <section id="viewResources" style="display: none;">
       
       <!-- Notes & Best Practices Section -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 10px 12px; margin-bottom:14px; border-color: rgba(56, 189, 248, 0.4); background: #1a2230;">
-        <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: #38bdf8; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 6px; margin-bottom: 10px;">
+      <div style="background: rgba(17, 25, 35, 0.7); border: 1px solid rgba(0, 255, 102, 0.3); border-radius: 12px; padding: 10px 12px; margin-bottom:14px; backdrop-filter: blur(4px);">
+        <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--accent-green); border-bottom: 1px solid rgba(0, 255, 102, 0.2); padding-bottom: 6px; margin-bottom: 10px;">
           <span>NOTES & BEST PRACTICES</span>
         </div>
         
         <div style="font-size:0.8rem; color:var(--text-main); display:flex; flex-direction:column; gap:12px;">
           <div style="margin-bottom: 4px;">
-            <span style="background: rgba(234, 179, 8, 0.15); color: var(--accent-gold); padding: 3px 6px; border-radius: 4px; font-weight: 700; font-size: 0.75rem;">★ Starred games</span> = preferred pick. Quick tips by category:
+            <span style="background: rgba(255, 204, 0, 0.15); color: var(--accent-gold); padding: 3px 6px; border-radius: 4px; font-weight: 700; font-size: 0.75rem; border: 1px solid rgba(255, 204, 0, 0.3);">★ Starred games</span> = preferred pick. Quick tips by category:
           </div>
 
           <div style="display:flex; align-items:flex-start; gap:8px;">
             <span style="font-size:1.1rem; line-height: 1;">🎯</span>
             <div>
               <strong style="font-size:0.9rem;">Plinko</strong> <span style="color:var(--text-muted); font-family: monospace;">Low volatility · 14 lines · small bet</span><br/>
-              <a href="https://sweepsgrail.com/guides/" target="_blank" style="color:#38bdf8; text-decoration:none; display:inline-block; margin-top:4px; font-weight:700;">▶ Plinko strategy</a>
+              <a href="https://sweepsgrail.com/guides/" target="_blank" style="color:var(--accent-green); text-decoration:none; display:inline-block; margin-top:4px; font-weight:700;">▶ Plinko strategy</a>
             </div>
           </div>
           
@@ -1076,7 +1150,7 @@
             <span style="font-size:1.1rem; line-height: 1;">🃏</span>
             <div>
               <strong style="font-size:0.9rem;">Blackjack</strong> <span style="color:var(--text-muted); font-family: monospace;">Small bet · no martingale</span><br/>
-              <a href="https://sweepsgrail.com/guides/" target="_blank" style="color:#38bdf8; text-decoration:none; display:inline-block; margin-top:4px; font-weight:700;">Basic strategy guide →</a>
+              <a href="https://sweepsgrail.com/guides/" target="_blank" style="color:var(--accent-green); text-decoration:none; display:inline-block; margin-top:4px; font-weight:700;">Basic strategy guide →</a>
             </div>
           </div>
           
@@ -1091,7 +1165,7 @@
             <span style="font-size:1.1rem; line-height: 1;">💣</span>
             <div>
               <strong style="font-size:0.9rem;">Dice / Mines / Limbo</strong><br/>
-              <a href="https://sweepsgrail.com/guides/" target="_blank" style="color:#38bdf8; text-decoration:none; display:inline-block; margin-top:4px; font-weight:700;">▶ 99% RTP dice strategy</a>
+              <a href="https://sweepsgrail.com/guides/" target="_blank" style="color:var(--accent-green); text-decoration:none; display:inline-block; margin-top:4px; font-weight:700;">▶ 99% RTP dice strategy</a>
             </div>
           </div>
           
@@ -1142,7 +1216,7 @@
     <button class="btn-dock" onclick="openImportModal()">⇩ Bulk Import</button>
   </div>
 
-  <!-- Group Add Bulk Tier Modal -->
+  <!-- Group Add Bulk Tier Modal (Floating/Transparent) -->
   <div id="bulkTierModal" class="sheet-backdrop">
     <div class="sheet-modal">
       <h3 style="color:var(--accent-gold); margin-bottom: 4px;">⚡ Bulk Group Add</h3>
@@ -1203,7 +1277,7 @@
       </div>
       <div style="margin-top: 14px;">
         <button class="btn-dock" style="max-width:100%; width:100%; margin-bottom:8px;" onclick="restartTourFromSettings()">Restart Interactive Tour</button>
-        <button class="btn-dock" style="max-width:100%; width:100%; color:var(--tier-s);" onclick="resetTrackerData()">Reset All Tracked Data</button>
+        <button class="btn-dock" style="max-width:100%; width:100%; color:var(--tier-s); border-color:var(--tier-s);" onclick="resetTrackerData()">Reset All Tracked Data</button>
       </div>
       <div class="modal-actions">
         <button class="btn-primary" onclick="closeModals()">Done</button>
@@ -1499,10 +1573,10 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
 
     // Strategy Content Config
     const STRATEGY_TIPS = {
-      plinko: "<strong>Setup:</strong> Low volatility · 14 lines · small bet<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:#38bdf8; text-decoration:none; margin-top:8px; display:inline-block;'>▶ Plinko strategy</a>",
-      bj: "<strong>Setup:</strong> Small bet · no martingale<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:#38bdf8; text-decoration:none; margin-top:8px; display:inline-block;'>Basic strategy guide →</a>",
+      plinko: "<strong>Setup:</strong> Low volatility · 14 lines · small bet<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:var(--accent-green); text-decoration:none; margin-top:8px; display:inline-block;'>▶ Plinko strategy</a>",
+      bj: "<strong>Setup:</strong> Small bet · no martingale<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:var(--accent-green); text-decoration:none; margin-top:8px; display:inline-block;'>Basic strategy guide →</a>",
       slots: "<strong>Setup:</strong> Smallest bet. Max lines if adjustable.",
-      dice: "<strong>Setup:</strong> Try on Mines, Limbo, or Dice.<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:#38bdf8; text-decoration:none; margin-top:8px; display:inline-block;'>▶ 99% RTP dice strategy</a>"
+      dice: "<strong>Setup:</strong> Try on Mines, Limbo, or Dice.<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:var(--accent-green); text-decoration:none; margin-top:8px; display:inline-block;'>▶ 99% RTP dice strategy</a>"
     };
 
     function makeStrategyItem(iconTitle, gameName, tipHtml) {
@@ -1774,7 +1848,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
             </div>
             <div class="card-actions">
               <button class="btn-open ${isReady ? '' : 'cooldown'}" onclick="collect('${game.id}')">
-                ${isReady ? 'Open' : formatTime(remainingMs)}
+                ${isReady ? 'OPEN' : formatTime(remainingMs)}
               </button>
               <button class="btn-dots" onclick="openEditModal('${game.id}')">⋯</button>
             </div>
@@ -1783,7 +1857,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
             <div class="keen-title">Keen Info • Min Redeem: ${game.minRedeem || 'Varies'}</div>
             ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.7rem; margin-bottom:4px;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
             <div>${game.notes || 'No specific warning flags. 24h standard reset cycle.'}</div>
-            ${goToGames ? `<div style="color:#38bdf8; font-size:0.75rem; margin-top:10px; border-top:1px solid rgba(56, 189, 248, 0.2); padding-top:6px;"><strong>Recommended Go-To Games:</strong>${goToGames}</div>` : ''}
+            ${goToGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid rgba(0, 255, 102, 0.2); padding-top:6px;"><strong>Recommended Go-To Games:</strong>${goToGames}</div>` : ''}
           </div>
         `;
         container.appendChild(cardWrapper);
@@ -1836,7 +1910,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
                 <div class="card-status">$${item.dailySC.toFixed(2)}${item.scIsAveraged ? '*' : ''} daily • ${item.cooldown}h • Score: ${item.reliability}%</div>
               </div>
             </div>
-            <span ${index === 0 ? 'id="tourAddTarget"' : ''} style="font-size:1.1rem; color:${isTracked ? 'var(--accent-gold)' : 'var(--text-dim)'}; font-weight:bold; padding: 4px 8px;">
+            <span ${index === 0 ? 'id="tourAddTarget"' : ''} style="font-size:1.1rem; color:${isTracked ? 'var(--accent-green)' : 'var(--text-dim)'}; font-weight:bold; padding: 4px 8px; text-shadow: ${isTracked ? '0 0 10px rgba(0, 255, 102, 0.5)' : 'none'};">
               ${isTracked ? '✓' : '+'}
             </span>
           </div>
@@ -1844,7 +1918,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
             <div class="keen-title">${item.name} • Min Redeem: ${item.minRedeem || 'Varies'}</div>
             ${item.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.7rem; margin-bottom:4px;">*Averaged from reported range ${item.scRange}/day</div>` : ''}
             <div>${item.notes || 'No critical flags. Normal 1x playthrough.'}</div>
-            ${item.bestGames ? `<div style="color:#38bdf8; font-size:0.75rem; margin-top:10px; border-top:1px solid rgba(56, 189, 248, 0.2); padding-top:6px;"><strong>Recommended Go-To Games:</strong>${item.bestGames}</div>` : ''}
+            ${item.bestGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid rgba(0, 255, 102, 0.2); padding-top:6px;"><strong>Recommended Go-To Games:</strong>${item.bestGames}</div>` : ''}
           </div>
         `;
         container.appendChild(cardWrapper);
@@ -2079,7 +2153,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
 
     function startTour() {
       tourStep = 1;
-      positionTourBox('tabCatalog', '☝️ Tap Casino Catalogue to browse & pick platforms');
+      positionTourBox('tabCatalog', '☝️ Tap Catalogue to browse & pick platforms');
     }
 
     function advanceTourStep() {
@@ -2087,7 +2161,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       if (tourStep === 2) {
         switchMainTab('catalog', document.getElementById('tabCatalog'));
         setTimeout(() => {
-          positionTourBox('tourAvatarTarget', '☝️ Tap any circular avatar to view keen terms & limits');
+          positionTourBox('tourAvatarTarget', '☝️ Tap any circular avatar to view keen terms & strategy tips');
         }, 150);
       } else if (tourStep === 3) {
         positionTourBox('tourAddTarget', '☝️ Tap + anywhere to add the platform to your ledger');
