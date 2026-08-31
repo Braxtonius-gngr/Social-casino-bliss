@@ -438,12 +438,12 @@
       justify-content: center;
     }
 
-    /* Bulk Tier Panel */
+    /* Highly Translucent Inline Bulk Tier Panel */
     .bulk-tier-panel {
       display: none;
-      background: rgba(10, 15, 26, 0.45);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      background: rgba(10, 15, 26, 0.25);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1.5px solid var(--neon-orange);
       box-shadow: 0 0 25px var(--neon-orange-glow), inset 0 0 20px rgba(255, 119, 0, 0.05);
       border-radius: 16px;
@@ -1024,7 +1024,7 @@
     .form-group input:focus, .form-group textarea:focus {
       outline: none;
       border-color: var(--neon-cyan);
-      box-shadow: 0 0 12px var(--neon-cyan-glow); N8RB6KQT
+      box-shadow: 0 0 12px var(--neon-cyan-glow);
     }
 
     .toggle-row {
@@ -1250,7 +1250,7 @@
 
     <!-- View: Casino Catalogue -->
     <section id="viewCatalog" style="display: none;">
-      <input type="text" id="catalogSearchInput" class="catalog-search" placeholder="Search 85+ verified sweepstakes platforms..." oninput="renderCatalogList()" />
+      <input type="text" id="catalogSearchInput" class="catalog-search" placeholder="Search 134 verified sweepstakes platforms..." oninput="renderCatalogList()" />
       
       <div class="filter-sort-row">
         <div class="filter-chips">
@@ -1615,15 +1615,15 @@ Yayz,–,–,–,–,–
 Zula,–,–,★ Epic Joker,–,★ Balloon Mania
 Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
 
-    // 85+ Verified Platforms
+    // 134 Verified Platforms
     const CATALOG_DATA = [
-      { name: "Stake", url: "https://stake.us/?tab=dailyBonus&currency=ltc&modal=wallet", tier: "S", dailySC: 1.0, speedHours: 1, reliability: 100, cooldown: 24, hasLive: true, minRedeem: "50 Crypto", notes: "Instant crypto payouts. 3x playthrough requirement on Stake Cash." },
       { name: "McLuck", url: "https://www.mcluck.com/home", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24, hasLive: true, minRedeem: "10 GC / 75 Cash", notes: "Use GC to farm VIP level before spinning SC. 1x playthrough on SC." },
       { name: "Spree", url: "https://spree.com/", tier: "S", dailySC: 0.4, speedHours: 24, reliability: 92, cooldown: 24, hasLive: true, minRedeem: "10 GC / 75 Cash", notes: "Regular extra free spins given away. Highly reputable. 1x playthrough." },
       { name: "Pulsz", url: "https://pulsz.com/", tier: "S", dailySC: 0.3, speedHours: 12, reliability: 98, cooldown: 24, hasLive: false, minRedeem: "10 GC / 100 Cash", notes: "Huge welcome offers & sales. Top starter casino." },
       { name: "Crown Coins", url: "https://crowncoinscasino.com/", tier: "S", dailySC: 1.5, speedHours: 6, reliability: 99, cooldown: 24, hasLive: false, minRedeem: "50 GC / 100 Cash", notes: "Top tier, daily streak increases with VIP level. Fast redemptions." },
       { name: "PlayFame", url: "https://playfame.com/", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 90, cooldown: 24, hasLive: true, minRedeem: "10 GC / 75 Cash", notes: "Great welcome deals and expansive Pragmatic catalog." },
       { name: "Jackpota", url: "https://www.jackpota.com/home", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 91, cooldown: 24, hasLive: true, minRedeem: "10 GC / 75 Cash", notes: "Juicy daily coin sales and quick debit payouts." },
+      { name: "Stake", url: "https://stake.us/?tab=dailyBonus&currency=ltc&modal=wallet", tier: "S", dailySC: 1.0, speedHours: 1, reliability: 100, cooldown: 24, hasLive: true, minRedeem: "50 Crypto", notes: "Instant crypto payouts. 3x playthrough requirement on Stake Cash." },
       { name: "HelloMillions", url: "https://www.hellomillions.com/home", tier: "S", dailySC: 0.25, speedHours: 24, reliability: 93, cooldown: 24, hasLive: true, minRedeem: "10 GC / 75 Cash", notes: "Solid Pragmatic games & regular discount bundles." },
       { name: "Shuffle", url: "https://shuffle.us/", tier: "S", dailySC: 1.0, speedHours: 1, reliability: 96, cooldown: 24, hasLive: true, minRedeem: "50 Crypto", notes: "1 SC daily streak. Instant near-zero fee crypto redeem. 3x rollover." },
       { name: "MyPrize", url: "https://myprize.us/", tier: "S", dailySC: 1.0, speedHours: 4, reliability: 94, cooldown: 24, hasLive: true, minRedeem: "100 Cash / Crypto", notes: "1x playthrough requirement with live multipliers." },
@@ -1644,10 +1644,10 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       { name: "Sportzino", url: "https://sportzino.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 96, cooldown: 24, hasLive: false, minRedeem: "10 GC / 50 Cash", notes: "Full sportsbook + casino. 1 SC daily. 1x playthrough." },
       { name: "LuckyLand Casino", url: "https://luckylandcasino.com/", tier: "S", dailySC: 0.5, speedHours: 12, reliability: 99, cooldown: 24, hasLive: false, minRedeem: "10 GC / 50 Cash", notes: "VGW sister to Chumba. Great daily streak." },
       { name: "Chumba", url: "https://www.chumbacasino.com/", tier: "S", dailySC: 1.0, speedHours: 12, reliability: 99, cooldown: 24, hasLive: true, minRedeem: "10 GC / 100 Cash", notes: "Weekly scratcher giveaways and rock-solid payouts." },
-      { name: "Fliff", url: "https://www.getfliff.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Social sportsbook. 1x playthrough on Fliff Cash." },
-      { name: "Yay Casino", url: "https://www.yaycasino.com/lobby", tier: "S", dailySC: 0.8, speedHours: 24, reliability: 92, cooldown: 24, hasLive: true, minRedeem: "50 Crypto", notes: "Zula sister site; Best: Luck n Clovers; crypto-native." },
       { name: "Coins Royale", url: "https://www.coinsroyale.com/en#login", tier: "A", dailySC: 1.0, speedHours: 12, reliability: 88, cooldown: 24, hasLive: true, minRedeem: "50 Cash / Crypto", notes: "Daily wheel spin bonus and 1x playthrough." },
       { name: "Jackpot Go", url: "https://jackpotgo.club/", tier: "A", dailySC: 0.8, speedHours: 12, reliability: 89, cooldown: 24, hasLive: false, minRedeem: "Varies", notes: "5.5 SC/day with weekly subscription. Social gaming hub." },
+      { name: "High5", url: "https://fun.high5casino.com/gc/?originId=2&accountTypeId=1", tier: "B", dailySC: 0.5, speedHours: 12, reliability: 90, cooldown: 4, hasLive: true, minRedeem: "50 GC / 100 Cash", notes: "4-Hour reload diamonds timer! Watch for bonus playthrough." },
+      { name: "Yay Casino", url: "https://www.yaycasino.com/lobby", tier: "S", dailySC: 0.8, speedHours: 24, reliability: 92, cooldown: 24, hasLive: true, minRedeem: "50 Crypto", notes: "Zula sister site; Best: Luck n Clovers; crypto-native." },
       { name: "American Luck", url: "https://americanluck.com/", tier: "A", dailySC: 0.65, speedHours: 24, reliability: 82, cooldown: 24, hasLive: false, minRedeem: "25 GC / 50 Cash", notes: "Zula sister site, slightly lower daily; Best: 1000x Busta" },
       { name: "Baba Casino", url: "https://play.babacasino.com/", tier: "A", dailySC: 0.6, speedHours: 24, reliability: 74, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Verify early - some report KYC trouble here. 1x playthrough." },
       { name: "Fortune Coins", url: "https://www.fortunecoins.com/", tier: "A", dailySC: 0.5, speedHours: 24, reliability: 82, cooldown: 24, hasLive: false, minRedeem: "50 Cash (5k FC)", notes: "Best: Dice Twice. 1x playthrough requirement." },
@@ -1657,68 +1657,22 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       { name: "Side Pot", url: "https://sidepot.us/", tier: "A", dailySC: 1.0, speedHours: 24, reliability: 82, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Fliff sister site; daily requires play activity from previous day." },
       { name: "Spin Pals", url: "https://www.spinpals.com/", tier: "A", dailySC: 0.7, speedHours: 24, reliability: 82, cooldown: 24, hasLive: false, minRedeem: "50 Cash / GC", notes: "Daily wheel spin + login bonus; Best: AutoRoulette" },
       { name: "Win Bonanza", url: "https://winbonanza.com/", tier: "A", dailySC: 1.0, speedHours: 24, reliability: 82, cooldown: 24, hasLive: false, minRedeem: "100 Cash", notes: "Fortune Coins clone. 1x wagering required." },
-      { name: "Yotta", url: "https://members.withyotta.com/login", tier: "A", dailySC: 0.5, speedHours: 24, reliability: 85, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough on YottaCash; direct ACH checking deposit." },
-      { name: "High5", url: "https://fun.high5casino.com/gc/?originId=2&accountTypeId=1", tier: "B", dailySC: 0.5, speedHours: 12, reliability: 90, cooldown: 4, hasLive: true, minRedeem: "50 GC / 100 Cash", notes: "4-Hour reload diamonds timer! Watch for bonus playthrough." },
-      { name: "Cashoomo", url: "https://cashoomo.com/", tier: "B", dailySC: 0.62, speedHours: 24, reliability: 36, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Purchase required for full daily; redemptions reportedly very slow." },
+      { name: "Cashoomo", url: "https://cashoomo.com/", tier: "B", dailySC: 0.62, scIsAveraged: true, scRange: "0.25–1.00", speedHours: 24, reliability: 36, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Purchase required for full daily; redemptions reportedly very slow." },
       { name: "Clubs Poker", url: "https://play.clubs.poker/", tier: "B", dailySC: 0.2, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Poker + slots, occasional real-money freerolls." },
       { name: "Dara Casino", url: "https://daracasino.com/", tier: "B", dailySC: 0.45, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Collect via + then Daily bonus; Best: Mines" },
-      { name: "Ember Fund", url: "https://emberfund.io/", tier: "B", dailySC: 0.85, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "$5–$10 BTC", notes: "Up to 1.50/day via referrals; weekly batch processing." },
+      { name: "Ember Fund", url: "https://emberfund.io/", tier: "B", dailySC: 0.85, scIsAveraged: true, scRange: "0.20–1.50", speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "$5–$10 BTC", notes: "Up to 1.50/day via referrals; weekly batch processing." },
       { name: "Goldenhearts Games", url: "https://goldenheartsgames.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "25 GC / 50 Cash", notes: "Best: Blackjack > Go Bananza. 1x playthrough on redeemables." },
       { name: "Jefe Bet", url: "https://jefebet.com/", tier: "B", dailySC: 0.2, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Best: Blackjack. 1x wagering requirement." },
       { name: "Lionsden Games", url: "https://lionsdengames.net/", tier: "B", dailySC: 1.0, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "Varies", notes: "Daily only given once balance drops under 1 SC." },
       { name: "Luckybits Vegas", url: "https://luckybitsvegas.com/", tier: "B", dailySC: 0.3, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "High5 sister site. 1x rollover requirement on SC." },
       { name: "Lunaland Casino", url: "https://lunalandcasino.com/", tier: "B", dailySC: 0.3, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Crown Coins clone, good promos. 1x playthrough." },
-      { name: "Moozi", url: "https://moozi.com/", tier: "B", dailySC: 0.55, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "Better daily at higher VIP; Best: Supreme 777" },
+      { name: "Moozi", url: "https://moozi.com/", tier: "B", dailySC: 0.55, scIsAveraged: true, scRange: "0.30–0.80", speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "Better daily at higher VIP; Best: Supreme 777" },
       { name: "Rolla", url: "https://www.rolla.com/login?redirect=/promotions/welcome-coins", tier: "B", dailySC: 0.2, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "WOW Vegas sister site; 1 SC/day for first 30 days, then 0.20" },
       { name: "Roxy Moxy", url: "https://roxymoxy.com/", tier: "B", dailySC: 0.3, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Best: Go High Joker. 1x wagering on promotional SC." },
       { name: "Ruby Sweeps", url: "https://rubysweeps.com/", tier: "B", dailySC: 0.2, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Daily wheel spin; Best: Harvest. 1x rollover on Emeralds." },
       { name: "Spin Quest", url: "https://spinquest.com/", tier: "B", dailySC: 1.0, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "5x playthrough on table games, 1x on slots." },
       { name: "Spindoo", url: "https://www.spindoo.us/", tier: "B", dailySC: 0.3, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash / GC", notes: "McLuck clone. 1x playthrough on promotional SC." },
       { name: "Wildworld Casino", url: "https://wildworldcasino.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional sweepstakes coins." },
-      { name: "Hush Casino", url: "https://hushcasino.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 75, cooldown: 24, hasLive: false, minRedeem: "100 Cash", notes: "1x rollover on sweepstakes credits; 60 day expiration." },
-      { name: "Funz Casino", url: "https://funzcasino.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 78, cooldown: 24, hasLive: false, minRedeem: "10 GC / 50 Cash", notes: "Standard 1x playthrough on promotional balance." },
-      { name: "Stackr Casino", url: "https://www.stackrcasino.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 74, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough on promotional SC; $5k limit in select states." },
-      { name: "Acorn Fun", url: "https://wap.acornfun.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough on promotional balance before redemption." },
-      { name: "Sixty6", url: "https://sixty6.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x rollover on promotional credits before redemption." },
-      { name: "VegaWin", url: "https://vegawin.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x wagering requirement on promotional SC." },
-      { name: "Winera", url: "https://winera.us/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional balance prior to redemption." },
-      { name: "Cider Casino", url: "https://game.cidercasino.com/?channel=official_website&campaign=official_website%2F#/home/rewards", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash / GC", notes: "1x playthrough requirement on promotional SC." },
-      { name: "Thrillzz", url: "https://thrillzz.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 76, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Social sportsbook. 1x rollover on Thrillzz Sweeps." },
-      { name: "Ace.com", url: "https://ace.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough on promotional balance." },
-      { name: "DoubleSpin", url: "https://doublespin.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x wagering requirement on promotional sweepstakes balance." },
-      { name: "Sweeplasvegas", url: "https://www.sweeplasvegas.com/en/spin-wheel", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover requirement on promotional SC." },
-      { name: "Zoot", url: "https://getzoot.us/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 74, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional sweepstakes coins." },
-      { name: "Coinsback Casino", url: "https://www.coinsbackcasino.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on all promotional SC before redemption." },
-      { name: "ZitoBox", url: "https://m.zitobox.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 75, cooldown: 24, hasLive: false, minRedeem: "25 GC", notes: "Reward points redeemable strictly for digital gift cards." },
-      { name: "SweepsRoyal", url: "https://sweepsroyal.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional sweepstakes coins." },
-      { name: "SweepKing", url: "https://sweepking.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional balance." },
-      { name: "KingPrize", url: "https://kingprize.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional sweepstakes coins." },
-      { name: "GetGud", url: "https://getgud.win/games", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough on promotional balance before prize redemption." },
-      { name: "SweepJungle", url: "https://sweepjungle.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional SC." },
-      { name: "Play1Up", url: "https://play1up.co/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough requirement on promotional SC." },
-      { name: "DexyPlay", url: "https://dexyplay.com/lobby/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional sweepstakes coins." },
-      { name: "PlayTana", url: "https://playtana.com/lobby", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional balance." },
-      { name: "FireSevens", url: "https://firesevens.com/lobby", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional SC." },
-      { name: "Fortune Purple", url: "https://fortunepurple.com/welcome", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough on promotional SC before redemption." },
-      { name: "Vegas Bonanza", url: "https://vegasbonanza.com/lobby", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x wagering requirement on promotional SC." },
-      { name: "Tang Luck", url: "https://game.tangluck.com/?channel=official_website&campaign=TangLuck_web_official_website", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional balance." },
-      { name: "Sweepolis", url: "https://sweepolis.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional sweepstakes coins." },
-      { name: "Spin4America", url: "https://spin4america.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash / GC", notes: "1x playthrough on promotional SC before prize redemption." },
-      { name: "New Luck", url: "https://newluck.net/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough on promotional balance before redemption." },
-      { name: "Dorados", url: "https://thesweepsguy.com/go/dorados", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough required on promotional sweepstakes coins." },
-      { name: "Lucky Bunny", url: "https://luckybunny.fun/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough on promotional SC before prize redemption." },
-      { name: "CapySpin", url: "https://www.capyspin.us/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough requirement on promotional SC." },
-      { name: "Daruma Casino", url: "https://darumacasino.us/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional sweepstakes coins." },
-      { name: "Joya", url: "https://joya.us/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional balance." },
-      { name: "Coinz.us", url: "https://coinz.us/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough on promotional SC before redemption." },
-      { name: "LuckyOne", url: "https://luckyone.us/en", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional sweepstakes coins." },
-      { name: "Tao Sweeps", url: "https://taosweeps.com/wallet", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional balance." },
-      { name: "ThrillCoins", url: "https://thrillcoins.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional sweepstakes coins." },
-      { name: "Zonko", url: "https://zonko.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional balance prior to prize redemption." },
-      { name: "Spinszy", url: "http://spinszy.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough requirement on promotional SC." },
-      { name: "Jumbo88", url: "https://jumbo88.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x rollover on promotional credits prior to prize redemption." },
-      { name: "Smiles Casino", url: "https://smilescasino.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional coins." },
-      { name: "Good Vibes Casino", url: "https://goodvibescasino.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional balance." },
       { name: "Bang Coins", url: "https://bangcoins.com/", tier: "C", dailySC: 0.2, speedHours: 24, reliability: 60, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "SpeedSweeps clone. 1x playthrough requirement." },
       { name: "Casino Click", url: "https://casino.click/", tier: "C", dailySC: 0.8, speedHours: 24, reliability: 42, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "Purchase required for daily scratcher; redemptions can be slow." },
       { name: "Chanced", url: "https://chanced.com/", tier: "C", dailySC: 0.2, speedHours: 24, reliability: 60, cooldown: 24, hasLive: true, minRedeem: "100 Cash / Crypto", notes: "Streak-based, 3x playthrough requirement on SC." },
@@ -1745,11 +1699,58 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       { name: "The Boss Casino", url: "https://theboss.casino/", tier: "C", dailySC: 0.15, speedHours: 24, reliability: 60, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "Crypto cashout only currently. 1x playthrough." },
       { name: "Vegas Way", url: "https://vegasway.com/lobby#/", tier: "C", dailySC: 0.3, speedHours: 24, reliability: 56, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Funrize sister site; freebie wins capped at $25." },
       { name: "Wildhorse Bucks", url: "https://wildhorsebucks.com/?source=pwa", tier: "C", dailySC: 0.1, speedHours: 24, reliability: 60, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough normally, 3x on bonus packages." },
+      { name: "Fliff", url: "https://www.getfliff.com/", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Social sportsbook. 1x playthrough on Fliff Cash." },
+      { name: "Hush Casino", url: "https://hushcasino.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 75, cooldown: 24, hasLive: false, minRedeem: "100 Cash", notes: "1x rollover on sweepstakes credits; 60 day expiration." },
+      { name: "Funz Casino", url: "https://funzcasino.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 78, cooldown: 24, hasLive: false, minRedeem: "10 GC / 50 Cash", notes: "Standard 1x playthrough on promotional balance." },
       { name: "Acebet", url: "https://acebet.cc/", tier: "C", dailySC: 0.2, speedHours: 24, reliability: 50, cooldown: 24, hasLive: false, minRedeem: "Varies", notes: "Operates primarily as social crypto hub." },
+      { name: "Stackr Casino", url: "https://www.stackrcasino.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 74, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough on promotional SC; $5k limit in select states." },
       { name: "Lavish Luck", url: "https://lavishluck.net/", tier: "C", dailySC: 0.2, speedHours: 24, reliability: 45, cooldown: 24, hasLive: false, minRedeem: "Varies", notes: "Social distributor portal; verify rules per provider." },
+      { name: "Acorn Fun", url: "https://wap.acornfun.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough on promotional balance before redemption." },
+      { name: "Sixty6", url: "https://sixty6.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x rollover on promotional credits before redemption." },
+      { name: "VegaWin", url: "https://vegawin.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x wagering requirement on promotional SC." },
+      { name: "Winera", url: "https://winera.us/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional balance prior to redemption." },
+      { name: "Cider Casino", url: "https://game.cidercasino.com/?channel=official_website&campaign=official_website%2F#/home/rewards", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash / GC", notes: "1x playthrough requirement on promotional SC." },
+      { name: "Thrillzz", url: "https://thrillzz.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 76, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "Social sportsbook. 1x rollover on Thrillzz Sweeps." },
+      { name: "Ace.com", url: "https://ace.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough on promotional balance." },
       { name: "Coin Wizard Games", url: "https://www.coinwizardgames.com/", tier: "C", dailySC: 0.2, speedHours: 24, reliability: 60, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional SC." },
+      { name: "DoubleSpin", url: "https://doublespin.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x wagering requirement on promotional sweepstakes balance." },
+      { name: "Sweeplasvegas", url: "https://www.sweeplasvegas.com/en/spin-wheel", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover requirement on promotional SC." },
+      { name: "Zoot", url: "https://getzoot.us/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 74, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional sweepstakes coins." },
+      { name: "Coinsback Casino", url: "https://www.coinsbackcasino.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on all promotional SC before redemption." },
+      { name: "Yotta", url: "https://members.withyotta.com/login", tier: "A", dailySC: 0.5, speedHours: 24, reliability: 85, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough on YottaCash; direct ACH checking deposit." },
+      { name: "ZitoBox", url: "https://m.zitobox.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 75, cooldown: 24, hasLive: false, minRedeem: "25 GC", notes: "Reward points redeemable strictly for digital gift cards." },
+      { name: "SweepsRoyal", url: "https://sweepsroyal.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional sweepstakes coins." },
+      { name: "SweepKing", url: "https://sweepking.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional balance." },
+      { name: "Spindoo US", url: "https://www.spindoo.us/", tier: "B", dailySC: 0.3, speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "50 Cash / GC", notes: "1x playthrough on promotional SC before redemption." },
+      { name: "KingPrize", url: "https://kingprize.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional sweepstakes coins." },
+      { name: "GetGud", url: "https://getgud.win/games", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough on promotional balance before prize redemption." },
+      { name: "SweepJungle", url: "https://sweepjungle.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional SC." },
+      { name: "Play1Up", url: "https://play1up.co/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough requirement on promotional SC." },
+      { name: "DexyPlay", url: "https://dexyplay.com/lobby/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional sweepstakes coins." },
+      { name: "PlayTana", url: "https://playtana.com/lobby", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional balance." },
+      { name: "FireSevens", url: "https://firesevens.com/lobby", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional SC." },
+      { name: "Fortune Purple", url: "https://fortunepurple.com/welcome", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough on promotional SC before redemption." },
+      { name: "Vegas Bonanza", url: "https://vegasbonanza.com/lobby", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x wagering requirement on promotional SC." },
+      { name: "Tang Luck", url: "https://game.tangluck.com/?channel=official_website&campaign=TangLuck_web_official_website", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional balance." },
       { name: "Sweepstakes Casino", url: "https://sweepstakescasino.com/", tier: "C", dailySC: 0.0, speedHours: 24, reliability: 50, cooldown: 24, hasLive: false, minRedeem: "Directory Portal", notes: "Affiliate review directory portal; does not host game redemptions." },
-      { name: "FreeSpin", url: "https://freespin.com/?modal=sign-in", tier: "C", dailySC: 0.2, speedHours: 24, reliability: 50, cooldown: 24, hasLive: false, minRedeem: "$100 Cash / BTC", notes: "Traditional casino structure; high 30x-60x playthrough rules." }
+      { name: "Sweepolis", url: "https://sweepolis.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional sweepstakes coins." },
+      { name: "Spin4America", url: "https://spin4america.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash / GC", notes: "1x playthrough on promotional SC before prize redemption." },
+      { name: "New Luck", url: "https://newluck.net/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough on promotional balance before redemption." },
+      { name: "Dorados", url: "https://thesweepsguy.com/go/dorados", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough required on promotional sweepstakes coins." },
+      { name: "FreeSpin", url: "https://freespin.com/?modal=sign-in", tier: "C", dailySC: 0.2, speedHours: 24, reliability: 50, cooldown: 24, hasLive: false, minRedeem: "$100 Cash / BTC", notes: "Traditional casino structure; high 30x-60x playthrough rules." },
+      { name: "Lucky Bunny", url: "https://luckybunny.fun/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough on promotional SC before prize redemption." },
+      { name: "CapySpin", url: "https://www.capyspin.us/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough requirement on promotional SC." },
+      { name: "Daruma Casino", url: "https://darumacasino.us/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional sweepstakes coins." },
+      { name: "Joya", url: "https://joya.us/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional balance." },
+      { name: "Coinz.us", url: "https://coinz.us/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough on promotional SC before redemption." },
+      { name: "LuckyOne", url: "https://luckyone.us/en", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional sweepstakes coins." },
+      { name: "Tao Sweeps", url: "https://taosweeps.com/wallet", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional balance." },
+      { name: "ThrillCoins", url: "https://thrillcoins.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional sweepstakes coins." },
+      { name: "Zonko", url: "https://zonko.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x rollover on promotional balance prior to prize redemption." },
+      { name: "Spinszy", url: "http://spinszy.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x playthrough requirement on promotional SC." },
+      { name: "Jumbo88", url: "https://jumbo88.com/", tier: "B", dailySC: 0.5, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash / Crypto", notes: "1x rollover on promotional credits prior to prize redemption." },
+      { name: "Smiles Casino", url: "https://smilescasino.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional coins." },
+      { name: "Good Vibes Casino", url: "https://goodvibescasino.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional balance." }
     ];
 
     // Map Strategies
@@ -2096,7 +2097,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
         
         cardWrapper.className = 'ledger-card-wrapper';
         cardWrapper.innerHTML = `
-          <div class="catalog-item-row ${isTracked ? 'tracked' : ''}" onclick="toggleCatalogItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+          <div class="catalog-item-row ${isTracked ? 'tracked' : ''}" onclick="toggleCatalogItemByName('${item.name}')">
             <div class="card-left">
               <div class="casino-avatar" ${index === 0 ? 'id="tourAvatarTarget"' : ''} style="width:40px; height:40px; font-size:0.85rem;" onclick="toggleKeenInfo('${catId}', event)">${getInitials(item.name)}</div>
               <div>
@@ -2123,7 +2124,10 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       });
     }
 
-    function toggleCatalogItem(item) {
+    // Completely safe programmatic lookup replaces broken inline JSON serialization
+    function toggleCatalogItemByName(name) {
+      const item = CATALOG_DATA.find(c => c.name === name);
+      if (!item) return;
       const idx = trackedGames.findIndex(g => g.name.toLowerCase() === item.name.toLowerCase());
       if (idx >= 0) {
         trackedGames.splice(idx, 1);
@@ -2149,6 +2153,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       }
       persist();
       renderCatalogList();
+      updateTierBadgeCounts();
     }
 
     function bulkToggleTier(tierLetter, shouldAdd) {
@@ -2338,7 +2343,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       document.querySelectorAll('.sheet-backdrop').forEach(b => b.classList.remove('open'));
     }
 
-    /* Interactive Tour Logic */
+    /* Fixed Interactive Dynamic Anchor Tour Pointer */
     function dismissLanding() {
       document.getElementById('landingScreen').classList.add('hidden');
       if (!localStorage.getItem('almanac_tour_completed')) {
@@ -2349,20 +2354,25 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
     function startTour() {
       tourStep = 1;
       switchMainTab('games', document.getElementById('tabPlatforms'));
-      positionTourBox('tabCatalog', 'Tap <strong>Catalogue</strong> to browse & pick platforms');
+      positionTourBox('tabCatalog', 'Tap <strong>Catalogue</strong> to browse & pick verified platforms');
     }
 
     function advanceTourStep() {
+      if (currentTourTarget && activeAnchorClickHandler) {
+        currentTourTarget.removeEventListener('click', activeAnchorClickHandler);
+        activeAnchorClickHandler = null;
+      }
+      
       tourStep++;
       if (tourStep === 2) {
         switchMainTab('catalog', document.getElementById('tabCatalog'));
         setTimeout(() => {
-          positionTourBox('tourAvatarTarget', 'Tap any circular avatar to view keen terms & strategy tips');
+          positionTourBox('tourAvatarTarget', 'Tap any circular avatar to view keen terms & game strategy modules');
         }, 150);
       } else if (tourStep === 3) {
         positionTourBox('tourAddTarget', 'Tap <strong>+</strong> anywhere on a row to add it to your deck');
       } else if (tourStep === 4) {
-        positionTourBox('btnToggleGroupAdd', 'Tap <strong>⚡ Group Add</strong> to batch-toggle entire tiers at once');
+        positionTourBox('btnToggleGroupAdd', 'Tap <strong>⚡ Group Add</strong> to quickly batch-add or remove entire tiers');
       } else if (tourStep === 5) {
         positionTourBox('sortTriggerCatalog', 'Tap <strong>⇅ Sort</strong> to customize and stack multi-sort priorities');
       } else {
@@ -2370,10 +2380,6 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
         document.getElementById('tourBox').style.display = 'none';
         if (currentTourTarget) {
           currentTourTarget.classList.remove('tour-target-active');
-          if (activeAnchorClickHandler) {
-            currentTourTarget.removeEventListener('click', activeAnchorClickHandler);
-            activeAnchorClickHandler = null;
-          }
         }
       }
     }
@@ -2395,8 +2401,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       currentTourTarget = target;
       target.classList.add('tour-target-active');
 
-      // Click on target also advances step
-      activeAnchorClickHandler = () => {
+      activeAnchorClickHandler = (e) => {
         setTimeout(advanceTourStep, 80);
       };
       target.addEventListener('click', activeAnchorClickHandler, { once: true });
@@ -2427,7 +2432,6 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       }, 60);
     }
 
-    // Initialize View & Date
     const d = new Date();
     const options = { weekday: 'long', month: 'long', day: 'numeric' };
     document.getElementById('currentDateDisplay').textContent = d.toLocaleDateString('en-US', options).toUpperCase();
@@ -2439,7 +2443,6 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
 
     updateSortUI('games');
     updateSortUI('catalog');
-    updateTierBadgeCounts();
 
     setInterval(() => {
       renderGames();
