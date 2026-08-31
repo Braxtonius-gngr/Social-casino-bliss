@@ -8,9 +8,9 @@
     :root {
       /* Deep Cyber Glass / AMOLED Colors */
       --bg-base: #05070d;
-      --bg-surface: rgba(13, 18, 30, 0.7);
-      --bg-card: rgba(18, 26, 42, 0.6);
-      --bg-card-active: rgba(26, 36, 58, 0.8);
+      --bg-surface: rgba(13, 18, 30, 0.75);
+      --bg-card: rgba(18, 26, 42, 0.65);
+      --bg-card-active: rgba(26, 36, 58, 0.85);
       
       --border-subtle: rgba(255, 255, 255, 0.09);
       --border-focus: rgba(0, 242, 254, 0.6);
@@ -100,7 +100,7 @@
       transform: rotate(60deg) scale(1.1);
     }
 
-    /* Ultra-Luminescent Radiating Split Title */
+    /* Ultra-Luminescent Split Title */
     .app-title {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 2.15rem;
@@ -235,7 +235,7 @@
       box-shadow: 0 0 20px var(--neon-magenta-glow);
     }
 
-    /* Filter & Header Rows */
+    /* Filter & Controls */
     .filter-sort-row {
       display: flex;
       align-items: center;
@@ -278,7 +278,6 @@
       font-weight: 800;
     }
 
-    /* Right-aligned Group Add & Sort Buttons */
     .catalog-action-cluster {
       display: flex;
       align-items: center;
@@ -365,7 +364,7 @@
       color: #fff;
     }
 
-    /* Collapsible Multi-Sort Drawer */
+    /* Multi-Sort Drawer */
     .sort-drawer {
       display: none;
       background: var(--bg-surface);
@@ -439,7 +438,7 @@
       justify-content: center;
     }
 
-    /* Highly Translucent Frosted Semi-Opaque Bulk Panel */
+    /* Bulk Tier Panel */
     .bulk-tier-panel {
       display: none;
       background: rgba(10, 15, 26, 0.45);
@@ -532,7 +531,7 @@
       box-shadow: 0 0 14px var(--neon-magenta-glow);
     }
 
-    /* Ledger Rows & Enhanced Forest Green / Cyan Glowing Cards */
+    /* Ledger Rows & Cards */
     .game-list {
       display: flex;
       flex-direction: column;
@@ -813,7 +812,6 @@
       box-shadow: 0 0 16px var(--neon-cyan-glow);
     }
 
-    /* High-contrast Forest Green Checkmarked Catalog Rows */
     .catalog-item-row {
       background: var(--bg-card);
       backdrop-filter: blur(16px);
@@ -852,7 +850,7 @@
       padding: 4px 8px;
     }
 
-    /* Glowing Docked Footer */
+    /* Docked Footer */
     .docked-footer {
       position: fixed;
       bottom: 0;
@@ -899,12 +897,12 @@
       box-shadow: 0 0 16px var(--neon-orange-glow);
     }
 
-    /* Landing Screen Overlay */
+    /* Full Landing Screen Intro */
     .landing-screen {
       position: fixed;
       inset: 0;
       background: radial-gradient(circle at 50% 30%, #152038 0%, var(--bg-base) 85%);
-      z-index: 200;
+      z-index: 2000;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -955,6 +953,11 @@
       font-weight: 900;
       cursor: pointer;
       box-shadow: 0 0 30px var(--neon-gold);
+      transition: transform 0.2s;
+    }
+
+    .landing-btn:active {
+      transform: scale(0.96);
     }
 
     /* Modals */
@@ -1021,7 +1024,7 @@
     .form-group input:focus, .form-group textarea:focus {
       outline: none;
       border-color: var(--neon-cyan);
-      box-shadow: 0 0 12px var(--neon-cyan-glow);
+      box-shadow: 0 0 12px var(--neon-cyan-glow); N8RB6KQT
     }
 
     .toggle-row {
@@ -1088,7 +1091,7 @@
       color: #fff;
     }
 
-    /* Dynamic Anchor Tour Tooltip */
+    /* Dynamic Anchor Interactive Tour Tooltip Pointer */
     .tour-tooltip-box {
       position: fixed;
       background: #000;
@@ -1098,7 +1101,7 @@
       border-radius: 14px;
       font-size: 0.88rem;
       font-weight: 700;
-      box-shadow: 0 0 35px rgba(255, 196, 0, 0.6), 0 10px 40px rgba(0, 0, 0, 0.9);
+      box-shadow: 0 0 35px rgba(255, 196, 0, 0.6), 0 10px 40px rgba(0, 0, 0, 0.95);
       z-index: 1500;
       cursor: pointer;
       display: none;
@@ -1147,14 +1150,14 @@
 </head>
 <body>
 
-  <!-- Full-Screen Landing Page -->
+  <!-- Full-Screen Landing Page Intro -->
   <div id="landingScreen" class="landing-screen">
     <h1 class="landing-title">The Casino<br><span>Almanac</span></h1>
     <p class="landing-subtitle">DAILY DROPS • TIMERS • REDEMPTIONS</p>
     <button class="landing-btn" onclick="dismissLanding()">Enter Almanac →</button>
   </div>
 
-  <!-- Dynamic Anchor Tour Pointer -->
+  <!-- Interactive Dynamic Anchor Tour Pointer -->
   <div id="tourBox" class="tour-tooltip-box" onclick="advanceTourStep()">
     <div id="tourBody"></div>
     <span class="tour-advance-subtext" id="tourSubtext">Click to advance →</span>
@@ -1166,13 +1169,13 @@
       <button class="btn-settings-gear" onclick="openSettingsModal()">⚙️</button>
     </div>
     
-    <!-- Ultra-Luminescent Radiating Header -->
+    <!-- Ultra-Luminescent Split Header -->
     <h1 class="app-title">
       <span class="title-casino">The Casino</span>
       <span class="title-almanac">Almanac</span>
     </h1>
 
-    <!-- Glowing Frosted Glass Hero Counter -->
+    <!-- Hero Counter Card -->
     <div class="hero-stat-card">
       <div class="hero-ring-wrapper">
         <div class="hero-ring-circle" id="heroCount">0</div>
@@ -1208,7 +1211,7 @@
       <!-- Active Stack Row -->
       <div id="sortStackGames" class="active-sort-stack"></div>
 
-      <!-- Collapsible Multi-Sort Drawer (Games) -->
+      <!-- Multi-Sort Drawer (Games) -->
       <div id="sortDrawerGames" class="sort-drawer">
         <div class="sort-drawer-header">
           <span>Sort Priority Stack</span>
@@ -1269,7 +1272,7 @@
       <!-- Active Stack Row -->
       <div id="sortStackCatalog" class="active-sort-stack"></div>
 
-      <!-- Collapsible Multi-Sort Drawer (Catalog) -->
+      <!-- Multi-Sort Drawer (Catalog) -->
       <div id="sortDrawerCatalog" class="sort-drawer">
         <div class="sort-drawer-header">
           <span>Sort Priority Stack</span>
@@ -1353,7 +1356,7 @@
         </div>
       </div>
 
-      <!-- Casino Catalog List -->
+      <!-- Casino Catalog List Container -->
       <div id="catalogGroupContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
     </section>
 
@@ -1612,7 +1615,7 @@ Yayz,–,–,–,–,–
 Zula,–,–,★ Epic Joker,–,★ Balloon Mania
 Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
 
-    // Master Catalog Array (85+ Verified Platforms)
+    // 85+ Verified Platforms
     const CATALOG_DATA = [
       { name: "Stake", url: "https://stake.us/?tab=dailyBonus&currency=ltc&modal=wallet", tier: "S", dailySC: 1.0, speedHours: 1, reliability: 100, cooldown: 24, hasLive: true, minRedeem: "50 Crypto", notes: "Instant crypto payouts. 3x playthrough requirement on Stake Cash." },
       { name: "McLuck", url: "https://www.mcluck.com/home", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24, hasLive: true, minRedeem: "10 GC / 75 Cash", notes: "Use GC to farm VIP level before spinning SC. 1x playthrough on SC." },
@@ -1749,7 +1752,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       { name: "FreeSpin", url: "https://freespin.com/?modal=sign-in", tier: "C", dailySC: 0.2, speedHours: 24, reliability: 50, cooldown: 24, hasLive: false, minRedeem: "$100 Cash / BTC", notes: "Traditional casino structure; high 30x-60x playthrough rules." }
     ];
 
-    // Map CSV Strategy
+    // Map Strategies
     const parsedRecommendations = {};
     BEST_GAMES_CSV.trim().split('\n').slice(1).forEach(line => {
       const cols = line.split(',');
@@ -1769,6 +1772,28 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
         if (hasRecs) parsedRecommendations[cleanName] = recs;
       }
     });
+
+    const STRATEGY_TIPS = {
+      plinko: "<strong>Setup:</strong> Low volatility · 14 lines · small bet<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:var(--neon-cyan); text-decoration:none; margin-top:6px; display:inline-block; font-weight:700;'>▶ Plinko strategy</a>",
+      bj: "<strong>Setup:</strong> Small bet · no martingale<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:var(--neon-cyan); text-decoration:none; margin-top:6px; display:inline-block; font-weight:700;'>Basic strategy guide →</a>",
+      slots: "<strong>Setup:</strong> Smallest bet. Max lines if adjustable.",
+      dice: "<strong>Setup:</strong> Try on Mines, Limbo, or Dice.<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:var(--neon-cyan); text-decoration:none; margin-top:6px; display:inline-block; font-weight:700;'>▶ 99% RTP dice strategy</a>"
+    };
+
+    function makeStrategyItem(iconTitle, gameName, tipHtml) {
+      if (!tipHtml) {
+        return `<div class="strategy-row non-interactive"><div class="strategy-row-header"><span>${iconTitle}: <span style="color:#fff;">${gameName}</span></span></div></div>`;
+      }
+      return `
+        <div class="strategy-row interactive" onclick="this.classList.toggle('expanded')">
+          <div class="strategy-row-header">
+            <span>${iconTitle}: <span style="color:#fff;">${gameName}</span></span>
+            <span class="expand-icon" style="transition: transform 0.2s; color:var(--neon-cyan);">▾</span>
+          </div>
+          <div class="strategy-row-body">${tipHtml}</div>
+        </div>
+      `;
+    }
 
     CATALOG_DATA.forEach(cat => {
       const cleanName = cat.name.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -2297,6 +2322,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
 
     function restartTourFromSettings() {
       closeModals();
+      localStorage.removeItem('almanac_tour_completed');
       startTour();
     }
 
@@ -2312,17 +2338,18 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       document.querySelectorAll('.sheet-backdrop').forEach(b => b.classList.remove('open'));
     }
 
-    // Interactive Dynamic Anchor Tour System
+    /* Interactive Tour Logic */
     function dismissLanding() {
       document.getElementById('landingScreen').classList.add('hidden');
       if (!localStorage.getItem('almanac_tour_completed')) {
-        setTimeout(startTour, 300);
+        setTimeout(startTour, 350);
       }
     }
 
     function startTour() {
       tourStep = 1;
-      positionTourBox('tabCatalog', 'Tap <strong>Catalogue</strong> to browse & pick verified platforms');
+      switchMainTab('games', document.getElementById('tabPlatforms'));
+      positionTourBox('tabCatalog', 'Tap <strong>Catalogue</strong> to browse & pick platforms');
     }
 
     function advanceTourStep() {
@@ -2330,12 +2357,12 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       if (tourStep === 2) {
         switchMainTab('catalog', document.getElementById('tabCatalog'));
         setTimeout(() => {
-          positionTourBox('tourAvatarTarget', 'Tap any circular avatar to view keen terms & game strategy modules');
+          positionTourBox('tourAvatarTarget', 'Tap any circular avatar to view keen terms & strategy tips');
         }, 150);
       } else if (tourStep === 3) {
         positionTourBox('tourAddTarget', 'Tap <strong>+</strong> anywhere on a row to add it to your deck');
       } else if (tourStep === 4) {
-        positionTourBox('btnToggleGroupAdd', 'Tap <strong>⚡ Group Add</strong> to quickly batch-add or remove entire tiers');
+        positionTourBox('btnToggleGroupAdd', 'Tap <strong>⚡ Group Add</strong> to batch-toggle entire tiers at once');
       } else if (tourStep === 5) {
         positionTourBox('sortTriggerCatalog', 'Tap <strong>⇅ Sort</strong> to customize and stack multi-sort priorities');
       } else {
@@ -2368,7 +2395,8 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       currentTourTarget = target;
       target.classList.add('tour-target-active');
 
-      activeAnchorClickHandler = (e) => {
+      // Click on target also advances step
+      activeAnchorClickHandler = () => {
         setTimeout(advanceTourStep, 80);
       };
       target.addEventListener('click', activeAnchorClickHandler, { once: true });
@@ -2399,6 +2427,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       }, 60);
     }
 
+    // Initialize View & Date
     const d = new Date();
     const options = { weekday: 'long', month: 'long', day: 'numeric' };
     document.getElementById('currentDateDisplay').textContent = d.toLocaleDateString('en-US', options).toUpperCase();
