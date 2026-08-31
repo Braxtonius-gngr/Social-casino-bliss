@@ -221,49 +221,39 @@
       align-items: center;
       gap: 4px;
       flex-shrink: 0;
+      white-space: nowrap;
+    }
+    
+    .sort-trigger-btn.secondary {
+      color: var(--text-main);
+      border-color: var(--border-focus);
     }
 
-    /* Bulk Tier Actions Panel in Catalogue */
-    .tier-group-actions-panel {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 12px;
-      padding: 10px 12px;
-      margin-bottom: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .tier-group-actions-title {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-dim);
-      font-weight: 700;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
+    /* Modal Tier Group Actions */
     .tier-action-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
+      gap: 8px;
     }
 
     .tier-action-card {
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
-      padding: 6px 8px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .tier-action-card-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
 
     .tier-label-badge {
-      font-size: 0.72rem;
+      font-size: 0.76rem;
       font-weight: 800;
       padding: 2px 6px;
       border-radius: 4px;
@@ -272,13 +262,15 @@
     .tier-btn-pair {
       display: flex;
       gap: 4px;
+      width: 100%;
     }
 
     .btn-tier-toggle {
-      padding: 4px 7px;
+      flex: 1;
+      padding: 6px;
       border-radius: 6px;
       border: 1px solid var(--border-subtle);
-      font-size: 0.68rem;
+      font-size: 0.72rem;
       font-weight: 700;
       cursor: pointer;
       background: #252e3e;
@@ -473,6 +465,58 @@
       font-weight: 700;
       color: var(--accent-gold);
       margin-bottom: 2px;
+    }
+
+    /* Interactive Strategy Menus */
+    .strategy-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    
+    .strategy-row {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+    
+    .strategy-row.interactive {
+      cursor: pointer;
+    }
+    
+    .strategy-row.interactive:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      background: rgba(56, 189, 248, 0.05);
+    }
+    
+    .strategy-row-header {
+      padding: 6px 8px;
+      font-size: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #38bdf8;
+    }
+    
+    .strategy-row-body {
+      display: none;
+      padding: 8px;
+      font-size: 0.72rem;
+      color: var(--text-main);
+      background: rgba(0,0,0,0.3);
+      border-top: 1px solid var(--border-subtle);
+      line-height: 1.4;
+    }
+    
+    .strategy-row.expanded .strategy-row-body {
+      display: block;
+    }
+    
+    .strategy-row.expanded .expand-icon {
+      transform: rotate(180deg);
     }
 
     .card-body {
@@ -900,7 +944,7 @@
           <button class="filter-btn" onclick="applyFilter('cooldown', this)">Cooldown</button>
           <button class="filter-btn" onclick="applyFilter('referral', this)">Has referral</button>
         </div>
-        <button class="sort-trigger-btn" onclick="toggleSortDrawer('games')">
+        <button class="sort-trigger-btn secondary" onclick="toggleSortDrawer('games')">
           <span>⇅ Sort</span>
         </button>
       </div>
@@ -954,48 +998,15 @@
           <button class="filter-btn active" onclick="applyCatalogFilter('all', this)">All</button>
           <button class="filter-btn" onclick="applyCatalogFilter('S', this)">🔥 S-Tier</button>
           <button class="filter-btn" onclick="applyCatalogFilter('A', this)">✅ A-Tier</button>
-          <button class="filter-btn" onclick="applyCatalogFilter('live', this)">🔴 Live Play</button>
+          <button class="filter-btn" onclick="applyCatalogFilter('live', this)">🔴 Live</button>
         </div>
-        <button class="sort-trigger-btn" id="sortTriggerCatalog" onclick="toggleSortDrawer('catalog')">
-          <span>⇅ Sort</span>
-        </button>
-      </div>
-
-      <!-- Bulk Tier Group Management -->
-      <div class="tier-group-actions-panel">
-        <div class="tier-group-actions-title">
-          <span>⚡ Bulk Tier Group Toggle</span>
-          <span style="font-size:0.65rem; color:var(--text-muted);">Add/Remove whole tiers</span>
-        </div>
-        <div class="tier-action-grid">
-          <div class="tier-action-card">
-            <span class="tier-label-badge tier-S">S-Tier</span>
-            <div class="tier-btn-pair">
-              <button class="btn-tier-toggle add" onclick="bulkToggleTier('S', true)">+ Add</button>
-              <button class="btn-tier-toggle remove" onclick="bulkToggleTier('S', false)">- Remove</button>
-            </div>
-          </div>
-          <div class="tier-action-card">
-            <span class="tier-label-badge tier-A">A-Tier</span>
-            <div class="tier-btn-pair">
-              <button class="btn-tier-toggle add" onclick="bulkToggleTier('A', true)">+ Add</button>
-              <button class="btn-tier-toggle remove" onclick="bulkToggleTier('A', false)">- Remove</button>
-            </div>
-          </div>
-          <div class="tier-action-card">
-            <span class="tier-label-badge tier-B">B-Tier</span>
-            <div class="tier-btn-pair">
-              <button class="btn-tier-toggle add" onclick="bulkToggleTier('B', true)">+ Add</button>
-              <button class="btn-tier-toggle remove" onclick="bulkToggleTier('B', false)">- Remove</button>
-            </div>
-          </div>
-          <div class="tier-action-card">
-            <span class="tier-label-badge tier-C">C-Tier</span>
-            <div class="tier-btn-pair">
-              <button class="btn-tier-toggle add" onclick="bulkToggleTier('C', true)">+ Add</button>
-              <button class="btn-tier-toggle remove" onclick="bulkToggleTier('C', false)">- Remove</button>
-            </div>
-          </div>
+        <div style="display: flex; gap: 6px;">
+          <button class="sort-trigger-btn" onclick="openBulkTierModal()">
+            <span>⚡ Group Add</span>
+          </button>
+          <button class="sort-trigger-btn secondary" id="sortTriggerCatalog" onclick="toggleSortDrawer('catalog')">
+            <span>⇅ Sort</span>
+          </button>
         </div>
       </div>
 
@@ -1042,9 +1053,9 @@
     <!-- View: Resources -->
     <section id="viewResources" style="display: none;">
       
-      <!-- New Added Notes & Best Practices Section -->
-      <div class="tier-group-actions-panel" style="margin-bottom:14px; border-color: rgba(56, 189, 248, 0.4); background: #1a2230;">
-        <div class="tier-group-actions-title" style="color: #38bdf8; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 6px; margin-bottom: 10px;">
+      <!-- Notes & Best Practices Section -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 10px 12px; margin-bottom:14px; border-color: rgba(56, 189, 248, 0.4); background: #1a2230;">
+        <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: #38bdf8; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 6px; margin-bottom: 10px;">
           <span>NOTES & BEST PRACTICES</span>
         </div>
         
@@ -1129,6 +1140,57 @@
   <div class="docked-footer">
     <button class="btn-dock" onclick="openAddModal()">+ Add platform</button>
     <button class="btn-dock" onclick="openImportModal()">⇩ Bulk Import</button>
+  </div>
+
+  <!-- Group Add Bulk Tier Modal -->
+  <div id="bulkTierModal" class="sheet-backdrop">
+    <div class="sheet-modal">
+      <h3 style="color:var(--accent-gold); margin-bottom: 4px;">⚡ Bulk Group Add</h3>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">Add or remove platforms instantly by tier.</p>
+      
+      <div class="tier-action-grid">
+        <div class="tier-action-card">
+          <div class="tier-action-card-header">
+            <span class="tier-label-badge tier-S">S-Tier</span>
+          </div>
+          <div class="tier-btn-pair">
+            <button class="btn-tier-toggle add" onclick="bulkToggleTier('S', true)">+ Add</button>
+            <button class="btn-tier-toggle remove" onclick="bulkToggleTier('S', false)">- Remove</button>
+          </div>
+        </div>
+        <div class="tier-action-card">
+          <div class="tier-action-card-header">
+            <span class="tier-label-badge tier-A">A-Tier</span>
+          </div>
+          <div class="tier-btn-pair">
+            <button class="btn-tier-toggle add" onclick="bulkToggleTier('A', true)">+ Add</button>
+            <button class="btn-tier-toggle remove" onclick="bulkToggleTier('A', false)">- Remove</button>
+          </div>
+        </div>
+        <div class="tier-action-card">
+          <div class="tier-action-card-header">
+            <span class="tier-label-badge tier-B">B-Tier</span>
+          </div>
+          <div class="tier-btn-pair">
+            <button class="btn-tier-toggle add" onclick="bulkToggleTier('B', true)">+ Add</button>
+            <button class="btn-tier-toggle remove" onclick="bulkToggleTier('B', false)">- Remove</button>
+          </div>
+        </div>
+        <div class="tier-action-card">
+          <div class="tier-action-card-header">
+            <span class="tier-label-badge tier-C">C-Tier</span>
+          </div>
+          <div class="tier-btn-pair">
+            <button class="btn-tier-toggle add" onclick="bulkToggleTier('C', true)">+ Add</button>
+            <button class="btn-tier-toggle remove" onclick="bulkToggleTier('C', false)">- Remove</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions" style="margin-top:20px;">
+        <button class="btn-primary" onclick="closeModals()">Done</button>
+      </div>
+    </div>
   </div>
 
   <!-- Settings Modal -->
@@ -1435,6 +1497,29 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       { name: "Good Vibes Casino", url: "https://goodvibescasino.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional balance." }
     ];
 
+    // Strategy Content Config
+    const STRATEGY_TIPS = {
+      plinko: "<strong>Setup:</strong> Low volatility · 14 lines · small bet<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:#38bdf8; text-decoration:none; margin-top:8px; display:inline-block;'>▶ Plinko strategy</a>",
+      bj: "<strong>Setup:</strong> Small bet · no martingale<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:#38bdf8; text-decoration:none; margin-top:8px; display:inline-block;'>Basic strategy guide →</a>",
+      slots: "<strong>Setup:</strong> Smallest bet. Max lines if adjustable.",
+      dice: "<strong>Setup:</strong> Try on Mines, Limbo, or Dice.<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:#38bdf8; text-decoration:none; margin-top:8px; display:inline-block;'>▶ 99% RTP dice strategy</a>"
+    };
+
+    function makeStrategyItem(iconTitle, gameName, tipHtml) {
+      if (!tipHtml) {
+        return `<div class="strategy-row non-interactive"><div class="strategy-row-header"><span>${iconTitle}: <span style="color:#f3f4f6;">${gameName}</span></span></div></div>`;
+      }
+      return `
+        <div class="strategy-row interactive" onclick="this.classList.toggle('expanded')">
+          <div class="strategy-row-header">
+            <span>${iconTitle}: <span style="color:#f3f4f6;">${gameName}</span></span>
+            <span class="expand-icon" style="transition: transform 0.2s;">▾</span>
+          </div>
+          <div class="strategy-row-body">${tipHtml}</div>
+        </div>
+      `;
+    }
+
     // Map CSV Strategy games onto Master Catalog Data
     const parsedRecommendations = {};
     BEST_GAMES_CSV.trim().split('\n').slice(1).forEach(line => {
@@ -1442,13 +1527,17 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       if (cols.length >= 6) {
         const rawName = cols[0].trim();
         const cleanName = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        let recs = [];
-        if (cols[1] && cols[1] !== '–') recs.push('🎯 Plinko: ' + cols[1]);
-        if (cols[2] && cols[2] !== '–') recs.push('🃏 BJ: ' + cols[2]);
-        if (cols[3] && cols[3] !== '–') recs.push('🎰 Slots: ' + cols[3]);
-        if (cols[4] && cols[4] !== '–') recs.push('💣 Dice: ' + cols[4]);
-        if (cols[5] && cols[5] !== '–') recs.push('🔴 Live: ' + cols[5]);
-        if (recs.length > 0) parsedRecommendations[cleanName] = recs.join('<br/>');
+        let recs = '<div class="strategy-list">';
+        let hasRecs = false;
+        
+        if (cols[1] && cols[1] !== '–') { recs += makeStrategyItem('🎯 Plinko', cols[1], STRATEGY_TIPS.plinko); hasRecs = true; }
+        if (cols[2] && cols[2] !== '–') { recs += makeStrategyItem('🃏 BJ', cols[2], STRATEGY_TIPS.bj); hasRecs = true; }
+        if (cols[3] && cols[3] !== '–') { recs += makeStrategyItem('🎰 Slots', cols[3], STRATEGY_TIPS.slots); hasRecs = true; }
+        if (cols[4] && cols[4] !== '–') { recs += makeStrategyItem('💣 Dice', cols[4], STRATEGY_TIPS.dice); hasRecs = true; }
+        if (cols[5] && cols[5] !== '–') { recs += makeStrategyItem('🔴 Live', cols[5], null); hasRecs = true; }
+        
+        recs += '</div>';
+        if (hasRecs) parsedRecommendations[cleanName] = recs;
       }
     });
 
@@ -1694,7 +1783,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
             <div class="keen-title">Keen Info • Min Redeem: ${game.minRedeem || 'Varies'}</div>
             ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.7rem; margin-bottom:4px;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
             <div>${game.notes || 'No specific warning flags. 24h standard reset cycle.'}</div>
-            ${goToGames ? `<div style="color:#38bdf8; font-size:0.75rem; margin-top:8px; line-height:1.4; border-top:1px solid rgba(56, 189, 248, 0.2); padding-top:4px;"><strong>Recommended Go-To Games:</strong><br/>${goToGames}</div>` : ''}
+            ${goToGames ? `<div style="color:#38bdf8; font-size:0.75rem; margin-top:10px; border-top:1px solid rgba(56, 189, 248, 0.2); padding-top:6px;"><strong>Recommended Go-To Games:</strong>${goToGames}</div>` : ''}
           </div>
         `;
         container.appendChild(cardWrapper);
@@ -1755,7 +1844,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
             <div class="keen-title">${item.name} • Min Redeem: ${item.minRedeem || 'Varies'}</div>
             ${item.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.7rem; margin-bottom:4px;">*Averaged from reported range ${item.scRange}/day</div>` : ''}
             <div>${item.notes || 'No critical flags. Normal 1x playthrough.'}</div>
-            ${item.bestGames ? `<div style="color:#38bdf8; font-size:0.75rem; margin-top:8px; line-height:1.4; border-top:1px solid rgba(56, 189, 248, 0.2); padding-top:4px;"><strong>Recommended Go-To Games:</strong><br/>${item.bestGames}</div>` : ''}
+            ${item.bestGames ? `<div style="color:#38bdf8; font-size:0.75rem; margin-top:10px; border-top:1px solid rgba(56, 189, 248, 0.2); padding-top:6px;"><strong>Recommended Go-To Games:</strong>${item.bestGames}</div>` : ''}
           </div>
         `;
         container.appendChild(cardWrapper);
@@ -1790,7 +1879,11 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       renderCatalogList();
     }
 
-    // Bulk Tier Group Add/Remove Handler
+    // Modal Handlers
+    function openBulkTierModal() {
+      document.getElementById('bulkTierModal').classList.add('open');
+    }
+
     function bulkToggleTier(tierLetter, shouldAdd) {
       const tierItems = CATALOG_DATA.filter(c => c.tier === tierLetter);
 
@@ -1827,7 +1920,6 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
       renderCatalogList();
     }
 
-    // Modal Handlers
     function openAddModal() {
       document.getElementById('modalHeading').textContent = 'Add Platform';
       document.getElementById('modalGameId').value = '';
