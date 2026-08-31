@@ -223,6 +223,81 @@
       flex-shrink: 0;
     }
 
+    /* Bulk Tier Actions Panel in Catalogue */
+    .tier-group-actions-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tier-group-actions-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tier-action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    .tier-action-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 6px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tier-label-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .tier-btn-pair {
+      display: flex;
+      gap: 4px;
+    }
+
+    .btn-tier-toggle {
+      padding: 4px 7px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      font-size: 0.68rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: #252e3e;
+      color: var(--text-main);
+      transition: all 0.15s;
+    }
+
+    .btn-tier-toggle.add:hover {
+      background: var(--accent-gold);
+      color: #11141a;
+      border-color: var(--accent-gold);
+    }
+
+    .btn-tier-toggle.remove:hover {
+      background: var(--tier-s);
+      color: #ffffff;
+      border-color: var(--tier-s);
+    }
+
     /* Active Multi-Sort Priority Stack Display */
     .active-sort-stack {
       display: flex;
@@ -732,6 +807,7 @@
       display: flex;
       gap: 8px;
       margin-top: 16px;
+      flex-wrap: wrap;
     }
 
     .btn-primary {
@@ -754,6 +830,23 @@
       border-radius: 8px;
       font-weight: 600;
       cursor: pointer;
+    }
+
+    .btn-danger {
+      flex: 1;
+      padding: 10px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--tier-s);
+      color: var(--tier-s);
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-danger:hover {
+      background: var(--tier-s);
+      color: #fff;
     }
   </style>
 </head>
@@ -868,6 +961,44 @@
         </button>
       </div>
 
+      <!-- Bulk Tier Group Management -->
+      <div class="tier-group-actions-panel">
+        <div class="tier-group-actions-title">
+          <span>⚡ Bulk Tier Group Toggle</span>
+          <span style="font-size:0.65rem; color:var(--text-muted);">Add/Remove whole tiers</span>
+        </div>
+        <div class="tier-action-grid">
+          <div class="tier-action-card">
+            <span class="tier-label-badge tier-S">S-Tier</span>
+            <div class="tier-btn-pair">
+              <button class="btn-tier-toggle add" onclick="bulkToggleTier('S', true)">+ Add</button>
+              <button class="btn-tier-toggle remove" onclick="bulkToggleTier('S', false)">- Remove</button>
+            </div>
+          </div>
+          <div class="tier-action-card">
+            <span class="tier-label-badge tier-A">A-Tier</span>
+            <div class="tier-btn-pair">
+              <button class="btn-tier-toggle add" onclick="bulkToggleTier('A', true)">+ Add</button>
+              <button class="btn-tier-toggle remove" onclick="bulkToggleTier('A', false)">- Remove</button>
+            </div>
+          </div>
+          <div class="tier-action-card">
+            <span class="tier-label-badge tier-B">B-Tier</span>
+            <div class="tier-btn-pair">
+              <button class="btn-tier-toggle add" onclick="bulkToggleTier('B', true)">+ Add</button>
+              <button class="btn-tier-toggle remove" onclick="bulkToggleTier('B', false)">- Remove</button>
+            </div>
+          </div>
+          <div class="tier-action-card">
+            <span class="tier-label-badge tier-C">C-Tier</span>
+            <div class="tier-btn-pair">
+              <button class="btn-tier-toggle add" onclick="bulkToggleTier('C', true)">+ Add</button>
+              <button class="btn-tier-toggle remove" onclick="bulkToggleTier('C', false)">- Remove</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Active Stack Row -->
       <div id="sortStackCatalog" class="active-sort-stack"></div>
 
@@ -969,7 +1100,7 @@
     </div>
   </div>
 
-  <!-- Edit / Add Modal -->
+  <!-- Edit / Add Modal with Dedicated Delete Button -->
   <div id="gameModal" class="sheet-backdrop">
     <div class="sheet-modal">
       <h3 id="modalHeading">Edit Platform</h3>
@@ -992,6 +1123,7 @@
       </div>
       <div class="modal-actions">
         <button class="btn-primary" onclick="saveModalEntry()">Save</button>
+        <button class="btn-danger" id="btnModalDelete" onclick="deleteModalEntry()">Remove</button>
         <button class="btn-cancel" onclick="closeModals()">Cancel</button>
       </div>
     </div>
@@ -1481,6 +1613,42 @@
       renderCatalogList();
     }
 
+    // Bulk Tier Group Add/Remove Handler
+    function bulkToggleTier(tierLetter, shouldAdd) {
+      const tierItems = CATALOG_DATA.filter(c => c.tier === tierLetter);
+
+      if (shouldAdd) {
+        tierItems.forEach(item => {
+          const alreadyTracked = trackedGames.some(g => g.name.toLowerCase() === item.name.toLowerCase());
+          if (!alreadyTracked) {
+            trackedGames.push({
+              id: uid(),
+              name: item.name,
+              url: item.url,
+              tier: item.tier,
+              dailySC: item.dailySC,
+              speedHours: item.speedHours,
+              reliability: item.reliability,
+              hasLive: item.hasLive,
+              minRedeem: item.minRedeem,
+              notes: item.notes,
+              scIsAveraged: item.scIsAveraged,
+              scRange: item.scRange,
+              referralUrl: '',
+              cooldownHours: item.cooldown,
+              lastCollected: 0
+            });
+          }
+        });
+      } else {
+        const tierNames = new Set(tierItems.map(item => item.name.toLowerCase()));
+        trackedGames = trackedGames.filter(g => !tierNames.has(g.name.toLowerCase()));
+      }
+
+      persist();
+      renderCatalogList();
+    }
+
     // Modal Handlers
     function openAddModal() {
       document.getElementById('modalHeading').textContent = 'Add Platform';
@@ -1489,6 +1657,7 @@
       document.getElementById('modalGameUrl').value = '';
       document.getElementById('modalReferralUrl').value = '';
       document.getElementById('modalCooldown').value = '24';
+      document.getElementById('btnModalDelete').style.display = 'none'; // Hide delete when adding
       document.getElementById('gameModal').classList.add('open');
     }
 
@@ -1502,7 +1671,24 @@
       document.getElementById('modalGameUrl').value = game.url;
       document.getElementById('modalReferralUrl').value = game.referralUrl || '';
       document.getElementById('modalCooldown').value = game.cooldownHours || 24;
+      document.getElementById('btnModalDelete').style.display = 'block'; // Show delete when editing
       document.getElementById('gameModal').classList.add('open');
+    }
+
+    function deleteModalEntry() {
+      const id = document.getElementById('modalGameId').value;
+      if (!id) return;
+      const game = trackedGames.find(g => g.id === id);
+      const name = game ? game.name : 'this platform';
+
+      if (confirm(`Remove ${name} from your tracked platforms?`)) {
+        trackedGames = trackedGames.filter(g => g.id !== id);
+        persist();
+        closeModals();
+        if (document.getElementById('viewCatalog').style.display === 'block') {
+          renderCatalogList();
+        }
+      }
     }
 
     function saveModalEntry() {
