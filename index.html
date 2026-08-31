@@ -7,10 +7,7 @@
   <style>
     :root {
       /* Deep Cyberpunk Backgrounds */
-      --bg-base: #05090f;
-      --bg-surface: rgba(14, 21, 28, 0.6);
-      --bg-card: rgba(17, 25, 35, 0.7);
-      --bg-card-active: rgba(25, 38, 51, 0.9);
+      --bg-base: #070a10;
       
       /* Neon Accents */
       --accent-gold: #ffcc00;
@@ -20,19 +17,29 @@
       --accent-green: #00ff66;
       --accent-green-dim: rgba(0, 255, 102, 0.15);
       
-      --border-subtle: rgba(0, 255, 102, 0.15);
-      --border-focus: rgba(0, 255, 102, 0.5);
+      --accent-pink: #ff007f;
+      --accent-pink-dim: rgba(255, 0, 127, 0.15);
+      
+      --accent-orange: #ff6600;
+      --accent-orange-dim: rgba(255, 102, 0, 0.15);
+
+      --accent-cyan: #00e5ff;
+      --accent-cyan-dim: rgba(0, 229, 255, 0.15);
+
+      /* Glass Borders */
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-highlight: rgba(255, 255, 255, 0.2);
 
       /* Text */
       --text-main: #e2f1ec;
-      --text-muted: #829a91;
+      --text-muted: #8b9bb4;
       --text-dim: #4d665b;
       
-      /* Tiers (Retained Distinguishable Colors) */
-      --tier-s: #ff0055; /* Neon Red/Pink */
-      --tier-a: #ff8800; /* Neon Orange */
-      --tier-b: #00e5ff; /* Neon Cyan */
-      --tier-c: #8b5cf6; /* Neon Purple */
+      /* Tiers */
+      --tier-s: var(--accent-pink);
+      --tier-a: var(--accent-orange);
+      --tier-b: var(--accent-cyan);
+      --tier-c: #8b5cf6; 
     }
 
     * {
@@ -44,12 +51,26 @@
     }
 
     body {
-      background: linear-gradient(180deg, #05090f 0%, #0a1118 100%);
+      /* Ambient Cyberpunk Gradient Background */
+      background: radial-gradient(circle at 15% 50%, rgba(255, 0, 127, 0.08), transparent 40%), 
+                  radial-gradient(circle at 85% 30%, rgba(0, 229, 255, 0.08), transparent 40%), 
+                  linear-gradient(135deg, #05070d 0%, #0a0612 50%, #030a14 100%);
       background-attachment: fixed;
       color: var(--text-main);
       min-height: 100vh;
       padding: 20px 16px 100px;
       overflow-x: hidden;
+    }
+
+    /* Core Glassmorphism Utility Class applied directly to elements */
+    .glass-panel {
+      background: rgba(16, 22, 32, 0.35);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-top: 1px solid var(--glass-highlight);
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
     }
 
     .app-container {
@@ -67,55 +88,54 @@
     }
 
     .date-header {
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
-      color: var(--accent-green);
-      text-shadow: 0 0 8px rgba(0, 255, 102, 0.3);
+      color: var(--accent-pink);
+      text-shadow: 0 0 10px var(--accent-pink);
     }
 
     .btn-settings-gear {
       background: transparent;
       border: none;
       color: var(--text-muted);
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       cursor: pointer;
       padding: 4px;
-      transition: color 0.2s;
+      transition: all 0.2s;
     }
     
     .btn-settings-gear:hover {
-      color: var(--accent-gold);
+      color: var(--accent-cyan);
+      text-shadow: 0 0 10px var(--accent-cyan);
     }
 
     .app-title {
       font-family: "Courier New", Courier, monospace;
       font-size: 1.85rem;
-      font-weight: 800;
-      color: var(--text-main);
+      font-weight: 900;
+      color: #fff;
       margin-bottom: 20px;
       letter-spacing: -0.05em;
       text-transform: uppercase;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      /* Intense Neon Glow */
+      text-shadow: 0 0 5px #fff, 0 0 10px var(--accent-cyan), 0 0 20px var(--accent-cyan), 0 0 40px var(--accent-cyan);
     }
     
     .app-title span {
-      color: var(--accent-gold);
+      color: #fff;
+      text-shadow: 0 0 5px #fff, 0 0 10px var(--accent-gold), 0 0 20px var(--accent-gold), 0 0 40px var(--accent-gold);
     }
 
     /* Cyberpunk Hero Card */
     .hero-stat-card {
-      background: linear-gradient(145deg, rgba(17, 25, 35, 0.8) 0%, rgba(10, 15, 20, 0.9) 100%);
-      border: 1px solid rgba(255, 204, 0, 0.2);
       border-radius: 20px;
       padding: 20px;
       display: flex;
       align-items: center;
       gap: 18px;
       margin-bottom: 20px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 204, 0, 0.05);
-      backdrop-filter: blur(8px);
     }
 
     .hero-ring-wrapper {
@@ -134,25 +154,26 @@
       align-items: center;
       justify-content: center;
       font-size: 1.5rem;
-      font-weight: 800;
+      font-weight: 900;
       color: #ffffff;
       background: rgba(0, 255, 102, 0.05);
-      box-shadow: 0 0 15px rgba(0, 255, 102, 0.3), inset 0 0 10px rgba(0, 255, 102, 0.2);
-      text-shadow: 0 0 8px rgba(0, 255, 102, 0.5);
+      box-shadow: 0 0 20px rgba(0, 255, 102, 0.4), inset 0 0 15px rgba(0, 255, 102, 0.3);
+      text-shadow: 0 0 10px rgba(0, 255, 102, 0.8);
     }
 
     .hero-details h2 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--accent-gold);
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #fff;
       margin-bottom: 4px;
-      text-shadow: 0 0 10px rgba(255, 204, 0, 0.2);
+      text-shadow: 0 0 5px #fff, 0 0 15px var(--accent-orange);
     }
 
     .hero-details p {
       font-size: 0.78rem;
-      color: var(--text-muted);
+      color: var(--accent-cyan);
       font-family: "Courier New", Courier, monospace;
+      text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
     }
 
     /* Navigation Tabs */
@@ -160,34 +181,33 @@
       display: flex;
       gap: 6px;
       margin-bottom: 12px;
-      background: rgba(0,0,0,0.4);
-      padding: 4px;
+      padding: 6px;
       border-radius: 30px;
-      border: 1px solid var(--border-subtle);
     }
 
     .nav-tab {
       flex: 1;
       padding: 9px 6px;
       background: transparent;
-      border: none;
+      border: 1px solid transparent;
       border-radius: 24px;
       color: var(--text-muted);
       font-size: 0.76rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 4px;
-      transition: all 0.2s;
+      transition: all 0.3s ease;
     }
 
     .nav-tab.active {
-      background: rgba(0, 255, 102, 0.1);
-      color: var(--accent-green);
-      border: 1px solid rgba(0, 255, 102, 0.3);
-      box-shadow: 0 0 10px rgba(0, 255, 102, 0.1);
+      background: rgba(255, 0, 127, 0.15);
+      color: #fff;
+      border: 1px solid var(--accent-pink);
+      text-shadow: 0 0 8px var(--accent-pink);
+      box-shadow: 0 0 15px rgba(255, 0, 127, 0.3), inset 0 0 10px rgba(255, 0, 127, 0.2);
     }
 
     /* Filter Chips & Sort Trigger */
@@ -213,46 +233,106 @@
 
     .filter-btn {
       padding: 6px 12px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--glass-border);
       border-radius: 20px;
       color: var(--text-muted);
       font-size: 0.76rem;
-      font-weight: 500;
+      font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
-      transition: all 0.15s;
+      transition: all 0.2s;
     }
 
     .filter-btn.active {
-      background: var(--accent-gold-dim);
-      color: var(--accent-gold);
-      border-color: var(--accent-gold);
-      font-weight: 600;
-      box-shadow: 0 0 8px rgba(255, 204, 0, 0.2);
+      background: var(--accent-cyan-dim);
+      color: #fff;
+      border-color: var(--accent-cyan);
+      text-shadow: 0 0 8px var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
     }
 
     .sort-trigger-btn {
       padding: 6px 12px;
-      background: var(--bg-surface);
+      background: rgba(0,0,0,0.4);
       border: 1px solid var(--accent-gold);
       border-radius: 20px;
       color: var(--accent-gold);
       font-size: 0.78rem;
-      font-weight: 600;
+      font-weight: 800;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 4px;
       flex-shrink: 0;
       white-space: nowrap;
-      box-shadow: 0 0 8px rgba(255, 204, 0, 0.1);
+      box-shadow: 0 0 10px rgba(255, 204, 0, 0.2);
+      text-shadow: 0 0 8px var(--accent-gold);
     }
     
     .sort-trigger-btn.secondary {
       color: var(--text-main);
-      border-color: var(--border-subtle);
+      border-color: var(--glass-highlight);
       box-shadow: none;
+      text-shadow: none;
+    }
+
+    /* Modal Tier Group Actions */
+    .tier-action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .tier-action-card {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .tier-action-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tier-btn-pair {
+      display: flex;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .btn-tier-toggle {
+      flex: 1;
+      padding: 8px 4px;
+      border-radius: 6px;
+      border: 1px solid var(--glass-border);
+      font-size: 0.72rem;
+      font-weight: 800;
+      cursor: pointer;
+      background: rgba(0,0,0,0.5);
+      color: var(--text-main);
+      transition: all 0.2s;
+    }
+
+    .btn-tier-toggle.add:hover {
+      background: var(--accent-green-dim);
+      color: #fff;
+      border-color: var(--accent-green);
+      text-shadow: 0 0 8px var(--accent-green);
+      box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+    }
+
+    .btn-tier-toggle.remove:hover {
+      background: var(--accent-pink-dim);
+      color: #ffffff;
+      border-color: var(--accent-pink);
+      text-shadow: 0 0 8px var(--accent-pink);
+      box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
     }
 
     /* Active Multi-Sort Priority Stack Display */
@@ -265,16 +345,17 @@
     }
 
     .sort-stack-chip {
-      background: var(--accent-green-dim);
-      border: 1px solid rgba(0, 255, 102, 0.3);
-      color: var(--accent-green);
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--accent-orange);
+      color: var(--accent-orange);
       font-size: 0.7rem;
-      font-weight: 600;
-      padding: 3px 8px;
+      font-weight: 700;
+      padding: 4px 10px;
       border-radius: 6px;
       display: flex;
       align-items: center;
       gap: 6px;
+      box-shadow: 0 0 8px rgba(255, 102, 0, 0.2);
     }
 
     .sort-stack-chip .btn-remove-sort {
@@ -284,17 +365,15 @@
 
     .sort-stack-chip .btn-remove-sort:hover {
       opacity: 1;
+      text-shadow: 0 0 5px var(--accent-orange);
     }
 
     /* Expandable Sort Drawer */
     .sort-drawer {
       display: none;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
       border-radius: 14px;
-      padding: 12px 14px;
+      padding: 14px;
       margin-bottom: 14px;
-      backdrop-filter: blur(8px);
       animation: fadeIn 0.2s ease-in-out;
     }
 
@@ -308,28 +387,31 @@
     }
 
     .sort-drawer-header {
-      font-size: 0.72rem;
+      font-size: 0.75rem;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: var(--text-dim);
-      margin-bottom: 8px;
+      color: var(--accent-cyan);
+      margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
+      text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
     }
 
     .sort-options-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
+      gap: 8px;
     }
 
     .sort-option-btn {
-      padding: 8px 10px;
-      background: rgba(0,0,0,0.3);
-      border: 1px solid var(--border-subtle);
+      padding: 10px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--glass-border);
       border-radius: 8px;
       color: var(--text-muted);
       font-size: 0.76rem;
+      font-weight: 600;
       text-align: left;
       cursor: pointer;
       display: flex;
@@ -339,92 +421,98 @@
     }
 
     .sort-option-btn.active {
-      border-color: var(--accent-green);
-      color: var(--accent-green);
-      background: var(--accent-green-dim);
+      border-color: var(--accent-orange);
+      color: #fff;
+      background: var(--accent-orange-dim);
+      text-shadow: 0 0 5px var(--accent-orange);
+      box-shadow: inset 0 0 10px rgba(255, 102, 0, 0.2);
     }
 
     .sort-priority-num {
-      background: var(--accent-green);
-      color: #05090f;
-      width: 16px;
-      height: 16px;
+      background: var(--accent-orange);
+      color: #000;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
-      font-size: 0.62rem;
-      font-weight: 800;
+      font-size: 0.65rem;
+      font-weight: 900;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 0 8px var(--accent-orange);
+      text-shadow: none;
     }
 
     /* Ledger Rows & Keen Info */
     .game-list {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 12px;
     }
 
     .ledger-card-wrapper {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
     }
 
     .ledger-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
       border-radius: 14px;
-      padding: 12px 14px;
+      padding: 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      backdrop-filter: blur(4px);
+      transition: transform 0.2s;
+    }
+    
+    .ledger-card:active {
+      transform: scale(0.98);
     }
 
     .card-left {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
       flex: 1;
       min-width: 0;
     }
 
     .casino-avatar {
-      width: 42px;
-      height: 42px;
+      width: 46px;
+      height: 46px;
       border-radius: 50%;
-      border: 2px solid var(--accent-gold);
-      background: rgba(0,0,0,0.5);
+      border: 2px solid var(--accent-cyan);
+      background: rgba(0,0,0,0.6);
       display: flex;
       align-items: center;
       justify-content: center;
       font-family: "Courier New", Courier, monospace;
-      font-weight: 800;
-      font-size: 0.9rem;
-      color: var(--accent-gold);
+      font-weight: 900;
+      font-size: 1rem;
+      color: #fff;
       flex-shrink: 0;
-      box-shadow: inset 0 0 10px rgba(255, 204, 0, 0.2);
+      box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.4), 0 0 10px rgba(0, 229, 255, 0.3);
+      text-shadow: 0 0 5px var(--accent-cyan);
       cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.2s;
+      transition: all 0.2s;
     }
 
     .casino-avatar:active {
-      transform: scale(0.92);
-      box-shadow: inset 0 0 15px rgba(255, 204, 0, 0.5);
+      transform: scale(0.9);
+      box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.8), 0 0 15px rgba(0, 229, 255, 0.6);
     }
 
     .keen-info-popover {
       display: none;
-      background: rgba(10, 16, 22, 0.85);
-      backdrop-filter: blur(10px);
-      border: 1px dashed var(--accent-gold);
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      line-height: 1.4;
+      border: 1px dashed var(--accent-pink);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.8rem;
+      color: var(--text-main);
+      line-height: 1.5;
       animation: fadeIn 0.2s ease-in-out;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 20px rgba(255, 0, 127, 0.05);
     }
 
     .keen-info-popover.open {
@@ -432,23 +520,24 @@
     }
 
     .keen-title {
-      font-weight: 700;
-      color: var(--accent-gold);
-      margin-bottom: 2px;
+      font-weight: 800;
+      color: var(--accent-pink);
+      margin-bottom: 4px;
+      text-shadow: 0 0 8px rgba(255, 0, 127, 0.5);
     }
 
     /* Interactive Strategy Menus */
     .strategy-list {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      margin-top: 6px;
+      gap: 6px;
+      margin-top: 8px;
     }
     
     .strategy-row {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(0, 255, 102, 0.2);
-      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
       overflow: hidden;
       transition: all 0.2s;
     }
@@ -458,27 +547,30 @@
     }
     
     .strategy-row.interactive:hover {
-      border-color: var(--accent-green);
-      background: rgba(0, 255, 102, 0.05);
+      border-color: var(--accent-cyan);
+      background: rgba(0, 229, 255, 0.08);
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.15);
     }
     
     .strategy-row-header {
-      padding: 6px 8px;
-      font-size: 0.75rem;
+      padding: 8px 10px;
+      font-size: 0.78rem;
+      font-weight: 700;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      color: var(--accent-green);
+      color: var(--accent-cyan);
+      text-shadow: 0 0 5px rgba(0, 229, 255, 0.4);
     }
     
     .strategy-row-body {
       display: none;
-      padding: 8px;
-      font-size: 0.72rem;
+      padding: 10px;
+      font-size: 0.75rem;
       color: var(--text-main);
-      background: rgba(0,0,0,0.5);
-      border-top: 1px solid rgba(0, 255, 102, 0.2);
-      line-height: 1.4;
+      background: rgba(0,0,0,0.6);
+      border-top: 1px solid rgba(0, 229, 255, 0.3);
+      line-height: 1.5;
     }
     
     .strategy-row.expanded .strategy-row-body {
@@ -492,69 +584,74 @@
     .card-body {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 4px;
       overflow: hidden;
     }
 
     .card-title-row {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
     .casino-name {
-      font-size: 0.92rem;
-      font-weight: 600;
-      color: var(--text-main);
+      font-size: 0.98rem;
+      font-weight: 800;
+      color: #fff;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
     }
 
     .tier-badge {
       font-size: 0.65rem;
-      font-weight: 800;
-      padding: 1px 5px;
+      font-weight: 900;
+      padding: 2px 6px;
       border-radius: 4px;
       text-transform: uppercase;
-      box-shadow: 0 0 5px rgba(0,0,0,0.5);
+      box-shadow: 0 0 8px currentColor;
     }
 
     .type-badge {
       font-size: 0.62rem;
-      padding: 1px 4px;
+      font-weight: 800;
+      padding: 2px 5px;
       border-radius: 4px;
-      background: rgba(0, 229, 255, 0.15);
-      color: #00e5ff;
-      border: 1px solid rgba(0, 229, 255, 0.3);
+      background: var(--accent-orange-dim);
+      color: #fff;
+      border: 1px solid var(--accent-orange);
+      text-shadow: 0 0 5px var(--accent-orange);
+      box-shadow: 0 0 8px rgba(255, 102, 0, 0.4);
     }
 
-    .tier-S { background: var(--tier-s); color: #fff; }
-    .tier-A { background: var(--tier-a); color: #fff; }
-    .tier-B { background: var(--tier-b); color: #fff; }
-    .tier-C { background: var(--tier-c); color: #fff; }
-    .tier-Unranked { background: #374151; color: #9ca3af; }
+    .tier-S { background: rgba(255,0,127,0.2); color: var(--tier-s); border: 1px solid var(--tier-s); text-shadow: 0 0 5px var(--tier-s); }
+    .tier-A { background: rgba(255,102,0,0.2); color: var(--tier-a); border: 1px solid var(--tier-a); text-shadow: 0 0 5px var(--tier-a); }
+    .tier-B { background: rgba(0,229,255,0.2); color: var(--tier-b); border: 1px solid var(--tier-b); text-shadow: 0 0 5px var(--tier-b); }
+    .tier-C { background: rgba(139,92,246,0.2); color: var(--tier-c); border: 1px solid var(--tier-c); text-shadow: 0 0 5px var(--tier-c); }
+    .tier-Unranked { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
 
     .card-status {
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 0.74rem;
-      color: var(--text-muted);
+      font-size: 0.75rem;
+      color: var(--text-main);
+      opacity: 0.8;
     }
 
     .status-dot {
-      width: 6px;
-      height: 6px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: var(--accent-green);
       display: inline-block;
-      box-shadow: 0 0 5px var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green), 0 0 12px var(--accent-green);
     }
 
     .status-dot.cooldown {
-      background: var(--text-dim);
+      background: var(--text-muted);
       box-shadow: none;
     }
 
@@ -562,80 +659,96 @@
     .card-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       flex-shrink: 0;
     }
 
+    /* Cyberpunk Gradient Button */
     .btn-open {
-      padding: 7px 16px;
-      background: var(--accent-gold);
-      color: #05090f;
+      padding: 8px 18px;
+      background: linear-gradient(90deg, var(--accent-pink), var(--accent-orange));
+      color: #fff;
       border: none;
       border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 800;
+      font-size: 0.85rem;
+      font-weight: 900;
       cursor: pointer;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 15px rgba(255, 0, 127, 0.4);
+      transition: all 0.2s;
+    }
+    
+    .btn-open:hover {
+      box-shadow: 0 4px 25px rgba(255, 102, 0, 0.6);
+      transform: translateY(-1px);
     }
 
     .btn-open.cooldown {
       background: rgba(0,0,0,0.5);
-      border: 1px solid var(--border-subtle);
+      border: 1px solid var(--glass-border);
       color: var(--text-muted);
-      font-weight: 600;
-      font-size: 0.72rem;
-      padding: 6px 12px;
+      font-weight: 700;
+      font-size: 0.75rem;
+      padding: 7px 14px;
       box-shadow: none;
+      text-shadow: none;
     }
 
     .btn-dots {
       background: transparent;
       border: none;
-      color: var(--text-dim);
-      font-size: 1.1rem;
-      padding: 4px 6px;
+      color: var(--text-main);
+      font-size: 1.2rem;
+      padding: 4px 8px;
       cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    
+    .btn-dots:hover {
+      opacity: 1;
+      text-shadow: 0 0 10px #fff;
     }
 
     /* Catalog View */
     .catalog-search {
       width: 100%;
-      padding: 10px 16px;
-      background: rgba(0,0,0,0.4);
-      border: 1px solid var(--border-subtle);
+      padding: 12px 16px;
       border-radius: 12px;
-      color: var(--text-main);
-      font-size: 0.88rem;
-      margin-bottom: 12px;
+      color: #fff;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
       outline: none;
-      backdrop-filter: blur(4px);
+      transition: all 0.2s;
     }
     
     .catalog-search:focus {
-      border-color: var(--accent-green);
-      box-shadow: 0 0 8px rgba(0, 255, 102, 0.2);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 15px rgba(0, 229, 255, 0.3), inset 0 0 10px rgba(0, 229, 255, 0.1);
     }
 
     .catalog-item-row {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: 10px;
-      padding: 10px 14px;
+      border-radius: 12px;
+      padding: 12px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       cursor: pointer;
-      backdrop-filter: blur(4px);
+      transition: all 0.2s;
+    }
+    
+    .catalog-item-row:hover {
+      background: rgba(255,255,255,0.05);
     }
 
     .catalog-item-row.tracked {
-      border-color: rgba(0, 255, 102, 0.5);
-      background: rgba(0, 255, 102, 0.03);
-      box-shadow: inset 0 0 10px rgba(0, 255, 102, 0.05);
+      border-color: var(--accent-green);
+      background: var(--accent-green-dim);
+      box-shadow: inset 0 0 15px rgba(0, 255, 102, 0.1);
     }
 
     /* Docked Footer */
@@ -644,45 +757,48 @@
       bottom: 0;
       left: 0;
       right: 0;
-      background: rgba(5, 9, 15, 0.85);
-      backdrop-filter: blur(12px);
-      border-top: 1px solid var(--border-subtle);
-      padding: 12px 16px;
+      background: rgba(5, 7, 13, 0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--glass-highlight);
+      padding: 16px;
       display: flex;
       justify-content: center;
-      gap: 10px;
+      gap: 12px;
       z-index: 50;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.8);
     }
 
     .btn-dock {
       flex: 1;
       max-width: 240px;
-      padding: 11px 16px;
-      background: rgba(17, 25, 35, 0.8);
-      border: 1px solid var(--border-subtle);
-      border-radius: 10px;
-      color: var(--accent-green);
-      font-size: 0.85rem;
-      font-weight: 600;
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid var(--accent-cyan);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 800;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
       transition: all 0.2s;
+      text-shadow: 0 0 5px var(--accent-cyan);
+      box-shadow: inset 0 0 10px rgba(0, 229, 255, 0.2);
     }
     
     .btn-dock:hover {
-      background: var(--accent-green-dim);
-      border-color: var(--accent-green);
-      box-shadow: 0 0 10px rgba(0, 255, 102, 0.2);
+      background: var(--accent-cyan-dim);
+      box-shadow: 0 0 15px rgba(0, 229, 255, 0.4), inset 0 0 15px rgba(0, 229, 255, 0.4);
     }
 
     /* Landing Screen Overlay */
     .landing-screen {
       position: fixed;
       inset: 0;
-      background: #05090f;
+      background: radial-gradient(circle at center, #10061a 0%, #05070d 100%);
       z-index: 200;
       display: flex;
       flex-direction: column;
@@ -690,7 +806,7 @@
       justify-content: center;
       padding: 32px;
       text-align: center;
-      transition: opacity 0.3s ease, visibility 0.3s;
+      transition: opacity 0.4s ease, visibility 0.4s;
     }
 
     .landing-screen.hidden {
@@ -699,47 +815,59 @@
       pointer-events: none;
     }
 
+    /* Hollow Neon Tube Text */
     .landing-title {
       font-family: "Courier New", Courier, monospace;
-      font-size: 2.2rem;
-      color: var(--text-main);
+      font-size: 3rem;
+      color: transparent;
+      -webkit-text-stroke: 1.5px var(--accent-cyan);
       letter-spacing: -0.05em;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
       text-transform: uppercase;
+      text-shadow: 0 0 20px var(--accent-cyan);
     }
     
     .landing-title span {
-      color: var(--accent-gold);
+      -webkit-text-stroke: 1.5px var(--accent-pink);
+      text-shadow: 0 0 20px var(--accent-pink);
     }
 
     .landing-subtitle {
-      font-size: 0.85rem;
-      color: var(--accent-green);
-      margin-bottom: 36px;
+      font-size: 0.9rem;
+      color: #fff;
+      margin-bottom: 40px;
       font-family: monospace;
-      letter-spacing: 0.1em;
-      text-shadow: 0 0 8px rgba(0, 255, 102, 0.3);
+      letter-spacing: 0.15em;
+      font-weight: 700;
+      text-shadow: 0 0 10px rgba(255,255,255,0.8);
     }
 
     .landing-btn {
-      padding: 12px 32px;
-      background: var(--accent-gold);
-      color: #05090f;
-      border: none;
+      padding: 14px 36px;
+      background: transparent;
+      color: #fff;
+      border: 2px solid var(--accent-green);
       border-radius: 30px;
-      font-size: 0.9rem;
-      font-weight: 800;
+      font-size: 1rem;
+      font-weight: 900;
       cursor: pointer;
-      box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
+      box-shadow: 0 0 20px rgba(0, 255, 102, 0.3), inset 0 0 15px rgba(0, 255, 102, 0.2);
+      text-shadow: 0 0 8px var(--accent-green);
+      transition: all 0.2s;
+    }
+    
+    .landing-btn:hover {
+      background: var(--accent-green-dim);
+      box-shadow: 0 0 30px rgba(0, 255, 102, 0.6), inset 0 0 20px rgba(0, 255, 102, 0.4);
     }
 
-    /* Modals & Popovers (Glassmorphism) */
+    /* Modals & Popovers (Heavy Glassmorphism) */
     .sheet-backdrop {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(2px);
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
       z-index: 100;
       align-items: center;
       justify-content: center;
@@ -752,195 +880,155 @@
 
     /* Floating Transparent Adjustments for Group Add Modal */
     #bulkTierModal.sheet-backdrop {
-      background: rgba(0, 0, 0, 0.15); /* Very light background */
-      backdrop-filter: blur(0px); /* No blur so list is visible */
+      background: rgba(0, 0, 0, 0.2); 
+      backdrop-filter: blur(1px); 
       align-items: flex-start;
-      padding-top: 15vh; /* Float near top */
+      padding-top: 12vh; 
     }
 
     .sheet-modal {
-      background: rgba(10, 16, 22, 0.85);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--accent-green);
-      box-shadow: 0 0 30px rgba(0, 255, 102, 0.15);
-      border-radius: 16px;
+      border-radius: 20px;
       width: 100%;
       max-width: 440px;
-      padding: 20px;
+      padding: 24px;
     }
 
     .sheet-modal h3 {
-      font-size: 1.25rem;
-      color: var(--accent-gold);
+      font-size: 1.35rem;
+      color: #fff;
       margin-bottom: 8px;
       font-family: "Courier New", Courier, monospace;
       text-transform: uppercase;
+      font-weight: 900;
       letter-spacing: -0.02em;
-    }
-
-    /* Modal Tier Group Actions */
-    .tier-action-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-    }
-
-    .tier-action-card {
-      background: rgba(0,0,0,0.4);
-      border: 1px solid rgba(0, 255, 102, 0.2);
-      border-radius: 8px;
-      padding: 8px 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
-    .tier-action-card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .tier-btn-pair {
-      display: flex;
-      gap: 4px;
-      width: 100%;
-    }
-
-    .btn-tier-toggle {
-      flex: 1;
-      padding: 6px;
-      border-radius: 6px;
-      border: 1px solid var(--border-subtle);
-      font-size: 0.72rem;
-      font-weight: 700;
-      cursor: pointer;
-      background: rgba(17, 25, 35, 0.8);
-      color: var(--text-main);
-      transition: all 0.15s;
-    }
-
-    .btn-tier-toggle.add:hover {
-      background: var(--accent-green);
-      color: #05090f;
-      border-color: var(--accent-green);
-      box-shadow: 0 0 10px rgba(0, 255, 102, 0.3);
-    }
-
-    .btn-tier-toggle.remove:hover {
-      background: var(--tier-s);
-      color: #ffffff;
-      border-color: var(--tier-s);
-      box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);
+      text-shadow: 0 0 10px var(--accent-cyan);
     }
 
     .form-group {
-      margin-bottom: 12px;
+      margin-bottom: 16px;
     }
 
     .form-group label {
       display: block;
       font-size: 0.75rem;
-      color: var(--accent-green);
-      margin-bottom: 4px;
+      color: var(--accent-cyan);
+      margin-bottom: 6px;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
     }
 
     .form-group input, .form-group textarea, .form-group select {
       width: 100%;
-      padding: 10px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border-subtle);
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--glass-border);
       background: rgba(0,0,0,0.5);
-      color: var(--text-main);
-      font-size: 0.88rem;
+      color: #fff;
+      font-size: 0.9rem;
+      transition: all 0.2s;
     }
     
     .form-group input:focus, .form-group textarea:focus {
       outline: none;
-      border-color: var(--accent-gold);
-      box-shadow: 0 0 8px rgba(255, 204, 0, 0.2);
+      border-color: var(--accent-pink);
+      box-shadow: 0 0 15px rgba(255, 0, 127, 0.3), inset 0 0 10px rgba(255, 0, 127, 0.1);
     }
 
     .toggle-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border-subtle);
-      font-size: 0.88rem;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--glass-border);
+      font-size: 0.9rem;
+      font-weight: 600;
     }
 
     .toggle-row input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--accent-green);
+      width: 20px;
+      height: 20px;
+      accent-color: var(--accent-pink);
     }
 
     .modal-actions {
       display: flex;
-      gap: 8px;
-      margin-top: 16px;
+      gap: 10px;
+      margin-top: 20px;
       flex-wrap: wrap;
     }
 
     .btn-primary {
       flex: 1;
-      padding: 10px;
-      background: var(--accent-gold);
-      color: #05090f;
+      padding: 12px;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+      color: #000;
       border: none;
-      border-radius: 8px;
-      font-weight: 800;
+      border-radius: 10px;
+      font-weight: 900;
+      font-size: 0.9rem;
       cursor: pointer;
-      box-shadow: 0 0 15px rgba(255, 204, 0, 0.2);
+      box-shadow: 0 0 20px rgba(0, 255, 102, 0.4);
+      transition: all 0.2s;
+    }
+    
+    .btn-primary:hover {
+      box-shadow: 0 0 30px rgba(0, 255, 102, 0.6);
     }
 
     .btn-cancel {
       flex: 1;
-      padding: 10px;
-      background: rgba(17, 25, 35, 0.8);
-      color: var(--text-muted);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      font-weight: 600;
+      padding: 12px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      font-weight: 700;
       cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-cancel:hover {
+      background: rgba(255,255,255,0.1);
     }
 
     .btn-danger {
       flex: 1;
-      padding: 10px;
+      padding: 12px;
       background: rgba(255, 0, 85, 0.15);
-      border: 1px solid var(--tier-s);
-      color: var(--tier-s);
-      border-radius: 8px;
-      font-weight: 700;
+      border: 1px solid var(--accent-pink);
+      color: var(--accent-pink);
+      border-radius: 10px;
+      font-weight: 800;
       cursor: pointer;
-      transition: background 0.15s;
+      text-shadow: 0 0 5px var(--accent-pink);
+      transition: all 0.2s;
     }
 
     .btn-danger:hover {
-      background: var(--tier-s);
+      background: var(--accent-pink);
       color: #fff;
-      box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);
+      box-shadow: 0 0 20px rgba(255, 0, 127, 0.5);
+      text-shadow: none;
     }
 
     /* Tour Tooltip */
     .tour-tooltip-box {
       position: fixed;
-      background: var(--accent-green);
-      color: #05090f;
-      padding: 12px 14px;
-      border-radius: 12px;
-      font-size: 0.82rem;
-      font-weight: 800;
-      box-shadow: 0 10px 30px rgba(0, 255, 102, 0.3);
+      background: rgba(0, 229, 255, 0.9);
+      backdrop-filter: blur(10px);
+      color: #000;
+      padding: 14px 16px;
+      border-radius: 14px;
+      font-size: 0.85rem;
+      font-weight: 900;
+      box-shadow: 0 10px 40px rgba(0, 229, 255, 0.5), inset 0 0 10px rgba(255,255,255,0.5);
       z-index: 150;
       cursor: pointer;
       display: none;
       max-width: 250px;
-      line-height: 1.35;
+      line-height: 1.4;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -950,31 +1038,31 @@
       top: -8px;
       left: 50%;
       transform: translateX(-50%);
-      border-width: 0 8px 8px 8px;
+      border-width: 0 10px 10px 10px;
       border-style: solid;
-      border-color: transparent transparent var(--accent-green) transparent;
+      border-color: transparent transparent rgba(0, 229, 255, 0.9) transparent;
     }
 
     .tour-advance-subtext {
       display: block;
       font-size: 0.65rem;
-      font-weight: 800;
-      color: rgba(5, 9, 15, 0.7);
+      font-weight: 900;
+      color: rgba(0, 0, 0, 0.6);
       text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-top: 6px;
-      border-top: 1px solid rgba(0, 0, 0, 0.15);
-      padding-top: 4px;
+      letter-spacing: 0.05em;
+      margin-top: 8px;
+      border-top: 1px solid rgba(0, 0, 0, 0.2);
+      padding-top: 6px;
     }
   </style>
 </head>
 <body>
 
-  <!-- Full-Screen Minimal Landing Page -->
+  <!-- Full-Screen Cyberpunk Landing Page -->
   <div id="landingScreen" class="landing-screen">
-    <h1 class="landing-title">The Casino <span>Almanac</span></h1>
+    <h1 class="landing-title">The Casino<br><span>Almanac</span></h1>
     <p class="landing-subtitle">DAILY DROPS • TIMERS • REDEMPTIONS</p>
-    <button class="landing-btn" onclick="dismissLanding()">ENTER ALMANAC →</button>
+    <button class="landing-btn" onclick="dismissLanding()">ENTER DECK →</button>
   </div>
 
   <!-- Dynamic Anchor Tour Pointer -->
@@ -991,7 +1079,7 @@
     <h1 class="app-title">The Casino <span>Almanac</span></h1>
 
     <!-- Hero Counter -->
-    <div class="hero-stat-card">
+    <div class="hero-stat-card glass-panel">
       <div class="hero-ring-wrapper">
         <div class="hero-ring-circle" id="heroCount">0</div>
       </div>
@@ -1002,7 +1090,7 @@
     </div>
 
     <!-- Navigation Tabs -->
-    <div class="nav-pill-group" id="navGroup">
+    <div class="nav-pill-group glass-panel" id="navGroup">
       <button class="nav-tab active" id="tabPlatforms" onclick="switchMainTab('games', this)">🎰 Platforms</button>
       <button class="nav-tab" id="tabCatalog" onclick="switchMainTab('catalog', this)">📁 Catalogue</button>
       <button class="nav-tab" id="tabResources" onclick="switchMainTab('resources', this)">📚 Resources</button>
@@ -1018,7 +1106,7 @@
           <button class="filter-btn" onclick="applyFilter('cooldown', this)">Cooldown</button>
           <button class="filter-btn" onclick="applyFilter('referral', this)">Has referral</button>
         </div>
-        <button class="sort-trigger-btn secondary" onclick="toggleSortDrawer('games')">
+        <button class="sort-trigger-btn secondary glass-panel" style="padding:6px 12px;" onclick="toggleSortDrawer('games')">
           <span>⇅ Sort</span>
         </button>
       </div>
@@ -1027,10 +1115,10 @@
       <div id="sortStackGames" class="active-sort-stack"></div>
 
       <!-- Collapsible Multi-Sort Drawer (Games) -->
-      <div id="sortDrawerGames" class="sort-drawer">
+      <div id="sortDrawerGames" class="sort-drawer glass-panel">
         <div class="sort-drawer-header">
-          <span>Sort Stack (Priority: First Clicked)</span>
-          <span style="cursor:pointer; color:var(--accent-green);" onclick="clearSortStack('games')">Clear All</span>
+          <span>Sort Priority Stack</span>
+          <span style="cursor:pointer; color:var(--accent-pink); text-shadow:0 0 8px var(--accent-pink);" onclick="clearSortStack('games')">Clear All</span>
         </div>
         <div class="sort-options-grid">
           <button class="sort-option-btn" data-key="tier" onclick="toggleSortKey('tier', 'games')">
@@ -1065,7 +1153,7 @@
 
     <!-- View: Casino Catalogue -->
     <section id="viewCatalog" style="display: none;">
-      <input type="text" id="catalogSearchInput" class="catalog-search" placeholder="Search 85+ verified sweepstakes platforms..." oninput="renderCatalogList()" />
+      <input type="text" id="catalogSearchInput" class="catalog-search glass-panel" placeholder="Search 85+ verified sweepstakes platforms..." oninput="renderCatalogList()" />
       
       <div class="filter-sort-row">
         <div class="filter-chips">
@@ -1075,10 +1163,10 @@
           <button class="filter-btn" onclick="applyCatalogFilter('live', this)">🔴 Live</button>
         </div>
         <div style="display: flex; gap: 6px;">
-          <button class="sort-trigger-btn" onclick="openBulkTierModal()">
+          <button class="sort-trigger-btn glass-panel" style="padding:6px 12px; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="openBulkTierModal()">
             <span>⚡ Group Add</span>
           </button>
-          <button class="sort-trigger-btn secondary" id="sortTriggerCatalog" onclick="toggleSortDrawer('catalog')">
+          <button class="sort-trigger-btn secondary glass-panel" style="padding:6px 12px;" id="sortTriggerCatalog" onclick="toggleSortDrawer('catalog')">
             <span>⇅ Sort</span>
           </button>
         </div>
@@ -1088,10 +1176,10 @@
       <div id="sortStackCatalog" class="active-sort-stack"></div>
 
       <!-- Collapsible Multi-Sort Drawer (Catalog) -->
-      <div id="sortDrawerCatalog" class="sort-drawer">
+      <div id="sortDrawerCatalog" class="sort-drawer glass-panel">
         <div class="sort-drawer-header">
-          <span>Sort Stack (Priority: First Clicked)</span>
-          <span style="cursor:pointer; color:var(--accent-green);" onclick="clearSortStack('catalog')">Clear All</span>
+          <span>Sort Priority Stack</span>
+          <span style="cursor:pointer; color:var(--accent-pink); text-shadow:0 0 8px var(--accent-pink);" onclick="clearSortStack('catalog')">Clear All</span>
         </div>
         <div class="sort-options-grid">
           <button class="sort-option-btn" data-key="tier" onclick="toggleSortKey('tier', 'catalog')">
@@ -1128,57 +1216,57 @@
     <section id="viewResources" style="display: none;">
       
       <!-- Notes & Best Practices Section -->
-      <div style="background: rgba(17, 25, 35, 0.7); border: 1px solid rgba(0, 255, 102, 0.3); border-radius: 12px; padding: 10px 12px; margin-bottom:14px; backdrop-filter: blur(4px);">
-        <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--accent-green); border-bottom: 1px solid rgba(0, 255, 102, 0.2); padding-bottom: 6px; margin-bottom: 10px;">
+      <div class="glass-panel" style="border-radius: 16px; padding: 16px; margin-bottom:16px;">
+        <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800; color: var(--accent-cyan); border-bottom: 1px solid rgba(0, 229, 255, 0.3); padding-bottom: 8px; margin-bottom: 14px; text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);">
           <span>NOTES & BEST PRACTICES</span>
         </div>
         
-        <div style="font-size:0.8rem; color:var(--text-main); display:flex; flex-direction:column; gap:12px;">
+        <div style="font-size:0.85rem; color:var(--text-main); display:flex; flex-direction:column; gap:14px;">
           <div style="margin-bottom: 4px;">
-            <span style="background: rgba(255, 204, 0, 0.15); color: var(--accent-gold); padding: 3px 6px; border-radius: 4px; font-weight: 700; font-size: 0.75rem; border: 1px solid rgba(255, 204, 0, 0.3);">★ Starred games</span> = preferred pick. Quick tips by category:
+            <span style="background: var(--accent-pink-dim); color: #fff; padding: 4px 8px; border-radius: 6px; font-weight: 800; font-size: 0.75rem; border: 1px solid var(--accent-pink); text-shadow: 0 0 5px var(--accent-pink); box-shadow: 0 0 10px rgba(255, 0, 127, 0.3);">★ Starred games</span> = preferred pick. Quick tips:
           </div>
 
-          <div style="display:flex; align-items:flex-start; gap:8px;">
-            <span style="font-size:1.1rem; line-height: 1;">🎯</span>
+          <div style="display:flex; align-items:flex-start; gap:10px;">
+            <span style="font-size:1.2rem; line-height: 1; text-shadow: 0 0 10px rgba(255,255,255,0.5);">🎯</span>
             <div>
-              <strong style="font-size:0.9rem;">Plinko</strong> <span style="color:var(--text-muted); font-family: monospace;">Low volatility · 14 lines · small bet</span><br/>
-              <a href="https://sweepsgrail.com/guides/" target="_blank" style="color:var(--accent-green); text-decoration:none; display:inline-block; margin-top:4px; font-weight:700;">▶ Plinko strategy</a>
+              <strong style="font-size:0.95rem; color:#fff;">Plinko</strong> <span style="color:var(--text-muted); font-family: monospace;">Low volatility · 14 lines · small bet</span><br/>
+              <a href="https://sweepsgrail.com/guides/" target="_blank" style="color:var(--accent-cyan); text-decoration:none; display:inline-block; margin-top:6px; font-weight:800; text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);">▶ Plinko strategy</a>
             </div>
           </div>
           
-          <div style="display:flex; align-items:flex-start; gap:8px;">
-            <span style="font-size:1.1rem; line-height: 1;">🃏</span>
+          <div style="display:flex; align-items:flex-start; gap:10px;">
+            <span style="font-size:1.2rem; line-height: 1; text-shadow: 0 0 10px rgba(255,255,255,0.5);">🃏</span>
             <div>
-              <strong style="font-size:0.9rem;">Blackjack</strong> <span style="color:var(--text-muted); font-family: monospace;">Small bet · no martingale</span><br/>
-              <a href="https://sweepsgrail.com/guides/" target="_blank" style="color:var(--accent-green); text-decoration:none; display:inline-block; margin-top:4px; font-weight:700;">Basic strategy guide →</a>
+              <strong style="font-size:0.95rem; color:#fff;">Blackjack</strong> <span style="color:var(--text-muted); font-family: monospace;">Small bet · no martingale</span><br/>
+              <a href="https://sweepsgrail.com/guides/" target="_blank" style="color:var(--accent-cyan); text-decoration:none; display:inline-block; margin-top:6px; font-weight:800; text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);">Basic strategy guide →</a>
             </div>
           </div>
           
-          <div style="display:flex; align-items:flex-start; gap:8px;">
-            <span style="font-size:1.1rem; line-height: 1;">🎰</span>
+          <div style="display:flex; align-items:flex-start; gap:10px;">
+            <span style="font-size:1.2rem; line-height: 1; text-shadow: 0 0 10px rgba(255,255,255,0.5);">🎰</span>
             <div>
-              <strong style="font-size:0.9rem;">Slots</strong> <span style="color:var(--text-muted); font-family: monospace;">Smallest bet. Max lines if adjustable</span>
+              <strong style="font-size:0.95rem; color:#fff;">Slots</strong> <span style="color:var(--text-muted); font-family: monospace;">Smallest bet. Max lines if adjustable</span>
             </div>
           </div>
           
-          <div style="display:flex; align-items:flex-start; gap:8px;">
-            <span style="font-size:1.1rem; line-height: 1;">💣</span>
+          <div style="display:flex; align-items:flex-start; gap:10px;">
+            <span style="font-size:1.2rem; line-height: 1; text-shadow: 0 0 10px rgba(255,255,255,0.5);">💣</span>
             <div>
-              <strong style="font-size:0.9rem;">Dice / Mines / Limbo</strong><br/>
-              <a href="https://sweepsgrail.com/guides/" target="_blank" style="color:var(--accent-green); text-decoration:none; display:inline-block; margin-top:4px; font-weight:700;">▶ 99% RTP dice strategy</a>
+              <strong style="font-size:0.95rem; color:#fff;">Dice / Mines / Limbo</strong><br/>
+              <a href="https://sweepsgrail.com/guides/" target="_blank" style="color:var(--accent-cyan); text-decoration:none; display:inline-block; margin-top:6px; font-weight:800; text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);">▶ 99% RTP dice strategy</a>
             </div>
           </div>
           
-          <div style="color:var(--text-dim); font-size:0.7rem; margin-top:4px; border-top: 1px solid var(--border-subtle); padding-top:8px;">
+          <div style="color:var(--text-muted); font-size:0.75rem; margin-top:8px; border-top: 1px solid var(--glass-border); padding-top:10px; font-family: monospace;">
             BB = Bonus Buy
           </div>
         </div>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:10px;">
-        <a href="https://docs.google.com/spreadsheets/d/1CcQhgeod8UEECb2H6qcFxiPhjMFxdzlxXsFYHfS4UlQ/edit" target="_blank" class="ledger-card" style="text-decoration:none;">
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <a href="https://docs.google.com/spreadsheets/d/1CcQhgeod8UEECb2H6qcFxiPhjMFxdzlxXsFYHfS4UlQ/edit" target="_blank" class="ledger-card glass-panel" style="text-decoration:none;">
           <div class="card-left">
-            <div class="casino-avatar">📊</div>
+            <div class="casino-avatar" style="border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange); box-shadow:inset 0 0 10px rgba(255, 102, 0, 0.3);">📊</div>
             <div>
               <div class="casino-name">TheSweepsGuy Master Sheet</div>
               <div class="card-status">Community tracked live spreadsheet</div>
@@ -1186,9 +1274,9 @@
           </div>
           <span class="btn-dots">↗</span>
         </a>
-        <a href="https://sweepsgrail.com/guides/" target="_blank" class="ledger-card" style="text-decoration:none;">
+        <a href="https://sweepsgrail.com/guides/" target="_blank" class="ledger-card glass-panel" style="text-decoration:none;">
           <div class="card-left">
-            <div class="casino-avatar">📖</div>
+            <div class="casino-avatar" style="border-color:var(--accent-pink); color:var(--accent-pink); text-shadow:0 0 5px var(--accent-pink); box-shadow:inset 0 0 10px rgba(255, 0, 127, 0.3);">📖</div>
             <div>
               <div class="casino-name">SweepsGrail Strategy Guides</div>
               <div class="card-status">VIP Leveling, AMOE, and Playthrough guides</div>
@@ -1196,9 +1284,9 @@
           </div>
           <span class="btn-dots">↗</span>
         </a>
-        <a href="https://www.reddit.com/r/SweepstakeSideHustle/" target="_blank" class="ledger-card" style="text-decoration:none;">
+        <a href="https://www.reddit.com/r/SweepstakeSideHustle/" target="_blank" class="ledger-card glass-panel" style="text-decoration:none;">
           <div class="card-left">
-            <div class="casino-avatar">💬</div>
+            <div class="casino-avatar" style="border-color:var(--accent-green); color:var(--accent-green); text-shadow:0 0 5px var(--accent-green); box-shadow:inset 0 0 10px rgba(0, 255, 102, 0.3);">💬</div>
             <div>
               <div class="casino-name">r/SweepstakeSideHustle</div>
               <div class="card-status">Reddit community discussions & links</div>
@@ -1212,15 +1300,15 @@
 
   <!-- Docked Action Footer -->
   <div class="docked-footer">
-    <button class="btn-dock" onclick="openAddModal()">+ Add platform</button>
-    <button class="btn-dock" onclick="openImportModal()">⇩ Bulk Import</button>
+    <button class="btn-dock" onclick="openAddModal()">+ ADD PLATFORM</button>
+    <button class="btn-dock" style="border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange); box-shadow:inset 0 0 10px rgba(255, 102, 0, 0.2);" onclick="openImportModal()">⇩ BULK IMPORT</button>
   </div>
 
   <!-- Group Add Bulk Tier Modal (Floating/Transparent) -->
   <div id="bulkTierModal" class="sheet-backdrop">
-    <div class="sheet-modal">
-      <h3 style="color:var(--accent-gold); margin-bottom: 4px;">⚡ Bulk Group Add</h3>
-      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">Add or remove platforms instantly by tier.</p>
+    <div class="sheet-modal glass-panel">
+      <h3 style="color:var(--accent-orange); text-shadow: 0 0 10px var(--accent-orange); margin-bottom: 6px;">⚡ Bulk Group Add</h3>
+      <p style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 20px; opacity:0.9;">Add or remove platforms instantly by tier.</p>
       
       <div class="tier-action-grid">
         <div class="tier-action-card">
@@ -1261,33 +1349,33 @@
         </div>
       </div>
       
-      <div class="modal-actions" style="margin-top:20px;">
-        <button class="btn-primary" onclick="closeModals()">Done</button>
+      <div class="modal-actions" style="margin-top:24px;">
+        <button class="btn-primary" onclick="closeModals()">DONE</button>
       </div>
     </div>
   </div>
 
   <!-- Settings Modal -->
   <div id="settingsModal" class="sheet-backdrop">
-    <div class="sheet-modal">
+    <div class="sheet-modal glass-panel">
       <h3>Ledger Settings</h3>
       <div class="toggle-row">
-        <span>Show Landing Page on Open</span>
+        <span style="color:#fff;">Show Landing Page on Open</span>
         <input type="checkbox" id="settingLandingToggle" onchange="toggleLandingSetting()" checked />
       </div>
-      <div style="margin-top: 14px;">
-        <button class="btn-dock" style="max-width:100%; width:100%; margin-bottom:8px;" onclick="restartTourFromSettings()">Restart Interactive Tour</button>
-        <button class="btn-dock" style="max-width:100%; width:100%; color:var(--tier-s); border-color:var(--tier-s);" onclick="resetTrackerData()">Reset All Tracked Data</button>
+      <div style="margin-top: 20px; display:flex; flex-direction:column; gap:10px;">
+        <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="restartTourFromSettings()">Restart Interactive Tour</button>
+        <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-pink); color:var(--accent-pink); text-shadow:0 0 5px var(--accent-pink);" onclick="resetTrackerData()">Reset All Tracked Data</button>
       </div>
       <div class="modal-actions">
-        <button class="btn-primary" onclick="closeModals()">Done</button>
+        <button class="btn-primary" onclick="closeModals()">DONE</button>
       </div>
     </div>
   </div>
 
   <!-- Edit / Add Modal -->
   <div id="gameModal" class="sheet-backdrop">
-    <div class="sheet-modal">
+    <div class="sheet-modal glass-panel">
       <h3 id="modalHeading">Edit Platform</h3>
       <input type="hidden" id="modalGameId" />
       <div class="form-group">
@@ -1307,24 +1395,24 @@
         <input type="number" id="modalCooldown" value="24" />
       </div>
       <div class="modal-actions">
-        <button class="btn-primary" onclick="saveModalEntry()">Save</button>
-        <button class="btn-danger" id="btnModalDelete" onclick="deleteModalEntry()">Remove</button>
-        <button class="btn-cancel" onclick="closeModals()">Cancel</button>
+        <button class="btn-primary" onclick="saveModalEntry()">SAVE</button>
+        <button class="btn-danger" id="btnModalDelete" onclick="deleteModalEntry()">REMOVE</button>
+        <button class="btn-cancel" onclick="closeModals()">CANCEL</button>
       </div>
     </div>
   </div>
 
   <!-- Import Modal -->
   <div id="importModal" class="sheet-backdrop">
-    <div class="sheet-modal">
-      <h3>Bulk Import</h3>
+    <div class="sheet-modal glass-panel">
+      <h3 style="color:var(--accent-orange); text-shadow:0 0 10px var(--accent-orange);">Bulk Import</h3>
       <div class="form-group">
-        <label>Paste URLs (one per line)</label>
+        <label style="color:var(--accent-orange); text-shadow:0 0 5px rgba(255, 102, 0, 0.5);">Paste URLs (one per line)</label>
         <textarea id="importUrlsText" rows="6" placeholder="https://chumbacasino.com/&#10;https://luckylandcasino.com/"></textarea>
       </div>
       <div class="modal-actions">
-        <button class="btn-primary" onclick="executeBulkImport()">Import</button>
-        <button class="btn-cancel" onclick="closeModals()">Cancel</button>
+        <button class="btn-primary" style="background:linear-gradient(90deg, var(--accent-orange), var(--accent-gold)); box-shadow:0 0 20px rgba(255, 102, 0, 0.4);" onclick="executeBulkImport()">IMPORT</button>
+        <button class="btn-cancel" onclick="closeModals()">CANCEL</button>
       </div>
     </div>
   </div>
@@ -1573,21 +1661,21 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
 
     // Strategy Content Config
     const STRATEGY_TIPS = {
-      plinko: "<strong>Setup:</strong> Low volatility · 14 lines · small bet<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:var(--accent-green); text-decoration:none; margin-top:8px; display:inline-block;'>▶ Plinko strategy</a>",
-      bj: "<strong>Setup:</strong> Small bet · no martingale<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:var(--accent-green); text-decoration:none; margin-top:8px; display:inline-block;'>Basic strategy guide →</a>",
+      plinko: "<strong>Setup:</strong> Low volatility · 14 lines · small bet<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:var(--accent-cyan); text-decoration:none; margin-top:6px; display:inline-block; font-weight:800; text-shadow:0 0 5px rgba(0, 229, 255, 0.4);'>▶ Plinko strategy</a>",
+      bj: "<strong>Setup:</strong> Small bet · no martingale<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:var(--accent-cyan); text-decoration:none; margin-top:6px; display:inline-block; font-weight:800; text-shadow:0 0 5px rgba(0, 229, 255, 0.4);'>Basic strategy guide →</a>",
       slots: "<strong>Setup:</strong> Smallest bet. Max lines if adjustable.",
-      dice: "<strong>Setup:</strong> Try on Mines, Limbo, or Dice.<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:var(--accent-green); text-decoration:none; margin-top:8px; display:inline-block;'>▶ 99% RTP dice strategy</a>"
+      dice: "<strong>Setup:</strong> Try on Mines, Limbo, or Dice.<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:var(--accent-cyan); text-decoration:none; margin-top:6px; display:inline-block; font-weight:800; text-shadow:0 0 5px rgba(0, 229, 255, 0.4);'>▶ 99% RTP dice strategy</a>"
     };
 
     function makeStrategyItem(iconTitle, gameName, tipHtml) {
       if (!tipHtml) {
-        return `<div class="strategy-row non-interactive"><div class="strategy-row-header"><span>${iconTitle}: <span style="color:#f3f4f6;">${gameName}</span></span></div></div>`;
+        return `<div class="strategy-row non-interactive"><div class="strategy-row-header"><span>${iconTitle}: <span style="color:#fff;">${gameName}</span></span></div></div>`;
       }
       return `
         <div class="strategy-row interactive" onclick="this.classList.toggle('expanded')">
           <div class="strategy-row-header">
-            <span>${iconTitle}: <span style="color:#f3f4f6;">${gameName}</span></span>
-            <span class="expand-icon" style="transition: transform 0.2s;">▾</span>
+            <span>${iconTitle}: <span style="color:#fff;">${gameName}</span></span>
+            <span class="expand-icon" style="transition: transform 0.2s; color:#fff;">▾</span>
           </div>
           <div class="strategy-row-body">${tipHtml}</div>
         </div>
@@ -1816,9 +1904,9 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
 
       if (list.length === 0) {
         container.innerHTML = `
-          <div style="text-align:center; padding: 40px 16px; color:var(--text-dim);">
-            <p style="font-size:1.1rem; margin-bottom:6px;">No platforms tracked yet</p>
-            <p style="font-size:0.8rem;">Select platforms from the Casino Catalogue or tap + Add below</p>
+          <div style="text-align:center; padding: 40px 16px; color:var(--text-muted); text-shadow:0 0 5px rgba(255,255,255,0.2);">
+            <p style="font-size:1.1rem; margin-bottom:6px; font-weight:800; color:var(--accent-cyan);">NO PLATFORMS DETECTED</p>
+            <p style="font-size:0.8rem;">Initialize deck from Catalogue or ADD manually</p>
           </div>
         `;
         return;
@@ -1831,7 +1919,7 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
         
         cardWrapper.className = 'ledger-card-wrapper';
         cardWrapper.innerHTML = `
-          <div class="ledger-card">
+          <div class="ledger-card glass-panel">
             <div class="card-left">
               <div class="casino-avatar" onclick="toggleKeenInfo('${game.id}', event)">${getInitials(game.name)}</div>
               <div class="card-body">
@@ -1842,22 +1930,22 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
                 </div>
                 <div class="card-status">
                   <span class="status-dot ${isReady ? '' : 'cooldown'}"></span>
-                  <span>${isReady ? 'ready now' : formatTime(remainingMs) + ' left'}</span>
+                  <span style="font-family: monospace; font-weight:600;">${isReady ? 'READY' : formatTime(remainingMs)}</span>
                 </div>
               </div>
             </div>
             <div class="card-actions">
               <button class="btn-open ${isReady ? '' : 'cooldown'}" onclick="collect('${game.id}')">
-                ${isReady ? 'OPEN' : formatTime(remainingMs)}
+                ${isReady ? 'OPEN' : 'WAIT'}
               </button>
               <button class="btn-dots" onclick="openEditModal('${game.id}')">⋯</button>
             </div>
           </div>
           <div id="keen_${game.id}" class="keen-info-popover ${openKeenIds.has(game.id) ? 'open' : ''}">
             <div class="keen-title">Keen Info • Min Redeem: ${game.minRedeem || 'Varies'}</div>
-            ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.7rem; margin-bottom:4px;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
+            ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:4px; font-weight:700;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
             <div>${game.notes || 'No specific warning flags. 24h standard reset cycle.'}</div>
-            ${goToGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid rgba(0, 255, 102, 0.2); padding-top:6px;"><strong>Recommended Go-To Games:</strong>${goToGames}</div>` : ''}
+            ${goToGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">RECOMMENDED MODULES:</strong>${goToGames}</div>` : ''}
           </div>
         `;
         container.appendChild(cardWrapper);
@@ -1898,27 +1986,27 @@ Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
         
         cardWrapper.className = 'ledger-card-wrapper';
         cardWrapper.innerHTML = `
-          <div class="catalog-item-row ${isTracked ? 'tracked' : ''}" onclick="toggleCatalogItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+          <div class="catalog-item-row glass-panel ${isTracked ? 'tracked' : ''}" onclick="toggleCatalogItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
             <div class="card-left">
-              <div class="casino-avatar" ${index === 0 ? 'id="tourAvatarTarget"' : ''} style="width:36px; height:36px; font-size:0.8rem;" onclick="toggleKeenInfo('${catId}', event)">${getInitials(item.name)}</div>
+              <div class="casino-avatar" ${index === 0 ? 'id="tourAvatarTarget"' : ''} style="width:38px; height:38px; font-size:0.8rem;" onclick="toggleKeenInfo('${catId}', event)">${getInitials(item.name)}</div>
               <div>
                 <div style="display:flex; align-items:center; gap:6px;">
-                  <span class="casino-name" style="font-size:0.9rem;">${item.name}</span>
+                  <span class="casino-name" style="font-size:0.95rem;">${item.name}</span>
                   <span class="tier-badge tier-${item.tier}">${item.tier}</span>
                   ${item.hasLive ? '<span class="type-badge" style="font-size:0.6rem;">🔴 LIVE</span>' : ''}
                 </div>
-                <div class="card-status">$${item.dailySC.toFixed(2)}${item.scIsAveraged ? '*' : ''} daily • ${item.cooldown}h • Score: ${item.reliability}%</div>
+                <div class="card-status">$${item.dailySC.toFixed(2)}${item.scIsAveraged ? '*' : ''} / ${item.cooldown}h • Score: ${item.reliability}%</div>
               </div>
             </div>
-            <span ${index === 0 ? 'id="tourAddTarget"' : ''} style="font-size:1.1rem; color:${isTracked ? 'var(--accent-green)' : 'var(--text-dim)'}; font-weight:bold; padding: 4px 8px; text-shadow: ${isTracked ? '0 0 10px rgba(0, 255, 102, 0.5)' : 'none'};">
+            <span ${index === 0 ? 'id="tourAddTarget"' : ''} style="font-size:1.4rem; color:${isTracked ? 'var(--accent-green)' : 'var(--text-dim)'}; font-weight:900; padding: 4px 8px; text-shadow: ${isTracked ? '0 0 10px rgba(0, 255, 102, 0.5)' : 'none'};">
               ${isTracked ? '✓' : '+'}
             </span>
           </div>
           <div id="keen_${catId}" class="keen-info-popover ${openKeenIds.has(catId) ? 'open' : ''}">
             <div class="keen-title">${item.name} • Min Redeem: ${item.minRedeem || 'Varies'}</div>
-            ${item.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.7rem; margin-bottom:4px;">*Averaged from reported range ${item.scRange}/day</div>` : ''}
+            ${item.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:4px; font-weight:700;">*Averaged from reported range ${item.scRange}/day</div>` : ''}
             <div>${item.notes || 'No critical flags. Normal 1x playthrough.'}</div>
-            ${item.bestGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid rgba(0, 255, 102, 0.2); padding-top:6px;"><strong>Recommended Go-To Games:</strong>${item.bestGames}</div>` : ''}
+            ${item.bestGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">RECOMMENDED MODULES:</strong>${item.bestGames}</div>` : ''}
           </div>
         `;
         container.appendChild(cardWrapper);
