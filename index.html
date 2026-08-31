@@ -691,7 +691,7 @@
       box-shadow: 0 4px 20px rgba(234, 179, 8, 0.25);
     }
 
-    /* Tour Tooltip with Precise Upward Pointing Arrow */
+    /* Tour Tooltip */
     .tour-tooltip-box {
       position: fixed;
       background: var(--accent-gold);
@@ -1041,6 +1041,55 @@
 
     <!-- View: Resources -->
     <section id="viewResources" style="display: none;">
+      
+      <!-- New Added Notes & Best Practices Section -->
+      <div class="tier-group-actions-panel" style="margin-bottom:14px; border-color: rgba(56, 189, 248, 0.4); background: #1a2230;">
+        <div class="tier-group-actions-title" style="color: #38bdf8; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 6px; margin-bottom: 10px;">
+          <span>NOTES & BEST PRACTICES</span>
+        </div>
+        
+        <div style="font-size:0.8rem; color:var(--text-main); display:flex; flex-direction:column; gap:12px;">
+          <div style="margin-bottom: 4px;">
+            <span style="background: rgba(234, 179, 8, 0.15); color: var(--accent-gold); padding: 3px 6px; border-radius: 4px; font-weight: 700; font-size: 0.75rem;">★ Starred games</span> = preferred pick. Quick tips by category:
+          </div>
+
+          <div style="display:flex; align-items:flex-start; gap:8px;">
+            <span style="font-size:1.1rem; line-height: 1;">🎯</span>
+            <div>
+              <strong style="font-size:0.9rem;">Plinko</strong> <span style="color:var(--text-muted); font-family: monospace;">Low volatility · 14 lines · small bet</span><br/>
+              <a href="https://sweepsgrail.com/guides/" target="_blank" style="color:#38bdf8; text-decoration:none; display:inline-block; margin-top:4px; font-weight:700;">▶ Plinko strategy</a>
+            </div>
+          </div>
+          
+          <div style="display:flex; align-items:flex-start; gap:8px;">
+            <span style="font-size:1.1rem; line-height: 1;">🃏</span>
+            <div>
+              <strong style="font-size:0.9rem;">Blackjack</strong> <span style="color:var(--text-muted); font-family: monospace;">Small bet · no martingale</span><br/>
+              <a href="https://sweepsgrail.com/guides/" target="_blank" style="color:#38bdf8; text-decoration:none; display:inline-block; margin-top:4px; font-weight:700;">Basic strategy guide →</a>
+            </div>
+          </div>
+          
+          <div style="display:flex; align-items:flex-start; gap:8px;">
+            <span style="font-size:1.1rem; line-height: 1;">🎰</span>
+            <div>
+              <strong style="font-size:0.9rem;">Slots</strong> <span style="color:var(--text-muted); font-family: monospace;">Smallest bet. Max lines if adjustable</span>
+            </div>
+          </div>
+          
+          <div style="display:flex; align-items:flex-start; gap:8px;">
+            <span style="font-size:1.1rem; line-height: 1;">💣</span>
+            <div>
+              <strong style="font-size:0.9rem;">Dice / Mines / Limbo</strong><br/>
+              <a href="https://sweepsgrail.com/guides/" target="_blank" style="color:#38bdf8; text-decoration:none; display:inline-block; margin-top:4px; font-weight:700;">▶ 99% RTP dice strategy</a>
+            </div>
+          </div>
+          
+          <div style="color:var(--text-dim); font-size:0.7rem; margin-top:4px; border-top: 1px solid var(--border-subtle); padding-top:8px;">
+            BB = Bonus Buy
+          </div>
+        </div>
+      </div>
+
       <div style="display:flex; flex-direction:column; gap:10px;">
         <a href="https://docs.google.com/spreadsheets/d/1CcQhgeod8UEECb2H6qcFxiPhjMFxdzlxXsFYHfS4UlQ/edit" target="_blank" class="ledger-card" style="text-decoration:none;">
           <div class="card-left">
@@ -1100,7 +1149,7 @@
     </div>
   </div>
 
-  <!-- Edit / Add Modal with Dedicated Delete Button -->
+  <!-- Edit / Add Modal -->
   <div id="gameModal" class="sheet-backdrop">
     <div class="sheet-modal">
       <h3 id="modalHeading">Edit Platform</h3>
@@ -1157,7 +1206,98 @@
       return clean.slice(0, 2).toUpperCase();
     }
 
-    // Master Catalog Data (Expanded 85+ Entry Catalog)
+    // Embed the Raw CSV strategy data to be dynamically linked to the games
+    const BEST_GAMES_CSV = `Casino,Plinko,Blackjack,Slots,Dice/Mines/Limbo,Live Table/Other
+Ace,–,–,★ Aztec Fire 2 / ★ Halloween Fortune,–,★ Open It
+AceBet,–,–,–,–,–
+AcornFun,–,★ First Person Blackjack,–,–,–
+American Luck,Zeus's Thunderbolt Plinko,–,3 Coin Treasures Super Duper,–,★ Open It
+Baba,–,–,Starburst,–,–
+BangCoins,–,–,Aztec Fire 2 / Coin Up Lightning (BB) / Hot Fire Fruits / Joker's Fortune,–,★ Live Roulette
+Betr,Gravity Plinko,Blackjack,–,–,Live Roulette
+BlitzMania,–,–,–,CricX,–
+Card Crush,–,★ Surrender Multihand,Aloha Elvis,Pilot Aviajet,–
+Chanced,Plinko,–,–,–,Baccarat
+ChipNWin,★ PlinkoXY,–,Speed 777,★ LimboXY / ★ MinesweeperXY,★ Live Roulette
+Chumba,★ Pin Rush,★ Classic Blackjack,The Great Pigsby,–,★ Roulette/Baccarat
+Cider Casino,Plinko Rush,–,–,–,★ Baccarat / Lightning Fishooter
+Clash5,–,Blackjack,–,Mines / Dungeon / Dice,Live Roulette / Baccarat
+Clubs,–,★ Clubs Blackjack,–,★ Joker,★ Live Roulette
+Coin Wizard,–,–,★ TNT Bonanza / Coin Up Lightning (BB) / Gold Gold Gold,–,–
+CoinsBack Casino,–,–,–,Mines / Dice / Limbo,–
+Crown Coins,–,–,Fruity Girl,Magic Dice / Turbo Mines / ★ FlyX,–
+Dara,–,–,★ 3 Coin Treasures / ★ Crazy 777,–,Lightning Fishooter
+DimeSweeps,–,–,★ Aztec Fire 2 / Hot Fire Fruits / Joker's Fortune,–,★ Roulette
+Dogg House,Plinko (Snoop),–,–,–,Live Baccarat
+Fliff,–,Blackjack,–,–,Sports Hedging
+FortunaRush,–,★ Gravity Blackjack,–,★ Live Crash,★ Live Roulette
+Fortune Wins,★ Plinkoman,–,–,★ Magic Dice,★ Jackpot Roulette
+FortunePurple,–,–,–,–,Jackpot Football
+Global Poker,–,★ Classic Blackjack,The Great Pigsby,–,★ Live Baccarat
+Golden Hearts,–,–,–,Chicken Rush 2,★ Kicker Mania
+HelloMillions,★ Gravity Plinko,HelloMillions Blackjack,–,–,★ Live Roulette / Balloon Mania
+High5,–,–,Super Duper,High 5 Mines,High 5 Wheel / Balloon Mania
+Jackpot Daily,–,–,–,Rocket Dice XY,–
+Jackpot Go,Zeus's Thunderbolt Plinko,–,–,–,★ Baccarat / Lightning Fishooter
+Jackpota,–,Suited Blackjack,The Great Pigsby,–,★ Live Roulette / Balloon Mania
+Lavish Luck,–,–,–,–,★ Baccarat
+Legacy Arcade,Plinko 2,–,–,Rocket Dice XY,French Roulette
+Legendz,★ Legendz Plinko,–,–,–,★ Live Roulette / Baccarat Original
+Lonestar,★ Plinkoman,★ Suited Blackjack,–,Magic Dice / Turbo Mines,★ Roulette / ★ Courier Sweeper
+LuckParty,★ Plinko 2,–,★ Epic Joker / ★ The Great Pigsby,–,Balloon Mania
+LuckyBits Vegas,★ Plinko,–,–,★ MinesweeperXY,–
+LuckyHands,★ Plinko,–,–,Mines,★ Baccarat / Live Roulette
+LuckyLand Casino,–,–,The Great Pigsby,–,★ Live Baccarat
+LuckyLand Slots,–,★ Big Hit Blackjack,The Great Pigsby,–,–
+LuckyRush,–,★ Gravity Blackjack,Aztec Fire 2,★ Diamond Mines,★ Live Roulette
+LunaLand,★ Plinkoman,–,Aztec Fire 2 / Hot Fire Fruits,–,–
+McLuck,★ Gravity Plinko,Blackjack Rush,–,–,★ Auto-Roulette
+MegaBonanza,Gravity Plinko,Gravity Blackjack,–,–,★ Live Roulette / Sic Bo
+Modo,★ Modo Plinko,★ Lucky Sevens Blackjack,★ Epic Joker,★ Mines,★ Modo Roulette
+Moozi,Gravity Plinko,–,Super Duper,★ Minefield,Live Roulette / Open It
+MyPrize,★ Plinko,★ Blackjack,Epic Joker / Super Duper,Limbo / Mines / Dice,Live Baccarat / Roulette
+Novig,–,–,–,–,–
+OceanKing,–,–,–,–,–
+OnyxOdds,–,–,–,–,–
+PeakPlay,–,–,–,–,–
+PlayFame,Gravity Plinko,Speed Blackjack,Aztec Fire 2,–,★ Auto-Roulette
+Pulsz,–,Classic Multihand,Epic Joker,Classic Dice / Mines Classic,Balloon Mania / ★ Live Roulette
+Pulsz Bingo,–,Classic Multihand,Epic Joker,Classic Dice / Mines Classic,Balloon Mania / ★ Live Roulette
+Punt,Plinko,–,–,–,Baccarat
+RealPrize,★ Gravity Plinko,Suited Blackjack,–,Magic Dice / Turbo Mines,★ Live Roulette
+ReBet,★ PlinkoXY,★ Blackjack,–,★ MinesweeperXY,–
+RichSweeps,–,–,Aztec Fire 2 / Coin Up Lightning (BB) / Hot Fire Fruits / Joker's Fortune,–,★ Live Roulette
+Rolla,–,–,–,Dice / Limbo / Mines / ★ Diamonds,–
+Ruby Sweeps,–,–,★ Sunken Treasure,Paddy's Cauldron,–
+Scoop,–,–,–,–,–
+Scrooge,–,–,–,–,–
+Shuffle,★ Plinko,★ Blackjack,–,Limbo / Dice,★ Auto-Roulette / ★ Sic Bo
+Sidepot,–,–,Wheel of Fortune / Knock Knock,–,–
+SorceryReels,–,–,–,–,–
+SpeedSweeps,–,–,Aztec Fire 2 / Coin Up Lightning (BB) / Hot Fire Fruits / Joker's Fortune,–,★ Live Roulette
+SpinBlitz,Gravity Plinko,Speed Blackjack,–,–,★ Auto-Roulette / Balloon Mania
+SpinPals,–,Blackjack,–,Mines / Dungeon / Dice,Live Roulette / Baccarat
+SpinSaga,★ Plinko,–,–,★ Minefield,–
+Sportzino,–,–,Go Bananza,★ Tower Rush / ★ Ninja Crash,–
+Spree,★ PlinkoXY,–,Epic Joker,–,★ Auto-Roulette
+Stackr,★ Plinko,–,–,–,–
+Stake,★ Plinko,★ Blackjack,–,Limbo / Dice / Mines,–
+SweepJungle,–,–,Hot Fire Fruits,★ Hi-Lo,–
+SweepsRoyal,–,–,Aztec Fire 2 / Coin Up Lightning (BB) / Hot Fire Fruits / Joker's Fortune,–,★ Live Roulette
+SweetSweeps,★ Gravity Plinko,–,–,–,★ Bac Bo / French Roulette
+TaoSweeps,–,★ Gravity Blackjack,–,★ Coin Miner,★ Live Roulette
+TheWinZone,–,–,GigaMatch SugarSkull / ★ GigaMatch Gummy / Gold Gold Gold / Scarab Rising,–,–
+ThrillCoins,–,–,Aztec Fire 2 / Coin Up Lightning (BB) / Hot Fire Fruits / Joker's Fortune,–,★ Live Roulette
+Thrillz,–,–,–,–,–
+Wild,–,–,–,–,–
+WinBonanza,–,–,–,–,Balloon Mania
+WOW Vegas,–,★ Gravity Blackjack,–,Limbo / Dice / Mines,★ Live Roulette
+Yay,–,–,SharkFrenzy / Neon Dreams / Starspell / 3 Coin Treasures / ★ The Great Pigsby,–,–
+Yayz,–,–,–,–,–
+Zula,–,–,★ Epic Joker,–,★ Balloon Mania
+Zumo,–,–,Hot Fire Fruits,★ Hi-Lo,–`;
+
+    // Master Catalog Data
     const CATALOG_DATA = [
       { name: "McLuck", url: "https://www.mcluck.com/home", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24, hasLive: true, minRedeem: "10 GC / 75 Cash", notes: "Use GC to farm VIP level before spinning SC. 1x playthrough on SC." },
       { name: "Spree", url: "https://spree.com/", tier: "S", dailySC: 0.4, speedHours: 24, reliability: 92, cooldown: 24, hasLive: true, minRedeem: "10 GC / 75 Cash", notes: "Regular extra free spins given away. Highly reputable. 1x playthrough." },
@@ -1294,6 +1434,39 @@
       { name: "Smiles Casino", url: "https://smilescasino.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 70, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional coins." },
       { name: "Good Vibes Casino", url: "https://goodvibescasino.com/", tier: "B", dailySC: 0.4, speedHours: 24, reliability: 68, cooldown: 24, hasLive: false, minRedeem: "50 Cash", notes: "1x playthrough required on promotional balance." }
     ];
+
+    // Map CSV Strategy games onto Master Catalog Data
+    const parsedRecommendations = {};
+    BEST_GAMES_CSV.trim().split('\n').slice(1).forEach(line => {
+      const cols = line.split(',');
+      if (cols.length >= 6) {
+        const rawName = cols[0].trim();
+        const cleanName = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        let recs = [];
+        if (cols[1] && cols[1] !== '–') recs.push('🎯 Plinko: ' + cols[1]);
+        if (cols[2] && cols[2] !== '–') recs.push('🃏 BJ: ' + cols[2]);
+        if (cols[3] && cols[3] !== '–') recs.push('🎰 Slots: ' + cols[3]);
+        if (cols[4] && cols[4] !== '–') recs.push('💣 Dice: ' + cols[4]);
+        if (cols[5] && cols[5] !== '–') recs.push('🔴 Live: ' + cols[5]);
+        if (recs.length > 0) parsedRecommendations[cleanName] = recs.join('<br/>');
+      }
+    });
+
+    CATALOG_DATA.forEach(cat => {
+      const cleanName = cat.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const matchedKey = Object.keys(parsedRecommendations).find(k => 
+        cleanName === k || cleanName.startsWith(k) || k.startsWith(cleanName)
+      );
+      if (matchedKey) {
+        cat.bestGames = parsedRecommendations[matchedKey];
+      }
+    });
+
+    // Extract bestGames for dynamic rendering of older LocalStorage saved profiles
+    function getBestGames(name) {
+      const found = CATALOG_DATA.find(c => c.name.toLowerCase() === name.toLowerCase());
+      return found ? found.bestGames : null;
+    }
 
     // State
     let trackedGames = JSON.parse(localStorage.getItem('the_casino_almanac_v7') || '[]');
@@ -1491,8 +1664,9 @@
       list.forEach(game => {
         const { isReady, remainingMs } = getCooldownState(game);
         const cardWrapper = document.createElement('div');
+        const goToGames = getBestGames(game.name) || game.bestGames;
+        
         cardWrapper.className = 'ledger-card-wrapper';
-
         cardWrapper.innerHTML = `
           <div class="ledger-card">
             <div class="card-left">
@@ -1520,6 +1694,7 @@
             <div class="keen-title">Keen Info • Min Redeem: ${game.minRedeem || 'Varies'}</div>
             ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.7rem; margin-bottom:4px;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
             <div>${game.notes || 'No specific warning flags. 24h standard reset cycle.'}</div>
+            ${goToGames ? `<div style="color:#38bdf8; font-size:0.75rem; margin-top:8px; line-height:1.4; border-top:1px solid rgba(56, 189, 248, 0.2); padding-top:4px;"><strong>Recommended Go-To Games:</strong><br/>${goToGames}</div>` : ''}
           </div>
         `;
         container.appendChild(cardWrapper);
@@ -1557,8 +1732,8 @@
         const isTracked = trackedGames.some(g => g.name.toLowerCase() === item.name.toLowerCase());
         const catId = 'cat_' + item.name.replace(/[^a-zA-Z0-9]/g, '_');
         const cardWrapper = document.createElement('div');
+        
         cardWrapper.className = 'ledger-card-wrapper';
-
         cardWrapper.innerHTML = `
           <div class="catalog-item-row ${isTracked ? 'tracked' : ''}" onclick="toggleCatalogItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
             <div class="card-left">
@@ -1580,6 +1755,7 @@
             <div class="keen-title">${item.name} • Min Redeem: ${item.minRedeem || 'Varies'}</div>
             ${item.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.7rem; margin-bottom:4px;">*Averaged from reported range ${item.scRange}/day</div>` : ''}
             <div>${item.notes || 'No critical flags. Normal 1x playthrough.'}</div>
+            ${item.bestGames ? `<div style="color:#38bdf8; font-size:0.75rem; margin-top:8px; line-height:1.4; border-top:1px solid rgba(56, 189, 248, 0.2); padding-top:4px;"><strong>Recommended Go-To Games:</strong><br/>${item.bestGames}</div>` : ''}
           </div>
         `;
         container.appendChild(cardWrapper);
@@ -1602,6 +1778,7 @@
           hasLive: item.hasLive,
           minRedeem: item.minRedeem,
           notes: item.notes,
+          bestGames: item.bestGames,
           scIsAveraged: item.scIsAveraged,
           scRange: item.scRange,
           referralUrl: '',
@@ -1632,6 +1809,7 @@
               hasLive: item.hasLive,
               minRedeem: item.minRedeem,
               notes: item.notes,
+              bestGames: item.bestGames,
               scIsAveraged: item.scIsAveraged,
               scRange: item.scRange,
               referralUrl: '',
