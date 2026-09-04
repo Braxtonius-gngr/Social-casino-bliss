@@ -252,6 +252,21 @@
 
     /* PWA install */
     .pwa-install-container { margin-top: 18px; border-top: 1px solid var(--glass-border); padding-top: 14px; }
+
+    /* Referral manager */
+    .referral-header-stats { color: var(--text-muted); font-size: 0.78rem; margin-bottom: 12px; }
+    .referral-row { display: flex; flex-direction: column; gap: 5px; padding: 9px 0; border-bottom: 1px solid var(--glass-border); }
+    .referral-row:last-child { border-bottom: none; }
+    .referral-row label { font-weight: 700; color: var(--text-main); font-size: 0.85rem; }
+    .referral-input { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); color: var(--text-main); padding: 9px 10px; border-radius: 8px; font-family: inherit; font-size: 0.82rem; }
+    .referral-input:focus { outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0,229,255,0.25); }
+    .bulk-section { background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 10px; padding: 14px; margin-bottom: 14px; display: none; }
+    .bulk-section.open { display: block; }
+    .bulk-textarea { width: 100%; height: 120px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: var(--text-main); padding: 10px; margin-bottom: 10px; border-radius: 8px; font-family: monospace; font-size: 0.78rem; resize: vertical; }
+    .bulk-error-list { color: var(--accent-pink); margin: 6px 0 0; padding-left: 20px; font-size: 0.78rem; line-height: 1.6; }
+    .bulk-success { color: var(--accent-green); font-weight: 800; }
+    .btn-share { background: transparent; border: 1px solid var(--accent-cyan); color: var(--accent-cyan); padding: 6px 10px; border-radius: 8px; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; cursor: pointer; flex-shrink: 0; }
+    .btn-share:hover { background: rgba(0,229,255,0.12); box-shadow: 0 0 10px rgba(0,229,255,0.3); }
   </style>
 </head>
 <body>
@@ -521,8 +536,9 @@
         <button class="btn-dock" style="border-color:var(--accent-green); color:var(--accent-green); text-shadow:0 0 5px var(--accent-green);" onclick="exportBackup()">&#8681; EXPORT BACKUP</button>
         <button class="btn-dock" style="border-color:var(--accent-gold); color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold);" onclick="document.getElementById('importBackupInput').click()">&#8679; IMPORT BACKUP</button>
       </div>
-      <div style="margin-top:10px;">
+      <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="openStatsModal()">&#9673; VIEW STATS</button>
+        <button class="btn-dock" style="max-width:100%; width:100%;" onclick="openReferralModal()">&#128279; MANAGE REFERRALS</button>
       </div>
       <div class="pwa-install-container">
         <button id="btnInstallPwa" class="btn-dock" style="display:none; max-width:100%; width:100%; margin-bottom:10px; border-color:var(--accent-pink); color:var(--accent-pink); text-shadow:0 0 5px var(--accent-pink);" onclick="installPWA()">&#8595; INSTALL APP</button>
@@ -549,6 +565,30 @@
       <div id="statsContent" style="flex:1; overflow-y:auto; min-height:0; padding-right:4px;"></div>
       <div class="modal-actions" style="flex-shrink:0; border-top:1px solid var(--glass-border); padding-top:14px;">
         <button class="btn-danger" onclick="clearHistory()">CLEAR HISTORY</button>
+        <button class="btn-primary" onclick="closeModals()">DONE</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="referralModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel" style="max-height:88vh; display:flex; flex-direction:column;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:6px; flex-shrink:0;">
+        <h3 style="margin:0;">Referrals</h3>
+        <button class="btn-close-x" onclick="closeModals()">&#10005;</button>
+      </div>
+      <div id="referralStats" class="referral-header-stats"></div>
+      <div style="display:flex; gap:8px; margin-bottom:12px; flex-shrink:0;">
+        <input type="text" id="referralSearch" class="referral-input" placeholder="Search platforms..." oninput="renderReferralList(this.value)" />
+        <button class="btn-dock" style="max-width:none; padding:0 14px; white-space:nowrap; font-size:0.72rem;" onclick="toggleBulkPaste()">BULK</button>
+      </div>
+      <div id="bulkPasteSection" class="bulk-section">
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">One per line &mdash; <code>PlatformName | https://link</code></div>
+        <textarea id="bulkTextarea" class="bulk-textarea" placeholder="Pulsz | https://...&#10;Chumba | https://..."></textarea>
+        <button class="btn-primary" style="width:100%; padding:10px;" onclick="processBulkReferrals()">PROCESS LINKS</button>
+        <div id="bulkResults" style="margin-top:10px; font-size:0.78rem;"></div>
+      </div>
+      <div id="referralList" style="flex:1; overflow-y:auto; min-height:0; padding-right:4px;"></div>
+      <div class="modal-actions" style="flex-shrink:0; border-top:1px solid var(--glass-border); padding-top:14px;">
         <button class="btn-primary" onclick="closeModals()">DONE</button>
       </div>
     </div>
@@ -1062,6 +1102,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               </div>
             </div>
             <div class="card-actions">
+              ${game.referralUrl ? `<button class="btn-share" onclick="shareReferral(this, '${game.id}')">Share</button>` : ''}
               <button class="btn-open ${isReady ? '' : 'cooldown'}" onclick="collect('${game.id}')">
                 ${isReady ? 'OPEN' : 'WAIT'}
               </button>
@@ -1534,6 +1575,132 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (view === 'catalog') {
         const isOpen = document.getElementById('sortDrawerCatalog').classList.contains('open');
         if (isOpen) tourCheckpoint(5);
+      }
+    }
+
+    // --- Referral management ---
+    function escHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function openReferralModal() {
+      closeModals();
+      document.getElementById('referralSearch').value = '';
+      document.getElementById('bulkTextarea').value = '';
+      document.getElementById('bulkResults').innerHTML = '';
+      document.getElementById('bulkPasteSection').classList.remove('open');
+      updateReferralStats();
+      renderReferralList('');
+      document.getElementById('referralModal').classList.add('open');
+    }
+
+    function updateReferralStats() {
+      const total = trackedGames.length;
+      const withRef = trackedGames.filter(g => g.referralUrl && g.referralUrl.trim() !== '').length;
+      document.getElementById('referralStats').textContent =
+        `${withRef} of ${total} platform(s) have a referral link.`;
+    }
+
+    function renderReferralList(filterText) {
+      const listDiv = document.getElementById('referralList');
+      const q = (filterText || '').toLowerCase();
+      const filtered = [...trackedGames]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .filter(g => g.name.toLowerCase().includes(q));
+
+      if (filtered.length === 0) {
+        listDiv.innerHTML = `<div style="color:var(--text-muted); text-align:center; padding:24px;">${trackedGames.length === 0 ? 'No platforms tracked yet.' : 'No platforms match that search.'}</div>`;
+        return;
+      }
+
+      // Values are escaped: referral URLs routinely contain characters that
+      // would otherwise break out of the value attribute.
+      listDiv.innerHTML = filtered.map(g => `
+        <div class="referral-row">
+          <label>${escHtml(g.name)}</label>
+          <input type="url" class="referral-input" value="${escHtml(g.referralUrl || '')}"
+                 placeholder="https://..." data-gid="${escHtml(g.id)}"
+                 onblur="updateReferralUrl(this.dataset.gid, this.value)" />
+        </div>`).join('');
+    }
+
+    function updateReferralUrl(id, value) {
+      const game = trackedGames.find(g => g.id === id);
+      if (!game) return;
+      game.referralUrl = (value || '').trim();
+      persist();
+      updateReferralStats();
+    }
+
+    function toggleBulkPaste() {
+      document.getElementById('bulkPasteSection').classList.toggle('open');
+    }
+
+    function processBulkReferrals() {
+      const lines = document.getElementById('bulkTextarea').value.split('\n');
+      let updated = 0, ignored = 0;
+      const failures = [];
+
+      lines.forEach(line => {
+        if (!line.trim()) { ignored++; return; }
+        const pipe = line.indexOf('|');           // split on the FIRST pipe only
+        if (pipe === -1) { ignored++; return; }
+
+        const name = line.substring(0, pipe).trim();
+        const url = line.substring(pipe + 1).trim();
+
+        if (!/^https?:\/\//i.test(url)) {
+          failures.push(`Not a valid URL: <strong>${escHtml(name || line.trim())}</strong>`);
+          return;
+        }
+        // Exact case-insensitive match only. No fuzzy matching -- a near miss
+        // gets reported rather than written to the wrong platform.
+        const match = trackedGames.find(g => g.name.toLowerCase() === name.toLowerCase());
+        if (!match) {
+          failures.push(`No exact match: <strong>${escHtml(name)}</strong>`);
+          return;
+        }
+        match.referralUrl = url;
+        updated++;
+      });
+
+      persist();
+      updateReferralStats();
+      renderReferralList(document.getElementById('referralSearch').value);
+
+      let html = `<div class="bulk-success">Matched and updated: ${updated}</div>`;
+      if (ignored > 0) html += `<div style="color:var(--text-muted); margin-top:5px;">Ignored (blank or no "|"): ${ignored}</div>`;
+      if (failures.length > 0) {
+        html += `<div style="margin-top:10px; color:var(--text-muted);">Needs attention (${failures.length}):</div>`;
+        html += `<ul class="bulk-error-list">${failures.map(f => `<li>${f}</li>`).join('')}</ul>`;
+      }
+      document.getElementById('bulkResults').innerHTML = html;
+    }
+
+    // Looks the platform up by id rather than interpolating the URL into an
+    // inline handler, which would break on URLs containing quotes.
+    async function shareReferral(btn, id) {
+      const game = trackedGames.find(g => g.id === id);
+      if (!game || !game.referralUrl) return;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: `Join me on ${game.name}`, url: game.referralUrl });
+        } catch (err) {
+          if (err && err.name !== 'AbortError') console.warn('Share failed:', err);
+        }
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(game.referralUrl);
+        const original = btn.textContent;
+        btn.textContent = 'COPIED';
+        setTimeout(() => { btn.textContent = original; }, 1800);
+      } catch (err) {
+        alert('Referral link:\n\n' + game.referralUrl);
       }
     }
 
