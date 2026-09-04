@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>The Casino Almanac</title>
+  <meta name="theme-color" content="#05070d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Almanac" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <style>
     :root {
       --bg-base: #070a10;
@@ -227,6 +234,24 @@
     .backup-controls { display: flex; gap: 10px; margin-top: 16px; }
     .backup-controls .btn-dock { flex: 1; max-width: 100%; padding: 12px 8px; font-size: 0.8rem; }
     .backup-helper { color: var(--text-muted); font-size: 0.72rem; text-align: center; margin-top: 10px; line-height: 1.5; }
+
+    /* Stats modal */
+    .stats-section { margin-bottom: 22px; }
+    .stats-section h4 { color: var(--accent-cyan); border-bottom: 1px solid var(--glass-border); padding-bottom: 6px; margin-bottom: 12px; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 800; text-shadow: 0 0 8px rgba(0,229,255,0.4); }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
+    .stat-box { background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); border-radius: 10px; padding: 14px 8px; text-align: center; }
+    .stat-value { font-size: 1.5rem; font-weight: 900; margin-bottom: 4px; font-family: "Courier New", Courier, monospace; }
+    .stat-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .stats-list { list-style: none; padding: 0; margin: 0; }
+    .stats-list-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px dashed var(--glass-border); font-size: 0.85rem; }
+    .stats-list-item:last-child { border-bottom: none; }
+    .stale-name { color: var(--text-main); font-weight: 700; }
+    .stale-warning { color: var(--accent-pink); font-size: 0.78rem; white-space: nowrap; }
+    .btn-close-x { background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); border-radius: 50%; width: 32px; height: 32px; flex: 0 0 auto; cursor: pointer; font-size: 0.9rem; font-weight: 800; padding: 0; }
+    .btn-close-x:hover { border-color: var(--accent-pink); color: var(--accent-pink); }
+
+    /* PWA install */
+    .pwa-install-container { margin-top: 18px; border-top: 1px solid var(--glass-border); padding-top: 14px; }
   </style>
 </head>
 <body>
@@ -496,11 +521,36 @@
         <button class="btn-dock" style="border-color:var(--accent-green); color:var(--accent-green); text-shadow:0 0 5px var(--accent-green);" onclick="exportBackup()">&#8681; EXPORT BACKUP</button>
         <button class="btn-dock" style="border-color:var(--accent-gold); color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold);" onclick="document.getElementById('importBackupInput').click()">&#8679; IMPORT BACKUP</button>
       </div>
+      <div style="margin-top:10px;">
+        <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="openStatsModal()">&#9673; VIEW STATS</button>
+      </div>
+      <div class="pwa-install-container">
+        <button id="btnInstallPwa" class="btn-dock" style="display:none; max-width:100%; width:100%; margin-bottom:10px; border-color:var(--accent-pink); color:var(--accent-pink); text-shadow:0 0 5px var(--accent-pink);" onclick="installPWA()">&#8595; INSTALL APP</button>
+        <div class="backup-helper" style="margin-top:0;">
+          <strong style="color:var(--text-main);">Install for offline use:</strong><br>
+          Android &mdash; browser menu &rarr; "Add to Home screen".<br>
+          iPad &mdash; Share button &rarr; "Add to Home Screen".
+        </div>
+      </div>
       <div class="backup-helper">
         Everything is stored locally in this browser only. Backups are the only way to move your data to another device or recover it if browser data is cleared.
       </div>
       <input type="file" id="importBackupInput" accept=".json,application/json" style="display:none;" onchange="importBackup(event)" />
       <div class="modal-actions"><button class="btn-primary" onclick="closeModals()">DONE</button></div>
+    </div>
+  </div>
+
+  <div id="statsModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel" style="max-height:88vh; display:flex; flex-direction:column;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px; flex-shrink:0;">
+        <h3 style="margin:0;">Collection Stats</h3>
+        <button class="btn-close-x" onclick="closeModals()">&#10005;</button>
+      </div>
+      <div id="statsContent" style="flex:1; overflow-y:auto; min-height:0; padding-right:4px;"></div>
+      <div class="modal-actions" style="flex-shrink:0; border-top:1px solid var(--glass-border); padding-top:14px;">
+        <button class="btn-danger" onclick="clearHistory()">CLEAR HISTORY</button>
+        <button class="btn-primary" onclick="closeModals()">DONE</button>
+      </div>
     </div>
   </div>
 
@@ -962,6 +1012,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (!game) return;
       window.open(game.url, '_blank');
       game.lastCollected = Date.now();
+      logCollection(id);
       persist();
     }
 
@@ -1486,6 +1537,219 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
     }
 
+    // --- PWA install & offline ---
+    let deferredPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('btnInstallPwa');
+      if (btn) btn.style.display = 'block';
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredPrompt = null;
+      const btn = document.getElementById('btnInstallPwa');
+      if (btn) btn.style.display = 'none';
+    });
+
+    function installPWA() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        const btn = document.getElementById('btnInstallPwa');
+        if (btn) btn.style.display = 'none';
+        deferredPrompt = null;
+      }).catch(() => { deferredPrompt = null; });
+    }
+
+    // Register the service worker with a RELATIVE path (this app lives on a
+    // GitHub Pages subpath). Any failure is non-fatal: the app must keep
+    // working normally without it.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        try {
+          navigator.serviceWorker.register('sw.js')
+            .catch(err => console.warn('Service worker registration failed:', err));
+        } catch (err) {
+          console.warn('Service worker registration error:', err);
+        }
+      });
+    }
+
+    // --- Collection history & stats ---
+    let collectionHistory = [];
+    let dailyRunsHistory = [];
+    let currentDailyRunStartTime = null;
+
+    function initHistory() {
+      try {
+        const h = JSON.parse(localStorage.getItem('the_casino_almanac_history_v1'));
+        collectionHistory = Array.isArray(h) ? h : [];
+      } catch (e) { collectionHistory = []; }
+      try {
+        const r = JSON.parse(localStorage.getItem('the_casino_almanac_runs_v1'));
+        dailyRunsHistory = Array.isArray(r) ? r : [];
+      } catch (e) { dailyRunsHistory = []; }
+    }
+    initHistory();
+
+    function logCollection(id) {
+      const game = trackedGames.find(g => g.id === id);
+      if (!game) return;
+      collectionHistory.push({ platformName: game.name, collectedAt: Date.now() });
+      while (collectionHistory.length > 2000) collectionHistory.shift();
+      try {
+        localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory));
+      } catch (e) { /* storage full or unavailable; keep in-memory copy */ }
+    }
+
+    function recordDailyRunStart() {
+      currentDailyRunStartTime = Date.now();
+    }
+
+    function recordDailyRunEnd() {
+      if (currentDailyRunStartTime) {
+        dailyRunsHistory.push({
+          startedAt: currentDailyRunStartTime,
+          endedAt: Date.now(),
+          collected: dailyRunStats.collected,
+          skipped: dailyRunStats.skipped
+        });
+        while (dailyRunsHistory.length > 200) dailyRunsHistory.shift();
+        try {
+          localStorage.setItem('the_casino_almanac_runs_v1', JSON.stringify(dailyRunsHistory));
+        } catch (e) { /* ignore */ }
+      }
+      currentDailyRunStartTime = null;
+    }
+
+    function openStatsModal() {
+      closeModals();
+      renderStats();
+      document.getElementById('statsModal').classList.add('open');
+    }
+
+    function renderStats() {
+      const container = document.getElementById('statsContent');
+      const now = Date.now();
+      const dayMs = 24 * 60 * 60 * 1000;
+
+      if (collectionHistory.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:40px 20px; color:var(--text-muted); line-height:1.6;">
+          No collections logged yet.<br>Collect from a platform and check back here.</div>`;
+        return;
+      }
+
+      const total = collectionHistory.length;
+      let last7 = 0, last30 = 0;
+      const counts = {};
+      const lastSeen = {};
+      const historyDates = new Set();
+
+      collectionHistory.forEach(entry => {
+        if (now - entry.collectedAt <= 7 * dayMs) last7++;
+        if (now - entry.collectedAt <= 30 * dayMs) last30++;
+        counts[entry.platformName] = (counts[entry.platformName] || 0) + 1;
+        // Track the most recent timestamp explicitly rather than assuming
+        // the array is chronologically ordered.
+        if (!lastSeen[entry.platformName] || entry.collectedAt > lastSeen[entry.platformName]) {
+          lastSeen[entry.platformName] = entry.collectedAt;
+        }
+        historyDates.add(new Date(entry.collectedAt).toDateString());
+      });
+
+      // Streak: consecutive local calendar days, counting back from today
+      // (or yesterday if nothing collected yet today).
+      let streak = 0;
+      let checkDate = new Date();
+      if (!historyDates.has(checkDate.toDateString())) {
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+      while (historyDates.has(checkDate.toDateString())) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+
+      const top10 = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      const top10Html = top10.map(([name, n]) => `
+        <li class="stats-list-item">
+          <span>${name}</span>
+          <span style="color:var(--accent-cyan); font-weight:800;">${n}</span>
+        </li>`).join('');
+
+      // Going stale: only currently-tracked platforms.
+      const threshold = now - (21 * dayMs);
+      const stale = [];
+      trackedGames.forEach(game => {
+        const last = lastSeen[game.name];
+        if (last === undefined) {
+          stale.push({ name: game.name, lastCol: 0 });
+        } else if (last < threshold) {
+          stale.push({ name: game.name, lastCol: last });
+        }
+      });
+      stale.sort((a, b) => a.lastCol - b.lastCol);
+
+      let staleHtml;
+      if (stale.length === 0) {
+        staleHtml = `<div style="color:var(--accent-green); font-size:0.85rem; text-align:center; padding:14px; border:1px solid var(--glass-border); border-radius:10px; background:rgba(0,0,0,0.2);">Looking good &mdash; nothing neglected.</div>`;
+      } else {
+        staleHtml = '<ul class="stats-list">' + stale.map(s => {
+          const text = s.lastCol > 0
+            ? `${Math.floor((now - s.lastCol) / dayMs)} days ago`
+            : 'Never collected';
+          return `<li class="stats-list-item"><span class="stale-name">${s.name}</span><span class="stale-warning">${text}</span></li>`;
+        }).join('') + '</ul>';
+      }
+
+      let runHtml = '';
+      if (dailyRunsHistory.length > 0) {
+        const recent = dailyRunsHistory.slice(-10);
+        const avgMs = recent.reduce((acc, r) => acc + (r.endedAt - r.startedAt), 0) / recent.length;
+        const m = Math.floor(avgMs / 60000);
+        const s = Math.floor((avgMs % 60000) / 1000).toString().padStart(2, '0');
+        runHtml = `
+          <div class="stats-section">
+            <h4>Daily Run Performance</h4>
+            <div class="stats-list-item" style="border:none; padding-top:0;">
+              <span style="color:var(--text-muted); font-size:0.82rem;">Avg duration (last ${recent.length})</span>
+              <span style="color:var(--accent-orange); font-weight:800;">${m}m ${s}s</span>
+            </div>
+          </div>`;
+      }
+
+      container.innerHTML = `
+        <div class="stats-section">
+          <h4>Overview</h4>
+          <div class="stats-grid">
+            <div class="stat-box"><div class="stat-value" style="color:var(--accent-green);">${total}</div><div class="stat-label">All Time</div></div>
+            <div class="stat-box"><div class="stat-value" style="color:var(--accent-orange);">${streak}</div><div class="stat-label">Day Streak</div></div>
+            <div class="stat-box"><div class="stat-value" style="color:var(--accent-pink);">${last7}</div><div class="stat-label">Last 7 Days</div></div>
+            <div class="stat-box"><div class="stat-value" style="color:var(--accent-cyan);">${last30}</div><div class="stat-label">Last 30 Days</div></div>
+          </div>
+        </div>
+        ${runHtml}
+        <div class="stats-section">
+          <h4>Most Collected</h4>
+          <ul class="stats-list">${top10Html}</ul>
+        </div>
+        <div class="stats-section">
+          <h4>Going Stale (21+ days)</h4>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px; line-height:1.4;">Still tracked, but you haven't collected from these in a while. Worth pruning?</div>
+          ${staleHtml}
+        </div>`;
+    }
+
+    function clearHistory() {
+      if (!confirm(`Delete all ${collectionHistory.length} collection history entries and ${dailyRunsHistory.length} run record(s)?\n\nYour tracked platforms and cooldown timers will NOT be affected.`)) return;
+      collectionHistory = [];
+      dailyRunsHistory = [];
+      localStorage.removeItem('the_casino_almanac_history_v1');
+      localStorage.removeItem('the_casino_almanac_runs_v1');
+      renderStats();
+    }
+
     // --- Backup & restore ---
     function exportBackup() {
       const dateStr = new Date().toISOString().split('T')[0];
@@ -1618,6 +1882,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
       dailyRunIndex = 0;
       dailyRunStats = { collected: 0, skipped: 0 };
+      recordDailyRunStart();
       document.getElementById('dailyRunOverlay').classList.add('open');
       renderDailyRunStep();
     }
@@ -1681,6 +1946,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function exitDailyRun() {
+      recordDailyRunEnd();
       document.getElementById('dailyRunOverlay').classList.remove('open');
       renderGames();
       updateHeroStats();
