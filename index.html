@@ -297,6 +297,72 @@
     .prune-summary-item { padding: 16px 10px; text-align: center; flex: 1; border-radius: 10px; background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); }
     .prune-summary-item .val { font-size: 1.7rem; font-weight: 900; margin-bottom: 4px; font-family: "Courier New", Courier, monospace; }
     .prune-note { font-size: 0.72rem; color: var(--text-muted); line-height: 1.5; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--glass-border); }
+
+    /* Theme picker */
+    .theme-settings { margin-top: 18px; border-top: 1px solid var(--glass-border); padding-top: 14px; }
+    .theme-settings h4 { margin: 0 0 10px; font-size: 0.8rem; color: var(--accent-cyan); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; }
+    .theme-grid { display: flex; flex-direction: column; gap: 10px; }
+    .theme-card { background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); border-radius: 12px; padding: 12px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: border-color .2s, background .2s; }
+    .theme-card.active { border-color: var(--accent-green); background: rgba(0,0,0,0.5); }
+    .theme-info { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+    .theme-name { font-size: 0.9rem; color: var(--text-main); font-weight: 800; }
+    .theme-name .active-tag { font-size: 0.6rem; color: var(--accent-green); margin-left: 8px; letter-spacing: 0.08em; }
+    .theme-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
+    .theme-swatches { display: flex; gap: 4px; flex-shrink: 0; }
+    .theme-swatch { width: 15px; height: 15px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.25); }
+
+    /*
+     * OBSIDIAN LEDGER structural overrides.
+     * Scoped to the theme attribute rather than applied globally: this file has
+     * ~64 hardcoded rgba glows that CSS variables can't reach, plus tier badge
+     * backgrounds baked in as literal rgba. These rules neutralise the neon
+     * lighting and restate those backgrounds so the theme reads as genuinely
+     * different rather than a hue swap. The default theme is untouched.
+     */
+    [data-theme="obsidian"] * { text-shadow: none !important; }
+    [data-theme="obsidian"] .glass-panel { background: rgba(30,28,26,0.72); box-shadow: 0 2px 10px rgba(0,0,0,0.55); border-top-color: rgba(255,255,255,0.06); border-left-color: rgba(255,255,255,0.04); }
+    [data-theme="obsidian"] body, [data-theme="obsidian"] { background: #161514; }
+    [data-theme="obsidian"] .app-title { -webkit-text-stroke: 0; color: var(--text-main); font-family: Georgia, "Times New Roman", serif; letter-spacing: 0.02em; text-transform: none; font-weight: 700; }
+    [data-theme="obsidian"] .app-title span { -webkit-text-stroke: 0; color: var(--accent-gold); }
+    [data-theme="obsidian"] .landing-title { -webkit-text-stroke: 0; color: var(--text-main); font-family: Georgia, "Times New Roman", serif; text-transform: none; }
+    [data-theme="obsidian"] .landing-title span { -webkit-text-stroke: 0; color: var(--accent-gold); }
+    [data-theme="obsidian"] .hero-ring-circle { box-shadow: none; background: rgba(0,0,0,0.35); border-width: 2px; }
+    [data-theme="obsidian"] .casino-avatar { box-shadow: none; border-width: 1px; }
+    [data-theme="obsidian"] .status-dot { box-shadow: none; }
+    [data-theme="obsidian"] .tier-badge { box-shadow: none; }
+    [data-theme="obsidian"] .tier-S { background: rgba(176,141,87,0.16); }
+    [data-theme="obsidian"] .tier-A { background: rgba(160,116,80,0.16); }
+    [data-theme="obsidian"] .tier-B { background: rgba(94,124,110,0.16); }
+    [data-theme="obsidian"] .tier-C { background: rgba(122,110,140,0.16); }
+    [data-theme="obsidian"] .btn-open { background: var(--accent-gold); color: #201c14; box-shadow: none; }
+    [data-theme="obsidian"] .btn-open:hover { box-shadow: none; transform: none; }
+    [data-theme="obsidian"] .btn-open.cooldown { background: rgba(0,0,0,0.35); color: var(--text-dim); border: 1px solid var(--glass-border); }
+    [data-theme="obsidian"] .docked-footer { background: rgba(18,17,16,0.88); box-shadow: 0 -6px 20px rgba(0,0,0,0.6); border-top-color: var(--glass-border); }
+    [data-theme="obsidian"] .btn-start-run { box-shadow: none; background: rgba(0,0,0,0.35); }
+    [data-theme="obsidian"] .btn-start-run:hover:not(:disabled) { box-shadow: none; background: rgba(125,155,122,0.12); }
+    [data-theme="obsidian"] .landing-screen { background: radial-gradient(circle at center, #1e1b18 0%, #121110 100%); }
+    [data-theme="obsidian"] .hero-stat-card { background: rgba(30,28,26,0.6); }
+    [data-theme="obsidian"] .btn-primary { background: var(--accent-green); color: #14180f; box-shadow: none; }
+    [data-theme="obsidian"] .btn-primary:hover { box-shadow: none; }
+    [data-theme="obsidian"] .btn-run-collect { background: var(--accent-gold); color: #201c14; box-shadow: none; }
+    [data-theme="obsidian"] .btn-dock { box-shadow: none; }
+    [data-theme="obsidian"] .btn-dock:hover { box-shadow: none; }
+    [data-theme="obsidian"] .nav-tab.active { background: rgba(176,141,87,0.14); border-color: var(--accent-gold); box-shadow: none; color: var(--text-main); }
+    [data-theme="obsidian"] .filter-btn.active { background: rgba(94,124,110,0.18); border-color: var(--accent-cyan); box-shadow: none; }
+    [data-theme="obsidian"] .sort-trigger-btn { box-shadow: none; }
+    [data-theme="obsidian"] .sort-stack-chip { box-shadow: none; }
+    [data-theme="obsidian"] .sort-priority-num { box-shadow: none; }
+    [data-theme="obsidian"] .keen-info-popover { border-style: solid; border-color: var(--glass-border); box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+    [data-theme="obsidian"] .catalog-item-row.tracked { box-shadow: none; }
+    [data-theme="obsidian"] .landing-btn { box-shadow: none; border-color: var(--accent-gold); color: var(--accent-gold); }
+    [data-theme="obsidian"] .landing-btn:hover { background: rgba(176,141,87,0.12); box-shadow: none; }
+    [data-theme="obsidian"] .tour-tooltip-box { background: var(--accent-gold); box-shadow: 0 6px 24px rgba(0,0,0,0.6); }
+    [data-theme="obsidian"] .tour-tooltip-box::before { border-color: transparent transparent var(--accent-gold) transparent; }
+    [data-theme="obsidian"] .tour-tooltip-box.arrow-below::before { border-color: var(--accent-gold) transparent transparent transparent; }
+    [data-theme="obsidian"] .tour-target-active { animation: none !important; box-shadow: 0 0 0 2px var(--accent-gold) !important; }
+    [data-theme="obsidian"] .cooldown-chip.flash { box-shadow: none; }
+    [data-theme="obsidian"] .btn-share:hover { box-shadow: none; }
+    [data-theme="obsidian"] .type-badge { box-shadow: none; }
   </style>
 </head>
 <body>
@@ -577,6 +643,11 @@
           Android &mdash; browser menu &rarr; "Add to Home screen".<br>
           iPad &mdash; Share button &rarr; "Add to Home Screen".
         </div>
+      </div>
+
+      <div class="theme-settings">
+        <h4>Theme</h4>
+        <div id="themeList" class="theme-grid"></div>
       </div>
 
       <div class="notify-settings">
@@ -1422,6 +1493,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function openSettingsModal() {
       const isEnabled = localStorage.getItem('almanac_show_landing') !== 'false';
       document.getElementById('settingLandingToggle').checked = isEnabled;
+      renderThemeUI();
       refreshNotifyUI();
       document.getElementById('settingsModal').classList.add('open');
     }
@@ -1701,6 +1773,114 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         });
       });
     }
+
+    // --- Theme engine ---
+    const THEME_KEY = 'almanac_theme_v1';
+
+    // "neon" reproduces the existing :root block verbatim. Do not "tidy" these
+    // values - they are the current look and must stay pixel-identical.
+    const THEMES = {
+      neon: {
+        name: 'Neon Grid',
+        description: 'High-contrast cyberpunk. Cyan and magenta on near-black, with glow.',
+        vars: {
+          '--bg-base': '#070a10',
+          '--accent-gold': '#ffcc00',
+          '--accent-gold-hover': '#e6b800',
+          '--accent-gold-dim': 'rgba(255, 204, 0, 0.15)',
+          '--accent-green': '#00ff66',
+          '--accent-green-dim': 'rgba(0, 255, 102, 0.15)',
+          '--accent-pink': '#ff007f',
+          '--accent-pink-dim': 'rgba(255, 0, 127, 0.15)',
+          '--accent-orange': '#ff6600',
+          '--accent-orange-dim': 'rgba(255, 102, 0, 0.15)',
+          '--accent-cyan': '#00e5ff',
+          '--accent-cyan-dim': 'rgba(0, 229, 255, 0.15)',
+          '--glass-border': 'rgba(255, 255, 255, 0.08)',
+          '--glass-highlight': 'rgba(255, 255, 255, 0.2)',
+          '--text-main': '#e2f1ec',
+          '--text-muted': '#8b9bb4',
+          '--text-dim': '#4d665b',
+          '--tier-s': '#ff007f',
+          '--tier-a': '#ff6600',
+          '--tier-b': '#00e5ff',
+          '--tier-c': '#8b5cf6'
+        },
+        bodyBg: 'radial-gradient(circle at 20% 30%, rgba(255, 0, 127, 0.18), transparent 45%), radial-gradient(circle at 80% 60%, rgba(0, 229, 255, 0.18), transparent 45%), radial-gradient(circle at 50% 100%, rgba(0, 255, 102, 0.15), transparent 50%), linear-gradient(135deg, #05070d 0%, #0a0612 50%, #030a14 100%)',
+        metaColor: '#05070d'
+      },
+      obsidian: {
+        name: 'Obsidian Ledger',
+        description: 'Warm dark neutrals with aged brass and sage. Quiet, matte, print-like.',
+        vars: {
+          '--bg-base': '#161514',
+          '--accent-gold': '#b08d57',
+          '--accent-gold-hover': '#9a7a49',
+          '--accent-gold-dim': 'rgba(176, 141, 87, 0.15)',
+          '--accent-green': '#7d9b7a',
+          '--accent-green-dim': 'rgba(125, 155, 122, 0.15)',
+          '--accent-pink': '#a86b62',
+          '--accent-pink-dim': 'rgba(168, 107, 98, 0.15)',
+          '--accent-orange': '#a07450',
+          '--accent-orange-dim': 'rgba(160, 116, 80, 0.15)',
+          '--accent-cyan': '#5e7c6e',
+          '--accent-cyan-dim': 'rgba(94, 124, 110, 0.15)',
+          '--glass-border': 'rgba(240, 232, 220, 0.10)',
+          '--glass-highlight': 'rgba(240, 232, 220, 0.06)',
+          '--text-main': '#ece5d9',
+          '--text-muted': '#9b9287',
+          '--text-dim': '#655e56',
+          '--tier-s': '#b08d57',
+          '--tier-a': '#a07450',
+          '--tier-b': '#5e7c6e',
+          '--tier-c': '#7a6e8c'
+        },
+        bodyBg: 'linear-gradient(170deg, #1b1917 0%, #161514 55%, #121110 100%)',
+        metaColor: '#161514'
+      }
+    };
+
+    function getActiveThemeId() {
+      const id = localStorage.getItem(THEME_KEY);
+      return THEMES[id] ? id : 'neon';
+    }
+
+    function applyTheme(themeId) {
+      const theme = THEMES[themeId] || THEMES.neon;
+      const root = document.documentElement;
+      Object.entries(theme.vars).forEach(([k, v]) => root.style.setProperty(k, v));
+      root.setAttribute('data-theme', themeId);
+      if (document.body) document.body.style.background = theme.bodyBg;
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', theme.metaColor);
+    }
+
+    function selectTheme(themeId) {
+      try { localStorage.setItem(THEME_KEY, themeId); } catch (e) {}
+      applyTheme(themeId);
+      renderThemeUI();
+    }
+
+    function renderThemeUI() {
+      const list = document.getElementById('themeList');
+      if (!list) return;
+      const active = getActiveThemeId();
+      list.innerHTML = Object.entries(THEMES).map(([id, t]) => {
+        const isActive = id === active;
+        const swatches = [t.vars['--accent-cyan'], t.vars['--accent-pink'], t.vars['--accent-gold'], t.vars['--accent-green']]
+          .map(c => `<div class="theme-swatch" style="background:${c}"></div>`).join('');
+        return `<div class="theme-card ${isActive ? 'active' : ''}" onclick="selectTheme('${id}')">
+          <div class="theme-info">
+            <span class="theme-name">${escHtml(t.name)}${isActive ? '<span class="active-tag">ACTIVE</span>' : ''}</span>
+            <span class="theme-desc">${escHtml(t.description)}</span>
+          </div>
+          <div class="theme-swatches">${swatches}</div>
+        </div>`;
+      }).join('');
+    }
+
+    // Apply before first paint so there's no flash of the wrong theme.
+    applyTheme(getActiveThemeId());
 
     // --- Review & prune ---
     let pruneQueue = [];
@@ -2588,6 +2768,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     renderGames();
     updateHeroStats();
     scheduleNextNotification();
+    applyTheme(getActiveThemeId());
   </script>
 </body>
 </html>
