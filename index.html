@@ -274,6 +274,29 @@
     .cooldown-chip:active { transform: scale(0.92); }
     .cooldown-chip.flash { border-color: var(--accent-gold); color: var(--accent-gold); box-shadow: 0 0 10px rgba(255,204,0,0.4); }
     .run-cooldown-row { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px; }
+
+    /* Notifications */
+    .notify-settings { margin-top: 18px; border-top: 1px solid var(--glass-border); padding-top: 14px; }
+    .notify-settings h4 { margin: 0 0 10px; font-size: 0.8rem; color: var(--accent-cyan); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; text-shadow: 0 0 8px rgba(0,229,255,0.4); }
+    .notify-message { font-size: 0.72rem; margin-bottom: 10px; line-height: 1.5; color: var(--text-muted); }
+    .notify-error { color: var(--accent-pink); font-weight: 700; }
+    .time-inputs { display: flex; gap: 12px; margin-top: 12px; }
+    .time-inputs label { display: flex; flex-direction: column; font-size: 0.68rem; color: var(--text-muted); gap: 5px; flex: 1; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+    .time-inputs input[type="time"] { background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: var(--text-main); padding: 9px; border-radius: 8px; font-family: inherit; font-size: 0.85rem; }
+    .time-inputs input[type="time"]:focus { outline: none; border-color: var(--accent-cyan); }
+
+    /* Review & prune */
+    .prune-card { background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; }
+    .prune-title { font-size: 1.15rem; font-weight: 900; color: #fff; margin: 0 0 4px; text-shadow: 0 0 10px rgba(255,255,255,0.25); }
+    .prune-flagged-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-orange); font-weight: 800; margin: 12px 0 8px; }
+    .prune-reasons { margin: 0; padding: 0; list-style: none; }
+    .prune-reasons li { font-size: 0.85rem; color: var(--text-main); margin-bottom: 7px; display: flex; align-items: flex-start; line-height: 1.4; }
+    .prune-reasons li::before { content: '\\2022'; color: var(--accent-orange); margin-right: 8px; font-weight: 900; flex-shrink: 0; }
+    .prune-warning { color: var(--accent-pink); font-size: 0.78rem; margin-top: 14px; padding: 11px; background: rgba(255,0,127,0.08); border: 1px solid var(--accent-pink); border-radius: 8px; line-height: 1.45; }
+    .prune-summary-grid { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+    .prune-summary-item { padding: 16px 10px; text-align: center; flex: 1; border-radius: 10px; background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); }
+    .prune-summary-item .val { font-size: 1.7rem; font-weight: 900; margin-bottom: 4px; font-family: "Courier New", Courier, monospace; }
+    .prune-note { font-size: 0.72rem; color: var(--text-muted); line-height: 1.5; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--glass-border); }
   </style>
 </head>
 <body>
@@ -555,6 +578,29 @@
           iPad &mdash; Share button &rarr; "Add to Home Screen".
         </div>
       </div>
+
+      <div class="notify-settings">
+        <h4>Notifications</h4>
+        <div id="notifyUnsupported" class="notify-message notify-error" style="display:none;">
+          This browser doesn't support notifications, so alerts aren't available on this device.
+        </div>
+        <div id="notifyDenied" class="notify-message notify-error" style="display:none;">
+          Notifications are blocked at the browser level. To use them, re-enable notifications for this site in your browser's site settings.
+        </div>
+        <div id="notifyControls">
+          <div class="toggle-row">
+            <span style="color:#fff; font-size:0.85rem;">Alert me when platforms are ready</span>
+            <input type="checkbox" id="notifyToggle" onchange="toggleNotifications(this.checked)" />
+          </div>
+          <div class="time-inputs" id="notifyQuietHours" style="display:none;">
+            <label>Quiet from <input type="time" id="notifyStart" onchange="saveNotifyPrefsFromInputs()" /></label>
+            <label>Quiet until <input type="time" id="notifyEnd" onchange="saveNotifyPrefsFromInputs()" /></label>
+          </div>
+          <div class="notify-message" style="margin-top:12px; margin-bottom:0;">
+            Alerts are generated on this device &mdash; there's no server involved. They fire while the app is open or in the background, but if you fully close it from the app switcher, the timer stops until you reopen it.
+          </div>
+        </div>
+      </div>
       <div class="backup-helper">
         Everything is stored locally in this browser only. Backups are the only way to move your data to another device or recover it if browser data is cleared.
       </div>
@@ -571,6 +617,7 @@
       </div>
       <div id="statsContent" style="flex:1; overflow-y:auto; min-height:0; padding-right:4px;"></div>
       <div class="modal-actions" style="flex-shrink:0; border-top:1px solid var(--glass-border); padding-top:14px;">
+        <button class="btn-dock" style="max-width:none; flex:1; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="openPruneModal()">REVIEW &amp; PRUNE</button>
         <button class="btn-danger" onclick="clearHistory()">CLEAR HISTORY</button>
         <button class="btn-primary" onclick="closeModals()">DONE</button>
       </div>
@@ -597,6 +644,27 @@
       <div id="referralList" style="flex:1; overflow-y:auto; min-height:0; padding-right:4px;"></div>
       <div class="modal-actions" style="flex-shrink:0; border-top:1px solid var(--glass-border); padding-top:14px;">
         <button class="btn-primary" onclick="closeModals()">DONE</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pruneModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel" style="max-height:88vh; display:flex; flex-direction:column;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; flex-shrink:0;">
+        <h3 style="margin:0;">Review &amp; Prune</h3>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span id="pruneProgress" style="font-family:'Courier New',monospace; font-size:0.72rem; color:var(--accent-cyan); font-weight:800;"></span>
+          <button class="btn-close-x" onclick="closeModals()">&#10005;</button>
+        </div>
+      </div>
+      <div id="pruneBody" style="flex:1; overflow-y:auto; min-height:0; padding-right:4px;"></div>
+      <div class="modal-actions" id="pruneActions" style="flex-shrink:0; border-top:1px solid var(--glass-border); padding-top:14px;">
+        <button class="btn-cancel" onclick="handlePrune('skip')">SKIP</button>
+        <button class="btn-primary" onclick="handlePrune('keep')">KEEP</button>
+        <button class="btn-danger" onclick="handlePrune('remove')">REMOVE</button>
+      </div>
+      <div class="modal-actions" id="pruneSummaryActions" style="display:none; flex-shrink:0; border-top:1px solid var(--glass-border); padding-top:14px;">
+        <button class="btn-primary" style="width:100%;" onclick="closeModals()">DONE</button>
       </div>
     </div>
   </div>
@@ -948,6 +1016,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       localStorage.setItem('the_casino_almanac_v7', JSON.stringify(trackedGames));
       renderGames();
       updateHeroStats();
+      scheduleNextNotification();
     }
 
     function applyFilter(filter, el) {
@@ -1353,6 +1422,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function openSettingsModal() {
       const isEnabled = localStorage.getItem('almanac_show_landing') !== 'false';
       document.getElementById('settingLandingToggle').checked = isEnabled;
+      refreshNotifyUI();
       document.getElementById('settingsModal').classList.add('open');
     }
 
@@ -1630,6 +1700,326 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           }
         });
       });
+    }
+
+    // --- Review & prune ---
+    let pruneQueue = [];
+    let pruneIndex = 0;
+    let pruneStats = { kept: 0, removed: 0, skipped: 0 };
+    let pruneHistoryImmature = false;
+
+    function openPruneModal() {
+      closeModals();
+      pruneQueue = [];
+      pruneIndex = 0;
+      pruneStats = { kept: 0, removed: 0, skipped: 0 };
+
+      let reviewed = {};
+      try { reviewed = JSON.parse(localStorage.getItem('almanac_reviewed_v1')) || {}; } catch (e) { reviewed = {}; }
+
+      const now = Date.now();
+      const DAY = 86400000;
+      const THIRTY = 30 * DAY, TWENTYONE = 21 * DAY, SIXTY = 60 * DAY;
+
+      // The "fewer than 3 collections in 60 days" signal is only meaningful
+      // once there's enough history for it to mean anything. Collection
+      // logging is recent, so applying it early would flag literally every
+      // tracked platform and make the whole flow useless.
+      const oldest = collectionHistory.reduce((m, h) => Math.min(m, h.collectedAt), Infinity);
+      pruneHistoryImmature = collectionHistory.length === 0 || (now - oldest) < 14 * DAY;
+
+      trackedGames.forEach(game => {
+        if (reviewed[game.name] && (now - reviewed[game.name] < THIRTY)) return;
+
+        const reasons = [];
+        const cat = CATALOG_DATA.find(c => c.name === game.name) || {};
+        const hist = collectionHistory.filter(h => h.platformName === game.name);
+        const last60 = hist.filter(h => now - h.collectedAt < SIXTY).length;
+        const neverCollected = !game.lastCollected;
+
+        if (neverCollected) {
+          reasons.push('Never collected');
+          if (cat.notes && cat.notes.includes('UNVERIFIED')) {
+            reasons.push('No verified tier or daily value, and never collected');
+          }
+        } else {
+          const days = Math.floor((now - game.lastCollected) / DAY);
+          if (now - game.lastCollected > TWENTYONE) {
+            reasons.push(`No collection in ${days} days`);
+          }
+        }
+
+        if (!pruneHistoryImmature && !neverCollected && last60 < 3) {
+          reasons.push(`Only ${last60} collection${last60 === 1 ? '' : 's'} logged in the last 60 days`);
+        }
+
+        if (reasons.length > 0) {
+          pruneQueue.push({ game, reasons, sortValue: neverCollected ? -1 : game.lastCollected });
+        }
+      });
+
+      pruneQueue.sort((a, b) => a.sortValue - b.sortValue);
+      document.getElementById('pruneModal').classList.add('open');
+      renderPruneStep();
+    }
+
+    function renderPruneStep() {
+      const body = document.getElementById('pruneBody');
+      const progress = document.getElementById('pruneProgress');
+      const actions = document.getElementById('pruneActions');
+      const summaryActions = document.getElementById('pruneSummaryActions');
+
+      if (pruneQueue.length === 0) {
+        progress.textContent = '';
+        body.innerHTML = `<div style="text-align:center; padding:36px 16px;">
+          <div style="color:var(--accent-green); font-size:1.1rem; font-weight:800; margin-bottom:8px;">Nothing to prune</div>
+          <p style="color:var(--text-muted); font-size:0.85rem; line-height:1.5;">Every tracked platform is either active or already reviewed recently.</p>
+        </div>`;
+        actions.style.display = 'none';
+        summaryActions.style.display = 'flex';
+        return;
+      }
+
+      if (pruneIndex >= pruneQueue.length) {
+        progress.textContent = '';
+        body.innerHTML = `<div style="text-align:center; padding-top:12px;">
+          <div style="font-size:1.05rem; font-weight:800; color:#fff; margin-bottom:4px;">Review complete</div>
+          <div class="prune-summary-grid">
+            <div class="prune-summary-item"><div class="val" style="color:var(--accent-green);">${pruneStats.kept}</div><div style="font-size:0.68rem; color:var(--text-muted);">KEPT</div></div>
+            <div class="prune-summary-item"><div class="val" style="color:var(--accent-pink);">${pruneStats.removed}</div><div style="font-size:0.68rem; color:var(--text-muted);">REMOVED</div></div>
+            <div class="prune-summary-item"><div class="val" style="color:var(--text-muted);">${pruneStats.skipped}</div><div style="font-size:0.68rem; color:var(--text-muted);">SKIPPED</div></div>
+          </div>
+          <div class="prune-note">Anything you removed is still in the Catalogue and can be re-added at any time.</div>
+        </div>`;
+        actions.style.display = 'none';
+        summaryActions.style.display = 'flex';
+        return;
+      }
+
+      progress.textContent = `${pruneIndex + 1} OF ${pruneQueue.length}`;
+      actions.style.display = 'flex';
+      summaryActions.style.display = 'none';
+
+      const item = pruneQueue[pruneIndex];
+      const hasReferral = item.game.referralUrl && item.game.referralUrl.trim().length > 0;
+
+      body.innerHTML = `
+        <div class="prune-card">
+          <div class="prune-title">${escHtml(item.game.name)}</div>
+          <span class="tier-badge tier-${item.game.tier || 'Unranked'}">${escHtml(item.game.tier || 'Unranked')}</span>
+          <div class="prune-flagged-label">Flagged because</div>
+          <ul class="prune-reasons">${item.reasons.map(r => `<li>${escHtml(r)}</li>`).join('')}</ul>
+          ${hasReferral ? `<div class="prune-warning"><strong>Heads up:</strong> you have a referral link saved for this platform. Removing it deletes that link permanently &mdash; it can't be recovered from the Catalogue.</div>` : ''}
+        </div>
+        ${pruneHistoryImmature ? `<div class="prune-note">Collection history is still new, so the "low activity" check is switched off for now. It'll start applying once there are a couple of weeks of data.</div>` : ''}`;
+    }
+
+    function handlePrune(action) {
+      const item = pruneQueue[pruneIndex];
+      if (!item) return;
+
+      if (action === 'keep') {
+        let reviewed = {};
+        try { reviewed = JSON.parse(localStorage.getItem('almanac_reviewed_v1')) || {}; } catch (e) { reviewed = {}; }
+        reviewed[item.game.name] = Date.now();
+        try { localStorage.setItem('almanac_reviewed_v1', JSON.stringify(reviewed)); } catch (e) {}
+        pruneStats.kept++;
+      } else if (action === 'remove') {
+        const idx = trackedGames.findIndex(g => g.id === item.game.id);
+        if (idx > -1) {
+          trackedGames.splice(idx, 1);
+          persist();   // CATALOG_DATA is untouched; the platform stays browsable
+        }
+        pruneStats.removed++;
+      } else {
+        pruneStats.skipped++;
+      }
+
+      pruneIndex++;
+      renderPruneStep();
+    }
+
+    // --- Local notifications ---
+    const NOTIFY_KEY = 'almanac_notify_v1';
+    const NOTIFY_DEFAULTS = { enabled: false, start: '23:00', end: '08:00', last: 0 };
+    let notifyTimer = null;
+
+    function getNotifyPrefs() {
+      try {
+        const p = JSON.parse(localStorage.getItem(NOTIFY_KEY));
+        return p && typeof p === 'object' ? { ...NOTIFY_DEFAULTS, ...p } : { ...NOTIFY_DEFAULTS };
+      } catch (e) { return { ...NOTIFY_DEFAULTS }; }
+    }
+
+    // Merges and saves. Deliberately does NOT read the DOM -- an earlier version
+    // did, which meant any call made while the settings modal had never been
+    // opened would overwrite quiet hours with empty strings and silently break
+    // the quiet-hours check.
+    function saveNotifyPrefs(patch = {}) {
+      const prefs = { ...getNotifyPrefs(), ...patch };
+      try { localStorage.setItem(NOTIFY_KEY, JSON.stringify(prefs)); } catch (e) {}
+      scheduleNextNotification();
+      return prefs;
+    }
+
+    // Only this reads the inputs, and only when they hold real values.
+    function saveNotifyPrefsFromInputs() {
+      const s = document.getElementById('notifyStart');
+      const e = document.getElementById('notifyEnd');
+      const patch = {};
+      if (s && /^\d{2}:\d{2}$/.test(s.value)) patch.start = s.value;
+      if (e && /^\d{2}:\d{2}$/.test(e.value)) patch.end = e.value;
+      saveNotifyPrefs(patch);
+    }
+
+    function notificationsSupported() {
+      return typeof window !== 'undefined' && 'Notification' in window;
+    }
+
+    function refreshNotifyUI() {
+      const controls = document.getElementById('notifyControls');
+      const unsupported = document.getElementById('notifyUnsupported');
+      const denied = document.getElementById('notifyDenied');
+      const toggle = document.getElementById('notifyToggle');
+      const quiet = document.getElementById('notifyQuietHours');
+      if (!controls) return;
+
+      if (!notificationsSupported()) {
+        controls.style.display = 'none';
+        if (denied) denied.style.display = 'none';
+        if (unsupported) unsupported.style.display = 'block';
+        return;
+      }
+
+      const prefs = getNotifyPrefs();
+      const s = document.getElementById('notifyStart');
+      const e = document.getElementById('notifyEnd');
+      if (s) s.value = prefs.start;
+      if (e) e.value = prefs.end;
+
+      if (Notification.permission === 'denied') {
+        controls.style.display = 'none';
+        if (unsupported) unsupported.style.display = 'none';
+        if (denied) denied.style.display = 'block';
+        return;
+      }
+
+      controls.style.display = 'block';
+      if (unsupported) unsupported.style.display = 'none';
+      if (denied) denied.style.display = 'none';
+
+      const on = prefs.enabled && Notification.permission === 'granted';
+      if (toggle) toggle.checked = on;
+      if (quiet) quiet.style.display = on ? 'flex' : 'none';
+    }
+
+    async function toggleNotifications(requestedOn) {
+      if (!notificationsSupported()) { refreshNotifyUI(); return; }
+
+      if (!requestedOn) {
+        saveNotifyPrefs({ enabled: false });
+        refreshNotifyUI();
+        return;
+      }
+      if (Notification.permission === 'granted') {
+        saveNotifyPrefs({ enabled: true });
+        refreshNotifyUI();
+        return;
+      }
+      if (Notification.permission !== 'denied') {
+        try {
+          const perm = await Notification.requestPermission();
+          saveNotifyPrefs({ enabled: perm === 'granted' });
+        } catch (e) {
+          saveNotifyPrefs({ enabled: false });
+        }
+      }
+      refreshNotifyUI();
+    }
+
+    function isQuietHours(timeMs, startStr, endStr) {
+      if (!/^\d{2}:\d{2}$/.test(startStr || '') || !/^\d{2}:\d{2}$/.test(endStr || '')) return false;
+      const d = new Date(timeMs);
+      const mins = d.getHours() * 60 + d.getMinutes();
+      const [sH, sM] = startStr.split(':').map(Number);
+      const [eH, eM] = endStr.split(':').map(Number);
+      const startMin = sH * 60 + sM, endMin = eH * 60 + eM;
+      if (startMin === endMin) return false;
+      return startMin < endMin
+        ? (mins >= startMin && mins < endMin)
+        : (mins >= startMin || mins < endMin);   // window crosses midnight
+    }
+
+    function adjustForQuietHours(timeMs, startStr, endStr) {
+      if (!isQuietHours(timeMs, startStr, endStr)) return timeMs;
+      const [eH, eM] = endStr.split(':').map(Number);
+      const d = new Date(timeMs);
+      d.setHours(eH, eM, 0, 0);
+      if (d.getTime() <= timeMs) d.setDate(d.getDate() + 1);
+      return d.getTime();
+    }
+
+    function countReadyNow() {
+      const now = Date.now();
+      return trackedGames.filter(g => {
+        const cd = (g.cooldownHours || 24) * 3600000;
+        return now - (g.lastCollected || 0) >= cd;
+      }).length;
+    }
+
+    function scheduleNextNotification() {
+      if (notifyTimer) { clearTimeout(notifyTimer); notifyTimer = null; }
+      if (!notificationsSupported()) return;
+      const prefs = getNotifyPrefs();
+      if (!prefs.enabled || Notification.permission !== 'granted') return;
+
+      const now = Date.now();
+      let nextReady = Infinity;
+      trackedGames.forEach(g => {
+        const readyAt = (g.lastCollected || 0) + (g.cooldownHours || 24) * 3600000;
+        if (readyAt > now && readyAt < nextReady) nextReady = readyAt;
+      });
+      if (nextReady === Infinity) return;
+
+      let fireAt = adjustForQuietHours(nextReady, prefs.start, prefs.end);
+
+      // Batch: never more than one alert per hour.
+      const HOUR = 3600000;
+      if (fireAt < (prefs.last || 0) + HOUR) {
+        fireAt = adjustForQuietHours((prefs.last || 0) + HOUR, prefs.start, prefs.end);
+      }
+
+      const delay = fireAt - now;
+      // setTimeout overflows past ~24.8 days; cooldowns never approach that,
+      // but guard anyway.
+      if (delay > 0 && delay < 2147483647) {
+        notifyTimer = setTimeout(fireNotification, delay);
+      }
+    }
+
+    function fireNotification() {
+      if (!notificationsSupported()) return;
+      const prefs = getNotifyPrefs();
+      if (!prefs.enabled || Notification.permission !== 'granted') return;
+
+      if (isQuietHours(Date.now(), prefs.start, prefs.end)) { scheduleNextNotification(); return; }
+
+      const readyCount = countReadyNow();
+      if (readyCount === 0) { scheduleNextNotification(); return; }
+
+      const body = `${readyCount} platform${readyCount !== 1 ? 's' : ''} ready to collect`;
+      try {
+        if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+          navigator.serviceWorker.ready
+            .then(reg => reg.showNotification('Casino Almanac', { body, tag: 'almanac-ready', renotify: false }))
+            .catch(() => { try { new Notification('Casino Almanac', { body }); } catch (e) {} });
+        } else {
+          const n = new Notification('Casino Almanac', { body });
+          n.onclick = () => window.focus();
+        }
+      } catch (e) { /* notification failed; don't break the app */ }
+
+      saveNotifyPrefs({ last: Date.now() });   // this reschedules
     }
 
     // --- Referral management ---
@@ -2197,6 +2587,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     renderGames();
     updateHeroStats();
+    scheduleNextNotification();
   </script>
 </body>
 </html>
