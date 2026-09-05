@@ -199,6 +199,7 @@
     .tour-tooltip-box { position: fixed; background: rgba(0, 229, 255, 0.95); backdrop-filter: blur(10px); color: #000; padding: 14px 16px; border-radius: 14px; font-size: 0.85rem; font-weight: 900; box-shadow: 0 10px 40px rgba(0, 229, 255, 0.5), inset 0 0 10px rgba(255,255,255,0.6); z-index: 150; cursor: pointer; display: none; line-height: 1.4; transition: opacity 0.2s, top 0.3s cubic-bezier(0.16, 1, 0.3, 1), left 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     .tour-tooltip-box::before { content: ""; position: absolute; top: -10px; left: var(--arrow-pos, 50%); transform: translateX(-50%); border-width: 0 10px 10px 10px; border-style: solid; border-color: transparent transparent rgba(0, 229, 255, 0.95) transparent; transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     .tour-tooltip-box.arrow-below::before { top: auto; bottom: -10px; border-width: 10px 10px 0 10px; border-color: rgba(0, 229, 255, 0.95) transparent transparent transparent; }
+    .tour-tooltip-box.no-arrow::before { display: none; }
     .tour-advance-subtext { display: block; font-size: 0.65rem; font-weight: 900; color: rgba(0, 0, 0, 0.6); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; border-top: 1px solid rgba(0, 0, 0, 0.2); padding-top: 6px; }
     .tour-target-active { position: relative; z-index: 151; animation: targetPulse 1.5s infinite !important; }
     @keyframes targetPulse { 0% { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.9); } 70% { box-shadow: 0 0 0 12px rgba(0, 229, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0); } }
@@ -363,6 +364,139 @@
     [data-theme="obsidian"] .cooldown-chip.flash { box-shadow: none; }
     [data-theme="obsidian"] .btn-share:hover { box-shadow: none; }
     [data-theme="obsidian"] .type-badge { box-shadow: none; }
+
+    /* =========================================================
+       THEME: PRISM SPECTACLE
+       ========================================================= */
+    [data-theme="prism"] .app-title,
+    [data-theme="prism"] .landing-title {
+      background: linear-gradient(100deg, #7df9ff 0%, #00e5ff 22%, #ff4d8d 55%, #ffd700 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      -webkit-text-stroke: 0; text-shadow: none; font-weight: 900;
+    }
+    [data-theme="prism"] .app-title span,
+    [data-theme="prism"] .landing-title span { -webkit-text-stroke: 0; -webkit-text-fill-color: transparent; text-shadow: none; }
+
+    /* Faceted glass: sharp corners, lit top edge, deep shadow */
+    [data-theme="prism"] .glass-panel,
+    [data-theme="prism"] .ledger-card,
+    [data-theme="prism"] .catalog-item-row,
+    [data-theme="prism"] .sheet-modal,
+    [data-theme="prism"] .hero-stat-card,
+    [data-theme="prism"] .keen-info-popover {
+      border-radius: 3px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(15,5,25,0.5) 40%, rgba(5,0,15,0.7) 100%);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-top-color: rgba(255,255,255,0.35);
+      border-left-color: rgba(255,255,255,0.2);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.15);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    }
+    [data-theme="prism"] .keen-info-popover { border-style: solid; }
+
+    /* The tour tooltip is deliberately NOT grouped with the glass panels: it
+       has color:#000 baked in, so a dark translucent background would render
+       black text on near-black. Keep it bright and opaque. */
+    [data-theme="prism"] .tour-tooltip-box {
+      border-radius: 3px;
+      background: linear-gradient(135deg, #7df9ff 0%, #00e5ff 55%, #4dc4ff 100%);
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 0 10px 34px rgba(0,229,255,0.45), inset 0 1px 2px rgba(255,255,255,0.7);
+    }
+    [data-theme="prism"] .tour-tooltip-box::before { border-color: transparent transparent #7df9ff transparent; }
+    [data-theme="prism"] .tour-tooltip-box.arrow-below::before { border-color: #4dc4ff transparent transparent transparent; }
+
+    /* Crystalline avatars */
+    [data-theme="prism"] .casino-avatar {
+      border-radius: 4px; border: 1px solid var(--accent-cyan);
+      border-top-color: #80f2ff;
+      box-shadow: inset 0 0 12px var(--accent-cyan-dim), 0 4px 8px rgba(0,0,0,0.5);
+    }
+
+    /* Cut-gem badges */
+    [data-theme="prism"] .tier-badge {
+      border-radius: 2px; border: 1px solid currentColor;
+      box-shadow: inset 0 0 6px currentColor;
+      background: rgba(0,0,0,0.6); font-weight: 900; letter-spacing: 0.5px;
+    }
+    [data-theme="prism"] .tier-S { color: var(--tier-s); }
+    [data-theme="prism"] .tier-A { color: var(--tier-a); }
+    [data-theme="prism"] .tier-B { color: var(--tier-b); }
+    [data-theme="prism"] .tier-C { color: var(--tier-c); }
+
+    [data-theme="prism"] .hero-ring-circle { filter: drop-shadow(0 0 4px var(--accent-pink)); }
+
+    [data-theme="prism"] .docked-footer {
+      background: linear-gradient(to top, rgba(9,2,18,0.95), rgba(20,5,35,0.85));
+      border-top: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.8);
+    }
+    [data-theme="prism"] .nav-tab.active,
+    [data-theme="prism"] .filter-btn.active {
+      border-radius: 3px 3px 0 0; border-bottom: 2px solid var(--accent-cyan);
+      background: linear-gradient(to top, var(--accent-cyan-dim), transparent);
+      text-shadow: 0 0 8px var(--accent-cyan); color: var(--text-main);
+    }
+
+    [data-theme="prism"] .btn-primary,
+    [data-theme="prism"] .btn-start-run,
+    [data-theme="prism"] .btn-dock,
+    [data-theme="prism"] .btn-open,
+    [data-theme="prism"] .btn-run-collect {
+      border-radius: 3px; border: 1px solid rgba(255,255,255,0.15);
+      border-top-color: rgba(255,255,255,0.5);
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(0,0,0,0.3));
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.2);
+      position: relative; overflow: hidden;
+    }
+    [data-theme="prism"] .btn-primary { color: #08111a; background: linear-gradient(135deg, #6ff5c0, #00e676); }
+    [data-theme="prism"] .btn-open:not(.cooldown), [data-theme="prism"] .btn-run-collect {
+      border-color: var(--accent-green); border-top-color: #80ffbd;
+      background: linear-gradient(135deg, rgba(0,230,118,0.35), rgba(0,0,0,0.4));
+      box-shadow: 0 4px 12px rgba(0,230,118,0.2), inset 0 1px 2px rgba(255,255,255,0.4);
+      color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
+    [data-theme="prism"] .btn-open.cooldown {
+      background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(0,0,0,0.4));
+      border-color: var(--glass-border); opacity: 0.8;
+    }
+
+    @keyframes prism-shimmer-sweep {
+      0%   { transform: translateX(-150%) skewX(-25deg); }
+      100% { transform: translateX(200%) skewX(-25deg); }
+    }
+    [data-theme="prism"] .btn-primary::after,
+    [data-theme="prism"] .btn-start-run::after,
+    [data-theme="prism"] .btn-run-collect::after,
+    [data-theme="prism"] .btn-open:not(.cooldown)::after {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 150%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+      transform: translateX(-150%) skewX(-25deg); pointer-events: none;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      /* :active is included because this is a touch device app -- :hover
+         alone would mean the effect never fires on a phone. */
+      [data-theme="prism"] .btn-primary:hover::after,
+      [data-theme="prism"] .btn-primary:active::after,
+      [data-theme="prism"] .btn-start-run:hover::after,
+      [data-theme="prism"] .btn-start-run:active::after,
+      [data-theme="prism"] .btn-run-collect:hover::after,
+      [data-theme="prism"] .btn-run-collect:active::after,
+      [data-theme="prism"] .btn-open:not(.cooldown):hover::after,
+      [data-theme="prism"] .btn-open:not(.cooldown):active::after {
+        animation: prism-shimmer-sweep 1.2s infinite;
+      }
+      /* One slow ambient sweep on the hero ring only -- a single focal point
+         rather than constant motion across the whole screen. */
+      [data-theme="prism"] .hero-ring-wrapper::after {
+        content: ''; position: absolute; inset: -6px; border-radius: 50%;
+        background: conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.16) 25deg, transparent 55deg);
+        animation: prism-ring-spin 6s linear infinite; pointer-events: none;
+      }
+      @keyframes prism-ring-spin { to { transform: rotate(360deg); } }
+    }
   </style>
 </head>
 <body>
@@ -1536,12 +1670,22 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       positionTourBox('tabCatalog', 'Tap Catalogue to browse & pick platforms.', true);
     }
 
+    // A hidden element (display:none) reports a zero rect, which previously
+    // pinned the tooltip to the top-left corner of the screen. Treat that as
+    // "not positionable" rather than trusting the numbers.
+    function isPositionable(el) {
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      return (r.width > 0 || r.height > 0) && el.offsetParent !== null;
+    }
+
     function advanceTourStep() {
       if (tourStep >= 7) {
         localStorage.setItem('almanac_tour_completed', 'true');
         const box = document.getElementById('tourBox');
         if (box) box.style.display = 'none';
         if (currentTourTarget) currentTourTarget.classList.remove('tour-target-active');
+        currentTourTarget = null;
         tourStep = 0;
         return;
       }
@@ -1555,15 +1699,44 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         setTimeout(() => {
           positionTourBox('tourAvatarTarget', 'Tap any circular avatar to view keen terms & strategy tips.', true);
         }, 150);
+
       } else if (tourStep === 3) {
-        const targetId = tourActiveCatId ? ('keen_' + tourActiveCatId) : 'tourAvatarTarget';
-        positionTourBox(targetId, 'This shows minimum redemption amounts, warnings, and recommended games for this platform.', false);
+        // The popover must be open for this step to point at anything. If the
+        // user reached step 3 by skipping rather than tapping, open it here.
+        const catId = tourActiveCatId || (document.querySelector('.catalog-item-row .casino-avatar')
+          ? document.querySelector('#catalogGroupContainer .keen-info-popover')?.id.replace('keen_', '')
+          : null);
+        if (catId) {
+          const el = document.getElementById('keen_' + catId);
+          if (el && !el.classList.contains('open')) {
+            el.classList.add('open');
+            openKeenIds.add(catId);
+          }
+          tourActiveCatId = catId;
+        }
+        setTimeout(() => {
+          const targetId = tourActiveCatId ? ('keen_' + tourActiveCatId) : 'tourAvatarTarget';
+          const el = document.getElementById(targetId);
+          positionTourBox(isPositionable(el) ? targetId : 'tourAvatarTarget',
+            'This shows minimum redemption amounts, warnings, and recommended games for this platform.', false);
+        }, 120);
+
       } else if (tourStep === 4) {
         positionTourBox('tourAddTarget', 'Tap + to add this platform to your deck.', true);
+
       } else if (tourStep === 5) {
         positionTourBox('sortTriggerCatalog', 'Tap Sort to open multi-criteria stacking.', true);
+
       } else if (tourStep === 6) {
-        positionTourBox('sortDrawerCatalog', 'Tap multiple options in priority order to stack sorts \u2014 first tap is top priority.', false);
+        // Same problem as step 3: if the drawer isn't open, there is nothing
+        // to point at and the tooltip lands in the corner. Open it first.
+        const drawer = document.getElementById('sortDrawerCatalog');
+        if (drawer && !drawer.classList.contains('open')) drawer.classList.add('open');
+        setTimeout(() => {
+          positionTourBox(isPositionable(drawer) ? 'sortDrawerCatalog' : 'sortTriggerCatalog',
+            'Tap multiple options in priority order to stack sorts \u2014 first tap is top priority.', false);
+        }, 120);
+
       } else if (tourStep === 7) {
         positionTourBox('tabResources', 'Check out Resources for community guides, strategy tips, and spreadsheets.', true);
       }
@@ -1591,33 +1764,46 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       box.style.visibility = 'hidden';
       box.style.display = 'block';
 
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // If the target has no layout box yet (just un-hidden, or still
+      // display:none), wait briefly for it rather than measuring zeros.
+      let waited = 0;
+      const readyCheck = setInterval(() => {
+        waited += 50;
+        if (isPositionable(target) || waited >= 400) {
+          clearInterval(readyCheck);
+          beginPositioning();
+        }
+      }, 50);
 
-      // Smooth scrolling does NOT begin synchronously. If we only checked for
-      // "position stopped changing", the first few samples would read the
-      // pre-scroll position, look stable, and pin the tooltip somewhere the
-      // target is about to scroll away from. So enforce a minimum wait before
-      // stability is allowed to count.
-      const MIN_WAIT = 320;
-      const MAX_WAIT = 1600;
-      const tick = 60;
-      let lastTop = null, stable = 0, elapsed = 0, done = false;
+      function beginPositioning() {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-      const finish = () => {
-        if (done) return;
-        done = true;
-        clearInterval(poll);
-        placeBox(target, box);
-        box.style.visibility = 'visible';
-      };
+        // Smooth scrolling does NOT begin synchronously. If we only checked for
+        // "position stopped changing", the first few samples would read the
+        // pre-scroll position, look stable, and pin the tooltip somewhere the
+        // target is about to scroll away from. So enforce a minimum wait before
+        // stability is allowed to count.
+        const MIN_WAIT = 320;
+        const MAX_WAIT = 1600;
+        const tick = 60;
+        let lastTop = null, stable = 0, elapsed = 0, done = false;
 
-      const poll = setInterval(() => {
-        elapsed += tick;
-        const top = target.getBoundingClientRect().top;
-        stable = (lastTop !== null && Math.abs(top - lastTop) < 1) ? stable + 1 : 0;
-        lastTop = top;
-        if ((elapsed >= MIN_WAIT && stable >= 2) || elapsed >= MAX_WAIT) finish();
-      }, tick);
+        const finish = () => {
+          if (done) return;
+          done = true;
+          clearInterval(poll);
+          placeBox(target, box);
+          box.style.visibility = 'visible';
+        };
+
+        const poll = setInterval(() => {
+          elapsed += tick;
+          const top = target.getBoundingClientRect().top;
+          stable = (lastTop !== null && Math.abs(top - lastTop) < 1) ? stable + 1 : 0;
+          lastTop = top;
+          if ((elapsed >= MIN_WAIT && stable >= 2) || elapsed >= MAX_WAIT) finish();
+        }, tick);
+      }
     }
 
     // Keep the tooltip glued to its target if the page moves underneath it.
@@ -1640,12 +1826,19 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const rect = target.getBoundingClientRect();
       const boxWidth = 240;
       box.style.width = boxWidth + 'px';
-
       const boxHeight = box.offsetHeight || 90;
       const viewportH = window.innerHeight;
 
-      // Default: below the target. If that would run off the bottom of the
-      // screen, flip above it instead so the tooltip is always visible.
+      // Zero rect means the target isn't laid out. Centre the tooltip and hide
+      // the arrow rather than pinning it to the top-left corner.
+      if (rect.width === 0 && rect.height === 0) {
+        box.classList.add('no-arrow');
+        box.style.top = Math.max(16, (viewportH - boxHeight) / 2) + 'px';
+        box.style.left = Math.max(16, (window.innerWidth - boxWidth) / 2) + 'px';
+        return;
+      }
+      box.classList.remove('no-arrow');
+
       let top = rect.bottom + 16;
       let flipped = false;
       if (top + boxHeight > viewportH - 16) {
@@ -1837,6 +2030,35 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         },
         bodyBg: 'linear-gradient(170deg, #1b1917 0%, #161514 55%, #121110 100%)',
         metaColor: '#161514'
+      },
+      prism: {
+        name: 'Prism Spectacle',
+        description: 'Faceted edges, translucent jewel tones, and catching light.',
+        vars: {
+          '--bg-base': '#090212',
+          '--accent-gold': '#ffd700',
+          '--accent-gold-hover': '#ffe140',
+          '--accent-gold-dim': 'rgba(255, 215, 0, 0.15)',
+          '--accent-green': '#00e676',
+          '--accent-green-dim': 'rgba(0, 230, 118, 0.15)',
+          '--accent-pink': '#ff1744',
+          '--accent-pink-dim': 'rgba(255, 23, 68, 0.15)',
+          '--accent-orange': '#ff9100',
+          '--accent-orange-dim': 'rgba(255, 145, 0, 0.15)',
+          '--accent-cyan': '#00e5ff',
+          '--accent-cyan-dim': 'rgba(0, 229, 255, 0.15)',
+          '--glass-border': 'rgba(255, 255, 255, 0.12)',
+          '--glass-highlight': 'rgba(255, 255, 255, 0.30)',
+          '--text-main': '#f4f0ff',
+          '--text-muted': '#bba8d4',
+          '--text-dim': '#8a76a3',
+          '--tier-s': '#ffd700',
+          '--tier-a': '#00e5ff',
+          '--tier-b': '#00e676',
+          '--tier-c': '#ff9100'
+        },
+        bodyBg: 'linear-gradient(135deg, #090212 0%, #1f0836 50%, #090212 100%)',
+        metaColor: '#090212'
       }
     };
 
