@@ -267,6 +267,13 @@
     .bulk-success { color: var(--accent-green); font-weight: 800; }
     .btn-share { background: transparent; border: 1px solid var(--accent-cyan); color: var(--accent-cyan); padding: 6px 10px; border-radius: 8px; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; cursor: pointer; flex-shrink: 0; }
     .btn-share:hover { background: rgba(0,229,255,0.12); box-shadow: 0 0 10px rgba(0,229,255,0.3); }
+
+    /* Quick cooldown editing */
+    .cooldown-chip { display: inline-flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700; color: var(--text-muted); background: transparent; border: 1px solid var(--glass-border); border-radius: 12px; padding: 1px 7px; margin-left: 6px; cursor: pointer; user-select: none; transition: all 0.2s; vertical-align: middle; font-family: "Courier New", Courier, monospace; }
+    .cooldown-chip:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
+    .cooldown-chip:active { transform: scale(0.92); }
+    .cooldown-chip.flash { border-color: var(--accent-gold); color: var(--accent-gold); box-shadow: 0 0 10px rgba(255,204,0,0.4); }
+    .run-cooldown-row { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px; }
   </style>
 </head>
 <body>
@@ -1098,6 +1105,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
                 <div class="card-status">
                   <span class="status-dot ${isReady ? '' : 'cooldown'}"></span>
                   <span style="font-family: monospace; font-weight:600;">${isReady ? 'READY' : formatTime(remainingMs)}</span>
+                  <span class="cooldown-chip" title="Tap to change the cooldown interval" onclick="cycleCooldown(event, '${game.id}', false)">${game.cooldownHours || 24}h</span>
                 </div>
               </div>
             </div>
@@ -1438,39 +1446,53 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         subtext.innerHTML = isAuto ? 'Do the action above, or tap here to skip' : 'Tap here to continue';
       }
 
-      // Hide the box while we scroll so it doesn't visibly fly across the screen
       box.style.visibility = 'hidden';
       box.style.display = 'block';
 
       target.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-      // The old code measured after a fixed 50ms, which landed mid-scroll and
-      // put the tooltip in the wrong place. Instead, poll until the target's
-      // position stops changing (scroll settled), then measure.
-      let lastTop = null;
-      let stableCount = 0;
-      let elapsed = 0;
+      // Smooth scrolling does NOT begin synchronously. If we only checked for
+      // "position stopped changing", the first few samples would read the
+      // pre-scroll position, look stable, and pin the tooltip somewhere the
+      // target is about to scroll away from. So enforce a minimum wait before
+      // stability is allowed to count.
+      const MIN_WAIT = 320;
+      const MAX_WAIT = 1600;
       const tick = 60;
+      let lastTop = null, stable = 0, elapsed = 0, done = false;
 
-      const settle = setInterval(() => {
-        const rect = target.getBoundingClientRect();
+      const finish = () => {
+        if (done) return;
+        done = true;
+        clearInterval(poll);
+        placeBox(target, box);
+        box.style.visibility = 'visible';
+      };
+
+      const poll = setInterval(() => {
         elapsed += tick;
-
-        if (lastTop !== null && Math.abs(rect.top - lastTop) < 1) {
-          stableCount++;
-        } else {
-          stableCount = 0;
-        }
-        lastTop = rect.top;
-
-        // Settled for 2 consecutive checks, or we've waited long enough
-        if (stableCount >= 2 || elapsed > 1200) {
-          clearInterval(settle);
-          placeBox(target, box);
-          box.style.visibility = 'visible';
-        }
+        const top = target.getBoundingClientRect().top;
+        stable = (lastTop !== null && Math.abs(top - lastTop) < 1) ? stable + 1 : 0;
+        lastTop = top;
+        if ((elapsed >= MIN_WAIT && stable >= 2) || elapsed >= MAX_WAIT) finish();
       }, tick);
     }
+
+    // Keep the tooltip glued to its target if the page moves underneath it.
+    let tourRepositionPending = false;
+    function repositionTourBox() {
+      if (!currentTourTarget || tourStep === 0) return;
+      const box = document.getElementById('tourBox');
+      if (!box || box.style.display === 'none') return;
+      if (tourRepositionPending) return;
+      tourRepositionPending = true;
+      requestAnimationFrame(() => {
+        tourRepositionPending = false;
+        placeBox(currentTourTarget, box);
+      });
+    }
+    window.addEventListener('scroll', repositionTourBox, { passive: true });
+    window.addEventListener('resize', repositionTourBox);
 
     function placeBox(target, box) {
       const rect = target.getBoundingClientRect();
@@ -1576,6 +1598,38 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const isOpen = document.getElementById('sortDrawerCatalog').classList.contains('open');
         if (isOpen) tourCheckpoint(5);
       }
+    }
+
+    // Tap the cooldown chip to correct an interval in place.
+    // cooldownHours lives only on the tracked copy; CATALOG_DATA is untouched.
+    function cycleCooldown(event, id, isRunStep) {
+      event.stopPropagation();
+      const game = trackedGames.find(g => g.id === id);
+      if (!game) return;
+
+      const cycle = [2, 4, 6, 8, 12, 24, 48];
+      const current = typeof game.cooldownHours === 'number' ? game.cooldownHours : 24;
+      const next = cycle.find(v => v > current);
+      game.cooldownHours = next !== undefined ? next : cycle[0];
+
+      // persist() already re-renders the games list and hero stats.
+      persist();
+
+      if (isRunStep) {
+        // Re-render the current step only. The run queue is deliberately built
+        // once at run start and must not be rebuilt underneath the user.
+        renderDailyRunStep();
+      }
+
+      // Brief highlight so the change registers visually.
+      requestAnimationFrame(() => {
+        document.querySelectorAll('.cooldown-chip').forEach(chip => {
+          if (chip.getAttribute('onclick') && chip.getAttribute('onclick').includes(id)) {
+            chip.classList.add('flash');
+            setTimeout(() => chip.classList.remove('flash'), 450);
+          }
+        });
+      });
     }
 
     // --- Referral management ---
@@ -2090,6 +2144,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           ${game.hasLive ? '<span class="type-badge">LIVE</span>' : ''}
         </div>
         <div class="run-redeem">Min Redeem: ${game.minRedeem || 'Varies'}</div>
+        <div class="run-cooldown-row">
+          <span>Cooldown</span>
+          <span class="cooldown-chip" title="Tap to change the cooldown interval" onclick="cycleCooldown(event, '${game.id}', true)">${game.cooldownHours || 24}h</span>
+        </div>
         ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:8px;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
         ${game.notes ? `<div class="run-notes">${game.notes}</div>` : ''}
         ${goToGames ? `<div class="run-bestgames"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0,229,255,0.4);">RECOMMENDED MODULES:</strong>${goToGames}</div>` : ''}
