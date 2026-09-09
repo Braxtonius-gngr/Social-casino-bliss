@@ -289,6 +289,8 @@
         <button class="btn-dock" style="border-color:var(--accent-green); color:var(--accent-green); text-shadow:0 0 5px var(--accent-green);" onclick="exportBackup()">&#8681; EXPORT BACKUP</button>
         <button class="btn-dock" style="border-color:var(--accent-gold); color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold);" onclick="document.getElementById('importBackupInput').click()">&#8679; IMPORT BACKUP</button>
       </div>
+      <div class="backup-helper" style="margin-top:8px;">A full backup includes your platforms, collection and ledger history, and preferences &mdash; everything needed to restore this app completely.</div>
+      <button class="btn-dock" style="max-width:100%; width:100%; margin-top:10px; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="restoreFromRecoverySnapshot()">Restore Previous State (Undo Last Import)</button>
       <div class="backup-controls" style="margin-top:10px;">
         <button class="btn-dock" onclick="exportDeck()">&#8681; SHARE DECK</button>
         <button class="btn-dock" onclick="document.getElementById('importDeckInput').click()">&#8679; IMPORT DECK</button>
@@ -557,6 +559,25 @@
     </div>
   </div>
 
+  <div id="importPreviewModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel">
+      <h3 style="color:var(--accent-gold); text-shadow:0 0 10px var(--accent-gold);">Import Preview</h3>
+      <div class="form-group">
+        <div class="toggle-row"><span>Schema version</span><span id="importPreviewVersion" style="font-weight:800;"></span></div>
+        <div class="toggle-row"><span>Export date</span><span id="importPreviewDate" style="font-weight:800;"></span></div>
+        <div class="toggle-row"><span>Platforms</span><span id="importPreviewPlatforms" style="font-weight:800; color:var(--accent-cyan);"></span></div>
+        <div class="toggle-row"><span>Collection history entries</span><span id="importPreviewHistory" style="font-weight:800; color:var(--accent-cyan);"></span></div>
+        <div class="toggle-row"><span>Ledger entries</span><span id="importPreviewLedger" style="font-weight:800; color:var(--accent-cyan);"></span></div>
+        <div id="importPreviewDropped" style="display:none; font-size:0.75rem; color:var(--accent-orange); margin-top:8px;"></div>
+      </div>
+      <div class="hint" style="font-size:0.72rem; color:var(--text-muted); margin-bottom:14px;">Importing replaces your current tracked platforms, history, ledger and listed preferences. A snapshot of everything as it is right now is saved first, so you can undo this from Settings &rarr; Restore Previous State.</div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="confirmPendingImport()">IMPORT</button>
+        <button class="btn-cancel" onclick="cancelPendingImport()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
   <div id="importModal" class="sheet-backdrop">
     <div class="sheet-modal glass-panel">
       <h3 style="color:var(--accent-orange); text-shadow:0 0 10px var(--accent-orange);">Bulk Import</h3>
@@ -802,44 +823,63 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // normal default if missing, malformed, or - for a tag filter - if the
     // tag no longer exists on any tracked platform. Corrupt JSON simply
     // leaves the defaults already set above untouched.
-    function restoreViewState() {
-      let raw;
-      try { raw = localStorage.getItem(VIEW_STATE_KEY); } catch (e) { return; }
-      if (!raw) return;
-      let state;
-      try { state = JSON.parse(raw); } catch (e) { return; }
-      if (!state || typeof state !== 'object') return;
-
+    // Pure: takes a parsed (untrusted) view-state object plus the games to
+    // check tag references against, and returns a fully-populated, safe
+    // object - every field independently validated and defaulted, never a
+    // pass-through of the input. Shared by restoreViewState() (startup)
+    // and backup import (see validateAndMigrateBackup()), so there is
+    // exactly one place this validation lives.
+    function sanitizeViewState(state, gamesForTagCheck) {
       const knownTags = new Set();
-      trackedGames.forEach(g => (g.tags || []).forEach(t => knownTags.add(t)));
+      (gamesForTagCheck || []).forEach((g) => (g.tags || []).forEach((t) => knownTags.add(t)));
 
       let gamesFilter = 'all';
-      if (typeof state.gamesFilter === 'string') {
+      if (state && typeof state.gamesFilter === 'string') {
         if (VALID_GAMES_FILTERS.includes(state.gamesFilter)) gamesFilter = state.gamesFilter;
         else if (state.gamesFilter.startsWith('tag:') && knownTags.has(state.gamesFilter.slice(4))) gamesFilter = state.gamesFilter;
       }
-      currentFilter = gamesFilter;
 
-      currentCatalogFilter = (typeof state.catalogFilter === 'string' && VALID_CATALOG_FILTERS.includes(state.catalogFilter))
+      const catalogFilter = (state && typeof state.catalogFilter === 'string' && VALID_CATALOG_FILTERS.includes(state.catalogFilter))
         ? state.catalogFilter : 'all';
 
       const validSortKeys = Object.keys(SORT_CONFIG);
       function sanitizeSortStack(v) {
         if (!Array.isArray(v)) return ['tier', 'reliability'];
         const seen = new Set();
-        return v.filter(k => typeof k === 'string' && validSortKeys.includes(k) && !seen.has(k) && seen.add(k));
+        return v.filter((k) => typeof k === 'string' && validSortKeys.includes(k) && !seen.has(k) && seen.add(k));
       }
-      sortStackGames = sanitizeSortStack(state.sortStackGames);
-      sortStackCatalog = sanitizeSortStack(state.sortStackCatalog);
 
-      if (typeof state.gamesSearch === 'string') {
-        const el = document.getElementById('gamesSearch');
-        if (el) el.value = state.gamesSearch;
-      }
-      if (typeof state.catalogSearch === 'string') {
-        const el = document.getElementById('catalogSearchInput');
-        if (el) el.value = state.catalogSearch;
-      }
+      const tab = (state && typeof state.tab === 'string' && VALID_TABS.includes(state.tab)) ? state.tab : 'games';
+
+      return {
+        tab,
+        gamesFilter,
+        catalogFilter,
+        sortStackGames: sanitizeSortStack(state && state.sortStackGames),
+        sortStackCatalog: sanitizeSortStack(state && state.sortStackCatalog),
+        gamesSearch: (state && typeof state.gamesSearch === 'string') ? state.gamesSearch : '',
+        catalogSearch: (state && typeof state.catalogSearch === 'string') ? state.catalogSearch : ''
+      };
+    }
+
+    function restoreViewState() {
+      let raw;
+      try { raw = localStorage.getItem(VIEW_STATE_KEY); } catch (e) { return; }
+      if (!raw) return;
+      let parsed;
+      try { parsed = JSON.parse(raw); } catch (e) { return; }
+      if (!parsed || typeof parsed !== 'object') return;
+
+      const clean = sanitizeViewState(parsed, trackedGames);
+      currentFilter = clean.gamesFilter;
+      currentCatalogFilter = clean.catalogFilter;
+      sortStackGames = clean.sortStackGames;
+      sortStackCatalog = clean.sortStackCatalog;
+
+      const gsEl = document.getElementById('gamesSearch');
+      if (gsEl) gsEl.value = clean.gamesSearch;
+      const csEl = document.getElementById('catalogSearchInput');
+      if (csEl) csEl.value = clean.catalogSearch;
 
       setGamesFilterButtonUI(currentFilter.startsWith('tag:') ? '' : currentFilter);
       setCatalogFilterButtonUI(currentCatalogFilter);
@@ -847,9 +887,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       updateSortUI('games');
       updateSortUI('catalog');
 
-      const tab = (typeof state.tab === 'string' && VALID_TABS.includes(state.tab)) ? state.tab : 'games';
-      const tabBtn = document.getElementById(TAB_BUTTON_IDS[tab]);
-      if (tab !== 'games' && tabBtn) switchMainTab(tab, tabBtn);
+      const tabBtn = document.getElementById(TAB_BUTTON_IDS[clean.tab]);
+      if (clean.tab !== 'games' && tabBtn) switchMainTab(clean.tab, tabBtn);
     }
 
     function resetViewState() {
@@ -870,7 +909,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function persist() {
-      localStorage.setItem('the_casino_almanac_v7', JSON.stringify(trackedGames));
+      // Guarded like every other localStorage write in this app - a
+      // quota-exceeded write here must not take down the render/notify
+      // calls after it (import/recovery calls this with a much larger
+      // trackedGames payload than a single collect() ever did).
+      try { localStorage.setItem('the_casino_almanac_v7', JSON.stringify(trackedGames)); } catch (e) {}
       renderGames();
       updateHeroStats();
       scheduleNextNotification();
@@ -2435,6 +2478,19 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } catch (e) { return { ...NOTIFY_DEFAULTS }; }
     }
 
+    // Field-by-field whitelist for an *untrusted* notify-prefs object (a
+    // backup import) - unlike getNotifyPrefs() above, which merges our own
+    // previously-saved prefs and can trust their shape.
+    function sanitizeNotifyPrefs(v) {
+      if (!v || typeof v !== 'object') return { ...NOTIFY_DEFAULTS };
+      return {
+        enabled: typeof v.enabled === 'boolean' ? v.enabled : NOTIFY_DEFAULTS.enabled,
+        start: (typeof v.start === 'string' && /^\d{2}:\d{2}$/.test(v.start)) ? v.start : NOTIFY_DEFAULTS.start,
+        end: (typeof v.end === 'string' && /^\d{2}:\d{2}$/.test(v.end)) ? v.end : NOTIFY_DEFAULTS.end,
+        last: (typeof v.last === 'number' && Number.isFinite(v.last)) ? v.last : 0
+      };
+    }
+
     // Merges and saves. Deliberately does NOT read the DOM -- an earlier version
     // did, which meant any call made while the settings modal had never been
     // opened would overwrite quiet hours with empty strings and silently break
@@ -3396,12 +3452,52 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     // --- Backup & restore ---
+    // Schema history: v7 exported trackedGames only. v8 is a complete
+    // application backup - platforms, collection history, daily-run
+    // history, the spend/redeem ledger, the "relevant" preferences, and
+    // (if present) persisted view state. v7 files still import (see
+    // validateAndMigrateBackup()); everything from here on exports as v8.
+    const BACKUP_SCHEMA_VERSION = 'v8';
+    const RECOVERY_KEY = 'almanac_recovery_v1';
+
+    // Every key this app persists, used for the pre-import recovery
+    // snapshot. Deliberately one explicit list rather than derived, so a
+    // future new key is a conscious addition here, not something a
+    // snapshot silently misses. (almanac_reviewed_v1 and
+    // almanac_tour_completed are intentionally excluded - one-off UI nag
+    // suppression, not data worth a recovery slot; see the PR notes.)
+    const ALL_APP_STORAGE_KEYS = [
+      'the_casino_almanac_v7', 'the_casino_almanac_history_v1', 'the_casino_almanac_runs_v1',
+      LEDGER_KEY, THEME_KEY, 'almanac_tz_v1', MOTION_KEY, NOTIFY_KEY,
+      'almanac_hide_collected', 'almanac_show_landing', 'almanac_dense', VIEW_STATE_KEY
+    ];
+
+    function isPlainObject(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
+
     function exportBackup() {
       const dateStr = new Date().toISOString().split('T')[0];
       const exportData = {
-        schemaVersion: "v7",
+        schemaVersion: BACKUP_SCHEMA_VERSION,
         exportedAt: new Date().toISOString(),
-        trackedGames: trackedGames
+        trackedGames: trackedGames,
+        collectionHistory: collectionHistory,
+        dailyRunsHistory: dailyRunsHistory,
+        ledger: ledger,
+        preferences: {
+          theme: localStorage.getItem(THEME_KEY) || null,
+          timezone: localStorage.getItem('almanac_tz_v1') || null,
+          motion: localStorage.getItem(MOTION_KEY) || null,
+          notify: getNotifyPrefs(),
+          hideCollected: localStorage.getItem('almanac_hide_collected') === 'true',
+          showLanding: localStorage.getItem('almanac_show_landing') !== 'false',
+          dense: localStorage.getItem('almanac_dense') === 'true'
+        },
+        viewState: (() => {
+          try { return JSON.parse(localStorage.getItem(VIEW_STATE_KEY)); } catch (e) { return null; }
+        })()
+        // Deliberately never included: Notification.permission (a browser
+        // permission grant, not app data), service-worker/cache state, or
+        // anything resembling a secret - this app has none.
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -3415,6 +3511,278 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       URL.revokeObjectURL(url);
     }
 
+    // ---- Validation / migration (pure - no DOM, no localStorage) ----
+    // Every function below either returns a fully-formed, whitelisted
+    // value or null/an error - nothing here ever spreads an untrusted
+    // object into a value the app will actually use.
+
+    // Same rules the original v7 import always enforced, extended with the
+    // fields v7 never carried (snoozedUntil) so a v8 export round-trips
+    // completely. Returns {ok:true, game} or {ok:false, error}.
+    function migratePlatformEntry(g, index) {
+      if (!g || typeof g !== 'object') return { ok: false, error: `entry ${index + 1}: not an object` };
+      if (typeof g.name !== 'string' || g.name.trim() === '') return { ok: false, error: `entry ${index + 1}: missing a valid name` };
+      if (typeof g.url !== 'string' || g.url.trim() === '') return { ok: false, error: `entry ${index + 1} ("${g.name}"): missing a valid URL` };
+
+      const n = {
+        id: (typeof g.id === 'string' && g.id) ? g.id : uid(),
+        name: g.name.trim(),
+        url: g.url.trim(),
+        tier: typeof g.tier === 'string' && g.tier ? g.tier : 'Unranked',
+        dailySC: typeof g.dailySC === 'number' && Number.isFinite(g.dailySC) ? g.dailySC : 0,
+        speedHours: typeof g.speedHours === 'number' && Number.isFinite(g.speedHours) ? g.speedHours : 24,
+        reliability: typeof g.reliability === 'number' && Number.isFinite(g.reliability) ? g.reliability : 68,
+        cooldownHours: typeof g.cooldownHours === 'number' && Number.isFinite(g.cooldownHours) && g.cooldownHours > 0 ? g.cooldownHours : 24,
+        hasLive: typeof g.hasLive === 'boolean' ? g.hasLive : false,
+        minRedeem: typeof g.minRedeem === 'string' && g.minRedeem ? g.minRedeem : 'Varies',
+        notes: typeof g.notes === 'string' ? g.notes : '',
+        referralUrl: typeof g.referralUrl === 'string' ? g.referralUrl : '',
+        lastCollected: typeof g.lastCollected === 'number' && Number.isFinite(g.lastCollected) ? g.lastCollected : 0
+      };
+      if (typeof g.balance === 'number' && Number.isFinite(g.balance)) n.balance = g.balance;
+      if (Array.isArray(g.tags)) n.tags = g.tags.filter((t) => typeof t === 'string');
+      if (typeof g.userNotes === 'string') n.userNotes = g.userNotes;
+      if (typeof g.resetHour === 'number' && Number.isFinite(g.resetHour) && g.resetHour >= 0 && g.resetHour < 24) n.resetHour = g.resetHour;
+      if (typeof g.resetTZ === 'string' && g.resetTZ) n.resetTZ = g.resetTZ;
+      if (typeof g.snoozedUntil === 'number' && Number.isFinite(g.snoozedUntil)) n.snoozedUntil = g.snoozedUntil;
+      if (typeof g.scIsAveraged === 'boolean') n.scIsAveraged = g.scIsAveraged;
+      if (typeof g.scRange === 'string') n.scRange = g.scRange;
+      if (typeof g.bestGames === 'string') n.bestGames = g.bestGames;
+      return { ok: true, game: n };
+    }
+
+    // These three return null for a malformed record rather than failing
+    // the whole import - secondary/enrichment data, unlike trackedGames,
+    // so one bad row from a hand-edited or older file shouldn't block
+    // restoring everything else. validateAndMigrateBackup() reports how
+    // many were dropped.
+    function migrateHistoryEntry(h) {
+      if (!h || typeof h !== 'object') return null;
+      if (typeof h.platformName !== 'string' || !h.platformName.trim()) return null;
+      if (typeof h.collectedAt !== 'number' || !Number.isFinite(h.collectedAt)) return null;
+      return { platformName: h.platformName, collectedAt: h.collectedAt };
+    }
+
+    function migrateRunEntry(r) {
+      if (!r || typeof r !== 'object') return null;
+      const fields = [r.startedAt, r.endedAt, r.collected, r.skipped];
+      if (!fields.every((v) => typeof v === 'number' && Number.isFinite(v))) return null;
+      return { startedAt: r.startedAt, endedAt: r.endedAt, collected: r.collected, skipped: r.skipped };
+    }
+
+    function migrateLedgerEntry(e) {
+      if (!e || typeof e !== 'object') return null;
+      if (typeof e.date !== 'string' || !e.date) return null;
+      if (typeof e.platform !== 'string' || !e.platform) return null;
+      if (e.type !== 'purchase' && e.type !== 'redemption') return null;
+      if (typeof e.amount !== 'number' || !Number.isFinite(e.amount)) return null;
+      return {
+        id: (typeof e.id === 'string' && e.id) ? e.id : uid(),
+        date: e.date, platform: e.platform, type: e.type, amount: e.amount,
+        sc: (typeof e.sc === 'number' && Number.isFinite(e.sc)) ? e.sc : null,
+        playthrough: (typeof e.playthrough === 'number' && Number.isFinite(e.playthrough)) ? e.playthrough : null,
+        note: typeof e.note === 'string' ? e.note : ''
+      };
+    }
+
+    // The single gate every byte from an import file passes through before
+    // anything in the app changes. Returns {ok:true, migrated, summary} or
+    // {ok:false, error}. Pure - never touches localStorage or the DOM, so
+    // it's safe to call just to preview a file.
+    function validateAndMigrateBackup(data) {
+      if (!data || typeof data !== 'object') return { ok: false, error: 'Invalid backup file: not a JSON object.' };
+      if (!Array.isArray(data.trackedGames)) return { ok: false, error: "Invalid backup file: missing the 'trackedGames' array." };
+
+      const games = [];
+      for (let i = 0; i < data.trackedGames.length; i++) {
+        const r = migratePlatformEntry(data.trackedGames[i], i);
+        if (!r.ok) return { ok: false, error: `Invalid backup file: ${r.error}.` };
+        games.push(r.game);
+      }
+
+      // A v7 file only ever had trackedGames - everything else in v8 is
+      // simply absent for it, not "invalid".
+      const isV7 = data.schemaVersion === 'v7';
+      const historyIn = isV7 ? undefined : data.collectionHistory;
+      const runsIn = isV7 ? undefined : data.dailyRunsHistory;
+      const ledgerIn = isV7 ? undefined : data.ledger;
+
+      if (historyIn !== undefined && historyIn !== null && !Array.isArray(historyIn)) {
+        return { ok: false, error: "Invalid backup file: 'collectionHistory' is present but not an array." };
+      }
+      if (runsIn !== undefined && runsIn !== null && !Array.isArray(runsIn)) {
+        return { ok: false, error: "Invalid backup file: 'dailyRunsHistory' is present but not an array." };
+      }
+      if (ledgerIn !== undefined && ledgerIn !== null && !Array.isArray(ledgerIn)) {
+        return { ok: false, error: "Invalid backup file: 'ledger' is present but not an array." };
+      }
+
+      const migratedHistory = (historyIn || []).map(migrateHistoryEntry).filter(Boolean);
+      const migratedRuns = (runsIn || []).map(migrateRunEntry).filter(Boolean);
+      const migratedLedger = (ledgerIn || []).map(migrateLedgerEntry).filter(Boolean);
+
+      let migratedPrefs = null;
+      if (!isV7 && isPlainObject(data.preferences)) {
+        const p = data.preferences;
+        migratedPrefs = {
+          theme: (typeof p.theme === 'string' && p.theme) ? p.theme : null,
+          timezone: typeof p.timezone === 'string' ? p.timezone : null,
+          motion: (typeof p.motion === 'string' && p.motion) ? p.motion : null,
+          notify: sanitizeNotifyPrefs(p.notify),
+          hideCollected: typeof p.hideCollected === 'boolean' ? p.hideCollected : null,
+          showLanding: typeof p.showLanding === 'boolean' ? p.showLanding : null,
+          dense: typeof p.dense === 'boolean' ? p.dense : null
+        };
+      }
+
+      // sanitizeViewState() always returns a fully-populated, safe object
+      // (see its declaration) - this is never a pass-through of data.viewState.
+      const migratedViewState = (!isV7 && isPlainObject(data.viewState))
+        ? sanitizeViewState(data.viewState, games)
+        : null;
+
+      return {
+        ok: true,
+        migrated: {
+          trackedGames: games,
+          collectionHistory: migratedHistory,
+          dailyRunsHistory: migratedRuns,
+          ledger: migratedLedger,
+          preferences: migratedPrefs,
+          viewState: migratedViewState
+        },
+        summary: {
+          schemaVersion: typeof data.schemaVersion === 'string' && data.schemaVersion ? data.schemaVersion : 'unknown (legacy)',
+          exportedAt: typeof data.exportedAt === 'string' ? data.exportedAt : null,
+          platformCount: games.length,
+          historyCount: migratedHistory.length,
+          ledgerCount: migratedLedger.length,
+          runsCount: migratedRuns.length,
+          historyDropped: (historyIn || []).length - migratedHistory.length,
+          ledgerDropped: (ledgerIn || []).length - migratedLedger.length
+        }
+      };
+    }
+
+    // ---- Snapshot / recovery ----
+
+    // Raw string snapshot (not re-migrated) of every key this app owns,
+    // taken immediately before an import replaces anything. Restoring it
+    // writes those exact strings back, rather than round-tripping through
+    // the migration logic a second time.
+    function snapshotCurrentState() {
+      const keys = {};
+      ALL_APP_STORAGE_KEYS.forEach((k) => { keys[k] = localStorage.getItem(k); });
+      try {
+        localStorage.setItem(RECOVERY_KEY, JSON.stringify({ snapshotAt: new Date().toISOString(), keys }));
+      } catch (e) { /* best-effort - the import still proceeds even if the snapshot can't be stored */ }
+    }
+
+    function restoreFromRecoverySnapshot() {
+      let snap;
+      try { snap = JSON.parse(localStorage.getItem(RECOVERY_KEY)); } catch (e) { snap = null; }
+      if (!snap || !isPlainObject(snap.keys)) {
+        showToast('No recovery snapshot found.', null);
+        return;
+      }
+      const when = new Date(snap.snapshotAt).toLocaleString();
+      if (!confirm(`Restore everything to how it was just before your last import (snapshot from ${when})? This replaces your current data.`)) return;
+
+      ALL_APP_STORAGE_KEYS.forEach((k) => {
+        const v = snap.keys[k];
+        try {
+          if (v === null || v === undefined) localStorage.removeItem(k);
+          else localStorage.setItem(k, v);
+        } catch (e) {}
+      });
+
+      reloadAppStateFromStorage();
+      refreshAllViewsAfterImport();
+      closeModals();
+      showToast('Previous state restored.', null);
+    }
+
+    // Re-hydrates every in-memory variable this app keeps a live copy of
+    // from whatever is currently in localStorage. Used after writing raw
+    // key values directly (recovery restore) rather than through the
+    // normal single-key setters.
+    function reloadAppStateFromStorage() {
+      trackedGames = JSON.parse(localStorage.getItem('the_casino_almanac_v7') || '[]');
+      initHistory();
+      try {
+        const l = JSON.parse(localStorage.getItem(LEDGER_KEY));
+        ledger = Array.isArray(l) ? l : [];
+      } catch (e) { ledger = []; }
+    }
+
+    // ---- Applying a validated import ----
+
+    function applyImportedBackup(migrated) {
+      trackedGames = migrated.trackedGames;
+      try { localStorage.setItem('the_casino_almanac_v7', JSON.stringify(trackedGames)); } catch (e) {}
+
+      collectionHistory = migrated.collectionHistory;
+      try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
+
+      dailyRunsHistory = migrated.dailyRunsHistory;
+      try { localStorage.setItem('the_casino_almanac_runs_v1', JSON.stringify(dailyRunsHistory)); } catch (e) {}
+
+      ledger = migrated.ledger;
+      try { localStorage.setItem(LEDGER_KEY, JSON.stringify(ledger)); } catch (e) {}
+
+      if (migrated.preferences) {
+        const p = migrated.preferences;
+        if (p.theme) { try { localStorage.setItem(THEME_KEY, p.theme); } catch (e) {} }
+        if (p.timezone !== null) { try { localStorage.setItem('almanac_tz_v1', p.timezone); } catch (e) {} }
+        if (p.motion) { try { localStorage.setItem(MOTION_KEY, p.motion); } catch (e) {} }
+        try { localStorage.setItem(NOTIFY_KEY, JSON.stringify(p.notify)); } catch (e) {}
+        if (typeof p.hideCollected === 'boolean') { try { localStorage.setItem('almanac_hide_collected', String(p.hideCollected)); } catch (e) {} }
+        if (typeof p.showLanding === 'boolean') { try { localStorage.setItem('almanac_show_landing', String(p.showLanding)); } catch (e) {} }
+        if (typeof p.dense === 'boolean') { try { localStorage.setItem('almanac_dense', String(p.dense)); } catch (e) {} }
+      }
+
+      if (migrated.viewState) {
+        try { localStorage.setItem(VIEW_STATE_KEY, JSON.stringify(migrated.viewState)); } catch (e) {}
+      }
+    }
+
+    // Re-renders/re-applies everything a successful import (or a recovery
+    // restore) could have changed: platforms, history-derived stats, the
+    // ledger, every preference's own UI, and view state.
+    function refreshAllViewsAfterImport() {
+      persist();
+      renderTagChips();
+      updateSortUI('games');
+      updateSortUI('catalog');
+      updateDailyRunButton();
+      if (document.getElementById('viewCatalog').style.display !== 'none') renderCatalogList();
+      if (document.getElementById('statsModal').classList.contains('open')) renderStats();
+      if (document.getElementById('ledgerModal').classList.contains('open')) renderLedger();
+
+      applyTheme(getActiveThemeId());
+      refreshMotionUI();
+      applyMotionPref();
+      refreshTZUI();
+      refreshNotifyUI();
+      const landingToggle = document.getElementById('settingLandingToggle');
+      if (landingToggle) landingToggle.checked = localStorage.getItem('almanac_show_landing') !== 'false';
+      const hideToggle = document.getElementById('settingHideCollected');
+      if (hideToggle) hideToggle.checked = localStorage.getItem('almanac_hide_collected') === 'true';
+      if (localStorage.getItem('almanac_dense') === 'true') {
+        document.body.classList.add('dense');
+        const db = document.getElementById('btnDense'); if (db) db.classList.add('on');
+      } else {
+        document.body.classList.remove('dense');
+        const db = document.getElementById('btnDense'); if (db) db.classList.remove('on');
+      }
+
+      restoreViewState();
+    }
+
+    // ---- Import flow: read -> validate -> preview -> confirm/cancel ----
+
+    let pendingImport = null; // { migrated, summary } awaiting confirmation in the preview modal
+
     function importBackup(event) {
       const input = event.target;
       const file = input.files[0];
@@ -3422,86 +3790,68 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
       const reader = new FileReader();
 
-      reader.onerror = function() {
-        alert("Could not read that file. It may be corrupted or unreadable.");
+      reader.onerror = function () {
+        showToast('Could not read that file - it may be corrupted or unreadable.', null);
         input.value = '';
       };
 
-      reader.onload = function(e) {
-        // Parse + validate inside try/catch. Everything AFTER validation is
-        // kept outside it, so a rendering error isn't misreported as bad JSON.
+      reader.onload = function (e) {
         let data;
         try {
           data = JSON.parse(e.target.result);
         } catch (err) {
-          alert("Invalid backup file: not valid JSON.");
+          showToast('Invalid backup file: not valid JSON.', null);
           input.value = '';
           return;
         }
 
-        if (!data || typeof data !== 'object' || !Array.isArray(data.trackedGames)) {
-          alert("Invalid backup file: missing the 'trackedGames' array.");
-          input.value = '';
-          return;
-        }
-
-        const importedGames = data.trackedGames;
-        for (let i = 0; i < importedGames.length; i++) {
-          const g = importedGames[i];
-          if (!g || typeof g.name !== 'string' || g.name.trim() === '') {
-            alert(`Invalid backup file: entry ${i + 1} is missing a valid name.`);
-            input.value = '';
-            return;
-          }
-          if (typeof g.url !== 'string' || g.url.trim() === '') {
-            alert(`Invalid backup file: entry ${i + 1} ("${g.name}") is missing a valid URL.`);
-            input.value = '';
-            return;
-          }
-        }
-
-        const confirmMsg = `This backup contains ${importedGames.length} platform(s).\n` +
-          `You currently have ${trackedGames.length} tracked.\n\n` +
-          `WARNING: importing REPLACES all current tracked data, including cooldown timers. Proceed?`;
-        if (!confirm(confirmMsg)) {
-          input.value = '';
-          return;
-        }
-
-        trackedGames = importedGames.map(g => {
-          const n = {
-            id: g.id || uid(),
-            name: g.name.trim(),
-            url: g.url.trim(),
-            tier: g.tier || "Unranked",
-            dailySC: typeof g.dailySC === 'number' ? g.dailySC : 0,
-            speedHours: typeof g.speedHours === 'number' ? g.speedHours : 24,
-            reliability: typeof g.reliability === 'number' ? g.reliability : 68,
-            cooldownHours: typeof g.cooldownHours === 'number' ? g.cooldownHours : 24,
-            hasLive: typeof g.hasLive === 'boolean' ? g.hasLive : false,
-            minRedeem: g.minRedeem || "Varies",
-            notes: g.notes || "",
-            referralUrl: g.referralUrl || "",
-            lastCollected: typeof g.lastCollected === 'number' ? g.lastCollected : 0
-          };
-          if (typeof g.balance === 'number') n.balance = g.balance;
-          if (Array.isArray(g.tags)) n.tags = g.tags;
-          if ('userNotes' in g) n.userNotes = g.userNotes;
-          if ('resetHour' in g) n.resetHour = g.resetHour;
-          if ('resetTZ' in g) n.resetTZ = g.resetTZ;
-          if ('scIsAveraged' in g) n.scIsAveraged = g.scIsAveraged;
-          if ('scRange' in g) n.scRange = g.scRange;
-          if ('bestGames' in g) n.bestGames = g.bestGames;
-          return n;
-        });
-
-        persist();
+        const result = validateAndMigrateBackup(data);
         input.value = '';
-        alert(`Imported ${trackedGames.length} platform(s) successfully.`);
-        closeModals();
+        if (!result.ok) {
+          showToast(result.error, null, 8000);
+          return;
+        }
+
+        pendingImport = result;
+        showImportPreview(result.summary);
       };
 
       reader.readAsText(file);
+    }
+
+    function showImportPreview(summary) {
+      document.getElementById('importPreviewVersion').textContent = summary.schemaVersion;
+      document.getElementById('importPreviewDate').textContent = summary.exportedAt
+        ? new Date(summary.exportedAt).toLocaleString() : 'Unknown';
+      document.getElementById('importPreviewPlatforms').textContent = summary.platformCount;
+      document.getElementById('importPreviewHistory').textContent = summary.historyCount;
+      document.getElementById('importPreviewLedger').textContent = summary.ledgerCount;
+
+      const dropped = [];
+      if (summary.historyDropped > 0) dropped.push(`${summary.historyDropped} history entr${summary.historyDropped === 1 ? 'y' : 'ies'}`);
+      if (summary.ledgerDropped > 0) dropped.push(`${summary.ledgerDropped} ledger entr${summary.ledgerDropped === 1 ? 'y' : 'ies'}`);
+      const droppedEl = document.getElementById('importPreviewDropped');
+      droppedEl.textContent = dropped.length ? `Skipped ${dropped.join(' and ')} with malformed data.` : '';
+      droppedEl.style.display = dropped.length ? 'block' : 'none';
+
+      closeModals();
+      document.getElementById('importPreviewModal').classList.add('open');
+    }
+
+    function cancelPendingImport() {
+      pendingImport = null;
+      closeModals();
+    }
+
+    function confirmPendingImport() {
+      if (!pendingImport) { closeModals(); return; }
+      snapshotCurrentState();
+      applyImportedBackup(pendingImport.migrated);
+      const platformCount = pendingImport.migrated.trackedGames.length;
+      pendingImport = null;
+      refreshAllViewsAfterImport();
+      closeModals();
+      showToast(`Backup imported: ${platformCount} platform(s) restored.`, null);
     }
 
     // --- Daily Run mode ---
