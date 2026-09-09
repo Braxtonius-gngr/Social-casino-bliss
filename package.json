@@ -1,0 +1,10 @@
+{
+  "name": "social-casino-bliss",
+  "private": true,
+  "description": "Quality-check scripts for this build-free static site. No runtime dependencies - see scripts/.",
+  "scripts": {
+    "check": "npm run check:syntax && npm run check:refs",
+    "check:syntax": "node scripts/check-syntax.js",
+    "check:refs": "node scripts/check-references.js"
+  }
+}
