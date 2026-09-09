@@ -735,6 +735,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     let trackedGames = JSON.parse(localStorage.getItem('the_casino_almanac_v7') || '[]');
+    // One-time recovery pass for whatever's already on disk: malformed
+    // timer fields from before this normalization existed are corrected
+    // rather than left to crash the first render, and _prevCollected -
+    // never meant to be persisted at all - is dropped if any older stored
+    // copy still has it (see markCollected()/collect()).
+    trackedGames.forEach((g) => { normalizeTimerFields(g); delete g._prevCollected; });
     let openKeenIds = new Set();
     let currentTab = 'games';
     let currentFilter = 'all';
@@ -977,6 +983,44 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // Iterating converges on the right offset, which keeps DST transitions
     // correct - storing a UTC reset as a fixed local hour would drift by an
     // hour for half the year.
+
+    // Intl.DateTimeFormat throws RangeError for anything it doesn't
+    // recognize as an IANA zone - this is the standard way to validate one
+    // without a dependency. lastResetInstant()/nextResetInstant() are the
+    // only functions that ever pass a resetTZ into a real
+    // Intl.DateTimeFormat call, so validating tz right there (rather than
+    // at every caller) is the one place that guarantees an invalid zone
+    // never reaches it, however it got into a game record.
+    function isValidTimeZone(tz) {
+      if (typeof tz !== 'string' || !tz) return false;
+      try { new Intl.DateTimeFormat(undefined, { timeZone: tz }); return true; }
+      catch (e) { return false; }
+    }
+
+    // Centralized timer-field validation, called wherever a game object
+    // enters trackedGames (initial load, single/tier/all catalog add, deck
+    // import, backup import, manual creation) so every path is consistent
+    // rather than each one re-implementing its own checks. Mutates in
+    // place and only ever touches a field that's actually invalid -valid
+    // existing values (including a resetTZ this function itself can't
+    // fully re-derive, like an intentional non-default zone) are left
+    // untouched.
+    function normalizeTimerFields(game) {
+      if (typeof game.cooldownHours !== 'number' || !Number.isFinite(game.cooldownHours) || game.cooldownHours <= 0) {
+        game.cooldownHours = 24;
+      }
+      const hasValidResetHour = typeof game.resetHour === 'number'
+        && Number.isInteger(game.resetHour) && game.resetHour >= 0 && game.resetHour <= 23;
+      if ('resetHour' in game && !hasValidResetHour) {
+        delete game.resetHour;
+        delete game.resetTZ;
+      }
+      if ('resetTZ' in game && (!hasValidResetHour || !isValidTimeZone(game.resetTZ))) {
+        delete game.resetTZ;
+      }
+      return game;
+    }
+
     function zonedHourToUtc(y, mo, d, hour, tz) {
       let guess = Date.UTC(y, mo - 1, d, hour, 0, 0);
       for (let i = 0; i < 3; i++) {
@@ -1000,8 +1044,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return { y: +p.year, mo: +p.month, d: +p.day };
     }
 
-    // Instant of the most recent reset at or before `now`
-    function lastResetInstant(now, hour, tz) {
+    // Instant of the most recent reset at or before `now`. tz is validated
+    // here (rather than trusted from the caller) - an invalid zone falls
+    // back to device-local instead of ever reaching Intl.DateTimeFormat.
+    function lastResetInstant(now, hour, rawTz) {
+      const tz = isValidTimeZone(rawTz) ? rawTz : null;
       const t = partsIn(now, tz);
       let inst = tz ? zonedHourToUtc(t.y, t.mo, t.d, hour, tz)
                     : new Date(new Date(now).setHours(hour, 0, 0, 0)).getTime();
@@ -1014,7 +1061,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return inst;
     }
 
-    function nextResetInstant(now, hour, tz) {
+    function nextResetInstant(now, hour, rawTz) {
+      const tz = isValidTimeZone(rawTz) ? rawTz : null;
       const last = lastResetInstant(now, hour, tz);
       const nxt = new Date(last); nxt.setUTCDate(nxt.getUTCDate() + 1);
       const t = partsIn(nxt.getTime(), tz);
@@ -1030,26 +1078,36 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return v && v !== 'device' ? v : null;
     }
 
-    function getCooldownState(game) {
-      const now = Date.now();
-
-      // Fixed daily reset: the drop returns at a set clock hour, not N hours
-      // after you collected. Collecting at 11pm on a 5am-reset platform means
-      // waiting 6 hours, not 24.
-      if (typeof game.resetHour === 'number') {
+    // Single source of truth for both rolling and fixed-reset readiness -
+    // countReadyNow() and scheduleNextNotification() both call this rather
+    // than re-deriving readiness from lastCollected/cooldownHours
+    // themselves, so a platform's actual mode (rolling vs. fixed) is only
+    // ever interpreted in one place. `now` defaults to the live clock but
+    // can be passed explicitly to ask "is this ready at time X" - that's
+    // what scheduleNextNotification() needs to find the next platform to
+    // become ready, not just which ones already are.
+    function getCooldownState(game, now = Date.now()) {
+      // A malformed resetHour (bad import, hand-edited storage) falls
+      // through to rolling-cooldown treatment rather than feeding a
+      // nonsense hour into Date.setHours()/the fixed-reset math below.
+      if (typeof game.resetHour === 'number' && Number.isInteger(game.resetHour) && game.resetHour >= 0 && game.resetHour <= 23) {
+        // Fixed daily reset: the drop returns at a set clock hour, not N
+        // hours after you collected. Collecting at 11pm on a 5am-reset
+        // platform means waiting 6 hours, not 24.
         const tz = game.resetTZ || getLockedTZ() || null;
         const lastReset = lastResetInstant(now, game.resetHour, tz);
         const collected = game.lastCollected || 0;
         if (collected >= lastReset) {
-          return { isReady: false, remainingMs: nextResetInstant(now, game.resetHour, tz) - now };
+          const nextReadyAt = nextResetInstant(now, game.resetHour, tz);
+          return { isReady: false, remainingMs: nextReadyAt - now, nextReadyAt };
         }
-        return { isReady: true, remainingMs: 0 };
+        return { isReady: true, remainingMs: 0, nextReadyAt: now };
       }
 
       // Rolling cooldown: N hours from the moment of collection.
-      const durationMs = (game.cooldownHours || 24) * 3600 * 1000;
+      const durationMs = (typeof game.cooldownHours === 'number' && Number.isFinite(game.cooldownHours) && game.cooldownHours > 0 ? game.cooldownHours : 24) * 3600 * 1000;
       const remaining = Math.max(0, durationMs - (now - (game.lastCollected || 0)));
-      return { isReady: remaining === 0, remainingMs: remaining };
+      return { isReady: remaining === 0, remainingMs: remaining, nextReadyAt: remaining === 0 ? now : now + remaining };
     }
 
     // Fraction of the wait already elapsed, for the card fill.
@@ -1065,13 +1123,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     function cooldownProgress(game, remainingMs) {
       let total;
-      if (typeof game.resetHour === 'number') {
+      // Same fixed-vs-rolling gate as getCooldownState() - a malformed
+      // resetHour must fall the same direction here too, or the progress
+      // bar's total and the remainingMs it was passed would come from two
+      // different modes.
+      if (typeof game.resetHour === 'number' && Number.isInteger(game.resetHour) && game.resetHour >= 0 && game.resetHour <= 23) {
         const tz = game.resetTZ || getLockedTZ() || null;
         const lastReset = lastResetInstant(Date.now(), game.resetHour, tz);
         const nextReset = nextResetInstant(Date.now(), game.resetHour, tz);
         total = nextReset - lastReset;
       } else {
-        total = (game.cooldownHours || 24) * 3600000;
+        total = (typeof game.cooldownHours === 'number' && Number.isFinite(game.cooldownHours) && game.cooldownHours > 0 ? game.cooldownHours : 24) * 3600000;
       }
       if (!total || total <= 0) return 0;
       return Math.max(0, Math.min(1, 1 - remainingMs / total));
@@ -1170,21 +1232,36 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return typeof game.snoozedUntil === 'number' && game.snoozedUntil > Date.now();
     }
 
+    // The collect-undo toast below and the cooldown-fix suggestion in
+    // offerCooldownFix() share one toast widget - showing the second while
+    // the first is still up would silently replace it, taking Undo off
+    // screen with no way back to it. UNDO_TOAST_MS matches the ms
+    // showToast() defaults to when markCollected() doesn't override it, so
+    // the fix suggestion (if any) only appears once that window has
+    // actually closed.
+    const UNDO_TOAST_MS = 6000;
+
     function markCollected(id, event) {
       if (event) event.stopPropagation();
       const game = trackedGames.find(g => g.id === id);
       if (!game) return;
       const wasReady = getCooldownState(game).isReady;
-      const prev = game.lastCollected;
-      game._prevCollected = prev;
+      // Local variables, not a field on the game object: offerCooldownFix()
+      // needs "what was lastCollected a moment ago" only for the duration
+      // of this one action, and that must never be something trackedGames/
+      // localStorage/exports actually persist.
+      const prevCollected = game.lastCollected;
       const prevSnooze = game.snoozedUntil;
       game.lastCollected = Date.now();
       delete game.snoozedUntil;
       logCollection(id);
       persist();
       hapticBuzz(40);
+
+      let undone = false;
       showToast(`${game.name} marked collected`, () => {
-        game.lastCollected = prev;
+        undone = true;
+        game.lastCollected = prevCollected;
         if (prevSnooze) game.snoozedUntil = prevSnooze;
         // roll back the history entry this action added
         for (let i = collectionHistory.length - 1; i >= 0; i--) {
@@ -1193,17 +1270,24 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
         persist();
       });
-      offerCooldownFix(game, wasReady);
+
+      // Deferred past the undo toast's own window, and skipped entirely if
+      // the user already undid - a fix suggestion for a collection that no
+      // longer happened would be meaningless, and would itself be a stale,
+      // no-longer-actionable toast left on screen.
+      setTimeout(() => {
+        if (undone) return;
+        offerCooldownFix(game, wasReady, prevCollected);
+      }, UNDO_TOAST_MS + 300);
     }
 
     // If you collect from something the app said wasn't ready yet, the stored
     // interval is too long - the real one is at most the time that actually
     // elapsed. Offer to correct it rather than silently staying wrong.
     const CD_STEPS = [1, 2, 3, 4, 6, 8, 12, 24, 48];
-    function offerCooldownFix(game, wasReady) {
+    function offerCooldownFix(game, wasReady, prevCollected) {
       if (wasReady) return;
       if (typeof game.resetHour === 'number') return;   // fixed resets aren't intervals
-      const prevCollected = game._prevCollected;
       if (!prevCollected) return;
       const elapsedH = (Date.now() - prevCollected) / 3600000;
       if (elapsedH < 0.5) return;                        // double-tap, not a real signal
@@ -1222,14 +1306,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const game = trackedGames.find(g => g.id === id);
       if (!game) return;
       const wasReady = getCooldownState(game).isReady;
-      game._prevCollected = game.lastCollected;
+      const prevCollected = game.lastCollected;
       window.open(game.url, '_blank');
       game.lastCollected = Date.now();
       delete game.snoozedUntil;
       logCollection(id);
       persist();
       hapticBuzz(40);
-      offerCooldownFix(game, wasReady);
+      // No competing toast on this path (collect() has no undo of its own
+      // today), so no need to defer here.
+      offerCooldownFix(game, wasReady, prevCollected);
     }
 
     function renderGames() {
@@ -1471,13 +1557,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         let added = 0;
         CATALOG_DATA.forEach(item => {
           if (!trackedGames.some(g => g.name.toLowerCase() === item.name.toLowerCase())) {
-            trackedGames.push({
+            const g = {
               id: uid(), name: item.name, url: item.url, tier: item.tier, dailySC: item.dailySC,
               speedHours: item.speedHours, reliability: item.reliability, hasLive: item.hasLive,
               minRedeem: item.minRedeem, notes: item.notes, bestGames: item.bestGames,
               scIsAveraged: item.scIsAveraged, scRange: item.scRange, referralUrl: '',
               cooldownHours: item.cooldown, resetHour: item.resetHour, resetTZ: item.resetTZ, lastCollected: 0
-            });
+            };
+            normalizeTimerFields(g);
+            trackedGames.push(g);
             added++;
           }
         });
@@ -1500,7 +1588,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         tierItems.forEach(item => {
           const alreadyTracked = trackedGames.some(g => g.name.toLowerCase() === item.name.toLowerCase());
           if (!alreadyTracked) {
-            trackedGames.push({
+            const g = {
               id: uid(),
               name: item.name,
               url: item.url,
@@ -1516,8 +1604,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               scRange: item.scRange,
               referralUrl: '',
               cooldownHours: item.cooldown,
+              resetHour: item.resetHour,
+              resetTZ: item.resetTZ,
               lastCollected: 0
-            });
+            };
+            normalizeTimerFields(g);
+            trackedGames.push(g);
           }
         });
       } else {
@@ -1595,9 +1687,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           game.url = url;
           game.referralUrl = referralUrl;
           game.cooldownHours = cooldownHours;
+          normalizeTimerFields(game); // e.g. a typed "0" or "-5" hours recovers to the 24h default
         }
       } else {
-        trackedGames.push({
+        const g = {
           id: uid(),
           name,
           url,
@@ -1611,7 +1704,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           minRedeem: 'Custom',
           notes: 'User created platform',
           lastCollected: 0
-        });
+        };
+        normalizeTimerFields(g);
+        trackedGames.push(g);
       }
 
       persist();
@@ -1936,13 +2031,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (idx >= 0) {
         trackedGames.splice(idx, 1);
       } else {
-        trackedGames.push({
+        const g = {
           id: uid(), name: item.name, url: item.url, tier: item.tier, dailySC: item.dailySC,
           speedHours: item.speedHours, reliability: item.reliability, hasLive: item.hasLive,
           minRedeem: item.minRedeem, notes: item.notes, bestGames: item.bestGames,
           scIsAveraged: item.scIsAveraged, scRange: item.scRange, referralUrl: '',
           cooldownHours: item.cooldown, resetHour: item.resetHour, resetTZ: item.resetTZ, lastCollected: 0
-        });
+        };
+        normalizeTimerFields(g);
+        trackedGames.push(g);
       }
       persist();
       renderCatalogList();
@@ -2543,12 +2640,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return d.getTime();
     }
 
+    // Reuses getCooldownState() - the same canonical calculation every
+    // card, filter, and sort already goes through - rather than
+    // re-deriving readiness from lastCollected+cooldownHours, which was
+    // wrong for any fixed-reset platform. Snoozed platforms are excluded:
+    // the user asked not to be bothered about them right now.
     function countReadyNow() {
-      const now = Date.now();
-      return trackedGames.filter(g => {
-        const cd = (g.cooldownHours || 24) * 3600000;
-        return now - (g.lastCollected || 0) >= cd;
-      }).length;
+      return trackedGames.filter(g => getCooldownState(g).isReady && !isSnoozed(g)).length;
     }
 
     function scheduleNextNotification() {
@@ -2560,7 +2658,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const now = Date.now();
       let nextReady = Infinity;
       trackedGames.forEach(g => {
-        const readyAt = (g.lastCollected || 0) + (g.cooldownHours || 24) * 3600000;
+        // getCooldownState()'s nextReadyAt is already correct for both
+        // rolling and fixed-reset platforms (and equals `now` itself for
+        // one that's already ready, which the `> now` check below then
+        // naturally excludes - it's already counted by countReadyNow(),
+        // not something to schedule a *future* notification for).
+        let readyAt = getCooldownState(g, now).nextReadyAt;
+        // A snoozed platform isn't worth notifying about until the snooze
+        // itself expires, even if the underlying cooldown finished first -
+        // schedule for whichever of the two is later.
+        if (isSnoozed(g) && readyAt < g.snoozedUntil) readyAt = g.snoozedUntil;
         if (readyAt > now && readyAt < nextReady) nextReady = readyAt;
       });
       if (nextReady === Infinity) return;
@@ -3372,7 +3479,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             updated++;
           } else {
             const cat = CATALOG_DATA.find(c => c.name.toLowerCase() === pl.name.toLowerCase()) || {};
-            trackedGames.push({
+            const g = {
               id: uid(), name: pl.name, url: pl.url || cat.url || '',
               tier: cat.tier || 'Unranked', dailySC: cat.dailySC || 0,
               speedHours: cat.speedHours || 24, reliability: cat.reliability || 68,
@@ -3384,7 +3491,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               resetHour: pl.resetHour !== undefined ? pl.resetHour : cat.resetHour,
               resetTZ: pl.resetTZ !== undefined ? pl.resetTZ : cat.resetTZ,
               lastCollected: 0
-            });
+            };
+            normalizeTimerFields(g); // pl.* is an untrusted imported file
+            trackedGames.push(g);
             added++;
           }
         });
@@ -3396,12 +3505,35 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     // --- Backup & restore ---
+    // Explicit whitelist rather than trackedGames as-is, so an internal-
+    // only field (_prevCollected - see markCollected()/collect(), never
+    // meant to be persisted anywhere) can never leak into an exported file
+    // even transiently.
+    function exportableGame(g) {
+      const out = {
+        id: g.id, name: g.name, url: g.url, tier: g.tier, dailySC: g.dailySC,
+        speedHours: g.speedHours, reliability: g.reliability, cooldownHours: g.cooldownHours,
+        hasLive: g.hasLive, minRedeem: g.minRedeem, notes: g.notes,
+        referralUrl: g.referralUrl, lastCollected: g.lastCollected
+      };
+      if (typeof g.balance === 'number') out.balance = g.balance;
+      if (Array.isArray(g.tags)) out.tags = g.tags;
+      if ('userNotes' in g) out.userNotes = g.userNotes;
+      if ('resetHour' in g) out.resetHour = g.resetHour;
+      if ('resetTZ' in g) out.resetTZ = g.resetTZ;
+      if (typeof g.snoozedUntil === 'number') out.snoozedUntil = g.snoozedUntil;
+      if ('scIsAveraged' in g) out.scIsAveraged = g.scIsAveraged;
+      if ('scRange' in g) out.scRange = g.scRange;
+      if ('bestGames' in g) out.bestGames = g.bestGames;
+      return out;
+    }
+
     function exportBackup() {
       const dateStr = new Date().toISOString().split('T')[0];
       const exportData = {
         schemaVersion: "v7",
         exportedAt: new Date().toISOString(),
-        trackedGames: trackedGames
+        trackedGames: trackedGames.map(exportableGame)
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -3489,9 +3621,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           if ('userNotes' in g) n.userNotes = g.userNotes;
           if ('resetHour' in g) n.resetHour = g.resetHour;
           if ('resetTZ' in g) n.resetTZ = g.resetTZ;
+          if (typeof g.snoozedUntil === 'number') n.snoozedUntil = g.snoozedUntil;
           if ('scIsAveraged' in g) n.scIsAveraged = g.scIsAveraged;
           if ('scRange' in g) n.scRange = g.scRange;
           if ('bestGames' in g) n.bestGames = g.bestGames;
+          // _prevCollected is deliberately never whitelisted above, so an
+          // older backup that happens to carry one drops it here.
+          normalizeTimerFields(n);
           return n;
         });
 
