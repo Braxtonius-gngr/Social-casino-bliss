@@ -11,12 +11,12 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v1';
+const CACHE_NAME = 'almanac-v2';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
 // and silently fail.
-const PRECACHE_URLS = ['./', './index.html', './manifest.json'];
+const PRECACHE_URLS = ['./', './index.html', './manifest.json', './assets/app.css'];
 
 self.addEventListener('install', (event) => {
   // Precache the shell so the very first offline load works, even if the
