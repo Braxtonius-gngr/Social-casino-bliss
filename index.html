@@ -557,6 +557,76 @@
     </div>
   </div>
 
+  <div id="cooldownEditorModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel">
+      <h3>Edit Cooldown</h3>
+      <input type="hidden" id="ceGameId" />
+      <input type="hidden" id="ceIsRunStep" />
+      <div id="ceGameName" style="font-weight:800; color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold); margin-bottom:14px;"></div>
+
+      <div class="form-group">
+        <label>Timer type</label>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="filter-btn" id="ceModeRolling" aria-pressed="false" onclick="setCooldownEditorMode('rolling')">Rolling</button>
+          <button type="button" class="filter-btn" id="ceModeFixed" aria-pressed="false" onclick="setCooldownEditorMode('fixed')">Fixed Reset</button>
+        </div>
+      </div>
+
+      <div class="form-group" id="ceRollingFields">
+        <label for="ceInterval">Interval (hours)</label>
+        <input type="number" id="ceInterval" min="1" step="1" />
+      </div>
+
+      <div class="form-group" id="ceFixedFields" style="display:none;">
+        <label for="ceResetHour">Reset time</label>
+        <select id="ceResetHour">
+          <option value="0">12:00 AM</option>
+          <option value="1">1:00 AM</option>
+          <option value="2">2:00 AM</option>
+          <option value="3">3:00 AM</option>
+          <option value="4">4:00 AM</option>
+          <option value="5">5:00 AM</option>
+          <option value="6">6:00 AM</option>
+          <option value="7">7:00 AM</option>
+          <option value="8">8:00 AM</option>
+          <option value="9">9:00 AM</option>
+          <option value="10">10:00 AM</option>
+          <option value="11">11:00 AM</option>
+          <option value="12">12:00 PM</option>
+          <option value="13">1:00 PM</option>
+          <option value="14">2:00 PM</option>
+          <option value="15">3:00 PM</option>
+          <option value="16">4:00 PM</option>
+          <option value="17">5:00 PM</option>
+          <option value="18">6:00 PM</option>
+          <option value="19">7:00 PM</option>
+          <option value="20">8:00 PM</option>
+          <option value="21">9:00 PM</option>
+          <option value="22">10:00 PM</option>
+          <option value="23">11:00 PM</option>
+        </select>
+        <label for="ceResetTZ" style="display:block; margin-top:12px;">Timezone</label>
+        <select id="ceResetTZ">
+          <option value="device">Home timezone (Settings)</option>
+          <option value="America/New_York">Eastern</option>
+          <option value="America/Chicago">Central</option>
+          <option value="America/Denver">Mountain</option>
+          <option value="America/Phoenix">Arizona</option>
+          <option value="America/Los_Angeles">Pacific</option>
+          <option value="America/Anchorage">Alaska</option>
+          <option value="Pacific/Honolulu">Hawaii</option>
+          <option value="UTC">UTC</option>
+        </select>
+        <div class="hint" style="font-size:0.68rem; color:var(--text-muted); margin-top:5px;">"Home timezone" follows the device or locked timezone set in Settings. Pick a specific zone if this platform's reset is anchored to it regardless of where you are.</div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-primary" onclick="saveCooldownEditor()">SAVE</button>
+        <button type="button" class="btn-cancel" onclick="closeModals()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
   <div id="importModal" class="sheet-backdrop">
     <div class="sheet-modal glass-panel">
       <h3 style="color:var(--accent-orange); text-shadow:0 0 10px var(--accent-orange);">Bulk Import</h3>
@@ -1381,7 +1451,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
                   <span class="status-dot ${isReady ? '' : 'cooldown'}"></span>
                   <span style="font-family: monospace; font-weight:600;">${isReady ? 'READY' : formatTime(remainingMs)}</span>
                   ${isReady ? '' : `<span class="ready-at">&rarr; ${readyAtLabel(game, remainingMs)}</span>`}
-                  <span class="cooldown-chip" title="Tap to change the cooldown interval" onclick="cycleCooldown(event, '${game.id}', false)">${cooldownLabel(game)}</span>
+                  <button type="button" class="cooldown-chip" title="Edit cooldown" aria-label="Edit cooldown for ${escHtml(game.name)}, currently ${cooldownLabel(game)}" onclick="openCooldownEditor('${game.id}', event, false)">${cooldownLabel(game)}</button>
                 </div>
               </div>
             </div>
@@ -2083,44 +2153,84 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     // Tap the cooldown chip to correct an interval in place.
     // cooldownHours lives only on the tracked copy; CATALOG_DATA is untouched.
-    function cycleCooldown(event, id, isRunStep) {
-      event.stopPropagation();
+    // --- Cooldown editor ---
+    // Replaces the old tap-to-cycle chip (a fixed sequence of hardcoded
+    // rolling/fixed-reset presets, applied instantly on every tap with no
+    // way back). This is a real form: nothing changes on the game until
+    // SAVE, CANCEL/closeModals() discards the in-progress edit untouched,
+    // and every value that reaches the game object still passes through
+    // normalizeTimerFields() - this form's own controls only ever offer
+    // valid choices, but that's the same authoritative gate every other
+    // entry point uses, not a second, parallel set of rules.
+    let cooldownEditorMode = 'rolling';
+
+    function openCooldownEditor(id, event, isRunStep) {
+      if (event) event.stopPropagation();
       const game = trackedGames.find(g => g.id === id);
       if (!game) return;
+      closeModals();
 
-      // Rolling hours first, then the common fixed reset hours, then back.
-      const ROLL = [2, 4, 6, 8, 12, 24, 48];
-      const FIXED = [
-        { resetHour: 0 }, { resetHour: 5 }, { resetHour: 6 }, { resetHour: 7 },
-        { resetHour: 10 }, { resetHour: 0, resetTZ: 'UTC' }, { resetHour: 0, resetTZ: 'America/New_York' }
-      ];
-      if (typeof game.resetHour === 'number') {
-        const i = FIXED.findIndex(f => f.resetHour === game.resetHour && (f.resetTZ || null) === (game.resetTZ || null));
-        if (i === -1 || i === FIXED.length - 1) {
-          delete game.resetHour; delete game.resetTZ; game.cooldownHours = ROLL[0];
-        } else {
-          game.resetHour = FIXED[i + 1].resetHour;
-          if (FIXED[i + 1].resetTZ) game.resetTZ = FIXED[i + 1].resetTZ; else delete game.resetTZ;
+      document.getElementById('ceGameId').value = id;
+      document.getElementById('ceIsRunStep').value = isRunStep ? '1' : '';
+      document.getElementById('ceGameName').textContent = game.name;
+
+      const isFixed = typeof game.resetHour === 'number';
+      document.getElementById('ceInterval').value = typeof game.cooldownHours === 'number' ? game.cooldownHours : 24;
+      document.getElementById('ceResetHour').value = isFixed ? String(game.resetHour) : '5';
+      document.getElementById('ceResetTZ').value = game.resetTZ || 'device';
+      setCooldownEditorMode(isFixed ? 'fixed' : 'rolling');
+
+      document.getElementById('cooldownEditorModal').classList.add('open');
+    }
+
+    function setCooldownEditorMode(mode) {
+      cooldownEditorMode = mode;
+      const rollBtn = document.getElementById('ceModeRolling');
+      const fixedBtn = document.getElementById('ceModeFixed');
+      rollBtn.classList.toggle('active', mode === 'rolling');
+      fixedBtn.classList.toggle('active', mode === 'fixed');
+      rollBtn.setAttribute('aria-pressed', mode === 'rolling' ? 'true' : 'false');
+      fixedBtn.setAttribute('aria-pressed', mode === 'fixed' ? 'true' : 'false');
+      document.getElementById('ceRollingFields').style.display = mode === 'rolling' ? '' : 'none';
+      document.getElementById('ceFixedFields').style.display = mode === 'fixed' ? '' : 'none';
+    }
+
+    function saveCooldownEditor() {
+      const id = document.getElementById('ceGameId').value;
+      const game = trackedGames.find(g => g.id === id);
+      if (!game) { closeModals(); return; }
+
+      if (cooldownEditorMode === 'rolling') {
+        const hours = parseInt(document.getElementById('ceInterval').value, 10);
+        if (!Number.isFinite(hours) || hours <= 0) {
+          showToast('Enter an interval greater than 0 hours.', null);
+          return;
         }
+        game.cooldownHours = hours;
+        delete game.resetHour;
+        delete game.resetTZ;
       } else {
-        const cur = typeof game.cooldownHours === 'number' ? game.cooldownHours : 24;
-        const next = ROLL.find(v => v > cur);
-        if (next !== undefined) { game.cooldownHours = next; }
-        else { game.resetHour = FIXED[0].resetHour; delete game.resetTZ; }
+        game.resetHour = parseInt(document.getElementById('ceResetHour').value, 10);
+        const tzValue = document.getElementById('ceResetTZ').value;
+        if (tzValue === 'device') delete game.resetTZ; else game.resetTZ = tzValue;
       }
-
-      // persist() already re-renders the games list and hero stats.
+      normalizeTimerFields(game);
       persist();
 
-      if (isRunStep) {
-        // Re-render the current step only. The run queue is deliberately built
-        // once at run start and must not be rebuilt underneath the user.
+      if (document.getElementById('ceIsRunStep').value === '1') {
+        // Re-render the current step only. The run queue is deliberately
+        // built once at run start and must not be rebuilt underneath the
+        // user.
         renderDailyRunStep();
       }
 
-      // Brief highlight so the change registers visually.
+      closeModals();
+      showToast(`${game.name} cooldown updated`, null);
+
+      // Brief highlight on the chip so the change registers visually,
+      // matching the old cycle-in-place feedback.
       requestAnimationFrame(() => {
-        document.querySelectorAll('.cooldown-chip').forEach(chip => {
+        document.querySelectorAll('.cooldown-chip').forEach((chip) => {
           if (chip.getAttribute('onclick') && chip.getAttribute('onclick').includes(id)) {
             chip.classList.add('flash');
             setTimeout(() => chip.classList.remove('flash'), 450);
@@ -3725,7 +3835,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         <div class="run-redeem">Min Redeem: ${game.minRedeem || 'Varies'}</div>
         <div class="run-cooldown-row">
           <span>Cooldown</span>
-          <span class="cooldown-chip" title="Tap to change the cooldown interval" onclick="cycleCooldown(event, '${game.id}', true)">${cooldownLabel(game)}</span>
+          <button type="button" class="cooldown-chip" title="Edit cooldown" aria-label="Edit cooldown for ${escHtml(game.name)}, currently ${cooldownLabel(game)}" onclick="openCooldownEditor('${game.id}', event, true)">${cooldownLabel(game)}</button>
         </div>
         ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:8px;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
         ${game.notes ? `<div class="run-notes">${game.notes}</div>` : ''}
