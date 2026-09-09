@@ -13,6 +13,9 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="assets/app.css" />
   <link rel="stylesheet" href="assets/accessibility.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body>
 
@@ -1056,6 +1059,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       delete game.snoozedUntil;
       logCollection(id);
       persist();
+      hapticBuzz(40);
       showToast(`${game.name} marked collected`, () => {
         game.lastCollected = prev;
         if (prevSnooze) game.snoozedUntil = prevSnooze;
@@ -1101,6 +1105,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       delete game.snoozedUntil;
       logCollection(id);
       persist();
+      hapticBuzz(40);
       offerCooldownFix(game, wasReady);
     }
 
@@ -1970,6 +1975,68 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // "neon" reproduces the existing :root block verbatim. Do not "tidy" these
     // values - they are the current look and must stay pixel-identical.
     const THEMES = {
+      western: {
+        name: 'Boot Hill',
+        description: 'Gritty spaghetti-western macabre. Blood red, pitch black, high-voltage gold.',
+        vars: {
+          '--bg-base': '#0B0B0B',
+          '--accent-gold': '#FFC107',
+          '--accent-gold-hover': '#E0A800',
+          '--accent-gold-dim': 'rgba(255, 193, 7, 0.18)',
+          '--accent-green': '#8AA624',
+          '--accent-green-dim': 'rgba(138, 166, 36, 0.18)',
+          '--accent-pink': '#B33A3A',
+          '--accent-pink-dim': 'rgba(179, 58, 58, 0.18)',
+          '--accent-orange': '#C16B2C',
+          '--accent-orange-dim': 'rgba(193, 107, 44, 0.18)',
+          '--accent-cyan': '#6E7C7C',
+          '--accent-cyan-dim': 'rgba(110, 124, 124, 0.18)',
+          '--glass-border': 'rgba(234, 234, 234, 0.15)',
+          '--glass-highlight': 'rgba(234, 234, 234, 0.08)',
+          '--text-main': '#EAEAEA',
+          '--text-muted': '#A8A8A0',
+          '--text-dim': '#6b6b66',
+          '--tier-s': '#B33A3A',
+          '--tier-a': '#C16B2C',
+          '--tier-b': '#6E7C7C',
+          '--tier-c': '#5C4B51'
+        },
+        bodyBg: 'radial-gradient(130% 90% at 50% 15%, rgba(122,0,0,0.65) 0%, rgba(58,0,0,0.55) 40%, #0B0B0B 85%), linear-gradient(180deg, #0B0B0B 0%, #050505 100%)',
+        metaColor: '#0B0B0B'
+      },
+      prism: {
+        name: 'Prism Noir',
+        description: 'Black-card luxury. Antique gold, deep emerald, hairline edges.',
+        vars: {
+          '--bg-base': '#0a0b0a',
+          '--accent-gold': '#c9a227',
+          '--accent-gold-hover': '#e0bb45',
+          '--accent-gold-dim': 'rgba(201, 162, 39, 0.14)',
+          '--accent-green': '#3d8767',
+          '--accent-green-dim': 'rgba(61, 135, 103, 0.14)',
+          '--accent-pink': '#9e3540',
+          '--accent-pink-dim': 'rgba(158, 53, 64, 0.16)',
+          '--accent-orange': '#a8763f',
+          '--accent-orange-dim': 'rgba(168, 118, 63, 0.14)',
+          '--accent-cyan': '#c4b998',
+          '--accent-cyan-dim': 'rgba(196, 185, 152, 0.12)',
+          '--glass-border': 'rgba(201, 162, 39, 0.18)',
+          '--glass-highlight': 'rgba(255, 250, 235, 0.07)',
+          '--text-main': '#f4efe4',
+          '--text-muted': '#9c958a',
+          '--text-dim': '#645e56',
+          '--tier-s': '#c9a227',
+          '--tier-a': '#b9c0c4',
+          '--tier-b': '#3d8767',
+          '--tier-c': '#7a736a',
+          '--wire-cyan': '#00e5ff',
+          '--wire-magenta': '#ff2fb0',
+          '--wire-amber': '#ff8a1f',
+          '--wire-violet': '#a45cff'
+        },
+        bodyBg: 'radial-gradient(90% 60% at 8% -5%, rgba(255,138,31,0.10) 0%, transparent 55%), radial-gradient(90% 60% at 95% 25%, rgba(255,47,176,0.09) 0%, transparent 55%), radial-gradient(80% 55% at 50% 105%, rgba(164,92,255,0.10) 0%, transparent 60%), radial-gradient(120% 90% at 50% -10%, #16180f 0%, #0d0e0b 45%, #070807 100%)',
+        metaColor: '#0a0b0a'
+      },
       neon: {
         name: 'Neon Grid',
         description: 'High-contrast cyberpunk. Cyan and magenta on near-black, with glow.',
@@ -2027,55 +2094,42 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         },
         bodyBg: 'linear-gradient(170deg, #1b1917 0%, #161514 55%, #121110 100%)',
         metaColor: '#161514'
-      },
-      prism: {
-        name: 'Prism Noir',
-        description: 'Black-card luxury. Antique gold, deep emerald, hairline edges.',
-        vars: {
-          '--bg-base': '#0a0b0a',
-          '--accent-gold': '#c9a227',
-          '--accent-gold-hover': '#e0bb45',
-          '--accent-gold-dim': 'rgba(201, 162, 39, 0.14)',
-          '--accent-green': '#3d8767',
-          '--accent-green-dim': 'rgba(61, 135, 103, 0.14)',
-          '--accent-pink': '#9e3540',
-          '--accent-pink-dim': 'rgba(158, 53, 64, 0.16)',
-          '--accent-orange': '#a8763f',
-          '--accent-orange-dim': 'rgba(168, 118, 63, 0.14)',
-          '--accent-cyan': '#c4b998',
-          '--accent-cyan-dim': 'rgba(196, 185, 152, 0.12)',
-          '--glass-border': 'rgba(201, 162, 39, 0.18)',
-          '--glass-highlight': 'rgba(255, 250, 235, 0.07)',
-          '--text-main': '#f4efe4',
-          '--text-muted': '#9c958a',
-          '--text-dim': '#645e56',
-          '--tier-s': '#c9a227',
-          '--tier-a': '#b9c0c4',
-          '--tier-b': '#3d8767',
-          '--tier-c': '#7a736a',
-          '--wire-cyan': '#00e5ff',
-          '--wire-magenta': '#ff2fb0',
-          '--wire-amber': '#ff8a1f',
-          '--wire-violet': '#a45cff'
-        },
-        bodyBg: 'radial-gradient(90% 60% at 8% -5%, rgba(255,138,31,0.10) 0%, transparent 55%), radial-gradient(90% 60% at 95% 25%, rgba(255,47,176,0.09) 0%, transparent 55%), radial-gradient(80% 55% at 50% 105%, rgba(164,92,255,0.10) 0%, transparent 60%), radial-gradient(120% 90% at 50% -10%, #16180f 0%, #0d0e0b 45%, #070807 100%)',
-        metaColor: '#0a0b0a'
       }
     };
 
     function getActiveThemeId() {
       const id = localStorage.getItem(THEME_KEY);
-      return THEMES[id] ? id : 'prism';
+      return THEMES[id] ? id : 'western';
     }
 
     function applyTheme(themeId) {
-      const theme = THEMES[themeId] || THEMES.prism;
+      const theme = THEMES[themeId] || THEMES.western;
       const root = document.documentElement;
       Object.entries(theme.vars).forEach(([k, v]) => root.style.setProperty(k, v));
       root.setAttribute('data-theme', themeId);
       if (document.body) document.body.style.background = theme.bodyBg;
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute('content', theme.metaColor);
+    }
+
+    // Western-only interaction effects (see Boot Hill theme in THEMES
+    // above): haptic buzz on collect actions, screen-shake on the daily
+    // run's completion milestone. Every other theme is CSS-only, same as
+    // before - these two are gated behind the active theme so nothing
+    // about the shared collect/daily-run code paths changes for anyone
+    // not using Boot Hill.
+    function isWesternTheme() { return getActiveThemeId() === 'western'; }
+
+    function hapticBuzz(pattern) {
+      if (!isWesternTheme()) return;
+      try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+    }
+
+    function screenShake() {
+      if (!isWesternTheme()) return;
+      if (document.documentElement.getAttribute('data-motion') === 'off') return;
+      document.body.classList.add('screen-shake-active');
+      setTimeout(() => document.body.classList.remove('screen-shake-active'), 400);
     }
 
     function selectTheme(themeId) {
@@ -3376,6 +3430,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const total = dailyRunQueue.length;
 
       if (dailyRunIndex >= total) {
+        hapticBuzz([30, 40, 30, 40, 90]);
+        screenShake();
         progressText.textContent = 'RUN COMPLETE';
         progressFill.style.width = '100%';
         actions.style.display = 'none';
