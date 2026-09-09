@@ -571,7 +571,9 @@
   </div>
 
   <script src="data/catalog.js"></script>
+  <script src="data/cooldowns.js"></script>
   <script src="utils/cleanDropUrl.js"></script>
+  <script src="utils/cooldowns.js"></script>
   <script src="assets/accessibility.js"></script>
   <script>
     const uid = () => 'id_' + Math.random().toString(36).substr(2, 9);
@@ -907,8 +909,28 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return v && v !== 'device' ? v : null;
     }
 
-    function getCooldownState(game) {
-      const now = Date.now();
+    function curatedTimerDefinition(game) {
+      if (game.timerCustomized === true) return null;
+      if (typeof CURATED_COOLDOWN_DATA === 'undefined' || !CURATED_COOLDOWN_DATA.definitions) return null;
+      return CURATED_COOLDOWN_DATA.definitions[game.name] || null;
+    }
+
+    function curatedTimerStreams(game) {
+      const definition = curatedTimerDefinition(game);
+      if (typeof CooldownEngine === 'undefined') return null;
+      return definition && Array.isArray(definition.streams) ? definition.streams : null;
+    }
+
+    function getCooldownState(game, now = Date.now()) {
+      const streams = curatedTimerStreams(game);
+      if (streams) {
+        // A legacy lastCollected value applies only before per-stream state
+        // exists. Once a stream map has been created, a newly published stream
+        // has no timestamp and must start ready rather than inheriting an
+        // unrelated collection.
+        const legacyFallback = game.timerCollectedAt ? 0 : (game.lastCollected || 0);
+        return CooldownEngine.getState(streams, game.timerCollectedAt, legacyFallback, now);
+      }
 
       // Fixed daily reset: the drop returns at a set clock hour, not N hours
       // after you collected. Collecting at 11pm on a 5am-reset platform means
@@ -918,15 +940,21 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const lastReset = lastResetInstant(now, game.resetHour, tz);
         const collected = game.lastCollected || 0;
         if (collected >= lastReset) {
-          return { isReady: false, remainingMs: nextResetInstant(now, game.resetHour, tz) - now };
+          const nextReadyAt = nextResetInstant(now, game.resetHour, tz);
+          return { isReady: false, remainingMs: nextReadyAt - now, totalMs: nextReadyAt - lastReset, nextReadyAt };
         }
-        return { isReady: true, remainingMs: 0 };
+        return { isReady: true, remainingMs: 0, totalMs: 86400000, nextReadyAt: now };
       }
 
       // Rolling cooldown: N hours from the moment of collection.
       const durationMs = (game.cooldownHours || 24) * 3600 * 1000;
       const remaining = Math.max(0, durationMs - (now - (game.lastCollected || 0)));
-      return { isReady: remaining === 0, remainingMs: remaining };
+      return {
+        isReady: remaining === 0,
+        remainingMs: remaining,
+        totalMs: durationMs,
+        nextReadyAt: remaining === 0 ? now : now + remaining
+      };
     }
 
     // Fraction of the wait already elapsed, for the card fill.
@@ -941,6 +969,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function cooldownProgress(game, remainingMs) {
+      const curated = curatedTimerStreams(game);
+      if (curated) {
+        const state = getCooldownState(game);
+        if (state.isReady) return 1;
+        return state.totalMs > 0 ? Math.max(0, Math.min(1, 1 - state.remainingMs / state.totalMs)) : 0;
+      }
       let total;
       if (typeof game.resetHour === 'number') {
         const tz = game.resetTZ || getLockedTZ() || null;
@@ -955,6 +989,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function cooldownLabel(game) {
+      const curated = curatedTimerStreams(game);
+      if (curated) return CooldownEngine.label(curated);
       if (typeof game.resetHour === 'number') {
         const h = game.resetHour;
         const suffix = game.resetTZ === 'UTC' ? 'Z' : (game.resetTZ === 'America/New_York' ? 'ET' : '');
@@ -962,6 +998,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         return disp + suffix;
       }
       return (game.cooldownHours || 24) + 'h';
+    }
+
+    function cooldownTitle(game) {
+      const definition = curatedTimerDefinition(game);
+      return definition
+        ? `Schedule synced from Bonus Farmer (${definition.sourceName}). Tap to use a custom timer.`
+        : 'Tap to change the cooldown interval';
     }
 
     // A countdown is the wrong unit for a fixed reset. Knowing something lands
@@ -1047,21 +1090,67 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return typeof game.snoozedUntil === 'number' && game.snoozedUntil > Date.now();
     }
 
+    function timerSnapshot(game) {
+      return {
+        lastCollected: game.lastCollected,
+        hadStreamTimes: Object.prototype.hasOwnProperty.call(game, 'timerCollectedAt'),
+        timerCollectedAt: game.timerCollectedAt ? { ...game.timerCollectedAt } : null
+      };
+    }
+
+    function restoreTimerSnapshot(game, snapshot) {
+      game.lastCollected = snapshot.lastCollected;
+      if (snapshot.hadStreamTimes) game.timerCollectedAt = snapshot.timerCollectedAt || {};
+      else delete game.timerCollectedAt;
+    }
+
+    // Curated platforms can expose more than one independently-resetting
+    // bonus. Stamp only the streams that are ready, exactly as Bonus Farmer
+    // does; a 6h refill click must not postpone a separate 24h daily bonus.
+    function stampCollectionTimers(game, now = Date.now()) {
+      const streams = curatedTimerStreams(game);
+      if (!streams) {
+        game.lastCollected = now;
+        return true;
+      }
+
+      const legacyFallback = game.timerCollectedAt ? 0 : (game.lastCollected || 0);
+      const state = CooldownEngine.getState(streams, game.timerCollectedAt, legacyFallback, now);
+      const readyIds = new Set(state.streams.filter(stream => stream.isReady).map(stream => stream.id));
+      if (readyIds.size === 0) return false;
+
+      const previousFallback = legacyFallback;
+      const previousStreamTimes = game.timerCollectedAt || {};
+      const streamTimes = {};
+      streams.forEach(stream => {
+        const previous = Number(previousStreamTimes[stream.id]);
+        streamTimes[stream.id] = Number.isFinite(previous) ? previous : previousFallback;
+        if (readyIds.has(stream.id)) streamTimes[stream.id] = now;
+      });
+      game.timerCollectedAt = streamTimes;
+      game.lastCollected = now;
+      return true;
+    }
+
     function markCollected(id, event) {
       if (event) event.stopPropagation();
       const game = trackedGames.find(g => g.id === id);
       if (!game) return;
       const wasReady = getCooldownState(game).isReady;
-      const prev = game.lastCollected;
-      game._prevCollected = prev;
+      if (curatedTimerStreams(game) && !wasReady) {
+        showToast(`${game.name} is still on cooldown; timer unchanged`);
+        return;
+      }
+      const snapshot = timerSnapshot(game);
+      game._prevCollected = snapshot.lastCollected;
       const prevSnooze = game.snoozedUntil;
-      game.lastCollected = Date.now();
+      if (!stampCollectionTimers(game)) return;
       delete game.snoozedUntil;
       logCollection(id);
       persist();
       hapticBuzz(40);
       showToast(`${game.name} marked collected`, () => {
-        game.lastCollected = prev;
+        restoreTimerSnapshot(game, snapshot);
         if (prevSnooze) game.snoozedUntil = prevSnooze;
         // roll back the history entry this action added
         for (let i = collectionHistory.length - 1; i >= 0; i--) {
@@ -1079,6 +1168,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const CD_STEPS = [1, 2, 3, 4, 6, 8, 12, 24, 48];
     function offerCooldownFix(game, wasReady) {
       if (wasReady) return;
+      if (curatedTimerStreams(game)) return;             // source schedule is authoritative
       if (typeof game.resetHour === 'number') return;   // fixed resets aren't intervals
       const prevCollected = game._prevCollected;
       if (!prevCollected) return;
@@ -1101,7 +1191,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const wasReady = getCooldownState(game).isReady;
       game._prevCollected = game.lastCollected;
       window.open(game.url, '_blank');
-      game.lastCollected = Date.now();
+      if (!stampCollectionTimers(game)) {
+        showToast(`${game.name} opened; timer unchanged until it is ready`);
+        return;
+      }
       delete game.snoozedUntil;
       logCollection(id);
       persist();
@@ -1172,7 +1265,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
                   <span class="status-dot ${isReady ? '' : 'cooldown'}"></span>
                   <span style="font-family: monospace; font-weight:600;">${isReady ? 'READY' : formatTime(remainingMs)}</span>
                   ${isReady ? '' : `<span class="ready-at">&rarr; ${readyAtLabel(game, remainingMs)}</span>`}
-                  <span class="cooldown-chip" title="Tap to change the cooldown interval" onclick="cycleCooldown(event, '${game.id}', false)">${cooldownLabel(game)}</span>
+                  <span class="cooldown-chip" title="${escHtml(cooldownTitle(game))}" onclick="cycleCooldown(event, '${game.id}', false)">${cooldownLabel(game)}</span>
                 </div>
               </div>
             </div>
@@ -1467,10 +1560,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (id) {
         const game = trackedGames.find(g => g.id === id);
         if (game) {
+          const cooldownChanged = cooldownHours !== (Number(game.cooldownHours) || 24);
           game.name = name;
           game.url = url;
           game.referralUrl = referralUrl;
           game.cooldownHours = cooldownHours;
+          if (cooldownChanged) {
+            game.timerCustomized = true;
+            delete game.resetHour;
+            delete game.resetTZ;
+            delete game.timerCollectedAt;
+          }
         }
       } else {
         trackedGames.push({
@@ -1863,6 +1963,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       event.stopPropagation();
       const game = trackedGames.find(g => g.id === id);
       if (!game) return;
+      game.timerCustomized = true;
+      delete game.timerCollectedAt;
 
       // Rolling hours first, then the common fixed reset hours, then back.
       const ROLL = [2, 4, 6, 8, 12, 24, 48];
@@ -2417,11 +2519,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function countReadyNow() {
-      const now = Date.now();
-      return trackedGames.filter(g => {
-        const cd = (g.cooldownHours || 24) * 3600000;
-        return now - (g.lastCollected || 0) >= cd;
-      }).length;
+      return trackedGames.filter(g => getCooldownState(g).isReady).length;
     }
 
     function scheduleNextNotification() {
@@ -2433,7 +2531,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const now = Date.now();
       let nextReady = Infinity;
       trackedGames.forEach(g => {
-        const readyAt = (g.lastCollected || 0) + (g.cooldownHours || 24) * 3600000;
+        const state = getCooldownState(g, now);
+        const readyAt = state.nextReadyAt;
         if (readyAt > now && readyAt < nextReady) nextReady = readyAt;
       });
       if (nextReady === Infinity) return;
@@ -3009,13 +3108,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (d.tracked && d.match) {
         const g = trackedGames.find(x => x.id === d.match.id);
         if (g) {
-          const prev = g.lastCollected;
-          g.lastCollected = Date.now();
+          const snapshot = timerSnapshot(g);
+          if (!stampCollectionTimers(g)) {
+            showToast(`${g.name} opened; scheduled timer was already running`);
+            return;
+          }
           delete g.snoozedUntil;
           logCollection(g.id);
           persist();
           showToast(`${g.name} timer started`, () => {
-            g.lastCollected = prev;
+            restoreTimerSnapshot(g, snapshot);
             for (let k = collectionHistory.length - 1; k >= 0; k--) {
               if (collectionHistory[k].platformName === g.name) { collectionHistory.splice(k, 1); break; }
             }
@@ -3147,7 +3249,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const GUIDE = [
         { t: 'Getting started', items: [{ h: 'Catalogue vs Platforms', b: "<b>Catalogue</b> is the master list of every platform in the app. <b>Platforms</b> is your own list — only what you've added, each with a live timer. Tap + in the Catalogue to move something into your list; tap the check again to remove it." }, { h: 'Group Add', b: 'In the Catalogue, <b>Group Add</b> lets you add or remove a whole tier at once, or every platform in one go. Fastest way to set up on day one.' }, { h: 'Bulk Import', b: 'Bottom of the screen. Paste a list of URLs, one per line, and it creates entries for anything not already tracked — useful if you keep your own list somewhere else.' }] },
         { t: 'Collecting day to day', items: [{ h: 'The two buttons', b: '<b>OPEN</b> opens the site and starts the timer. The <b>&#10003;</b> next to it marks something collected <i>without</i> opening — use it when you collected on another device and just want the timer running here.' }, { h: 'Undo', b: 'Any collect or snooze shows a toast with UNDO for a few seconds. Mistap costs you nothing.' }, { h: 'Daily Run', b: 'Goes through every ready platform one at a time — name, notes, best games, and a big collect button — then a summary of what you collected and skipped. Much faster than scrolling a long list.' }, { h: 'Swipe', b: 'On a ready card: swipe <b>right</b> to collect, <b>left</b> to snooze it 3 hours. Vertical swipes scroll normally.' }, { h: 'Snooze &#9200;', b: "Drops a ready platform out of your list for 3 hours without marking it collected — for when it's ready but you can't get to it right now." }] },
-        { t: 'Timers — the important part', items: [{ h: 'Two kinds of timer', b: "Platforms don't all work the same way. <b>Rolling</b> means the clock starts when you collect (24h from now). <b>Fixed reset</b> means the drop returns at a set clock time regardless of when you collected — 5:00 AM, midnight, whatever." }, { h: 'Why it matters', b: "Collect from a 5am-reset platform at 11pm and you wait <b>6 hours</b>, not 24. If the app treated that as rolling, it'd tell you to come back at 11pm tomorrow and you'd miss the morning drop entirely." }, { h: 'The chip', b: 'The little chip on each card shows the mode: <b>24h</b> or <b>4h</b> for rolling, <b>5a</b> or <b>12a</b> for a fixed reset, with <b>Z</b> for UTC and <b>ET</b> for Eastern. Tap it to cycle through the options and correct one.' }, { h: 'It corrects itself', b: "If you collect from something the app said wasn't ready, it works out the real interval and offers to fix the timer for you. Over a few weeks your timers get accurate on their own." }, { h: 'Home timezone', b: "Settings → Home timezone. Lock it if you travel, so a 5am reset doesn't follow you across time zones. Platforms with their own anchored timezone stay right either way." }] },
+        { t: 'Timers — the important part', items: [{ h: 'Two kinds of timer', b: "Platforms don't all work the same way. <b>Rolling</b> means the clock starts when you collect (24h from now). <b>Fixed reset</b> means the drop returns at a listed UTC time regardless of when you collected." }, { h: 'Verified schedules', b: "Known schedules are synced from Bonus Farmer into the app's offline data. Sites with several bonuses keep a separate timer for each one, so collecting a short refill does not postpone the daily reward." }, { h: 'Why it matters', b: "Collect from a 10:00 UTC-reset platform five minutes before reset and you wait <b>5 minutes</b>, not 24 hours. Rolling platforms still wait the full interval from your click." }, { h: 'The chip', b: 'The chip shows <b>24h</b> for a rolling timer, <b>10:00Z</b> for one UTC reset, or the number of daily UTC reset points. Tap it to replace the synced schedule with your own local timer.' }, { h: 'Safe clicks', b: "OPEN starts a synced timer only when a bonus is ready. If you open a site early, the running timer is left alone instead of being pushed back." }, { h: 'Home timezone', b: "Settings → Home timezone affects legacy local-hour timers only. Verified UTC schedules stay anchored while you travel." }] },
         { t: 'Organising a big list', items: [{ h: 'Runs and tags', b: 'Edit any platform (⋯) and add tags like <i>morning</i> or <i>crypto</i>. Tags become chips above your list. Tap one and Daily Run scopes to just that group — the button changes to <b>START CRYPTO RUN</b>. This is how you avoid a 139-platform sitting.' }, { h: 'Search and compact view', b: 'Search filters your tracked list. The <b>&#9776;</b> button switches to a compact layout that roughly halves the height of every row.' }, { h: 'Sorting', b: 'Sorts <i>stack</i>. Tap Tier then Reliability and it sorts by Tier first, using Reliability to break ties. <b>Closest to Ready</b> floats whatever unlocks soonest to the top — clear the stack first if you want that on its own.' }, { h: 'Hide platforms on cooldown', b: "Settings toggle. Cuts your list down to just what's collectable. The Cooldown filter still shows everything when you want it." }] },
         { t: "Knowing what's working", items: [{ h: 'Stats', b: 'Total collections, last 7 and 30 days, your current daily streak, most-collected platforms, and a 12-week activity heatmap.' }, { h: 'Missed Resets', b: "Fixed-reset platforms whose drop came and went uncollected. That one's genuinely gone — unlike a rolling timer, which just waits. Rolling platforms are excluded because they can't miss." }, { h: 'Going Stale', b: "Tracked platforms you haven't touched in 21+ days. The prune list." }, { h: 'Review &amp; Prune', b: "Walks you through prunable platforms one at a time with the reason each was flagged. Keep, remove, or skip. Nothing is ever removed automatically, and it warns you if a platform has a referral link you'd lose." }, { h: 'A note on numbers', b: 'The app counts <i>collections</i>, never estimated money. 37 catalogue entries have no verified daily value, and several others are averaged ranges — a dollar figure built on that would look authoritative while being mostly invented.' }] },
         { t: 'Balances and cashouts', items: [{ h: 'Balance tracking', b: "Edit a platform and enter your current SC balance. You get a progress bar toward that platform's cashout minimum, which turns green at <b>CASHOUT READY</b>." }, { h: 'Where the target comes from', b: 'It\'s read from the platform\'s stated minimum redemption. Where a platform lists both ("50 GC / 100 Cash") it uses the larger, since that\'s the one gating a real cash redemption.' }] },
@@ -3362,6 +3464,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           if ('userNotes' in g) n.userNotes = g.userNotes;
           if ('resetHour' in g) n.resetHour = g.resetHour;
           if ('resetTZ' in g) n.resetTZ = g.resetTZ;
+          if (g.timerCustomized === true) n.timerCustomized = true;
+          if (g.timerCollectedAt && typeof g.timerCollectedAt === 'object' && !Array.isArray(g.timerCollectedAt)) {
+            const importedAt = Date.now();
+            n.timerCollectedAt = Object.fromEntries(Object.entries(g.timerCollectedAt)
+              .filter(([key, value]) => typeof key === 'string' && key.length <= 100 && Number.isFinite(Number(value)) && Number(value) >= 0 && Number(value) <= importedAt)
+              .slice(0, 20)
+              .map(([key, value]) => [key, Number(value)]));
+          }
           if ('scIsAveraged' in g) n.scIsAveraged = g.scIsAveraged;
           if ('scRange' in g) n.scRange = g.scRange;
           if ('bestGames' in g) n.bestGames = g.bestGames;
@@ -3462,7 +3572,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         <div class="run-redeem">Min Redeem: ${game.minRedeem || 'Varies'}</div>
         <div class="run-cooldown-row">
           <span>Cooldown</span>
-          <span class="cooldown-chip" title="Tap to change the cooldown interval" onclick="cycleCooldown(event, '${game.id}', true)">${cooldownLabel(game)}</span>
+          <span class="cooldown-chip" title="${escHtml(cooldownTitle(game))}" onclick="cycleCooldown(event, '${game.id}', true)">${cooldownLabel(game)}</span>
         </div>
         ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:8px;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
         ${game.notes ? `<div class="run-notes">${game.notes}</div>` : ''}
