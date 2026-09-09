@@ -1119,3 +1119,180 @@
     [data-theme="prism"] .form-group textarea,
     [data-theme="prism"] .referral-input,
     [data-theme="prism"] .catalog-search { border-radius: 1px; }
+
+/* =========================================================
+   THEME: Western ("Boot Hill")
+   Gritty graphic novel / spaghetti western macabre. Deep blood
+   red, pitch black, distressed grey, high-voltage gold, bone
+   white. Neo-brutalist: flat, sharp 90deg corners, thick black
+   borders, hard offset shadows - no blur/glow anywhere, the
+   opposite of neon/prism's soft light sources. Buttons get a
+   CSS-only spring "overshoot" press: a back-out cubic-bezier on
+   the release transition does the compress-then-snap-past-100%
+   bounce with no JS or keyframes needed for that part.
+   ========================================================= */
+
+/* Grain (same feTurbulence trick as prism's body::before) plus a
+   harder vignette - "darkening significantly around the edges"
+   per the brief - as body::after. */
+[data-theme="western"] body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
+[data-theme="western"] body::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  background: radial-gradient(120% 90% at 50% 40%, transparent 40%, rgba(0,0,0,0.55) 100%);
+}
+[data-theme="western"] .app-container, [data-theme="western"] .docked-footer { position: relative; z-index: 2; }
+
+/* Typography: typewriter/wood-block headings, condensed mechanical body */
+[data-theme="western"] .app-title,
+[data-theme="western"] .landing-title {
+  font-family: 'Special Elite', 'Courier New', monospace;
+  text-transform: uppercase; font-weight: 400; letter-spacing: 0;
+  -webkit-text-stroke: 0; color: var(--text-main);
+  text-shadow: 2px 2px 0 var(--accent-pink);
+}
+[data-theme="western"] .app-title span,
+[data-theme="western"] .landing-title span {
+  color: var(--accent-gold); -webkit-text-fill-color: currentColor;
+  -webkit-text-stroke: 0; text-shadow: none;
+}
+[data-theme="western"] body { font-family: 'Oswald', 'Arial Narrow', Arial, sans-serif; }
+
+/* Landing screen: wanted-poster card on a blood-vignette backdrop */
+[data-theme="western"] .landing-screen {
+  background: radial-gradient(140% 100% at 50% 30%, #7A0000 0%, #3a0000 45%, #0B0B0B 90%);
+}
+[data-theme="western"] .landing-inner::before {
+  /* Base rule paints a dark glow-well *above* .landing-inner's own
+     background (negative z-index sits behind in-flow content, not behind
+     the parent's own background box) - built for the other themes' dark/
+     translucent cards. This theme's card is solid bone white, so the well
+     has to go rather than get overridden to match. */
+  display: none;
+}
+[data-theme="western"] .landing-inner {
+  background: var(--text-main);
+  border: 4px solid #0B0B0B;
+  box-shadow: 8px 8px 0 #0B0B0B;
+  transform: rotate(-0.6deg);
+  padding: 34px 26px 30px;
+}
+[data-theme="western"] .landing-title { color: #0B0B0B; text-shadow: 2px 2px 0 var(--accent-gold); }
+[data-theme="western"] .landing-title span { color: #7A0000; -webkit-text-stroke: 0; text-shadow: none; }
+[data-theme="western"] .landing-subtitle {
+  color: #2E2E2E; font-family: 'Oswald', sans-serif; font-weight: 700;
+  letter-spacing: 0.2em; text-shadow: none;
+}
+
+/* Buttons: neo-brutalist, flat, thick black border, hard offset shadow,
+   CSS-only spring overshoot on release via a back-out easing curve.
+   Primary/active = gold (the CTA color); everything else = distressed
+   grey (per the brief's "inactive state" role for that color). */
+[data-theme="western"] .landing-btn,
+[data-theme="western"] .btn-primary,
+[data-theme="western"] .btn-start-run,
+[data-theme="western"] .sort-trigger-btn,
+[data-theme="western"] .filter-btn.active,
+[data-theme="western"] .nav-tab.active {
+  border-radius: 0; border: 3px solid #0B0B0B;
+  background: var(--accent-gold); color: #0B0B0B;
+  box-shadow: 4px 4px 0 #0B0B0B; text-shadow: none;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
+}
+[data-theme="western"] .landing-btn:active,
+[data-theme="western"] .btn-primary:active,
+[data-theme="western"] .btn-start-run:active,
+[data-theme="western"] .sort-trigger-btn:active,
+[data-theme="western"] .filter-btn.active:active,
+[data-theme="western"] .nav-tab.active:active {
+  transform: translate(3px, 3px) scale(0.85);
+  box-shadow: 1px 1px 0 #0B0B0B;
+}
+[data-theme="western"] .filter-btn,
+[data-theme="western"] .btn-cancel,
+[data-theme="western"] .btn-check,
+[data-theme="western"] .btn-open,
+[data-theme="western"] .nav-tab,
+[data-theme="western"] .btn-share,
+[data-theme="western"] .cooldown-chip {
+  border-radius: 0; border: 2px solid #0B0B0B;
+  background: #2E2E2E; color: var(--text-main);
+  box-shadow: 3px 3px 0 #0B0B0B; text-shadow: none;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
+}
+[data-theme="western"] .filter-btn:active,
+[data-theme="western"] .btn-cancel:active,
+[data-theme="western"] .btn-check:active,
+[data-theme="western"] .btn-open:active,
+[data-theme="western"] .nav-tab:active,
+[data-theme="western"] .btn-share:active,
+[data-theme="western"] .cooldown-chip:active {
+  transform: translate(2px, 2px) scale(0.88);
+  box-shadow: 1px 1px 0 #0B0B0B;
+}
+[data-theme="western"] .btn-settings-gear { color: var(--text-main); }
+
+/* Cards & containers: solid, flat, grain-textured, hard-edged */
+[data-theme="western"] .glass-panel,
+[data-theme="western"] .ledger-card,
+[data-theme="western"] .catalog-item-row,
+[data-theme="western"] .sheet-modal,
+[data-theme="western"] .hero-stat-card,
+[data-theme="western"] .keen-info-popover,
+[data-theme="western"] .res-brief,
+[data-theme="western"] .res-tile,
+[data-theme="western"] .strategy-row,
+[data-theme="western"] .tier-action-card {
+  border-radius: 0;
+  background: #2E2E2E;
+  border: 2px solid #0B0B0B;
+  box-shadow: 4px 4px 0 rgba(11,11,11,0.7), inset 0 0 0 1px rgba(234,234,234,0.06);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+[data-theme="western"] .keen-info-popover { border-style: solid; background: #EAEAEA; color: #0B0B0B; }
+[data-theme="western"] .ledger-card:active,
+[data-theme="western"] .catalog-item-row:active { transform: scale(0.98) translate(1px, 1px); }
+
+/* Avatars & badges: square plates and filled tags, not glowing gems */
+[data-theme="western"] .casino-avatar,
+[data-theme="western"] .hero-ring-circle {
+  border-radius: 0; border: 2px solid #0B0B0B;
+  background: var(--accent-gold); color: #0B0B0B;
+  box-shadow: 3px 3px 0 #0B0B0B; text-shadow: none;
+  font-family: 'Special Elite', monospace;
+}
+[data-theme="western"] .status-dot { border-radius: 0; width: 9px; height: 9px; box-shadow: 1px 1px 0 #0B0B0B; }
+[data-theme="western"] .tier-badge {
+  border-radius: 0; border: 1px solid #0B0B0B; box-shadow: 2px 2px 0 #0B0B0B;
+  color: #0B0B0B; text-shadow: none;
+}
+[data-theme="western"] .tier-S { background: var(--tier-s); }
+[data-theme="western"] .tier-A { background: var(--tier-a); }
+[data-theme="western"] .tier-B { background: var(--tier-b); }
+[data-theme="western"] .tier-C { background: var(--tier-c); }
+[data-theme="western"] .type-badge {
+  border-radius: 0; border: 1px solid #0B0B0B; box-shadow: 2px 2px 0 #0B0B0B;
+  background: var(--accent-pink); color: var(--text-main); text-shadow: none;
+}
+
+[data-theme="western"] .date-header { color: var(--accent-gold); text-shadow: none; font-family: 'Oswald', sans-serif; font-weight: 700; letter-spacing: 0.14em; }
+[data-theme="western"] .hero-details h2 { text-shadow: none; }
+[data-theme="western"] .hero-details p { color: var(--text-muted); text-shadow: none; }
+[data-theme="western"] .nav-pill-group { border-radius: 0; border: 2px solid #0B0B0B; background: #0B0B0B; }
+[data-theme="western"] .docked-footer {
+  background: #0B0B0B; border-top: 3px solid #0B0B0B; backdrop-filter: none; -webkit-backdrop-filter: none;
+  box-shadow: 0 -4px 0 rgba(11,11,11,0.7);
+}
+
+/* Screen shake for the daily-run-complete milestone hook in the main
+   script (see screenShake() near applyTheme()). Body-scoped so toggling
+   .screen-shake-active off-theme is a harmless no-op. */
+[data-theme="western"] body.screen-shake-active { animation: western-screen-shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+@keyframes western-screen-shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, -1px, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 1px, 0); }
+  40%, 60% { transform: translate3d(4px, -1px, 0); }
+}
