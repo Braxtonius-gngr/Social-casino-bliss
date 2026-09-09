@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /*
  * Syntax-checks every classic <script> this app ships: the .js files under
- * assets/ and utils/, plus the inline <script> block in index.html (the one
- * with no src= attribute - the app has no build step, so that block is real,
- * shipped code, not a template).
+ * assets/, utils/, scripts/, and data/ (recursively), plus the inline
+ * <script> block in index.html (the one with no src= attribute - the app
+ * has no build step, so that block is real, shipped code, not a template).
  *
  * Uses `node --check`, which parses without executing and needs no
  * dependencies beyond Node itself. This app deliberately has no linter: it
@@ -72,6 +72,7 @@ function main() {
     ...findJsFiles(path.join(ROOT, 'assets')),
     ...findJsFiles(path.join(ROOT, 'utils')),
     ...findJsFiles(path.join(ROOT, 'scripts')),
+    ...findJsFiles(path.join(ROOT, 'data')),
   ];
   for (const file of jsFiles) {
     const rel = path.relative(ROOT, file);
