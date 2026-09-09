@@ -1,54 +1,57 @@
 /* assets/accessibility.js
-   - Dismiss landing-screen and persist
-   - Add keyboard/ARIA toggles for .strategy-row.interactive
+   Keyboard + ARIA support for the dynamically-rendered .strategy-row.interactive
+   rows in index.html (Keen Info popovers, resource guides, etc.).
+
+   These rows are template-string HTML re-rendered on demand (search, sort,
+   tab switches, popover opens) rather than static markup present at
+   DOMContentLoaded, so a one-time querySelectorAll would miss most of them.
+   This uses a MutationObserver to tag new rows as they appear, plus event
+   delegation on `document` so listeners never need to be re-attached.
+
+   Rows already carry an inline onclick="this.classList.toggle('expanded')"
+   for mouse users (see makeStrategyItem() in index.html). We never call
+   toggle() ourselves in the click handler - only keydown (Enter/Space)
+   toggles - so mouse and keyboard never double-toggle the same row.
 */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Landing screen dismissal
-  const landing = document.querySelector('.landing-screen');
-  const landingBtn = document.querySelector('.landing-btn');
-  if (landing && landingBtn) {
-    if (localStorage.getItem('seen-landing')) {
-      landing.classList.add('hidden');
-    }
-    landingBtn.setAttribute('aria-label', landingBtn.getAttribute('aria-label') || 'Enter app');
-    landingBtn.addEventListener('click', () => {
-      landing.classList.add('hidden');
-      localStorage.setItem('seen-landing', '1');
-      // Move focus to main content area
-      const main = document.getElementById('main-content') || document.querySelector('main');
-      if (main) main.focus();
-    });
+  function initStrategyRow(row) {
+    if (row.dataset.a11yInit) return;
+    row.dataset.a11yInit = '1';
+    row.setAttribute('role', 'button');
+    if (!row.hasAttribute('tabindex')) row.setAttribute('tabindex', '0');
+    row.setAttribute('aria-expanded', row.classList.contains('expanded') ? 'true' : 'false');
   }
 
-  // Strategy rows: enable keyboard toggle and aria-expanded
-  const strategyRows = Array.from(document.querySelectorAll('.strategy-row.interactive'));
-  strategyRows.forEach((row, idx) => {
-    const header = row.querySelector('.strategy-row-header');
-    const body = row.querySelector('.strategy-row-body');
-    const rowId = row.id || `strategy-row-${idx+1}`;
-    row.id = rowId;
-    if (header && body) {
-      header.setAttribute('role', 'button');
-      header.setAttribute('tabindex', header.getAttribute('tabindex') || '0');
-      header.setAttribute('aria-controls', body.id || `${rowId}-body`);
-      body.id = body.id || `${rowId}-body`;
-      header.setAttribute('aria-expanded', row.classList.contains('expanded') ? 'true' : 'false');
+  function syncAriaExpanded(row) {
+    row.setAttribute('aria-expanded', row.classList.contains('expanded') ? 'true' : 'false');
+  }
 
-      const toggle = () => {
-        const willExpand = header.getAttribute('aria-expanded') === 'false';
-        header.setAttribute('aria-expanded', willExpand ? 'true' : 'false');
-        row.classList.toggle('expanded', willExpand);
-        if (willExpand) body.querySelectorAll('a, button, [tabindex]').forEach(el => el.setAttribute('tabindex', '0'));
-      };
+  document.querySelectorAll('.strategy-row.interactive').forEach(initStrategyRow);
 
-      header.addEventListener('click', toggle);
-      header.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter' || ev.key === ' ') {
-          ev.preventDefault();
-          toggle();
-        }
+  new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType !== 1) return;
+        if (node.matches && node.matches('.strategy-row.interactive')) initStrategyRow(node);
+        if (node.querySelectorAll) node.querySelectorAll('.strategy-row.interactive').forEach(initStrategyRow);
       });
     }
+  }).observe(document.body, { childList: true, subtree: true });
+
+  // Mouse clicks already toggled 'expanded' via the row's own inline onclick
+  // by the time this bubbles up here - just mirror the resulting state.
+  document.addEventListener('click', (ev) => {
+    const row = ev.target.closest('.strategy-row.interactive');
+    if (row) syncAriaExpanded(row);
+  });
+
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    const row = ev.target.closest('.strategy-row.interactive');
+    if (!row) return;
+    ev.preventDefault();
+    row.classList.toggle('expanded');
+    syncAriaExpanded(row);
   });
 });

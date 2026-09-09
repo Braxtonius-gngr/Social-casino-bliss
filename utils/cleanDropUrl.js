@@ -14,7 +14,7 @@ const TRACKING_PARAMS = new Set([
  * @returns {string} The cleaned and normalized URL.
  * @throws {TypeError} If the rawUrl cannot be parsed as a valid URL.
  */
-export function cleanDropUrl(rawUrl) {
+function cleanDropUrl(rawUrl) {
   const url = new URL(rawUrl);
 
   // 1. Normalize the hostname (Browsers usually do this, but enforcing ensures consistency)

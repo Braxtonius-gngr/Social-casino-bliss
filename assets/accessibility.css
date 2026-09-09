@@ -36,6 +36,13 @@ button:focus, a:focus {
   outline-offset: 3px;
 }
 
+/* #main-content is a large landmark wrapper (the skip-link target and where
+   focus lands after the landing screen closes) - not a control, so it
+   shouldn't get a full-page outline box. */
+#main-content:focus {
+  outline: none;
+}
+
 /* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
