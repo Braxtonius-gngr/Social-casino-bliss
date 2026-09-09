@@ -62,17 +62,17 @@
 
     <section id="viewGames">
       <div style="display:flex; gap:8px; margin-bottom:12px;">
-        <input type="text" id="gamesSearch" class="catalog-search glass-panel" style="margin-bottom:0; flex:1;" placeholder="Search your platforms..." oninput="renderGames()" />
+        <input type="text" id="gamesSearch" class="catalog-search glass-panel" style="margin-bottom:0; flex:1;" placeholder="Search your platforms..." oninput="renderGames(); saveViewState();" />
         <button class="sort-trigger-btn secondary glass-panel" id="btnDense" title="Compact view" onclick="toggleDense()" style="padding:6px 12px;">&#9776;</button>
       </div>
       <button class="btn-start-run" id="btnStartDailyRun" onclick="startDailyRun()" disabled>NOTHING READY YET</button>
       <div class="filter-sort-row">
         <div class="filter-chips">
-          <button class="filter-btn active" onclick="applyFilter('all', this)">All</button>
-          <button class="filter-btn" onclick="applyFilter('ready', this)">Ready</button>
-          <button class="filter-btn" onclick="applyFilter('live', this)">Live Play</button>
-          <button class="filter-btn" onclick="applyFilter('cooldown', this)">Cooldown</button>
-          <button class="filter-btn" onclick="applyFilter('referral', this)">Has referral</button>
+          <button class="filter-btn active" id="filterAll" onclick="applyFilter('all', this)">All</button>
+          <button class="filter-btn" id="filterReady" onclick="applyFilter('ready', this)">Ready</button>
+          <button class="filter-btn" id="filterLive" onclick="applyFilter('live', this)">Live Play</button>
+          <button class="filter-btn" id="filterCooldown" onclick="applyFilter('cooldown', this)">Cooldown</button>
+          <button class="filter-btn" id="filterReferral" onclick="applyFilter('referral', this)">Has referral</button>
         </div>
         <button class="sort-trigger-btn secondary glass-panel" style="padding:6px 12px;" id="sortTriggerGames" onclick="toggleSortDrawer('games')">
           <span>Sort</span>
@@ -102,14 +102,14 @@
     </section>
 
     <section id="viewCatalog" style="display: none;">
-      <input type="text" id="catalogSearchInput" class="catalog-search glass-panel" placeholder="Search 85+ verified sweepstakes platforms..." oninput="renderCatalogList()" />
+      <input type="text" id="catalogSearchInput" class="catalog-search glass-panel" placeholder="Search 85+ verified sweepstakes platforms..." oninput="renderCatalogList(); saveViewState();" />
       
       <div class="filter-sort-row">
         <div class="filter-chips">
-          <button class="filter-btn active" onclick="applyCatalogFilter('all', this)">All</button>
-          <button class="filter-btn" onclick="applyCatalogFilter('S', this)">S-Tier</button>
-          <button class="filter-btn" onclick="applyCatalogFilter('A', this)">A-Tier</button>
-          <button class="filter-btn" onclick="applyCatalogFilter('live', this)">Live</button>
+          <button class="filter-btn active" id="catFilterAll" onclick="applyCatalogFilter('all', this)">All</button>
+          <button class="filter-btn" id="catFilterS" onclick="applyCatalogFilter('S', this)">S-Tier</button>
+          <button class="filter-btn" id="catFilterA" onclick="applyCatalogFilter('A', this)">A-Tier</button>
+          <button class="filter-btn" id="catFilterLive" onclick="applyCatalogFilter('live', this)">Live</button>
         </div>
         <div style="display: flex; gap: 6px;">
           <button class="sort-trigger-btn glass-panel" style="padding:6px 12px; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="openBulkTierModal()">
@@ -282,6 +282,7 @@
       </div>
       <div style="margin-top: 20px; display:flex; flex-direction:column; gap:10px;">
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="restartTourFromSettings()">Restart Interactive Tour</button>
+        <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="resetViewState()">Reset View</button>
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-pink); color:var(--accent-pink); text-shadow:0 0 5px var(--accent-pink);" onclick="resetTrackerData()">Reset All Tracked Data</button>
       </div>
       <div class="backup-controls">
@@ -735,6 +736,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     let trackedGames = JSON.parse(localStorage.getItem('the_casino_almanac_v7') || '[]');
     let openKeenIds = new Set();
+    let currentTab = 'games';
     let currentFilter = 'all';
     let currentCatalogFilter = 'all';
     let sortStackGames = ['tier', 'reliability'];
@@ -750,6 +752,123 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       name: { label: "Name (A to Z)" }
     };
 
+    // Persisted view state (active tab, filters, sort stacks, search text) -
+    // everything a user configures to look at their data, as opposed to the
+    // data itself (trackedGames, under a separate key/version). One
+    // versioned key so a future shape change can be migrated or dropped
+    // independently of the platform data.
+    const VIEW_STATE_KEY = 'almanac_view_state_v1';
+    const VALID_TABS = ['games', 'catalog', 'resources'];
+    const VALID_GAMES_FILTERS = ['all', 'ready', 'live', 'cooldown', 'referral'];
+    const VALID_CATALOG_FILTERS = ['all', 'S', 'A', 'live'];
+    const TAB_BUTTON_IDS = { games: 'tabPlatforms', catalog: 'tabCatalog', resources: 'tabResources' };
+    const GAMES_FILTER_BTN_IDS = { all: 'filterAll', ready: 'filterReady', live: 'filterLive', cooldown: 'filterCooldown', referral: 'filterReferral' };
+    const CATALOG_FILTER_BTN_IDS = { all: 'catFilterAll', S: 'catFilterS', A: 'catFilterA', live: 'catFilterLive' };
+
+    // Mirrors applyFilter()'s own class bookkeeping, minus the render/save
+    // side effects - used by restore/reset so they can set the *visual*
+    // active state without re-triggering a save on every field they touch.
+    function setGamesFilterButtonUI(filter) {
+      document.querySelectorAll('#viewGames .filter-chips:not(#tagChips) .filter-btn').forEach(b => b.classList.remove('active'));
+      const id = GAMES_FILTER_BTN_IDS[filter];
+      const btn = id && document.getElementById(id);
+      if (btn) btn.classList.add('active');
+    }
+    function setCatalogFilterButtonUI(filter) {
+      document.querySelectorAll('#viewCatalog .filter-chips .filter-btn').forEach(b => b.classList.remove('active'));
+      const id = CATALOG_FILTER_BTN_IDS[filter];
+      const btn = id && document.getElementById(id);
+      if (btn) btn.classList.add('active');
+    }
+
+    function saveViewState() {
+      try {
+        localStorage.setItem(VIEW_STATE_KEY, JSON.stringify({
+          tab: currentTab,
+          gamesFilter: currentFilter,
+          catalogFilter: currentCatalogFilter,
+          sortStackGames: sortStackGames,
+          sortStackCatalog: sortStackCatalog,
+          gamesSearch: document.getElementById('gamesSearch')?.value || '',
+          catalogSearch: document.getElementById('catalogSearchInput')?.value || ''
+        }));
+      } catch (e) {}
+    }
+
+    // Called once at startup, after trackedGames is loaded and the DOM
+    // above this script has parsed (this script runs at the end of <body>,
+    // so both are already true here - see the call site near the bottom).
+    // Every field is validated independently and falls back to the app's
+    // normal default if missing, malformed, or - for a tag filter - if the
+    // tag no longer exists on any tracked platform. Corrupt JSON simply
+    // leaves the defaults already set above untouched.
+    function restoreViewState() {
+      let raw;
+      try { raw = localStorage.getItem(VIEW_STATE_KEY); } catch (e) { return; }
+      if (!raw) return;
+      let state;
+      try { state = JSON.parse(raw); } catch (e) { return; }
+      if (!state || typeof state !== 'object') return;
+
+      const knownTags = new Set();
+      trackedGames.forEach(g => (g.tags || []).forEach(t => knownTags.add(t)));
+
+      let gamesFilter = 'all';
+      if (typeof state.gamesFilter === 'string') {
+        if (VALID_GAMES_FILTERS.includes(state.gamesFilter)) gamesFilter = state.gamesFilter;
+        else if (state.gamesFilter.startsWith('tag:') && knownTags.has(state.gamesFilter.slice(4))) gamesFilter = state.gamesFilter;
+      }
+      currentFilter = gamesFilter;
+
+      currentCatalogFilter = (typeof state.catalogFilter === 'string' && VALID_CATALOG_FILTERS.includes(state.catalogFilter))
+        ? state.catalogFilter : 'all';
+
+      const validSortKeys = Object.keys(SORT_CONFIG);
+      function sanitizeSortStack(v) {
+        if (!Array.isArray(v)) return ['tier', 'reliability'];
+        const seen = new Set();
+        return v.filter(k => typeof k === 'string' && validSortKeys.includes(k) && !seen.has(k) && seen.add(k));
+      }
+      sortStackGames = sanitizeSortStack(state.sortStackGames);
+      sortStackCatalog = sanitizeSortStack(state.sortStackCatalog);
+
+      if (typeof state.gamesSearch === 'string') {
+        const el = document.getElementById('gamesSearch');
+        if (el) el.value = state.gamesSearch;
+      }
+      if (typeof state.catalogSearch === 'string') {
+        const el = document.getElementById('catalogSearchInput');
+        if (el) el.value = state.catalogSearch;
+      }
+
+      setGamesFilterButtonUI(currentFilter.startsWith('tag:') ? '' : currentFilter);
+      setCatalogFilterButtonUI(currentCatalogFilter);
+      renderTagChips();
+      updateSortUI('games');
+      updateSortUI('catalog');
+
+      const tab = (typeof state.tab === 'string' && VALID_TABS.includes(state.tab)) ? state.tab : 'games';
+      const tabBtn = document.getElementById(TAB_BUTTON_IDS[tab]);
+      if (tab !== 'games' && tabBtn) switchMainTab(tab, tabBtn);
+    }
+
+    function resetViewState() {
+      try { localStorage.removeItem(VIEW_STATE_KEY); } catch (e) {}
+      currentFilter = 'all';
+      currentCatalogFilter = 'all';
+      sortStackGames = ['tier', 'reliability'];
+      sortStackCatalog = ['tier', 'reliability'];
+      const gs = document.getElementById('gamesSearch'); if (gs) gs.value = '';
+      const cs = document.getElementById('catalogSearchInput'); if (cs) cs.value = '';
+      setGamesFilterButtonUI('all');
+      setCatalogFilterButtonUI('all');
+      renderTagChips();
+      updateSortUI('games');
+      updateSortUI('catalog');
+      switchMainTab('games', document.getElementById(TAB_BUTTON_IDS.games));
+      closeModals();
+    }
+
     function persist() {
       localStorage.setItem('the_casino_almanac_v7', JSON.stringify(trackedGames));
       renderGames();
@@ -764,6 +883,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderGames();
       renderTagChips();
       updateDailyRunButton();
+      saveViewState();
     }
 
     function applyCatalogFilter(filter, el) {
@@ -771,6 +891,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       el.classList.add('active');
       currentCatalogFilter = filter;
       renderCatalogList();
+      saveViewState();
     }
 
     function toggleSortKey(key, view) {
@@ -786,6 +907,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       updateSortUI(view);
       if (view === 'games') renderGames();
       else renderCatalogList();
+      saveViewState();
     }
 
     function clearSortStack(view) {
@@ -794,6 +916,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       updateSortUI(view);
       if (view === 'games') renderGames();
       else renderCatalogList();
+      saveViewState();
     }
 
     function updateSortUI(view) {
@@ -1233,6 +1356,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderGames();
       renderTagChips();
       updateDailyRunButton();
+      saveViewState();
     }
 
     function updateHeroStats() {
@@ -1842,6 +1966,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (tab === 'catalog') tourCheckpoint(1);
       if (tab === 'games') tourCheckpoint(5);
       if (tab === 'resources') tourCheckpoint(8);
+
+      currentTab = tab;
+      saveViewState();
     }
 
     function toggleSortDrawer(view) {
@@ -3502,6 +3629,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     if (!showLanding) {
       document.getElementById('landingScreen').classList.add('hidden');
     }
+
+    // trackedGames is loaded near the top of this script and every element
+    // it touches is already parsed (this script runs at the end of <body>),
+    // so it's safe to restore here, before the renders below pick up
+    // whatever it set.
+    restoreViewState();
 
     updateSortUI('games');
     updateSortUI('catalog');
