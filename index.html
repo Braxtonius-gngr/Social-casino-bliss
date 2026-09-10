@@ -2319,23 +2319,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           '--accent-gold-dim': 'rgba(255, 193, 7, 0.18)',
           '--accent-green': '#8AA624',
           '--accent-green-dim': 'rgba(138, 166, 36, 0.18)',
-          '--accent-pink': '#B33A3A',
-          '--accent-pink-dim': 'rgba(179, 58, 58, 0.18)',
+          '--accent-pink': '#810000',
+          '--accent-pink-dim': 'rgba(129, 0, 0, 0.22)',
           '--accent-orange': '#C16B2C',
           '--accent-orange-dim': 'rgba(193, 107, 44, 0.18)',
           '--accent-cyan': '#6E7C7C',
           '--accent-cyan-dim': 'rgba(110, 124, 124, 0.18)',
           '--glass-border': 'rgba(234, 234, 234, 0.15)',
           '--glass-highlight': 'rgba(234, 234, 234, 0.08)',
-          '--text-main': '#EAEAEA',
-          '--text-muted': '#A8A8A0',
+          '--text-main': '#E3DAC9',
+          '--text-muted': '#B8AD9A',
           '--text-dim': '#6b6b66',
-          '--tier-s': '#B33A3A',
+          '--tier-s': '#810000',
           '--tier-a': '#C16B2C',
           '--tier-b': '#6E7C7C',
           '--tier-c': '#5C4B51'
         },
-        bodyBg: 'radial-gradient(130% 90% at 50% 15%, rgba(122,0,0,0.65) 0%, rgba(58,0,0,0.55) 40%, #0B0B0B 85%), linear-gradient(180deg, #0B0B0B 0%, #050505 100%)',
+        bodyBg: 'radial-gradient(130% 90% at 50% 15%, rgba(129,0,0,0.72) 0%, rgba(58,0,0,0.58) 42%, #0B0B0B 86%), linear-gradient(180deg, #0B0B0B 0%, #050505 100%)',
         metaColor: '#0B0B0B'
       },
       prism: {
@@ -3848,6 +3848,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (game) {
         collect(game.id);
         dailyRunStats.collected++;
+        hapticBuzz([18, 24, 42]);
+        screenShake();
       }
       dailyRunIndex++;
       renderDailyRunStep();

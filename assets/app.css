@@ -1162,7 +1162,7 @@
 
 /* Landing screen: wanted-poster card on a blood-vignette backdrop */
 [data-theme="western"] .landing-screen {
-  background: radial-gradient(140% 100% at 50% 30%, #7A0000 0%, #3a0000 45%, #0B0B0B 90%);
+  background: radial-gradient(140% 100% at 50% 30%, #810000 0%, #3a0000 45%, #0B0B0B 90%);
 }
 [data-theme="western"] .landing-inner::before {
   /* Base rule paints a dark glow-well *above* .landing-inner's own
@@ -1180,7 +1180,7 @@
   padding: 34px 26px 30px;
 }
 [data-theme="western"] .landing-title { color: #0B0B0B; text-shadow: 2px 2px 0 var(--accent-gold); }
-[data-theme="western"] .landing-title span { color: #7A0000; -webkit-text-stroke: 0; text-shadow: none; }
+[data-theme="western"] .landing-title span { color: #810000; -webkit-text-stroke: 0; text-shadow: none; }
 [data-theme="western"] .landing-subtitle {
   color: #2E2E2E; font-family: 'Oswald', sans-serif; font-weight: 700;
   letter-spacing: 0.2em; text-shadow: none;
@@ -1251,7 +1251,7 @@
   box-shadow: 4px 4px 0 rgba(11,11,11,0.7), inset 0 0 0 1px rgba(234,234,234,0.06);
   backdrop-filter: none; -webkit-backdrop-filter: none;
 }
-[data-theme="western"] .keen-info-popover { border-style: solid; background: #EAEAEA; color: #0B0B0B; }
+[data-theme="western"] .keen-info-popover { border-style: solid; background: #E3DAC9; color: #0B0B0B; }
 [data-theme="western"] .ledger-card:active,
 [data-theme="western"] .catalog-item-row:active { transform: scale(0.98) translate(1px, 1px); }
 
@@ -1296,3 +1296,84 @@
   30%, 50%, 70% { transform: translate3d(-4px, 1px, 0); }
   40%, 60% { transform: translate3d(4px, -1px, 0); }
 }
+
+[data-theme="western"] .app-container {
+  perspective: 900px;
+}
+[data-theme="western"] .hero-stat-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--text-main);
+  color: #0B0B0B;
+  transform: rotate(-0.8deg);
+  box-shadow: 7px 7px 0 #0B0B0B;
+}
+[data-theme="western"] .hero-stat-card::before,
+[data-theme="western"] .hero-stat-card::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  border: 2px solid rgba(129, 0, 0, 0.35);
+  border-radius: 50%;
+}
+[data-theme="western"] .hero-stat-card::before { width: 210px; height: 210px; right: -90px; top: -80px; }
+[data-theme="western"] .hero-stat-card::after { width: 145px; height: 145px; right: -56px; top: -48px; border-color: rgba(11, 11, 11, 0.35); }
+[data-theme="western"] .hero-details h2,
+[data-theme="western"] .hero-details p { color: #0B0B0B; }
+[data-theme="western"] .hero-details p { opacity: 0.72; }
+[data-theme="western"] .hero-ring-circle {
+  position: relative;
+  z-index: 1;
+  border-radius: 50%;
+  background: #810000;
+  color: var(--text-main);
+  border: 5px double #0B0B0B;
+  box-shadow: 4px 4px 0 #0B0B0B, inset 0 0 0 5px rgba(227, 218, 201, 0.18);
+}
+[data-theme="western"] .nav-pill-group {
+  position: relative;
+  border: 2px solid #0B0B0B;
+  background: #810000;
+  box-shadow: 5px 5px 0 #0B0B0B;
+  transform: rotate(0.45deg);
+}
+[data-theme="western"] .nav-tab { color: var(--text-main); }
+[data-theme="western"] .nav-tab.active {
+  background: var(--accent-gold);
+  color: #0B0B0B;
+  box-shadow: 3px 3px 0 #0B0B0B;
+}
+[data-theme="western"] .ledger-card:nth-child(odd) { transform: rotate(-0.35deg); }
+[data-theme="western"] .ledger-card:nth-child(even) { transform: rotate(0.35deg); }
+[data-theme="western"] .btn-open {
+  background: var(--accent-gold);
+  color: #0B0B0B;
+  box-shadow: 3px 3px 0 #0B0B0B;
+}
+[data-theme="western"] .btn-open:hover { background: #FFD54F; box-shadow: 5px 5px 0 #0B0B0B; }
+[data-theme="western"] .btn-start-run::before { content: '◉ '; }
+[data-theme="western"] body.screen-shake-active::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+  background: #fff;
+  animation: recoil-flash 0.4s steps(2, end) both;
+}
+@keyframes recoil-flash {
+  0%, 12% { opacity: 0.92; }
+  28% { opacity: 0; }
+  100% { opacity: 0; }
+}
+[data-theme="western"] body.screen-shake-active .app-container {
+  animation: chamber-recoil 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+@keyframes chamber-recoil {
+  0% { transform: scale(1); }
+  18% { transform: scale(0.94) rotateX(3deg); }
+  52% { transform: scale(1.015) rotateX(-1deg); }
+  100% { transform: scale(1); }
+}
+[data-motion="off"] body.screen-shake-active::after,
+[data-motion="off"] body.screen-shake-active .app-container { animation: none; }
