@@ -589,6 +589,76 @@
     </div>
   </div>
 
+  <div id="cooldownEditorModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel">
+      <h3>Edit Cooldown</h3>
+      <input type="hidden" id="ceGameId" />
+      <input type="hidden" id="ceIsRunStep" />
+      <div id="ceGameName" style="font-weight:800; color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold); margin-bottom:14px;"></div>
+
+      <div class="form-group">
+        <label>Timer type</label>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="filter-btn" id="ceModeRolling" aria-pressed="false" onclick="setCooldownEditorMode('rolling')">Rolling</button>
+          <button type="button" class="filter-btn" id="ceModeFixed" aria-pressed="false" onclick="setCooldownEditorMode('fixed')">Fixed Reset</button>
+        </div>
+      </div>
+
+      <div class="form-group" id="ceRollingFields">
+        <label for="ceInterval">Interval (hours)</label>
+        <input type="number" id="ceInterval" min="1" step="1" />
+      </div>
+
+      <div class="form-group" id="ceFixedFields" style="display:none;">
+        <label for="ceResetHour">Reset time</label>
+        <select id="ceResetHour">
+          <option value="0">12:00 AM</option>
+          <option value="1">1:00 AM</option>
+          <option value="2">2:00 AM</option>
+          <option value="3">3:00 AM</option>
+          <option value="4">4:00 AM</option>
+          <option value="5">5:00 AM</option>
+          <option value="6">6:00 AM</option>
+          <option value="7">7:00 AM</option>
+          <option value="8">8:00 AM</option>
+          <option value="9">9:00 AM</option>
+          <option value="10">10:00 AM</option>
+          <option value="11">11:00 AM</option>
+          <option value="12">12:00 PM</option>
+          <option value="13">1:00 PM</option>
+          <option value="14">2:00 PM</option>
+          <option value="15">3:00 PM</option>
+          <option value="16">4:00 PM</option>
+          <option value="17">5:00 PM</option>
+          <option value="18">6:00 PM</option>
+          <option value="19">7:00 PM</option>
+          <option value="20">8:00 PM</option>
+          <option value="21">9:00 PM</option>
+          <option value="22">10:00 PM</option>
+          <option value="23">11:00 PM</option>
+        </select>
+        <label for="ceResetTZ" style="display:block; margin-top:12px;">Timezone</label>
+        <select id="ceResetTZ">
+          <option value="device">Home timezone (Settings)</option>
+          <option value="America/New_York">Eastern</option>
+          <option value="America/Chicago">Central</option>
+          <option value="America/Denver">Mountain</option>
+          <option value="America/Phoenix">Arizona</option>
+          <option value="America/Los_Angeles">Pacific</option>
+          <option value="America/Anchorage">Alaska</option>
+          <option value="Pacific/Honolulu">Hawaii</option>
+          <option value="UTC">UTC</option>
+        </select>
+        <div class="hint" style="font-size:0.68rem; color:var(--text-muted); margin-top:5px;">"Home timezone" follows the device or locked timezone set in Settings. Pick a specific zone if this platform's reset is anchored to it regardless of where you are.</div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-primary" onclick="saveCooldownEditor()">SAVE</button>
+        <button type="button" class="btn-cancel" onclick="closeModals()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
   <div id="importModal" class="sheet-backdrop">
     <div class="sheet-modal glass-panel">
       <h3 style="color:var(--accent-orange); text-shadow:0 0 10px var(--accent-orange);">Bulk Import</h3>
@@ -767,6 +837,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     let trackedGames = JSON.parse(localStorage.getItem('the_casino_almanac_v7') || '[]');
+    // One-time recovery pass for whatever's already on disk: malformed
+    // timer fields from before this normalization existed are corrected
+    // rather than left to crash the first render, and _prevCollected -
+    // never meant to be persisted at all - is dropped if any older stored
+    // copy still has it (see markCollected()/collect()).
+    trackedGames.forEach((g) => { normalizeTimerFields(g); delete g._prevCollected; });
     let openKeenIds = new Set();
     let currentTab = 'games';
     let currentFilter = 'all';
@@ -1009,6 +1085,44 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // Iterating converges on the right offset, which keeps DST transitions
     // correct - storing a UTC reset as a fixed local hour would drift by an
     // hour for half the year.
+
+    // Intl.DateTimeFormat throws RangeError for anything it doesn't
+    // recognize as an IANA zone - this is the standard way to validate one
+    // without a dependency. lastResetInstant()/nextResetInstant() are the
+    // only functions that ever pass a resetTZ into a real
+    // Intl.DateTimeFormat call, so validating tz right there (rather than
+    // at every caller) is the one place that guarantees an invalid zone
+    // never reaches it, however it got into a game record.
+    function isValidTimeZone(tz) {
+      if (typeof tz !== 'string' || !tz) return false;
+      try { new Intl.DateTimeFormat(undefined, { timeZone: tz }); return true; }
+      catch (e) { return false; }
+    }
+
+    // Centralized timer-field validation, called wherever a game object
+    // enters trackedGames (initial load, single/tier/all catalog add, deck
+    // import, backup import, manual creation) so every path is consistent
+    // rather than each one re-implementing its own checks. Mutates in
+    // place and only ever touches a field that's actually invalid -valid
+    // existing values (including a resetTZ this function itself can't
+    // fully re-derive, like an intentional non-default zone) are left
+    // untouched.
+    function normalizeTimerFields(game) {
+      if (typeof game.cooldownHours !== 'number' || !Number.isFinite(game.cooldownHours) || game.cooldownHours <= 0) {
+        game.cooldownHours = 24;
+      }
+      const hasValidResetHour = typeof game.resetHour === 'number'
+        && Number.isInteger(game.resetHour) && game.resetHour >= 0 && game.resetHour <= 23;
+      if ('resetHour' in game && !hasValidResetHour) {
+        delete game.resetHour;
+        delete game.resetTZ;
+      }
+      if ('resetTZ' in game && (!hasValidResetHour || !isValidTimeZone(game.resetTZ))) {
+        delete game.resetTZ;
+      }
+      return game;
+    }
+
     function zonedHourToUtc(y, mo, d, hour, tz) {
       let guess = Date.UTC(y, mo - 1, d, hour, 0, 0);
       for (let i = 0; i < 3; i++) {
@@ -1032,8 +1146,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return { y: +p.year, mo: +p.month, d: +p.day };
     }
 
-    // Instant of the most recent reset at or before `now`
-    function lastResetInstant(now, hour, tz) {
+    // Instant of the most recent reset at or before `now`. tz is validated
+    // here (rather than trusted from the caller) - an invalid zone falls
+    // back to device-local instead of ever reaching Intl.DateTimeFormat.
+    function lastResetInstant(now, hour, rawTz) {
+      const tz = isValidTimeZone(rawTz) ? rawTz : null;
       const t = partsIn(now, tz);
       let inst = tz ? zonedHourToUtc(t.y, t.mo, t.d, hour, tz)
                     : new Date(new Date(now).setHours(hour, 0, 0, 0)).getTime();
@@ -1046,7 +1163,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return inst;
     }
 
-    function nextResetInstant(now, hour, tz) {
+    function nextResetInstant(now, hour, rawTz) {
+      const tz = isValidTimeZone(rawTz) ? rawTz : null;
       const last = lastResetInstant(now, hour, tz);
       const nxt = new Date(last); nxt.setUTCDate(nxt.getUTCDate() + 1);
       const t = partsIn(nxt.getTime(), tz);
@@ -1062,26 +1180,36 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return v && v !== 'device' ? v : null;
     }
 
-    function getCooldownState(game) {
-      const now = Date.now();
-
-      // Fixed daily reset: the drop returns at a set clock hour, not N hours
-      // after you collected. Collecting at 11pm on a 5am-reset platform means
-      // waiting 6 hours, not 24.
-      if (typeof game.resetHour === 'number') {
+    // Single source of truth for both rolling and fixed-reset readiness -
+    // countReadyNow() and scheduleNextNotification() both call this rather
+    // than re-deriving readiness from lastCollected/cooldownHours
+    // themselves, so a platform's actual mode (rolling vs. fixed) is only
+    // ever interpreted in one place. `now` defaults to the live clock but
+    // can be passed explicitly to ask "is this ready at time X" - that's
+    // what scheduleNextNotification() needs to find the next platform to
+    // become ready, not just which ones already are.
+    function getCooldownState(game, now = Date.now()) {
+      // A malformed resetHour (bad import, hand-edited storage) falls
+      // through to rolling-cooldown treatment rather than feeding a
+      // nonsense hour into Date.setHours()/the fixed-reset math below.
+      if (typeof game.resetHour === 'number' && Number.isInteger(game.resetHour) && game.resetHour >= 0 && game.resetHour <= 23) {
+        // Fixed daily reset: the drop returns at a set clock hour, not N
+        // hours after you collected. Collecting at 11pm on a 5am-reset
+        // platform means waiting 6 hours, not 24.
         const tz = game.resetTZ || getLockedTZ() || null;
         const lastReset = lastResetInstant(now, game.resetHour, tz);
         const collected = game.lastCollected || 0;
         if (collected >= lastReset) {
-          return { isReady: false, remainingMs: nextResetInstant(now, game.resetHour, tz) - now };
+          const nextReadyAt = nextResetInstant(now, game.resetHour, tz);
+          return { isReady: false, remainingMs: nextReadyAt - now, nextReadyAt };
         }
-        return { isReady: true, remainingMs: 0 };
+        return { isReady: true, remainingMs: 0, nextReadyAt: now };
       }
 
       // Rolling cooldown: N hours from the moment of collection.
-      const durationMs = (game.cooldownHours || 24) * 3600 * 1000;
+      const durationMs = (typeof game.cooldownHours === 'number' && Number.isFinite(game.cooldownHours) && game.cooldownHours > 0 ? game.cooldownHours : 24) * 3600 * 1000;
       const remaining = Math.max(0, durationMs - (now - (game.lastCollected || 0)));
-      return { isReady: remaining === 0, remainingMs: remaining };
+      return { isReady: remaining === 0, remainingMs: remaining, nextReadyAt: remaining === 0 ? now : now + remaining };
     }
 
     // Fraction of the wait already elapsed, for the card fill.
@@ -1097,13 +1225,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     function cooldownProgress(game, remainingMs) {
       let total;
-      if (typeof game.resetHour === 'number') {
+      // Same fixed-vs-rolling gate as getCooldownState() - a malformed
+      // resetHour must fall the same direction here too, or the progress
+      // bar's total and the remainingMs it was passed would come from two
+      // different modes.
+      if (typeof game.resetHour === 'number' && Number.isInteger(game.resetHour) && game.resetHour >= 0 && game.resetHour <= 23) {
         const tz = game.resetTZ || getLockedTZ() || null;
         const lastReset = lastResetInstant(Date.now(), game.resetHour, tz);
         const nextReset = nextResetInstant(Date.now(), game.resetHour, tz);
         total = nextReset - lastReset;
       } else {
-        total = (game.cooldownHours || 24) * 3600000;
+        total = (typeof game.cooldownHours === 'number' && Number.isFinite(game.cooldownHours) && game.cooldownHours > 0 ? game.cooldownHours : 24) * 3600000;
       }
       if (!total || total <= 0) return 0;
       return Math.max(0, Math.min(1, 1 - remainingMs / total));
@@ -1202,21 +1334,36 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return typeof game.snoozedUntil === 'number' && game.snoozedUntil > Date.now();
     }
 
+    // The collect-undo toast below and the cooldown-fix suggestion in
+    // offerCooldownFix() share one toast widget - showing the second while
+    // the first is still up would silently replace it, taking Undo off
+    // screen with no way back to it. UNDO_TOAST_MS matches the ms
+    // showToast() defaults to when markCollected() doesn't override it, so
+    // the fix suggestion (if any) only appears once that window has
+    // actually closed.
+    const UNDO_TOAST_MS = 6000;
+
     function markCollected(id, event) {
       if (event) event.stopPropagation();
       const game = trackedGames.find(g => g.id === id);
       if (!game) return;
       const wasReady = getCooldownState(game).isReady;
-      const prev = game.lastCollected;
-      game._prevCollected = prev;
+      // Local variables, not a field on the game object: offerCooldownFix()
+      // needs "what was lastCollected a moment ago" only for the duration
+      // of this one action, and that must never be something trackedGames/
+      // localStorage/exports actually persist.
+      const prevCollected = game.lastCollected;
       const prevSnooze = game.snoozedUntil;
       game.lastCollected = Date.now();
       delete game.snoozedUntil;
       logCollection(id);
       persist();
       hapticBuzz(40);
+
+      let undone = false;
       showToast(`${game.name} marked collected`, () => {
-        game.lastCollected = prev;
+        undone = true;
+        game.lastCollected = prevCollected;
         if (prevSnooze) game.snoozedUntil = prevSnooze;
         // roll back the history entry this action added
         for (let i = collectionHistory.length - 1; i >= 0; i--) {
@@ -1225,17 +1372,24 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
         persist();
       });
-      offerCooldownFix(game, wasReady);
+
+      // Deferred past the undo toast's own window, and skipped entirely if
+      // the user already undid - a fix suggestion for a collection that no
+      // longer happened would be meaningless, and would itself be a stale,
+      // no-longer-actionable toast left on screen.
+      setTimeout(() => {
+        if (undone) return;
+        offerCooldownFix(game, wasReady, prevCollected);
+      }, UNDO_TOAST_MS + 300);
     }
 
     // If you collect from something the app said wasn't ready yet, the stored
     // interval is too long - the real one is at most the time that actually
     // elapsed. Offer to correct it rather than silently staying wrong.
     const CD_STEPS = [1, 2, 3, 4, 6, 8, 12, 24, 48];
-    function offerCooldownFix(game, wasReady) {
+    function offerCooldownFix(game, wasReady, prevCollected) {
       if (wasReady) return;
       if (typeof game.resetHour === 'number') return;   // fixed resets aren't intervals
-      const prevCollected = game._prevCollected;
       if (!prevCollected) return;
       const elapsedH = (Date.now() - prevCollected) / 3600000;
       if (elapsedH < 0.5) return;                        // double-tap, not a real signal
@@ -1254,14 +1408,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const game = trackedGames.find(g => g.id === id);
       if (!game) return;
       const wasReady = getCooldownState(game).isReady;
-      game._prevCollected = game.lastCollected;
+      const prevCollected = game.lastCollected;
       window.open(game.url, '_blank');
       game.lastCollected = Date.now();
       delete game.snoozedUntil;
       logCollection(id);
       persist();
       hapticBuzz(40);
-      offerCooldownFix(game, wasReady);
+      // No competing toast on this path (collect() has no undo of its own
+      // today), so no need to defer here.
+      offerCooldownFix(game, wasReady, prevCollected);
     }
 
     function renderGames() {
@@ -1327,7 +1483,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
                   <span class="status-dot ${isReady ? '' : 'cooldown'}"></span>
                   <span style="font-family: monospace; font-weight:600;">${isReady ? 'READY' : formatTime(remainingMs)}</span>
                   ${isReady ? '' : `<span class="ready-at">&rarr; ${readyAtLabel(game, remainingMs)}</span>`}
-                  <span class="cooldown-chip" title="Tap to change the cooldown interval" onclick="cycleCooldown(event, '${game.id}', false)">${cooldownLabel(game)}</span>
+                  <button type="button" class="cooldown-chip" title="Edit cooldown" aria-label="Edit cooldown for ${escHtml(game.name)}, currently ${cooldownLabel(game)}" onclick="openCooldownEditor('${game.id}', event, false)">${cooldownLabel(game)}</button>
                 </div>
               </div>
             </div>
@@ -1503,13 +1659,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         let added = 0;
         CATALOG_DATA.forEach(item => {
           if (!trackedGames.some(g => g.name.toLowerCase() === item.name.toLowerCase())) {
-            trackedGames.push({
+            const g = {
               id: uid(), name: item.name, url: item.url, tier: item.tier, dailySC: item.dailySC,
               speedHours: item.speedHours, reliability: item.reliability, hasLive: item.hasLive,
               minRedeem: item.minRedeem, notes: item.notes, bestGames: item.bestGames,
               scIsAveraged: item.scIsAveraged, scRange: item.scRange, referralUrl: '',
               cooldownHours: item.cooldown, resetHour: item.resetHour, resetTZ: item.resetTZ, lastCollected: 0
-            });
+            };
+            normalizeTimerFields(g);
+            trackedGames.push(g);
             added++;
           }
         });
@@ -1532,7 +1690,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         tierItems.forEach(item => {
           const alreadyTracked = trackedGames.some(g => g.name.toLowerCase() === item.name.toLowerCase());
           if (!alreadyTracked) {
-            trackedGames.push({
+            const g = {
               id: uid(),
               name: item.name,
               url: item.url,
@@ -1548,8 +1706,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               scRange: item.scRange,
               referralUrl: '',
               cooldownHours: item.cooldown,
+              resetHour: item.resetHour,
+              resetTZ: item.resetTZ,
               lastCollected: 0
-            });
+            };
+            normalizeTimerFields(g);
+            trackedGames.push(g);
           }
         });
       } else {
@@ -1629,9 +1791,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           game.url = url;
           game.referralUrl = referralUrl;
           game.cooldownHours = cooldownHours;
+          normalizeTimerFields(game); // e.g. a typed "0" or "-5" hours recovers to the 24h default
         }
       } else {
-        trackedGames.push({
+        const g = {
           id: uid(),
           name,
           url,
@@ -1645,7 +1808,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           minRedeem: 'Custom',
           notes: 'User created platform',
           lastCollected: 0
-        });
+        };
+        normalizeTimerFields(g);
+        trackedGames.push(g);
       }
 
       persist();
@@ -1970,13 +2135,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (idx >= 0) {
         trackedGames.splice(idx, 1);
       } else {
-        trackedGames.push({
+        const g = {
           id: uid(), name: item.name, url: item.url, tier: item.tier, dailySC: item.dailySC,
           speedHours: item.speedHours, reliability: item.reliability, hasLive: item.hasLive,
           minRedeem: item.minRedeem, notes: item.notes, bestGames: item.bestGames,
           scIsAveraged: item.scIsAveraged, scRange: item.scRange, referralUrl: '',
           cooldownHours: item.cooldown, resetHour: item.resetHour, resetTZ: item.resetTZ, lastCollected: 0
-        });
+        };
+        normalizeTimerFields(g);
+        trackedGames.push(g);
       }
       persist();
       renderCatalogList();
@@ -2020,44 +2187,84 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     // Tap the cooldown chip to correct an interval in place.
     // cooldownHours lives only on the tracked copy; CATALOG_DATA is untouched.
-    function cycleCooldown(event, id, isRunStep) {
-      event.stopPropagation();
+    // --- Cooldown editor ---
+    // Replaces the old tap-to-cycle chip (a fixed sequence of hardcoded
+    // rolling/fixed-reset presets, applied instantly on every tap with no
+    // way back). This is a real form: nothing changes on the game until
+    // SAVE, CANCEL/closeModals() discards the in-progress edit untouched,
+    // and every value that reaches the game object still passes through
+    // normalizeTimerFields() - this form's own controls only ever offer
+    // valid choices, but that's the same authoritative gate every other
+    // entry point uses, not a second, parallel set of rules.
+    let cooldownEditorMode = 'rolling';
+
+    function openCooldownEditor(id, event, isRunStep) {
+      if (event) event.stopPropagation();
       const game = trackedGames.find(g => g.id === id);
       if (!game) return;
+      closeModals();
 
-      // Rolling hours first, then the common fixed reset hours, then back.
-      const ROLL = [2, 4, 6, 8, 12, 24, 48];
-      const FIXED = [
-        { resetHour: 0 }, { resetHour: 5 }, { resetHour: 6 }, { resetHour: 7 },
-        { resetHour: 10 }, { resetHour: 0, resetTZ: 'UTC' }, { resetHour: 0, resetTZ: 'America/New_York' }
-      ];
-      if (typeof game.resetHour === 'number') {
-        const i = FIXED.findIndex(f => f.resetHour === game.resetHour && (f.resetTZ || null) === (game.resetTZ || null));
-        if (i === -1 || i === FIXED.length - 1) {
-          delete game.resetHour; delete game.resetTZ; game.cooldownHours = ROLL[0];
-        } else {
-          game.resetHour = FIXED[i + 1].resetHour;
-          if (FIXED[i + 1].resetTZ) game.resetTZ = FIXED[i + 1].resetTZ; else delete game.resetTZ;
+      document.getElementById('ceGameId').value = id;
+      document.getElementById('ceIsRunStep').value = isRunStep ? '1' : '';
+      document.getElementById('ceGameName').textContent = game.name;
+
+      const isFixed = typeof game.resetHour === 'number';
+      document.getElementById('ceInterval').value = typeof game.cooldownHours === 'number' ? game.cooldownHours : 24;
+      document.getElementById('ceResetHour').value = isFixed ? String(game.resetHour) : '5';
+      document.getElementById('ceResetTZ').value = game.resetTZ || 'device';
+      setCooldownEditorMode(isFixed ? 'fixed' : 'rolling');
+
+      document.getElementById('cooldownEditorModal').classList.add('open');
+    }
+
+    function setCooldownEditorMode(mode) {
+      cooldownEditorMode = mode;
+      const rollBtn = document.getElementById('ceModeRolling');
+      const fixedBtn = document.getElementById('ceModeFixed');
+      rollBtn.classList.toggle('active', mode === 'rolling');
+      fixedBtn.classList.toggle('active', mode === 'fixed');
+      rollBtn.setAttribute('aria-pressed', mode === 'rolling' ? 'true' : 'false');
+      fixedBtn.setAttribute('aria-pressed', mode === 'fixed' ? 'true' : 'false');
+      document.getElementById('ceRollingFields').style.display = mode === 'rolling' ? '' : 'none';
+      document.getElementById('ceFixedFields').style.display = mode === 'fixed' ? '' : 'none';
+    }
+
+    function saveCooldownEditor() {
+      const id = document.getElementById('ceGameId').value;
+      const game = trackedGames.find(g => g.id === id);
+      if (!game) { closeModals(); return; }
+
+      if (cooldownEditorMode === 'rolling') {
+        const hours = parseInt(document.getElementById('ceInterval').value, 10);
+        if (!Number.isFinite(hours) || hours <= 0) {
+          showToast('Enter an interval greater than 0 hours.', null);
+          return;
         }
+        game.cooldownHours = hours;
+        delete game.resetHour;
+        delete game.resetTZ;
       } else {
-        const cur = typeof game.cooldownHours === 'number' ? game.cooldownHours : 24;
-        const next = ROLL.find(v => v > cur);
-        if (next !== undefined) { game.cooldownHours = next; }
-        else { game.resetHour = FIXED[0].resetHour; delete game.resetTZ; }
+        game.resetHour = parseInt(document.getElementById('ceResetHour').value, 10);
+        const tzValue = document.getElementById('ceResetTZ').value;
+        if (tzValue === 'device') delete game.resetTZ; else game.resetTZ = tzValue;
       }
-
-      // persist() already re-renders the games list and hero stats.
+      normalizeTimerFields(game);
       persist();
 
-      if (isRunStep) {
-        // Re-render the current step only. The run queue is deliberately built
-        // once at run start and must not be rebuilt underneath the user.
+      if (document.getElementById('ceIsRunStep').value === '1') {
+        // Re-render the current step only. The run queue is deliberately
+        // built once at run start and must not be rebuilt underneath the
+        // user.
         renderDailyRunStep();
       }
 
-      // Brief highlight so the change registers visually.
+      closeModals();
+      showToast(`${game.name} cooldown updated`, null);
+
+      // Brief highlight on the chip so the change registers visually,
+      // matching the old cycle-in-place feedback.
       requestAnimationFrame(() => {
-        document.querySelectorAll('.cooldown-chip').forEach(chip => {
+        document.querySelectorAll('.cooldown-chip').forEach((chip) => {
           if (chip.getAttribute('onclick') && chip.getAttribute('onclick').includes(id)) {
             chip.classList.add('flash');
             setTimeout(() => chip.classList.remove('flash'), 450);
@@ -2146,23 +2353,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           '--accent-gold-dim': 'rgba(255, 193, 7, 0.18)',
           '--accent-green': '#8AA624',
           '--accent-green-dim': 'rgba(138, 166, 36, 0.18)',
-          '--accent-pink': '#B33A3A',
-          '--accent-pink-dim': 'rgba(179, 58, 58, 0.18)',
+          '--accent-pink': '#810000',
+          '--accent-pink-dim': 'rgba(129, 0, 0, 0.22)',
           '--accent-orange': '#C16B2C',
           '--accent-orange-dim': 'rgba(193, 107, 44, 0.18)',
           '--accent-cyan': '#6E7C7C',
           '--accent-cyan-dim': 'rgba(110, 124, 124, 0.18)',
           '--glass-border': 'rgba(234, 234, 234, 0.15)',
           '--glass-highlight': 'rgba(234, 234, 234, 0.08)',
-          '--text-main': '#EAEAEA',
-          '--text-muted': '#A8A8A0',
+          '--text-main': '#E3DAC9',
+          '--text-muted': '#B8AD9A',
           '--text-dim': '#6b6b66',
-          '--tier-s': '#B33A3A',
+          '--tier-s': '#810000',
           '--tier-a': '#C16B2C',
           '--tier-b': '#6E7C7C',
           '--tier-c': '#5C4B51'
         },
-        bodyBg: 'radial-gradient(130% 90% at 50% 15%, rgba(122,0,0,0.65) 0%, rgba(58,0,0,0.55) 40%, #0B0B0B 85%), linear-gradient(180deg, #0B0B0B 0%, #050505 100%)',
+        bodyBg: 'radial-gradient(130% 90% at 50% 15%, rgba(129,0,0,0.72) 0%, rgba(58,0,0,0.58) 42%, #0B0B0B 86%), linear-gradient(180deg, #0B0B0B 0%, #050505 100%)',
         metaColor: '#0B0B0B'
       },
       prism: {
@@ -2577,12 +2784,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return d.getTime();
     }
 
+    // Reuses getCooldownState() - the same canonical calculation every
+    // card, filter, and sort already goes through - rather than
+    // re-deriving readiness from lastCollected+cooldownHours, which was
+    // wrong for any fixed-reset platform. Snoozed platforms are excluded:
+    // the user asked not to be bothered about them right now.
     function countReadyNow() {
-      const now = Date.now();
-      return trackedGames.filter(g => {
-        const cd = (g.cooldownHours || 24) * 3600000;
-        return now - (g.lastCollected || 0) >= cd;
-      }).length;
+      return trackedGames.filter(g => getCooldownState(g).isReady && !isSnoozed(g)).length;
     }
 
     function scheduleNextNotification() {
@@ -2594,7 +2802,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const now = Date.now();
       let nextReady = Infinity;
       trackedGames.forEach(g => {
-        const readyAt = (g.lastCollected || 0) + (g.cooldownHours || 24) * 3600000;
+        // getCooldownState()'s nextReadyAt is already correct for both
+        // rolling and fixed-reset platforms (and equals `now` itself for
+        // one that's already ready, which the `> now` check below then
+        // naturally excludes - it's already counted by countReadyNow(),
+        // not something to schedule a *future* notification for).
+        let readyAt = getCooldownState(g, now).nextReadyAt;
+        // A snoozed platform isn't worth notifying about until the snooze
+        // itself expires, even if the underlying cooldown finished first -
+        // schedule for whichever of the two is later.
+        if (isSnoozed(g) && readyAt < g.snoozedUntil) readyAt = g.snoozedUntil;
         if (readyAt > now && readyAt < nextReady) nextReady = readyAt;
       });
       if (nextReady === Infinity) return;
@@ -3641,7 +3858,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             updated++;
           } else {
             const cat = CATALOG_DATA.find(c => c.name.toLowerCase() === pl.name.toLowerCase()) || {};
-            trackedGames.push({
+            const g = {
               id: uid(), name: pl.name, url: pl.url || cat.url || '',
               tier: cat.tier || 'Unranked', dailySC: cat.dailySC || 0,
               speedHours: cat.speedHours || 24, reliability: cat.reliability || 68,
@@ -3653,7 +3870,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               resetHour: pl.resetHour !== undefined ? pl.resetHour : cat.resetHour,
               resetTZ: pl.resetTZ !== undefined ? pl.resetTZ : cat.resetTZ,
               lastCollected: 0
-            });
+            };
+            normalizeTimerFields(g); // pl.* is an untrusted imported file
+            trackedGames.push(g);
             added++;
           }
         });
@@ -3665,12 +3884,35 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     // --- Backup & restore ---
+    // Explicit whitelist rather than trackedGames as-is, so an internal-
+    // only field (_prevCollected - see markCollected()/collect(), never
+    // meant to be persisted anywhere) can never leak into an exported file
+    // even transiently.
+    function exportableGame(g) {
+      const out = {
+        id: g.id, name: g.name, url: g.url, tier: g.tier, dailySC: g.dailySC,
+        speedHours: g.speedHours, reliability: g.reliability, cooldownHours: g.cooldownHours,
+        hasLive: g.hasLive, minRedeem: g.minRedeem, notes: g.notes,
+        referralUrl: g.referralUrl, lastCollected: g.lastCollected
+      };
+      if (typeof g.balance === 'number') out.balance = g.balance;
+      if (Array.isArray(g.tags)) out.tags = g.tags;
+      if ('userNotes' in g) out.userNotes = g.userNotes;
+      if ('resetHour' in g) out.resetHour = g.resetHour;
+      if ('resetTZ' in g) out.resetTZ = g.resetTZ;
+      if (typeof g.snoozedUntil === 'number') out.snoozedUntil = g.snoozedUntil;
+      if ('scIsAveraged' in g) out.scIsAveraged = g.scIsAveraged;
+      if ('scRange' in g) out.scRange = g.scRange;
+      if ('bestGames' in g) out.bestGames = g.bestGames;
+      return out;
+    }
+
     function exportBackup() {
       const dateStr = new Date().toISOString().split('T')[0];
       const exportData = {
         schemaVersion: "v7",
         exportedAt: new Date().toISOString(),
-        trackedGames: trackedGames
+        trackedGames: trackedGames.map(exportableGame)
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -3758,9 +4000,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           if ('userNotes' in g) n.userNotes = g.userNotes;
           if ('resetHour' in g) n.resetHour = g.resetHour;
           if ('resetTZ' in g) n.resetTZ = g.resetTZ;
+          if (typeof g.snoozedUntil === 'number') n.snoozedUntil = g.snoozedUntil;
           if ('scIsAveraged' in g) n.scIsAveraged = g.scIsAveraged;
           if ('scRange' in g) n.scRange = g.scRange;
           if ('bestGames' in g) n.bestGames = g.bestGames;
+          // _prevCollected is deliberately never whitelisted above, so an
+          // older backup that happens to carry one drops it here.
+          normalizeTimerFields(n);
           return n;
         });
 
@@ -3858,7 +4104,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         <div class="run-redeem">Min Redeem: ${game.minRedeem || 'Varies'}</div>
         <div class="run-cooldown-row">
           <span>Cooldown</span>
-          <span class="cooldown-chip" title="Tap to change the cooldown interval" onclick="cycleCooldown(event, '${game.id}', true)">${cooldownLabel(game)}</span>
+          <button type="button" class="cooldown-chip" title="Edit cooldown" aria-label="Edit cooldown for ${escHtml(game.name)}, currently ${cooldownLabel(game)}" onclick="openCooldownEditor('${game.id}', event, true)">${cooldownLabel(game)}</button>
         </div>
         ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:8px;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
         ${game.notes ? `<div class="run-notes">${game.notes}</div>` : ''}
@@ -3871,6 +4117,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (game) {
         collect(game.id);
         dailyRunStats.collected++;
+        hapticBuzz([18, 24, 42]);
+        screenShake();
       }
       dailyRunIndex++;
       renderDailyRunStep();
