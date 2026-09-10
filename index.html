@@ -574,7 +574,7 @@
           </div>
         </div>
         <div class="form-group">
-          <label>Custom date &amp; time</label>
+          <label for="ctCustomInput">Custom date &amp; time</label>
           <input type="datetime-local" id="ctCustomInput" />
           <button class="btn-primary" style="margin-top:8px; width:100%;" onclick="setCollectionTimeCustom()">Apply</button>
         </div>
@@ -3107,12 +3107,18 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
       const prevMs = game.lastCollected || 0;
       const prevSnooze = game.snoozedUntil;
-      const hadExisting = findHistoryEntryIndex(game.name, prevMs) >= 0;
+      const prevIdx = findHistoryEntryIndex(game.name, prevMs);
+      const hadExisting = prevIdx >= 0;
+      const collisionIdx = findHistoryEntryIndex(game.name, newMs);
+      if (collisionIdx >= 0 && collisionIdx !== prevIdx) {
+        showToast('A collection already exists at that date and time.', null);
+        return false;
+      }
 
       game.lastCollected = newMs;
       delete game.snoozedUntil;
       if (hadExisting) {
-        collectionHistory[findHistoryEntryIndex(game.name, prevMs)].collectedAt = newMs;
+        collectionHistory[prevIdx].collectedAt = newMs;
       } else {
         collectionHistory.push({ platformName: game.name, collectedAt: newMs });
       }
@@ -3181,6 +3187,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
       const idx = findHistoryEntryIndex(game.name, oldMs);
       if (idx < 0) return;
+      const collisionIdx = findHistoryEntryIndex(game.name, newMs);
+      if (collisionIdx >= 0 && collisionIdx !== idx) {
+        showToast('A collection already exists at that date and time.', null);
+        return;
+      }
 
       const wasCurrent = game.lastCollected === oldMs;
       const prevGameLastCollected = game.lastCollected;
@@ -3981,7 +3992,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
         trackedGames = importedGames.map(g => {
           const n = {
-            id: g.id || uid(),
+            id: String(g.id || uid()),
             name: g.name.trim(),
             url: g.url.trim(),
             tier: g.tier || "Unranked",
