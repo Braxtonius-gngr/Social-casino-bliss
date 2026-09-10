@@ -549,10 +549,42 @@
       <div class="form-group"><label>Current SC balance</label><input type="number" step="0.01" id="modalBalance" placeholder="0" /><div class="hint" style="font-size:0.68rem; color:var(--text-muted); margin-top:5px;">Optional. Shows a progress bar toward this platform's cashout minimum.</div></div>
       <div class="form-group"><label>Runs / tags</label><input type="text" id="modalTags" placeholder="morning, crypto, high value" /><div class="hint" style="font-size:0.68rem; color:var(--text-muted); margin-top:5px;">Comma separated. Tags become filter chips you can run on their own.</div></div>
       <div class="form-group"><label>My notes</label><textarea id="modalUserNotes" rows="2" placeholder="Login via Google, KYC done, needs VPN..." style="width:100%; background:rgba(0,0,0,0.5); border:1px solid var(--glass-border); color:var(--text-main); padding:10px 12px; border-radius:10px; font-family:inherit; font-size:0.85rem; resize:vertical;"></textarea></div>
+      <button class="btn-dock" id="btnSetCollectionTime" style="max-width:100%; width:100%; margin-bottom:14px; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="openCollectionTimeModal(document.getElementById('modalGameId').value)">SET COLLECTION TIME</button>
       <div class="modal-actions">
         <button class="btn-primary" onclick="saveModalEntry()">SAVE</button>
         <button class="btn-danger" id="btnModalDelete" onclick="deleteModalEntry()">REMOVE</button>
         <button class="btn-cancel" onclick="closeModals()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="collectionTimeModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel" style="max-height:88vh; display:flex; flex-direction:column;">
+      <h3 style="flex-shrink:0;">Set Collection Time</h3>
+      <input type="hidden" id="ctGameId" />
+      <div id="ctGameName" style="flex-shrink:0; font-weight:800; color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold); margin-bottom:14px;"></div>
+      <div style="flex:1; overflow-y:auto; min-height:0; padding-right:4px;">
+        <div class="form-group">
+          <label>Quick choices</label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="filter-btn" onclick="setCollectionTimeQuick(0)">Now</button>
+            <button class="filter-btn" onclick="setCollectionTimeQuick(15)">15 min ago</button>
+            <button class="filter-btn" onclick="setCollectionTimeQuick(30)">30 min ago</button>
+            <button class="filter-btn" onclick="setCollectionTimeQuick(60)">1 hour ago</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="ctCustomInput">Custom date &amp; time</label>
+          <input type="datetime-local" id="ctCustomInput" />
+          <button class="btn-primary" style="margin-top:8px; width:100%;" onclick="setCollectionTimeCustom()">Apply</button>
+        </div>
+        <div class="form-group">
+          <label>Recent collections</label>
+          <div id="ctHistoryList"></div>
+        </div>
+      </div>
+      <div class="modal-actions" style="flex-shrink:0;">
+        <button class="btn-cancel" onclick="closeModals()">CLOSE</button>
       </div>
     </div>
   </div>
@@ -1702,6 +1734,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('modalTags').value = '';
       document.getElementById('modalUserNotes').value = '';
       document.getElementById('btnModalDelete').style.display = 'none';
+      document.getElementById('btnSetCollectionTime').style.display = 'none';
       document.getElementById('gameModal').classList.add('open');
     }
 
@@ -1719,6 +1752,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('modalTags').value = (game.tags || []).join(', ');
       document.getElementById('modalUserNotes').value = game.userNotes || '';
       document.getElementById('btnModalDelete').style.display = 'block';
+      document.getElementById('btnSetCollectionTime').style.display = 'block';
       document.getElementById('gameModal').classList.add('open');
     }
 
@@ -3016,6 +3050,252 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } catch (e) { /* storage full or unavailable; keep in-memory copy */ }
     }
 
+    // --- Collection time correction ---
+    // game.lastCollected (ms) is the one field every cooldown calculation
+    // reads (see getCooldownState()); collectionHistory entries have no id
+    // of their own, just {platformName, collectedAt}, so a specific entry
+    // is identified by that pair - unique in every realistic case, since
+    // two genuinely distinct collections landing on the exact same
+    // millisecond doesn't happen. All of this reuses persist()/
+    // getCooldownState()/showToast() rather than adding parallel logic.
+
+    function isReasonableCollectionTime(ms) {
+      if (typeof ms !== 'number' || !Number.isFinite(ms)) return false;
+      // A few minutes of slack for clock skew between tabs/devices, not a
+      // hard "must be <= now".
+      return ms <= Date.now() + 5 * 60000;
+    }
+
+    function toDatetimeLocalValue(ms) {
+      const d = new Date(ms);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function findHistoryEntryIndex(platformName, collectedAt) {
+      for (let i = collectionHistory.length - 1; i >= 0; i--) {
+        if (collectionHistory[i].platformName === platformName && collectionHistory[i].collectedAt === collectedAt) return i;
+      }
+      return -1;
+    }
+
+    // Shared tail for anything that mutates collectionHistory directly
+    // (bypassing logCollection()): persists it, drops the stale streak
+    // cache (platformStreaks() otherwise serves up to 30s-old data - see
+    // its declaration), and refreshes the Stats modal if it's the thing
+    // currently on screen.
+    function syncAfterHistoryChange() {
+      streakCache = null;
+      try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
+      if (document.getElementById('statsModal').classList.contains('open')) renderStats();
+    }
+
+    // Sets "when this platform was last collected" - the quick-choice and
+    // custom date/time paths both funnel through here. Corrects, rather
+    // than duplicates, the history entry this platform's current
+    // lastCollected corresponds to: only if none exists yet (e.g. a
+    // platform that's never actually been collected through the normal
+    // flow) is a new entry added.
+    function setCollectionTime(id, newMs, opts) {
+      opts = opts || {};
+      const game = trackedGames.find((g) => g.id === id);
+      if (!game) return false;
+      if (!isReasonableCollectionTime(newMs)) {
+        showToast('Enter a valid date and time - not in the future.', null);
+        return false;
+      }
+
+      const prevMs = game.lastCollected || 0;
+      const prevSnooze = game.snoozedUntil;
+      const prevIdx = findHistoryEntryIndex(game.name, prevMs);
+      const hadExisting = prevIdx >= 0;
+      const collisionIdx = findHistoryEntryIndex(game.name, newMs);
+      if (collisionIdx >= 0 && collisionIdx !== prevIdx) {
+        showToast('A collection already exists at that date and time.', null);
+        return false;
+      }
+
+      game.lastCollected = newMs;
+      delete game.snoozedUntil;
+      if (hadExisting) {
+        collectionHistory[prevIdx].collectedAt = newMs;
+      } else {
+        collectionHistory.push({ platformName: game.name, collectedAt: newMs });
+      }
+
+      persist();
+      updateDailyRunButton();
+      syncAfterHistoryChange();
+
+      if (opts.showUndo !== false) {
+        showToast(`${game.name} collection time updated`, () => {
+          game.lastCollected = prevMs;
+          if (prevSnooze) game.snoozedUntil = prevSnooze; else delete game.snoozedUntil;
+          const idx = findHistoryEntryIndex(game.name, newMs);
+          if (hadExisting) {
+            if (idx >= 0) collectionHistory[idx].collectedAt = prevMs;
+          } else if (idx >= 0) {
+            collectionHistory.splice(idx, 1);
+          }
+          persist();
+          updateDailyRunButton();
+          syncAfterHistoryChange();
+          refreshCollectionTimeModalIfShowing(id);
+        });
+      }
+      return true;
+    }
+
+    function openCollectionTimeModal(id) {
+      const game = trackedGames.find((g) => g.id === id);
+      if (!game) return;
+      closeModals();
+      document.getElementById('ctGameId').value = id;
+      document.getElementById('ctGameName').textContent = game.name;
+      const now = toDatetimeLocalValue(Date.now());
+      const input = document.getElementById('ctCustomInput');
+      input.value = now;
+      input.max = now;
+      renderCollectionTimeHistory(id);
+      document.getElementById('collectionTimeModal').classList.add('open');
+    }
+
+    function setCollectionTimeQuick(minutesAgo) {
+      const id = document.getElementById('ctGameId').value;
+      if (!id) return;
+      if (setCollectionTime(id, Date.now() - minutesAgo * 60000)) renderCollectionTimeHistory(id);
+    }
+
+    function setCollectionTimeCustom() {
+      const id = document.getElementById('ctGameId').value;
+      if (!id) return;
+      const raw = document.getElementById('ctCustomInput').value;
+      if (!raw) { showToast('Pick a date and time first.', null); return; }
+      const newMs = new Date(raw).getTime();
+      if (setCollectionTime(id, newMs)) renderCollectionTimeHistory(id);
+    }
+
+    // Corrects one specific past entry (not necessarily the current one -
+    // see wasCurrent below) rather than the live collection time.
+    function editHistoryEntryTime(gameId, oldMs, newRaw) {
+      const game = trackedGames.find((g) => g.id === gameId);
+      if (!game) return;
+      const newMs = new Date(newRaw).getTime();
+      if (!isReasonableCollectionTime(newMs)) {
+        showToast('Enter a valid date and time - not in the future.', null);
+        return;
+      }
+      const idx = findHistoryEntryIndex(game.name, oldMs);
+      if (idx < 0) return;
+      const collisionIdx = findHistoryEntryIndex(game.name, newMs);
+      if (collisionIdx >= 0 && collisionIdx !== idx) {
+        showToast('A collection already exists at that date and time.', null);
+        return;
+      }
+
+      const wasCurrent = game.lastCollected === oldMs;
+      const prevGameLastCollected = game.lastCollected;
+
+      collectionHistory[idx].collectedAt = newMs;
+      if (wasCurrent) game.lastCollected = newMs;
+
+      persist();
+      updateDailyRunButton();
+      syncAfterHistoryChange();
+      renderCollectionTimeHistory(gameId);
+
+      showToast(`${game.name} history entry updated`, () => {
+        const undoIdx = findHistoryEntryIndex(game.name, newMs);
+        if (undoIdx >= 0) collectionHistory[undoIdx].collectedAt = oldMs;
+        if (wasCurrent) game.lastCollected = prevGameLastCollected;
+        persist();
+        updateDailyRunButton();
+        syncAfterHistoryChange();
+        refreshCollectionTimeModalIfShowing(gameId);
+      });
+    }
+
+    // Deleting the entry the live cooldown is currently based on falls
+    // back to the next most recent remaining entry for this platform (or
+    // "never collected" if none) rather than leaving a stale timestamp or
+    // silently jumping past real history that's still there.
+    function deleteHistoryEntry(gameId, ms) {
+      const game = trackedGames.find((g) => g.id === gameId);
+      if (!game) return;
+      const idx = findHistoryEntryIndex(game.name, ms);
+      if (idx < 0) return;
+
+      const removedEntry = collectionHistory[idx];
+      const wasCurrent = game.lastCollected === ms;
+      const prevGameLastCollected = game.lastCollected;
+      const prevSnooze = game.snoozedUntil;
+
+      collectionHistory.splice(idx, 1);
+      if (wasCurrent) {
+        const remaining = collectionHistory.filter((h) => h.platformName === game.name);
+        game.lastCollected = remaining.length ? Math.max(...remaining.map((h) => h.collectedAt)) : 0;
+      }
+
+      persist();
+      updateDailyRunButton();
+      syncAfterHistoryChange();
+      renderCollectionTimeHistory(gameId);
+
+      showToast(`${game.name} history entry deleted`, () => {
+        collectionHistory.push(removedEntry);
+        if (wasCurrent) {
+          game.lastCollected = prevGameLastCollected;
+          if (prevSnooze) game.snoozedUntil = prevSnooze;
+        }
+        persist();
+        updateDailyRunButton();
+        syncAfterHistoryChange();
+        refreshCollectionTimeModalIfShowing(gameId);
+      });
+    }
+
+    // setCollectionTime()'s own undo can fire well after the fact (the
+    // toast stays up to 6s, and the user may have closed this modal or
+    // opened a different platform's in the meantime) - unlike every other
+    // caller here, which is always synchronously inside an interaction
+    // that guarantees the modal is open and showing this exact platform.
+    // Refresh only if that's still true, so a deferred undo can't stomp a
+    // different platform's currently-displayed list.
+    function refreshCollectionTimeModalIfShowing(gameId) {
+      const modal = document.getElementById('collectionTimeModal');
+      if (modal && modal.classList.contains('open') && document.getElementById('ctGameId').value === gameId) {
+        renderCollectionTimeHistory(gameId);
+      }
+    }
+
+    function renderCollectionTimeHistory(gameId) {
+      const container = document.getElementById('ctHistoryList');
+      if (!container) return;
+      const game = trackedGames.find((g) => g.id === gameId);
+      if (!game) { container.innerHTML = ''; return; }
+
+      const entries = collectionHistory
+        .filter((h) => h.platformName === game.name)
+        .sort((a, b) => b.collectedAt - a.collectedAt)
+        .slice(0, 8);
+
+      if (entries.length === 0) {
+        container.innerHTML = `<div style="color:var(--text-muted); font-size:0.8rem; padding:8px 0;">No collections logged yet.</div>`;
+        return;
+      }
+
+      const nowLocal = toDatetimeLocalValue(Date.now());
+      container.innerHTML = entries.map((h) => {
+        const inputId = `ctEditRow_${h.collectedAt}`.replace(/[^a-zA-Z0-9_]/g, '');
+        return `
+        <div style="display:flex; align-items:center; gap:6px; padding:6px 0; border-bottom:1px solid var(--glass-border);">
+          <input type="datetime-local" id="${inputId}" value="${toDatetimeLocalValue(h.collectedAt)}" max="${nowLocal}" style="flex:1; min-width:0; font-size:0.78rem; padding:8px;" />
+          <button class="btn-check" title="Save" onclick="editHistoryEntryTime('${game.id}', ${h.collectedAt}, document.getElementById('${inputId}').value)">&check;</button>
+          <button class="btn-check" title="Delete" onclick="deleteHistoryEntry('${game.id}', ${h.collectedAt})">&times;</button>
+        </div>`;
+      }).join('');
+    }
+
     function recordDailyRunStart() {
       currentDailyRunStartTime = Date.now();
     }
@@ -3712,7 +3992,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
         trackedGames = importedGames.map(g => {
           const n = {
-            id: g.id || uid(),
+            id: String(g.id || uid()),
             name: g.name.trim(),
             url: g.url.trim(),
             tier: g.tier || "Unranked",
