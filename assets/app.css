@@ -1822,23 +1822,58 @@
 }
 [data-motion="off"] [data-theme="western"] .landing-screen::after { animation: none; }
 
+/* Landing-screen smoke: the same dark drifting plumes the app carries
+   behind its top section (#smokeField, and the demon-smoke keyframe
+   they share), but scoped to this screen and spread over its full
+   height instead of a 280px band. The app's own layer sits at z-index 1
+   and the landing screen at 200, so it could never have shown through
+   here - this is its own element rather than a z-index fight. Sits
+   under .landing-inner (z-index 2), above the screen's background. */
+.landing-smoke { position: absolute; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; opacity: 0; }
+[data-theme="western"] .landing-smoke { opacity: 1; }
+/* Denser core than #smokeField's: these plumes are bigger, and the same
+   alpha spread over more area just reads as a gradient artifact against
+   an already near-black backdrop rather than as smoke. */
+[data-theme="western"] .landing-smoke span {
+  position: absolute;
+  bottom: 26%;
+  width: 120px; height: 170px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(6, 5, 5, 0.95) 0%, rgba(6, 5, 5, 0.62) 42%, rgba(6, 5, 5, 0.22) 64%, transparent 80%);
+  filter: blur(12px);
+  opacity: 0;
+  animation: demon-smoke 11s ease-in infinite;
+}
+[data-theme="western"] .landing-smoke span:nth-child(1) { left: 4%;  width: 140px; height: 200px; animation-duration: 9.5s;  animation-delay: 0s; }
+[data-theme="western"] .landing-smoke span:nth-child(2) { left: 28%; width: 100px; height: 150px; animation-duration: 12s;   animation-delay: 2.1s; }
+[data-theme="western"] .landing-smoke span:nth-child(3) { left: 56%; width: 150px; height: 210px; animation-duration: 10.5s; animation-delay: 1.1s; }
+[data-theme="western"] .landing-smoke span:nth-child(4) { left: 78%; width: 110px; height: 160px; animation-duration: 13s;   animation-delay: 3.8s; }
+[data-theme="western"] .landing-smoke span:nth-child(5) { left: 40%; width: 90px;  height: 130px; animation-duration: 8.5s;  animation-delay: 5.4s; }
+[data-theme="western"] .landing-smoke span:nth-child(6) { left: 66%; width: 120px; height: 175px; animation-duration: 11.5s; animation-delay: 6.9s; }
+[data-motion="off"] [data-theme="western"] .landing-smoke span { animation: none; }
+
 /* Burn transition: "Enter Deck" burns through with real holes, not an
-   illusion - .landing-inner's clip-path references the SVG clipPath by
-   #landingBurnPath (see index.html), whose one <path> is a full rect
-   plus circular subpaths, evenodd fill-rule so the circles genuinely
-   cut through rather than paint over. runBurnHoles() in the main
-   script grows each circle's radius via requestAnimationFrame,
-   staggered - confirmed sharp and correct via a solid-color backer
-   test (the card's actual cutout showed the pattern behind it cleanly,
-   not a blurred blob). No smoke: an earlier heavy-smoke bridge into
-   the app didn't read well and is gone entirely, along with the smoke
-   plume this card itself used to give off - holes + char + glow carry
-   the moment on their own now. Driven by .burning, added in
-   dismissLanding() only when the theme is western and motion isn't
-   off; .hidden (the existing fade) lands right after, once this has
-   had time to play. */
+   illusion - .landing-inner's mask references the SVG <mask> at
+   #landingBurnMask (see index.html): a white rect for the surviving
+   paper, with black circles painted over it. runBurnHoles() in the
+   main script grows each circle's radius via requestAnimationFrame,
+   staggered.
+
+   Masks, not a clipPath: under both evenodd and nonzero winding a
+   point inside two overlapping hole subpaths flips back to solid, so
+   the clipPath version stalled around half-consumed and sprouted
+   parchment islands wherever holes met. Mask circles simply paint over
+   one another, so overlaps union. No smoke: an earlier heavy-smoke
+   bridge into the app didn't read well and is gone entirely, along
+   with the smoke plume this card itself used to give off - holes +
+   char + glow carry the moment on their own now. Driven by .burning,
+   added in dismissLanding() only when the theme is western and motion
+   isn't off; .hidden (the existing fade) lands right after, once this
+   has had time to play. */
 [data-theme="western"] .landing-screen.burning {
-  animation: landing-burn-glow 1.5s ease-out both;
+  animation: landing-burn-glow 1.9s ease-out both;
+  -webkit-mask-image: url(#landingScreenBurnMask);
+  mask-image: url(#landingScreenBurnMask);
 }
 /* More stops than a plain fade needs, on purpose - firelight flickers
    irregularly rather than brightening on one smooth curve, echoing the
@@ -1856,16 +1891,22 @@
   100% { background: radial-gradient(140% 100% at 50% 70%, #FF6600 0%, #3a0000 40%, #0B0B0B 85%); }
 }
 [data-theme="western"] .landing-screen.burning .landing-inner {
-  animation: landing-burn-card 1.5s ease-in forwards;
-  -webkit-clip-path: url(#landingBurnClip);
-  clip-path: url(#landingBurnClip);
+  animation: landing-burn-card 1.9s ease-in forwards;
+  -webkit-mask-image: url(#landingBurnMask);
+  mask-image: url(#landingBurnMask);
 }
+/* Holds opacity almost to the end now - the holes are what should be
+   taking the poster apart, so fading it out underneath them would just
+   be doing the same job twice and hiding the effect that matters. It
+   still chars (sepia/darken) the whole way through. */
 @keyframes landing-burn-card {
   0% { filter: none; transform: rotate(-0.6deg) scale(1); opacity: 1; }
-  20% { filter: sepia(0.3) brightness(1.08) contrast(1.05); }
-  45% { filter: sepia(0.55) brightness(0.85) contrast(1.15); transform: rotate(-1deg) scale(0.99); }
-  75% { filter: sepia(0.85) brightness(0.45) contrast(1.35); transform: rotate(-2.2deg) scale(0.94); }
-  100% { filter: sepia(1) brightness(0.1) contrast(1.6) blur(3px); transform: rotate(-5deg) scale(0.8); opacity: 0; }
+  15% { filter: sepia(0.45) brightness(1.06) contrast(1.06); }
+  35% { filter: sepia(0.8) brightness(0.72) contrast(1.2); transform: rotate(-1deg) scale(0.99); }
+  60% { filter: sepia(1) brightness(0.42) contrast(1.35); transform: rotate(-1.8deg) scale(0.97); }
+  80% { filter: sepia(1) brightness(0.22) contrast(1.45); transform: rotate(-2.4deg) scale(0.95); }
+  92% { filter: sepia(1) brightness(0.14) contrast(1.5); opacity: 1; }
+  100% { filter: sepia(1) brightness(0.08) contrast(1.6) blur(2px); transform: rotate(-3deg) scale(0.92); opacity: 0; }
 }
 [data-theme="western"] .landing-screen.burning .landing-inner::after {
   content: '';
@@ -1886,7 +1927,7 @@
     radial-gradient(circle 2px at 15% 45%, #C1121F 99%, transparent 100%),
     radial-gradient(circle 2px at 38% 30%, #FF9500 99%, transparent 100%);
   opacity: 0;
-  animation: landing-burn-embers 1.5s ease-out forwards;
+  animation: landing-burn-embers 1.9s ease-out forwards;
 }
 @keyframes landing-burn-embers {
   0%, 12% { opacity: 0; transform: translateY(0); }
