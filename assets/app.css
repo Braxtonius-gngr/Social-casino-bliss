@@ -368,6 +368,13 @@
     .run-redeem { color: var(--accent-gold); font-weight: 800; font-size: 0.9rem; margin-bottom: 10px; text-shadow: 0 0 8px rgba(255,204,0,0.4); }
     .run-notes { opacity: 0.85; font-size: 0.88rem; line-height: 1.5; max-width: 460px; }
     .run-bestgames { margin-top: 18px; text-align: left; width: 100%; max-width: 460px; border-top: 1px solid var(--glass-border); padding-top: 14px; font-size: 0.75rem; }
+    /* Persistent undo, not a toast - hidden by default via [hidden];
+       showRunUndoBar()/hideRunUndoBar() in the main script toggle it.
+       Sits right above .run-actions (same width/centering) so it reads
+       as "attached to" the collect button below it. */
+    .run-undo-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; max-width: 460px; align-self: center; flex-shrink: 0; margin-bottom: 10px; padding: 10px 14px; border-radius: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); font-size: 0.82rem; color: var(--text-muted); }
+    .run-undo-btn { flex-shrink: 0; background: transparent; border: 1px solid var(--accent-cyan); color: var(--accent-cyan); border-radius: 8px; padding: 6px 12px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.05em; cursor: pointer; }
+    .run-undo-btn:active { transform: scale(0.95); }
     .run-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 460px; align-self: center; flex-shrink: 0; }
     .btn-run-collect { padding: 18px; font-size: 1.15rem; font-weight: 900; border: none; border-radius: 14px; cursor: pointer; background: linear-gradient(90deg, var(--accent-pink), var(--accent-orange)); color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5); box-shadow: 0 6px 24px rgba(255,0,127,0.45); }
     .btn-run-collect:active { transform: scale(0.98); }
@@ -1258,7 +1265,7 @@
 [data-theme="western"] .btn-share,
 [data-theme="western"] .cooldown-chip {
   border-radius: 0; border: 2px solid #0B0B0B;
-  background: #2E2E2E; color: var(--text-main);
+  background: #22252A; color: var(--text-main);
   box-shadow: 3px 3px 0 #0B0B0B; text-shadow: none;
   transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
 }
@@ -1286,7 +1293,7 @@
 [data-theme="western"] .strategy-row,
 [data-theme="western"] .tier-action-card {
   border-radius: 0;
-  background: #2E2E2E;
+  background: #22252A;
   border: 2px solid #0B0B0B;
   box-shadow: 4px 4px 0 rgba(11,11,11,0.7), inset 0 0 0 1px rgba(234,234,234,0.06);
   backdrop-filter: none; -webkit-backdrop-filter: none;
@@ -1794,19 +1801,21 @@
 }
 [data-motion="off"] [data-theme="western"] .landing-screen::after { animation: none; }
 
-/* Burn transition: "Enter Deck" doesn't just fade the wanted poster out -
-   it burns from the underside like old parchment, dark char holes
-   ripping open as the flame front works upward, before the card
-   disappears entirely. Three layers do the work: a mask-image wipe on
-   .landing-inner itself (the actual "paper disappearing from the
-   bottom up" - two gradient keyframes are enough since compatible
-   gradients interpolate their stop positions natively), the .burn-holes
-   spans (irregular blob shapes, not circles, that pop open at staggered
-   times low on the card - the "holes ripping through"), and the
-   existing smoke/ember pseudo-elements retimed to match. Driven by
-   .burning, added in dismissLanding() only when the theme is western
-   and motion isn't off; .hidden (the existing fade) lands right after,
-   once this has had time to play. */
+/* Burn transition: "Enter Deck" burns through with real holes, not an
+   illusion - .landing-inner's clip-path references the SVG clipPath by
+   #landingBurnPath (see index.html), whose one <path> is a full rect
+   plus circular subpaths, evenodd fill-rule so the circles genuinely
+   cut through rather than paint over. runBurnHoles() in the main
+   script grows each circle's radius via requestAnimationFrame,
+   staggered - confirmed sharp and correct via a solid-color backer
+   test (the card's actual cutout showed the pattern behind it cleanly,
+   not a blurred blob). No smoke: an earlier heavy-smoke bridge into
+   the app didn't read well and is gone entirely, along with the smoke
+   plume this card itself used to give off - holes + char + glow carry
+   the moment on their own now. Driven by .burning, added in
+   dismissLanding() only when the theme is western and motion isn't
+   off; .hidden (the existing fade) lands right after, once this has
+   had time to play. */
 [data-theme="western"] .landing-screen.burning {
   animation: landing-burn-glow 1.5s ease-out both;
 }
@@ -1826,8 +1835,9 @@
   100% { background: radial-gradient(140% 100% at 50% 70%, #FF6600 0%, #3a0000 40%, #0B0B0B 85%); }
 }
 [data-theme="western"] .landing-screen.burning .landing-inner {
-  animation: landing-burn-card 1.5s ease-in forwards,
-             landing-burn-wipe 1.5s ease-in forwards;
+  animation: landing-burn-card 1.5s ease-in forwards;
+  -webkit-clip-path: url(#landingBurnClip);
+  clip-path: url(#landingBurnClip);
 }
 @keyframes landing-burn-card {
   0% { filter: none; transform: rotate(-0.6deg) scale(1); opacity: 1; }
@@ -1835,56 +1845,6 @@
   45% { filter: sepia(0.55) brightness(0.85) contrast(1.15); transform: rotate(-1deg) scale(0.99); }
   75% { filter: sepia(0.85) brightness(0.45) contrast(1.35); transform: rotate(-2.2deg) scale(0.94); }
   100% { filter: sepia(1) brightness(0.1) contrast(1.6) blur(3px); transform: rotate(-5deg) scale(0.8); opacity: 0; }
-}
-/* An irregular, jagged char-line climbs from the bottom instead of a
-   straight cut - inset() (a flat rectangle) read as shredding/slicing,
-   not burning. Tried real punch-through holes via mask-composite first
-   (multiple radial-gradient holes subtracted from an opaque base), but
-   its behavior turned out inconsistent under empirical testing - one
-   ordering inverted the result, another produced solid opaque circles
-   instead of transparency, neither reliable enough to ship. A polygon()
-   boundary sidesteps that: same 11 points at both keyframes, only their
-   Y values shift, by the SAME delta at every point (jaggedness in the
-   shape stays constant, only its vertical position moves) - which
-   interpolates cleanly since it's just numeric points, not a gradient
-   or a composite operator. The .burn-holes spans (below) still add
-   pop-open detail ahead of this line. */
-@keyframes landing-burn-wipe {
-  0% {
-    -webkit-clip-path: polygon(0% 0%, 100% 0%, 100% 108%, 87% 100%, 75% 111%, 62% 102%, 50% 116%, 37% 104%, 25% 113%, 12% 101%, 0% 108%);
-    clip-path: polygon(0% 0%, 100% 0%, 100% 108%, 87% 100%, 75% 111%, 62% 102%, 50% 116%, 37% 104%, 25% 113%, 12% 101%, 0% 108%);
-  }
-  100% {
-    -webkit-clip-path: polygon(0% 0%, 100% 0%, 100% -12%, 87% -20%, 75% -9%, 62% -18%, 50% -4%, 37% -16%, 25% -7%, 12% -19%, 0% -12%);
-    clip-path: polygon(0% 0%, 100% 0%, 100% -12%, 87% -20%, 75% -9%, 62% -18%, 50% -4%, 37% -16%, 25% -7%, 12% -19%, 0% -12%);
-  }
-}
-/* Heavy black smoke, not a light haze - several dark plumes at
-   different offsets/sizes so they read as billowing rather than one
-   uniform cloud, rotating as they rise for a swirling motion instead
-   of a straight vertical drift. */
-[data-theme="western"] .landing-screen.burning .landing-inner::before {
-  display: block;
-  content: '';
-  position: absolute; inset: -40px;
-  background:
-    radial-gradient(ellipse 55% 45% at 30% 95%, rgba(6,5,5,0.96) 0%, rgba(6,5,5,0.7) 35%, transparent 68%),
-    radial-gradient(ellipse 50% 40% at 68% 100%, rgba(10,8,7,0.94) 0%, rgba(10,8,7,0.6) 38%, transparent 70%),
-    radial-gradient(ellipse 45% 50% at 48% 90%, rgba(4,4,4,0.9) 0%, rgba(4,4,4,0.55) 40%, transparent 72%);
-  filter: blur(16px);
-  opacity: 0;
-  pointer-events: none;
-  transform-origin: 50% 100%;
-  z-index: 3;
-  animation: landing-burn-smoke 1.5s ease-out forwards;
-}
-@keyframes landing-burn-smoke {
-  0% { opacity: 0; transform: translateY(15%) scale(0.75) rotate(0deg); }
-  8% { opacity: 0; }
-  28% { opacity: 1; transform: translateY(-8%) scale(1.15) rotate(-3deg); }
-  55% { opacity: 0.96; transform: translateY(-35%) scale(1.6) rotate(4deg); }
-  80% { opacity: 0.55; transform: translateY(-58%) scale(2.1) rotate(-2deg); }
-  100% { opacity: 0; transform: translateY(-80%) scale(2.6) rotate(5deg); }
 }
 [data-theme="western"] .landing-screen.burning .landing-inner::after {
   content: '';
@@ -1915,110 +1875,6 @@
   100% { opacity: 0; transform: translateY(-180%); }
 }
 
-/* Burn holes: irregular (non-circular) blobs that pop open low on the
-   card at staggered times, each a dark charred core with a glowing
-   orange/gold rim - an opaque overlay, not a real cutout, but reads the
-   same to the eye since nothing behind it needs to show through. Base
-   rule (all themes) keeps them invisible outside the western burn. */
-.burn-holes { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 5; }
-.burn-holes span {
-  position: absolute;
-  width: 40px; height: 40px;
-  border-radius: 42% 58% 53% 47% / 48% 44% 56% 52%;
-  transform: scale(0) rotate(0deg);
-  opacity: 0;
-}
-[data-theme="western"] .landing-screen.burning .burn-holes span {
-  background: radial-gradient(circle, #0B0B0B 0%, #0B0B0B 34%, #C1121F 48%, #FFC107 60%, transparent 76%);
-  animation: burn-hole-pop 1.1s ease-out forwards;
-}
-@keyframes burn-hole-pop {
-  0% { transform: scale(0) rotate(0deg); opacity: 0; }
-  25% { opacity: 1; }
-  100% { transform: scale(1.1) rotate(10deg); opacity: 1; }
-}
-.burn-holes span:nth-child(1) { left: 14%; bottom: 8%;  width: 46px; height: 46px; }
-.burn-holes span:nth-child(2) { left: 58%; bottom: 4%;  width: 62px; height: 62px; }
-.burn-holes span:nth-child(3) { left: 33%; bottom: 24%; width: 36px; height: 36px; }
-.burn-holes span:nth-child(4) { left: 76%; bottom: 16%; width: 50px; height: 50px; }
-.burn-holes span:nth-child(5) { left: 48%; bottom: 44%; width: 32px; height: 32px; }
-.burn-holes span:nth-child(6) { left: 20%; bottom: 50%; width: 42px; height: 42px; }
-.burn-holes span:nth-child(7) { left: 68%; bottom: 34%; width: 30px; height: 30px; }
-.burn-holes span:nth-child(8) { left: 8%;  bottom: 28%; width: 38px; height: 38px; }
-.burn-holes span:nth-child(9) { left: 88%; bottom: 40%; width: 26px; height: 26px; }
-[data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(1) { animation-delay: 0.05s; }
-[data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(2) { animation-delay: 0.2s; }
-[data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(3) { animation-delay: 0.45s; }
-[data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(4) { animation-delay: 0.3s; }
-[data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(5) { animation-delay: 0.65s; }
-[data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(6) { animation-delay: 0.55s; }
-[data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(7) { animation-delay: 0.4s; }
-[data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(8) { animation-delay: 0.75s; }
-[data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(9) { animation-delay: 0.6s; }
-
-/* Smoke screen bridge: right as the poster's gone (see dismissLanding),
-   the cut into the app is masked by smoke rather than a hard swap. A
-   dedicated top-level element (not nested in #smokeField - see the
-   comment on #transitionSmoke in index.html for why: a position:fixed
-   ancestor with its own z-index creates a stacking context that traps
-   every descendant at that stacking level regardless of the
-   descendant's own z-index, and #smokeField's z-index:1 sits BELOW
-   .app-container's z-index:2, so content nested in it can never paint
-   above the app no matter what z-index it's given - confirmed by
-   computed styles reporting opacity:1 on a fully "correct" but
-   invisible layer during testing). z-index:1000 here instead, high
-   enough to sit above everything else in the app including the
-   hellscape-static jolt (999). Inert (opacity:0, no size) until
-   .active is added; base rule keeps it out of the way otherwise. */
-#transitionSmoke {
-  position: fixed; inset: 0; z-index: 1000;
-  opacity: 0; pointer-events: none; overflow: hidden;
-}
-[data-theme="western"] #transitionSmoke.active::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(120% 100% at 50% 55%,
-    rgba(4, 3, 3, 0.97) 0%, rgba(4, 3, 3, 0.88) 45%,
-    rgba(4, 3, 3, 0.55) 75%, transparent 100%);
-  opacity: 0;
-  animation: smoke-burst-wash 1.3s ease-out both;
-}
-@keyframes smoke-burst-wash {
-  0% { opacity: 0; }
-  20% { opacity: 1; }
-  62% { opacity: 0.94; }
-  100% { opacity: 0; }
-}
-[data-theme="western"] #transitionSmoke.active { opacity: 1; }
-[data-theme="western"] #transitionSmoke.active span {
-  position: absolute;
-  bottom: 20%;
-  width: 260px; height: 320px;
-  border-radius: 45%;
-  background: radial-gradient(circle, rgba(5, 4, 4, 0.97) 0%, rgba(5, 4, 4, 0.8) 40%, rgba(5, 4, 4, 0.35) 68%, transparent 85%);
-  filter: blur(20px);
-  opacity: 0;
-  animation: smoke-burst-sweep 1.3s ease-out both;
-}
-@keyframes smoke-burst-sweep {
-  0% { transform: translate3d(0, 30%, 0) scale(0.9) rotate(0deg); opacity: 0; }
-  16% { opacity: 1; }
-  50% { opacity: 1; transform: translate3d(-14px, -20%, 0) scale(1.8) rotate(-10deg); }
-  75% { opacity: 0.7; transform: translate3d(18px, -90%, 0) scale(2.6) rotate(8deg); }
-  100% { transform: translate3d(10px, -210%, 0) scale(3.2) rotate(-6deg); opacity: 0; }
-}
-[data-theme="western"] #transitionSmoke.active span:nth-child(1) { left: 6%;  animation-delay: 0s; }
-[data-theme="western"] #transitionSmoke.active span:nth-child(2) { left: 30%; animation-delay: 0.07s; }
-[data-theme="western"] #transitionSmoke.active span:nth-child(3) { left: 54%; animation-delay: 0.03s; }
-[data-theme="western"] #transitionSmoke.active span:nth-child(4) { left: 76%; animation-delay: 0.12s; }
-[data-theme="western"] #transitionSmoke.active span:nth-child(5) { left: 18%; animation-delay: 0.18s; }
-[data-theme="western"] #transitionSmoke.active span:nth-child(6) { left: 64%; animation-delay: 0.22s; }
-[data-theme="western"] #transitionSmoke.active span:nth-child(7) { left: 42%; animation-delay: 0.1s; }
-[data-motion="off"] #transitionSmoke.active { opacity: 0; }
-[data-motion="off"] [data-theme="western"] #transitionSmoke.active span,
-[data-motion="off"] [data-theme="western"] #transitionSmoke.active::before { animation: none; opacity: 0; }
-
 /* ---------------------------------------------------------------
    Daily Run overlay: had ZERO Boot Hill treatment before this - it
    was still wearing the neon pink/cyan look built for Prism/Neon,
@@ -2041,10 +1897,18 @@
   color: var(--accent-gold); text-shadow: 1px 1px 0 #0B0B0B; letter-spacing: 0.12em;
 }
 [data-theme="western"] .btn-exit-run {
-  border-radius: 0; border: 2px solid #0B0B0B; background: #2E2E2E; color: var(--text-main);
+  border-radius: 0; border: 2px solid #0B0B0B; background: #22252A; color: var(--text-main);
   box-shadow: 3px 3px 0 #0B0B0B;
 }
 [data-theme="western"] .btn-exit-run:hover { border-color: #0B0B0B; color: var(--accent-pink); }
+[data-theme="western"] .run-undo-bar {
+  border-radius: 0; border: 2px solid #0B0B0B; background: #22252A; color: var(--text-muted);
+  box-shadow: 3px 3px 0 #0B0B0B;
+}
+[data-theme="western"] .run-undo-btn {
+  border-radius: 0; border: 2px solid var(--accent-gold); color: var(--accent-gold);
+}
+[data-theme="western"] .run-undo-btn:active { color: #FFD54F; border-color: #FFD54F; }
 [data-theme="western"] .run-progress-bar { background: #0B0B0B; border: 2px solid #0B0B0B; border-radius: 0; }
 [data-theme="western"] .run-progress-fill {
   background: var(--accent-pink);
