@@ -11,10 +11,13 @@ project automatically, under an anonymous account created on-device with no
 email, password, or button click - Settings → Cloud Sync turns it off for
 anyone who'd rather stay fully local-only. It's an outbox-and-replay design:
 local changes queue up and push when online; pulling replays whatever
-changed elsewhere back in, matched by each entry's own id. Because the
-anonymous account has no credential to sign back in with, this covers
-redundancy and multi-tab/multi-browser use on the same device, not yet
-recovery on a brand new device after this one's storage is cleared.
+changed elsewhere back in, matched by each entry's own id. The anonymous
+account alone has no credential to sign back in with, so on its own this
+only covers redundancy and multi-tab/multi-browser use on the same device -
+Settings → **Link Email** closes that gap by attaching a passwordless email
+to it (no password anywhere in this app), and **Recover a Linked Account**
+pulls that same account's history onto a new or wiped device via a sign-in
+link, without creating a blank new account if the email was never linked.
 
 ## Quality checks
 

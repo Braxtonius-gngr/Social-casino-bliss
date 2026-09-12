@@ -301,6 +301,19 @@
         <div id="syncStatusBox" class="backup-helper" style="margin-top:6px;">Up to date</div>
         <div class="backup-helper" style="margin-top:4px;">Beta, on by default: mirrors your collection history (the ledger behind streaks and stats) to the cloud under an anonymous account created automatically for this device &mdash; no email, no button click needed. Turn it off here if you'd rather stay local-only.</div>
       </div>
+      <div id="syncEmailSection" style="margin-top: 10px;">
+        <div id="syncLinkedEmailBox" class="backup-helper" style="display:none; color:var(--accent-green);"></div>
+        <div id="syncLinkForm">
+          <input type="email" id="syncLinkEmailInput" class="catalog-search glass-panel" style="margin-bottom:6px;" placeholder="you@example.com" />
+          <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-green); color:var(--accent-green); text-shadow:0 0 5px var(--accent-green);" onclick="linkEmailToAccount()">Link Email (Recommended)</button>
+          <div class="backup-helper" style="margin-top:4px;">The anonymous account above has no password &mdash; nothing to sign back in with elsewhere. Link an email so this device's cloud copy is actually recoverable after a storage wipe, reinstall, or on a new device. No password to set; you'll get a confirmation link.</div>
+        </div>
+        <div style="margin-top:10px; border-top:1px solid var(--glass-border); padding-top:10px;">
+          <input type="email" id="syncRecoverEmailInput" class="catalog-search glass-panel" style="margin-bottom:6px;" placeholder="you@example.com" />
+          <button class="btn-dock" style="max-width:100%; width:100%;" onclick="sendRecoverySignIn()">Recover a Linked Account</button>
+          <div class="backup-helper" style="margin-top:4px;">Already linked an email somewhere else? Enter it here to pull that account's history onto THIS device instead of starting a new one. You'll get a sign-in link by email.</div>
+        </div>
+      </div>
       <div class="backup-controls" style="margin-top:10px;">
         <button class="btn-dock" onclick="exportDeck()">&#8681; SHARE DECK</button>
         <button class="btn-dock" onclick="document.getElementById('importDeckInput').click()">&#8679; IMPORT DECK</button>
@@ -3180,7 +3193,104 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (supabaseClient) return supabaseClient;
       if (typeof window.supabase === 'undefined' || !window.supabase.createClient) return null;
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      // Fires on the routine anonymous sign-in too, not just an email link
+      // completing - both cases want the same reaction (the email section
+      // may now show a linked address; there may be a different account's
+      // history to pull down), so no need to distinguish them here.
+      supabaseClient.auth.onAuthStateChange(() => {
+        renderSyncEmailUI();
+        kickSync();
+      });
       return supabaseClient;
+    }
+
+    // Where a magic-link/confirmation email sends the user back to. No
+    // build step means no known-in-advance production URL to hardcode -
+    // this resolves to wherever the page actually is (GitHub Pages
+    // subpath, a custom domain, or localhost while developing), so it
+    // only requires that exact origin+path to be present in the
+    // project's Auth "Redirect URLs" allow list, not any code change per
+    // environment. Strips query/hash so a link clicked from a stale tab
+    // doesn't carry old params back in.
+    function getEmailRedirectTo() {
+      return window.location.origin + window.location.pathname;
+    }
+
+    function isValidEmail(email) {
+      return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    // Reflects whether the current session has a linked, non-anonymous
+    // email - shows it plainly (a recoverable account exists) or falls
+    // back to the link/recover forms. Async because session lookup is,
+    // so callers don't block on it; it just repaints once resolved.
+    async function renderSyncEmailUI() {
+      const linkedBox = document.getElementById('syncLinkedEmailBox');
+      const linkForm = document.getElementById('syncLinkForm');
+      if (!linkedBox || !linkForm) return;
+      const client = getSupabaseClient();
+      if (!client) { linkedBox.style.display = 'none'; linkForm.style.display = ''; return; }
+      const { data: sessionData } = await client.auth.getSession();
+      const session = sessionData && sessionData.session;
+      const email = session && session.user && !session.user.is_anonymous ? session.user.email : null;
+      if (email) {
+        linkedBox.textContent = `Linked: ${email} — recoverable on any device via "Recover a Linked Account" below.`;
+        linkedBox.style.display = '';
+        linkForm.style.display = 'none';
+      } else {
+        linkedBox.style.display = 'none';
+        linkForm.style.display = '';
+      }
+    }
+
+    // Attaches an email to THIS device's current (anonymous) account -
+    // same user id, same data, now with a credential that can sign back
+    // into it. Does not send a password; the confirmation link itself,
+    // once clicked, completes the link (auth.updateUser resolves
+    // immediately here, before that click - the email isn't attached yet
+    // until it is confirmed).
+    async function linkEmailToAccount() {
+      const input = document.getElementById('syncLinkEmailInput');
+      const email = (input.value || '').trim();
+      if (!isValidEmail(email)) { showToast('Enter a valid email address.', null); return; }
+      const client = getSupabaseClient();
+      if (!client) { showToast('Cloud sync failed to load. Check your connection and reload.', null); return; }
+      try {
+        await ensureSyncSignedIn(client);
+        const { error } = await client.auth.updateUser({ email }, { emailRedirectTo: getEmailRedirectTo() });
+        if (error) throw error;
+        showToast(`Check ${email} for a confirmation link to finish linking.`, null, 8000);
+        input.value = '';
+      } catch (err) {
+        console.warn('Link email failed:', err);
+        showToast('Could not link email: ' + ((err && err.message) || 'unknown error'), null);
+      }
+    }
+
+    // Recovers a previously-linked account onto THIS device via a magic
+    // link, rather than linking THIS device's own (possibly empty, on a
+    // fresh install) anonymous account. shouldCreateUser: false is
+    // deliberate - an email that was never linked to anything should
+    // fail here, not silently spin up a new blank account under it, which
+    // would look like "recovery" while actually doing the opposite.
+    async function sendRecoverySignIn() {
+      const input = document.getElementById('syncRecoverEmailInput');
+      const email = (input.value || '').trim();
+      if (!isValidEmail(email)) { showToast('Enter a valid email address.', null); return; }
+      const client = getSupabaseClient();
+      if (!client) { showToast('Cloud sync failed to load. Check your connection and reload.', null); return; }
+      try {
+        const { error } = await client.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: getEmailRedirectTo(), shouldCreateUser: false }
+        });
+        if (error) throw error;
+        showToast(`Check ${email} for a sign-in link.`, null, 8000);
+        input.value = '';
+      } catch (err) {
+        console.warn('Send recovery sign-in failed:', err);
+        showToast('Could not send sign-in link: ' + ((err && err.message) || 'unknown error'), null);
+      }
     }
 
     function getDeviceId() {
@@ -3403,6 +3513,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         await flushSyncOutbox();
         await pullAndReplay();
         renderSyncStatusUI();
+        renderSyncEmailUI();
         showToast('Cloud sync enabled.', null);
       } catch (err) {
         console.warn('Enable cloud sync failed:', err);
@@ -3446,6 +3557,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // stack another one).
     function initSync() {
       renderSyncStatusUI();
+      renderSyncEmailUI();
       kickSync();
       setInterval(kickSync, 45000);
       window.addEventListener('online', kickSync);
@@ -4221,7 +4333,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         { t: "Knowing what's working", items: [{ h: 'Stats', b: 'Total collections, last 7 and 30 days, your current daily streak, most-collected platforms, and a 12-week activity heatmap.' }, { h: 'Missed Resets', b: "Fixed-reset platforms whose drop came and went uncollected. That one's genuinely gone — unlike a rolling timer, which just waits. Rolling platforms are excluded because they can't miss." }, { h: 'Going Stale', b: "Tracked platforms you haven't touched in 21+ days. The prune list." }, { h: 'Review &amp; Prune', b: "Walks you through prunable platforms one at a time with the reason each was flagged. Keep, remove, or skip. Nothing is ever removed automatically, and it warns you if a platform has a referral link you'd lose." }, { h: 'A note on numbers', b: 'The app counts <i>collections</i>, never estimated money. 37 catalogue entries have no verified daily value, and several others are averaged ranges — a dollar figure built on that would look authoritative while being mostly invented.' }] },
         { t: 'Balances and cashouts', items: [{ h: 'Balance tracking', b: "Edit a platform and enter your current SC balance. You get a progress bar toward that platform's cashout minimum, which turns green at <b>CASHOUT READY</b>." }, { h: 'Where the target comes from', b: 'It\'s read from the platform\'s stated minimum redemption. Where a platform lists both ("50 GC / 100 Cash") it uses the larger, since that\'s the one gating a real cash redemption.' }] },
         { t: 'Referrals and sharing', items: [{ h: 'Manage Referrals', b: "Settings → Manage Referrals. Paste your own referral links per platform, or use <b>BULK</b> to paste many at once as <code>PlatformName | https://link</code>. Names must match exactly — anything that doesn't match is reported back rather than guessed at." }, { h: 'Share button', b: 'Platforms with a referral link get a Share button on their card — native share sheet, or copies to clipboard.' }, { h: 'Share Deck', b: 'Exports your platform list, tags and referral links as a file to send someone. It deliberately leaves out your timers, balances, history and private notes. On import it merges rather than overwrites.' }] },
-        { t: 'Keeping your data', items: [{ h: 'Local, plus a cloud mirror', b: 'Your tracked platforms and timers live in this browser. Your collection history (streaks/stats) also mirrors to the cloud automatically — see Cloud Sync below.' }, { h: 'Backups', b: "Settings → Export Backup gives you a dated JSON file with your tracked platforms and their timers. It does NOT include collection history/streaks — that's what Cloud Sync covers instead." }, { h: 'Cloud Sync (beta)', b: "On by default, no signup: this device gets an anonymous account automatically and your collection history mirrors to it. It has no password you could sign back in with, so clearing THIS device's storage still loses local access to that copy — turn it off in Settings if you'd rather stay fully local-only." }, { h: 'Install it', b: 'Add to Home Screen from your browser menu. It then opens like an app and works offline.' }] },
+        { t: 'Keeping your data', items: [{ h: 'Local, plus a cloud mirror', b: 'Your tracked platforms and timers live in this browser. Your collection history (streaks/stats) also mirrors to the cloud automatically — see Cloud Sync below.' }, { h: 'Backups', b: "Settings → Export Backup gives you a dated JSON file with your tracked platforms and their timers. It does NOT include collection history/streaks — that's what Cloud Sync covers instead." }, { h: 'Cloud Sync (beta)', b: "On by default, no signup: this device gets an anonymous account automatically and your collection history mirrors to it. Turn it off in Settings if you'd rather stay fully local-only." }, { h: 'Making it recoverable', b: "The anonymous account alone has no password to sign back in with, so clearing THIS device's storage still loses local access to that copy. Settings → Link Email fixes that — attaches a passwordless email (a confirmation link, never a password) so the same account can be recovered later. On a new or wiped device, Settings → Recover a Linked Account sends a sign-in link that pulls that history back down." }, { h: 'Install it', b: 'Add to Home Screen from your browser menu. It then opens like an app and works offline.' }] },
         { t: 'Look and feel', items: [{ h: 'Themes', b: 'Three: <b>Prism Noir</b> (black-card luxury with circuit threading), <b>Neon Grid</b> (high-contrast cyberpunk), <b>Obsidian Ledger</b> (warm matte neutrals). Settings → Theme.' }, { h: 'Motion', b: 'If your device has Reduce Motion or Battery Saver on, animations switch off automatically. Settings → Motion → <b>Always on</b> overrides that if you want them regardless.' }] }
     ];
 
