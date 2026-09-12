@@ -115,6 +115,7 @@
           <button class="filter-btn" id="catFilterS" onclick="applyCatalogFilter('S', this)">S-Tier</button>
           <button class="filter-btn" id="catFilterA" onclick="applyCatalogFilter('A', this)">A-Tier</button>
           <button class="filter-btn" id="catFilterLive" onclick="applyCatalogFilter('live', this)">Live</button>
+          <button class="filter-btn" id="catFilterStale" onclick="applyCatalogFilter('stale', this)" title="Never verified or checked more than 90 days ago">Needs Review</button>
         </div>
         <div style="display: flex; gap: 6px;">
           <button class="sort-trigger-btn glass-panel" style="padding:6px 12px; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="openBulkTierModal()">
@@ -141,6 +142,7 @@
           <button class="sort-option-btn" data-key="soon" onclick="toggleSortKey('soon', 'catalog')"><span>Closest to Ready</span><span class="sort-priority-num" style="display:none;"></span></button>
           <button class="sort-option-btn" data-key="live" onclick="toggleSortKey('live', 'catalog')"><span>Live Play Available</span><span class="sort-priority-num" style="display:none;"></span></button>
           <button class="sort-option-btn" data-key="name" onclick="toggleSortKey('name', 'catalog')"><span>Name (A to Z)</span><span class="sort-priority-num" style="display:none;"></span></button>
+          <button class="sort-option-btn" data-key="verified" onclick="toggleSortKey('verified', 'catalog')"><span>Needs Review First</span><span class="sort-priority-num" style="display:none;"></span></button>
         </div>
       </div>
 
@@ -862,8 +864,41 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       speed: { label: "Redeem Speed" },
       soon: { label: "Closest to Ready" },
       live: { label: "Live Play" },
-      name: { label: "Name (A to Z)" }
+      name: { label: "Name (A to Z)" },
+      verified: { label: "Needs Review First" }
     };
+
+    // Catalog data staleness: entries older than this (or never verified)
+    // count as "stale" for the review-queue filter/sort. A wrong timer is
+    // worse than no timer, so this exists to surface the oldest-checked
+    // entries rather than let them quietly rot - see validate-catalog.js
+    // for the maintainer-facing side of the same signal.
+    const CATALOG_STALE_DAYS = 90;
+
+    // A large finite sentinel (not Infinity) for "never verified", so it
+    // always sorts as the most urgent - a missing date is not neutral,
+    // it's the worst case - without producing NaN when two unverified
+    // entries are diffed against each other in compareByStack.
+    const CATALOG_NEVER_VERIFIED_AGE = Number.MAX_SAFE_INTEGER;
+
+    function catalogAgeDays(item) {
+      if (!item || typeof item.lastVerified !== 'string' || !item.lastVerified) return CATALOG_NEVER_VERIFIED_AGE;
+      const ms = Date.now() - new Date(item.lastVerified + 'T00:00:00Z').getTime();
+      if (!Number.isFinite(ms)) return CATALOG_NEVER_VERIFIED_AGE;
+      return Math.max(0, Math.floor(ms / 86400000));
+    }
+
+    function catalogIsStale(item) {
+      return catalogAgeDays(item) > CATALOG_STALE_DAYS;
+    }
+
+    function catalogVerifiedLabel(item) {
+      const age = catalogAgeDays(item);
+      if (age === CATALOG_NEVER_VERIFIED_AGE) return 'Unverified';
+      if (age === 0) return 'Verified today';
+      if (age === 1) return 'Verified 1d ago';
+      return `Verified ${age}d ago`;
+    }
 
     // Persisted view state (active tab, filters, sort stacks, search text) -
     // everything a user configures to look at their data, as opposed to the
@@ -873,10 +908,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const VIEW_STATE_KEY = 'almanac_view_state_v1';
     const VALID_TABS = ['games', 'catalog', 'resources'];
     const VALID_GAMES_FILTERS = ['all', 'ready', 'live', 'cooldown', 'referral'];
-    const VALID_CATALOG_FILTERS = ['all', 'S', 'A', 'live'];
+    const VALID_CATALOG_FILTERS = ['all', 'S', 'A', 'live', 'stale'];
     const TAB_BUTTON_IDS = { games: 'tabPlatforms', catalog: 'tabCatalog', resources: 'tabResources' };
     const GAMES_FILTER_BTN_IDS = { all: 'filterAll', ready: 'filterReady', live: 'filterLive', cooldown: 'filterCooldown', referral: 'filterReferral' };
-    const CATALOG_FILTER_BTN_IDS = { all: 'catFilterAll', S: 'catFilterS', A: 'catFilterA', live: 'catFilterLive' };
+    const CATALOG_FILTER_BTN_IDS = { all: 'catFilterAll', S: 'catFilterS', A: 'catFilterA', live: 'catFilterLive', stale: 'catFilterStale' };
 
     // Mirrors applyFilter()'s own class bookkeeping, minus the render/save
     // side effects - used by restore/reset so they can set the *visual*
@@ -1080,6 +1115,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           diff = (sa.isReady ? 0 : sa.remainingMs) - (sb.isReady ? 0 : sb.remainingMs);
         }
         else if (key === 'name') diff = a.name.localeCompare(b.name);
+        else if (key === 'verified') diff = catalogAgeDays(b) - catalogAgeDays(a);
 
         if (diff !== 0) return diff;
       }
@@ -1616,6 +1652,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (currentCatalogFilter === 'S') return matchesQuery && item.tier === 'S';
         if (currentCatalogFilter === 'A') return matchesQuery && item.tier === 'A';
         if (currentCatalogFilter === 'live') return matchesQuery && item.hasLive;
+        if (currentCatalogFilter === 'stale') return matchesQuery && catalogIsStale(item);
         return matchesQuery;
       });
 
@@ -1638,6 +1675,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
                   ${item.hasLive ? '<span class="type-badge" style="font-size:0.6rem;">LIVE</span>' : ''}
                 </div>
                 <div class="card-status">$${item.dailySC.toFixed(2)}${item.scIsAveraged ? '*' : ''} / ${typeof item.resetHour === 'number' ? cooldownLabel(item) : item.cooldown + 'h'} - Score: ${item.reliability}%</div>
+                <div class="verify-tag ${catalogIsStale(item) ? 'stale' : ''}">${catalogVerifiedLabel(item)}</div>
               </div>
             </div>
             <span ${index === 0 ? 'id="tourAddTarget"' : ''} style="font-size:1.4rem; color:${isTracked ? 'var(--accent-green)' : 'var(--text-dim)'}; font-weight:900; padding: 4px 8px; text-shadow: ${isTracked ? '0 0 10px rgba(0, 255, 102, 0.5)' : 'none'};">
@@ -1646,6 +1684,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           </div>
           <div id="keen_${catId}" class="keen-info-popover ${openKeenIds.has(catId) ? 'open' : ''}">
             <div class="keen-title">${item.name} - Min Redeem: ${item.minRedeem || 'Varies'}</div>
+            <div class="verify-tag ${catalogIsStale(item) ? 'stale' : ''}" style="margin-bottom:4px;">${catalogVerifiedLabel(item)}${item.lastVerified ? ` (${item.lastVerified})` : ''}</div>
             ${item.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:4px; font-weight:700;">*Averaged from reported range ${item.scRange}/day</div>` : ''}
             <div>${item.notes || 'No critical flags. Normal 1x playthrough.'}</div>
             ${item.bestGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">RECOMMENDED MODULES:</strong>${item.bestGames}</div>` : ''}
@@ -1669,7 +1708,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               speedHours: item.speedHours, reliability: item.reliability, hasLive: item.hasLive,
               minRedeem: item.minRedeem, notes: item.notes, bestGames: item.bestGames,
               scIsAveraged: item.scIsAveraged, scRange: item.scRange, referralUrl: '',
-              cooldownHours: item.cooldown, resetHour: item.resetHour, resetTZ: item.resetTZ, lastCollected: 0
+              cooldownHours: item.cooldown, resetHour: item.resetHour, resetTZ: item.resetTZ, lastCollected: 0,
+              lastVerified: item.lastVerified
             };
             normalizeTimerFields(g);
             trackedGames.push(g);
@@ -1713,7 +1753,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               cooldownHours: item.cooldown,
               resetHour: item.resetHour,
               resetTZ: item.resetTZ,
-              lastCollected: 0
+              lastCollected: 0,
+              lastVerified: item.lastVerified
             };
             normalizeTimerFields(g);
             trackedGames.push(g);
@@ -2145,7 +2186,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           speedHours: item.speedHours, reliability: item.reliability, hasLive: item.hasLive,
           minRedeem: item.minRedeem, notes: item.notes, bestGames: item.bestGames,
           scIsAveraged: item.scIsAveraged, scRange: item.scRange, referralUrl: '',
-          cooldownHours: item.cooldown, resetHour: item.resetHour, resetTZ: item.resetTZ, lastCollected: 0
+          cooldownHours: item.cooldown, resetHour: item.resetHour, resetTZ: item.resetTZ, lastCollected: 0,
+          lastVerified: item.lastVerified
         };
         normalizeTimerFields(g);
         trackedGames.push(g);

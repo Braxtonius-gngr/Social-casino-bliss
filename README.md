@@ -28,6 +28,15 @@ entries tracking different cooldowns on the same underlying platform under
 different names); those are printed for a human to judge, never edited
 automatically.
 
+Each entry also takes an optional `lastVerified: "YYYY-MM-DD"` field: the
+date someone last actually re-checked that its URL, cooldown, and reset
+window are still correct. `check:catalog` validates the format and prints
+a review queue of the entries most overdue for a re-check (missing the
+field, or older than 90 days), oldest/never-verified first - the same
+ordering the in-app Catalogue's "Needs Review First" sort and "Needs
+Review" filter use. Re-checking a platform and bumping its date is a
+manual, human step; nothing here fabricates or auto-updates the field.
+
 No `npm install` needed - both scripts use only Node's standard library.
 They also run automatically on every push and pull request via
 [`.github/workflows/checks.yml`](.github/workflows/checks.yml).

@@ -138,6 +138,12 @@
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); display: inline-block; box-shadow: 0 0 8px var(--accent-green), 0 0 12px var(--accent-green); }
     .status-dot.cooldown { background: var(--text-muted); box-shadow: none; }
 
+    /* Catalog data-freshness signal: neutral once actually verified,
+       warning-colored when stale/never-checked so a rotting entry is
+       visibly distrustable rather than looking identical to a fresh one. */
+    .verify-tag { font-size: 0.68rem; color: var(--text-dim); margin-top: 2px; }
+    .verify-tag.stale { color: var(--accent-orange); font-weight: 600; }
+
     .card-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .btn-open { padding: 8px 18px; background: linear-gradient(90deg, var(--accent-pink), var(--accent-orange)); color: #fff; border: none; border-radius: 20px; font-size: 0.85rem; font-weight: 900; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; text-shadow: 0 1px 2px rgba(0,0,0,0.5); box-shadow: 0 4px 15px rgba(255, 0, 127, 0.4); transition: all 0.2s; }
     .btn-open:hover { box-shadow: 0 4px 25px rgba(255, 102, 0, 0.6); transform: translateY(-1px); }
