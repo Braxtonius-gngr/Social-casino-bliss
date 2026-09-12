@@ -111,9 +111,19 @@
 
     .game-list { display: flex; flex-direction: column; gap: 12px; }
     .ledger-card-wrapper { display: flex; flex-direction: column; gap: 6px; }
-    .ledger-card { border-radius: 14px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: transform 0.2s; }
+    /* Column, not a single left/actions row - that row had name+tier+LIVE
+       squeezed into whatever was left after four action buttons
+       (clock/check/open/dots, ~213px on a 420px phone) claimed their
+       space, leaving the name as little as ~70px to work with before it
+       had to ellipsis, and even then the tier/LIVE badges still wrapped
+       onto their own line - a platform with a longer name or a LIVE
+       badge silently got a taller, misaligned card. Splitting into two
+       full-width rows (top: avatar+name+badges, bottom: status+actions)
+       gives the name the entire card width instead of a leftover sliver. */
+    .ledger-card { border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; transition: transform 0.2s; }
     .ledger-card:active { transform: scale(0.98); }
     .card-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+    .card-bottom-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1; }
     .casino-avatar { width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--accent-cyan); background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; font-family: "Courier New", Courier, monospace; font-weight: 900; font-size: 1rem; color: #fff; flex-shrink: 0; box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.4), 0 0 10px rgba(0, 229, 255, 0.3); text-shadow: 0 0 5px var(--accent-cyan); cursor: pointer; transition: all 0.2s; }
     .casino-avatar:active { transform: scale(0.9); box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.8), 0 0 15px rgba(0, 229, 255, 0.6); }
 
@@ -130,9 +140,13 @@
     .strategy-row.expanded .strategy-row-body { display: block; }
     .strategy-row.expanded .expand-icon { transform: rotate(180deg); }
 
-    .card-body { display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
-    .card-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .casino-name { font-size: 0.98rem; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+    /* flex:1 + min-width:0 is what actually lets .casino-name's own
+       ellipsis rule bite - without it a flex item's min-width defaults
+       to auto (its content's full natural size), so the row would just
+       overflow instead of truncating the name and keeping the badges on
+       the same line. */
+    .card-title-row { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+    .casino-name { flex-shrink: 1; min-width: 0; font-size: 0.98rem; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
     .tier-badge { font-size: 0.65rem; font-weight: 900; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; box-shadow: 0 0 8px currentColor; }
     .type-badge { font-size: 0.62rem; font-weight: 800; padding: 2px 5px; border-radius: 4px; background: var(--accent-orange-dim); color: #fff; border: 1px solid var(--accent-orange); text-shadow: 0 0 5px var(--accent-orange); box-shadow: 0 0 8px rgba(255, 102, 0, 0.4); }
 
@@ -591,7 +605,7 @@
       background: linear-gradient(90deg, rgba(255,138,31,0.045), rgba(255,138,31,0.11));
       border-right: 1px solid rgba(255,138,31,0.22); transition: width .6s linear; }
     .ledger-card.is-ready .cd-fill { display:none; }
-    .card-left, .card-actions, .card-body { position: relative; z-index: 1; }
+    .card-left, .card-actions { position: relative; z-index: 1; }
     .user-note { background: rgba(255,138,31,0.10); border-left: 2px solid var(--accent-orange); padding: 7px 10px; border-radius: 4px; margin-bottom: 8px; font-size: 0.78rem; }
     .user-note strong { color: var(--accent-orange); }
     .tag-pill { display:inline-block; font-size:0.62rem; font-weight:700; padding:2px 7px; margin-right:4px; border-radius:3px; background:rgba(255,255,255,0.06); border:1px solid var(--glass-border); color:var(--text-muted); }
@@ -1630,12 +1644,19 @@
   }
 }
 [data-motion="off"] [data-theme="western"] .hero-ring-circle { animation: none; }
-/* The ring is a tap target now (toggles the stats popout), so it can
-   pick up the browser's generic focus ring on tap - a desaturated cyan
-   outline that has no business anywhere in this theme. Recolor rather
-   than remove it: still visible for keyboard/switch users, just gold
-   instead of clashing neon. */
-[data-theme="western"] .hero-ring-circle:focus { outline-color: var(--accent-gold); }
+/* Any tapped element keeps focus on mobile Chrome until something else
+   takes it - accessibility.css's generic :focus/button:focus rules draw
+   a desaturated cyan outline that has no business anywhere in this
+   theme, and it was showing up wherever that happened to land (the hero
+   ring, then .btn-run-collect staying focused for the rest of a run
+   since that button element itself never gets re-created between
+   steps). One global override instead of chasing it element by element -
+   :focus here has higher specificity than accessibility.css's own
+   :focus/button:focus/a:focus (attribute selector + pseudo-class beats
+   a bare type-plus-pseudo-class) regardless of stylesheet load order.
+   Recolors rather than removes it: still visible for keyboard/switch
+   users, just gold instead of clashing neon. */
+[data-theme="western"] :focus { outline-color: var(--accent-gold); }
 
 /* Gold gleam text: the daily-run CTA sits inline in the details column,
    next to the ring's attention pulse - no box, no border, just the

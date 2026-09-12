@@ -1627,28 +1627,28 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
                 <div class="casino-avatar" onclick="toggleKeenInfo('${game.id}', event)">${getInitials(game.name)}</div>
                 ${streaks[game.name] ? `<span class="streak-badge" title="${streaks[game.name]} days in a row">&#9650;${streaks[game.name]}</span>` : ''}
               </div>
-              <div class="card-body">
-                <div class="card-title-row">
-                  <span class="casino-name">${game.name}</span>
-                  <span class="tier-badge tier-${game.tier || 'Unranked'}">${game.tier || 'A'}</span>
-                  ${game.hasLive ? '<span class="type-badge">LIVE</span>' : ''}
-                </div>
-                <div class="card-status">
-                  <span class="status-dot ${isReady ? '' : 'cooldown'}"></span>
-                  <span style="font-family: monospace; font-weight:600;">${isReady ? 'READY' : formatTime(remainingMs)}</span>
-                  ${isReady ? '' : `<span class="ready-at">&rarr; ${readyAtLabel(game, remainingMs)}</span>`}
-                  <button type="button" class="cooldown-chip" title="Edit cooldown" aria-label="Edit cooldown for ${escHtml(game.name)}, currently ${cooldownLabel(game)}" onclick="openCooldownEditor('${game.id}', event, false)">${cooldownLabel(game)}</button>
-                </div>
+              <div class="card-title-row">
+                <span class="casino-name">${game.name}</span>
+                <span class="tier-badge tier-${game.tier || 'Unranked'}">${game.tier || 'A'}</span>
+                ${game.hasLive ? '<span class="type-badge">LIVE</span>' : ''}
               </div>
             </div>
-            <div class="card-actions">
-              ${game.referralUrl ? `<button class="btn-share" onclick="shareReferral(this, '${game.id}')">Share</button>` : ''}
-              ${isReady ? `<button class="btn-check btn-snooze" title="Snooze 3 hours" onclick="snoozePlatform('${game.id}', 3, event)">&#9200;</button>` : ''}
-              <button class="btn-check" title="Mark collected without opening" onclick="markCollected('${game.id}', event)">&#10003;</button>
-              <button class="btn-open ${isReady ? '' : 'cooldown'}" onclick="collect('${game.id}')">
-                ${isReady ? 'OPEN' : 'WAIT'}
-              </button>
-              <button class="btn-dots" onclick="openEditModal('${game.id}')">...</button>
+            <div class="card-bottom-row">
+              <div class="card-status">
+                <span class="status-dot ${isReady ? '' : 'cooldown'}"></span>
+                <span style="font-family: monospace; font-weight:600;">${isReady ? 'READY' : formatTime(remainingMs)}</span>
+                ${isReady ? '' : `<span class="ready-at">&rarr; ${readyAtLabel(game, remainingMs)}</span>`}
+                <button type="button" class="cooldown-chip" title="Edit cooldown" aria-label="Edit cooldown for ${escHtml(game.name)}, currently ${cooldownLabel(game)}" onclick="openCooldownEditor('${game.id}', event, false)">${cooldownLabel(game)}</button>
+              </div>
+              <div class="card-actions">
+                ${game.referralUrl ? `<button class="btn-share" onclick="shareReferral(this, '${game.id}')">Share</button>` : ''}
+                ${isReady ? `<button class="btn-check btn-snooze" title="Snooze 3 hours" onclick="snoozePlatform('${game.id}', 3, event)">&#9200;</button>` : ''}
+                <button class="btn-check" title="Mark collected without opening" onclick="markCollected('${game.id}', event)">&#10003;</button>
+                <button class="btn-open ${isReady ? '' : 'cooldown'}" onclick="collect('${game.id}')">
+                  ${isReady ? 'OPEN' : 'WAIT'}
+                </button>
+                <button class="btn-dots" onclick="openEditModal('${game.id}')">...</button>
+              </div>
             </div>
           </div>
           <div id="keen_${game.id}" class="keen-info-popover ${openKeenIds.has(game.id) ? 'open' : ''}">
