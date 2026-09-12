@@ -1576,7 +1576,7 @@
    doesn't merge with an animation running - it's replaced wholesale)
    so the existing offset shadow/inset ring never drops out mid-pulse. */
 [data-theme="western"] .hero-ring-circle {
-  animation: heartbeat-pulse 2.4s ease-in-out infinite, hero-number-pulse 1.6s steps(2, end) infinite;
+  animation: heartbeat-pulse 2.4s ease-in-out infinite, hero-number-pulse 2.2s ease-in-out infinite;
 }
 @keyframes heartbeat-pulse {
   0%, 100% { transform: scale(1); }
@@ -1585,24 +1585,26 @@
   42% { transform: scale(1.05); }
   56% { transform: scale(1); }
 }
-/* Three stacked rings instead of one flat color - dark red closest to
-   the badge, brightening through ember-orange to gold at the outer
-   edge, each layer more transparent than the last as it gets further
-   out, so it reads as heat radiating off the ring rather than a single
-   flat glow. Ties the ring to the same gold the CTA text gleams in,
-   without literally forcing one flat color everywhere. */
+/* Three soft glow layers instead of hard-edged rings - dark red closest
+   to the badge, brightening through ember-orange to gold at the outer
+   edge, each layer both blurrier and more transparent than the last as
+   it gets further out, so it reads as heat radiating outward rather
+   than concentric outlines. Smooth ease-in-out breathing instead of the
+   hard steps(2,end) on/off jump this had - a slower, softer pulse reads
+   as more deliberate here than a flash would. Ties the ring to the same
+   gold the CTA text gleams in, without forcing one flat color on both. */
 @keyframes hero-number-pulse {
   0%, 100% {
     box-shadow: 4px 4px 0 #0B0B0B, inset 0 0 0 5px rgba(227, 218, 201, 0.18),
-      0 0 0 0 rgba(129, 0, 0, 0),
-      0 0 0 0 rgba(193, 18, 31, 0),
-      0 0 0 0 rgba(255, 193, 7, 0);
+      0 0 3px 0px rgba(129, 0, 0, 0),
+      0 0 8px 0px rgba(193, 18, 31, 0),
+      0 0 14px 0px rgba(255, 193, 7, 0);
   }
   50% {
     box-shadow: 4px 4px 0 #0B0B0B, inset 0 0 0 5px rgba(227, 218, 201, 0.18),
-      0 0 0 4px rgba(129, 0, 0, 0.65),
-      0 0 0 9px rgba(193, 18, 31, 0.4),
-      0 0 0 15px rgba(255, 193, 7, 0.16);
+      0 0 5px 3px rgba(129, 0, 0, 0.5),
+      0 0 13px 6px rgba(193, 18, 31, 0.3),
+      0 0 22px 11px rgba(255, 193, 7, 0.14);
   }
 }
 [data-motion="off"] [data-theme="western"] .hero-ring-circle { animation: none; }
@@ -1628,32 +1630,30 @@
   box-shadow: none;
   color: var(--accent-gold);
   /* Hard offset shadow, same as every other header/label in this theme -
-     doubles as what keeps the letters legible against the card's pale
-     bone background during the bright part of the gleam sweep below
-     (a near-white highlight on a near-white card would otherwise wash
-     the letters out to nothing at that instant). */
-  text-shadow: 1px 1px 0 #0B0B0B;
-}
-[data-theme="western"] .hero-run-btn:not(:disabled) {
+     keeps the letters legible against the card behind them during the
+     bright part of the gleam sweep - plus a soft warm glow under that,
+     so the text pulls the eye on its own rather than needing a box.
+     Always on, ready-to-collect or not: this is a "go do this" cue
+     that should never read as inert, even when nothing's ready yet. */
+  text-shadow: 1px 1px 0 #0B0B0B, 0 0 10px rgba(255, 193, 7, 0.4);
   background-image: linear-gradient(115deg,
-    #FFC107 0%, #FFC107 36%,
-    #FFE9A8 50%,
-    #FFC107 64%, #FFC107 100%);
+    #FFC107 0%, #FFC107 34%,
+    #FFF6D6 50%,
+    #FFC107 66%, #FFC107 100%);
   background-repeat: no-repeat;
-  background-size: 240% 100%;
+  background-size: 220% 100%;
   background-position: 160% 0;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: gold-text-gleam 1.6s linear infinite;
+  animation: gold-text-gleam 1.3s linear infinite;
 }
 @keyframes gold-text-gleam {
   0% { background-position: 160% 0; }
   100% { background-position: -60% 0; }
 }
-[data-theme="western"] .hero-run-btn:disabled { color: rgba(11, 11, 11, 0.4); text-shadow: none; }
 [data-theme="western"] .hero-run-btn:active { box-shadow: none; }
-[data-motion="off"] [data-theme="western"] .hero-run-btn:not(:disabled) {
+[data-motion="off"] [data-theme="western"] .hero-run-btn {
   animation: none;
   background: none;
   -webkit-text-fill-color: var(--accent-gold);
@@ -1821,32 +1821,55 @@
   75% { filter: sepia(0.85) brightness(0.45) contrast(1.35); transform: rotate(-2.2deg) scale(0.94); }
   100% { filter: sepia(1) brightness(0.1) contrast(1.6) blur(3px); transform: rotate(-5deg) scale(0.8); opacity: 0; }
 }
-/* clip-path inset() eats the card away from the bottom edge upward -
-   tried a mask-image gradient wipe first, but gradient stop-position
-   keyframes don't reliably interpolate for mask-image (confirmed via
-   computed-style sampling: it held at the start value then hard-cut to
-   the end value partway through instead of animating), where a plain
-   length/percentage like inset() animates smoothly as expected. */
+/* An irregular, jagged char-line climbs from the bottom instead of a
+   straight cut - inset() (a flat rectangle) read as shredding/slicing,
+   not burning. Tried real punch-through holes via mask-composite first
+   (multiple radial-gradient holes subtracted from an opaque base), but
+   its behavior turned out inconsistent under empirical testing - one
+   ordering inverted the result, another produced solid opaque circles
+   instead of transparency, neither reliable enough to ship. A polygon()
+   boundary sidesteps that: same 11 points at both keyframes, only their
+   Y values shift, by the SAME delta at every point (jaggedness in the
+   shape stays constant, only its vertical position moves) - which
+   interpolates cleanly since it's just numeric points, not a gradient
+   or a composite operator. The .burn-holes spans (below) still add
+   pop-open detail ahead of this line. */
 @keyframes landing-burn-wipe {
-  0% { -webkit-clip-path: inset(0 0 0% 0); clip-path: inset(0 0 0% 0); }
-  100% { -webkit-clip-path: inset(0 0 100% 0); clip-path: inset(0 0 100% 0); }
+  0% {
+    -webkit-clip-path: polygon(0% 0%, 100% 0%, 100% 108%, 87% 100%, 75% 111%, 62% 102%, 50% 116%, 37% 104%, 25% 113%, 12% 101%, 0% 108%);
+    clip-path: polygon(0% 0%, 100% 0%, 100% 108%, 87% 100%, 75% 111%, 62% 102%, 50% 116%, 37% 104%, 25% 113%, 12% 101%, 0% 108%);
+  }
+  100% {
+    -webkit-clip-path: polygon(0% 0%, 100% 0%, 100% -12%, 87% -20%, 75% -9%, 62% -18%, 50% -4%, 37% -16%, 25% -7%, 12% -19%, 0% -12%);
+    clip-path: polygon(0% 0%, 100% 0%, 100% -12%, 87% -20%, 75% -9%, 62% -18%, 50% -4%, 37% -16%, 25% -7%, 12% -19%, 0% -12%);
+  }
 }
+/* Heavy black smoke, not a light haze - several dark plumes at
+   different offsets/sizes so they read as billowing rather than one
+   uniform cloud, rotating as they rise for a swirling motion instead
+   of a straight vertical drift. */
 [data-theme="western"] .landing-screen.burning .landing-inner::before {
   display: block;
   content: '';
-  position: absolute; inset: -20px;
-  background: radial-gradient(ellipse at 50% 100%, rgba(20,16,12,0.9) 0%, rgba(20,16,12,0.5) 40%, transparent 70%);
-  filter: blur(14px);
+  position: absolute; inset: -40px;
+  background:
+    radial-gradient(ellipse 55% 45% at 30% 95%, rgba(6,5,5,0.96) 0%, rgba(6,5,5,0.7) 35%, transparent 68%),
+    radial-gradient(ellipse 50% 40% at 68% 100%, rgba(10,8,7,0.94) 0%, rgba(10,8,7,0.6) 38%, transparent 70%),
+    radial-gradient(ellipse 45% 50% at 48% 90%, rgba(4,4,4,0.9) 0%, rgba(4,4,4,0.55) 40%, transparent 72%);
+  filter: blur(16px);
   opacity: 0;
   pointer-events: none;
+  transform-origin: 50% 100%;
   z-index: 3;
   animation: landing-burn-smoke 1.5s ease-out forwards;
 }
 @keyframes landing-burn-smoke {
-  0% { opacity: 0; transform: translateY(10%) scale(0.8); }
-  10% { opacity: 0; }
-  30% { opacity: 0.85; }
-  100% { opacity: 0; transform: translateY(-70%) scale(1.9); }
+  0% { opacity: 0; transform: translateY(15%) scale(0.75) rotate(0deg); }
+  8% { opacity: 0; }
+  28% { opacity: 1; transform: translateY(-8%) scale(1.15) rotate(-3deg); }
+  55% { opacity: 0.96; transform: translateY(-35%) scale(1.6) rotate(4deg); }
+  80% { opacity: 0.55; transform: translateY(-58%) scale(2.1) rotate(-2deg); }
+  100% { opacity: 0; transform: translateY(-80%) scale(2.6) rotate(5deg); }
 }
 [data-theme="western"] .landing-screen.burning .landing-inner::after {
   content: '';
@@ -1919,30 +1942,67 @@
 [data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(9) { animation-delay: 0.6s; }
 
 /* Smoke screen bridge: right as the poster's gone (see dismissLanding),
-   the app's own ambient smoke layer gets a brief, denser, faster burst
-   across the FULL viewport (not just its usual top-280px band) instead
-   of the app just snapping into view underneath - the cut is bridged
-   with smoke clearing rather than a hard swap. Reuses #smokeField's
-   existing spans/positions, just with its own keyframe and duration
-   while .burst is present; falls back to the ambient demon-smoke loop
-   once it's removed. */
-[data-theme="western"] #smokeField.burst { height: 100vh; }
-[data-theme="western"] #smokeField.burst span {
-  width: 180px; height: 240px;
-  animation: smoke-burst-sweep 1.1s ease-out both;
+   the cut into the app is masked by smoke rather than a hard swap. A
+   dedicated top-level element (not nested in #smokeField - see the
+   comment on #transitionSmoke in index.html for why: a position:fixed
+   ancestor with its own z-index creates a stacking context that traps
+   every descendant at that stacking level regardless of the
+   descendant's own z-index, and #smokeField's z-index:1 sits BELOW
+   .app-container's z-index:2, so content nested in it can never paint
+   above the app no matter what z-index it's given - confirmed by
+   computed styles reporting opacity:1 on a fully "correct" but
+   invisible layer during testing). z-index:1000 here instead, high
+   enough to sit above everything else in the app including the
+   hellscape-static jolt (999). Inert (opacity:0, no size) until
+   .active is added; base rule keeps it out of the way otherwise. */
+#transitionSmoke {
+  position: fixed; inset: 0; z-index: 1000;
+  opacity: 0; pointer-events: none; overflow: hidden;
+}
+[data-theme="western"] #transitionSmoke.active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 100% at 50% 55%,
+    rgba(4, 3, 3, 0.97) 0%, rgba(4, 3, 3, 0.88) 45%,
+    rgba(4, 3, 3, 0.55) 75%, transparent 100%);
+  opacity: 0;
+  animation: smoke-burst-wash 1.3s ease-out both;
+}
+@keyframes smoke-burst-wash {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  62% { opacity: 0.94; }
+  100% { opacity: 0; }
+}
+[data-theme="western"] #transitionSmoke.active { opacity: 1; }
+[data-theme="western"] #transitionSmoke.active span {
+  position: absolute;
+  bottom: 20%;
+  width: 260px; height: 320px;
+  border-radius: 45%;
+  background: radial-gradient(circle, rgba(5, 4, 4, 0.97) 0%, rgba(5, 4, 4, 0.8) 40%, rgba(5, 4, 4, 0.35) 68%, transparent 85%);
+  filter: blur(20px);
+  opacity: 0;
+  animation: smoke-burst-sweep 1.3s ease-out both;
 }
 @keyframes smoke-burst-sweep {
-  0% { transform: translate3d(0, 25%, 0) scale(1) rotate(0deg); opacity: 0; }
-  18% { opacity: 1; }
-  55% { opacity: 0.85; }
-  100% { transform: translate3d(12px, -190%, 0) scale(2.3) rotate(-6deg); opacity: 0; }
+  0% { transform: translate3d(0, 30%, 0) scale(0.9) rotate(0deg); opacity: 0; }
+  16% { opacity: 1; }
+  50% { opacity: 1; transform: translate3d(-14px, -20%, 0) scale(1.8) rotate(-10deg); }
+  75% { opacity: 0.7; transform: translate3d(18px, -90%, 0) scale(2.6) rotate(8deg); }
+  100% { transform: translate3d(10px, -210%, 0) scale(3.2) rotate(-6deg); opacity: 0; }
 }
-[data-theme="western"] #smokeField.burst span:nth-child(1) { animation-delay: 0s; }
-[data-theme="western"] #smokeField.burst span:nth-child(2) { animation-delay: 0.07s; }
-[data-theme="western"] #smokeField.burst span:nth-child(3) { animation-delay: 0.03s; }
-[data-theme="western"] #smokeField.burst span:nth-child(4) { animation-delay: 0.12s; }
-[data-theme="western"] #smokeField.burst span:nth-child(5) { animation-delay: 0.18s; }
-[data-motion="off"] [data-theme="western"] #smokeField.burst span { animation: none; }
+[data-theme="western"] #transitionSmoke.active span:nth-child(1) { left: 6%;  animation-delay: 0s; }
+[data-theme="western"] #transitionSmoke.active span:nth-child(2) { left: 30%; animation-delay: 0.07s; }
+[data-theme="western"] #transitionSmoke.active span:nth-child(3) { left: 54%; animation-delay: 0.03s; }
+[data-theme="western"] #transitionSmoke.active span:nth-child(4) { left: 76%; animation-delay: 0.12s; }
+[data-theme="western"] #transitionSmoke.active span:nth-child(5) { left: 18%; animation-delay: 0.18s; }
+[data-theme="western"] #transitionSmoke.active span:nth-child(6) { left: 64%; animation-delay: 0.22s; }
+[data-theme="western"] #transitionSmoke.active span:nth-child(7) { left: 42%; animation-delay: 0.1s; }
+[data-motion="off"] #transitionSmoke.active { opacity: 0; }
+[data-motion="off"] [data-theme="western"] #transitionSmoke.active span,
+[data-motion="off"] [data-theme="western"] #transitionSmoke.active::before { animation: none; opacity: 0; }
 
 /* ---------------------------------------------------------------
    Daily Run overlay: had ZERO Boot Hill treatment before this - it

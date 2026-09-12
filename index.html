@@ -64,6 +64,19 @@
     <span></span><span></span><span></span><span></span><span></span>
   </div>
 
+  <!-- Sits outside #smokeField deliberately, not nested in it - a
+       position:fixed ancestor with its own z-index (#smokeField has
+       z-index:1, for the ambient wisps to drift behind app content)
+       creates a stacking context, trapping every descendant (fixed or
+       not) inside that stacking level regardless of the descendant's
+       own z-index. The transition burst needs to sit ABOVE the app
+       (.app-container is z-index:2), so it gets its own top-level
+       element instead of being a child of #smokeField. -->
+  <div id="transitionSmoke" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span>
+  </div>
+
   <div id="tourBox" class="tour-tooltip-box" onclick="advanceTourStep()">
     <div id="tourBody"></div>
     <span class="tour-advance-subtext" id="tourSubtext">Click to advance</span>
@@ -2068,13 +2081,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         setTimeout(() => {
           screen.classList.add('hidden');
           screen.classList.remove('burning');
-          // A burst through the app's own ambient smoke layer, timed to
-          // the exact moment the poster is gone - bridges the cut with
-          // smoke instead of the app just snapping into view under it.
-          const smoke = document.getElementById('smokeField');
+          // A heavy smoke burst timed to the exact moment the poster is
+          // gone - bridges the cut instead of the app just snapping
+          // into view underneath it.
+          const smoke = document.getElementById('transitionSmoke');
           if (smoke) {
-            smoke.classList.add('burst');
-            setTimeout(() => smoke.classList.remove('burst'), 1200);
+            smoke.classList.add('active');
+            setTimeout(() => smoke.classList.remove('active'), 1300);
           }
         }, 1550);
       } else {
