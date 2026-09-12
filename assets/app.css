@@ -1459,3 +1459,77 @@
   0%, 100% { background: var(--tier-s); }
   50% { background: #C1121F; }
 }
+
+/* Blood drip: a jagged (not soft-blurred) dripping silhouette bleeding
+   off the bottom edge of the primary CTA, the one button every visit
+   passes through. Built as a clip-path shape - hard torn points, not a
+   gradient smear - so it reads as viscera without ever being literal
+   imagery, matching the theme's flat/no-blur rule. Steps() timing keeps
+   the "grow, hold, gone" motion abrupt instead of a smooth ooze. */
+[data-theme="western"] .btn-start-run { position: relative; overflow: visible; }
+[data-theme="western"] .btn-start-run:not(:disabled)::after {
+  content: '';
+  position: absolute;
+  left: 10%; right: 10%; bottom: -9px;
+  height: 9px;
+  background: #6b0000;
+  clip-path: polygon(
+    0% 0%, 7% 0%, 9% 55%, 13% 100%, 17% 50%, 21% 0%,
+    29% 0%, 32% 75%, 36% 100%, 40% 35%, 43% 0%,
+    54% 0%, 57% 100%, 61% 45%, 65% 0%,
+    74% 0%, 77% 65%, 81% 100%, 85% 25%, 89% 0%,
+    100% 0%, 100% 0%, 0% 0%
+  );
+  transform-origin: top;
+  opacity: 0;
+  pointer-events: none;
+  animation: blood-drip 7s steps(3, end) infinite;
+}
+@keyframes blood-drip {
+  0%, 58% { opacity: 0; transform: scaleY(0.25); }
+  63% { opacity: 1; transform: scaleY(0.25); }
+  86% { opacity: 1; transform: scaleY(1); }
+  100% { opacity: 0; transform: scaleY(1); }
+}
+
+/* Heartbeat: the ready-count medallion gets a lub-dub double-thump
+   instead of sitting static - something alive (or dying) up top, not
+   just a number. Pure scale, no color/blur change. */
+[data-theme="western"] .hero-ring-circle { animation: heartbeat-pulse 2.4s ease-in-out infinite; }
+@keyframes heartbeat-pulse {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(1.08); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.05); }
+  56% { transform: scale(1); }
+}
+
+/* Hellscape static: a rare (~30s), brief (~1s) full-viewport signal-
+   corruption sting - a red scanline pattern slammed on/off with a couple
+   of hard horizontal jolts, like the whole screen briefly loses its grip.
+   steps(1,end) on the parent keyframe + short-lived opacity spikes keep
+   it a jolt, not a flicker loop - deliberately rare enough to still
+   startle rather than become wallpaper. */
+[data-theme="western"] .app-container::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(129, 0, 0, 0.35) 0px, rgba(129, 0, 0, 0.35) 2px,
+    transparent 2px, transparent 5px
+  );
+  mix-blend-mode: multiply;
+  opacity: 0;
+  animation: hellscape-static 31s steps(1, end) infinite;
+}
+@keyframes hellscape-static {
+  0%, 96.5% { opacity: 0; transform: translate3d(0, 0, 0); }
+  96.6% { opacity: 0.55; transform: translate3d(-8px, 0, 0); }
+  96.8% { opacity: 0.1; transform: translate3d(5px, 0, 0); }
+  97.0% { opacity: 0.6; transform: translate3d(-4px, 2px, 0); }
+  97.3% { opacity: 0.15; transform: translate3d(0, 0, 0); }
+  97.5%, 100% { opacity: 0; transform: translate3d(0, 0, 0); }
+}
