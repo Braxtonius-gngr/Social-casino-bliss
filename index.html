@@ -35,6 +35,10 @@
     <span></span><span></span><span></span><span></span><span></span>
   </div>
 
+  <div id="smokeField" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+
   <div id="tourBox" class="tour-tooltip-box" onclick="advanceTourStep()">
     <div id="tourBody"></div>
     <span class="tour-advance-subtext" id="tourSubtext">Click to advance</span>
@@ -2592,6 +2596,20 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       setTimeout(() => document.body.classList.remove('screen-shake-active'), 400);
     }
 
+    // Lighter sibling of screenShake() - a quick visual accent (see
+    // .collect-flash-active in the western theme CSS) fired from
+    // logCollection() itself, the one function every collect path
+    // (markCollected, collect, collectCurrentDailyRun, openDrop) already
+    // funnels through - unlike screenShake(), which is deliberately only
+    // called from the Daily Run flow as a bigger, rarer "moment" cue and
+    // was never going to fire from an everyday single-tap collect.
+    function collectFlash() {
+      if (!isWesternTheme()) return;
+      if (document.documentElement.getAttribute('data-motion') === 'off') return;
+      document.body.classList.add('collect-flash-active');
+      setTimeout(() => document.body.classList.remove('collect-flash-active'), 500);
+    }
+
     function selectTheme(themeId) {
       try { localStorage.setItem(THEME_KEY, themeId); } catch (e) {}
       applyTheme(themeId);
@@ -3665,6 +3683,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory));
       } catch (e) { /* storage full or unavailable; keep in-memory copy */ }
       enqueueHistorySync(entry, false);
+      collectFlash();
     }
 
     // Removes the most recent collectionHistory entry for this platform
