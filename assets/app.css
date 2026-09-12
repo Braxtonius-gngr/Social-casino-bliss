@@ -430,6 +430,33 @@
     .ledger-meta { font-size:0.68rem; color:var(--text-dim); }
     .ledger-amt { font-family:"Courier New",monospace; font-weight:800; font-size:0.84rem; flex-shrink:0; }
     .ledger-amt.purchase { color:var(--accent-pink); } .ledger-amt.redemption { color:var(--accent-green); }
+    /* Shared look for every control in the add-entry form. Was repeated
+       inline on each one; it needs to be a class now that fields swap in
+       and out by entry type. */
+    .led-field { background:rgba(0,0,0,0.5); border:1px solid var(--glass-border); color:var(--text-main); padding:9px; border-radius:8px; font-family:inherit; font-size:0.82rem; min-width:0; }
+    .led-row { display:flex; gap:8px; margin-bottom:10px; }
+    .led-hint { font-size:0.68rem; line-height:1.45; color:var(--text-dim); margin:-2px 0 10px; }
+    /* Which routes the money actually came back through. */
+    .payout-breakdown { margin:-6px 0 16px; }
+    .payout-breakdown-head { font-size:0.6rem; font-weight:800; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-dim); text-align:center; margin-bottom:7px; }
+    .payout-chips { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+    .payout-chip { font-size:0.68rem; color:var(--text-muted); background:rgba(0,0,0,0.35); border:1px solid var(--glass-border); border-radius:999px; padding:4px 10px; font-family:"Courier New",monospace; }
+    .payout-chip strong { color:var(--text-main); font-weight:700; }
+    /* Ledger, promoted: top of settings rather than buried in the button
+       stack, and carrying its own net so it reads as a figure you have
+       rather than another place to go. */
+    .settings-ledger-card { width:100%; display:flex; align-items:center; gap:12px; text-align:left; background:rgba(61,135,103,0.08); border:1px solid rgba(61,135,103,0.45); border-left:3px solid var(--accent-green); border-radius:8px; padding:12px 13px; margin-bottom:16px; cursor:pointer; font-family:inherit; transition:background 0.2s, border-color 0.2s; }
+    .settings-ledger-card:hover { background:rgba(61,135,103,0.16); border-color:var(--accent-green); }
+    .slc-icon { font-size:1.15rem; flex-shrink:0; }
+    .slc-text { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+    .slc-text strong { font-size:0.8rem; font-weight:800; letter-spacing:0.12em; color:var(--accent-green); }
+    .slc-sub { font-size:0.68rem; line-height:1.4; color:var(--text-muted); }
+    .slc-net { font-family:"Courier New",monospace; font-weight:800; font-size:0.88rem; flex-shrink:0; }
+    /* Permanent seat next to the gear, on every tab. */
+    .top-bar-actions { display:flex; align-items:center; gap:8px; }
+    .btn-ledger-quick { display:flex; align-items:center; gap:6px; background:transparent; border:none; color:var(--text-muted); font-size:1.05rem; font-family:inherit; cursor:pointer; padding:4px; transition:all 0.2s; }
+    .btn-ledger-quick:hover { color:var(--accent-green); }
+    .ledger-quick-net { font-family:"Courier New",monospace; font-weight:800; font-size:0.72rem; }
     .icon-x { background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:0.8rem; padding:2px 4px; flex-shrink:0; }
     .icon-x:hover { color:var(--accent-pink); }
     .guide-sec { border:1px solid var(--glass-border); border-radius:8px; margin-bottom:9px; overflow:hidden; }
