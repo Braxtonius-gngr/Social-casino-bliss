@@ -1464,33 +1464,90 @@
    off the bottom edge of the primary CTA, the one button every visit
    passes through. Built as a clip-path shape - hard torn points, not a
    gradient smear - so it reads as viscera without ever being literal
-   imagery, matching the theme's flat/no-blur rule. Steps() timing keeps
-   the "grow, hold, gone" motion abrupt instead of a smooth ooze. */
+   imagery, matching the theme's flat/no-blur rule.
+   Two-tier by design, not just when enabled: a faint dried-stain base
+   sits there always (even "NOTHING READY YET" - the button was used
+   recently, the stain doesn't vanish because nothing's ready right now),
+   with a much bigger, richer swell layered on top only while there's
+   something to collect. The old version was gated entirely behind
+   :not(:disabled), so on a device that's mostly "nothing ready" (which
+   is most of the time, by design) it was rarely even in the DOM's
+   visible state - the "I only saw it once" complaint was a reliability
+   bug, not just a subtlety one. Shorter cycle (5s vs 7s) and a taller,
+   more varied-depth shape than before for more presence when it's on. */
 [data-theme="western"] .btn-start-run { position: relative; overflow: visible; }
-[data-theme="western"] .btn-start-run:not(:disabled)::after {
+[data-theme="western"] .btn-start-run::after {
   content: '';
   position: absolute;
-  left: 10%; right: 10%; bottom: -9px;
-  height: 9px;
-  background: #6b0000;
+  left: 6%; right: 6%; bottom: -15px;
+  height: 15px;
+  background: #5a0000;
   clip-path: polygon(
-    0% 0%, 7% 0%, 9% 55%, 13% 100%, 17% 50%, 21% 0%,
-    29% 0%, 32% 75%, 36% 100%, 40% 35%, 43% 0%,
-    54% 0%, 57% 100%, 61% 45%, 65% 0%,
-    74% 0%, 77% 65%, 81% 100%, 85% 25%, 89% 0%,
-    100% 0%, 100% 0%, 0% 0%
+    0% 0%, 5% 0%, 6% 40%, 9% 100%, 12% 35%, 15% 0%,
+    21% 0%, 23% 70%, 26% 100%, 28% 20%, 31% 0%,
+    38% 0%, 40% 55%, 43% 100%, 46% 45%, 49% 0%,
+    56% 0%, 58% 85%, 61% 100%, 64% 15%, 67% 0%,
+    73% 0%, 75% 60%, 78% 100%, 81% 30%, 84% 0%,
+    91% 0%, 93% 75%, 96% 100%, 98% 25%, 100% 0%,
+    100% 0%, 0% 0%
   );
   transform-origin: top;
-  opacity: 0;
+  opacity: 0.3;
+  transform: scaleY(0.3);
   pointer-events: none;
-  animation: blood-drip 7s steps(3, end) infinite;
+}
+[data-theme="western"] .btn-start-run:not(:disabled)::after {
+  animation: blood-drip 5s steps(5, end) infinite;
 }
 @keyframes blood-drip {
-  0%, 58% { opacity: 0; transform: scaleY(0.25); }
-  63% { opacity: 1; transform: scaleY(0.25); }
-  86% { opacity: 1; transform: scaleY(1); }
-  100% { opacity: 0; transform: scaleY(1); }
+  0%, 42% { opacity: 0.3; transform: scaleY(0.3); }
+  50% { opacity: 0.75; transform: scaleY(0.55); }
+  64% { opacity: 1; transform: scaleY(0.85); }
+  80% { opacity: 1; transform: scaleY(1); }
+  92% { opacity: 0.5; transform: scaleY(0.5); }
+  100% { opacity: 0.3; transform: scaleY(0.3); }
 }
+
+/* Blood splatter burst: the reliably-seen counterpart to the drip above -
+   fires on body.screen-shake-active, the same hook already driving the
+   muzzle flash and ember burst on every collect (see screenShake() in
+   the main script), so it's guaranteed to actually be seen instead of
+   depending on catching an ambient loop mid-cycle. Circular splatter
+   dots via radial-gradient, not a soft splash - flat-edged like every
+   other mark in this theme - scattered across the upper screen, quick
+   punch in and slow fade-settle out. Uses .app-container::before, the
+   one pseudo-slot on that element not already claimed (::after is the
+   hellscape-static layer below). */
+[data-theme="western"] .app-container::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  pointer-events: none;
+  opacity: 0;
+}
+[data-theme="western"] body.screen-shake-active .app-container::before {
+  opacity: 1;
+  background:
+    radial-gradient(circle 3px at 18% 24%, #810000 99%, transparent 100%),
+    radial-gradient(circle 6px at 64% 14%, #6b0000 99%, transparent 100%),
+    radial-gradient(circle 2px at 36% 9%, #810000 99%, transparent 100%),
+    radial-gradient(circle 4px at 82% 28%, #6b0000 99%, transparent 100%),
+    radial-gradient(circle 2px at 9% 36%, #810000 99%, transparent 100%),
+    radial-gradient(circle 7px at 52% 19%, #4a0000 99%, transparent 100%),
+    radial-gradient(circle 3px at 27% 41%, #6b0000 99%, transparent 100%),
+    radial-gradient(circle 2px at 91% 12%, #810000 99%, transparent 100%),
+    radial-gradient(circle 5px at 45% 33%, #5a0000 99%, transparent 100%),
+    radial-gradient(circle 2px at 71% 38%, #810000 99%, transparent 100%);
+  animation: splatter-burst 0.7s ease-out both;
+}
+@keyframes splatter-burst {
+  0% { opacity: 0; transform: scale(0.25); }
+  12% { opacity: 1; transform: scale(1.2); }
+  30% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.35); }
+}
+[data-motion="off"] body.screen-shake-active .app-container::before { animation: none; opacity: 0; }
 
 /* Heartbeat: the ready-count medallion gets a lub-dub double-thump
    instead of sitting static - something alive (or dying) up top, not
@@ -1504,11 +1561,16 @@
   56% { transform: scale(1); }
 }
 
-/* Hellscape static: a rare (~30s), brief (~1s) full-viewport signal-
-   corruption sting - a red scanline pattern slammed on/off with a couple
-   of hard horizontal jolts, like the whole screen briefly loses its grip.
-   steps(1,end) on the parent keyframe + short-lived opacity spikes keep
-   it a jolt, not a flicker loop - deliberately rare enough to still
+/* Hellscape static: a rare (~24s), brief (~1.3s) full-viewport signal-
+   corruption sting - a red scanline pattern slammed on/off with several
+   hard horizontal jolts and one blown-out white-hot frame (filter:
+   brightness, not a color swap - mix-blend-mode itself doesn't
+   interpolate, but a brightness/contrast spike on the same red pattern
+   reads as the signal overloading rather than just flickering), like
+   the whole screen briefly loses its grip. steps(1,end) on the parent
+   keyframe + short-lived opacity spikes keep it a jolt, not a flicker
+   loop - shortened from the original 31s and given one more jump since
+   this was the effect that actually landed; still rare enough to stay a
    startle rather than become wallpaper. */
 [data-theme="western"] .app-container::after {
   content: '';
@@ -1523,13 +1585,15 @@
   );
   mix-blend-mode: multiply;
   opacity: 0;
-  animation: hellscape-static 31s steps(1, end) infinite;
+  animation: hellscape-static 24s steps(1, end) infinite;
 }
 @keyframes hellscape-static {
-  0%, 96.5% { opacity: 0; transform: translate3d(0, 0, 0); }
-  96.6% { opacity: 0.55; transform: translate3d(-8px, 0, 0); }
-  96.8% { opacity: 0.1; transform: translate3d(5px, 0, 0); }
-  97.0% { opacity: 0.6; transform: translate3d(-4px, 2px, 0); }
-  97.3% { opacity: 0.15; transform: translate3d(0, 0, 0); }
-  97.5%, 100% { opacity: 0; transform: translate3d(0, 0, 0); }
+  0%, 96.0% { opacity: 0; transform: translate3d(0, 0, 0); filter: brightness(1); }
+  96.1% { opacity: 0.5; transform: translate3d(-9px, 0, 0); filter: brightness(1); }
+  96.3% { opacity: 0.1; transform: translate3d(6px, 0, 0); filter: brightness(1); }
+  96.5% { opacity: 0.95; transform: translate3d(0, -3px, 0); filter: brightness(2.4) contrast(1.4); }
+  96.65% { opacity: 0.2; transform: translate3d(-5px, 0, 0); filter: brightness(1); }
+  96.85% { opacity: 0.6; transform: translate3d(4px, 2px, 0); filter: brightness(1); }
+  97.1% { opacity: 0.15; transform: translate3d(0, 0, 0); filter: brightness(1); }
+  97.3%, 100% { opacity: 0; transform: translate3d(0, 0, 0); filter: brightness(1); }
 }
