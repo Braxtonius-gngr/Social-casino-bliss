@@ -48,6 +48,9 @@
     <h1 class="landing-title">The Casino<br><span>Almanac</span></h1>
     <p class="landing-subtitle">DAILY DROPS &bull; TIMERS &bull; REDEMPTIONS</p>
     <button class="landing-btn" onclick="dismissLanding()" aria-label="Enter app">ENTER DECK &rarr;</button>
+    <div class="burn-holes" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
     </div>
   </div>
 
@@ -75,17 +78,21 @@
 
     <div class="hero-stat-card glass-panel">
       <div class="hero-ring-wrapper">
-        <div class="hero-ring-circle" id="heroCount">0</div>
+        <!-- Now the trigger for the stats popout, not just decoration -
+             tap the number to reveal ready/cooldown/next-batch detail,
+             since that text doesn't need to sit on screen permanently. -->
+        <div class="hero-ring-circle" id="heroCount" role="button" tabindex="0" aria-expanded="false" aria-controls="heroDetailsPopout" onclick="toggleHeroDetails()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleHeroDetails();}">0</div>
       </div>
-      <!-- Lives in the same row as the ring's attention pulse, filling the
-           space next to the numbers rather than a full-width bar of its
-           own - reachable from every tab since the hero card sits outside
-           the switched sections. -->
+      <!-- Lives in the same row as the ring, right by the numbers - the
+           one thing meant to stay visible here, reachable from every tab
+           since the hero card sits outside the switched sections. -->
       <div class="hero-details">
-        <h2 id="heroReadyText">0 ready to collect</h2>
-        <p><span id="heroCooldownText">0 on cooldown</span> &bull; <span id="heroDoneText">0 done today</span></p>
-        <p id="nextBatch" class="next-batch"></p>
         <button class="btn-start-run hero-run-btn" id="btnStartDailyRun" onclick="startDailyRun()" disabled>NOTHING READY YET</button>
+        <div class="hero-details-popout" id="heroDetailsPopout">
+          <h2 id="heroReadyText">0 ready to collect</h2>
+          <p><span id="heroCooldownText">0 on cooldown</span> &bull; <span id="heroDoneText">0 done today</span></p>
+          <p id="nextBatch" class="next-batch"></p>
+        </div>
       </div>
     </div>
 
@@ -1653,6 +1660,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       saveViewState();
     }
 
+    function toggleHeroDetails() {
+      const el = document.getElementById('heroDetailsPopout');
+      const ring = document.getElementById('heroCount');
+      if (!el) return;
+      const open = el.classList.toggle('open');
+      if (ring) ring.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
     function updateHeroStats() {
       const total = trackedGames.length;
       const ready = trackedGames.filter(g => getCooldownState(g).isReady).length;
@@ -2052,7 +2067,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         setTimeout(() => {
           screen.classList.add('hidden');
           screen.classList.remove('burning');
-        }, 850);
+        }, 1550);
       } else {
         screen.classList.add('hidden');
       }
@@ -2063,7 +2078,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // interval tick for someone who just walked in the door.
       kickSync();
       if (!localStorage.getItem('almanac_tour_completed')) {
-        setTimeout(startTour, burnEligible ? 900 : 300);
+        setTimeout(startTour, burnEligible ? 1600 : 300);
       } else {
         const main = document.getElementById('main-content');
         if (main) main.focus();

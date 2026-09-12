@@ -62,10 +62,17 @@
     .app-title span { -webkit-text-stroke: 1.2px var(--accent-pink); text-shadow: 0 0 15px rgba(255, 0, 127, 0.5); }
 
     .hero-stat-card { border-radius: 20px; padding: 20px; display: flex; align-items: center; gap: 18px; margin-bottom: 20px; }
-    .btn-start-run.hero-run-btn { width: auto; margin: 6px 0 0; padding: 6px 2px; font-size: 0.85rem; text-align: left; }
+    .btn-start-run.hero-run-btn { width: auto; margin: 0; padding: 6px 2px; font-size: 0.85rem; text-align: left; }
     .hero-ring-wrapper { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
-    .hero-ring-circle { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--accent-green); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; color: #ffffff; background: rgba(0, 255, 102, 0.05); box-shadow: 0 0 20px rgba(0, 255, 102, 0.4), inset 0 0 15px rgba(0, 255, 102, 0.3); text-shadow: 0 0 10px rgba(0, 255, 102, 0.8); }
-    .hero-details h2 { font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 4px; text-shadow: 0 0 5px #fff, 0 0 15px var(--accent-orange); }
+    .hero-ring-circle { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--accent-green); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; color: #ffffff; background: rgba(0, 255, 102, 0.05); box-shadow: 0 0 20px rgba(0, 255, 102, 0.4), inset 0 0 15px rgba(0, 255, 102, 0.3); text-shadow: 0 0 10px rgba(0, 255, 102, 0.8); cursor: pointer; }
+    /* Popout: collapsed by default, tapping the ring number reveals it -
+       the ring used to just sit there looking pretty; now it's the way
+       in to this detail instead of the detail being permanently on
+       screen. Height-animated (not display:none/block) so it opens and
+       closes instead of snapping. */
+    .hero-details-popout { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    .hero-details-popout.open { max-height: 160px; }
+    .hero-details h2 { font-size: 1.15rem; font-weight: 800; color: #fff; margin: 8px 0 4px; text-shadow: 0 0 5px #fff, 0 0 15px var(--accent-orange); }
     .hero-details p { font-size: 0.78rem; color: var(--accent-cyan); font-family: "Courier New", Courier, monospace; text-shadow: 0 0 8px rgba(0, 229, 255, 0.5); }
 
     .nav-pill-group { display: flex; gap: 6px; margin-bottom: 12px; padding: 6px; border-radius: 30px; }
@@ -1319,33 +1326,36 @@
   perspective: 900px;
 }
 [data-theme="western"] .hero-stat-card {
+  /* Dark, same as every other card in this theme (the bone-white
+     "wanted poster" treatment this had before reads as the wrong
+     surface here - that look belongs to the landing card, not a card
+     that sits on screen throughout the app). */
   position: relative;
   overflow: hidden;
-  background: var(--text-main);
-  color: #0B0B0B;
   transform: rotate(-0.8deg);
-  box-shadow: 7px 7px 0 #0B0B0B;
 }
 [data-theme="western"] .hero-stat-card::before,
 [data-theme="western"] .hero-stat-card::after {
   content: '';
   position: absolute;
   pointer-events: none;
-  border: 2px solid rgba(129, 0, 0, 0.35);
+  border: 2px solid rgba(129, 0, 0, 0.4);
   border-radius: 50%;
 }
 [data-theme="western"] .hero-stat-card::before { width: 210px; height: 210px; right: -90px; top: -80px; }
-[data-theme="western"] .hero-stat-card::after { width: 145px; height: 145px; right: -56px; top: -48px; border-color: rgba(11, 11, 11, 0.35); }
-[data-theme="western"] .hero-details h2,
-[data-theme="western"] .hero-details p { color: #0B0B0B; }
-[data-theme="western"] .hero-details p { opacity: 0.72; }
+[data-theme="western"] .hero-stat-card::after { width: 145px; height: 145px; right: -56px; top: -48px; border-color: rgba(227, 218, 201, 0.18); }
+[data-theme="western"] .hero-details h2 { color: var(--text-main); text-shadow: 1px 1px 0 #0B0B0B; }
+[data-theme="western"] .hero-details p { color: var(--text-muted); }
 [data-theme="western"] .hero-ring-circle {
   position: relative;
   z-index: 1;
   border-radius: 50%;
   background: #810000;
   color: var(--text-main);
-  border: 5px double #0B0B0B;
+  /* Gold, not black - a black ring edge all but disappeared against
+     this card's own dark grey fill. Reads as a branding-iron/badge
+     ring now instead of vanishing into the background. */
+  border: 5px double var(--accent-gold);
   box-shadow: 4px 4px 0 #0B0B0B, inset 0 0 0 5px rgba(227, 218, 201, 0.18);
 }
 [data-theme="western"] .nav-pill-group {
@@ -1753,28 +1763,47 @@
 }
 [data-motion="off"] [data-theme="western"] .landing-screen::after { animation: none; }
 
-/* Burn transition: "Enter Deck" doesn't just fade the wanted poster out,
-   it catches fire - char/curl on the card itself, a smoke plume off its
-   base, embers punching up through it - so first contact with the app
-   already reads as this theme's world instead of a plain screen swap.
-   Driven by .burning, added in dismissLanding() only when the theme is
-   western and motion isn't off; .hidden (the existing fade) still lands
-   right after, once the burn's had time to play. */
+/* Burn transition: "Enter Deck" doesn't just fade the wanted poster out -
+   it burns from the underside like old parchment, dark char holes
+   ripping open as the flame front works upward, before the card
+   disappears entirely. Three layers do the work: a mask-image wipe on
+   .landing-inner itself (the actual "paper disappearing from the
+   bottom up" - two gradient keyframes are enough since compatible
+   gradients interpolate their stop positions natively), the .burn-holes
+   spans (irregular blob shapes, not circles, that pop open at staggered
+   times low on the card - the "holes ripping through"), and the
+   existing smoke/ember pseudo-elements retimed to match. Driven by
+   .burning, added in dismissLanding() only when the theme is western
+   and motion isn't off; .hidden (the existing fade) lands right after,
+   once this has had time to play. */
 [data-theme="western"] .landing-screen.burning {
-  animation: landing-burn-glow 0.85s ease-out both;
+  animation: landing-burn-glow 1.5s ease-out both;
 }
 @keyframes landing-burn-glow {
-  0%, 100% { background: radial-gradient(140% 100% at 50% 30%, #810000 0%, #3a0000 45%, #0B0B0B 90%); }
-  35% { background: radial-gradient(140% 100% at 50% 30%, #FF6600 0%, #810000 40%, #0B0B0B 90%); }
+  0% { background: radial-gradient(140% 100% at 50% 30%, #810000 0%, #3a0000 45%, #0B0B0B 90%); }
+  45% { background: radial-gradient(140% 100% at 50% 55%, #FF6600 0%, #810000 40%, #0B0B0B 90%); }
+  100% { background: radial-gradient(140% 100% at 50% 70%, #FF6600 0%, #3a0000 40%, #0B0B0B 85%); }
 }
 [data-theme="western"] .landing-screen.burning .landing-inner {
-  animation: landing-burn-card 0.85s ease-in forwards;
+  animation: landing-burn-card 1.5s ease-in forwards,
+             landing-burn-wipe 1.5s ease-in forwards;
 }
 @keyframes landing-burn-card {
   0% { filter: none; transform: rotate(-0.6deg) scale(1); opacity: 1; }
-  30% { filter: sepia(0.4) brightness(0.92) contrast(1.05); }
-  60% { filter: sepia(0.7) brightness(0.55) contrast(1.3); transform: rotate(-1.4deg) scale(0.97); }
-  100% { filter: sepia(1) brightness(0.15) contrast(1.6) blur(2px); transform: rotate(-4deg) scale(0.82); opacity: 0; }
+  20% { filter: sepia(0.3) brightness(1.08) contrast(1.05); }
+  45% { filter: sepia(0.55) brightness(0.85) contrast(1.15); transform: rotate(-1deg) scale(0.99); }
+  75% { filter: sepia(0.85) brightness(0.45) contrast(1.35); transform: rotate(-2.2deg) scale(0.94); }
+  100% { filter: sepia(1) brightness(0.1) contrast(1.6) blur(3px); transform: rotate(-5deg) scale(0.8); opacity: 0; }
+}
+/* clip-path inset() eats the card away from the bottom edge upward -
+   tried a mask-image gradient wipe first, but gradient stop-position
+   keyframes don't reliably interpolate for mask-image (confirmed via
+   computed-style sampling: it held at the start value then hard-cut to
+   the end value partway through instead of animating), where a plain
+   length/percentage like inset() animates smoothly as expected. */
+@keyframes landing-burn-wipe {
+  0% { -webkit-clip-path: inset(0 0 0% 0); clip-path: inset(0 0 0% 0); }
+  100% { -webkit-clip-path: inset(0 0 100% 0); clip-path: inset(0 0 100% 0); }
 }
 [data-theme="western"] .landing-screen.burning .landing-inner::before {
   display: block;
@@ -1785,12 +1814,13 @@
   opacity: 0;
   pointer-events: none;
   z-index: 3;
-  animation: landing-burn-smoke 0.85s ease-out forwards;
+  animation: landing-burn-smoke 1.5s ease-out forwards;
 }
 @keyframes landing-burn-smoke {
   0% { opacity: 0; transform: translateY(10%) scale(0.8); }
+  10% { opacity: 0; }
   30% { opacity: 0.85; }
-  100% { opacity: 0; transform: translateY(-60%) scale(1.6); }
+  100% { opacity: 0; transform: translateY(-70%) scale(1.9); }
 }
 [data-theme="western"] .landing-screen.burning .landing-inner::after {
   content: '';
@@ -1805,13 +1835,48 @@
     radial-gradient(circle 2px at 30% 92%, #FFC107 99%, transparent 100%),
     radial-gradient(circle 2px at 85% 78%, #810000 99%, transparent 100%);
   opacity: 0;
-  animation: landing-burn-embers 0.85s ease-out forwards;
+  animation: landing-burn-embers 1.5s ease-out forwards;
 }
 @keyframes landing-burn-embers {
-  0% { opacity: 0; transform: translateY(0); }
-  20% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-140%); }
+  0%, 15% { opacity: 0; transform: translateY(0); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-160%); }
 }
+
+/* Burn holes: irregular (non-circular) blobs that pop open low on the
+   card at staggered times, each a dark charred core with a glowing
+   orange/gold rim - an opaque overlay, not a real cutout, but reads the
+   same to the eye since nothing behind it needs to show through. Base
+   rule (all themes) keeps them invisible outside the western burn. */
+.burn-holes { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 5; }
+.burn-holes span {
+  position: absolute;
+  width: 40px; height: 40px;
+  border-radius: 42% 58% 53% 47% / 48% 44% 56% 52%;
+  transform: scale(0) rotate(0deg);
+  opacity: 0;
+}
+[data-theme="western"] .landing-screen.burning .burn-holes span {
+  background: radial-gradient(circle, #0B0B0B 0%, #0B0B0B 34%, #C1121F 48%, #FFC107 60%, transparent 76%);
+  animation: burn-hole-pop 1.1s ease-out forwards;
+}
+@keyframes burn-hole-pop {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: scale(1.1) rotate(10deg); opacity: 1; }
+}
+.burn-holes span:nth-child(1) { left: 14%; bottom: 8%;  width: 46px; height: 46px; }
+.burn-holes span:nth-child(2) { left: 58%; bottom: 4%;  width: 62px; height: 62px; }
+.burn-holes span:nth-child(3) { left: 33%; bottom: 24%; width: 36px; height: 36px; }
+.burn-holes span:nth-child(4) { left: 76%; bottom: 16%; width: 50px; height: 50px; }
+.burn-holes span:nth-child(5) { left: 48%; bottom: 44%; width: 32px; height: 32px; }
+.burn-holes span:nth-child(6) { left: 20%; bottom: 50%; width: 42px; height: 42px; }
+[data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(1) { animation-delay: 0.05s; }
+[data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(2) { animation-delay: 0.2s; }
+[data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(3) { animation-delay: 0.45s; }
+[data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(4) { animation-delay: 0.3s; }
+[data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(5) { animation-delay: 0.65s; }
+[data-theme="western"] .landing-screen.burning .burn-holes span:nth-child(6) { animation-delay: 0.55s; }
 
 /* ---------------------------------------------------------------
    Daily Run overlay: had ZERO Boot Hill treatment before this - it
