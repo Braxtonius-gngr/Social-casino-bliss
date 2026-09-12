@@ -50,6 +50,7 @@
     <button class="landing-btn" onclick="dismissLanding()" aria-label="Enter app">ENTER DECK &rarr;</button>
     <div class="burn-holes" aria-hidden="true">
       <span></span><span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span>
     </div>
     </div>
   </div>
@@ -2067,6 +2068,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         setTimeout(() => {
           screen.classList.add('hidden');
           screen.classList.remove('burning');
+          // A burst through the app's own ambient smoke layer, timed to
+          // the exact moment the poster is gone - bridges the cut with
+          // smoke instead of the app just snapping into view under it.
+          const smoke = document.getElementById('smokeField');
+          if (smoke) {
+            smoke.classList.add('burst');
+            setTimeout(() => smoke.classList.remove('burst'), 1200);
+          }
         }, 1550);
       } else {
         screen.classList.add('hidden');
