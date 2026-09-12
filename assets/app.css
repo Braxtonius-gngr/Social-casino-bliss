@@ -160,6 +160,9 @@
 
     /* ---- Landing circuit board ---- */
     #circuitBg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; transition: opacity .6s ease; }
+
+    /* ---- Ember field (Boot Hill only, see THEME: Western below) ---- */
+    #emberField { position: fixed; inset: 0; z-index: 1; opacity: 0; pointer-events: none; transition: opacity .6s ease; overflow: hidden; }
     [data-theme="prism"] .landing-inner::before {
       background: radial-gradient(ellipse 78% 62% at 50% 50%, rgba(10,11,8,0.985) 0%, rgba(10,11,8,0.95) 50%, rgba(10,11,8,0.75) 74%, transparent 90%);
     }
@@ -1358,7 +1361,7 @@
   inset: 0;
   z-index: 1000;
   pointer-events: none;
-  background: #fff;
+  background: radial-gradient(120% 100% at 50% 45%, #fff 0%, #FFC107 38%, #810000 78%, transparent 100%);
   animation: recoil-flash 0.4s steps(2, end) both;
 }
 @keyframes recoil-flash {
@@ -1377,3 +1380,76 @@
 }
 [data-motion="off"] body.screen-shake-active::after,
 [data-motion="off"] body.screen-shake-active .app-container { animation: none; }
+
+/* Ember field: ash/spark motes drifting up through the whole app, like
+   embers rising off a burning wanted poster. Hard-edged squares (not soft
+   neon dots) to stay in the brutalist/ransom-note family - each one gets a
+   very small point-light blur since a flat, unblurred 3px square just
+   reads as a bug rather than a spark. Ten static spans (same static-DOM
+   approach as #circuitBg above) with nth-child driving the per-ember
+   spread instead of per-element inline styles. */
+[data-theme="western"] #emberField { opacity: 1; z-index: 1; }
+[data-theme="western"] #emberField span {
+  position: absolute;
+  bottom: -5%;
+  width: 3px; height: 3px;
+  background: var(--accent-gold);
+  box-shadow: 0 0 3px 1px rgba(255, 193, 7, 0.85);
+  opacity: 0;
+  animation: ember-rise 9s linear infinite;
+}
+[data-theme="western"] #emberField span:nth-child(1)  { left: 6%;  width: 2px; height: 2px; animation-duration: 7.5s; animation-delay: 0s; }
+[data-theme="western"] #emberField span:nth-child(2)  { left: 16%; animation-duration: 9.5s; animation-delay: 1.1s; background: var(--accent-pink); box-shadow: 0 0 3px 1px rgba(129, 0, 0, 0.85); }
+[data-theme="western"] #emberField span:nth-child(3)  { left: 27%; width: 2px; height: 2px; animation-duration: 8.2s; animation-delay: 2.4s; }
+[data-theme="western"] #emberField span:nth-child(4)  { left: 38%; animation-duration: 10.5s; animation-delay: 0.6s; background: var(--accent-orange); box-shadow: 0 0 3px 1px rgba(193, 107, 44, 0.85); }
+[data-theme="western"] #emberField span:nth-child(5)  { left: 49%; width: 2px; height: 2px; animation-duration: 7.8s; animation-delay: 3.5s; }
+[data-theme="western"] #emberField span:nth-child(6)  { left: 60%; animation-duration: 9s;   animation-delay: 1.8s; background: var(--accent-pink); box-shadow: 0 0 3px 1px rgba(129, 0, 0, 0.85); }
+[data-theme="western"] #emberField span:nth-child(7)  { left: 71%; width: 2px; height: 2px; animation-duration: 8.8s; animation-delay: 4.2s; }
+[data-theme="western"] #emberField span:nth-child(8)  { left: 82%; animation-duration: 10s;  animation-delay: 0.2s; background: var(--accent-orange); box-shadow: 0 0 3px 1px rgba(193, 107, 44, 0.85); }
+[data-theme="western"] #emberField span:nth-child(9)  { left: 91%; width: 2px; height: 2px; animation-duration: 7.2s; animation-delay: 2.9s; }
+[data-theme="western"] #emberField span:nth-child(10) { left: 50%; animation-duration: 11s;  animation-delay: 5s; background: var(--accent-pink); box-shadow: 0 0 3px 1px rgba(129, 0, 0, 0.85); }
+@keyframes ember-rise {
+  0%   { transform: translate3d(0, 0, 0); opacity: 0; }
+  8%   { opacity: 0.9; }
+  55%  { opacity: 0.55; }
+  92%  { transform: translate3d(14px, -92vh, 0); opacity: 0; }
+  100% { transform: translate3d(14px, -92vh, 0); opacity: 0; }
+}
+/* A recoil burst speeds every ember through its rise in one sharp puff,
+   the same "short and consequential over continuous" hit that the flash
+   and chamber-recoil already lean on. */
+[data-theme="western"] body.screen-shake-active #emberField span {
+  animation-name: ember-burst;
+  animation-duration: 0.6s;
+  animation-delay: 0s;
+  animation-timing-function: ease-out;
+}
+@keyframes ember-burst {
+  0%   { transform: translate3d(0, 0, 0) scale(1); opacity: 0.95; }
+  100% { transform: translate3d(14px, -18vh, 0) scale(0.6); opacity: 0; }
+}
+
+/* Torch-flicker: the vignette (body::after, set above) throbs irregularly
+   like firelight instead of sitting flat - harsh stepped opacity jumps
+   rather than a smooth glow pulse, to match the grindhouse/film-print
+   aesthetic rather than a soft ambient light source. */
+[data-theme="western"] body::after { animation: torch-flicker 5s steps(1, end) infinite; }
+@keyframes torch-flicker {
+  0%, 100% { opacity: 1; }
+  8%  { opacity: 0.86; }
+  17% { opacity: 1; }
+  24% { opacity: 0.92; }
+  40% { opacity: 1; }
+  52% { opacity: 0.8; }
+  61% { opacity: 1; }
+  78% { opacity: 0.9; }
+  86% { opacity: 1; }
+}
+
+/* Smolder: the top tier badge reads as "hot" - a slow, hard-edged (no
+   blur radius change, just color) pulse between two embers of red. */
+[data-theme="western"] .tier-S { animation: smolder 3.4s ease-in-out infinite; }
+@keyframes smolder {
+  0%, 100% { background: var(--tier-s); }
+  50% { background: #C1121F; }
+}
