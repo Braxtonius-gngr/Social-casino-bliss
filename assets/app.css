@@ -589,9 +589,24 @@
     .user-note strong { color: var(--accent-orange); }
     .tag-pill { display:inline-block; font-size:0.62rem; font-weight:700; padding:2px 7px; margin-right:4px; border-radius:3px; background:rgba(255,255,255,0.06); border:1px solid var(--glass-border); color:var(--text-muted); }
     .tag-chip.active { border-color: var(--accent-orange); color: var(--accent-orange); background: rgba(255,138,31,0.12); }
-    .streak-badge { font-size: 0.6rem; font-weight: 800; padding: 1px 6px; border-radius: 3px; background: rgba(255,138,31,0.14); color: var(--accent-orange); border: 1px solid var(--accent-orange); letter-spacing: 0.04em; }
+    /* Pinned to the avatar's corner rather than sitting inline in the
+       title row - inline, it was one more item for that flex-wrap row
+       to fit, so a platform with a streak silently got a taller card
+       than one without (wrapped to a second line once name+tier+LIVE+
+       streak didn't fit one line). A corner badge can't affect row
+       height at all, so every card in the list stays the same size
+       whether or not it happens to be showing a streak. */
+    .avatar-wrap { position: relative; flex-shrink: 0; }
+    .streak-badge {
+      position: absolute; top: -5px; right: -7px; z-index: 2;
+      font-size: 0.6rem; font-weight: 800; padding: 1px 5px; border-radius: 8px;
+      background: var(--accent-orange); color: #1a0f00;
+      border: 1px solid rgba(0,0,0,0.4);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      letter-spacing: 0.02em; line-height: 1.4;
+    }
     .btn-snooze:hover { border-color: var(--accent-orange); color: var(--accent-orange); }
-    body.dense .streak-badge { font-size: 0.55rem; padding: 0 4px; }
+    body.dense .streak-badge { font-size: 0.5rem; padding: 0 4px; top: -3px; right: -4px; }
     .ready-at { color: var(--text-dim); font-size: 0.7rem; font-family: "Courier New", monospace; }
     .btn-check { background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); border-radius: 8px; padding: 7px 10px; font-size: 0.9rem; cursor: pointer; flex-shrink: 0; line-height: 1; }
     .btn-check:hover { border-color: var(--accent-green); color: var(--accent-green); }
@@ -2056,17 +2071,31 @@
 [data-theme="western"] .run-cooldown-row span:first-child { color: var(--text-muted); }
 [data-theme="western"] .run-bestgames { border-top: 2px solid #0B0B0B; }
 
-/* The set-piece button: hard-edged blood-red/gold and a heavier smoke
-   curl than the nav button's. The pulsing outline this originally had
-   moved to .hero-ring-circle instead (see below) - on the numbers, not
-   the buttons, since that's where the attention-grabbing pulse actually
-   reads well; on a button it fought with the smoke and the press
-   feedback instead of adding anything. */
+/* The set-piece button: hard-edged blood-red/gold, a heavier smoke curl
+   than the nav button's, and now a gleam sweep across the gold face
+   itself - per feedback, this is the one button per run that most
+   deserves the eye, more than the ring at the top of the screen (which
+   keeps its own pulse independently). Same background-position sweep
+   technique as the hero CTA's text gleam, just painted on a filled
+   button face instead of clipped to text. */
 [data-theme="western"] .btn-run-collect {
   border-radius: 0; border: 3px solid #0B0B0B;
-  background: var(--accent-gold); color: #0B0B0B;
+  background-color: var(--accent-gold);
+  background-image: linear-gradient(115deg,
+    transparent 0%, transparent 38%,
+    rgba(255, 255, 255, 0.9) 50%,
+    transparent 62%, transparent 100%);
+  background-repeat: no-repeat;
+  background-size: 240% 100%;
+  background-position: 160% 0;
+  color: #0B0B0B;
   box-shadow: 4px 4px 0 #0B0B0B; text-shadow: none;
   position: relative; overflow: visible;
+  animation: btn-collect-gleam 1.8s linear infinite;
+}
+@keyframes btn-collect-gleam {
+  0% { background-position: 160% 0; }
+  100% { background-position: -60% 0; }
 }
 [data-theme="western"] .btn-run-collect::after {
   content: '';
@@ -2088,7 +2117,9 @@
 [data-motion="off"] [data-theme="western"] .run-avatar,
 [data-motion="off"] [data-theme="western"] .run-progress-fill,
 [data-motion="off"] [data-theme="western"] .btn-run-collect,
-[data-motion="off"] [data-theme="western"] .btn-run-collect::after { animation: none; }
+[data-motion="off"] [data-theme="western"] .btn-run-collect::after {
+  animation: none; background-position: 0 0;
+}
 
 /* Resources tab: rebuilt as three single-purpose cards (cheat sheet /
    icon glossary / grouped outbound links) instead of one dense card -

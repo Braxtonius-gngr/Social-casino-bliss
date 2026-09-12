@@ -1469,9 +1469,18 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // actually closed.
     const UNDO_TOAST_MS = 6000;
 
-    function markCollected(id, event) {
-      if (event) event.stopPropagation();
-      if (interceptForEmailGate(() => markCollected(id, event))) return;
+    // Shared by markCollected() and collect() - both mark a platform
+    // collected and both need the exact same undo (roll back lastCollected/
+    // snoozedUntil, remove the history entry, re-persist), so it lives in
+    // one place rather than twice. opensLink is the only real difference
+    // between the two call sites; onUndo is an extra hook a caller can run
+    // once the undo itself has completed (collectCurrentDailyRun() uses it
+    // to also rewind the run's own position/stats - see below).
+    // toastMs: how long the undo stays up - defaults to UNDO_TOAST_MS, but
+    // collectCurrentDailyRun() below asks for longer, since a run's
+    // "accidental tap, meant to skip" moment needs Undo to still be there
+    // a beat later, not just the standard window.
+    function collectWithUndo(id, opensLink, onUndo, toastMs) {
       const game = trackedGames.find(g => g.id === id);
       if (!game) return;
       const wasReady = getCooldownState(game).isReady;
@@ -1481,12 +1490,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // localStorage/exports actually persist.
       const prevCollected = game.lastCollected;
       const prevSnooze = game.snoozedUntil;
+      if (opensLink) window.open(game.url, '_blank');
       game.lastCollected = Date.now();
       delete game.snoozedUntil;
       logCollection(id);
       persist();
       hapticBuzz(40);
 
+      const ms = toastMs || UNDO_TOAST_MS;
       let undone = false;
       showToast(`${game.name} marked collected`, () => {
         undone = true;
@@ -1497,7 +1508,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
         if (removed) enqueueHistorySync(removed, true);
         persist();
-      });
+        if (onUndo) onUndo();
+      }, ms);
 
       // Deferred past the undo toast's own window, and skipped entirely if
       // the user already undid - a fix suggestion for a collection that no
@@ -1506,7 +1518,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       setTimeout(() => {
         if (undone) return;
         offerCooldownFix(game, wasReady, prevCollected);
-      }, UNDO_TOAST_MS + 300);
+      }, ms + 300);
+    }
+
+    function markCollected(id, event) {
+      if (event) event.stopPropagation();
+      if (interceptForEmailGate(() => markCollected(id, event))) return;
+      collectWithUndo(id, false);
     }
 
     // If you collect from something the app said wasn't ready yet, the stored
@@ -1530,21 +1548,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }, 9000, 'FIX TIMER');
     }
 
-    function collect(id) {
-      if (interceptForEmailGate(() => collect(id))) return;
-      const game = trackedGames.find(g => g.id === id);
-      if (!game) return;
-      const wasReady = getCooldownState(game).isReady;
-      const prevCollected = game.lastCollected;
-      window.open(game.url, '_blank');
-      game.lastCollected = Date.now();
-      delete game.snoozedUntil;
-      logCollection(id);
-      persist();
-      hapticBuzz(40);
-      // No competing toast on this path (collect() has no undo of its own
-      // today), so no need to defer here.
-      offerCooldownFix(game, wasReady, prevCollected);
+    // onUndo: optional, run once the undo itself has completed - see
+    // collectCurrentDailyRun() below, which uses it to also rewind the
+    // run's position when an accidental tap gets undone.
+    function collect(id, onUndo, toastMs) {
+      if (interceptForEmailGate(() => collect(id, onUndo, toastMs))) return;
+      collectWithUndo(id, true, onUndo, toastMs);
     }
 
     function renderGames() {
@@ -1598,13 +1607,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           <div class="ledger-card glass-panel ${isReady ? 'is-ready' : ''}" data-gid="${game.id}">
             <div class="cd-fill" style="width:${pct}%"></div>
             <div class="card-left">
-              <div class="casino-avatar" onclick="toggleKeenInfo('${game.id}', event)">${getInitials(game.name)}</div>
+              <div class="avatar-wrap">
+                <div class="casino-avatar" onclick="toggleKeenInfo('${game.id}', event)">${getInitials(game.name)}</div>
+                ${streaks[game.name] ? `<span class="streak-badge" title="${streaks[game.name]} days in a row">&#9650;${streaks[game.name]}</span>` : ''}
+              </div>
               <div class="card-body">
                 <div class="card-title-row">
                   <span class="casino-name">${game.name}</span>
                   <span class="tier-badge tier-${game.tier || 'Unranked'}">${game.tier || 'A'}</span>
                   ${game.hasLive ? '<span class="type-badge">LIVE</span>' : ''}
-                  ${streaks[game.name] ? `<span class="streak-badge" title="${streaks[game.name]} days in a row">&#9650;${streaks[game.name]}</span>` : ''}
                 </div>
                 <div class="card-status">
                   <span class="status-dot ${isReady ? '' : 'cooldown'}"></span>
@@ -4801,6 +4812,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       `;
     }
 
+    // Undo lingers longer here than the standard 6s (see collectWithUndo)
+    // and, unlike a plain list collect, also rewinds the run itself - back
+    // to this exact platform's card, stats decremented - so a mistap
+    // ("meant to skip, opened & collected instead") is actually
+    // recoverable, not just a data-level revert while the run's already
+    // moved on to the next one.
+    const DAILY_RUN_UNDO_TOAST_MS = 9000;
     function collectCurrentDailyRun() {
       // Gated here too, not just inside the collect() it calls below -
       // collect() bailing out on its own wouldn't stop this function from
@@ -4809,7 +4827,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (interceptForEmailGate(collectCurrentDailyRun)) return;
       const game = dailyRunQueue[dailyRunIndex];
       if (game) {
-        collect(game.id);
+        const collectedAtIndex = dailyRunIndex;
+        collect(game.id, () => {
+          dailyRunStats.collected--;
+          dailyRunIndex = collectedAtIndex;
+          renderDailyRunStep();
+        }, DAILY_RUN_UNDO_TOAST_MS);
         dailyRunStats.collected++;
         hapticBuzz([18, 24, 42]);
         screenShake();
