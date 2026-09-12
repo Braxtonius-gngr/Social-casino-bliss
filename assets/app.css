@@ -61,7 +61,9 @@
     .app-title { font-family: "Courier New", Courier, monospace; font-size: 2.3rem; font-weight: 900; color: transparent; -webkit-text-stroke: 1.2px var(--accent-cyan); margin-bottom: 24px; letter-spacing: -0.05em; text-transform: uppercase; text-shadow: 0 0 15px rgba(0, 229, 255, 0.5); text-align: center; }
     .app-title span { -webkit-text-stroke: 1.2px var(--accent-pink); text-shadow: 0 0 15px rgba(255, 0, 127, 0.5); }
 
-    .hero-stat-card { border-radius: 20px; padding: 20px; display: flex; align-items: center; gap: 18px; margin-bottom: 20px; }
+    .hero-stat-card { border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+    .hero-top-row { display: flex; align-items: center; gap: 18px; }
+    .btn-start-run.hero-run-btn { width: 100%; margin: 0; }
     .hero-ring-wrapper { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
     .hero-ring-circle { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--accent-green); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; color: #ffffff; background: rgba(0, 255, 102, 0.05); box-shadow: 0 0 20px rgba(0, 255, 102, 0.4), inset 0 0 15px rgba(0, 255, 102, 0.3); text-shadow: 0 0 10px rgba(0, 255, 102, 0.8); }
     .hero-details h2 { font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 4px; text-shadow: 0 0 5px #fff, 0 0 15px var(--accent-orange); }
@@ -164,7 +166,6 @@
        the rest of the app uses. */
     .docked-footer-inner { width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 10px; }
     .docked-footer-row { display: flex; justify-content: center; gap: 12px; }
-    .docked-footer .btn-start-run { margin-bottom: 0; }
     .btn-dock { flex: 1; max-width: 240px; padding: 12px 16px; background: rgba(0,0,0,0.6); border: 1px solid var(--accent-cyan); border-radius: 12px; color: #fff; font-size: 0.9rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; text-shadow: 0 0 5px var(--accent-cyan); box-shadow: inset 0 0 10px rgba(0, 229, 255, 0.2); }
     .btn-dock:hover { background: var(--accent-cyan-dim); box-shadow: 0 0 15px rgba(0, 229, 255, 0.4), inset 0 0 15px rgba(0, 229, 255, 0.4); }
 
@@ -502,7 +503,7 @@
        properties so layout changes stay instant. */
     body, .glass-panel, .ledger-card, .catalog-item-row, .sheet-modal,
     .nav-tab, .filter-btn, .btn-open, .btn-primary, .btn-dock, .tier-badge,
-    .casino-avatar, .res-brief, .res-tile, .hero-ring-circle, .docked-footer {
+    .casino-avatar, .res-brief, .res-ext-link, .hero-ring-circle, .docked-footer {
       transition: background-color .45s ease, background-image .45s ease,
                   border-color .45s ease, color .45s ease, box-shadow .45s ease;
     }
@@ -528,14 +529,14 @@
     /* Springy press feedback on every primary control. */
     .btn-open, .btn-primary, .btn-dock, .btn-cancel, .btn-danger,
     .nav-tab, .filter-btn, .sort-trigger-btn, .btn-share, .theme-card,
-    .res-tile, .btn-run-collect, .btn-start-run, .sort-option-btn {
+    .res-ext-link, .btn-run-collect, .btn-start-run, .sort-option-btn {
       transition: transform .13s cubic-bezier(.34,1.56,.64,1),
                   background-color .25s ease, border-color .25s ease,
                   box-shadow .25s ease, color .25s ease;
     }
     .btn-open:active, .btn-primary:active, .btn-dock:active, .btn-cancel:active,
     .btn-danger:active, .nav-tab:active, .filter-btn:active, .sort-trigger-btn:active,
-    .btn-share:active, .theme-card:active, .res-tile:active,
+    .btn-share:active, .theme-card:active, .res-ext-link:active,
     .btn-run-collect:active, .btn-start-run:active, .sort-option-btn:active {
       transform: scale(.965);
     }
@@ -605,29 +606,40 @@
 
     .theme-swatch { width: 15px; height: 15px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.25); }
 
-    /* Resources */
-    .res-brief { border-radius: 14px; padding: 18px; margin-bottom: 22px; }
+    /* Resources - three cards with one job each: a read-first cheat
+       sheet, a separate UI-icon glossary, and outbound links grouped by
+       kind (a section label above each group, not a repeated badge
+       inside every identical-looking tile). */
+    .res-brief { border-radius: 14px; padding: 18px; margin-bottom: 16px; }
     .res-brief-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent-gold); margin-bottom: 10px; }
-    .res-brief-lead { font-size: 0.88rem; line-height: 1.55; color: var(--text-main); margin-bottom: 18px; }
-    .tactic-grid { display: flex; flex-direction: column; }
-    .tactic { display: grid; grid-template-columns: 26px 1fr; grid-template-rows: auto auto; gap: 0 12px; padding: 13px 0; border-top: 1px solid var(--glass-border); text-decoration: none; }
-    .tactic.static { cursor: default; }
+    .res-brief-lead { font-size: 0.88rem; line-height: 1.55; color: var(--text-main); margin-bottom: 14px; }
+    .tactic-list { display: flex; flex-direction: column; }
+    .tactic-row { display: grid; grid-template-columns: 26px 1fr; grid-template-rows: auto auto; gap: 0 12px; padding: 11px 0; border-top: 1px solid var(--glass-border); }
     .tactic-k { grid-row: 1 / 3; font-family: "Courier New", monospace; font-size: 0.7rem; color: var(--text-dim); padding-top: 2px; }
     .tactic-name { font-size: 0.92rem; font-weight: 700; color: var(--text-main); }
     .tactic-set { font-size: 0.74rem; color: var(--text-muted); margin-top: 3px; }
-    a.tactic .tactic-name::after { content: ' \2192'; color: var(--accent-gold); font-weight: 400; }
-    a.tactic:active { opacity: 0.7; }
-    .res-legend { display: flex; flex-direction: column; gap: 7px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--glass-border); font-size: 0.72rem; color: var(--text-muted); line-height: 1.5; }
-    .res-legend-head { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-gold); margin-bottom: 2px; }
-    .res-legend b { color: var(--accent-gold); margin-right: 5px; }
-    .res-links-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 12px 2px; }
-    .res-tiles { display: flex; flex-direction: column; gap: 12px; }
-    .res-tile { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; padding: 16px; border-radius: 14px; text-decoration: none; }
-    .res-tile-kind { grid-column: 1; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-gold); }
-    .res-tile-title { grid-column: 1; font-size: 1rem; font-weight: 800; color: #fff; }
-    .res-tile-sub { grid-column: 1; font-size: 0.75rem; color: var(--text-muted); }
-    .res-tile-go { grid-column: 2; grid-row: 1 / 4; align-self: center; font-size: 0.7rem; font-weight: 800; color: var(--text-dim); letter-spacing: 0.06em; white-space: nowrap; }
-    .res-tile:active { transform: scale(.99); }
+    .tactic-full-guide {
+      display: block; margin-top: 14px; padding-top: 14px;
+      border-top: 1px solid var(--glass-border);
+      font-size: 0.78rem; font-weight: 700; color: var(--accent-gold);
+      text-decoration: none;
+    }
+    .tactic-full-guide:active { opacity: 0.7; }
+    .res-legend-card { margin-bottom: 22px; }
+    .res-legend-intro { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin: 0 0 12px; }
+    .res-legend-intro b { color: var(--accent-gold); font-weight: 700; }
+    .res-legend-list { display: grid; grid-template-columns: 28px 1fr; gap: 8px 12px; margin: 0; }
+    .res-legend-list dt { font-weight: 800; color: var(--accent-gold); }
+    .res-legend-list dd { margin: 0; font-size: 0.76rem; color: var(--text-muted); line-height: 1.5; }
+    .res-links-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 10px 2px; }
+    .res-ext-group { margin-bottom: 14px; }
+    .res-ext-group:last-child { margin-bottom: 0; }
+    .res-ext-kind { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 6px 2px; }
+    .res-ext-link { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; padding: 16px; border-radius: 14px; text-decoration: none; }
+    .res-ext-title { grid-column: 1; font-size: 1rem; font-weight: 800; color: #fff; }
+    .res-ext-sub { grid-column: 1; font-size: 0.75rem; color: var(--text-muted); }
+    .res-ext-go { grid-column: 2; grid-row: 1 / 3; align-self: center; font-size: 0.7rem; font-weight: 800; color: var(--text-dim); letter-spacing: 0.06em; white-space: nowrap; }
+    .res-ext-link:active { transform: scale(.99); }
 
     /*
      * OBSIDIAN LEDGER structural overrides.
@@ -753,7 +765,7 @@
     [data-theme="prism"] .hero-stat-card,
     [data-theme="prism"] .keen-info-popover,
     [data-theme="prism"] .res-brief,
-    [data-theme="prism"] .res-tile {
+    [data-theme="prism"] .res-ext-link {
       border-radius: 2px;
       background: linear-gradient(168deg, rgba(28,29,24,0.92) 0%, rgba(15,16,13,0.95) 100%);
       border: 1px solid rgba(201,162,39,0.16);
@@ -911,7 +923,7 @@
     [data-theme="prism"] .sheet-modal,
     [data-theme="prism"] .hero-stat-card,
     [data-theme="prism"] .res-brief,
-    [data-theme="prism"] .res-tile,
+    [data-theme="prism"] .res-ext-link,
     [data-theme="prism"] .keen-info-popover {
       background-color: #121310;
       background-image:
@@ -931,7 +943,7 @@
     [data-theme="prism"] .ledger-card::before,
     [data-theme="prism"] .catalog-item-row::before,
     [data-theme="prism"] .hero-stat-card > .stitch,
-    [data-theme="prism"] .res-tile::before,
+    [data-theme="prism"] .res-ext-link::before,
     [data-theme="prism"] .res-brief::before {
       content: ''; position: absolute; inset: 4px; pointer-events: none;
       border: 1px dashed rgba(214,178,74,0.45); border-radius: 2px;
@@ -939,7 +951,7 @@
 
     /* Etched gold trace work, branching off toward the right edge */
     [data-theme="prism"] .ledger-card,
-    [data-theme="prism"] .res-tile {
+    [data-theme="prism"] .res-ext-link {
       background-image:
         url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27120%27 height=%2780%27 viewBox=%270 0 120 80%27%3E%3Cg fill=%27none%27 stroke=%27%23c9a227%27 stroke-width=%271%27 opacity=%270.5%27 stroke-linecap=%27round%27%3E%3Cpath d=%27M0 40 L18 40 L30 28 L58 28 L70 16 L104 16%27/%3E%3Cpath d=%27M18 40 L30 52 L52 52 L62 62 L98 62%27/%3E%3Cpath d=%27M30 28 L30 20 L40 10 L74 10%27/%3E%3Cpath d=%27M52 52 L52 72 L60 72%27/%3E%3Cpath d=%27M70 16 L82 28 L110 28%27/%3E%3Cpath d=%27M62 62 L74 50 L96 50%27/%3E%3C/g%3E%3Cg fill=%27%23c9a227%27 opacity=%270.7%27%3E%3Crect x=%27102%27 y=%2714%27 width=%274%27 height=%274%27/%3E%3Crect x=%2796%27 y=%2760%27 width=%274%27 height=%274%27/%3E%3Crect x=%2772%27 y=%278%27 width=%274%27 height=%274%27/%3E%3Crect x=%27108%27 y=%2726%27 width=%274%27 height=%274%27/%3E%3Ccircle cx=%2730%27 cy=%2728%27 r=%272%27/%3E%3Ccircle cx=%2718%27 cy=%2740%27 r=%272%27/%3E%3Ccircle cx=%2752%27 cy=%2752%27 r=%272%27/%3E%3Ccircle cx=%2770%27 cy=%2716%27 r=%272%27/%3E%3C/g%3E%3C/svg%3E"),
         repeating-linear-gradient(45deg,  rgba(255,255,255,0.022) 0 2px, transparent 2px 4px),
@@ -953,7 +965,7 @@
     /* Machined gold corner hardware on every panel */
     [data-theme="prism"] .ledger-card::after,
     [data-theme="prism"] .catalog-item-row::after,
-    [data-theme="prism"] .res-tile::after {
+    [data-theme="prism"] .res-ext-link::after {
       content: ''; position: absolute; top: -1px; left: -1px;
       width: 15px; height: 15px; pointer-events: none;
       border-top: 2px solid var(--accent-gold); border-left: 2px solid var(--accent-gold);
@@ -1121,10 +1133,10 @@
       [data-theme="prism"] .tier-badge { box-shadow: 0 0 7px -1px currentColor; }
       [data-theme="prism"] .type-badge { box-shadow: 0 0 8px -2px var(--wire-magenta); }
 
-    [data-theme="prism"] .res-brief, [data-theme="prism"] .res-tile { border-radius: 2px; }
-    [data-theme="prism"] .res-tile-kind, [data-theme="prism"] .res-brief-label { color: var(--accent-gold); letter-spacing: 0.24em; }
+    [data-theme="prism"] .res-brief, [data-theme="prism"] .res-ext-link { border-radius: 2px; }
+    [data-theme="prism"] .res-ext-kind, [data-theme="prism"] .res-brief-label { color: var(--accent-gold); letter-spacing: 0.24em; }
     [data-theme="prism"] .tactic-k { color: rgba(0,229,255,0.6); }
-    [data-theme="prism"] .res-tile-go { color: rgba(0,229,255,0.75); font-family: "Courier New", monospace; }
+    [data-theme="prism"] .res-ext-go { color: rgba(0,229,255,0.75); font-family: "Courier New", monospace; }
     [data-theme="prism"] .theme-card { border-radius: 2px; }
     [data-theme="prism"] .theme-card.active { border-color: var(--accent-gold); }
     [data-theme="prism"] .stat-box, [data-theme="prism"] .prune-card,
@@ -1261,7 +1273,7 @@
 [data-theme="western"] .hero-stat-card,
 [data-theme="western"] .keen-info-popover,
 [data-theme="western"] .res-brief,
-[data-theme="western"] .res-tile,
+[data-theme="western"] .res-ext-link,
 [data-theme="western"] .strategy-row,
 [data-theme="western"] .tier-action-card {
   border-radius: 0;
@@ -1479,9 +1491,13 @@
    UI chrome, not banning every blur; real smoke reads as smoke only with
    softness) and drifting/dissipating rather than static. Two-tier like
    the drip was: a faint wisp even while disabled, a fuller curl once
-   there's something to collect - so it's never fully absent. */
+   there's something to collect - so it's never fully absent.
+   Scoped to :not(.hero-run-btn) - now that this button lives inside the
+   hero card right under the details text, upward-curling smoke would
+   drift straight over that copy. The hero placement gets its own
+   glint treatment instead (below). */
 [data-theme="western"] .btn-start-run { position: relative; overflow: visible; }
-[data-theme="western"] .btn-start-run::after {
+[data-theme="western"] .btn-start-run:not(.hero-run-btn)::after {
   content: '';
   position: absolute;
   left: 50%; top: -4px;
@@ -1496,7 +1512,7 @@
   pointer-events: none;
   animation: smoke-curl 9s ease-in infinite;
 }
-[data-theme="western"] .btn-start-run:not(:disabled)::after {
+[data-theme="western"] .btn-start-run:not(:disabled):not(.hero-run-btn)::after {
   animation-duration: 5.5s;
   opacity: 0.3;
 }
@@ -1583,6 +1599,39 @@
   }
 }
 [data-motion="off"] [data-theme="western"] .hero-ring-circle { animation: none; }
+
+/* Gold bar gleam: the daily-run CTA moved out of the footer to sit right
+   in the hero card, beside the ring's attention pulse - per feedback,
+   both are "go do this" cues and should pull the eye with comparable
+   force instead of one outshining the other. A diagonal light streak
+   rakes across the gold face on a loop (background-position sweep, not
+   a translating pseudo-element, so it scales with the button's actual
+   width instead of a fixed-px throw) and the edge picks up the same
+   steps(2, end) red pulse timing as hero-number-pulse, so the two read
+   as a paired unit rather than two unrelated animations. */
+[data-theme="western"] .hero-run-btn:not(:disabled) {
+  background-color: var(--accent-gold);
+  background-image: linear-gradient(115deg,
+    transparent 0%, transparent 42%,
+    rgba(255, 255, 255, 0.95) 50%,
+    transparent 58%, transparent 100%);
+  background-repeat: no-repeat;
+  background-size: 220% 100%;
+  background-position: 160% 0;
+  animation: gold-bar-gleam 2.8s ease-in-out infinite,
+             gold-bar-pulse 1.6s steps(2, end) infinite;
+}
+@keyframes gold-bar-gleam {
+  0%, 22% { background-position: 160% 0; }
+  55%, 100% { background-position: -60% 0; }
+}
+@keyframes gold-bar-pulse {
+  0%, 100% { box-shadow: 4px 4px 0 #0B0B0B, 0 0 0 0 rgba(129, 0, 0, 0); }
+  50% { box-shadow: 4px 4px 0 #0B0B0B, 0 0 0 5px rgba(129, 0, 0, 0.55); }
+}
+[data-motion="off"] [data-theme="western"] .hero-run-btn {
+  animation: none; background-position: 0 0;
+}
 
 /* Campfire flicker: the hero stat card - the single biggest visual
    block at the top of the app, on screen from the moment you land -
@@ -1789,34 +1838,26 @@
 [data-motion="off"] [data-theme="western"] .btn-run-collect,
 [data-motion="off"] [data-theme="western"] .btn-run-collect::after { animation: none; }
 
-/* Resources tab: had the flat/hard-edged card treatment (it's in the
-   shared .glass-panel group) but none of the theme's actual signature
-   touches - typewriter headers, hard offset text-shadow, the loose
-   "pinned to a corkboard" misregistration ledger-cards get - so it read
-   as generic dark cards with gold labels rather than this theme. */
+/* Resources tab: rebuilt as three single-purpose cards (cheat sheet /
+   icon glossary / grouped outbound links) instead of one dense card -
+   an information-architecture change, not a decorative one, so this
+   pass is typography and hierarchy only: typewriter labels and hard
+   offset text-shadow to match the rest of the theme, no card-rotation
+   misregistration or ambient flicker piled on top of the restructure -
+   those read as "more effects on the boxes" rather than a clearer read,
+   which is exactly the note this replaces. */
 [data-theme="western"] .res-brief-label,
-[data-theme="western"] .res-legend-head,
-[data-theme="western"] .res-links-label {
+[data-theme="western"] .res-links-label,
+[data-theme="western"] .res-ext-kind {
   font-family: 'Special Elite', monospace; text-shadow: 1px 1px 0 #0B0B0B;
 }
-[data-theme="western"] .tactic { border-top-color: #0B0B0B; }
+[data-theme="western"] .tactic-row { border-top-color: #0B0B0B; }
 [data-theme="western"] .tactic-k { color: var(--accent-gold); font-family: 'Special Elite', monospace; }
-[data-theme="western"] .res-legend { border-top-color: #0B0B0B; }
-[data-theme="western"] .res-tile-title { color: var(--text-main); }
-[data-theme="western"] .res-tile-go { color: var(--accent-gold); }
-[data-theme="western"] .res-tile:hover .res-tile-go { color: #FFD54F; }
-[data-theme="western"] .res-brief { transform: rotate(-0.3deg); }
-[data-theme="western"] .res-tile:nth-child(odd) { transform: rotate(-0.35deg); }
-[data-theme="western"] .res-tile:nth-child(even) { transform: rotate(0.35deg); }
-/* Same campfire breathe the hero card gets, offset per card so they
-   don't all flicker in lockstep - a bit of the same "lit from one
-   source" atmosphere reaching this tab instead of it sitting apart. */
-[data-theme="western"] .res-brief,
-[data-theme="western"] .res-tile { animation: campfire-flicker 3.6s ease-in-out infinite; }
-[data-theme="western"] .res-tiles .res-tile:nth-child(2) { animation-delay: -1.2s; }
-[data-theme="western"] .res-tiles .res-tile:nth-child(3) { animation-delay: -2.4s; }
-[data-motion="off"] [data-theme="western"] .res-brief,
-[data-motion="off"] [data-theme="western"] .res-tile { animation: none; }
+[data-theme="western"] .tactic-full-guide { border-top-color: #0B0B0B; }
+[data-theme="western"] .res-legend-list dt { color: var(--accent-gold); font-family: 'Special Elite', monospace; }
+[data-theme="western"] .res-ext-title { color: var(--text-main); }
+[data-theme="western"] .res-ext-go { color: var(--accent-gold); }
+[data-theme="western"] .res-ext-link:hover .res-ext-go { color: #FFD54F; }
 
 /* .strategy-row (the "Recommended Modules" expandable rows in a
    platform's detail panel and Daily Run card) never had a western

@@ -74,14 +74,21 @@
     <h1 class="app-title">The Casino <span>Almanac</span></h1>
 
     <div class="hero-stat-card glass-panel">
-      <div class="hero-ring-wrapper">
-        <div class="hero-ring-circle" id="heroCount">0</div>
+      <div class="hero-top-row">
+        <div class="hero-ring-wrapper">
+          <div class="hero-ring-circle" id="heroCount">0</div>
+        </div>
+        <div class="hero-details">
+          <h2 id="heroReadyText">0 ready to collect</h2>
+          <p><span id="heroCooldownText">0 on cooldown</span> &bull; <span id="heroDoneText">0 done today</span></p>
+          <p id="nextBatch" class="next-batch"></p>
+        </div>
       </div>
-      <div class="hero-details">
-        <h2 id="heroReadyText">0 ready to collect</h2>
-        <p><span id="heroCooldownText">0 on cooldown</span> &bull; <span id="heroDoneText">0 done today</span></p>
-        <p id="nextBatch" class="next-batch"></p>
-      </div>
+      <!-- Lives next to the ring's attention pulse, not buried in one tab
+           or off in the footer - both this and the ring are meant to be
+           equally strong "go do the thing" cues, reachable from every
+           tab since the hero card sits outside the switched sections. -->
+      <button class="btn-start-run hero-run-btn" id="btnStartDailyRun" onclick="startDailyRun()" disabled>NOTHING READY YET</button>
     </div>
 
     <div class="nav-pill-group glass-panel" id="navGroup">
@@ -175,58 +182,78 @@
 
     <section id="viewResources" style="display: none;">
 
+      <!-- Three cards, each doing one job, instead of one dense card
+           mixing strategy tips with a UI legend: a scan-first cheat
+           sheet (read, don't tap - only one thing here actually goes
+           anywhere, so only one thing is a link), a separate reference
+           for what the icons on a platform card mean, and the outbound
+           links grouped by what kind of resource they are instead of
+           each carrying its own repeated badge. -->
       <div class="res-brief glass-panel">
-        <div class="res-brief-label">Field Notes</div>
+        <div class="res-brief-label">Cheat Sheet</div>
         <div class="res-brief-lead">Lowest viable bet, highest line count. Playthrough is a tax &mdash; minimise variance, don't chase it.</div>
-        <div class="tactic-grid">
-          <a class="tactic" href="https://sweepsgrail.com/guides/" target="_blank">
+        <div class="tactic-list">
+          <div class="tactic-row">
             <span class="tactic-k">01</span>
             <span class="tactic-name">Plinko</span>
             <span class="tactic-set">Low volatility &middot; 14 lines &middot; min bet</span>
-          </a>
-          <a class="tactic" href="https://sweepsgrail.com/guides/" target="_blank">
+          </div>
+          <div class="tactic-row">
             <span class="tactic-k">02</span>
             <span class="tactic-name">Blackjack</span>
             <span class="tactic-set">Min bet &middot; basic strategy &middot; never martingale</span>
-          </a>
-          <div class="tactic static">
+          </div>
+          <div class="tactic-row">
             <span class="tactic-k">03</span>
             <span class="tactic-name">Slots</span>
             <span class="tactic-set">Smallest bet &middot; max lines where adjustable</span>
           </div>
-          <a class="tactic" href="https://sweepsgrail.com/guides/" target="_blank">
+          <div class="tactic-row">
             <span class="tactic-k">04</span>
             <span class="tactic-name">Dice / Mines / Limbo</span>
             <span class="tactic-set">99% RTP configuration</span>
-          </a>
+          </div>
         </div>
-        <div class="res-legend">
-          <div class="res-legend-head">Reading a platform card</div>
-          <span>Tap any platform tile in <b>Catalogue</b> to open its detail panel. Under <b>Recommended</b> you'll see the best games to play there, marked like this:</span>
-          <span><b>&#9733;</b> the preferred pick for that platform &mdash; play this one first</span>
-          <span><b>BB</b> bonus buy: paying up front to trigger a feature round. Counts toward playthrough but burns balance fast.</span>
-        </div>
+        <a class="tactic-full-guide" href="https://sweepsgrail.com/guides/" target="_blank">Full strategy write-ups at SweepsGrail &#8599;</a>
+      </div>
+
+      <div class="res-brief glass-panel res-legend-card">
+        <div class="res-brief-label">Reading a Platform Card</div>
+        <p class="res-legend-intro">Tap any tile in <b>Catalogue</b> to open its detail panel. Under <b>Recommended</b>, the best games to play there are marked:</p>
+        <dl class="res-legend-list">
+          <dt>&#9733;</dt>
+          <dd>The preferred pick for that platform &mdash; play this one first.</dd>
+          <dt>BB</dt>
+          <dd>Bonus buy: paying up front to trigger a feature round. Counts toward playthrough but burns balance fast.</dd>
+        </dl>
       </div>
 
       <div class="res-links-label">External</div>
-      <div class="res-tiles">
-        <a href="https://docs.google.com/spreadsheets/d/1CcQhgeod8UEECb2H6qcFxiPhjMFxdzlxXsFYHfS4UlQ/edit" target="_blank" class="res-tile glass-panel">
-          <span class="res-tile-kind">Data</span>
-          <span class="res-tile-title">TheSweepsGuy Master Sheet</span>
-          <span class="res-tile-sub">Community-maintained daily SC tracker</span>
-          <span class="res-tile-go">Open &#8599;</span>
+
+      <div class="res-ext-group">
+        <div class="res-ext-kind">Data</div>
+        <a href="https://docs.google.com/spreadsheets/d/1CcQhgeod8UEECb2H6qcFxiPhjMFxdzlxXsFYHfS4UlQ/edit" target="_blank" class="res-ext-link glass-panel">
+          <span class="res-ext-title">TheSweepsGuy Master Sheet</span>
+          <span class="res-ext-sub">Community-maintained daily SC tracker</span>
+          <span class="res-ext-go">Open &#8599;</span>
         </a>
-        <a href="https://sweepsgrail.com/guides/" target="_blank" class="res-tile glass-panel">
-          <span class="res-tile-kind">Guides</span>
-          <span class="res-tile-title">SweepsGrail</span>
-          <span class="res-tile-sub">VIP leveling, AMOE, playthrough strategy</span>
-          <span class="res-tile-go">Open &#8599;</span>
+      </div>
+
+      <div class="res-ext-group">
+        <div class="res-ext-kind">Guides</div>
+        <a href="https://sweepsgrail.com/guides/" target="_blank" class="res-ext-link glass-panel">
+          <span class="res-ext-title">SweepsGrail</span>
+          <span class="res-ext-sub">VIP leveling, AMOE, playthrough strategy</span>
+          <span class="res-ext-go">Open &#8599;</span>
         </a>
-        <a href="https://www.reddit.com/r/SweepstakeSideHustle/" target="_blank" class="res-tile glass-panel">
-          <span class="res-tile-kind">Community</span>
-          <span class="res-tile-title">r/SweepstakeSideHustle</span>
-          <span class="res-tile-sub">Discussion, drops, payout reports</span>
-          <span class="res-tile-go">Open &#8599;</span>
+      </div>
+
+      <div class="res-ext-group">
+        <div class="res-ext-kind">Community</div>
+        <a href="https://www.reddit.com/r/SweepstakeSideHustle/" target="_blank" class="res-ext-link glass-panel">
+          <span class="res-ext-title">r/SweepstakeSideHustle</span>
+          <span class="res-ext-sub">Discussion, drops, payout reports</span>
+          <span class="res-ext-go">Open &#8599;</span>
         </a>
       </div>
 
@@ -235,10 +262,6 @@
 
   <div class="docked-footer">
     <div class="docked-footer-inner">
-      <!-- Moved here from the Platforms tab so it's reachable from
-           every tab, not just one - a run doesn't only get started while
-           you happen to be looking at your own list. -->
-      <button class="btn-start-run" id="btnStartDailyRun" onclick="startDailyRun()" disabled>NOTHING READY YET</button>
       <div class="docked-footer-row">
         <button class="btn-dock" onclick="openAddModal()">+ ADD PLATFORM</button>
         <button class="btn-dock" style="border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange); box-shadow:inset 0 0 10px rgba(255, 102, 0, 0.2);" onclick="openImportModal()">BULK IMPORT</button>
