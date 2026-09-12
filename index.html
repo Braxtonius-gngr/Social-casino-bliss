@@ -583,14 +583,24 @@
 
         <div class="ledger-add">
           <div class="ledger-add-head">Add entry</div>
-          <div class="led-row">
-            <select id="ledType" class="led-field" onchange="onLedTypeChange()" style="flex:1;">
-              <option value="purchase">Purchase (money out)</option>
-              <option value="redemption">Redemption (money in)</option>
-            </select>
-            <input type="date" id="ledDate" class="led-field" style="flex:1;" />
-          </div>
+          <select id="ledType" class="led-field" onchange="onLedTypeChange()" style="width:100%; margin-bottom:10px;">
+            <option value="purchase">Purchase (money out)</option>
+            <option value="redemption">Redemption (money in)</option>
+          </select>
           <select id="ledPlatform" class="led-field" style="width:100%; margin-bottom:10px;"></select>
+          <!-- A redemption is not one moment, it is a wait: you request
+               it, it gets approved, then the money actually lands. Only
+               the first is knowable when you log it, so the other two are
+               optional here and fillable later from the entry row - which
+               is how the payout-speed figures get built. -->
+          <div class="led-row">
+            <label class="led-date"><span id="ledDateLabel">Date</span><input type="date" id="ledDate" class="led-field" /></label>
+            <label class="led-date" id="ledApprovedWrap" style="display:none;"><span>Approved</span><input type="date" id="ledApproved" class="led-field" /></label>
+          </div>
+          <div class="led-row" id="ledReceivedRow" style="display:none;">
+            <label class="led-date"><span>Received</span><input type="date" id="ledReceived" class="led-field" /></label>
+            <span class="led-date-note">Leave blank until it actually hits &mdash; you can fill it in from the entry later.</span>
+          </div>
           <div class="led-row">
             <input type="number" step="0.01" id="ledAmount" class="led-field" placeholder="Spent $" style="flex:1;" />
             <!-- Only one of these two ever shows. On a purchase the second
@@ -4559,9 +4569,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('ledSC').style.display = isBuy ? '' : 'none';
       document.getElementById('ledMethod').style.display = isBuy ? 'none' : '';
       document.getElementById('ledPT').style.display = isBuy ? '' : 'none';
+      document.getElementById('ledDateLabel').textContent = isBuy ? 'Date' : 'Requested';
+      document.getElementById('ledApprovedWrap').style.display = isBuy ? 'none' : '';
+      document.getElementById('ledReceivedRow').style.display = isBuy ? 'none' : '';
       document.getElementById('ledHint').textContent = isBuy
         ? 'Spent $ is the cash you paid. SC received is what the package credited you.'
-        : 'Cashed out $ is the money that reached you \u2014 the only dollar figure here. Pick how it was paid to track which payout routes you actually use.';
+        : 'Cashed out $ is the money that reached you \u2014 the only dollar figure here. Requested is the day you hit redeem; come back and fill in Received when it lands, and this starts telling you how long each site really takes.';
     }
 
     function openLedgerModal() {
@@ -4586,6 +4599,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const method = document.getElementById('ledMethod').value;
       const note = document.getElementById('ledNote').value.trim();
       const date = document.getElementById('ledDate').value;
+      const approvedDate = document.getElementById('ledApproved').value;
+      const receivedDate = document.getElementById('ledReceived').value;
       if (!platform) { alert('Pick a platform first.'); return; }
       if (platform === '__other') platform = note || 'Other';
       if (!amount || amount <= 0) { alert('Enter an amount.'); return; }
@@ -4596,10 +4611,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         sc: (type === 'purchase' && !isNaN(sc)) ? sc : null,
         playthrough: (type === 'purchase' && !isNaN(pt)) ? pt : null,
         method: type === 'redemption' ? (method || null) : null,
+        approvedDate: type === 'redemption' ? (approvedDate || null) : null,
+        receivedDate: type === 'redemption' ? (receivedDate || null) : null,
         note
       });
       saveLedger();
-      ['ledAmount','ledSC','ledPT','ledNote'].forEach(i => document.getElementById(i).value = '');
+      ['ledAmount','ledSC','ledPT','ledNote','ledApproved','ledReceived'].forEach(i => document.getElementById(i).value = '');
       document.getElementById('ledMethod').value = '';
       renderLedger();
       showToast(`${type === 'purchase' ? 'Purchase' : 'Redemption'} logged`);
@@ -4613,6 +4630,130 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       saveLedger(); renderLedger();
     }
 
+    // Dates are stored as plain YYYY-MM-DD, so parse them as LOCAL dates
+    // rather than letting Date() read them as UTC midnight - otherwise a
+    // same-day pair can come back as -1 day west of Greenwich.
+    function ledDateVal(str) {
+      if (!str) return null;
+      const parts = String(str).split('-').map(Number);
+      if (parts.length !== 3 || parts.some(isNaN)) return null;
+      return new Date(parts[0], parts[1] - 1, parts[2]).getTime();
+    }
+    function ledDaysBetween(from, to) {
+      const a = ledDateVal(from), b = ledDateVal(to);
+      if (a == null || b == null) return null;
+      return Math.round((b - a) / 86400000);
+    }
+    function ledDayLabel(n) { return n === 1 ? '1 day' : n + ' days'; }
+
+    // How long a redemption has been sitting, for one that hasn't landed.
+    function ledPendingDays(entry) {
+      const today = new Date();
+      const iso = [today.getFullYear(), String(today.getMonth() + 1).padStart(2, '0'), String(today.getDate()).padStart(2, '0')].join('-');
+      const n = ledDaysBetween(entry.date, iso);
+      return n == null ? null : Math.max(0, n);
+    }
+
+    // The status line under a redemption: where it is in the request ->
+    // approved -> paid chain, and how long each leg took.
+    function ledRedeemStatus(e) {
+      const toPaid = ledDaysBetween(e.date, e.receivedDate);
+      if (toPaid != null) {
+        const toApproved = ledDaysBetween(e.date, e.approvedDate);
+        return {
+          cls: 'paid',
+          text: toApproved != null
+            ? `Paid in ${ledDayLabel(toPaid)} \u00b7 approved in ${ledDayLabel(toApproved)}`
+            : `Paid in ${ledDayLabel(toPaid)}`
+        };
+      }
+      const waiting = ledPendingDays(e);
+      const approvedIn = ledDaysBetween(e.date, e.approvedDate);
+      if (approvedIn != null) {
+        return { cls: 'approved', text: `Approved in ${ledDayLabel(approvedIn)} \u00b7 waiting on the money${waiting != null ? ' (' + ledDayLabel(waiting) + ' in)' : ''}` };
+      }
+      return { cls: 'pending', text: waiting != null ? `Pending \u00b7 ${ledDayLabel(waiting)} in` : 'Pending' };
+    }
+
+    function toggleRedeemEditor(id) {
+      const box = document.getElementById('redeemEdit_' + id);
+      if (box) box.hidden = !box.hidden;
+    }
+
+    // Filling these in after the fact is the whole point - the money
+    // lands days after you log the request, so the row stays editable
+    // instead of the dates being a one-shot at entry time.
+    function saveRedeemDates(id) {
+      const entry = ledger.find(x => x.id === id);
+      if (!entry) return;
+      const approved = document.getElementById('redeemApproved_' + id).value;
+      const received = document.getElementById('redeemReceived_' + id).value;
+      if (received && ledDaysBetween(entry.date, received) < 0) { alert('Received date is before the day it was requested.'); return; }
+      if (approved && ledDaysBetween(entry.date, approved) < 0) { alert('Approved date is before the day it was requested.'); return; }
+      entry.approvedDate = approved || null;
+      entry.receivedDate = received || null;
+      saveLedger();
+      renderLedger();
+      showToast(received ? 'Payout dated \u2014 payout speed updated' : 'Redemption updated');
+    }
+
+    // One tap for the common case: it landed today.
+    function markRedeemedToday(id) {
+      const entry = ledger.find(x => x.id === id);
+      if (!entry) return;
+      const t = new Date();
+      entry.receivedDate = [t.getFullYear(), String(t.getMonth() + 1).padStart(2, '0'), String(t.getDate()).padStart(2, '0')].join('-');
+      saveLedger();
+      renderLedger();
+      showToast('Marked received today');
+    }
+
+    // Payout speed, built only from redemptions that actually have a
+    // received date on them. Median rather than mean for the headline -
+    // one site sitting on a payout for three weeks shouldn't drag the
+    // typical figure with it. Sample sizes are shown and thin ones are
+    // called out, since "proven" needs more than a single data point.
+    function ledMedian(nums) {
+      const sorted = [...nums].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    }
+    function fmtDays(n) { return (Math.round(n * 10) / 10) + 'd'; }
+
+    function renderPayoutSpeed() {
+      const reds = ledger.filter(e => e.type === 'redemption');
+      if (!reds.length) return '';
+      const done = reds.map(e => ({ e, days: ledDaysBetween(e.date, e.receivedDate) })).filter(x => x.days != null && x.days >= 0);
+      const pending = reds.length - done.length;
+
+      if (!done.length) {
+        return `<div class="payout-speed">
+          <div class="payout-breakdown-head">Payout speed</div>
+          <div class="speed-empty">No payouts dated yet. Open a redemption below and set the day it landed &mdash; after a few, this shows how long each site really takes.</div>
+        </div>`;
+      }
+
+      const all = done.map(x => x.days);
+      const byPlat = {};
+      done.forEach(x => { (byPlat[x.e.platform] = byPlat[x.e.platform] || []).push(x.days); });
+      const plats = Object.keys(byPlat).sort((a, b) => ledMedian(byPlat[a]) - ledMedian(byPlat[b]));
+
+      return `<div class="payout-speed">
+        <div class="payout-breakdown-head">Payout speed</div>
+        <div class="speed-headline">Typically <strong>${fmtDays(ledMedian(all))}</strong> from redeem to paid
+          <span class="speed-sub">${all.length} payout${all.length === 1 ? '' : 's'} dated${all.length > 1 ? ' \u00b7 ' + fmtDays(Math.min(...all)) + '\u2013' + fmtDays(Math.max(...all)) + ' range' : ''}${pending ? ' \u00b7 ' + pending + ' still pending' : ''}</span>
+        </div>
+        <div class="speed-rows">${plats.map(name => {
+          const d = byPlat[name];
+          return `<div class="speed-row">
+            <span class="speed-plat">${escHtml(name)}</span>
+            <span class="speed-days">${fmtDays(ledMedian(d))}</span>
+            <span class="speed-n${d.length < 3 ? ' thin' : ''}">${d.length < 3 ? d.length + ' so far' : 'n=' + d.length}</span>
+          </div>`;
+        }).join('')}</div>
+      </div>`;
+    }
+
     // Where the money actually came back through. Only earns its space
     // once something is logged with a method on it - legacy redemptions
     // (entered before payout method existed) fall into "Unspecified"
@@ -4621,16 +4762,19 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const reds = ledger.filter(e => e.type === 'redemption');
       if (!reds.length) return '';
       const byMethod = {};
+      const daysByMethod = {};
       reds.forEach(e => {
         const key = e.method || 'Unspecified';
         byMethod[key] = (byMethod[key] || 0) + e.amount;
+        const d = ledDaysBetween(e.date, e.receivedDate);
+        if (d != null && d >= 0) (daysByMethod[key] = daysByMethod[key] || []).push(d);
       });
       const rows = Object.keys(byMethod).sort((a, b) => byMethod[b] - byMethod[a]);
       if (rows.length === 1 && rows[0] === 'Unspecified') return '';
       return `<div class="payout-breakdown">
         <div class="payout-breakdown-head">Paid out through</div>
         <div class="payout-chips">${rows.map(m => `
-          <span class="payout-chip"><strong>${escHtml(m)}</strong> $${byMethod[m].toFixed(2)}</span>`).join('')}</div>
+          <span class="payout-chip"><strong>${escHtml(m)}</strong> $${byMethod[m].toFixed(2)}${daysByMethod[m] ? ' <em>' + fmtDays(ledMedian(daysByMethod[m])) + '</em>' : ''}</span>`).join('')}</div>
       </div>`;
     }
 
@@ -4662,14 +4806,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           <div class="stat-box"><div class="stat-value" style="color:var(--accent-gold); font-size:1.2rem;">${ptOwed ? ptOwed.toFixed(0) : '0'}</div><div class="stat-label">SC playthrough</div></div>
         </div>
         <div class="ledger-ytd">${year} to date &nbsp;&mdash;&nbsp; out $${ytdSpent.toFixed(2)} &nbsp;/&nbsp; in $${ytdBack.toFixed(2)}</div>
-        ${renderPayoutBreakdown()}`;
+        ${renderPayoutBreakdown()}
+        ${renderPayoutSpeed()}`;
 
       const list = document.getElementById('ledgerList');
       if (ledger.length === 0) {
         list.innerHTML = `<div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:18px;">Nothing logged yet.</div>`;
         return;
       }
-      list.innerHTML = [...ledger].sort((a, b) => b.date.localeCompare(a.date) || 0).map(e => `
+      list.innerHTML = [...ledger].sort((a, b) => b.date.localeCompare(a.date) || 0).map(e => {
+        const status = e.type === 'redemption' ? ledRedeemStatus(e) : null;
+        return `
         <div class="ledger-row">
           <div class="ledger-row-main">
             <span class="ledger-plat">${escHtml(e.platform)}</span>
@@ -4677,15 +4824,27 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           </div>
           <span class="ledger-amt ${e.type}">${e.type === 'purchase' ? '\u2212' : '+'}$${e.amount.toFixed(2)}</span>
           <button class="icon-x" onclick="deleteLedgerEntry('${e.id}')">&#10005;</button>
-        </div>`).join('');
+          ${status ? `
+          <div class="ledger-track">
+            <button type="button" class="track-chip ${status.cls}" onclick="toggleRedeemEditor('${e.id}')" aria-expanded="false" aria-controls="redeemEdit_${e.id}">${status.text}</button>
+            ${status.cls !== 'paid' ? `<button type="button" class="track-quick" onclick="markRedeemedToday('${e.id}')">Landed today</button>` : ''}
+            <div class="redeem-editor" id="redeemEdit_${e.id}" hidden>
+              <label class="led-date"><span>Approved</span><input type="date" class="led-field" id="redeemApproved_${e.id}" value="${e.approvedDate || ''}" /></label>
+              <label class="led-date"><span>Received</span><input type="date" class="led-field" id="redeemReceived_${e.id}" value="${e.receivedDate || ''}" /></label>
+              <button type="button" class="track-save" onclick="saveRedeemDates('${e.id}')">SAVE</button>
+            </div>
+          </div>` : ''}
+        </div>`;
+      }).join('');
     }
 
     function exportLedgerCSV() {
       if (ledger.length === 0) { alert('Nothing to export yet.'); return; }
       const esc = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
-      const rows = [['Date','Platform','Type','Amount USD','Paid out as','SC','Playthrough','Note']];
+      const rows = [['Date / requested','Platform','Type','Amount USD','Paid out as','Approved','Received','Days to pay','SC','Playthrough','Note']];
       [...ledger].sort((a, b) => a.date.localeCompare(b.date)).forEach(e => {
-        rows.push([e.date, e.platform, e.type, e.amount.toFixed(2), e.method || '', e.sc ?? '', e.playthrough ?? '', e.note || '']);
+        const toPaid = ledDaysBetween(e.date, e.receivedDate);
+        rows.push([e.date, e.platform, e.type, e.amount.toFixed(2), e.method || '', e.approvedDate || '', e.receivedDate || '', toPaid == null ? '' : toPaid, e.sc ?? '', e.playthrough ?? '', e.note || '']);
       });
       const spent = ledger.filter(e => e.type === 'purchase').reduce((a, e) => a + e.amount, 0);
       const back = ledger.filter(e => e.type === 'redemption').reduce((a, e) => a + e.amount, 0);
