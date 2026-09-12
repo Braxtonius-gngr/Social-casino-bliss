@@ -61,9 +61,8 @@
     .app-title { font-family: "Courier New", Courier, monospace; font-size: 2.3rem; font-weight: 900; color: transparent; -webkit-text-stroke: 1.2px var(--accent-cyan); margin-bottom: 24px; letter-spacing: -0.05em; text-transform: uppercase; text-shadow: 0 0 15px rgba(0, 229, 255, 0.5); text-align: center; }
     .app-title span { -webkit-text-stroke: 1.2px var(--accent-pink); text-shadow: 0 0 15px rgba(255, 0, 127, 0.5); }
 
-    .hero-stat-card { border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
-    .hero-top-row { display: flex; align-items: center; gap: 18px; }
-    .btn-start-run.hero-run-btn { width: 100%; margin: 0; }
+    .hero-stat-card { border-radius: 20px; padding: 20px; display: flex; align-items: center; gap: 18px; margin-bottom: 20px; }
+    .btn-start-run.hero-run-btn { width: auto; margin: 6px 0 0; padding: 6px 2px; font-size: 0.85rem; text-align: left; }
     .hero-ring-wrapper { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
     .hero-ring-circle { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--accent-green); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; color: #ffffff; background: rgba(0, 255, 102, 0.05); box-shadow: 0 0 20px rgba(0, 255, 102, 0.4), inset 0 0 15px rgba(0, 255, 102, 0.3); text-shadow: 0 0 10px rgba(0, 255, 102, 0.8); }
     .hero-details h2 { font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 4px; text-shadow: 0 0 5px #fff, 0 0 15px var(--accent-orange); }
@@ -442,17 +441,6 @@
     .pwa-install-container { margin-top: 18px; border-top: 1px solid var(--glass-border); padding-top: 14px; }
 
     /* Referral manager */
-    .referral-header-stats { color: var(--text-muted); font-size: 0.78rem; margin-bottom: 12px; }
-    .referral-row { display: flex; flex-direction: column; gap: 5px; padding: 9px 0; border-bottom: 1px solid var(--glass-border); }
-    .referral-row:last-child { border-bottom: none; }
-    .referral-row label { font-weight: 700; color: var(--text-main); font-size: 0.85rem; }
-    .referral-input { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); color: var(--text-main); padding: 9px 10px; border-radius: 8px; font-family: inherit; font-size: 0.82rem; }
-    .referral-input:focus { outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0,229,255,0.25); }
-    .bulk-section { background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 10px; padding: 14px; margin-bottom: 14px; display: none; }
-    .bulk-section.open { display: block; }
-    .bulk-textarea { width: 100%; height: 120px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: var(--text-main); padding: 10px; margin-bottom: 10px; border-radius: 8px; font-family: monospace; font-size: 0.78rem; resize: vertical; }
-    .bulk-error-list { color: var(--accent-pink); margin: 6px 0 0; padding-left: 20px; font-size: 0.78rem; line-height: 1.6; }
-    .bulk-success { color: var(--accent-green); font-weight: 800; }
     .btn-share { background: transparent; border: 1px solid var(--accent-cyan); color: var(--accent-cyan); padding: 6px 10px; border-radius: 8px; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; cursor: pointer; flex-shrink: 0; }
     .btn-share:hover { background: rgba(0,229,255,0.12); box-shadow: 0 0 10px rgba(0,229,255,0.3); }
 
@@ -1148,7 +1136,6 @@
     [data-theme="prism"] .notify-settings h4 { color: var(--accent-gold); text-shadow: none; letter-spacing: 0.14em; }
     [data-theme="prism"] .form-group input,
     [data-theme="prism"] .form-group textarea,
-    [data-theme="prism"] .referral-input,
     [data-theme="prism"] .catalog-search { border-radius: 1px; }
 
 /* =========================================================
@@ -1600,38 +1587,52 @@
 }
 [data-motion="off"] [data-theme="western"] .hero-ring-circle { animation: none; }
 
-/* Gold bar gleam: the daily-run CTA moved out of the footer to sit right
-   in the hero card, beside the ring's attention pulse - per feedback,
-   both are "go do this" cues and should pull the eye with comparable
-   force instead of one outshining the other. A diagonal light streak
-   rakes across the gold face on a loop (background-position sweep, not
-   a translating pseudo-element, so it scales with the button's actual
-   width instead of a fixed-px throw) and the edge picks up the same
-   steps(2, end) red pulse timing as hero-number-pulse, so the two read
-   as a paired unit rather than two unrelated animations. */
+/* Gold gleam text: the daily-run CTA sits inline in the details column,
+   next to the ring's attention pulse - no box, no border, just the
+   words themselves catching light, per feedback that the boxed bar
+   fought with the ring instead of pairing with it. The slow box-shadow
+   pulse this had is gone too (was reading as sluggish, not gleaming) -
+   the gold text itself carries the attention now, via a tight, fast,
+   continuously-looping light sweep (background-clip: text) rather than
+   a periodic flash, so it reads as "gleaming metal" instead of "pulsing
+   UI chrome". */
+[data-theme="western"] .hero-run-btn {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--accent-gold);
+  /* Hard offset shadow, same as every other header/label in this theme -
+     doubles as what keeps the letters legible against the card's pale
+     bone background during the bright part of the gleam sweep below
+     (a near-white highlight on a near-white card would otherwise wash
+     the letters out to nothing at that instant). */
+  text-shadow: 1px 1px 0 #0B0B0B;
+}
 [data-theme="western"] .hero-run-btn:not(:disabled) {
-  background-color: var(--accent-gold);
   background-image: linear-gradient(115deg,
-    transparent 0%, transparent 42%,
-    rgba(255, 255, 255, 0.95) 50%,
-    transparent 58%, transparent 100%);
+    #FFC107 0%, #FFC107 36%,
+    #FFE9A8 50%,
+    #FFC107 64%, #FFC107 100%);
   background-repeat: no-repeat;
-  background-size: 220% 100%;
+  background-size: 240% 100%;
   background-position: 160% 0;
-  animation: gold-bar-gleam 2.8s ease-in-out infinite,
-             gold-bar-pulse 1.6s steps(2, end) infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gold-text-gleam 1.6s linear infinite;
 }
-@keyframes gold-bar-gleam {
-  0%, 22% { background-position: 160% 0; }
-  55%, 100% { background-position: -60% 0; }
+@keyframes gold-text-gleam {
+  0% { background-position: 160% 0; }
+  100% { background-position: -60% 0; }
 }
-@keyframes gold-bar-pulse {
-  0%, 100% { box-shadow: 4px 4px 0 #0B0B0B, 0 0 0 0 rgba(129, 0, 0, 0); }
-  50% { box-shadow: 4px 4px 0 #0B0B0B, 0 0 0 5px rgba(129, 0, 0, 0.55); }
+[data-theme="western"] .hero-run-btn:disabled { color: rgba(11, 11, 11, 0.4); text-shadow: none; }
+[data-theme="western"] .hero-run-btn:active { box-shadow: none; }
+[data-motion="off"] [data-theme="western"] .hero-run-btn:not(:disabled) {
+  animation: none;
+  background: none;
+  -webkit-text-fill-color: var(--accent-gold);
 }
-[data-motion="off"] [data-theme="western"] .hero-run-btn {
-  animation: none; background-position: 0 0;
-}
+
 
 /* Campfire flicker: the hero stat card - the single biggest visual
    block at the top of the app, on screen from the moment you land -
@@ -1751,6 +1752,66 @@
   animation: hellscape-static 13s steps(1, end) infinite;
 }
 [data-motion="off"] [data-theme="western"] .landing-screen::after { animation: none; }
+
+/* Burn transition: "Enter Deck" doesn't just fade the wanted poster out,
+   it catches fire - char/curl on the card itself, a smoke plume off its
+   base, embers punching up through it - so first contact with the app
+   already reads as this theme's world instead of a plain screen swap.
+   Driven by .burning, added in dismissLanding() only when the theme is
+   western and motion isn't off; .hidden (the existing fade) still lands
+   right after, once the burn's had time to play. */
+[data-theme="western"] .landing-screen.burning {
+  animation: landing-burn-glow 0.85s ease-out both;
+}
+@keyframes landing-burn-glow {
+  0%, 100% { background: radial-gradient(140% 100% at 50% 30%, #810000 0%, #3a0000 45%, #0B0B0B 90%); }
+  35% { background: radial-gradient(140% 100% at 50% 30%, #FF6600 0%, #810000 40%, #0B0B0B 90%); }
+}
+[data-theme="western"] .landing-screen.burning .landing-inner {
+  animation: landing-burn-card 0.85s ease-in forwards;
+}
+@keyframes landing-burn-card {
+  0% { filter: none; transform: rotate(-0.6deg) scale(1); opacity: 1; }
+  30% { filter: sepia(0.4) brightness(0.92) contrast(1.05); }
+  60% { filter: sepia(0.7) brightness(0.55) contrast(1.3); transform: rotate(-1.4deg) scale(0.97); }
+  100% { filter: sepia(1) brightness(0.15) contrast(1.6) blur(2px); transform: rotate(-4deg) scale(0.82); opacity: 0; }
+}
+[data-theme="western"] .landing-screen.burning .landing-inner::before {
+  display: block;
+  content: '';
+  position: absolute; inset: -20px;
+  background: radial-gradient(ellipse at 50% 100%, rgba(20,16,12,0.9) 0%, rgba(20,16,12,0.5) 40%, transparent 70%);
+  filter: blur(14px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+  animation: landing-burn-smoke 0.85s ease-out forwards;
+}
+@keyframes landing-burn-smoke {
+  0% { opacity: 0; transform: translateY(10%) scale(0.8); }
+  30% { opacity: 0.85; }
+  100% { opacity: 0; transform: translateY(-60%) scale(1.6); }
+}
+[data-theme="western"] .landing-screen.burning .landing-inner::after {
+  content: '';
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  background:
+    radial-gradient(circle 3px at 20% 85%, #FFC107 99%, transparent 100%),
+    radial-gradient(circle 2px at 75% 90%, #810000 99%, transparent 100%),
+    radial-gradient(circle 2px at 45% 95%, #FFC107 99%, transparent 100%),
+    radial-gradient(circle 3px at 60% 80%, #C1121F 99%, transparent 100%),
+    radial-gradient(circle 2px at 30% 92%, #FFC107 99%, transparent 100%),
+    radial-gradient(circle 2px at 85% 78%, #810000 99%, transparent 100%);
+  opacity: 0;
+  animation: landing-burn-embers 0.85s ease-out forwards;
+}
+@keyframes landing-burn-embers {
+  0% { opacity: 0; transform: translateY(0); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-140%); }
+}
 
 /* ---------------------------------------------------------------
    Daily Run overlay: had ZERO Boot Hill treatment before this - it

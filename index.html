@@ -74,21 +74,19 @@
     <h1 class="app-title">The Casino <span>Almanac</span></h1>
 
     <div class="hero-stat-card glass-panel">
-      <div class="hero-top-row">
-        <div class="hero-ring-wrapper">
-          <div class="hero-ring-circle" id="heroCount">0</div>
-        </div>
-        <div class="hero-details">
-          <h2 id="heroReadyText">0 ready to collect</h2>
-          <p><span id="heroCooldownText">0 on cooldown</span> &bull; <span id="heroDoneText">0 done today</span></p>
-          <p id="nextBatch" class="next-batch"></p>
-        </div>
+      <div class="hero-ring-wrapper">
+        <div class="hero-ring-circle" id="heroCount">0</div>
       </div>
-      <!-- Lives next to the ring's attention pulse, not buried in one tab
-           or off in the footer - both this and the ring are meant to be
-           equally strong "go do the thing" cues, reachable from every
-           tab since the hero card sits outside the switched sections. -->
-      <button class="btn-start-run hero-run-btn" id="btnStartDailyRun" onclick="startDailyRun()" disabled>NOTHING READY YET</button>
+      <!-- Lives in the same row as the ring's attention pulse, filling the
+           space next to the numbers rather than a full-width bar of its
+           own - reachable from every tab since the hero card sits outside
+           the switched sections. -->
+      <div class="hero-details">
+        <h2 id="heroReadyText">0 ready to collect</h2>
+        <p><span id="heroCooldownText">0 on cooldown</span> &bull; <span id="heroDoneText">0 done today</span></p>
+        <p id="nextBatch" class="next-batch"></p>
+        <button class="btn-start-run hero-run-btn" id="btnStartDailyRun" onclick="startDailyRun()" disabled>NOTHING READY YET</button>
+      </div>
     </div>
 
     <div class="nav-pill-group glass-panel" id="navGroup">
@@ -344,7 +342,7 @@
 
   <div id="settingsModal" class="sheet-backdrop">
     <div class="sheet-modal glass-panel" style="max-height:88vh; display:flex; flex-direction:column;">
-      <h3 style="flex-shrink:0; margin-bottom:12px;">Ledger Settings</h3>
+      <h3 style="flex-shrink:0; margin-bottom:12px; cursor:default;" onclick="tapSettingsTitle()">Ledger Settings</h3>
       <div style="flex:1; overflow-y:auto; min-height:0; padding-right:4px;">
       <div class="toggle-row">
         <span style="color:#fff;">Show Landing Page on Open</span>
@@ -363,10 +361,11 @@
         <button class="btn-dock" style="border-color:var(--accent-green); color:var(--accent-green); text-shadow:0 0 5px var(--accent-green);" onclick="exportBackup()">&#8681; EXPORT BACKUP</button>
         <button class="btn-dock" style="border-color:var(--accent-gold); color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold);" onclick="document.getElementById('importBackupInput').click()">&#8679; IMPORT BACKUP</button>
       </div>
+      <div class="backup-helper" style="margin-top:6px;">Your platform list &mdash; timers, tags, notes, referral links &mdash; lives only in this browser; it's not part of Cloud Sync below. These buttons are the only way to move it to a new device or recover it if this browser's storage gets cleared.</div>
       <div style="margin-top: 14px;">
         <button id="syncToggleBtn" class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="toggleCloudSync()">Disable Cloud Sync</button>
         <div id="syncStatusBox" class="backup-helper" style="margin-top:6px;">Up to date</div>
-        <div class="backup-helper" style="margin-top:4px;">Beta, on by default: mirrors your collection history (the ledger behind streaks and stats) to the cloud under an anonymous account created automatically for this device &mdash; no email, no button click needed. Turn it off here if you'd rather stay local-only.</div>
+        <div class="backup-helper" style="margin-top:4px;">On by default: mirrors your collection history (the ledger behind streaks and stats) to the cloud under an account created automatically for this device. Collecting anything for the first time will ask for an email, so that history is recoverable if this device's storage is ever cleared. Turn it off here if you'd rather stay local-only.</div>
       </div>
       <div id="syncEmailSection" style="margin-top: 10px;">
         <div id="syncLinkedEmailBox" class="backup-helper" style="display:none; color:var(--accent-green);"></div>
@@ -385,14 +384,13 @@
         <button class="btn-dock" onclick="exportDeck()">&#8681; SHARE DECK</button>
         <button class="btn-dock" onclick="document.getElementById('importDeckInput').click()">&#8679; IMPORT DECK</button>
       </div>
-      <div class="backup-helper" style="margin-top:8px;">A deck is your platform list, tags and referral links &mdash; without your timers, balances or history. Safe to send to someone else.</div>
+      <div class="backup-helper" style="margin-top:8px;">A deck is your platform list and tags &mdash; without your timers, balances, history or referral links. Safe to send to someone else.</div>
       <input type="file" id="importDeckInput" accept=".json,application/json" style="display:none;" onchange="importDeck(event)" />
       <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="openStatsModal()">&#9673; VIEW STATS</button>
-        <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-gold); color:var(--accent-gold);" onclick="openDropsModal()">&#9889; DROP INBOX</button>
+        <button id="btnDropInbox" class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-gold); color:var(--accent-gold); display:none;" onclick="openDropsModal()">&#9889; DROP INBOX</button>
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-green); color:var(--accent-green);" onclick="openLedgerModal()">&#128209; LEDGER (SPEND / REDEEM)</button>
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan);" onclick="openGuideModal()">&#128214; FULL WALKTHROUGH</button>
-        <button class="btn-dock" style="max-width:100%; width:100%;" onclick="openReferralModal()">&#128279; MANAGE REFERRALS</button>
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--text-dim); color:var(--text-muted);" onclick="openCalcModal()">&#9878; PACKAGE VALUE (PURCHASE TOOL)</button>
       </div>
       <div class="pwa-install-container">
@@ -464,9 +462,6 @@
             Alerts are generated on this device &mdash; there's no server involved. They fire while the app is open or in the background, but if you fully close it from the app switcher, the timer stops until you reopen it.
           </div>
         </div>
-      </div>
-      <div class="backup-helper">
-        Everything is stored locally in this browser only. Backups are the only way to move your data to another device or recover it if browser data is cleared.
       </div>
       <input type="file" id="importBackupInput" accept=".json,application/json" style="display:none;" onchange="importBackup(event)" />
       </div>
@@ -580,30 +575,6 @@
       <div class="modal-actions" style="flex-shrink:0; border-top:1px solid var(--glass-border); padding-top:14px;">
         <button class="btn-dock" style="max-width:none; flex:1; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="openPruneModal()">REVIEW &amp; PRUNE</button>
         <button class="btn-danger" onclick="clearHistory()">CLEAR HISTORY</button>
-        <button class="btn-primary" onclick="closeModals()">DONE</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="referralModal" class="sheet-backdrop">
-    <div class="sheet-modal glass-panel" style="max-height:88vh; display:flex; flex-direction:column;">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:6px; flex-shrink:0;">
-        <h3 style="margin:0;">Referrals</h3>
-        <button class="btn-close-x" onclick="closeModals()">&#10005;</button>
-      </div>
-      <div id="referralStats" class="referral-header-stats"></div>
-      <div style="display:flex; gap:8px; margin-bottom:12px; flex-shrink:0;">
-        <input type="text" id="referralSearch" class="referral-input" placeholder="Search platforms..." oninput="renderReferralList(this.value)" />
-        <button class="btn-dock" style="max-width:none; padding:0 14px; white-space:nowrap; font-size:0.72rem;" onclick="toggleBulkPaste()">BULK</button>
-      </div>
-      <div id="bulkPasteSection" class="bulk-section">
-        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">One per line &mdash; <code>PlatformName | https://link</code></div>
-        <textarea id="bulkTextarea" class="bulk-textarea" placeholder="Pulsz | https://...&#10;Chumba | https://..."></textarea>
-        <button class="btn-primary" style="width:100%; padding:10px;" onclick="processBulkReferrals()">PROCESS LINKS</button>
-        <div id="bulkResults" style="margin-top:10px; font-size:0.78rem;"></div>
-      </div>
-      <div id="referralList" style="flex:1; overflow-y:auto; min-height:0; padding-right:4px;"></div>
-      <div class="modal-actions" style="flex-shrink:0; border-top:1px solid var(--glass-border); padding-top:14px;">
         <button class="btn-primary" onclick="closeModals()">DONE</button>
       </div>
     </div>
@@ -1995,6 +1966,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       closeModals();
     }
 
+    const DROPINBOX_UNLOCK_KEY = 'almanac_dropinbox_unlocked_v1';
+    let settingsTitleTapCount = 0;
+    let settingsTitleTapTimer = null;
+
     function openSettingsModal() {
       const isEnabled = localStorage.getItem('almanac_show_landing') !== 'false';
       document.getElementById('settingLandingToggle').checked = isEnabled;
@@ -2003,7 +1978,32 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       refreshMotionUI();
       refreshTZUI();
       refreshNotifyUI();
+      refreshDropInboxUI();
       document.getElementById('settingsModal').classList.add('open');
+    }
+
+    function refreshDropInboxUI() {
+      const btn = document.getElementById('btnDropInbox');
+      if (!btn) return;
+      btn.style.display = localStorage.getItem(DROPINBOX_UNLOCK_KEY) === 'true' ? '' : 'none';
+    }
+
+    // Not meant to be a real security boundary - Drop Inbox has nothing
+    // sensitive in it - just kept off the settings list a casual visitor
+    // (someone the deck/app link got shared with) would scroll past,
+    // since it's a personal-workflow tool, not something every user of a
+    // shared copy needs surfaced. Five taps on the modal title within 3s
+    // unlocks it for this device going forward.
+    function tapSettingsTitle() {
+      settingsTitleTapCount++;
+      clearTimeout(settingsTitleTapTimer);
+      settingsTitleTapTimer = setTimeout(() => { settingsTitleTapCount = 0; }, 3000);
+      if (settingsTitleTapCount >= 5) {
+        settingsTitleTapCount = 0;
+        localStorage.setItem(DROPINBOX_UNLOCK_KEY, 'true');
+        refreshDropInboxUI();
+        showToast('Drop Inbox unlocked.');
+      }
     }
 
     function toggleHideCollected() {
@@ -2039,7 +2039,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     let tourActiveCatId = null;
 
     function dismissLanding() {
-      document.getElementById('landingScreen').classList.add('hidden');
+      const screen = document.getElementById('landingScreen');
+      const burnEligible = isWesternTheme() && document.documentElement.getAttribute('data-motion') !== 'off';
+      if (burnEligible) {
+        // The wanted-poster card burns up into ember and smoke instead of
+        // just fading, so first contact with the app already feels like
+        // this theme rather than a plain screen swap. .hidden (and the
+        // rest of the function) still lands right after, once the burn
+        // has had time to play - it's the visual transition, not a
+        // replacement for the actual dismissal.
+        screen.classList.add('burning');
+        setTimeout(() => {
+          screen.classList.add('hidden');
+          screen.classList.remove('burning');
+        }, 850);
+      } else {
+        screen.classList.add('hidden');
+      }
       // Cloud sync already started at boot (see initSync()) regardless of
       // whether the landing screen is showing, but "Enter Deck" is the
       // one deliberate action every first-time visitor takes - kicking a
@@ -2047,7 +2063,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // interval tick for someone who just walked in the door.
       kickSync();
       if (!localStorage.getItem('almanac_tour_completed')) {
-        setTimeout(startTour, 300);
+        setTimeout(startTour, burnEligible ? 900 : 300);
       } else {
         const main = document.getElementById('main-content');
         if (main) main.focus();
@@ -3023,100 +3039,6 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return String(s == null ? '' : s)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    }
-
-    function openReferralModal() {
-      closeModals();
-      document.getElementById('referralSearch').value = '';
-      document.getElementById('bulkTextarea').value = '';
-      document.getElementById('bulkResults').innerHTML = '';
-      document.getElementById('bulkPasteSection').classList.remove('open');
-      updateReferralStats();
-      renderReferralList('');
-      document.getElementById('referralModal').classList.add('open');
-    }
-
-    function updateReferralStats() {
-      const total = trackedGames.length;
-      const withRef = trackedGames.filter(g => g.referralUrl && g.referralUrl.trim() !== '').length;
-      document.getElementById('referralStats').textContent =
-        `${withRef} of ${total} platform(s) have a referral link.`;
-    }
-
-    function renderReferralList(filterText) {
-      const listDiv = document.getElementById('referralList');
-      const q = (filterText || '').toLowerCase();
-      const filtered = [...trackedGames]
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .filter(g => g.name.toLowerCase().includes(q));
-
-      if (filtered.length === 0) {
-        listDiv.innerHTML = `<div style="color:var(--text-muted); text-align:center; padding:24px;">${trackedGames.length === 0 ? 'No platforms tracked yet.' : 'No platforms match that search.'}</div>`;
-        return;
-      }
-
-      // Values are escaped: referral URLs routinely contain characters that
-      // would otherwise break out of the value attribute.
-      listDiv.innerHTML = filtered.map(g => `
-        <div class="referral-row">
-          <label>${escHtml(g.name)}</label>
-          <input type="url" class="referral-input" value="${escHtml(g.referralUrl || '')}"
-                 placeholder="https://..." data-gid="${escHtml(g.id)}"
-                 onblur="updateReferralUrl(this.dataset.gid, this.value)" />
-        </div>`).join('');
-    }
-
-    function updateReferralUrl(id, value) {
-      const game = trackedGames.find(g => g.id === id);
-      if (!game) return;
-      game.referralUrl = (value || '').trim();
-      persist();
-      updateReferralStats();
-    }
-
-    function toggleBulkPaste() {
-      document.getElementById('bulkPasteSection').classList.toggle('open');
-    }
-
-    function processBulkReferrals() {
-      const lines = document.getElementById('bulkTextarea').value.split('\n');
-      let updated = 0, ignored = 0;
-      const failures = [];
-
-      lines.forEach(line => {
-        if (!line.trim()) { ignored++; return; }
-        const pipe = line.indexOf('|');           // split on the FIRST pipe only
-        if (pipe === -1) { ignored++; return; }
-
-        const name = line.substring(0, pipe).trim();
-        const url = line.substring(pipe + 1).trim();
-
-        if (!/^https?:\/\//i.test(url)) {
-          failures.push(`Not a valid URL: <strong>${escHtml(name || line.trim())}</strong>`);
-          return;
-        }
-        // Exact case-insensitive match only. No fuzzy matching -- a near miss
-        // gets reported rather than written to the wrong platform.
-        const match = trackedGames.find(g => g.name.toLowerCase() === name.toLowerCase());
-        if (!match) {
-          failures.push(`No exact match: <strong>${escHtml(name)}</strong>`);
-          return;
-        }
-        match.referralUrl = url;
-        updated++;
-      });
-
-      persist();
-      updateReferralStats();
-      renderReferralList(document.getElementById('referralSearch').value);
-
-      let html = `<div class="bulk-success">Matched and updated: ${updated}</div>`;
-      if (ignored > 0) html += `<div style="color:var(--text-muted); margin-top:5px;">Ignored (blank or no "|"): ${ignored}</div>`;
-      if (failures.length > 0) {
-        html += `<div style="margin-top:10px; color:var(--text-muted);">Needs attention (${failures.length}):</div>`;
-        html += `<ul class="bulk-error-list">${failures.map(f => `<li>${f}</li>`).join('')}</ul>`;
-      }
-      document.getElementById('bulkResults').innerHTML = html;
     }
 
     // Looks the platform up by id rather than interpolating the URL into an
@@ -4540,15 +4462,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     // --- Share deck ---
-    // A deck is the shareable half of your setup: which platforms, their
-    // tags and referral links. It deliberately omits timers, balances,
-    // history and personal notes - those are yours, not theirs.
+    // A deck is the shareable half of your setup: which platforms and
+    // tags. It deliberately omits timers, balances, history, personal
+    // notes AND referral links - a referral link is yours, not theirs;
+    // it used to ride along here and silently fill in on the other
+    // side's import, which is exactly the "someone else using my stuff
+    // as their own" case this now avoids at the source.
     function exportDeck() {
       const deck = {
         kind: 'almanac-deck', version: 1, exportedAt: new Date().toISOString(),
         platforms: trackedGames.map(g => ({
           name: g.name, url: g.url,
-          referralUrl: g.referralUrl || '',
           tags: g.tags || [],
           cooldownHours: g.cooldownHours,
           resetHour: g.resetHour, resetTZ: g.resetTZ
@@ -4560,7 +4484,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       a.href = url; a.download = `almanac-deck-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showToast(`Deck exported \u2014 ${deck.platforms.length} platforms, no personal data`);
+      showToast(`Deck exported \u2014 ${deck.platforms.length} platforms, no personal data or referral links`);
     }
 
     function importDeck(event) {
@@ -4580,8 +4504,6 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           if (!pl || typeof pl.name !== 'string' || !pl.name.trim()) return;
           const existing = trackedGames.find(g => g.name.toLowerCase() === pl.name.toLowerCase());
           if (existing) {
-            // Merge, never clobber: their referral link only fills a blank.
-            if (pl.referralUrl && !existing.referralUrl) existing.referralUrl = pl.referralUrl;
             if (Array.isArray(pl.tags) && pl.tags.length) {
               existing.tags = [...new Set([...(existing.tags || []), ...pl.tags])];
             }
@@ -4595,7 +4517,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               hasLive: !!cat.hasLive, minRedeem: cat.minRedeem || 'Varies',
               notes: cat.notes || '', bestGames: cat.bestGames,
               scIsAveraged: cat.scIsAveraged, scRange: cat.scRange,
-              referralUrl: pl.referralUrl || '', tags: pl.tags || [],
+              referralUrl: '', tags: pl.tags || [],
               cooldownHours: pl.cooldownHours || cat.cooldown || 24,
               resetHour: pl.resetHour !== undefined ? pl.resetHour : cat.resetHour,
               resetTZ: pl.resetTZ !== undefined ? pl.resetTZ : cat.resetTZ,
@@ -4608,7 +4530,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         });
         persist(); renderTagChips();
         input.value = '';
-        alert(`Deck imported.\n\nAdded: ${added}\nAlready tracked (merged tags/referrals): ${updated}\n\nYour own timers and balances were not touched.`);
+        alert(`Deck imported.\n\nAdded: ${added}\nAlready tracked (tags merged): ${updated}\n\nYour own timers, balances and referral links were not touched.`);
       };
       reader.readAsText(file);
     }
