@@ -1650,3 +1650,101 @@
   94.2% { opacity: 0.15; transform: translate3d(0, 0, 0) skewX(0deg); filter: brightness(1); }
   94.4%, 100% { opacity: 0; transform: translate3d(0, 0, 0) skewX(0deg); filter: brightness(1); }
 }
+
+/* ---------------------------------------------------------------
+   Daily Run overlay: had ZERO Boot Hill treatment before this - it
+   was still wearing the neon pink/cyan look built for Prism/Neon,
+   the one full-screen surface this theme never touched. This is the
+   "stepping into the ritual" moment (one platform at a time, full
+   focus), so it gets the darkest, most macabre pass in the theme:
+   near-black with an arterial-red portal vignette, a branding-iron
+   avatar ring, and the collect button as the set-piece - a heavier
+   echo of the smoke/ember motifs than the small nav button gets,
+   since this is the one moment per run built for exactly that.
+   --------------------------------------------------------------- */
+[data-theme="western"] #dailyRunOverlay {
+  background:
+    radial-gradient(circle at 50% 8%, rgba(129, 0, 0, 0.45) 0%, transparent 45%),
+    radial-gradient(circle at 50% 105%, rgba(80, 0, 0, 0.3) 0%, transparent 55%),
+    #0B0B0B;
+}
+[data-theme="western"] .run-progress-text {
+  font-family: 'Special Elite', 'Courier New', monospace;
+  color: var(--accent-gold); text-shadow: 1px 1px 0 #0B0B0B; letter-spacing: 0.12em;
+}
+[data-theme="western"] .btn-exit-run {
+  border-radius: 0; border: 2px solid #0B0B0B; background: #2E2E2E; color: var(--text-main);
+  box-shadow: 3px 3px 0 #0B0B0B;
+}
+[data-theme="western"] .btn-exit-run:hover { border-color: #0B0B0B; color: var(--accent-pink); }
+[data-theme="western"] .run-progress-bar { background: #0B0B0B; border: 2px solid #0B0B0B; border-radius: 0; }
+[data-theme="western"] .run-progress-fill {
+  background: var(--accent-pink);
+  box-shadow: none;
+  animation: run-fill-pulse 1.8s ease-in-out infinite;
+}
+@keyframes run-fill-pulse {
+  0%, 100% { background: var(--accent-pink); }
+  50% { background: #C1121F; }
+}
+[data-theme="western"] .run-avatar {
+  border-radius: 0; border: 3px double #0B0B0B;
+  background: #810000; color: var(--text-main);
+  font-family: 'Special Elite', monospace; text-shadow: none;
+  box-shadow: 4px 4px 0 #0B0B0B, inset 0 0 0 4px rgba(227, 218, 201, 0.15);
+  animation: heartbeat-pulse 2.4s ease-in-out infinite;
+}
+[data-theme="western"] .run-name {
+  font-family: 'Special Elite', 'Courier New', monospace; text-transform: uppercase;
+  color: var(--text-main); text-shadow: 2px 2px 0 var(--accent-pink);
+}
+[data-theme="western"] .run-redeem { color: var(--accent-gold); text-shadow: none; }
+[data-theme="western"] .run-notes { color: var(--text-muted); }
+[data-theme="western"] .run-cooldown-row span:first-child { color: var(--text-muted); }
+[data-theme="western"] .run-bestgames { border-top: 2px solid #0B0B0B; }
+
+/* The set-piece button: hard-edged blood-red/gold, a heavier smoke
+   curl than the nav button's, and a pulsing hard-edged (no blur)
+   double outline standing in for "something igniting" rather than a
+   soft glow. */
+[data-theme="western"] .btn-run-collect {
+  border-radius: 0; border: 3px solid #0B0B0B;
+  background: var(--accent-gold); color: #0B0B0B;
+  box-shadow: 4px 4px 0 #0B0B0B; text-shadow: none;
+  position: relative; overflow: visible;
+  animation: run-collect-pulse 1.6s steps(2, end) infinite;
+}
+@keyframes run-collect-pulse {
+  0%, 100% { box-shadow: 4px 4px 0 #0B0B0B, 0 0 0 0 rgba(129,0,0,0); }
+  50% { box-shadow: 4px 4px 0 #0B0B0B, 0 0 0 4px rgba(129,0,0,0.55); }
+}
+[data-theme="western"] .btn-run-collect::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: -6px;
+  width: 80%; height: 54px;
+  transform: translate(-50%, 4px) scale(0.8);
+  background:
+    radial-gradient(circle at 25% 92%, rgba(35, 33, 30, 0.6) 0%, transparent 55%),
+    radial-gradient(circle at 52% 88%, rgba(15, 13, 12, 0.55) 0%, transparent 50%),
+    radial-gradient(circle at 78% 94%, rgba(50, 44, 38, 0.45) 0%, transparent 55%);
+  filter: blur(6px);
+  opacity: 0.4;
+  pointer-events: none;
+  animation: smoke-curl 4.5s ease-in infinite;
+}
+[data-theme="western"] .btn-skip { color: var(--text-dim); }
+[data-theme="western"] .btn-skip:hover { color: var(--text-main); }
+[data-motion="off"] [data-theme="western"] .run-avatar,
+[data-motion="off"] [data-theme="western"] .run-progress-fill,
+[data-motion="off"] [data-theme="western"] .btn-run-collect,
+[data-motion="off"] [data-theme="western"] .btn-run-collect::after { animation: none; }
+
+/* Start Daily Run nav button: intensified per feedback - a hard-edged
+   pulsing double outline (matching .btn-run-collect above) so it reads
+   as "hot" even before you tap it, on top of the smoke curl it already
+   had. */
+[data-theme="western"] .btn-start-run:not(:disabled) {
+  animation: run-collect-pulse 1.6s steps(2, end) infinite;
+}
+[data-motion="off"] [data-theme="western"] .btn-start-run { animation: none; }
