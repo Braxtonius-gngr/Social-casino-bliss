@@ -4,15 +4,17 @@ Daily bonus tracker for sweepstakes and social casino platforms. A single
 static `index.html` (plus a handful of small `assets/`/`utils/` scripts and
 stylesheets) - no build step, deployed as-is via GitHub Pages.
 
-Everything is local-first by default: no account, nothing sent anywhere.
-Settings → **Enable Cloud Sync** turns on an optional, opt-in mirror of your
-collection history (the ledger behind streaks/stats - the one thing the
-manual JSON backup doesn't cover) to a Supabase project, under an anonymous
-account created on-device with no email or password. It's an outbox-and-
-replay design: local changes queue up and push when online; pulling replays
-whatever changed elsewhere back in, matched by each entry's own id.
-Everything else in the app - platforms, timers, settings - stays local-only
-either way.
+Everything is local-first: platforms, timers and settings live only in this
+browser, always. Collection history (the ledger behind streaks/stats - the
+one thing the manual JSON backup doesn't cover) also mirrors to a Supabase
+project automatically, under an anonymous account created on-device with no
+email, password, or button click - Settings → Cloud Sync turns it off for
+anyone who'd rather stay fully local-only. It's an outbox-and-replay design:
+local changes queue up and push when online; pulling replays whatever
+changed elsewhere back in, matched by each entry's own id. Because the
+anonymous account has no credential to sign back in with, this covers
+redundancy and multi-tab/multi-browser use on the same device, not yet
+recovery on a brand new device after this one's storage is cleared.
 
 ## Quality checks
 

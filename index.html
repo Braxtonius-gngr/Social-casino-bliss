@@ -297,9 +297,9 @@
         <button class="btn-dock" style="border-color:var(--accent-gold); color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold);" onclick="document.getElementById('importBackupInput').click()">&#8679; IMPORT BACKUP</button>
       </div>
       <div style="margin-top: 14px;">
-        <button id="syncToggleBtn" class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="toggleCloudSync()">Enable Cloud Sync</button>
-        <div id="syncStatusBox" class="backup-helper" style="margin-top:6px;">Off. Your data stays on this device only.</div>
-        <div class="backup-helper" style="margin-top:4px;">Beta: mirrors your collection history (the ledger behind streaks and stats) to the cloud, so it isn't lost if this device's storage is cleared. Anonymous by default &mdash; no email required.</div>
+        <button id="syncToggleBtn" class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="toggleCloudSync()">Disable Cloud Sync</button>
+        <div id="syncStatusBox" class="backup-helper" style="margin-top:6px;">Up to date</div>
+        <div class="backup-helper" style="margin-top:4px;">Beta, on by default: mirrors your collection history (the ledger behind streaks and stats) to the cloud under an anonymous account created automatically for this device &mdash; no email, no button click needed. Turn it off here if you'd rather stay local-only.</div>
       </div>
       <div class="backup-controls" style="margin-top:10px;">
         <button class="btn-dock" onclick="exportDeck()">&#8681; SHARE DECK</button>
@@ -1958,6 +1958,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     function dismissLanding() {
       document.getElementById('landingScreen').classList.add('hidden');
+      // Cloud sync already started at boot (see initSync()) regardless of
+      // whether the landing screen is showing, but "Enter Deck" is the
+      // one deliberate action every first-time visitor takes - kicking a
+      // sync attempt here too means it isn't waiting on the next 45s
+      // interval tick for someone who just walked in the door.
+      kickSync();
       if (!localStorage.getItem('almanac_tour_completed')) {
         setTimeout(startTour, 300);
       } else {
@@ -3117,28 +3123,37 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
     }
 
-    // --- Cloud sync (optional, opt-in; Supabase-backed) ---
+    // --- Cloud sync (on by default; Supabase-backed; still user-toggleable) ---
     // Local-first, always: every function above this point keeps working
-    // exactly as before, zero network calls, whether or not any of this
-    // is ever turned on. This block is strictly additive on top of that -
-    // an outbox of collectionHistory changes (the ledger behind streaks
-    // and stats: the one thing a manual Export Backup doesn't even cover)
-    // that gets pushed to Supabase once enabled, and a pull+replay of
-    // whatever's on the server merged back in. Disabled by default;
-    // nothing here runs, and no request is ever made, until the user
-    // opts in via Settings -> Enable Cloud Sync. Every write still
-    // persists to localStorage first and immediately, same as today -
-    // sync is a mirror of that, never a dependency for it to work.
+    // exactly as before, zero network calls, regardless of any of this.
+    // This block is strictly additive on top of that - an outbox of
+    // collectionHistory changes (the ledger behind streaks and stats: the
+    // one thing a manual Export Backup doesn't even cover) that gets
+    // pushed to Supabase, and a pull+replay of whatever's on the server
+    // merged back in. Every write still persists to localStorage first
+    // and immediately, same as today - sync is a mirror of that, never a
+    // dependency for it to work.
     //
-    // Identity: anonymous Supabase auth. Turning sync on signs the device
-    // into a stable anonymous account (no email, no password) so its
-    // writes are scoped to it via RLS; the same anonymous session persists
-    // across reloads (supabase-js keeps it in its own localStorage key).
-    // Anonymous-only means "restore on a NEW device" isn't wired up yet
-    // (there's no credential to sign back in with elsewhere) - this pass
-    // covers "survives this device's storage being cleared" and multiple
-    // browsers/tabs on the SAME device stayed signed into the same
-    // anonymous session, not yet cross-device account recovery.
+    // Default: ON, opt-OUT (isSyncEnabled() below). The device signs into
+    // an anonymous Supabase account automatically, with no button click
+    // and no PII - see SYNC_ENABLED_KEY only ever being read against the
+    // literal string 'false', so an unset key (a fresh install) reads as
+    // enabled. Settings -> Cloud Sync still lets anyone turn it off, which
+    // is respected everywhere via that same explicit 'false'.
+    //
+    // Identity: anonymous Supabase auth. The account has no credential a
+    // user could ever re-enter (no email, no password) - it's just a
+    // stable id this device's browser happens to hold a session for,
+    // persisted in supabase-js's own localStorage key. That is an
+    // important limit, not a detail: clearing this browser's storage
+    // wipes the session alongside collectionHistory, so there is currently
+    // no way for THIS device to get back to that same cloud copy - a
+    // second device also never had it, so it can't help either. What this
+    // actually buys today is redundancy across multiple browsers/tabs on
+    // the SAME still-live device, and a live copy of the data sitting on
+    // the server regardless. True "survives a wipe, from any device"
+    // needs the anonymous account linked to a real credential (email) at
+    // some point - not implemented yet.
     const SUPABASE_URL = 'https://ewfvyrhlsanzkmozrmhs.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3ZnZ5cmhsc2Fuemttb3pybWhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNjkxODksImV4cCI6MjEwNDc0NTE4OX0.kxDXQnueexwstqLeZNJdlITffqTHulaV6z-Rdb0ZJQE';
     const SYNC_ENABLED_KEY = 'almanac_sync_enabled_v1';
@@ -3146,12 +3161,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const SYNC_CURSOR_KEY = 'almanac_sync_cursor_v1';
     const SYNC_DEVICE_KEY = 'almanac_sync_device_id_v1';
     const SYNC_META_KEY = 'almanac_sync_meta_v1';
+    const SYNC_SEEDED_KEY = 'almanac_sync_seeded_v1';
 
     let supabaseClient = null;
     let syncInFlight = false;
 
+    // Opt-OUT, not opt-in: an unset key (never touched by this device) is
+    // enabled. Only an explicit 'false' - the user actually turning it off
+    // in Settings - disables it.
     function isSyncEnabled() {
-      return localStorage.getItem(SYNC_ENABLED_KEY) === 'true';
+      return localStorage.getItem(SYNC_ENABLED_KEY) !== 'false';
     }
 
     // null (not throwing) when the CDN script didn't load - offline first
@@ -3207,6 +3226,22 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       flushSyncOutbox();
     }
 
+    // Returns an active session, signing the device in anonymously first
+    // if it doesn't have one yet. Shared by every sync entry point (the
+    // automatic background kick, and the manual Settings toggle) so
+    // sign-in happens the first time ANY of them needs it, not only on an
+    // explicit button click.
+    async function ensureSyncSignedIn(client) {
+      const { data: sessionData } = await client.auth.getSession();
+      let session = sessionData && sessionData.session;
+      if (!session) {
+        const { data: signInData, error } = await client.auth.signInAnonymously();
+        if (error) throw error;
+        session = signInData.session;
+      }
+      return session;
+    }
+
     // Pushes the whole outbox in one request. Left queued (not cleared) on
     // any failure - offline, a transient error - so the next trigger
     // (interval, 'online' event, next enqueue) retries it; nothing here is
@@ -3219,9 +3254,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (!outbox.length) return;
       syncInFlight = true;
       try {
-        const { data: sessionData } = await client.auth.getSession();
-        const session = sessionData && sessionData.session;
-        if (!session) return;
+        const session = await ensureSyncSignedIn(client);
         const deviceId = getDeviceId();
         const rows = outbox.map((op) => ({
           id: op.id,
@@ -3253,9 +3286,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const client = getSupabaseClient();
       if (!client || !isSyncEnabled()) return;
       try {
-        const { data: sessionData } = await client.auth.getSession();
-        const session = sessionData && sessionData.session;
-        if (!session) return;
+        await ensureSyncSignedIn(client);
         const cursor = localStorage.getItem(SYNC_CURSOR_KEY) || '1970-01-01T00:00:00.000Z';
         const { data, error } = await client
           .from('collection_events')
@@ -3311,9 +3342,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       updateHeroStats();
     }
 
-    // First enable only: every pre-existing local entry predates the
-    // outbox, so none of it is queued yet - push it all once, then future
-    // changes flow through the normal enqueueHistorySync() call sites.
+    // Queues every pre-existing local entry that isn't already in the
+    // outbox. Idempotent/dedup-safe (checked against the CURRENT outbox
+    // snapshot), so re-running it is harmless - used both for the one-time
+    // automatic catch-up (see ensureHistorySeeded()) and for an explicit
+    // re-enable after the user had turned sync off, which needs a fresh
+    // catch-up regardless of whether the one-time seed already ran once.
     function seedOutboxFromLocalHistory() {
       const outbox = loadSyncOutbox();
       const queued = new Set(outbox.map((op) => op.id));
@@ -3325,6 +3359,35 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       saveSyncOutbox(outbox);
     }
 
+    // Runs the full-history seed exactly once per device (tracked by
+    // SYNC_SEEDED_KEY), so the automatic background sync catches up a
+    // pre-existing local history the first time it ever runs without
+    // redundantly re-queuing everything already synced on every interval
+    // tick thereafter.
+    function ensureHistorySeeded() {
+      if (localStorage.getItem(SYNC_SEEDED_KEY) === 'true') return;
+      seedOutboxFromLocalHistory();
+      try { localStorage.setItem(SYNC_SEEDED_KEY, 'true'); } catch (e) {}
+    }
+
+    // The actual "try to sync right now" step, shared by the automatic
+    // background triggers (interval, 'online', app boot, landing dismiss)
+    // - silent on failure (flushSyncOutbox()/pullAndReplay() already
+    // console.warn and record the error in sync meta; nothing here
+    // interrupts the user for a background attempt the way enableCloudSync
+    // below does for an explicit one).
+    function kickSync() {
+      if (!isSyncEnabled()) return;
+      ensureHistorySeeded();
+      flushSyncOutbox();
+      pullAndReplay();
+    }
+
+    // Explicit path: the Settings toggle, used either to force a sync
+    // attempt right now (already-enabled case - kickSync() plus a result
+    // toast) or to turn sync back on after the user had disabled it (which
+    // always re-seeds, since anything collected while disabled was never
+    // enqueued - enqueueHistorySync() itself no-ops while sync is off).
     async function enableCloudSync() {
       const client = getSupabaseClient();
       if (!client) {
@@ -3333,15 +3396,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
       renderSyncStatusUI('Connecting...');
       try {
-        const { data: sessionData } = await client.auth.getSession();
-        let session = sessionData && sessionData.session;
-        if (!session) {
-          const { data: signInData, error } = await client.auth.signInAnonymously();
-          if (error) throw error;
-          session = signInData.session;
-        }
         try { localStorage.setItem(SYNC_ENABLED_KEY, 'true'); } catch (e) {}
+        await ensureSyncSignedIn(client);
         seedOutboxFromLocalHistory();
+        try { localStorage.setItem(SYNC_SEEDED_KEY, 'true'); } catch (e) {}
         await flushSyncOutbox();
         await pullAndReplay();
         renderSyncStatusUI();
@@ -3380,15 +3438,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       box.textContent = parts.join(' • ');
     }
 
-    // Resumes sync on every load for a device that already opted in -
-    // enableCloudSync() only runs once, from the Settings toggle.
+    // Runs once at app boot. Sync is on by default (isSyncEnabled()), so
+    // for a brand-new install this is what actually signs the device in
+    // anonymously and starts syncing - no button click required. Sets up
+    // the recurring triggers exactly once (the interval/listener here,
+    // not inside kickSync() itself, or every call to kickSync() would
+    // stack another one).
     function initSync() {
       renderSyncStatusUI();
-      if (!isSyncEnabled()) return;
-      flushSyncOutbox();
-      pullAndReplay();
-      setInterval(() => { flushSyncOutbox(); pullAndReplay(); }, 45000);
-      window.addEventListener('online', () => { flushSyncOutbox(); pullAndReplay(); });
+      kickSync();
+      setInterval(kickSync, 45000);
+      window.addEventListener('online', kickSync);
     }
 
     function logCollection(id) {
@@ -4161,7 +4221,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         { t: "Knowing what's working", items: [{ h: 'Stats', b: 'Total collections, last 7 and 30 days, your current daily streak, most-collected platforms, and a 12-week activity heatmap.' }, { h: 'Missed Resets', b: "Fixed-reset platforms whose drop came and went uncollected. That one's genuinely gone — unlike a rolling timer, which just waits. Rolling platforms are excluded because they can't miss." }, { h: 'Going Stale', b: "Tracked platforms you haven't touched in 21+ days. The prune list." }, { h: 'Review &amp; Prune', b: "Walks you through prunable platforms one at a time with the reason each was flagged. Keep, remove, or skip. Nothing is ever removed automatically, and it warns you if a platform has a referral link you'd lose." }, { h: 'A note on numbers', b: 'The app counts <i>collections</i>, never estimated money. 37 catalogue entries have no verified daily value, and several others are averaged ranges — a dollar figure built on that would look authoritative while being mostly invented.' }] },
         { t: 'Balances and cashouts', items: [{ h: 'Balance tracking', b: "Edit a platform and enter your current SC balance. You get a progress bar toward that platform's cashout minimum, which turns green at <b>CASHOUT READY</b>." }, { h: 'Where the target comes from', b: 'It\'s read from the platform\'s stated minimum redemption. Where a platform lists both ("50 GC / 100 Cash") it uses the larger, since that\'s the one gating a real cash redemption.' }] },
         { t: 'Referrals and sharing', items: [{ h: 'Manage Referrals', b: "Settings → Manage Referrals. Paste your own referral links per platform, or use <b>BULK</b> to paste many at once as <code>PlatformName | https://link</code>. Names must match exactly — anything that doesn't match is reported back rather than guessed at." }, { h: 'Share button', b: 'Platforms with a referral link get a Share button on their card — native share sheet, or copies to clipboard.' }, { h: 'Share Deck', b: 'Exports your platform list, tags and referral links as a file to send someone. It deliberately leaves out your timers, balances, history and private notes. On import it merges rather than overwrites.' }] },
-        { t: 'Keeping your data', items: [{ h: 'Everything is local by default', b: 'All of it lives in this browser. No account required, nothing sent anywhere unless you turn Cloud Sync on. Clearing browser data wipes it.' }, { h: 'Backups', b: "Settings → Export Backup gives you a dated JSON file with your tracked platforms and their timers. It does NOT include collection history/streaks — do one now and keep it somewhere synced." }, { h: 'Cloud Sync (beta)', b: 'Settings → Enable Cloud Sync mirrors your collection history to the cloud under an anonymous account, so it survives this device\'s storage being cleared. Optional, off by default.' }, { h: 'Install it', b: 'Add to Home Screen from your browser menu. It then opens like an app and works offline.' }] },
+        { t: 'Keeping your data', items: [{ h: 'Local, plus a cloud mirror', b: 'Your tracked platforms and timers live in this browser. Your collection history (streaks/stats) also mirrors to the cloud automatically — see Cloud Sync below.' }, { h: 'Backups', b: "Settings → Export Backup gives you a dated JSON file with your tracked platforms and their timers. It does NOT include collection history/streaks — that's what Cloud Sync covers instead." }, { h: 'Cloud Sync (beta)', b: "On by default, no signup: this device gets an anonymous account automatically and your collection history mirrors to it. It has no password you could sign back in with, so clearing THIS device's storage still loses local access to that copy — turn it off in Settings if you'd rather stay fully local-only." }, { h: 'Install it', b: 'Add to Home Screen from your browser menu. It then opens like an app and works offline.' }] },
         { t: 'Look and feel', items: [{ h: 'Themes', b: 'Three: <b>Prism Noir</b> (black-card luxury with circuit threading), <b>Neon Grid</b> (high-contrast cyberpunk), <b>Obsidian Ledger</b> (warm matte neutrals). Settings → Theme.' }, { h: 'Motion', b: 'If your device has Reduce Motion or Battery Saver on, animations switch off automatically. Settings → Motion → <b>Always on</b> overrides that if you want them regardless.' }] }
     ];
 
