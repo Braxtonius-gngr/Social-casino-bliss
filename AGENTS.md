@@ -57,6 +57,14 @@ The authoritative script definitions are in [package.json](package.json), and CI
 - `getSupabaseClient()` registers a single `onAuthStateChange` listener (fires on the routine anonymous sign-in too, not just an email link completing) that repaints the email section and kicks a sync attempt - don't register a second one elsewhere, and don't call `initSync()` more than once per page load for the same reason `kickSync()`'s interval/listener setup already warns about above.
 - `renderSyncEmailUI()` distinguishes a linked account from anonymous via `session.user.is_anonymous` - an anonymous session still has RLS access (`authenticated` role either way), so this is a display/UX signal, not a security boundary; don't repurpose it as one.
 
+### First-collect email gate
+
+- `markCollected()`, `collect()`, `collectCurrentDailyRun()`, and `openDrop()` (only when it would actually log a collection) each open with `interceptForEmailGate(retryFn)` - a synchronous check against `cachedHasLinkedEmail`/`EMAIL_GATE_PASSED_KEY`, not an async session lookup, since these are synchronous `onclick` handlers. If it returns `true` the caller must return immediately without doing any of its own work; `retryFn` is what re-runs the original action once the gate clears, so add the check to any NEW function that logs a collection the same way, and keep it a closure over the same args the original call had.
+- `collectCurrentDailyRun()` is gated at its own level even though it calls `collect()`, which is also gated - `collect()` bailing out on its own wouldn't stop the daily-run wrapper from still advancing `dailyRunIndex`/stats as if the collection had happened. Any future wrapper around a gated function needs the same double-gating, not just the inner call.
+- The gate only requires *submitting* an email (`linkEmailCore()` resolving, i.e. the confirmation email queued), not waiting for the confirmation click - that's a deliberate friction tradeoff (chosen explicitly over a harder "block until confirmed" gate and a softer "just nag, never block" one), not an oversight. Don't tighten it to wait for confirmation, or loosen it to a dismissible reminder, without discussion.
+- Browsing, adding/removing platforms, and every non-collecting action stay completely ungated - only actions that call `logCollection()` (directly or via the functions above) are.
+- Canceling the gate (`cancelEmailGate()`) must never let the pending action through - it only clears `pendingGatedAction` and closes the modal. There is no bypass path; verify this stays true if this code is touched.
+
 ## Change Hygiene
 
 - Read the owning abstraction and a nearby call site before editing.

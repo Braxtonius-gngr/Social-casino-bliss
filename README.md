@@ -18,6 +18,10 @@ Settings → **Link Email** closes that gap by attaching a passwordless email
 to it (no password anywhere in this app), and **Recover a Linked Account**
 pulls that same account's history onto a new or wiped device via a sign-in
 link, without creating a blank new account if the email was never linked.
+Your very first collection (the moment there's actually data worth losing)
+prompts for this inline before it's logged, rather than leaving it as
+something you might never get around to - browsing and adding platforms
+stays completely unblocked either way.
 
 ## Quality checks
 

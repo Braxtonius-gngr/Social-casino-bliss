@@ -275,6 +275,18 @@
     </div>
   </div>
 
+  <div id="emailGateModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel">
+      <h3 style="color:var(--accent-cyan); text-shadow: 0 0 10px var(--accent-cyan); margin-bottom: 6px;">Protect This Timer</h3>
+      <p style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 16px; opacity:0.9;">This is your first collection - the moment there's actually something to lose. Link an email so it's recoverable if this device's storage ever gets cleared or you switch devices. No password, just a confirmation link.</p>
+      <input type="email" id="emailGateInput" class="catalog-search glass-panel" style="margin-bottom:14px;" placeholder="you@example.com" autocomplete="email" />
+      <div class="modal-actions" style="flex-direction:column; gap:10px;">
+        <button id="emailGateSubmitBtn" class="btn-primary" style="width:100%;" onclick="submitEmailGate()">Link Email &amp; Continue</button>
+        <button class="btn-cancel" style="width:100%;" onclick="cancelEmailGate()">Not now (won't collect this one)</button>
+      </div>
+    </div>
+  </div>
+
   <div id="settingsModal" class="sheet-backdrop">
     <div class="sheet-modal glass-panel" style="max-height:88vh; display:flex; flex-direction:column;">
       <h3 style="flex-shrink:0; margin-bottom:12px;">Ledger Settings</h3>
@@ -1412,6 +1424,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     function markCollected(id, event) {
       if (event) event.stopPropagation();
+      if (interceptForEmailGate(() => markCollected(id, event))) return;
       const game = trackedGames.find(g => g.id === id);
       if (!game) return;
       const wasReady = getCooldownState(game).isReady;
@@ -1471,6 +1484,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function collect(id) {
+      if (interceptForEmailGate(() => collect(id))) return;
       const game = trackedGames.find(g => g.id === id);
       if (!game) return;
       const wasReady = getCooldownState(game).isReady;
@@ -3175,9 +3189,21 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const SYNC_DEVICE_KEY = 'almanac_sync_device_id_v1';
     const SYNC_META_KEY = 'almanac_sync_meta_v1';
     const SYNC_SEEDED_KEY = 'almanac_sync_seeded_v1';
+    const EMAIL_GATE_PASSED_KEY = 'almanac_email_gate_passed_v1';
 
     let supabaseClient = null;
     let syncInFlight = false;
+    // Kept current by renderSyncEmailUI() (boot, every auth change, after
+    // enableCloudSync()) so the email gate below - which fires from
+    // synchronous onclick handlers (markCollected(), collect(), etc.) -
+    // can check "already linked?" without itself going async. Briefly
+    // stale is fine (worst case: one collect gets gated that technically
+    // didn't need to be, self-corrects the moment renderSyncEmailUI()
+    // next resolves); wrong in the other direction (skipping a gate that
+    // should've fired) is the one to avoid, so EMAIL_GATE_PASSED_KEY is
+    // the actual source of truth once a device has cleared the gate once.
+    let cachedHasLinkedEmail = false;
+    let pendingGatedAction = null;
 
     // Opt-OUT, not opt-in: an unset key (never touched by this device) is
     // enabled. Only an explicit 'false' - the user actually turning it off
@@ -3233,6 +3259,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const { data: sessionData } = await client.auth.getSession();
       const session = sessionData && sessionData.session;
       const email = session && session.user && !session.user.is_anonymous ? session.user.email : null;
+      cachedHasLinkedEmail = !!email;
       if (email) {
         linkedBox.textContent = `Linked: ${email} — recoverable on any device via "Recover a Linked Account" below.`;
         linkedBox.style.display = '';
@@ -3243,27 +3270,88 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
     }
 
-    // Attaches an email to THIS device's current (anonymous) account -
-    // same user id, same data, now with a credential that can sign back
-    // into it. Does not send a password; the confirmation link itself,
-    // once clicked, completes the link (auth.updateUser resolves
-    // immediately here, before that click - the email isn't attached yet
-    // until it is confirmed).
+    // Shared core: attaches `email` to the CURRENT session via
+    // auth.updateUser(), signing in anonymously first if this device
+    // doesn't have a session yet. Both the Settings "Link Email" button
+    // and the first-collect email gate funnel through this - they differ
+    // only in surrounding UI (which input/modal, whether a pending
+    // collect action resumes after). Does not set a password; the
+    // confirmation link itself, once clicked, is what actually completes
+    // the link (this call only queues that email, it doesn't wait for it).
+    async function linkEmailCore(email) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error('Cloud sync failed to load. Check your connection and reload.');
+      await ensureSyncSignedIn(client);
+      const { error } = await client.auth.updateUser({ email }, { emailRedirectTo: getEmailRedirectTo() });
+      if (error) throw error;
+      try { localStorage.setItem(EMAIL_GATE_PASSED_KEY, 'true'); } catch (e) {}
+    }
+
     async function linkEmailToAccount() {
       const input = document.getElementById('syncLinkEmailInput');
       const email = (input.value || '').trim();
       if (!isValidEmail(email)) { showToast('Enter a valid email address.', null); return; }
-      const client = getSupabaseClient();
-      if (!client) { showToast('Cloud sync failed to load. Check your connection and reload.', null); return; }
       try {
-        await ensureSyncSignedIn(client);
-        const { error } = await client.auth.updateUser({ email }, { emailRedirectTo: getEmailRedirectTo() });
-        if (error) throw error;
+        await linkEmailCore(email);
         showToast(`Check ${email} for a confirmation link to finish linking.`, null, 8000);
         input.value = '';
       } catch (err) {
         console.warn('Link email failed:', err);
         showToast('Could not link email: ' + ((err && err.message) || 'unknown error'), null);
+      }
+    }
+
+    // --- First-collect email gate ---
+    // The very first action that creates real data (a collection) is
+    // gated on having at least submitted an email - not fully confirmed
+    // it, just sent the link - so a device's history can't be silently
+    // built up entirely on an unrecoverable anonymous account by
+    // accident. Browsing/adding platforms stays completely ungated;
+    // only collect-type actions (markCollected, collect,
+    // collectCurrentDailyRun, openDrop) call interceptForEmailGate().
+    function emailGateSatisfied() {
+      if (!isSyncEnabled()) return true;  // opted out of sync entirely - not applicable
+      if (cachedHasLinkedEmail) return true;
+      return localStorage.getItem(EMAIL_GATE_PASSED_KEY) === 'true';
+    }
+
+    // Returns true if it intercepted (caller must return immediately
+    // without doing its own work) - retryFn is re-invoked automatically
+    // once the gate clears, so the original action still completes right
+    // after, not just "next time."
+    function interceptForEmailGate(retryFn) {
+      if (emailGateSatisfied()) return false;
+      pendingGatedAction = retryFn;
+      const input = document.getElementById('emailGateInput');
+      if (input) input.value = '';
+      document.getElementById('emailGateModal').classList.add('open');
+      return true;
+    }
+
+    function cancelEmailGate() {
+      pendingGatedAction = null;
+      document.getElementById('emailGateModal').classList.remove('open');
+    }
+
+    async function submitEmailGate() {
+      const input = document.getElementById('emailGateInput');
+      const email = (input.value || '').trim();
+      if (!isValidEmail(email)) { showToast('Enter a valid email address.', null); return; }
+      const btn = document.getElementById('emailGateSubmitBtn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Linking...'; }
+      try {
+        await linkEmailCore(email);
+        document.getElementById('emailGateModal').classList.remove('open');
+        showToast(`Check ${email} to confirm the link. Your collection was saved either way.`, null, 8000);
+        renderSyncEmailUI();
+        const action = pendingGatedAction;
+        pendingGatedAction = null;
+        if (action) action();
+      } catch (err) {
+        console.warn('Email gate submit failed:', err);
+        showToast('Could not link email: ' + ((err && err.message) || 'unknown error'), null);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Link Email & Continue'; }
       }
     }
 
@@ -4187,6 +4275,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function openDrop(i) {
       const d = lastDrops[i];
       if (!d) return;
+      // Only gated when this will actually log a collection (a tracked,
+      // matched platform) - opening an untracked/unmatched link creates
+      // no data, so there's nothing here for the gate to protect.
+      if (d.tracked && d.match && interceptForEmailGate(() => openDrop(i))) return;
       window.open(d.url, '_blank');
       if (d.tracked && d.match) {
         const g = trackedGames.find(x => x.id === d.match.id);
@@ -4333,7 +4425,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         { t: "Knowing what's working", items: [{ h: 'Stats', b: 'Total collections, last 7 and 30 days, your current daily streak, most-collected platforms, and a 12-week activity heatmap.' }, { h: 'Missed Resets', b: "Fixed-reset platforms whose drop came and went uncollected. That one's genuinely gone — unlike a rolling timer, which just waits. Rolling platforms are excluded because they can't miss." }, { h: 'Going Stale', b: "Tracked platforms you haven't touched in 21+ days. The prune list." }, { h: 'Review &amp; Prune', b: "Walks you through prunable platforms one at a time with the reason each was flagged. Keep, remove, or skip. Nothing is ever removed automatically, and it warns you if a platform has a referral link you'd lose." }, { h: 'A note on numbers', b: 'The app counts <i>collections</i>, never estimated money. 37 catalogue entries have no verified daily value, and several others are averaged ranges — a dollar figure built on that would look authoritative while being mostly invented.' }] },
         { t: 'Balances and cashouts', items: [{ h: 'Balance tracking', b: "Edit a platform and enter your current SC balance. You get a progress bar toward that platform's cashout minimum, which turns green at <b>CASHOUT READY</b>." }, { h: 'Where the target comes from', b: 'It\'s read from the platform\'s stated minimum redemption. Where a platform lists both ("50 GC / 100 Cash") it uses the larger, since that\'s the one gating a real cash redemption.' }] },
         { t: 'Referrals and sharing', items: [{ h: 'Manage Referrals', b: "Settings → Manage Referrals. Paste your own referral links per platform, or use <b>BULK</b> to paste many at once as <code>PlatformName | https://link</code>. Names must match exactly — anything that doesn't match is reported back rather than guessed at." }, { h: 'Share button', b: 'Platforms with a referral link get a Share button on their card — native share sheet, or copies to clipboard.' }, { h: 'Share Deck', b: 'Exports your platform list, tags and referral links as a file to send someone. It deliberately leaves out your timers, balances, history and private notes. On import it merges rather than overwrites.' }] },
-        { t: 'Keeping your data', items: [{ h: 'Local, plus a cloud mirror', b: 'Your tracked platforms and timers live in this browser. Your collection history (streaks/stats) also mirrors to the cloud automatically — see Cloud Sync below.' }, { h: 'Backups', b: "Settings → Export Backup gives you a dated JSON file with your tracked platforms and their timers. It does NOT include collection history/streaks — that's what Cloud Sync covers instead." }, { h: 'Cloud Sync (beta)', b: "On by default, no signup: this device gets an anonymous account automatically and your collection history mirrors to it. Turn it off in Settings if you'd rather stay fully local-only." }, { h: 'Making it recoverable', b: "The anonymous account alone has no password to sign back in with, so clearing THIS device's storage still loses local access to that copy. Settings → Link Email fixes that — attaches a passwordless email (a confirmation link, never a password) so the same account can be recovered later. On a new or wiped device, Settings → Recover a Linked Account sends a sign-in link that pulls that history back down." }, { h: 'Install it', b: 'Add to Home Screen from your browser menu. It then opens like an app and works offline.' }] },
+        { t: 'Keeping your data', items: [{ h: 'Local, plus a cloud mirror', b: 'Your tracked platforms and timers live in this browser. Your collection history (streaks/stats) also mirrors to the cloud automatically — see Cloud Sync below.' }, { h: 'Backups', b: "Settings → Export Backup gives you a dated JSON file with your tracked platforms and their timers. It does NOT include collection history/streaks — that's what Cloud Sync covers instead." }, { h: 'Cloud Sync (beta)', b: "On by default, no signup: this device gets an anonymous account automatically and your collection history mirrors to it. Turn it off in Settings if you'd rather stay fully local-only." }, { h: 'Making it recoverable', b: "The anonymous account alone has no password to sign back in with, so clearing THIS device's storage still loses local access to that copy. That's why your very first collection prompts for an email right there — a confirmation link, never a password — before it's logged, so there's always at least one way back to it. You can also do this anytime from Settings → Link Email. On a new or wiped device, Settings → Recover a Linked Account sends a sign-in link that pulls that history back down." }, { h: 'Install it', b: 'Add to Home Screen from your browser menu. It then opens like an app and works offline.' }] },
         { t: 'Look and feel', items: [{ h: 'Themes', b: 'Three: <b>Prism Noir</b> (black-card luxury with circuit threading), <b>Neon Grid</b> (high-contrast cyberpunk), <b>Obsidian Ledger</b> (warm matte neutrals). Settings → Theme.' }, { h: 'Motion', b: 'If your device has Reduce Motion or Battery Saver on, animations switch off automatically. Settings → Motion → <b>Always on</b> overrides that if you want them regardless.' }] }
     ];
 
@@ -4681,6 +4773,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function collectCurrentDailyRun() {
+      // Gated here too, not just inside the collect() it calls below -
+      // collect() bailing out on its own wouldn't stop this function from
+      // still advancing dailyRunIndex/stats as if the collection had
+      // happened.
+      if (interceptForEmailGate(collectCurrentDailyRun)) return;
       const game = dailyRunQueue[dailyRunIndex];
       if (game) {
         collect(game.id);
