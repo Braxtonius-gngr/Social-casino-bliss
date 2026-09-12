@@ -2,6 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <!-- Sets data-theme before the stylesheet paints anything, so the
+       landing screen never flashes the base (unthemed, purple/cyan)
+       look before switching to the saved theme a moment later. Every
+       [data-theme="..."] rule in app.css only matches once this
+       attribute is present - without it, first paint uses whatever the
+       untagged base rules say, which is the Prism-era default look, not
+       "no theme." Mirrors getActiveThemeId()'s own fallback (western)
+       so the two never disagree. Deliberately tiny and synchronous -
+       this has to finish before the browser's first paint, so it can't
+       wait for the rest of the page or any external script. -->
+  <script>
+    (function () {
+      try {
+        var id = localStorage.getItem('almanac_theme_v1');
+        var valid = ['western', 'prism', 'neon', 'obsidian'];
+        document.documentElement.setAttribute('data-theme', valid.indexOf(id) !== -1 ? id : 'western');
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'western');
+      }
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>The Casino Almanac</title>
   <meta name="theme-color" content="#0a0b0a" />
@@ -74,7 +95,6 @@
         <input type="text" id="gamesSearch" class="catalog-search glass-panel" style="margin-bottom:0; flex:1;" placeholder="Search your platforms..." oninput="renderGames(); saveViewState();" />
         <button class="sort-trigger-btn secondary glass-panel" id="btnDense" title="Compact view" onclick="toggleDense()" style="padding:6px 12px;">&#9776;</button>
       </div>
-      <button class="btn-start-run" id="btnStartDailyRun" onclick="startDailyRun()" disabled>NOTHING READY YET</button>
       <div class="filter-sort-row">
         <div class="filter-chips">
           <button class="filter-btn active" id="filterAll" onclick="applyFilter('all', this)">All</button>
@@ -214,8 +234,16 @@
   </div>
 
   <div class="docked-footer">
-    <button class="btn-dock" onclick="openAddModal()">+ ADD PLATFORM</button>
-    <button class="btn-dock" style="border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange); box-shadow:inset 0 0 10px rgba(255, 102, 0, 0.2);" onclick="openImportModal()">BULK IMPORT</button>
+    <div class="docked-footer-inner">
+      <!-- Moved here from the Platforms tab so it's reachable from
+           every tab, not just one - a run doesn't only get started while
+           you happen to be looking at your own list. -->
+      <button class="btn-start-run" id="btnStartDailyRun" onclick="startDailyRun()" disabled>NOTHING READY YET</button>
+      <div class="docked-footer-row">
+        <button class="btn-dock" onclick="openAddModal()">+ ADD PLATFORM</button>
+        <button class="btn-dock" style="border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange); box-shadow:inset 0 0 10px rgba(255, 102, 0, 0.2);" onclick="openImportModal()">BULK IMPORT</button>
+      </div>
+    </div>
   </div>
 
   <div id="dailyRunOverlay">
