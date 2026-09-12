@@ -16,7 +16,7 @@
 - Use two-space indentation, semicolons, and existing naming patterns.
 - Keep local URLs relative; the app may run under a GitHub Pages subpath.
 - Treat localStorage keys and persisted state as public contracts. Add migration logic before changing a key.
-- Do not add frameworks, bundlers, runtime dependencies, or unrelated refactors.
+- Do not add frameworks, bundlers, or unrelated refactors. The one exception already in place is `supabase-js`, loaded via CDN `<script src>` (see Cloud Sync below) the same way Google Fonts already is - no bundler, no build step, nothing to `npm install`. Don't add further runtime dependencies beyond that without deliberate discussion.
 - Catalog edits must preserve required fields and optional metadata; tracked user copies are persisted separately from the catalog.
 - Dynamic interactive rows must retain the existing accessibility behavior.
 
@@ -40,6 +40,14 @@ The authoritative script definitions are in [package.json](package.json), and CI
 - Put visual overrides in [assets/app.css](assets/app.css), scoped to the relevant theme selector.
 - Preserve accessibility and reduced-motion behavior, including the existing `screenShake()` and `hapticBuzz()` hooks.
 - For Ransom Note / Revolver Chamber work, follow [.github/agents/ransom-chamber.agent.md](.github/agents/ransom-chamber.agent.md).
+
+## Cloud Sync
+
+- Optional, opt-in, off by default. Everything works exactly as before with zero network calls unless the user enables it in Settings.
+- Client code lives in the "Cloud sync" block in the inline script in [index.html](index.html) (search for `SUPABASE_URL`); server schema is the `collection_events` table in the Supabase project (`ewfvyrhlsanzkmozrmhs`) managed via migrations applied through the Supabase MCP tools, not a checked-in `.sql` file - use `list_migrations`/`execute_sql` against that project to inspect it.
+- It's an outbox-and-replay design over `collectionHistory` only (the ledger behind streaks/stats - not `trackedGames`, not settings): local mutations enqueue an op via `enqueueHistorySync(entry, deleted)`, `flushSyncOutbox()` pushes it (upsert by id), `pullAndReplay()` fetches rows changed since the last cursor and applies them locally by id, tombstoning (`deleted: true`) rather than hard-deleting so other devices learn about removals instead of resurrecting them.
+- Every `collectionHistory` entry needs a stable `id` (assigned by `ensureHistoryEntryIds()` on load, and inline wherever a new entry is created) for this to work - preserve that if you touch collection-history code, even when sync itself isn't what you're changing.
+- The anon/publishable key in `index.html` is meant to be public (protected by RLS, not secrecy) - don't treat it as a secret to scrub, but also don't add anything there that would need to be one.
 
 ## Change Hygiene
 

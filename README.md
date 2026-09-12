@@ -4,6 +4,16 @@ Daily bonus tracker for sweepstakes and social casino platforms. A single
 static `index.html` (plus a handful of small `assets/`/`utils/` scripts and
 stylesheets) - no build step, deployed as-is via GitHub Pages.
 
+Everything is local-first by default: no account, nothing sent anywhere.
+Settings → **Enable Cloud Sync** turns on an optional, opt-in mirror of your
+collection history (the ledger behind streaks/stats - the one thing the
+manual JSON backup doesn't cover) to a Supabase project, under an anonymous
+account created on-device with no email or password. It's an outbox-and-
+replay design: local changes queue up and push when online; pulling replays
+whatever changed elsewhere back in, matched by each entry's own id.
+Everything else in the app - platforms, timers, settings - stays local-only
+either way.
+
 ## Quality checks
 
 Three dependency-free Node scripts catch the most common ways this kind of

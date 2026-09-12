@@ -296,6 +296,11 @@
         <button class="btn-dock" style="border-color:var(--accent-green); color:var(--accent-green); text-shadow:0 0 5px var(--accent-green);" onclick="exportBackup()">&#8681; EXPORT BACKUP</button>
         <button class="btn-dock" style="border-color:var(--accent-gold); color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold);" onclick="document.getElementById('importBackupInput').click()">&#8679; IMPORT BACKUP</button>
       </div>
+      <div style="margin-top: 14px;">
+        <button id="syncToggleBtn" class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="toggleCloudSync()">Enable Cloud Sync</button>
+        <div id="syncStatusBox" class="backup-helper" style="margin-top:6px;">Off. Your data stays on this device only.</div>
+        <div class="backup-helper" style="margin-top:4px;">Beta: mirrors your collection history (the ledger behind streaks and stats) to the cloud, so it isn't lost if this device's storage is cleared. Anonymous by default &mdash; no email required.</div>
+      </div>
       <div class="backup-controls" style="margin-top:10px;">
         <button class="btn-dock" onclick="exportDeck()">&#8681; SHARE DECK</button>
         <button class="btn-dock" onclick="document.getElementById('importDeckInput').click()">&#8679; IMPORT DECK</button>
@@ -683,6 +688,14 @@
   <script src="data/catalog.js"></script>
   <script src="utils/cleanDropUrl.js"></script>
   <script src="assets/accessibility.js"></script>
+  <!-- Cloud sync (optional, opt-in - see the "Cloud sync" block near the
+       end of the inline script below). Loaded from a CDN rather than
+       vendored, matching how Google Fonts is already loaded here - this
+       app has no build step to bundle a dependency into. If this fails to
+       load (offline, blocked request), window.supabase stays undefined
+       and every sync function no-ops instead of throwing; the rest of the
+       app is 100% unaffected either way. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const uid = () => 'id_' + Math.random().toString(36).substr(2, 9);
 
@@ -1407,10 +1420,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         game.lastCollected = prevCollected;
         if (prevSnooze) game.snoozedUntil = prevSnooze;
         // roll back the history entry this action added
-        for (let i = collectionHistory.length - 1; i >= 0; i--) {
-          if (collectionHistory[i].platformName === game.name) { collectionHistory.splice(i, 1); break; }
-        }
+        const removed = undoLastLoggedCollection(game.name);
         try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
+        if (removed) enqueueHistorySync(removed, true);
         persist();
       });
 
@@ -3084,17 +3096,329 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const r = JSON.parse(localStorage.getItem('the_casino_almanac_runs_v1'));
         dailyRunsHistory = Array.isArray(r) ? r : [];
       } catch (e) { dailyRunsHistory = []; }
+      ensureHistoryEntryIds();
     }
     initHistory();
+
+    // Backfills a stable id onto every collectionHistory entry that
+    // predates it. Entries are still looked up by (platformName,
+    // collectedAt) everywhere they already were - findHistoryEntryIndex()
+    // is untouched - this id exists purely so cloud sync has a stable key
+    // per entry, unrelated to its collection time (which is itself
+    // editable). Runs on every load, sync enabled or not, so ids are
+    // already stable and ready the moment someone turns sync on.
+    function ensureHistoryEntryIds() {
+      let changed = false;
+      collectionHistory.forEach((h) => {
+        if (!h.id) { h.id = uid(); changed = true; }
+      });
+      if (changed) {
+        try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
+      }
+    }
+
+    // --- Cloud sync (optional, opt-in; Supabase-backed) ---
+    // Local-first, always: every function above this point keeps working
+    // exactly as before, zero network calls, whether or not any of this
+    // is ever turned on. This block is strictly additive on top of that -
+    // an outbox of collectionHistory changes (the ledger behind streaks
+    // and stats: the one thing a manual Export Backup doesn't even cover)
+    // that gets pushed to Supabase once enabled, and a pull+replay of
+    // whatever's on the server merged back in. Disabled by default;
+    // nothing here runs, and no request is ever made, until the user
+    // opts in via Settings -> Enable Cloud Sync. Every write still
+    // persists to localStorage first and immediately, same as today -
+    // sync is a mirror of that, never a dependency for it to work.
+    //
+    // Identity: anonymous Supabase auth. Turning sync on signs the device
+    // into a stable anonymous account (no email, no password) so its
+    // writes are scoped to it via RLS; the same anonymous session persists
+    // across reloads (supabase-js keeps it in its own localStorage key).
+    // Anonymous-only means "restore on a NEW device" isn't wired up yet
+    // (there's no credential to sign back in with elsewhere) - this pass
+    // covers "survives this device's storage being cleared" and multiple
+    // browsers/tabs on the SAME device stayed signed into the same
+    // anonymous session, not yet cross-device account recovery.
+    const SUPABASE_URL = 'https://ewfvyrhlsanzkmozrmhs.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3ZnZ5cmhsc2Fuemttb3pybWhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNjkxODksImV4cCI6MjEwNDc0NTE4OX0.kxDXQnueexwstqLeZNJdlITffqTHulaV6z-Rdb0ZJQE';
+    const SYNC_ENABLED_KEY = 'almanac_sync_enabled_v1';
+    const SYNC_OUTBOX_KEY = 'almanac_sync_outbox_v1';
+    const SYNC_CURSOR_KEY = 'almanac_sync_cursor_v1';
+    const SYNC_DEVICE_KEY = 'almanac_sync_device_id_v1';
+    const SYNC_META_KEY = 'almanac_sync_meta_v1';
+
+    let supabaseClient = null;
+    let syncInFlight = false;
+
+    function isSyncEnabled() {
+      return localStorage.getItem(SYNC_ENABLED_KEY) === 'true';
+    }
+
+    // null (not throwing) when the CDN script didn't load - offline first
+    // page load, a blocked request, whatever - so every caller can no-op
+    // instead of crashing the rest of the app over an optional feature.
+    function getSupabaseClient() {
+      if (supabaseClient) return supabaseClient;
+      if (typeof window.supabase === 'undefined' || !window.supabase.createClient) return null;
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      return supabaseClient;
+    }
+
+    function getDeviceId() {
+      let id = localStorage.getItem(SYNC_DEVICE_KEY);
+      if (!id) {
+        id = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        try { localStorage.setItem(SYNC_DEVICE_KEY, id); } catch (e) {}
+      }
+      return id;
+    }
+
+    function getSyncMeta() {
+      try { return JSON.parse(localStorage.getItem(SYNC_META_KEY)) || {}; } catch (e) { return {}; }
+    }
+    function setSyncMeta(patch) {
+      const meta = Object.assign(getSyncMeta(), patch);
+      try { localStorage.setItem(SYNC_META_KEY, JSON.stringify(meta)); } catch (e) {}
+    }
+
+    function loadSyncOutbox() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(SYNC_OUTBOX_KEY));
+        return Array.isArray(raw) ? raw : [];
+      } catch (e) { return []; }
+    }
+    function saveSyncOutbox(outbox) {
+      try { localStorage.setItem(SYNC_OUTBOX_KEY, JSON.stringify(outbox)); } catch (e) {}
+    }
+
+    // Queues one collectionHistory entry as a pending change to push,
+    // keyed by the entry's own id - re-enqueuing the same id (e.g. a
+    // correction landing before the first push went out) replaces the
+    // pending write with the latest state rather than piling up redundant
+    // or stale ones. A no-op whenever sync is off, so every call site
+    // above that invokes this is a negligible-cost no-op for the (default)
+    // sync-disabled case.
+    function enqueueHistorySync(entry, deleted) {
+      if (!entry || !entry.id) return;
+      if (!isSyncEnabled()) return;
+      const outbox = loadSyncOutbox().filter((op) => op.id !== entry.id);
+      outbox.push({ id: entry.id, platformName: entry.platformName, collectedAt: entry.collectedAt, deleted: !!deleted });
+      saveSyncOutbox(outbox);
+      flushSyncOutbox();
+    }
+
+    // Pushes the whole outbox in one request. Left queued (not cleared) on
+    // any failure - offline, a transient error - so the next trigger
+    // (interval, 'online' event, next enqueue) retries it; nothing here is
+    // ever lost between "queued" and "confirmed written."
+    async function flushSyncOutbox() {
+      if (syncInFlight || !isSyncEnabled()) return;
+      const client = getSupabaseClient();
+      if (!client) return;
+      const outbox = loadSyncOutbox();
+      if (!outbox.length) return;
+      syncInFlight = true;
+      try {
+        const { data: sessionData } = await client.auth.getSession();
+        const session = sessionData && sessionData.session;
+        if (!session) return;
+        const deviceId = getDeviceId();
+        const rows = outbox.map((op) => ({
+          id: op.id,
+          user_id: session.user.id,
+          device_id: deviceId,
+          platform_name: op.platformName,
+          collected_at: new Date(op.collectedAt).toISOString(),
+          deleted: op.deleted
+        }));
+        const { error } = await client.from('collection_events').upsert(rows, { onConflict: 'id' });
+        if (error) throw error;
+        saveSyncOutbox([]);
+        setSyncMeta({ lastPushedAt: Date.now(), lastError: null });
+      } catch (err) {
+        console.warn('Cloud sync push failed, will retry:', err);
+        setSyncMeta({ lastError: (err && err.message) || 'push failed' });
+      } finally {
+        syncInFlight = false;
+        renderSyncStatusUI();
+      }
+    }
+
+    // Pulls every collection_events row updated since the last pull and
+    // replays it onto local collectionHistory - the actual "replay engine"
+    // step. updated_at is server-set (see the collection_events_touch
+    // trigger in the migration), so it's authoritative regardless of what
+    // any client's clock reads.
+    async function pullAndReplay() {
+      const client = getSupabaseClient();
+      if (!client || !isSyncEnabled()) return;
+      try {
+        const { data: sessionData } = await client.auth.getSession();
+        const session = sessionData && sessionData.session;
+        if (!session) return;
+        const cursor = localStorage.getItem(SYNC_CURSOR_KEY) || '1970-01-01T00:00:00.000Z';
+        const { data, error } = await client
+          .from('collection_events')
+          .select('id, platform_name, collected_at, deleted, updated_at')
+          .gt('updated_at', cursor)
+          .order('updated_at', { ascending: true })
+          .limit(1000);
+        if (error) throw error;
+        if (data && data.length) {
+          replayRemoteEvents(data);
+          try { localStorage.setItem(SYNC_CURSOR_KEY, data[data.length - 1].updated_at); } catch (e) {}
+        }
+        setSyncMeta({ lastPulledAt: Date.now(), lastError: null });
+      } catch (err) {
+        console.warn('Cloud sync pull failed:', err);
+        setSyncMeta({ lastError: (err && err.message) || 'pull failed' });
+      } finally {
+        renderSyncStatusUI();
+      }
+    }
+
+    // Applies the server's rows onto local collectionHistory by id. A
+    // tombstoned row removes the matching local entry (if present);
+    // anything else is an upsert-by-id. The device that originated a
+    // change already applied it locally the moment it happened, so
+    // replaying its own writes back here is a harmless no-op overwrite,
+    // not a duplicate.
+    function replayRemoteEvents(rows) {
+      let changed = false;
+      rows.forEach((row) => {
+        const idx = collectionHistory.findIndex((h) => h.id === row.id);
+        if (row.deleted) {
+          if (idx >= 0) { collectionHistory.splice(idx, 1); changed = true; }
+          return;
+        }
+        const collectedAt = new Date(row.collected_at).getTime();
+        if (idx >= 0) {
+          if (collectionHistory[idx].collectedAt !== collectedAt || collectionHistory[idx].platformName !== row.platform_name) {
+            collectionHistory[idx].collectedAt = collectedAt;
+            collectionHistory[idx].platformName = row.platform_name;
+            changed = true;
+          }
+        } else {
+          collectionHistory.push({ id: row.id, platformName: row.platform_name, collectedAt });
+          changed = true;
+        }
+      });
+      if (!changed) return;
+      streakCache = null;
+      try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
+      if (document.getElementById('statsModal').classList.contains('open')) renderStats();
+      renderGames();
+      updateHeroStats();
+    }
+
+    // First enable only: every pre-existing local entry predates the
+    // outbox, so none of it is queued yet - push it all once, then future
+    // changes flow through the normal enqueueHistorySync() call sites.
+    function seedOutboxFromLocalHistory() {
+      const outbox = loadSyncOutbox();
+      const queued = new Set(outbox.map((op) => op.id));
+      collectionHistory.forEach((h) => {
+        if (!queued.has(h.id)) {
+          outbox.push({ id: h.id, platformName: h.platformName, collectedAt: h.collectedAt, deleted: false });
+        }
+      });
+      saveSyncOutbox(outbox);
+    }
+
+    async function enableCloudSync() {
+      const client = getSupabaseClient();
+      if (!client) {
+        showToast('Cloud sync failed to load. Check your connection and reload.', null);
+        return;
+      }
+      renderSyncStatusUI('Connecting...');
+      try {
+        const { data: sessionData } = await client.auth.getSession();
+        let session = sessionData && sessionData.session;
+        if (!session) {
+          const { data: signInData, error } = await client.auth.signInAnonymously();
+          if (error) throw error;
+          session = signInData.session;
+        }
+        try { localStorage.setItem(SYNC_ENABLED_KEY, 'true'); } catch (e) {}
+        seedOutboxFromLocalHistory();
+        await flushSyncOutbox();
+        await pullAndReplay();
+        renderSyncStatusUI();
+        showToast('Cloud sync enabled.', null);
+      } catch (err) {
+        console.warn('Enable cloud sync failed:', err);
+        renderSyncStatusUI();
+        showToast('Could not enable cloud sync: ' + ((err && err.message) || 'unknown error'), null);
+      }
+    }
+
+    function disableCloudSync() {
+      try { localStorage.setItem(SYNC_ENABLED_KEY, 'false'); } catch (e) {}
+      renderSyncStatusUI();
+      showToast('Cloud sync turned off. Your data stays local from here.', null);
+    }
+
+    function toggleCloudSync() {
+      if (isSyncEnabled()) disableCloudSync();
+      else enableCloudSync();
+    }
+
+    function renderSyncStatusUI(overrideText) {
+      const box = document.getElementById('syncStatusBox');
+      const btn = document.getElementById('syncToggleBtn');
+      if (!box || !btn) return;
+      const enabled = isSyncEnabled();
+      btn.textContent = enabled ? 'Disable Cloud Sync' : 'Enable Cloud Sync';
+      if (overrideText) { box.textContent = overrideText; return; }
+      if (!enabled) { box.textContent = 'Off. Your data stays on this device only.'; return; }
+      const meta = getSyncMeta();
+      const pending = loadSyncOutbox().length;
+      const parts = [pending > 0 ? `${pending} change(s) pending upload` : 'Up to date'];
+      if (meta.lastPulledAt) parts.push(`last synced ${new Date(meta.lastPulledAt).toLocaleTimeString()}`);
+      if (meta.lastError) parts.push(`error: ${meta.lastError}`);
+      box.textContent = parts.join(' • ');
+    }
+
+    // Resumes sync on every load for a device that already opted in -
+    // enableCloudSync() only runs once, from the Settings toggle.
+    function initSync() {
+      renderSyncStatusUI();
+      if (!isSyncEnabled()) return;
+      flushSyncOutbox();
+      pullAndReplay();
+      setInterval(() => { flushSyncOutbox(); pullAndReplay(); }, 45000);
+      window.addEventListener('online', () => { flushSyncOutbox(); pullAndReplay(); });
+    }
 
     function logCollection(id) {
       const game = trackedGames.find(g => g.id === id);
       if (!game) return;
-      collectionHistory.push({ platformName: game.name, collectedAt: Date.now() });
+      const entry = { id: uid(), platformName: game.name, collectedAt: Date.now() };
+      collectionHistory.push(entry);
+      // The 2000-entry cap trims the oldest LOCAL entry only - it's a
+      // storage-size limit, not a "this collection didn't happen" signal,
+      // so it deliberately does NOT tombstone the trimmed entry for sync.
+      // The cloud copy (when sync is on) keeps full history uncapped.
       while (collectionHistory.length > 2000) collectionHistory.shift();
       try {
         localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory));
       } catch (e) { /* storage full or unavailable; keep in-memory copy */ }
+      enqueueHistorySync(entry, false);
+    }
+
+    // Removes the most recent collectionHistory entry for this platform
+    // name - shared by every "undo a collection I just logged via
+    // logCollection()" path (markCollected's undo toast, openDrop's).
+    // Returns the removed entry (so a caller can also tombstone it for
+    // sync) or null if none was found.
+    function undoLastLoggedCollection(platformName) {
+      for (let i = collectionHistory.length - 1; i >= 0; i--) {
+        if (collectionHistory[i].platformName === platformName) {
+          return collectionHistory.splice(i, 1)[0];
+        }
+      }
+      return null;
     }
 
     // --- Collection time correction ---
@@ -3164,15 +3488,19 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
       game.lastCollected = newMs;
       delete game.snoozedUntil;
+      let touchedEntry;
       if (hadExisting) {
         collectionHistory[prevIdx].collectedAt = newMs;
+        touchedEntry = collectionHistory[prevIdx];
       } else {
-        collectionHistory.push({ platformName: game.name, collectedAt: newMs });
+        touchedEntry = { id: uid(), platformName: game.name, collectedAt: newMs };
+        collectionHistory.push(touchedEntry);
       }
 
       persist();
       updateDailyRunButton();
       syncAfterHistoryChange();
+      enqueueHistorySync(touchedEntry, false);
 
       if (opts.showUndo !== false) {
         showToast(`${game.name} collection time updated`, () => {
@@ -3180,9 +3508,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           if (prevSnooze) game.snoozedUntil = prevSnooze; else delete game.snoozedUntil;
           const idx = findHistoryEntryIndex(game.name, newMs);
           if (hadExisting) {
-            if (idx >= 0) collectionHistory[idx].collectedAt = prevMs;
+            if (idx >= 0) { collectionHistory[idx].collectedAt = prevMs; enqueueHistorySync(collectionHistory[idx], false); }
           } else if (idx >= 0) {
-            collectionHistory.splice(idx, 1);
+            const removed = collectionHistory.splice(idx, 1)[0];
+            enqueueHistorySync(removed, true);
           }
           persist();
           updateDailyRunButton();
@@ -3249,11 +3578,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       persist();
       updateDailyRunButton();
       syncAfterHistoryChange();
+      enqueueHistorySync(collectionHistory[idx], false);
       renderCollectionTimeHistory(gameId);
 
       showToast(`${game.name} history entry updated`, () => {
         const undoIdx = findHistoryEntryIndex(game.name, newMs);
-        if (undoIdx >= 0) collectionHistory[undoIdx].collectedAt = oldMs;
+        if (undoIdx >= 0) {
+          collectionHistory[undoIdx].collectedAt = oldMs;
+          enqueueHistorySync(collectionHistory[undoIdx], false);
+        }
         if (wasCurrent) game.lastCollected = prevGameLastCollected;
         persist();
         updateDailyRunButton();
@@ -3286,6 +3619,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       persist();
       updateDailyRunButton();
       syncAfterHistoryChange();
+      enqueueHistorySync(removedEntry, true);
       renderCollectionTimeHistory(gameId);
 
       showToast(`${game.name} history entry deleted`, () => {
@@ -3297,6 +3631,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         persist();
         updateDailyRunButton();
         syncAfterHistoryChange();
+        enqueueHistorySync(removedEntry, false);
         refreshCollectionTimeModalIfShowing(gameId);
       });
     }
@@ -3539,6 +3874,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     function clearHistory() {
       if (!confirm(`Delete all ${collectionHistory.length} collection history entries and ${dailyRunsHistory.length} run record(s)?\n\nYour tracked platforms and cooldown timers will NOT be affected.`)) return;
+      // Tombstone every entry before clearing, or a synced copy elsewhere
+      // (another device, or this one after a future pull) would just
+      // resurrect everything this wipe was meant to remove.
+      collectionHistory.forEach((h) => enqueueHistorySync(h, true));
       collectionHistory = [];
       dailyRunsHistory = [];
       localStorage.removeItem('the_casino_almanac_history_v1');
@@ -3687,10 +4026,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           persist();
           showToast(`${g.name} timer started`, () => {
             g.lastCollected = prev;
-            for (let k = collectionHistory.length - 1; k >= 0; k--) {
-              if (collectionHistory[k].platformName === g.name) { collectionHistory.splice(k, 1); break; }
-            }
+            const removed = undoLastLoggedCollection(g.name);
             try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
+            if (removed) enqueueHistorySync(removed, true);
             persist();
           });
         }
@@ -3823,7 +4161,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         { t: "Knowing what's working", items: [{ h: 'Stats', b: 'Total collections, last 7 and 30 days, your current daily streak, most-collected platforms, and a 12-week activity heatmap.' }, { h: 'Missed Resets', b: "Fixed-reset platforms whose drop came and went uncollected. That one's genuinely gone — unlike a rolling timer, which just waits. Rolling platforms are excluded because they can't miss." }, { h: 'Going Stale', b: "Tracked platforms you haven't touched in 21+ days. The prune list." }, { h: 'Review &amp; Prune', b: "Walks you through prunable platforms one at a time with the reason each was flagged. Keep, remove, or skip. Nothing is ever removed automatically, and it warns you if a platform has a referral link you'd lose." }, { h: 'A note on numbers', b: 'The app counts <i>collections</i>, never estimated money. 37 catalogue entries have no verified daily value, and several others are averaged ranges — a dollar figure built on that would look authoritative while being mostly invented.' }] },
         { t: 'Balances and cashouts', items: [{ h: 'Balance tracking', b: "Edit a platform and enter your current SC balance. You get a progress bar toward that platform's cashout minimum, which turns green at <b>CASHOUT READY</b>." }, { h: 'Where the target comes from', b: 'It\'s read from the platform\'s stated minimum redemption. Where a platform lists both ("50 GC / 100 Cash") it uses the larger, since that\'s the one gating a real cash redemption.' }] },
         { t: 'Referrals and sharing', items: [{ h: 'Manage Referrals', b: "Settings → Manage Referrals. Paste your own referral links per platform, or use <b>BULK</b> to paste many at once as <code>PlatformName | https://link</code>. Names must match exactly — anything that doesn't match is reported back rather than guessed at." }, { h: 'Share button', b: 'Platforms with a referral link get a Share button on their card — native share sheet, or copies to clipboard.' }, { h: 'Share Deck', b: 'Exports your platform list, tags and referral links as a file to send someone. It deliberately leaves out your timers, balances, history and private notes. On import it merges rather than overwrites.' }] },
-        { t: 'Keeping your data', items: [{ h: 'Everything is local', b: 'All of it lives in this browser. No account, no server. Clearing browser data wipes it.' }, { h: 'Backups', b: "Settings → Export Backup gives you a dated JSON file with everything. Import restores it, on this device or another. Do one now and keep it somewhere synced — it's the only recovery path." }, { h: 'Install it', b: 'Add to Home Screen from your browser menu. It then opens like an app and works offline.' }] },
+        { t: 'Keeping your data', items: [{ h: 'Everything is local by default', b: 'All of it lives in this browser. No account required, nothing sent anywhere unless you turn Cloud Sync on. Clearing browser data wipes it.' }, { h: 'Backups', b: "Settings → Export Backup gives you a dated JSON file with your tracked platforms and their timers. It does NOT include collection history/streaks — do one now and keep it somewhere synced." }, { h: 'Cloud Sync (beta)', b: 'Settings → Enable Cloud Sync mirrors your collection history to the cloud under an anonymous account, so it survives this device\'s storage being cleared. Optional, off by default.' }, { h: 'Install it', b: 'Add to Home Screen from your browser menu. It then opens like an app and works offline.' }] },
         { t: 'Look and feel', items: [{ h: 'Themes', b: 'Three: <b>Prism Noir</b> (black-card luxury with circuit threading), <b>Neon Grid</b> (high-contrast cyberpunk), <b>Obsidian Ledger</b> (warm matte neutrals). Settings → Theme.' }, { h: 'Motion', b: 'If your device has Reduce Motion or Battery Saver on, animations switch off automatically. Settings → Motion → <b>Always on</b> overrides that if you want them regardless.' }] }
     ];
 
@@ -4228,6 +4566,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     updateHeroStats();
     scheduleNextNotification();
     applyTheme(getActiveThemeId());
+    initSync();
   </script>
 </body>
 </html>
