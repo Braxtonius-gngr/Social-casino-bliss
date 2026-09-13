@@ -489,7 +489,7 @@
        rather than another place to go. */
     .settings-ledger-card { width:100%; display:flex; align-items:center; gap:12px; text-align:left; background:rgba(61,135,103,0.08); border:1px solid rgba(61,135,103,0.45); border-left:3px solid var(--accent-green); border-radius:8px; padding:12px 13px; margin-bottom:16px; cursor:pointer; font-family:inherit; transition:background 0.2s, border-color 0.2s; }
     .settings-ledger-card:hover { background:rgba(61,135,103,0.16); border-color:var(--accent-green); }
-    .slc-icon { font-size:1.15rem; flex-shrink:0; }
+    .slc-icon { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border:1px solid currentColor; border-radius:4px; font-size:0.9rem; font-weight:800; line-height:1; color:var(--accent-green); flex-shrink:0; }
     .slc-text { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
     .slc-text strong { font-size:0.8rem; font-weight:800; letter-spacing:0.12em; color:var(--accent-green); }
     .slc-sub { font-size:0.68rem; line-height:1.4; color:var(--text-muted); }
@@ -701,6 +701,12 @@
       box-shadow: 0 1px 4px rgba(0,0,0,0.5);
       letter-spacing: 0.02em; line-height: 1.4;
     }
+    /* "Zz" instead of the alarm-clock emoji that used to sit here: that
+       glyph has no text presentation, so it rendered in full colour next
+       to the plain checkmark and dots beside it and read as a sticker on
+       the card. Letters need a touch more tracking and a slightly
+       smaller size than the single glyph did. */
+    .btn-snooze { font-weight: 800; letter-spacing: 0.04em; }
     .btn-snooze:hover { border-color: var(--accent-orange); color: var(--accent-orange); }
     body.dense .streak-badge { font-size: 0.5rem; padding: 0 4px; top: -3px; right: -4px; }
     .ready-at { color: var(--text-dim); font-size: 0.7rem; font-family: "Courier New", monospace; }
@@ -1373,7 +1379,8 @@
 [data-theme="western"] .btn-settings-gear { color: var(--text-main); }
 /* Same square-plate language as the tier badges and avatars. */
 [data-theme="western"] .btn-ledger-quick { color: var(--text-main); }
-[data-theme="western"] .ledger-quick-mark {
+[data-theme="western"] .ledger-quick-mark,
+[data-theme="western"] .slc-icon {
   border-radius: 0; border: 1px solid #0B0B0B; box-shadow: 2px 2px 0 #0B0B0B;
   background: var(--accent-gold); color: #0B0B0B;
   font-family: 'Special Elite', monospace;
