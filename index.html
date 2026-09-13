@@ -115,13 +115,16 @@
 
   <svg width="0" height="0" style="position:absolute;" aria-hidden="true">
     <filter id="smokeMerge">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="11" result="soft" />
-      <!-- Alpha slope kept moderate on purpose. Cranked higher it fuses
-           harder but thresholds the plumes into hard-edged cutouts, and
-           smoke with a defined edge stops being smoke. -->
+      <!-- Blur wide, lift the alpha back gently, blur again. The lift is
+           deliberately shallow (2.2, not the 8 this started at): a steep
+           slope is a threshold, and a threshold gives smoke a defined
+           edge, which is what made it read as a rendering fault rather
+           than as smoke. At this slope plumes still pool into one mass
+           where they overlap, but every edge stays soft. -->
+      <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="soft" />
       <feColorMatrix in="soft" type="matrix"
-        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 8 -3.1" result="fused" />
-      <feGaussianBlur in="fused" stdDeviation="9" />
+        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 2.2 -0.35" result="fused" />
+      <feGaussianBlur in="fused" stdDeviation="10" />
     </filter>
   </svg>
 
@@ -139,8 +142,12 @@
              three taps deep in settings. Shows running net once there is
              anything logged, so the number you'd open it for is already
              on screen. -->
+        <!-- A plain "$" on a plate rather than an emoji: the emoji
+             rendered in full colour next to a monochrome gear, which
+             read as a stray graphic sitting in the header rather than
+             as one of the app's own controls. -->
         <button class="btn-ledger-quick" id="btnLedgerQuick" onclick="openLedgerModal()" aria-label="Open ledger">
-          <span aria-hidden="true">&#128209;</span>
+          <span class="ledger-quick-mark" aria-hidden="true">$</span>
           <span class="ledger-quick-net" id="ledgerQuickNet" hidden></span>
         </button>
         <button class="btn-settings-gear" onclick="openSettingsModal()">&#9881;</button>
@@ -1729,14 +1736,19 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
                 <span class="casino-name">${game.name}</span>
                 <span class="tier-badge tier-${game.tier || 'Unranked'}">${game.tier || 'A'}</span>
                 ${game.hasLive ? '<span class="type-badge">LIVE</span>' : ''}
+                <!-- The cooldown chip lives up here rather than in the status
+                     line: it fills the dead space to the right of the name,
+                     and taking it out of the status line is what lets the
+                     timer and the action buttons share one row on every
+                     card instead of wrapping on some and not others. -->
+                <button type="button" class="cooldown-chip" title="Edit cooldown" aria-label="Edit cooldown for ${escHtml(game.name)}, currently ${cooldownLabel(game)}" onclick="openCooldownEditor('${game.id}', event, false)">${cooldownLabel(game)}</button>
               </div>
             </div>
             <div class="card-bottom-row">
               <div class="card-status">
                 <span class="status-dot ${isReady ? '' : 'cooldown'}"></span>
-                <span style="font-family: monospace; font-weight:600;">${isReady ? 'READY' : formatTime(remainingMs)}</span>
+                <span class="status-time">${isReady ? 'READY' : formatTime(remainingMs)}</span>
                 ${isReady ? '' : `<span class="ready-at">&rarr; ${readyAtLabel(game, remainingMs)}</span>`}
-                <button type="button" class="cooldown-chip" title="Edit cooldown" aria-label="Edit cooldown for ${escHtml(game.name)}, currently ${cooldownLabel(game)}" onclick="openCooldownEditor('${game.id}', event, false)">${cooldownLabel(game)}</button>
               </div>
               <div class="card-actions">
                 ${game.referralUrl ? `<button class="btn-share" onclick="shareReferral(this, '${game.id}')">Share</button>` : ''}

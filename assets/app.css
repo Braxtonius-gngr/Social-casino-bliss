@@ -123,7 +123,12 @@
     .ledger-card { border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; transition: transform 0.2s; }
     .ledger-card:active { transform: scale(0.98); }
     .card-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
-    .card-bottom-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1; }
+    /* nowrap, not wrap: wrapping is what made the list look ragged - a
+       card whose status line ran long pushed its buttons onto a second
+       row while its neighbours kept theirs on the first, so no two cards
+       agreed on where anything sat. Status takes the slack and truncates;
+       the button cluster never moves. */
+    .card-bottom-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: nowrap; position: relative; z-index: 1; }
     .casino-avatar { width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--accent-cyan); background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; font-family: "Courier New", Courier, monospace; font-weight: 900; font-size: 1rem; color: #fff; flex-shrink: 0; box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.4), 0 0 10px rgba(0, 229, 255, 0.3); text-shadow: 0 0 5px var(--accent-cyan); cursor: pointer; transition: all 0.2s; }
     .casino-avatar:active { transform: scale(0.9); box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.8), 0 0 15px rgba(0, 229, 255, 0.6); }
 
@@ -146,6 +151,11 @@
        overflow instead of truncating the name and keeping the badges on
        the same line. */
     .card-title-row { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+    .card-title-row .casino-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .card-title-row .tier-badge, .card-title-row .type-badge { flex-shrink: 0; }
+    /* Pushed to the far end of the title row, so every card has its
+       cooldown in the same place. */
+    .card-title-row .cooldown-chip { margin-left: auto; flex-shrink: 0; }
     .casino-name { flex-shrink: 1; min-width: 0; font-size: 0.98rem; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
     .tier-badge { font-size: 0.65rem; font-weight: 900; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; box-shadow: 0 0 8px currentColor; }
     .type-badge { font-size: 0.62rem; font-weight: 800; padding: 2px 5px; border-radius: 4px; background: var(--accent-orange-dim); color: #fff; border: 1px solid var(--accent-orange); text-shadow: 0 0 5px var(--accent-orange); box-shadow: 0 0 8px rgba(255, 102, 0, 0.4); }
@@ -156,7 +166,9 @@
     .tier-C { background: rgba(139,92,246,0.2); color: var(--tier-c); border: 1px solid var(--tier-c); text-shadow: 0 0 5px var(--tier-c); }
     .tier-Unranked { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
 
-    .card-status { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-main); opacity: 0.8; }
+    .card-status { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-main); opacity: 0.8; flex: 1; min-width: 0; overflow: hidden; }
+    .status-time { font-family: monospace; font-weight: 600; flex-shrink: 0; }
+    .card-status .ready-at { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); display: inline-block; box-shadow: 0 0 8px var(--accent-green), 0 0 12px var(--accent-green); }
     .status-dot.cooldown { background: var(--text-muted); box-shadow: none; }
 
@@ -484,8 +496,9 @@
     .slc-net { font-family:"Courier New",monospace; font-weight:800; font-size:0.88rem; flex-shrink:0; }
     /* Permanent seat next to the gear, on every tab. */
     .top-bar-actions { display:flex; align-items:center; gap:8px; }
-    .btn-ledger-quick { display:flex; align-items:center; gap:6px; background:transparent; border:none; color:var(--text-muted); font-size:1.05rem; font-family:inherit; cursor:pointer; padding:4px; transition:all 0.2s; }
+    .btn-ledger-quick { display:flex; align-items:center; gap:6px; background:transparent; border:none; color:var(--text-muted); font-family:inherit; cursor:pointer; padding:4px; transition:all 0.2s; }
     .btn-ledger-quick:hover { color:var(--accent-green); }
+    .ledger-quick-mark { display:inline-flex; align-items:center; justify-content:center; width:19px; height:19px; border:1px solid currentColor; border-radius:4px; font-size:0.76rem; font-weight:800; line-height:1; }
     .ledger-quick-net { font-family:"Courier New",monospace; font-weight:800; font-size:0.72rem; }
     .icon-x { background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:0.8rem; padding:2px 4px; flex-shrink:0; }
     .icon-x:hover { color:var(--accent-pink); }
@@ -658,9 +671,14 @@
     .cash-bar { height:5px; background:rgba(0,0,0,0.45); border:1px solid var(--glass-border); border-radius:3px; overflow:hidden; }
     .cash-fill { height:100%; background:linear-gradient(90deg,var(--accent-orange),var(--accent-gold)); transition:width .4s ease; }
     .cash-fill.done { background:linear-gradient(90deg,var(--accent-green),#9dffd4); }
-    .cd-fill { position:absolute; left:0; top:0; bottom:0; pointer-events:none; z-index:0;
-      background: linear-gradient(90deg, rgba(255,138,31,0.045), rgba(255,138,31,0.11));
-      border-right: 1px solid rgba(255,138,31,0.22); transition: width .6s linear; }
+    /* A bar along the bottom edge rather than a tint filling part of the
+       card. As a full-height wash it read as a rendering fault - every
+       card looked like it had a lighter rectangle stopping at a random
+       point, and no two stopped in the same place. Same information,
+       now clearly a progress bar. */
+    .cd-fill { position:absolute; left:0; bottom:0; height:3px; pointer-events:none; z-index:0;
+      background: linear-gradient(90deg, rgba(255,138,31,0.5), rgba(255,138,31,0.9));
+      transition: width .6s linear; }
     .ledger-card.is-ready .cd-fill { display:none; }
     .card-left, .card-actions { position: relative; z-index: 1; }
     .user-note { background: rgba(255,138,31,0.10); border-left: 2px solid var(--accent-orange); padding: 7px 10px; border-radius: 4px; margin-bottom: 8px; font-size: 0.78rem; }
@@ -1353,6 +1371,13 @@
   box-shadow: 1px 1px 0 #0B0B0B;
 }
 [data-theme="western"] .btn-settings-gear { color: var(--text-main); }
+/* Same square-plate language as the tier badges and avatars. */
+[data-theme="western"] .btn-ledger-quick { color: var(--text-main); }
+[data-theme="western"] .ledger-quick-mark {
+  border-radius: 0; border: 1px solid #0B0B0B; box-shadow: 2px 2px 0 #0B0B0B;
+  background: var(--accent-gold); color: #0B0B0B;
+  font-family: 'Special Elite', monospace;
+}
 
 /* Cards & containers: solid, flat, grain-textured, hard-edged */
 [data-theme="western"] .glass-panel,
@@ -1470,13 +1495,17 @@
   border: 2px solid #0B0B0B;
   background: #810000;
   box-shadow: 5px 5px 0 #0B0B0B;
-  padding: 7px 10px 10px 7px;
-  gap: 7px;
+  padding: 8px;
+  gap: 8px;
 }
 [data-theme="western"] .nav-tab { box-sizing: border-box; min-width: 0; }
 /* Equal borders across all three - the active state reads through
    colour and shadow depth, it doesn't need an extra pixel of edge. */
-[data-theme="western"] .nav-pill-group .nav-tab.active { border-width: 2px; box-shadow: 3px 3px 0 #0B0B0B; }
+/* 2px shadows here, not 3px: the plank's frame is even on all four
+   sides now, and a 3px drop shadow on the last tab reached past the
+   right edge of it. */
+[data-theme="western"] .nav-pill-group .nav-tab { box-shadow: 2px 2px 0 #0B0B0B; }
+[data-theme="western"] .nav-pill-group .nav-tab.active { border-width: 2px; box-shadow: 2px 2px 0 #0B0B0B; }
 [data-theme="western"] .nav-tab { color: var(--text-main); }
 [data-theme="western"] .nav-tab.active {
   background: var(--accent-gold);
@@ -1766,17 +1795,72 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: gold-text-gleam 1.3s linear infinite;
+  padding-right: 20px;
 }
 @keyframes gold-text-gleam {
   0% { background-position: 160% 0; }
   100% { background-position: -60% 0; }
 }
-[data-theme="western"] .hero-run-btn:active { box-shadow: none; }
-[data-motion="off"] [data-theme="western"] .hero-run-btn {
-  animation: none;
+
+/* Gleaming text alone turned out not to be enough of a "press this" -
+   someone using the app walked straight past it. So when there is
+   actually something ready, the label picks up three cues that gold
+   text on its own can't give: it breathes, it carries a chevron that
+   nudges toward the tap, and a light runs along a rule beneath it, the
+   way an underline marks something actionable. Still no box - the box
+   is what made this read as UI chrome the first time round. All three
+   are scoped to :not(:disabled), so "NOTHING READY YET" stays inert
+   rather than inviting a tap that does nothing. */
+[data-theme="western"] .hero-run-btn:not(:disabled) {
+  animation: gold-text-gleam 1.15s linear infinite, run-btn-breathe 2.6s ease-in-out infinite;
+  transform-origin: left center;
+}
+@keyframes run-btn-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+/* ::before and ::after have to opt out of the parent's background-clip:
+   text / transparent fill, or they inherit it and paint nothing. */
+[data-theme="western"] .hero-run-btn:not(:disabled)::after {
+  content: '\00BB';
+  position: absolute;
+  right: 2px; top: 50%;
   background: none;
   -webkit-text-fill-color: var(--accent-gold);
+  color: var(--accent-gold);
+  font-weight: 900;
+  text-shadow: 1px 1px 0 #0B0B0B, 0 0 8px rgba(255, 193, 7, 0.5);
+  animation: run-chevron-nudge 1.5s ease-in-out infinite;
+  pointer-events: none;
 }
+@keyframes run-chevron-nudge {
+  0%, 100% { transform: translate(0, -50%); opacity: 0.55; }
+  50% { transform: translate(4px, -50%); opacity: 1; }
+}
+[data-theme="western"] .hero-run-btn:not(:disabled)::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 16px; bottom: -1px; height: 2px;
+  background: linear-gradient(90deg, rgba(255,193,7,0) 0%, rgba(255,193,7,0) 28%, #FFC107 50%, rgba(255,193,7,0) 72%, rgba(255,193,7,0) 100%);
+  background-size: 220% 100%;
+  -webkit-text-fill-color: initial;
+  animation: run-underline-sweep 1.15s linear infinite;
+  pointer-events: none;
+}
+@keyframes run-underline-sweep {
+  0% { background-position: 160% 0; }
+  100% { background-position: -60% 0; }
+}
+[data-theme="western"] .hero-run-btn:active { box-shadow: none; }
+[data-motion="off"] [data-theme="western"] .hero-run-btn,
+[data-motion="off"] [data-theme="western"] .hero-run-btn:not(:disabled) {
+  animation: none;
+  background: none;
+  transform: none;
+  -webkit-text-fill-color: var(--accent-gold);
+}
+[data-motion="off"] [data-theme="western"] .hero-run-btn::before { animation: none; }
+[data-motion="off"] [data-theme="western"] .hero-run-btn::after { animation: none; opacity: 1; transform: translate(0, -50%); }
 
 
 /* Campfire flicker: the hero stat card - the single biggest visual
@@ -1817,11 +1901,12 @@
   bottom: 60%;
   width: 70px; height: 100px;
   border-radius: 50%;
-  /* Flatter falloff than before - the merge filter thresholds on alpha,
-     and a long transparent tail just gets cut away, so the plume body
-     carries its weight further out instead. */
-  background: radial-gradient(circle, rgba(10, 9, 8, 0.8) 0%, rgba(10, 9, 8, 0.6) 46%, rgba(10, 9, 8, 0.26) 68%, transparent 82%);
-  filter: blur(6px);
+  /* The original colour curve, restored: the flattened, denser version
+     that went with the hard threshold made these read as ink blots. The
+     long transparent tail is what makes them look like smoke. Size and
+     pace stay where they are - that part of the effect is right. */
+  background: radial-gradient(circle, rgba(10, 9, 8, 0.85) 0%, rgba(10, 9, 8, 0.4) 45%, transparent 72%);
+  filter: blur(10px);
   opacity: 0;
   animation: demon-smoke 17s ease-in infinite;
 }
@@ -1937,17 +2022,9 @@
   bottom: 10%;
   width: 120px; height: 170px;
   border-radius: 50%;
-  /* Thinner than it looks like it should be: the merge filter on the
-     field thickens whatever it fuses, and at the density these plumes
-     used to carry it welded them into one flat black slab across the
-     bottom of the screen. */
-  background: radial-gradient(circle, rgba(6, 5, 5, 0.42) 0%, rgba(6, 5, 5, 0.28) 44%, rgba(6, 5, 5, 0.11) 66%, transparent 82%);
-  /* Heavier per-plume blur than the app's, because these plumes are
-     roughly twice the size: the field-level merge blur is a fixed
-     radius, so on a bigger shape it softens proportionally less and
-     the threshold starts cutting a defined edge. Softening the input
-     buys that back. */
-  filter: blur(18px);
+  /* Same colour curve the app's plumes use, scaled for this screen. */
+  background: radial-gradient(circle, rgba(6, 5, 5, 0.72) 0%, rgba(6, 5, 5, 0.36) 45%, transparent 74%);
+  filter: blur(14px);
   opacity: 0;
   animation: demon-smoke 18s ease-in infinite;
 }
