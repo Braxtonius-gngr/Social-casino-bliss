@@ -1336,7 +1336,9 @@
 [data-theme="western"] .btn-share,
 [data-theme="western"] .cooldown-chip {
   border-radius: 0; border: 2px solid #0B0B0B;
-  background: #22252A; color: var(--text-main);
+  /* One step up from the card beneath them so a button still reads as
+     a raised control on the darkened surface, not a hole in it. */
+  background: #1E2126; color: var(--text-main);
   box-shadow: 3px 3px 0 #0B0B0B; text-shadow: none;
   transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
 }
@@ -1364,7 +1366,11 @@
 [data-theme="western"] .strategy-row,
 [data-theme="western"] .tier-action-card {
   border-radius: 0;
-  background: #22252A;
+  /* Darker gunmetal than the #22252A this started at: every glow in
+     this theme - the ring pulse, the campfire flicker, the ember
+     sparks - is light thrown onto these surfaces, and the lighter the
+     surface the less of that light actually registers. */
+  background: #16181C;
   border: 2px solid #0B0B0B;
   box-shadow: 4px 4px 0 rgba(11,11,11,0.7), inset 0 0 0 1px rgba(234,234,234,0.06);
   backdrop-filter: none; -webkit-backdrop-filter: none;
@@ -1451,13 +1457,26 @@
   border: 5px double var(--accent-gold);
   box-shadow: 4px 4px 0 #0B0B0B, inset 0 0 0 5px rgba(227, 218, 201, 0.18);
 }
+/* The red plank the three tabs are mounted on. It used to sit at a
+   0.45deg tilt, which put the frame out of square with everything
+   around it, and the tabs themselves overflowed it: three flex
+   children at 118px plus two 6px gaps came to 368px inside a 366px
+   box, so "Resources" hung over the right edge with its offset shadow
+   clipped off. Padding now leaves room for those 3px drop shadows on
+   the right and bottom, and the active tab no longer widens itself
+   with a fatter border, so all three measure the same and fit. */
 [data-theme="western"] .nav-pill-group {
   position: relative;
   border: 2px solid #0B0B0B;
   background: #810000;
   box-shadow: 5px 5px 0 #0B0B0B;
-  transform: rotate(0.45deg);
+  padding: 7px 10px 10px 7px;
+  gap: 7px;
 }
+[data-theme="western"] .nav-tab { box-sizing: border-box; min-width: 0; }
+/* Equal borders across all three - the active state reads through
+   colour and shadow depth, it doesn't need an extra pixel of edge. */
+[data-theme="western"] .nav-pill-group .nav-tab.active { border-width: 2px; box-shadow: 3px 3px 0 #0B0B0B; }
 [data-theme="western"] .nav-tab { color: var(--text-main); }
 [data-theme="western"] .nav-tab.active {
   background: var(--accent-gold);
@@ -1789,27 +1808,46 @@
    fewer, bigger, darker, concentrated over the top ~260px instead of
    the full viewport, and blurred since smoke (unlike embers, blood,
    grain) genuinely needs softness to read as smoke. */
-[data-theme="western"] #smokeField { opacity: 1; z-index: 1; }
+/* The merge filter lives on the field so it composites the plumes
+   against each other; without it two overlapping plumes just stack
+   their alpha and you can still read both outlines crossing. */
+[data-theme="western"] #smokeField { opacity: 1; z-index: 1; filter: url(#smokeMerge); }
 [data-theme="western"] #smokeField span {
   position: absolute;
   bottom: 60%;
   width: 70px; height: 100px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(10, 9, 8, 0.85) 0%, rgba(10, 9, 8, 0.4) 45%, transparent 72%);
-  filter: blur(10px);
+  /* Flatter falloff than before - the merge filter thresholds on alpha,
+     and a long transparent tail just gets cut away, so the plume body
+     carries its weight further out instead. */
+  background: radial-gradient(circle, rgba(10, 9, 8, 0.8) 0%, rgba(10, 9, 8, 0.6) 46%, rgba(10, 9, 8, 0.26) 68%, transparent 82%);
+  filter: blur(6px);
   opacity: 0;
-  animation: demon-smoke 10s ease-in infinite;
+  animation: demon-smoke 17s ease-in infinite;
 }
-[data-theme="western"] #smokeField span:nth-child(1) { left: 8%; width: 82px; height: 115px; animation-duration: 8.5s; animation-delay: 0s; }
-[data-theme="western"] #smokeField span:nth-child(2) { left: 30%; width: 60px; height: 88px; animation-duration: 11s; animation-delay: 2.4s; }
-[data-theme="western"] #smokeField span:nth-child(3) { left: 58%; width: 90px; height: 130px; animation-duration: 9.5s; animation-delay: 1.2s; }
-[data-theme="western"] #smokeField span:nth-child(4) { left: 78%; width: 64px; height: 95px; animation-duration: 12s; animation-delay: 4.4s; }
-[data-theme="western"] #smokeField span:nth-child(5) { left: 44%; width: 50px; height: 78px; animation-duration: 7.8s; animation-delay: 6s; }
+/* Roughly 1.7x the old durations. Smoke this size moving at the old
+   pace read as drifting particles; at this speed it climbs the way
+   heat actually carries it, and the slower crossings give two plumes
+   time to visibly swell together before they part again. */
+/* Delays are NEGATIVE: at this slower pace a positive delay means the
+   field is empty for the first several seconds, which is exactly when
+   someone is looking at it. A negative delay starts each plume part
+   way through its own climb, so the smoke is already up and drifting
+   on the first painted frame. */
+[data-theme="western"] #smokeField span:nth-child(1) { left: 8%;  width: 88px;  height: 122px; animation-duration: 15s;   animation-delay: -2s; }
+[data-theme="western"] #smokeField span:nth-child(2) { left: 26%; width: 70px;  height: 100px; animation-duration: 19s;   animation-delay: -9s; }
+[data-theme="western"] #smokeField span:nth-child(3) { left: 46%; width: 96px;  height: 136px; animation-duration: 16.5s; animation-delay: -5s; }
+[data-theme="western"] #smokeField span:nth-child(4) { left: 66%; width: 74px;  height: 104px; animation-duration: 20.5s; animation-delay: -13s; }
+[data-theme="western"] #smokeField span:nth-child(5) { left: 36%; width: 62px;  height: 88px;  animation-duration: 13.5s; animation-delay: -7s; }
+[data-theme="western"] #smokeField span:nth-child(6) { left: 82%; width: 84px;  height: 118px; animation-duration: 18s;   animation-delay: -16s; }
+/* Grows harder on the way up (0.7 -> 2.15) so neighbouring plumes
+   genuinely run into each other partway through the climb rather than
+   passing as two separate columns. */
 @keyframes demon-smoke {
   0% { transform: translate3d(0, 10%, 0) scale(0.7) rotate(0deg); opacity: 0; }
-  14% { opacity: 0.95; }
-  50% { opacity: 0.75; transform: translate3d(-10px, -55%, 0) scale(1.2) rotate(-4deg); }
-  100% { transform: translate3d(16px, -140%, 0) scale(1.6) rotate(6deg); opacity: 0; }
+  16% { opacity: 0.95; }
+  50% { opacity: 0.8; transform: translate3d(-12px, -55%, 0) scale(1.45) rotate(-4deg); }
+  100% { transform: translate3d(18px, -140%, 0) scale(2.15) rotate(6deg); opacity: 0; }
 }
 
 /* Hellscape static: a full-viewport signal-corruption sting - a red
@@ -1887,26 +1925,42 @@
    here - this is its own element rather than a z-index fight. Sits
    under .landing-inner (z-index 2), above the screen's background. */
 .landing-smoke { position: absolute; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; opacity: 0; }
-[data-theme="western"] .landing-smoke { opacity: 1; }
+/* Same merge filter as #smokeField, so the landing screen's smoke
+   behaves like the app's rather than being a separate-looking effect
+   on the way in. */
+[data-theme="western"] .landing-smoke { opacity: 1; filter: url(#smokeMerge); }
 /* Denser core than #smokeField's: these plumes are bigger, and the same
    alpha spread over more area just reads as a gradient artifact against
    an already near-black backdrop rather than as smoke. */
 [data-theme="western"] .landing-smoke span {
   position: absolute;
-  bottom: 26%;
+  bottom: 10%;
   width: 120px; height: 170px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(6, 5, 5, 0.95) 0%, rgba(6, 5, 5, 0.62) 42%, rgba(6, 5, 5, 0.22) 64%, transparent 80%);
-  filter: blur(12px);
+  /* Thinner than it looks like it should be: the merge filter on the
+     field thickens whatever it fuses, and at the density these plumes
+     used to carry it welded them into one flat black slab across the
+     bottom of the screen. */
+  background: radial-gradient(circle, rgba(6, 5, 5, 0.42) 0%, rgba(6, 5, 5, 0.28) 44%, rgba(6, 5, 5, 0.11) 66%, transparent 82%);
+  /* Heavier per-plume blur than the app's, because these plumes are
+     roughly twice the size: the field-level merge blur is a fixed
+     radius, so on a bigger shape it softens proportionally less and
+     the threshold starts cutting a defined edge. Softening the input
+     buys that back. */
+  filter: blur(18px);
   opacity: 0;
-  animation: demon-smoke 11s ease-in infinite;
+  animation: demon-smoke 18s ease-in infinite;
 }
-[data-theme="western"] .landing-smoke span:nth-child(1) { left: 4%;  width: 140px; height: 200px; animation-duration: 9.5s;  animation-delay: 0s; }
-[data-theme="western"] .landing-smoke span:nth-child(2) { left: 28%; width: 100px; height: 150px; animation-duration: 12s;   animation-delay: 2.1s; }
-[data-theme="western"] .landing-smoke span:nth-child(3) { left: 56%; width: 150px; height: 210px; animation-duration: 10.5s; animation-delay: 1.1s; }
-[data-theme="western"] .landing-smoke span:nth-child(4) { left: 78%; width: 110px; height: 160px; animation-duration: 13s;   animation-delay: 3.8s; }
-[data-theme="western"] .landing-smoke span:nth-child(5) { left: 40%; width: 90px;  height: 130px; animation-duration: 8.5s;  animation-delay: 5.4s; }
-[data-theme="western"] .landing-smoke span:nth-child(6) { left: 66%; width: 120px; height: 175px; animation-duration: 11.5s; animation-delay: 6.9s; }
+/* Small negative delays only. The poster card covers the middle of this
+   screen, so a plume more than a fifth of the way up its climb is
+   hidden behind it - the smoke has to read in the band below the card,
+   which means catching these early in the rise. */
+[data-theme="western"] .landing-smoke span:nth-child(1) { left: 6%;  width: 140px; height: 195px; animation-duration: 17s;   animation-delay: -1s; }
+[data-theme="western"] .landing-smoke span:nth-child(2) { left: 24%; width: 105px; height: 150px; animation-duration: 21s;   animation-delay: -3.4s; }
+[data-theme="western"] .landing-smoke span:nth-child(3) { left: 46%; width: 150px; height: 205px; animation-duration: 18.5s; animation-delay: -2.2s; }
+[data-theme="western"] .landing-smoke span:nth-child(4) { left: 68%; width: 125px; height: 175px; animation-duration: 22s;   animation-delay: -4.6s; }
+[data-theme="western"] .landing-smoke span:nth-child(5) { left: 36%; width: 100px; height: 142px; animation-duration: 15s;   animation-delay: -2.8s; }
+[data-theme="western"] .landing-smoke span:nth-child(6) { left: 84%; width: 135px; height: 188px; animation-duration: 19.5s; animation-delay: -5.6s; }
 [data-motion="off"] [data-theme="western"] .landing-smoke span { animation: none; }
 
 /* Burn transition: "Enter Deck" burns through with real holes, not an
@@ -2016,12 +2070,12 @@
   color: var(--accent-gold); text-shadow: 1px 1px 0 #0B0B0B; letter-spacing: 0.12em;
 }
 [data-theme="western"] .btn-exit-run {
-  border-radius: 0; border: 2px solid #0B0B0B; background: #22252A; color: var(--text-main);
+  border-radius: 0; border: 2px solid #0B0B0B; background: #1E2126; color: var(--text-main);
   box-shadow: 3px 3px 0 #0B0B0B;
 }
 [data-theme="western"] .btn-exit-run:hover { border-color: #0B0B0B; color: var(--accent-pink); }
 [data-theme="western"] .run-undo-bar {
-  border-radius: 0; border: 2px solid #0B0B0B; background: #22252A; color: var(--text-muted);
+  border-radius: 0; border: 2px solid #0B0B0B; background: #1E2126; color: var(--text-muted);
   box-shadow: 3px 3px 0 #0B0B0B;
 }
 [data-theme="western"] .run-undo-btn {

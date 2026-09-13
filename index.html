@@ -103,9 +103,27 @@
     <span></span><span></span><span></span><span></span><span></span>
   </div>
 
+  <!-- Six plumes now, and they fuse: #smokeMerge blurs the whole field
+       then slams the alpha back up, so two plumes drifting into each
+       other stop looking like two discs crossing and instead swell into
+       one larger mass with a single outline - the way real smoke and
+       flame behave when they meet. Applied to the field, not the spans,
+       since the merge has to happen between siblings. -->
   <div id="smokeField" aria-hidden="true">
-    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span><span></span>
   </div>
+
+  <svg width="0" height="0" style="position:absolute;" aria-hidden="true">
+    <filter id="smokeMerge">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="11" result="soft" />
+      <!-- Alpha slope kept moderate on purpose. Cranked higher it fuses
+           harder but thresholds the plumes into hard-edged cutouts, and
+           smoke with a defined edge stops being smoke. -->
+      <feColorMatrix in="soft" type="matrix"
+        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 8 -3.1" result="fused" />
+      <feGaussianBlur in="fused" stdDeviation="9" />
+    </filter>
+  </svg>
 
   <div id="tourBox" class="tour-tooltip-box" onclick="advanceTourStep()">
     <div id="tourBody"></div>
@@ -152,14 +170,14 @@
     </div>
 
     <div class="nav-pill-group glass-panel" id="navGroup">
-      <button class="nav-tab active" id="tabPlatforms" onclick="switchMainTab('games', this)">Platforms</button>
+      <button class="nav-tab active" id="tabPlatforms" onclick="switchMainTab('games', this)">Deck</button>
       <button class="nav-tab" id="tabCatalog" onclick="switchMainTab('catalog', this)">Catalogue</button>
       <button class="nav-tab" id="tabResources" onclick="switchMainTab('resources', this)">Resources</button>
     </div>
 
     <section id="viewGames">
       <div style="display:flex; gap:8px; margin-bottom:12px;">
-        <input type="text" id="gamesSearch" class="catalog-search glass-panel" style="margin-bottom:0; flex:1;" placeholder="Search your platforms..." oninput="renderGames(); saveViewState();" />
+        <input type="text" id="gamesSearch" class="catalog-search glass-panel" style="margin-bottom:0; flex:1;" placeholder="Search your deck..." oninput="renderGames(); saveViewState();" />
         <button class="sort-trigger-btn secondary glass-panel" id="btnDense" title="Compact view" onclick="toggleDense()" style="padding:6px 12px;">&#9776;</button>
       </div>
       <div class="filter-sort-row">
@@ -1685,14 +1703,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (list.length === 0) {
         container.innerHTML = `
           <div style="text-align:center; padding: 40px 16px; color:var(--text-muted); text-shadow:0 0 5px rgba(255,255,255,0.2);">
-            <p style="font-size:1.1rem; margin-bottom:6px; font-weight:800; color:var(--accent-cyan);">NO PLATFORMS DETECTED</p>
-            <p style="font-size:0.8rem;">Initialize deck from Catalogue or ADD manually</p>
+            <p style="font-size:1.1rem; margin-bottom:6px; font-weight:800; color:var(--accent-cyan);">YOUR DECK IS EMPTY</p>
+            <p style="font-size:0.8rem;">Deal yourself a deck from the Catalogue, or ADD one manually</p>
           </div>
         `;
         return;
       }
 
-      list.forEach(game => {
+      list.forEach((game, cardIndex) => {
         const { isReady, remainingMs } = getCooldownState(game);
         const cardWrapper = document.createElement('div');
         const goToGames = getBestGames(game.name) || game.bestGames;
@@ -1724,7 +1742,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
                 ${game.referralUrl ? `<button class="btn-share" onclick="shareReferral(this, '${game.id}')">Share</button>` : ''}
                 ${isReady ? `<button class="btn-check btn-snooze" title="Snooze 3 hours" onclick="snoozePlatform('${game.id}', 3, event)">&#9200;</button>` : ''}
                 <button class="btn-check" title="Mark collected without opening" onclick="markCollected('${game.id}', event)">&#10003;</button>
-                <button class="btn-open ${isReady ? '' : 'cooldown'}" onclick="collect('${game.id}')">
+                <button ${cardIndex === 0 ? 'id="tourOpenTarget"' : ''} class="btn-open ${isReady ? '' : 'cooldown'}" onclick="collect('${game.id}')">
                   ${isReady ? 'OPEN' : 'WAIT'}
                 </button>
                 <button class="btn-dots" onclick="openEditModal('${game.id}')">...</button>
@@ -2173,6 +2191,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     let tourStep = 0;
     let currentTourTarget = null;
+    let currentTourSecondary = null;
     let tourActiveCatId = null;
 
     // Real burn-through holes (see the SVG clipPaths in the markup near
@@ -2324,7 +2343,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const box = document.getElementById('tourBox');
         if (box) box.style.display = 'none';
         if (currentTourTarget) currentTourTarget.classList.remove('tour-target-active');
+        if (currentTourSecondary) currentTourSecondary.classList.remove('tour-target-active');
         currentTourTarget = null;
+        currentTourSecondary = null;
         tourStep = 0;
         return;
       }
@@ -2359,17 +2380,25 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         positionTourBox('tourAddTarget', 'Tap the + to start tracking this platform.', true);
 
       } else if (tourStep === 5) {
-        // The handoff people miss: added platforms live on the Platforms tab.
-        positionTourBox('tabPlatforms', 'Platforms is your own list \u2014 everything you add shows up here with a timer.', true);
+        // The handoff people miss: added platforms live on the Deck tab.
+        positionTourBox('tabPlatforms', 'Your Deck is your own personal list of sites \u2014 everything you add from the Catalogue lands here with its own timer.', true);
 
       } else if (tourStep === 6) {
         if (document.getElementById('viewGames').style.display !== 'block') {
           switchMainTab('games', document.getElementById('tabPlatforms'));
         }
         setTimeout(() => {
-          const btn = document.getElementById('btnStartDailyRun');
-          positionTourBox(isPositionable(btn) ? 'btnStartDailyRun' : 'tabPlatforms',
-            'OPEN takes you to the site and starts the timer. Or hit Daily Run to go through every ready platform one at a time.', false);
+          // Two things are being described, so both get lit up. Anchor on
+          // OPEN when there's a card to point at - the sentence leads with
+          // it, and pointing only at Daily Run left people hunting for the
+          // button the first half of the text was talking about.
+          const openBtn = document.getElementById('tourOpenTarget');
+          const runBtn = document.getElementById('btnStartDailyRun');
+          const anchor = isPositionable(openBtn) ? 'tourOpenTarget'
+            : (isPositionable(runBtn) ? 'btnStartDailyRun' : 'tabPlatforms');
+          const alsoLit = anchor === 'tourOpenTarget' && isPositionable(runBtn) ? 'btnStartDailyRun' : null;
+          positionTourBox(anchor,
+            'OPEN takes you to the site and starts its timer. Or hit Start Daily Run up top to walk every ready site one at a time.', false, alsoLit);
         }, 200);
 
       } else if (tourStep === 7) {
@@ -2382,9 +2411,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
     }
 
-    function positionTourBox(targetId, text, isAuto = false) {
+    // secondaryId lights a second element without moving the tooltip -
+    // for steps that describe two controls at once.
+    function positionTourBox(targetId, text, isAuto = false, secondaryId = null) {
       if (currentTourTarget) {
         currentTourTarget.classList.remove('tour-target-active');
+      }
+      if (currentTourSecondary) {
+        currentTourSecondary.classList.remove('tour-target-active');
+        currentTourSecondary = null;
       }
       const target = document.getElementById(targetId);
       const box = document.getElementById('tourBox');
@@ -2395,6 +2430,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
       currentTourTarget = target;
       target.classList.add('tour-target-active');
+      if (secondaryId) {
+        const second = document.getElementById(secondaryId);
+        if (second) { second.classList.add('tour-target-active'); currentTourSecondary = second; }
+      }
       body.innerHTML = text;
 
       if (subtext) {
