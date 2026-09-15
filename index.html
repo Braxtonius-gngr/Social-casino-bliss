@@ -180,6 +180,7 @@
       <button class="nav-tab active" id="tabPlatforms" onclick="switchMainTab('games', this)">Deck</button>
       <button class="nav-tab" id="tabCatalog" onclick="switchMainTab('catalog', this)">Catalogue</button>
       <button class="nav-tab" id="tabResources" onclick="switchMainTab('resources', this)">Resources</button>
+      <button class="nav-tab" id="tabFreebies" onclick="switchMainTab('freebies', this)">Freebies</button>
     </div>
 
     <section id="viewGames">
@@ -342,6 +343,11 @@
         </a>
       </div>
 
+    </section>
+
+    <section id="viewFreebies" style="display: none;">
+      <div class="drops-note" style="margin-bottom:10px;">Codes and claim links pulled from Discord/email sweeps and verified before posting. Account-tied links only work for whoever originally received them &mdash; those show which platform to check directly instead of a dead link.</div>
+      <div id="freebiesList"><div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:18px;">Loading...</div></div>
     </section>
   </div>
 
@@ -2610,9 +2616,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('viewGames').style.display = (tab === 'games') ? 'block' : 'none';
       document.getElementById('viewCatalog').style.display = (tab === 'catalog') ? 'block' : 'none';
       document.getElementById('viewResources').style.display = (tab === 'resources') ? 'block' : 'none';
+      document.getElementById('viewFreebies').style.display = (tab === 'freebies') ? 'block' : 'none';
 
       if (tab === 'catalog') renderCatalogList();
       if (tab === 'games') renderGames();
+      if (tab === 'freebies') loadPublicFreebies();
 
       if (tab === 'catalog') tourCheckpoint(1);
       if (tab === 'games') tourCheckpoint(5);
@@ -4860,6 +4868,85 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       queue.push(Object.assign({}, offer, { addedAt: Date.now() }));
       saveDropQueue(queue);
       showToast('Added to Drop Inbox queue.');
+    }
+
+    // --- Public Freebies feed: read-only for every app user ---
+    // Sourced from Supabase's public_freebies table, which RLS makes
+    // world-readable (active rows only) but NOT client-writable - there is
+    // no insert/update/delete policy for anon/authenticated, so curation
+    // only ever happens out of band (Supabase dashboard or an MCP-connected
+    // session), never from this page. That keeps a personal Drop Inbox
+    // paste from being able to spam every user's feed, and keeps this tab
+    // dead simple: fetch, cache briefly, render.
+    let publicFreebiesCache = null;
+    let publicFreebiesLoadedAt = 0;
+    const PUBLIC_FREEBIES_TTL_MS = 5 * 60 * 1000;
+
+    async function loadPublicFreebies(force) {
+      const list = document.getElementById('freebiesList');
+      if (!list) return;
+      if (!force && publicFreebiesCache && (Date.now() - publicFreebiesLoadedAt < PUBLIC_FREEBIES_TTL_MS)) {
+        renderPublicFreebies(publicFreebiesCache);
+        return;
+      }
+      list.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:18px;">Loading...</div>';
+      const client = getSupabaseClient();
+      if (!client) {
+        list.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:18px;">Freebies feed needs a connection &mdash; check back online.</div>';
+        return;
+      }
+      const nowIso = new Date().toISOString();
+      let data, error;
+      try {
+        ({ data, error } = await client
+          .from('public_freebies')
+          .select('*')
+          .eq('active', true)
+          .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+          .order('created_at', { ascending: false })
+          .limit(100));
+      } catch (e) { error = e; }
+      if (error) {
+        list.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:18px;">Couldn&rsquo;t load the freebies feed right now.</div>';
+        return;
+      }
+      publicFreebiesCache = data || [];
+      publicFreebiesLoadedAt = Date.now();
+      renderPublicFreebies(publicFreebiesCache);
+    }
+
+    function renderPublicFreebies(rows) {
+      const list = document.getElementById('freebiesList');
+      if (!list) return;
+      if (!rows.length) {
+        list.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:18px;">Nothing posted yet &mdash; check back soon.</div>';
+        return;
+      }
+      list.innerHTML = rows.map((r) => {
+        const codeHtml = r.code
+          ? `<div class="drop-name">${escHtml(r.code)} <button class="btn-open" style="padding:3px 8px; font-size:0.68rem;" onclick="navigator.clipboard.writeText('${escHtml(r.code).replace(/'/g, "\\'")}')">COPY</button></div>`
+          : '';
+        let linkHtml = '';
+        if (r.is_account_tied) {
+          linkHtml = `<div class="drop-url">Account-tied link &mdash; check ${escHtml(r.root_domain || r.platform_name)} directly, this link won't work for anyone else</div>`;
+        } else if (r.claim_url) {
+          linkHtml = `<button class="btn-open" style="padding:7px 12px; font-size:0.72rem;" onclick="window.open('${escHtml(r.claim_url)}','_blank')">OPEN</button>`;
+        }
+        const ttlText = r.expires_at ? `Expires ${new Date(r.expires_at).toLocaleString()}` : 'No expiry stated';
+        const termsHtml = r.terms ? `<span class="drop-tag">${escHtml(r.terms)}</span>` : '';
+        return `<div class="drop-row" style="flex-direction:column; align-items:stretch; gap:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <b>${escHtml(r.platform_name)}</b>
+            <span class="${BUCKET_CLASS[r.bucket] || ''}">${BUCKET_LABEL[r.bucket] || escHtml(r.bucket)}</span>
+          </div>
+          ${codeHtml}
+          ${linkHtml}
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <span class="drop-tag">${ttlText}</span>
+            ${termsHtml}
+          </div>
+        </div>`;
+      }).join('');
     }
 
     // --- Ledger: purchases, redemptions, playthrough ---
