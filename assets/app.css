@@ -1709,8 +1709,8 @@
    the ring carries the whole job of catching your eye on its own, so it
    gets more size and more glow than it needed while sharing the screen
    with a second CTA. */
-[data-theme="western"] .hero-ring-wrapper { width: 88px; height: 88px; }
-[data-theme="western"] .hero-ring-circle { font-size: 1.9rem; }
+[data-theme="western"] .hero-ring-wrapper { width: 100px; height: 100px; }
+[data-theme="western"] .hero-ring-circle { font-size: 2.2rem; }
 @keyframes heartbeat-pulse {
   0%, 100% { transform: scale(1); }
   14% { transform: scale(1.12); }
@@ -1769,13 +1769,19 @@
   border: none;
   box-shadow: none;
   color: var(--accent-gold);
+  /* Bigger than the base 0.85rem now that this is the app's only Daily
+     Run trigger (the Deck tab's duplicate button is gone) - it carries
+     the whole "go do this" job on its own, so it gets to take up more
+     room than it needed while splitting attention with a second CTA. */
+  font-size: 1.15rem;
+  padding: 8px 2px;
   /* Hard offset shadow, same as every other header/label in this theme -
      keeps the letters legible against the card behind them during the
      bright part of the gleam sweep - plus a soft warm glow under that,
      so the text pulls the eye on its own rather than needing a box.
      Always on, ready-to-collect or not: this is a "go do this" cue
      that should never read as inert, even when nothing's ready yet. */
-  text-shadow: 1px 1px 0 #0B0B0B, 0 0 10px rgba(255, 193, 7, 0.4);
+  text-shadow: 1px 1px 0 #0B0B0B, 0 0 16px rgba(255, 193, 7, 0.6);
   background-image: linear-gradient(115deg,
     #FFC107 0%, #FFC107 34%,
     #FFF6D6 50%,
@@ -1809,7 +1815,7 @@
 }
 @keyframes run-btn-breathe {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.045); }
+  50% { transform: scale(1.09); }
 }
 /* ::before and ::after have to opt out of the parent's background-clip:
    text / transparent fill, or they inherit it and paint nothing. */
@@ -1821,13 +1827,13 @@
   -webkit-text-fill-color: var(--accent-gold);
   color: var(--accent-gold);
   font-weight: 900;
-  text-shadow: 1px 1px 0 #0B0B0B, 0 0 8px rgba(255, 193, 7, 0.5);
+  text-shadow: 1px 1px 0 #0B0B0B, 0 0 12px rgba(255, 193, 7, 0.7);
   animation: run-chevron-nudge 1.5s ease-in-out infinite;
   pointer-events: none;
 }
 @keyframes run-chevron-nudge {
   0%, 100% { transform: translate(0, -50%); opacity: 0.55; }
-  50% { transform: translate(4px, -50%); opacity: 1; }
+  50% { transform: translate(8px, -50%); opacity: 1; }
 }
 [data-theme="western"] .hero-run-btn:not(:disabled)::before {
   content: '';
