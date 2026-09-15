@@ -4647,7 +4647,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // platform's own domain (e.g. crowncoinscasino.com/?fuid=...,
     // mcluck.com/?xnpe_tifc=... - Bloomreach's per-recipient token).
     const CLASSIFY_ACCOUNT_PARAMS = new Set([
-      'fuid', 'uid', 'token', 'pid', 'player_message', 'aa', 'hash', 'xnpe_tifc', 'xnpe_cmp'
+      'fuid', 'uid', 'token', 'pid', 'player_message', 'aa', 'hash', 'xnpe_tifc', 'xnpe_cmp', 'mcp_token'
     ]);
 
     function classifyIsCodeShaped(tok) {
@@ -4657,10 +4657,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // A real code is written in caps in the source text (PULSE20, WB250) -
     // surrounding prose words a greedy list-match sweeps up ("active",
     // "now") are not, so checking the ORIGINAL casing (not a post-hoc
-    // .toUpperCase()) is what filters them back out.
+    // .toUpperCase()) is what filters them back out. The separator after
+    // "code"/"codes" is colon, whitespace, OR a dash - real Discord copy
+    // uses all three ("Code: X", "code X", "Code-\nX" on its own line).
     function classifyExtractCodes(text) {
       const codes = new Set();
-      const triggerRe = /\b(?:promo\s+)?codes?\b[:\s]+((?:[A-Za-z0-9]{4,12}[\s,]+)*[A-Za-z0-9]{4,12})/gi;
+      const triggerRe = /\b(?:promo\s+)?codes?\b[:\-\s]+((?:[A-Za-z0-9]{4,12}[\s,]+)*[A-Za-z0-9]{4,12})/gi;
       let m;
       while ((m = triggerRe.exec(text))) {
         m[1].split(/[\s,]+/).forEach((tok) => { if (classifyIsCodeShaped(tok)) codes.add(tok); });
@@ -4668,11 +4670,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return Array.from(codes);
     }
 
+    // Beyond a fixed list of known ESP param names (which will always be
+    // one step behind whatever the next marketing platform calls its
+    // token), catch account-tied links by SHAPE: a query value that looks
+    // like a JWT (base64 JSON always starts "eyJ") or is just a long
+    // opaque base64url/hex blob is essentially never something meant to be
+    // shared - it's a signed, per-recipient token either way.
+    function classifyLooksLikeToken(value) {
+      if (!value) return false;
+      if (value.startsWith('eyJ')) return true;
+      return value.length >= 24 && /^[A-Za-z0-9_-]+$/.test(value) && /[0-9]/.test(value) && /[A-Za-z]/.test(value);
+    }
+
     function classifyHasAccountParam(url) {
       try {
         const u = new URL(url);
-        for (const key of u.searchParams.keys()) {
-          if (CLASSIFY_ACCOUNT_PARAMS.has(key.toLowerCase())) return true;
+        for (const [key, value] of u.searchParams.entries()) {
+          if (CLASSIFY_ACCOUNT_PARAMS.has(key.toLowerCase()) || classifyLooksLikeToken(value)) return true;
         }
       } catch (e) {}
       return false;
@@ -4731,14 +4745,30 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return CLASSIFY_PURCHASE_PATTERNS.some((re) => re.test(text));
     }
 
-    // Splits a pasted dump into candidate offer segments so a message
-    // bundling a purchase-tied headline with a genuine free-registration
-    // bonus in the same block doesn't get collapsed into one verdict.
+    // Splits a pasted dump into candidate offer segments. Two very
+    // different shapes of paste need two different splitters:
+    //
+    // - A Discord scrollback copy: blank lines are NOT a reliable message
+    //   boundary (an embed's own link line often runs straight into the
+    //   NEXT person's message with no blank line at all - confirmed
+    //   against a real paste, where blank-line splitting glued each
+    //   message's link onto whoever posted after them instead of the
+    //   message that actually posted it). The one boundary Discord's copy
+    //   format always emits is the "[H:MM AM/PM]" timestamp prefix on each
+    //   message, so when the text has at least one of those, split right
+    //   before each one instead - that keeps a message's own trailing
+    //   link/"Image" artifact correctly attached to IT, not the next
+    //   message, since everything up to the next timestamp stays together.
+    // - Anything else (an email body, pasted sheet rows) has no such
+    //   marker, so fall back to the original blank-line/sentence split -
+    //   this is what correctly separates Lavish Luck's purchase-tied
+    //   headline from its genuine free-registration bonus in one email.
     function classifySplitSegments(text) {
-      return text
-        .split(/\n\s*\n|(?<=[.!?])\s{2,}/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 8);
+      const hasDiscordTimestamps = /\[\d{1,2}:\d{2}\s*(?:AM|PM)\]/i.test(text);
+      const chunks = hasDiscordTimestamps
+        ? text.split(/(?=\[\d{1,2}:\d{2}\s*(?:AM|PM)\])/i)
+        : text.split(/\n\s*\n|(?<=[.!?])\s{2,}/);
+      return chunks.map((s) => s.trim()).filter((s) => s.length > 8);
     }
 
     function classifyDropText(rawText, opts) {
