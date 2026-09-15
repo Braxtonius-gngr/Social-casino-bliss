@@ -188,10 +188,16 @@
         <input type="text" id="gamesSearch" class="catalog-search glass-panel" style="margin-bottom:0; flex:1;" placeholder="Search your deck..." oninput="renderGames(); saveViewState();" />
         <button class="sort-trigger-btn secondary glass-panel" id="btnDense" title="Compact view" onclick="toggleDense()" style="padding:6px 12px;">&#9776;</button>
       </div>
+      <button class="btn-start-run" id="btnStartDailyRunDeck" onclick="startDailyRun()" disabled>NOTHING READY YET</button>
+      <div id="todayRunHint" class="today-run-hint" aria-live="polite"></div>
       <div class="filter-sort-row">
         <div class="filter-chips">
           <button class="filter-btn active" id="filterAll" onclick="applyFilter('all', this)">All</button>
           <button class="filter-btn" id="filterReady" onclick="applyFilter('ready', this)">Ready</button>
+          <button class="filter-btn" id="filterSoon" onclick="applyFilter('soon', this)">Due soon</button>
+          <button class="filter-btn" id="filterNever" onclick="applyFilter('never', this)">Never collected</button>
+          <button class="filter-btn" id="filterBalance" onclick="applyFilter('balance', this)">Has balance</button>
+          <button class="filter-btn" id="filterSnoozed" onclick="applyFilter('snoozed', this)">Snoozed</button>
           <button class="filter-btn" id="filterLive" onclick="applyFilter('live', this)">Live Play</button>
           <button class="filter-btn" id="filterCooldown" onclick="applyFilter('cooldown', this)">Cooldown</button>
           <button class="filter-btn" id="filterReferral" onclick="applyFilter('referral', this)">Has referral</button>
@@ -463,6 +469,10 @@
         <span style="color:#fff;">Hide platforms on cooldown<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Keeps your Deck to just what's ready</span></span>
         <input type="checkbox" id="settingHideCollected" onchange="toggleHideCollected()" />
       </div>
+      <div class="toggle-row">
+        <span style="color:#fff;">Compact platform list<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Show more platforms with less scrolling</span></span>
+        <input type="checkbox" id="settingDenseToggle" onchange="setDenseFromSettings(this.checked)" />
+      </div>
       <div style="margin-top: 20px; display:flex; flex-direction:column; gap:10px;">
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="restartTourFromSettings()">Restart Interactive Tour</button>
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="resetViewState()">Reset View</button>
@@ -571,7 +581,19 @@
           <div class="notify-message" style="margin-top:12px; margin-bottom:0;">
             Alerts are generated on this device &mdash; there's no server involved. They fire while the app is open or in the background, but if you fully close it from the app switcher, the timer stops until you reopen it.
           </div>
+          <div id="notifyStatus" class="backup-helper" style="text-align:left; margin-top:8px;"></div>
+          <button class="btn-dock" style="width:100%; max-width:none; margin-top:8px;" onclick="sendTestNotification()">SEND TEST ALERT</button>
+          <button id="notifyPauseButton" class="btn-dock" style="width:100%; max-width:none; margin-top:8px; border-color:var(--accent-orange); color:var(--accent-orange);" onclick="pauseNotificationsForDay()">PAUSE ALERTS FOR 24 HOURS</button>
         </div>
+      </div>
+      <div class="notify-settings">
+        <h4>Take a break</h4>
+        <div class="backup-helper" style="text-align:left; margin-top:0;">Set a private on-device session reminder. It never sends data anywhere.</div>
+        <button class="btn-dock" style="width:100%; max-width:none; margin-top:8px;" onclick="startBreakReminder()">REMIND ME IN 30 MINUTES</button>
+      </div>
+      <div class="backup-helper">
+        Everything is stored locally in this browser only. Backups are the only way to move your data to another device or recover it if browser data is cleared.
+        <span id="lastSavedStatus"></span>
       </div>
       <input type="file" id="importBackupInput" accept=".json,application/json" style="display:none;" onchange="importBackup(event)" />
       </div>
@@ -866,8 +888,9 @@
       <h3 style="color:var(--accent-orange); text-shadow:0 0 10px var(--accent-orange);">Bulk Import</h3>
       <div class="form-group">
         <label style="color:var(--accent-orange); text-shadow:0 0 5px rgba(255, 102, 0, 0.5);">Paste URLs (one per line)</label>
-        <textarea id="importUrlsText" rows="6" placeholder="https://chumbacasino.com/&#10;https://luckylandcasino.com/"></textarea>
+        <textarea id="importUrlsText" rows="6" placeholder="https://chumbacasino.com/&#10;https://luckylandcasino.com/" oninput="previewBulkImport()"></textarea>
       </div>
+      <div id="bulkImportPreview" class="backup-helper" style="text-align:left; white-space:pre-line; margin-top:-6px;"></div>
       <div class="modal-actions">
         <button class="btn-primary" style="background:linear-gradient(90deg, var(--accent-orange), var(--accent-gold)); box-shadow:0 0 20px rgba(255, 102, 0, 0.4);" onclick="executeBulkImport()">IMPORT</button>
         <button class="btn-cancel" onclick="closeModals()">CANCEL</button>
@@ -1110,10 +1133,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // independently of the platform data.
     const VIEW_STATE_KEY = 'almanac_view_state_v1';
     const VALID_TABS = ['games', 'catalog', 'resources'];
-    const VALID_GAMES_FILTERS = ['all', 'ready', 'live', 'cooldown', 'referral'];
+    const VALID_GAMES_FILTERS = ['all', 'ready', 'soon', 'never', 'balance', 'snoozed', 'live', 'cooldown', 'referral'];
     const VALID_CATALOG_FILTERS = ['all', 'S', 'A', 'live', 'stale'];
     const TAB_BUTTON_IDS = { games: 'tabPlatforms', catalog: 'tabCatalog', resources: 'tabResources' };
-    const GAMES_FILTER_BTN_IDS = { all: 'filterAll', ready: 'filterReady', live: 'filterLive', cooldown: 'filterCooldown', referral: 'filterReferral' };
+    const GAMES_FILTER_BTN_IDS = {
+      all: 'filterAll', ready: 'filterReady', soon: 'filterSoon', never: 'filterNever',
+      balance: 'filterBalance', snoozed: 'filterSnoozed', live: 'filterLive',
+      cooldown: 'filterCooldown', referral: 'filterReferral'
+    };
     const CATALOG_FILTER_BTN_IDS = { all: 'catFilterAll', S: 'catFilterS', A: 'catFilterA', live: 'catFilterLive', stale: 'catFilterStale' };
 
     // Mirrors applyFilter()'s own class bookkeeping, minus the render/save
@@ -1221,7 +1248,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function persist() {
-      localStorage.setItem('the_casino_almanac_v7', JSON.stringify(trackedGames));
+      try {
+        localStorage.setItem('the_casino_almanac_v7', JSON.stringify(trackedGames));
+        const savedAt = Date.now();
+        localStorage.setItem('almanac_last_saved_v1', String(savedAt));
+        const status = document.getElementById('lastSavedStatus');
+        if (status) status.textContent = ` Last saved ${new Date(savedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.`;
+      } catch (err) {
+        showToast('Could not save changes. Export a backup and free browser storage.', null);
+        throw err;
+      }
       renderGames();
       updateHeroStats();
       scheduleNextNotification();
@@ -1534,8 +1570,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     function toggleDense() {
       const on = !document.body.classList.contains('dense');
+      setDenseFromSettings(on);
+    }
+
+    function setDenseFromSettings(on) {
       document.body.classList.toggle('dense', on);
-      document.getElementById('btnDense').classList.toggle('on', on);
+      const button = document.getElementById('btnDense');
+      const setting = document.getElementById('settingDenseToggle');
+      if (button) button.classList.toggle('on', on);
+      if (setting) setting.checked = on;
       try { localStorage.setItem('almanac_dense', on ? 'true' : 'false'); } catch (e) {}
     }
 
@@ -1692,7 +1735,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       let list = trackedGames.slice();
 
       const q = (document.getElementById('gamesSearch')?.value || '').toLowerCase().trim();
-      if (q) list = list.filter(g => g.name.toLowerCase().includes(q));
+      if (q) {
+        list = list.filter(g => [
+          g.name, g.url, g.notes, g.userNotes, g.referralUrl,
+          ...(g.tags || [])
+        ].filter(Boolean).join(' ').toLowerCase().includes(q));
+      }
 
       // Global "hide platforms on cooldown" preference. The explicit Cooldown
       // filter chip still overrides it, so you can always look at them.
@@ -1705,21 +1753,37 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         list = list.filter(g => (g.tags || []).includes(t));
       }
       else if (currentFilter === 'ready') list = list.filter(g => getCooldownState(g).isReady);
+      else if (currentFilter === 'soon') list = list.filter(g => {
+        const state = getCooldownState(g);
+        return !state.isReady && state.remainingMs <= 6 * 3600000;
+      });
+      else if (currentFilter === 'never') list = list.filter(g => !g.lastCollected);
+      else if (currentFilter === 'balance') list = list.filter(g => typeof g.balance === 'number' && g.balance > 0);
+      else if (currentFilter === 'snoozed') list = list.filter(g => isSnoozed(g));
       else if (currentFilter === 'live') list = list.filter(g => g.hasLive);
       else if (currentFilter === 'cooldown') list = list.filter(g => !getCooldownState(g).isReady);
       else if (currentFilter === 'referral') list = list.filter(g => g.referralUrl && g.referralUrl.trim().length > 0);
 
       // Snoozed platforms drop out of the ready view until their snooze ends.
-      if (currentFilter !== 'cooldown') list = list.filter(g => !(isSnoozed(g) && getCooldownState(g).isReady));
+      if (currentFilter !== 'cooldown' && currentFilter !== 'snoozed') {
+        list = list.filter(g => !(isSnoozed(g) && getCooldownState(g).isReady));
+      }
 
       const streaks = platformStreaks();
       list.sort((a, b) => compareByStack(a, b, sortStackGames));
 
       if (list.length === 0) {
         container.innerHTML = `
-          <div style="text-align:center; padding: 40px 16px; color:var(--text-muted); text-shadow:0 0 5px rgba(255,255,255,0.2);">
-            <p style="font-size:1.1rem; margin-bottom:6px; font-weight:800; color:var(--accent-cyan);">YOUR DECK IS EMPTY</p>
-            <p style="font-size:0.8rem;">Deal yourself a deck from the Catalogue, or ADD one manually</p>
+          <div class="empty-state glass-panel">
+            <p class="empty-state-title">${trackedGames.length ? 'NO MATCHES FOUND' : 'YOUR DECK IS EMPTY'}</p>
+            <p>${trackedGames.length ? 'Try a different search or filter.' : 'Start with a few high-value platforms, or browse the full Catalogue.'}</p>
+            ${trackedGames.length ? '' : `
+              <div class="empty-state-actions">
+                <button class="btn-primary" onclick="addStarterDeck()">ADD S-TIER PICKS</button>
+                <button class="btn-dock" onclick="switchMainTab('catalog', document.getElementById('tabCatalog'))">BROWSE CATALOGUE</button>
+                <button class="btn-dock" onclick="openAddModal()">ADD MANUALLY</button>
+              </div>
+            `}
           </div>
         `;
         return;
@@ -2103,21 +2167,27 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function openImportModal() {
+      document.getElementById('importUrlsText').value = '';
+      previewBulkImport();
       document.getElementById('importModal').classList.add('open');
     }
 
     function executeBulkImport() {
       const text = document.getElementById('importUrlsText').value;
-      const urls = text.split('\n').map(u => u.trim()).filter(u => u.startsWith('http'));
+      const urls = text.split('\n').map(u => u.trim()).filter(Boolean);
+      const valid = [], invalid = [], duplicates = [];
 
       urls.forEach(urlStr => {
         try {
+          if (!/^https?:\/\//i.test(urlStr)) throw new Error('URL must start with http');
           const parsed = new URL(urlStr);
           const domain = parsed.hostname.replace('www.', '').split('.')[0];
           const cleanName = domain.charAt(0).toUpperCase() + domain.slice(1);
 
-          if (!trackedGames.some(g => g.url === urlStr)) {
-            trackedGames.push({
+          if (trackedGames.some(g => g.url === urlStr) || valid.some(g => g.url === urlStr)) {
+            duplicates.push(urlStr);
+          } else {
+            valid.push({
               id: uid(),
               name: cleanName,
               url: urlStr,
@@ -2133,11 +2203,41 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               lastCollected: 0
             });
           }
-        } catch(e) {}
+        } catch(e) { invalid.push(urlStr); }
       });
 
+      const summary = `Ready to import: ${valid.length}\nAlready tracked/duplicate: ${duplicates.length}\nInvalid: ${invalid.length}`;
+      if (!valid.length) {
+        previewBulkImport();
+        showToast('No new valid URLs to import.', null);
+        return;
+      }
+      if (!confirm(`${summary}\n\nAdd the ${valid.length} new platform(s)?`)) return;
+      trackedGames.push(...valid);
       persist();
       closeModals();
+      document.getElementById('importUrlsText').value = '';
+      document.getElementById('bulkImportPreview').textContent = '';
+      showToast(`Imported ${valid.length} platform${valid.length === 1 ? '' : 's'}`, null);
+    }
+
+    function previewBulkImport() {
+      const preview = document.getElementById('bulkImportPreview');
+      if (!preview) return;
+      const lines = document.getElementById('importUrlsText').value.split('\n').map(u => u.trim()).filter(Boolean);
+      let valid = 0, invalid = 0, duplicate = 0;
+      const seen = new Set();
+      lines.forEach(url => {
+        try {
+          if (!/^https?:\/\//i.test(url)) throw new Error();
+          new URL(url);
+          if (trackedGames.some(g => g.url === url) || seen.has(url)) duplicate++;
+          else { seen.add(url); valid++; }
+        } catch (e) { invalid++; }
+      });
+      preview.textContent = lines.length
+        ? `Preview: ${valid} new • ${duplicate} duplicate${invalid ? ` • ${invalid} invalid` : ''}`
+        : 'Preview appears here before anything is added.';
     }
 
     const DROPINBOX_UNLOCK_KEY = 'almanac_dropinbox_unlocked_v1';
@@ -2148,12 +2248,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const isEnabled = localStorage.getItem('almanac_show_landing') !== 'false';
       document.getElementById('settingLandingToggle').checked = isEnabled;
       document.getElementById('settingHideCollected').checked = localStorage.getItem('almanac_hide_collected') === 'true';
+      document.getElementById('settingDenseToggle').checked = document.body.classList.contains('dense');
       renderThemeUI();
       refreshMotionUI();
       refreshTZUI();
       refreshNotifyUI();
       refreshDropInboxUI();
       refreshLedgerNet();
+      const saved = Number(localStorage.getItem('almanac_last_saved_v1'));
+      const status = document.getElementById('lastSavedStatus');
+      if (status && saved) status.textContent = ` Last saved ${new Date(saved).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.`;
+      previewBulkImport();
       document.getElementById('settingsModal').classList.add('open');
     }
 
@@ -2206,8 +2311,41 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function closeModals() {
-      document.querySelectorAll('.sheet-backdrop').forEach(b => b.classList.remove('open'));
+      document.querySelectorAll('.sheet-backdrop.open').forEach(b => b.classList.remove('open'));
+      if (lastModalTrigger && typeof lastModalTrigger.focus === 'function') {
+        lastModalTrigger.focus();
+        lastModalTrigger = null;
+      }
     }
+
+    let lastModalTrigger = null;
+    const modalObserver = new MutationObserver(() => {
+      document.querySelectorAll('.sheet-backdrop.open').forEach(backdrop => {
+        backdrop.setAttribute('role', 'dialog');
+        backdrop.setAttribute('aria-modal', 'true');
+        const heading = backdrop.querySelector('h3');
+        if (heading) {
+          if (!heading.id) heading.id = 'modal-title-' + backdrop.id;
+          backdrop.setAttribute('aria-labelledby', heading.id);
+        }
+        const focusable = backdrop.querySelector('button, input, select, textarea, [tabindex]');
+        if (focusable && document.activeElement !== focusable) focusable.focus();
+      });
+    });
+    modalObserver.observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: true });
+    document.addEventListener('click', (event) => {
+      const trigger = event.target.closest('button, [role="button"]');
+      if (trigger && trigger.getAttribute('onclick') && /open[A-Z].*Modal/.test(trigger.getAttribute('onclick'))) {
+        lastModalTrigger = trigger;
+      }
+      if (event.target.classList.contains('sheet-backdrop') && event.target.classList.contains('open')) closeModals();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        const open = document.querySelector('.sheet-backdrop.open');
+        if (open) { event.preventDefault(); closeModals(); }
+      }
+    });
 
     let tourStep = 0;
     let currentTourTarget = null;
@@ -3138,7 +3276,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     // --- Local notifications ---
     const NOTIFY_KEY = 'almanac_notify_v1';
-    const NOTIFY_DEFAULTS = { enabled: false, start: '23:00', end: '08:00', last: 0 };
+    const NOTIFY_DEFAULTS = { enabled: false, start: '23:00', end: '08:00', last: 0, pausedUntil: 0, pausedEnabled: false };
     let notifyTimer = null;
 
     function getNotifyPrefs() {
@@ -3205,9 +3343,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (unsupported) unsupported.style.display = 'none';
       if (denied) denied.style.display = 'none';
 
-      const on = prefs.enabled && Notification.permission === 'granted';
+      const paused = Number(prefs.pausedUntil) > Date.now();
+      const on = prefs.enabled && !paused && Notification.permission === 'granted';
       if (toggle) toggle.checked = on;
       if (quiet) quiet.style.display = on ? 'flex' : 'none';
+      const pauseButton = document.getElementById('notifyPauseButton');
+      if (pauseButton) {
+        pauseButton.textContent = paused ? 'RESUME ALERTS' : 'PAUSE ALERTS FOR 24 HOURS';
+        pauseButton.onclick = paused ? resumeNotifications : pauseNotificationsForDay;
+      }
+      const status = document.getElementById('notifyStatus');
+      if (status) {
+        status.textContent = paused
+          ? `Alerts paused until ${new Date(prefs.pausedUntil).toLocaleString()}.`
+          : prefs.last
+          ? `Last alert: ${new Date(prefs.last).toLocaleString()}.`
+          : on ? 'Alerts enabled. No alert has fired yet.' : 'Alerts are currently off.';
+      }
     }
 
     async function toggleNotifications(requestedOn) {
@@ -3232,6 +3384,43 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         }
       }
       refreshNotifyUI();
+    }
+
+    function sendTestNotification() {
+      if (!notificationsSupported() || Notification.permission !== 'granted') {
+        showToast('Enable notifications first.', null);
+        return;
+      }
+      try {
+        const n = new Notification('Casino Almanac', { body: 'Test alert: your ready queue will appear here.' });
+        n.onclick = () => window.focus();
+        showToast('Test alert sent.', null);
+      } catch (err) {
+        showToast('The browser blocked the test alert.', null);
+      }
+    }
+
+    function pauseNotificationsForDay() {
+      const prefs = getNotifyPrefs();
+      saveNotifyPrefs({ pausedUntil: Date.now() + 24 * 3600000, pausedEnabled: prefs.enabled });
+      refreshNotifyUI();
+      showToast('Alerts paused for 24 hours.', null);
+    }
+
+    function resumeNotifications() {
+      saveNotifyPrefs({ pausedUntil: 0, pausedEnabled: false });
+      refreshNotifyUI();
+      showToast('Alerts resumed.', null);
+    }
+
+    function startBreakReminder() {
+      const reminderAt = Date.now() + 30 * 60000;
+      try { localStorage.setItem('almanac_break_reminder_v1', String(reminderAt)); } catch (e) {}
+      showToast('Break reminder set for 30 minutes.', null);
+      setTimeout(() => {
+        if (Date.now() < Number(localStorage.getItem('almanac_break_reminder_v1'))) return;
+        showToast('30 minutes have passed. Consider taking a break.', null, 10000, 'OK');
+      }, 30 * 60000);
     }
 
     function isQuietHours(timeMs, startStr, endStr) {
@@ -3272,6 +3461,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (!prefs.enabled || Notification.permission !== 'granted') return;
 
       const now = Date.now();
+      if (Number(prefs.pausedUntil) > now) {
+        const delay = prefs.pausedUntil - now;
+        if (delay > 0 && delay < 2147483647) {
+          notifyTimer = setTimeout(() => {
+            refreshNotifyUI();
+            scheduleNextNotification();
+          }, delay);
+        }
+        return;
+      }
+      if (prefs.pausedUntil) saveNotifyPrefs({ pausedUntil: 0, pausedEnabled: false });
       let nextReady = Infinity;
       trackedGames.forEach(g => {
         // getCooldownState()'s nextReadyAt is already correct for both
@@ -5565,22 +5765,39 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     function updateDailyRunButton() {
       const btn = document.getElementById('btnStartDailyRun');
-      if (!btn) return;
+      const deckBtn = document.getElementById('btnStartDailyRunDeck');
+      const hint = document.getElementById('todayRunHint');
+      if (!btn && !deckBtn) return;
       let pool = trackedGames.filter(g => getCooldownState(g).isReady && !isSnoozed(g));
-      let label = 'DAILY RUN';
       if (currentFilter.startsWith('tag:')) {
         const t = currentFilter.slice(4);
         pool = pool.filter(g => (g.tags || []).includes(t));
-        label = t.toUpperCase() + ' RUN';
       }
       const readyCount = pool.length;
       if (readyCount > 0) {
-        btn.textContent = `START ${label} (${readyCount} READY)`;
-        btn.disabled = false;
+        const text = `RUN TODAY (${readyCount} READY)`;
+        if (btn) { btn.textContent = text; btn.disabled = false; }
+        if (deckBtn) { deckBtn.textContent = text; deckBtn.disabled = false; }
+        if (hint) hint.textContent = currentFilter.startsWith('tag:')
+          ? `Focused on ${currentFilter.slice(4)} platforms.`
+          : 'Work through every ready platform in one focused queue.';
       } else {
-        btn.textContent = 'NOTHING READY YET';
-        btn.disabled = true;
+        if (btn) { btn.textContent = 'NOTHING READY YET'; btn.disabled = true; }
+        if (deckBtn) { deckBtn.textContent = 'NOTHING READY YET'; deckBtn.disabled = true; }
+        if (hint) hint.textContent = trackedGames.length
+          ? 'Nothing is ready right now. Use Due soon to see what unlocks next.'
+          : 'Add platforms to build your daily collection queue.';
       }
+    }
+
+    function addStarterDeck() {
+      bulkToggleTier('S', true);
+      currentFilter = 'all';
+      setGamesFilterButtonUI('all');
+      renderTagChips();
+      switchMainTab('games', document.getElementById('tabPlatforms'));
+      saveViewState();
+      showToast('S-Tier picks added to your deck', null);
     }
 
     function startDailyRun() {

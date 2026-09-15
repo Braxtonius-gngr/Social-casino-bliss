@@ -409,6 +409,12 @@
     .btn-start-run { width: 100%; padding: 14px; margin-bottom: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 900; cursor: pointer; background: rgba(0,0,0,0.5); border: 1px solid var(--accent-green); color: var(--accent-green); text-shadow: 0 0 8px var(--accent-green); box-shadow: inset 0 0 15px rgba(0,255,102,0.15); letter-spacing: 0.05em; }
     .btn-start-run:hover:not(:disabled) { background: var(--accent-green-dim); box-shadow: 0 0 20px rgba(0,255,102,0.35), inset 0 0 20px rgba(0,255,102,0.3); }
     .btn-start-run:disabled { border-color: var(--glass-border); color: var(--text-dim); text-shadow: none; box-shadow: none; cursor: default; }
+    .today-run-hint { min-height: 18px; margin: -7px 2px 12px; color: var(--text-muted); font-size: 0.72rem; text-align: center; }
+    .empty-state { margin: 10px 0; padding: 28px 16px; border-radius: 16px; text-align: center; color: var(--text-muted); }
+    .empty-state-title { margin-bottom: 6px; color: var(--accent-cyan); font-size: 1.05rem; font-weight: 900; text-shadow: 0 0 8px var(--accent-cyan); }
+    .empty-state p:not(.empty-state-title) { font-size: 0.8rem; line-height: 1.45; }
+    .empty-state-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px; }
+    .empty-state-actions button { flex: 1 1 140px; min-width: 0; }
 
     /* Backup & restore */
     .backup-controls { display: flex; gap: 10px; margin-top: 16px; }
