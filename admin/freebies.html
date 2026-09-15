@@ -38,6 +38,16 @@
     </div>
 
     <div class="glass-panel admin-panel">
+      <h2 style="font-size:0.85rem; color:var(--accent-cyan); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">Paste &amp; Classify</h2>
+      <p class="backup-helper" style="margin-bottom:10px;">Paste the same Discord/email text you'd drop into the app's Drop Inbox. This runs it through the same classifier and lists what it finds - review each draft and click "Load into form" to prefill the entry below, then check the platform name and save.</p>
+      <textarea id="pasteInput" rows="5" style="width:100%; resize:vertical;" placeholder="Paste raw text here..."></textarea>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="classifyPaste()">Classify</button>
+      </div>
+      <div id="pasteResults"></div>
+    </div>
+
+    <div class="glass-panel admin-panel">
       <h2 id="formHeading" style="font-size:0.85rem; color:var(--accent-cyan); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.05em;">New Entry</h2>
       <div class="admin-grid">
         <div class="form-group span2">
@@ -103,6 +113,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../utils/cleanDropUrl.js"></script>
+<script src="../utils/classifyDropText.js"></script>
 <script>
   const SUPABASE_URL = 'https://ewfvyrhlsanzkmozrmhs.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3ZnZ5cmhsc2Fuemttb3pybWhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNjkxODksImV4cCI6MjEwNDc0NTE4OX0.kxDXQnueexwstqLeZNJdlITffqTHulaV6z-Rdb0ZJQE';
@@ -293,6 +305,63 @@
     } catch (err) {
       showStatus('Delete failed: ' + ((err && err.message) || 'unknown error'), true);
     }
+  }
+
+  // --- Paste & Classify ---
+  let pasteDrafts = [];
+
+  function suggestPlatformName(root) {
+    if (!root) return '';
+    const base = root.split('.')[0];
+    return base.charAt(0).toUpperCase() + base.slice(1);
+  }
+
+  function classifyPaste() {
+    const raw = document.getElementById('pasteInput').value;
+    pasteDrafts = raw.trim() ? classifyDropText(raw) : [];
+    renderPasteResults();
+  }
+
+  function renderPasteResults() {
+    const box = document.getElementById('pasteResults');
+    if (!pasteDrafts.length) {
+      box.innerHTML = document.getElementById('pasteInput').value.trim()
+        ? '<div class="backup-helper" style="margin-top:10px;">No offers found in that text. (Engagement/referral spam and pure marketing copy are filtered out automatically.)</div>'
+        : '';
+      return;
+    }
+    box.innerHTML = '<div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">' + pasteDrafts.map((o, i) => `
+      <div class="drop-row" style="flex-direction:column; align-items:stretch; gap:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div>
+            <div class="drop-name">${BUCKET_LABEL[o.bucket] || escHtml(o.bucket)}${o.codes.length ? ' &bull; ' + escHtml(o.codes.join(', ')) : ''}${o.link ? ' &bull; ' + escHtml(o.link.root || '') + (o.link.type === 'tracking' ? ' (account-tied link)' : '') : ''}</div>
+            <div class="drop-url">${escHtml(o.snippet)}</div>
+          </div>
+          <button class="btn-open" style="padding:5px 10px; font-size:0.68rem; flex-shrink:0;" onclick="loadDraftIntoForm(${i})">LOAD INTO FORM</button>
+        </div>
+      </div>
+    `).join('') + '</div>';
+  }
+
+  function loadDraftIntoForm(i) {
+    const o = pasteDrafts[i];
+    if (!o) return;
+    editingId = null;
+    fillForm({
+      platform_name: o.link ? suggestPlatformName(o.link.root) : '',
+      bucket: o.bucket,
+      code: o.codes.length ? o.codes.join(', ') : '',
+      claim_url: o.link && o.link.type === 'clean' ? o.link.url : '',
+      root_domain: o.link ? o.link.root : '',
+      is_account_tied: !!(o.link && o.link.type === 'tracking'),
+      terms: o.terms || '',
+      expires_at: o.ttl && typeof o.ttl.expiresAt === 'number' ? new Date(o.ttl.expiresAt).toISOString() : null,
+      source_note: o.snippet
+    });
+    document.getElementById('formHeading').textContent = 'New Entry (from paste - check platform name)';
+    document.getElementById('cancelEditBtn').style.display = 'none';
+    showStatus('Review the platform name and other fields, then SAVE.');
+    document.getElementById('formHeading').scrollIntoView({ behavior: 'smooth' });
   }
 
   // --- Auth gate ---
