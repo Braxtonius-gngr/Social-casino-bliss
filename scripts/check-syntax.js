@@ -35,6 +35,17 @@ function findJsFiles(dir) {
   return results;
 }
 
+function findHtmlFiles(dir) {
+  const results = [];
+  if (!fs.existsSync(dir)) return results;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) results.push(...findHtmlFiles(full));
+    else if (entry.isFile() && entry.name.endsWith('.html')) results.push(full);
+  }
+  return results;
+}
+
 function extractInlineScript(htmlPath) {
   const html = fs.readFileSync(htmlPath, 'utf8');
   // Only <script> tags with no src= attribute carry real inline JS here.
@@ -80,17 +91,24 @@ function main() {
     results.push(checkFile(rel, source));
   }
 
-  const indexPath = path.join(ROOT, 'index.html');
-  if (fs.existsSync(indexPath)) {
-    const inlineBlocks = extractInlineScript(indexPath);
+  // index.html plus any standalone page this app ships (e.g. admin/*.html) -
+  // each gets its own inline <script> block(s) checked the same way.
+  const htmlPaths = [
+    path.join(ROOT, 'index.html'),
+    ...findHtmlFiles(path.join(ROOT, 'admin')),
+  ];
+  for (const htmlPath of htmlPaths) {
+    if (!fs.existsSync(htmlPath)) continue;
+    const rel = path.relative(ROOT, htmlPath);
+    const inlineBlocks = extractInlineScript(htmlPath);
     inlineBlocks.forEach((source, i) => {
       const label = inlineBlocks.length > 1
-        ? `index.html (inline <script> #${i + 1})`
-        : 'index.html (inline <script>)';
+        ? `${rel} (inline <script> #${i + 1})`
+        : `${rel} (inline <script>)`;
       results.push(checkFile(label, source));
     });
     if (inlineBlocks.length === 0) {
-      console.warn('Warning: no inline <script> block (without src=) found in index.html.');
+      console.warn(`Warning: no inline <script> block (without src=) found in ${rel}.`);
     }
   }
 

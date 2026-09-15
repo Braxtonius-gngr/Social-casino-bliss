@@ -482,11 +482,11 @@
         <button class="btn-dock" style="border-color:var(--accent-green); color:var(--accent-green); text-shadow:0 0 5px var(--accent-green);" onclick="exportBackup()">&#8681; EXPORT BACKUP</button>
         <button class="btn-dock" style="border-color:var(--accent-gold); color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold);" onclick="document.getElementById('importBackupInput').click()">&#8679; IMPORT BACKUP</button>
       </div>
-      <div class="backup-helper" style="margin-top:6px;">Your platform list &mdash; timers, tags, notes, referral links &mdash; lives only in this browser; it's not part of Cloud Sync below. These buttons are the only way to move it to a new device or recover it if this browser's storage gets cleared.</div>
+      <div class="backup-helper" style="margin-top:6px;">Your platform list &mdash; timers, tags, notes, referral links &mdash; also mirrors to the cloud via Cloud Sync below once you're signed in. These buttons still give you an offline, on-demand copy &mdash; handy for a manual transfer or as a snapshot to keep.</div>
       <div style="margin-top: 14px;">
         <button id="syncToggleBtn" class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="toggleCloudSync()">Disable Cloud Sync</button>
         <div id="syncStatusBox" class="backup-helper" style="margin-top:6px;">Up to date</div>
-        <div class="backup-helper" style="margin-top:4px;">On by default: mirrors your collection history (the ledger behind streaks and stats) to the cloud under an account created automatically for this device. Collecting anything for the first time will ask for an email, so that history is recoverable if this device's storage is ever cleared. Turn it off here if you'd rather stay local-only.</div>
+        <div class="backup-helper" style="margin-top:4px;">On by default: mirrors your platform list (timers, tags, notes, referral links) and your collection history (the ledger behind streaks and stats) to the cloud under an account created automatically for this device. Collecting anything for the first time will ask for an email, so both are recoverable if this device's storage is ever cleared &mdash; and, once linked, so your deck and timers stay in sync across every device signed into that same email. Turn it off here if you'd rather stay local-only.</div>
       </div>
       <div id="syncEmailSection" style="margin-top: 10px;">
         <div id="syncLinkedEmailBox" class="backup-helper" style="display:none; color:var(--accent-green);"></div>
@@ -1250,6 +1250,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function persist() {
       try {
         localStorage.setItem('the_casino_almanac_v7', JSON.stringify(trackedGames));
+        markDeckDirty();
         const savedAt = Date.now();
         localStorage.setItem('almanac_last_saved_v1', String(savedAt));
         const status = document.getElementById('lastSavedStatus');
@@ -3676,6 +3677,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const SYNC_META_KEY = 'almanac_sync_meta_v1';
     const SYNC_SEEDED_KEY = 'almanac_sync_seeded_v1';
     const EMAIL_GATE_PASSED_KEY = 'almanac_email_gate_passed_v1';
+    // Deck sync (trackedGames): a single-row-per-account snapshot, not an
+    // event log like collection_events above - see syncTrackedGamesSnapshot()
+    // for why (whole-deck overwrite, not a merge) and for the bootstrap
+    // guard that keeps a fresh/second device from pushing its own empty
+    // deck over an existing cloud one before it's ever pulled.
+    const DECK_SYNC_DIRTY_KEY = 'almanac_deck_sync_dirty_v1';
+    const DECK_SYNC_CURSOR_KEY = 'almanac_deck_sync_cursor_v1';
+    const DECK_SYNC_BOOTSTRAPPED_UID_KEY = 'almanac_deck_sync_bootstrapped_uid_v1';
 
     let supabaseClient = null;
     let syncInFlight = false;
@@ -4054,6 +4063,91 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try { localStorage.setItem(SYNC_SEEDED_KEY, 'true'); } catch (e) {}
     }
 
+    // --- Deck sync: trackedGames (platforms, timers, tiers, notes) ---
+    // Unlike collection_events above (an append/tombstone event log that
+    // replays cleanly from any device), the deck is one mutable array that
+    // every local edit rewrites wholesale via persist(). Trying to sync
+    // that as granular events would mean diffing arrays of objects for no
+    // real benefit on a single-user tool, so this instead upserts the
+    // WHOLE array as one JSON snapshot per account and applies it
+    // last-write-wins by server updated_at. That is a real, deliberate
+    // trade-off: editing the deck on two devices before either syncs means
+    // whichever push lands last wins for the whole deck, not a merge.
+    function markDeckDirty() {
+      try { localStorage.setItem(DECK_SYNC_DIRTY_KEY, 'true'); } catch (e) {}
+    }
+
+    // Applies the account's saved snapshot onto this device, but only if
+    // it's newer than the last one this device already applied (the cursor
+    // also advances on our OWN pushes, so this naturally no-ops on the
+    // pull right after a push instead of re-rendering what we just sent).
+    // Returns whether a remote snapshot exists at all - syncTrackedGamesSnapshot()
+    // needs that to tell "nothing to pull yet" apart from "pulled, unchanged."
+    async function pullTrackedGamesSnapshot(client, session) {
+      const { data, error } = await client
+        .from('tracked_games_snapshot')
+        .select('games, updated_at')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return false;
+      const cursor = localStorage.getItem(DECK_SYNC_CURSOR_KEY);
+      if (Array.isArray(data.games) && (!cursor || new Date(data.updated_at) > new Date(cursor))) {
+        trackedGames = data.games;
+        trackedGames.forEach(normalizeTimerFields);
+        try { localStorage.setItem('the_casino_almanac_v7', JSON.stringify(trackedGames)); } catch (e) {}
+        renderGames();
+        renderTagChips();
+        updateHeroStats();
+        updateDailyRunButton();
+      }
+      try { localStorage.setItem(DECK_SYNC_CURSOR_KEY, data.updated_at); } catch (e) {}
+      return true;
+    }
+
+    async function pushTrackedGamesSnapshot(client, session) {
+      const { data, error } = await client
+        .from('tracked_games_snapshot')
+        .upsert({ user_id: session.user.id, games: trackedGames, device_id: getDeviceId() }, { onConflict: 'user_id' })
+        .select('updated_at')
+        .single();
+      if (error) throw error;
+      try {
+        localStorage.setItem(DECK_SYNC_CURSOR_KEY, data.updated_at);
+        localStorage.removeItem(DECK_SYNC_DIRTY_KEY);
+      } catch (e) {}
+    }
+
+    async function syncTrackedGamesSnapshot() {
+      const client = getSupabaseClient();
+      if (!client) return;
+      try {
+        const session = await ensureSyncSignedIn(client);
+        const uid = session.user.id;
+        // First time THIS DEVICE has synced the deck under this account
+        // identity (fresh install signing in, or a "Recover a Linked
+        // Account" that just swapped in a different uid than before) -
+        // always pull first. Skipping this would let a fresh device's own
+        // empty/default deck get pushed and silently overwrite the real
+        // one before it ever saw it.
+        if (localStorage.getItem(DECK_SYNC_BOOTSTRAPPED_UID_KEY) !== uid) {
+          const hadRemote = await pullTrackedGamesSnapshot(client, session);
+          try { localStorage.setItem(DECK_SYNC_BOOTSTRAPPED_UID_KEY, uid); } catch (e) {}
+          if (hadRemote) { try { localStorage.removeItem(DECK_SYNC_DIRTY_KEY); } catch (e) {} return; }
+          // Nothing saved for this account yet - safe to seed it from this
+          // device on the very next line, same as any other dirty push.
+        }
+        if (localStorage.getItem(DECK_SYNC_DIRTY_KEY) === 'true') {
+          await pushTrackedGamesSnapshot(client, session);
+        } else {
+          await pullTrackedGamesSnapshot(client, session);
+        }
+      } catch (err) {
+        console.warn('Deck sync failed:', err);
+        setSyncMeta({ lastError: (err && err.message) || 'deck sync failed' });
+      }
+    }
+
     // The actual "try to sync right now" step, shared by the automatic
     // background triggers (interval, 'online', app boot, landing dismiss)
     // - silent on failure (flushSyncOutbox()/pullAndReplay() already
@@ -4065,6 +4159,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       ensureHistorySeeded();
       flushSyncOutbox();
       pullAndReplay();
+      syncTrackedGamesSnapshot();
     }
 
     // Explicit path: the Settings toggle, used either to force a sync
@@ -4086,6 +4181,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         try { localStorage.setItem(SYNC_SEEDED_KEY, 'true'); } catch (e) {}
         await flushSyncOutbox();
         await pullAndReplay();
+        await syncTrackedGamesSnapshot();
         renderSyncStatusUI();
         renderSyncEmailUI();
         showToast('Cloud sync enabled.', null);
@@ -5504,7 +5600,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         { t: "Knowing what's working", items: [{ h: 'Stats', b: 'Total collections, last 7 and 30 days, your current daily streak, most-collected platforms, and a 12-week activity heatmap.' }, { h: 'Missed Resets', b: "Fixed-reset platforms whose drop came and went uncollected. That one's genuinely gone — unlike a rolling timer, which just waits. Rolling platforms are excluded because they can't miss." }, { h: 'Going Stale', b: "Tracked platforms you haven't touched in 21+ days. The prune list." }, { h: 'Review &amp; Prune', b: "Walks you through prunable platforms one at a time with the reason each was flagged. Keep, remove, or skip. Nothing is ever removed automatically, and it warns you if a platform has a referral link you'd lose." }, { h: 'A note on numbers', b: 'The app counts <i>collections</i>, never estimated money. 37 catalogue entries have no verified daily value, and several others are averaged ranges — a dollar figure built on that would look authoritative while being mostly invented.' }] },
         { t: 'Balances and cashouts', items: [{ h: 'Balance tracking', b: "Edit a platform and enter your current SC balance. You get a progress bar toward that platform's cashout minimum, which turns green at <b>CASHOUT READY</b>." }, { h: 'Where the target comes from', b: 'It\'s read from the platform\'s stated minimum redemption. Where a platform lists both ("50 GC / 100 Cash") it uses the larger, since that\'s the one gating a real cash redemption.' }] },
         { t: 'Referrals and sharing', items: [{ h: 'Manage Referrals', b: "Settings → Manage Referrals. Paste your own referral links per platform, or use <b>BULK</b> to paste many at once as <code>PlatformName | https://link</code>. Names must match exactly — anything that doesn't match is reported back rather than guessed at." }, { h: 'Share button', b: 'Platforms with a referral link get a Share button on their card — native share sheet, or copies to clipboard.' }, { h: 'Share Deck', b: 'Exports your platform list, tags and referral links as a file to send someone. It deliberately leaves out your timers, balances, history and private notes. On import it merges rather than overwrites.' }] },
-        { t: 'Keeping your data', items: [{ h: 'Local, plus a cloud mirror', b: 'Your tracked platforms and timers live in this browser. Your collection history (streaks/stats) also mirrors to the cloud automatically — see Cloud Sync below.' }, { h: 'Backups', b: "Settings → Export Backup gives you a dated JSON file with your tracked platforms and their timers. It does NOT include collection history/streaks — that's what Cloud Sync covers instead." }, { h: 'Cloud Sync (beta)', b: "On by default, no signup: this device gets an anonymous account automatically and your collection history mirrors to it. Turn it off in Settings if you'd rather stay fully local-only." }, { h: 'Making it recoverable', b: "The anonymous account alone has no password to sign back in with, so clearing THIS device's storage still loses local access to that copy. That's why your very first collection prompts for an email right there — a confirmation link, never a password — before it's logged, so there's always at least one way back to it. You can also do this anytime from Settings → Link Email. On a new or wiped device, Settings → Recover a Linked Account sends a sign-in link that pulls that history back down." }, { h: 'Install it', b: 'Add to Home Screen from your browser menu. It then opens like an app and works offline.' }] },
+        { t: 'Keeping your data', items: [{ h: 'Local, plus a cloud mirror', b: 'Your tracked platforms, timers, and collection history (streaks/stats) all live in this browser first, and all mirror to the cloud automatically — see Cloud Sync below.' }, { h: 'Backups', b: "Settings → Export Backup gives you a dated JSON file with your tracked platforms and their timers, independent of the cloud — good for an offline copy or moving data by hand. It does NOT include collection history/streaks." }, { h: 'Cloud Sync (beta)', b: "On by default, no signup: this device gets an anonymous account automatically, and both your platform list (timers, tags, notes) and your collection history mirror to it. Turn it off in Settings if you'd rather stay fully local-only." }, { h: 'Making it recoverable, and synced across devices', b: "The anonymous account alone has no password to sign back in with, so clearing THIS device's storage still loses local access to that copy. That's why your very first collection prompts for an email right there — a confirmation link, never a password — before it's logged, so there's always at least one way back to it. You can also do this anytime from Settings → Link Email. On a new or wiped device, Settings → Recover a Linked Account sends a sign-in link that pulls both your deck and your history back down — and from then on, every device signed into that email stays in sync automatically. Editing the deck on two devices before either syncs means whichever save lands last wins for the whole deck, not a smart merge." }, { h: 'Install it', b: 'Add to Home Screen from your browser menu. It then opens like an app and works offline.' }] },
         { t: 'Look and feel', items: [{ h: 'Themes', b: 'Three: <b>Prism Noir</b> (black-card luxury with circuit threading), <b>Neon Grid</b> (high-contrast cyberpunk), <b>Obsidian Ledger</b> (warm matte neutrals). Settings → Theme.' }, { h: 'Motion', b: 'If your device has Reduce Motion or Battery Saver on, animations switch off automatically. Settings → Motion → <b>Always on</b> overrides that if you want them regardless.' }] }
     ];
 

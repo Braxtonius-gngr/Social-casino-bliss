@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Freebies Admin — The Casino Almanac</title>
+<link rel="stylesheet" href="../assets/app.css" />
+<style>
+  /* Small additions on top of the shared app.css theme - the admin list/
+     form layout isn't part of the main app, so it has no existing classes
+     to reuse beyond what's pulled in below. */
+  .admin-header { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:16px; }
+  .admin-header h1 { font-size:1.05rem; color:var(--accent-cyan); text-shadow:0 0 8px var(--accent-cyan); letter-spacing:0.04em; }
+  .admin-panel { padding:18px; border-radius:16px; margin-bottom:16px; }
+  .admin-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+  .admin-grid .form-group.span2 { grid-column: 1 / -1; }
+  @media (max-width:520px) { .admin-grid { grid-template-columns:1fr; } }
+  #statusMsg { min-height:16px; font-size:0.75rem; margin-top:8px; }
+  #authGate { max-width:420px; margin:80px auto; text-align:center; }
+</style>
+</head>
+<body>
+<div class="app-container">
+
+  <div id="authGate" class="glass-panel admin-panel" style="display:none;">
+    <h1 style="color:var(--accent-cyan); text-shadow:0 0 8px var(--accent-cyan); margin-bottom:10px;">Freebies Admin</h1>
+    <p class="backup-helper" style="margin-bottom:14px;">Signs in as the single admin identity for publishing/editing the public Freebies feed. Not linked from the app itself &mdash; bookmark this page.</p>
+    <button id="loginBtn" class="btn-primary" style="width:100%;" onclick="sendMagicLink()">Send Magic Link</button>
+    <button class="btn-cancel" style="width:100%; margin-top:8px;" onclick="signOut()">Sign out (if signed in as the wrong account)</button>
+    <div id="statusMsg"></div>
+  </div>
+
+  <div id="adminApp" style="display:none;">
+    <div class="admin-header">
+      <h1>Freebies Admin</h1>
+      <button class="btn-cancel" style="flex:none; padding:8px 14px; font-size:0.78rem;" onclick="signOut()">Sign out</button>
+    </div>
+
+    <div class="glass-panel admin-panel">
+      <h2 id="formHeading" style="font-size:0.85rem; color:var(--accent-cyan); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.05em;">New Entry</h2>
+      <div class="admin-grid">
+        <div class="form-group span2">
+          <label>Platform Name</label>
+          <input type="text" id="fPlatform" placeholder="e.g. Chumba Casino" />
+        </div>
+        <div class="form-group">
+          <label>Bucket</label>
+          <select id="fBucket">
+            <option value="A_code">A &mdash; Code</option>
+            <option value="B_claim">B &mdash; In-app claim</option>
+            <option value="C_purchase">C &mdash; Purchase required</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Code</label>
+          <input type="text" id="fCode" placeholder="optional" />
+        </div>
+        <div class="form-group span2">
+          <label>Claim URL</label>
+          <input type="text" id="fClaimUrl" placeholder="https://... (leave blank if account-tied)" />
+        </div>
+        <div class="form-group">
+          <label>Root Domain</label>
+          <input type="text" id="fRootDomain" placeholder="e.g. chumbacasino.com" />
+        </div>
+        <div class="form-group">
+          <label>Expires</label>
+          <input type="datetime-local" id="fExpiresAt" />
+        </div>
+        <div class="form-group span2">
+          <label>Terms</label>
+          <input type="text" id="fTerms" placeholder="optional, e.g. 30x playthrough" />
+        </div>
+        <div class="form-group span2">
+          <label>Source Note</label>
+          <input type="text" id="fSourceNote" placeholder="optional, e.g. Discord #freebies 9/15" />
+        </div>
+        <div class="form-group span2">
+          <div class="toggle-row" style="border-bottom:none; padding-bottom:0;">
+            <span>Account-tied (link only works for the original recipient)</span>
+            <input type="checkbox" id="fAccountTied" />
+          </div>
+          <div class="toggle-row" style="border-bottom:none; padding-top:6px;">
+            <span>Active (shown in the app)</span>
+            <input type="checkbox" id="fActive" checked />
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="submitEntry()">SAVE</button>
+        <button id="cancelEditBtn" class="btn-cancel" style="display:none;" onclick="resetForm()">CANCEL EDIT</button>
+      </div>
+      <div id="statusMsg"></div>
+    </div>
+
+    <div class="glass-panel admin-panel">
+      <h2 style="font-size:0.85rem; color:var(--accent-cyan); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">All Entries</h2>
+      <div id="entriesList"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://ewfvyrhlsanzkmozrmhs.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3ZnZ5cmhsc2Fuemttb3pybWhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNjkxODksImV4cCI6MjEwNDc0NTE4OX0.kxDXQnueexwstqLeZNJdlITffqTHulaV6z-Rdb0ZJQE';
+  const ADMIN_EMAIL = 'johndopamine210@gmail.com';
+
+  // A dedicated storage key, deliberately NOT the supabase-js default. This
+  // page shares an origin with the main app (same GitHub Pages site), and
+  // without this, signing in here would silently replace whatever session
+  // the main app has in this same browser - anonymous or linked - which
+  // would then push/pull the WRONG identity's deck and history on its next
+  // sync tick. Keeping the storage key distinct keeps the two sessions
+  // (and their auth listeners) completely isolated from each other.
+  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { storageKey: 'sb-freebies-admin-auth', persistSession: true, autoRefreshToken: true }
+  });
+
+  const BUCKET_LABEL = { A_code: 'CODE', B_claim: 'IN-APP CLAIM', C_purchase: 'PURCHASE REQUIRED' };
+
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+  }
+
+  function showStatus(msg, isError) {
+    document.querySelectorAll('#statusMsg').forEach((el) => {
+      el.textContent = msg || '';
+      el.style.color = isError ? 'var(--accent-pink)' : 'var(--text-muted)';
+    });
+  }
+
+  async function sendMagicLink() {
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    try {
+      const { error } = await client.auth.signInWithOtp({
+        email: ADMIN_EMAIL,
+        options: { emailRedirectTo: window.location.origin + window.location.pathname }
+      });
+      if (error) throw error;
+      showStatus(`Check ${ADMIN_EMAIL} for a sign-in link.`);
+    } catch (err) {
+      showStatus('Could not send link: ' + ((err && err.message) || 'unknown error'), true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Send Magic Link';
+    }
+  }
+
+  async function signOut() {
+    await client.auth.signOut();
+    render();
+  }
+
+  // --- Entries CRUD ---
+  let entries = [];
+  let editingId = null;
+
+  async function loadEntries() {
+    const { data, error } = await client
+      .from('public_freebies')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) { showStatus('Could not load entries: ' + error.message, true); return; }
+    entries = data || [];
+    renderEntries();
+  }
+
+  function renderEntries() {
+    const list = document.getElementById('entriesList');
+    if (!entries.length) {
+      list.innerHTML = '<div class="backup-helper">No entries yet.</div>';
+      return;
+    }
+    list.innerHTML = entries.map((r) => `
+      <div class="drop-row" style="flex-direction:column; align-items:stretch; gap:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div>
+            <div class="drop-name">${escHtml(r.platform_name)} ${r.active ? '' : '<span class="drop-tag unknown">INACTIVE</span>'}</div>
+            <div class="drop-url">${BUCKET_LABEL[r.bucket] || escHtml(r.bucket)}${r.code ? ' &bull; ' + escHtml(r.code) : ''}${r.expires_at ? ' &bull; expires ' + new Date(r.expires_at).toLocaleString() : ' &bull; no expiry'}</div>
+          </div>
+          <div style="display:flex; gap:6px; flex-shrink:0;">
+            <button class="btn-open" style="padding:5px 10px; font-size:0.68rem;" onclick="editEntry('${r.id}')">EDIT</button>
+            <button class="btn-open" style="padding:5px 10px; font-size:0.68rem;" onclick="toggleActive('${r.id}')">${r.active ? 'DEACTIVATE' : 'ACTIVATE'}</button>
+            <button class="btn-open" style="padding:5px 10px; font-size:0.68rem; background:transparent; border:1px solid var(--accent-pink); color:var(--accent-pink); box-shadow:none;" onclick="deleteEntry('${r.id}')">DELETE</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function toDatetimeLocalValue(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function readForm() {
+    const expiresLocal = document.getElementById('fExpiresAt').value;
+    return {
+      platform_name: document.getElementById('fPlatform').value.trim(),
+      bucket: document.getElementById('fBucket').value,
+      code: document.getElementById('fCode').value.trim() || null,
+      claim_url: document.getElementById('fClaimUrl').value.trim() || null,
+      root_domain: document.getElementById('fRootDomain').value.trim() || null,
+      is_account_tied: document.getElementById('fAccountTied').checked,
+      terms: document.getElementById('fTerms').value.trim() || null,
+      expires_at: expiresLocal ? new Date(expiresLocal).toISOString() : null,
+      source_note: document.getElementById('fSourceNote').value.trim() || null,
+      active: document.getElementById('fActive').checked
+    };
+  }
+
+  function fillForm(r) {
+    document.getElementById('fPlatform').value = r.platform_name || '';
+    document.getElementById('fBucket').value = r.bucket || 'A_code';
+    document.getElementById('fCode').value = r.code || '';
+    document.getElementById('fClaimUrl').value = r.claim_url || '';
+    document.getElementById('fRootDomain').value = r.root_domain || '';
+    document.getElementById('fAccountTied').checked = !!r.is_account_tied;
+    document.getElementById('fTerms').value = r.terms || '';
+    document.getElementById('fExpiresAt').value = toDatetimeLocalValue(r.expires_at);
+    document.getElementById('fSourceNote').value = r.source_note || '';
+    document.getElementById('fActive').checked = r.active !== false;
+  }
+
+  function resetForm() {
+    editingId = null;
+    fillForm({ bucket: 'A_code', active: true });
+    document.getElementById('formHeading').textContent = 'New Entry';
+    document.getElementById('cancelEditBtn').style.display = 'none';
+    showStatus('');
+  }
+
+  function editEntry(id) {
+    const r = entries.find((e) => e.id === id);
+    if (!r) return;
+    editingId = id;
+    fillForm(r);
+    document.getElementById('formHeading').textContent = 'Editing: ' + r.platform_name;
+    document.getElementById('cancelEditBtn').style.display = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function submitEntry() {
+    const row = readForm();
+    if (!row.platform_name) { showStatus('Platform name is required.', true); return; }
+    try {
+      if (editingId) {
+        const { error } = await client.from('public_freebies').update(row).eq('id', editingId);
+        if (error) throw error;
+        showStatus('Saved.');
+      } else {
+        const { error } = await client.from('public_freebies').insert(row);
+        if (error) throw error;
+        showStatus('Added.');
+      }
+      resetForm();
+      await loadEntries();
+    } catch (err) {
+      showStatus('Save failed: ' + ((err && err.message) || 'unknown error'), true);
+    }
+  }
+
+  async function toggleActive(id) {
+    const r = entries.find((e) => e.id === id);
+    if (!r) return;
+    try {
+      const { error } = await client.from('public_freebies').update({ active: !r.active }).eq('id', id);
+      if (error) throw error;
+      await loadEntries();
+    } catch (err) {
+      showStatus('Update failed: ' + ((err && err.message) || 'unknown error'), true);
+    }
+  }
+
+  async function deleteEntry(id) {
+    const r = entries.find((e) => e.id === id);
+    if (!r) return;
+    if (!confirm(`Delete "${r.platform_name}"? This can't be undone.`)) return;
+    try {
+      const { error } = await client.from('public_freebies').delete().eq('id', id);
+      if (error) throw error;
+      if (editingId === id) resetForm();
+      await loadEntries();
+    } catch (err) {
+      showStatus('Delete failed: ' + ((err && err.message) || 'unknown error'), true);
+    }
+  }
+
+  // --- Auth gate ---
+  async function render() {
+    const { data } = await client.auth.getSession();
+    const session = data && data.session;
+    const authed = !!(session && session.user && session.user.email === ADMIN_EMAIL);
+    document.getElementById('authGate').style.display = authed ? 'none' : '';
+    document.getElementById('adminApp').style.display = authed ? '' : 'none';
+    if (authed) {
+      resetForm();
+      loadEntries();
+    } else if (session && session.user && session.user.email !== ADMIN_EMAIL) {
+      showStatus(`Signed in as ${session.user.email}, which isn't the admin account. Sign out and use the link sent to ${ADMIN_EMAIL}.`, true);
+    }
+  }
+
+  client.auth.onAuthStateChange(() => render());
+  render();
+</script>
+</body>
+</html>
