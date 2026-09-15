@@ -586,8 +586,10 @@
         <textarea id="dropsInput" rows="4" placeholder="Paste one or more links, any format..." style="width:100%; background:rgba(0,0,0,0.5); border:1px solid var(--glass-border); color:var(--text-main); padding:10px; border-radius:8px; font-family:monospace; font-size:0.76rem; resize:vertical; margin-bottom:9px;"></textarea>
         <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
           <button class="btn-primary" style="flex:1; padding:10px;" onclick="parseDrops()">MATCH LINKS</button>
+          <button class="btn-primary" style="flex:1; padding:10px;" onclick="classifyPastedText()">CLASSIFY TEXT</button>
         </div>
         <label class="drops-toggle"><input type="checkbox" id="dropsOnlyMine" checked onchange="parseDrops()" /> <span>Only show platforms I track</span></label>
+        <div class="drops-note" style="margin-top:6px;">CLASSIFY TEXT reads a whole pasted block (a Discord message, an email body) and sorts it into a real code, an in-app claim, or a purchase-required pack &mdash; instead of just pulling out links.</div>
       </div>
       <div style="flex:1; overflow-y:auto; min-height:0; padding-right:4px; margin-top:12px;" id="dropsList"></div>
       <div class="modal-actions" style="flex-shrink:0; border-top:1px solid var(--glass-border); padding-top:14px;">
@@ -4574,6 +4576,260 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           });
         }
       }
+    }
+
+    // --- Drop text classifier ---
+    // Sorts a pasted block (a Discord message, an email body) into real
+    // codes, in-app claims, or purchase-required packs, instead of just
+    // pulling out links like parseDrops() above. See AGENTS.md Cloud Sync
+    // section's sibling note for context - this is a separate, offline,
+    // local-only pipeline: nothing here talks to Supabase or any network
+    // API, it only classifies text the user pastes in themselves.
+    const DROP_QUEUE_KEY = 'almanac_drop_queue_v1';
+
+    const CLASSIFY_PURCHASE_PATTERNS = [
+      /\bwith\s+(?:any\s+)?purchase\b/i,
+      /\bwhen\s+you\s+buy\b/i,
+      /\bdeposit\s+of\b/i,
+      /\bpurchase\s+package\b/i,
+      /\bin\s+our\s+store\b/i,
+      /\bdiscounted\s+pack\b/i,
+      /\bupgraded\s+purchase\b/i,
+      /\bpack\s*boost\b/i,
+      // Real marketing copy usually skips the word "purchase" entirely and
+      // just states a price next to the offer ("$4.99", "$10.99 GC
+      // package") - a literal-phrase-only filter misses most of these.
+      /\$\s?\d+(?:\.\d{2})?\s*(?:GC\s*)?(?:package|pack|bundle|recharge|boost)?/i
+    ];
+    const CLASSIFY_ZERO_PURCHASE_MARKERS = [
+      /\bzero\s+purchase\s+required\b/i,
+      /\bno\s+purchase\s+necessary\b/i,
+      /\bfree\s+spins?\s+waiting\b/i,
+      /\bfree\s+gift\s+drop\b/i,
+      /\bbonus\s+drop\s+code\b/i,
+      /\bjust\s+for\s+registering\b/i,
+      /\bno\s+purchase\b/i
+    ];
+    // Engagement/retention spam - referral nudges, streak reminders, "we
+    // miss you" copy - none of which is an actual offer to classify.
+    const CLASSIFY_SPAM_PATTERNS = [
+      /\bassemble\s+your\s+squad\b/i,
+      /\bturn\s+friends\s+into\s+rewards\b/i,
+      /\bbring\s+your\s+crew\b/i,
+      /\bshare\s+the\s+fun\s+with\s+your\s+friends\b/i,
+      /\bstill\s+hungry\b/i,
+      /\bwe\s+miss\s+you\b/i,
+      /\bcome\s+back\b/i,
+      /\bgame\s+of\s+the\s+week\b/i,
+      /\bonline\s+in\s+your\s+state\b/i
+    ];
+    // Tokens shaped like a code but never actually one - without this, GC/
+    // SC/ET/TBD and similar abbreviations get pulled in as false positives.
+    const CLASSIFY_CODE_STOPWORDS = new Set([
+      'GC', 'SC', 'USD', 'ET', 'EST', 'PST', 'PDT', 'KYC', 'VIP', 'FAQ', 'TBD',
+      'AMOE', 'TOS', 'RTP', 'CRM'
+    ]);
+    // ESP/marketing-automation domains whose links ARE the tracking token
+    // (Exponea, Bloomreach/customer.io-style redirects, affiliate routers) -
+    // there's no "clean" version; stripping query params does nothing.
+    const CLASSIFY_TRACKING_DOMAINS = [
+      /exponea\.com$/i, /route\.app$/i, /routy\.app$/i, /bonuses\.email$/i,
+      /track\.customer\.io$/i, /^email\./i, /^tracking-/i, /\.page\.link$/i,
+      // Numbered click-tracking subdomains (IBM Watson/Silverpop/Alterian-
+      // style ESPs, e.g. url9888.sweeplasvegas.com/ls/click?...) - the
+      // brand's real domain is the suffix, but this subdomain is the ESP's
+      // one-time redirect layer in front of it, not a page worth publishing.
+      /^url\d*\./i
+    ];
+    // Account-linking params (distinct from plain utm_* marketing tracking,
+    // already handled by cleanDropUrl): if present the link is scoped to
+    // whoever received it and fails for anyone else, even on the
+    // platform's own domain (e.g. crowncoinscasino.com/?fuid=...,
+    // mcluck.com/?xnpe_tifc=... - Bloomreach's per-recipient token).
+    const CLASSIFY_ACCOUNT_PARAMS = new Set([
+      'fuid', 'uid', 'token', 'pid', 'player_message', 'aa', 'hash', 'xnpe_tifc', 'xnpe_cmp'
+    ]);
+
+    function classifyIsCodeShaped(tok) {
+      return /^[A-Z0-9]{4,12}$/.test(tok) && /[A-Z]/.test(tok) && !CLASSIFY_CODE_STOPWORDS.has(tok);
+    }
+
+    // A real code is written in caps in the source text (PULSE20, WB250) -
+    // surrounding prose words a greedy list-match sweeps up ("active",
+    // "now") are not, so checking the ORIGINAL casing (not a post-hoc
+    // .toUpperCase()) is what filters them back out.
+    function classifyExtractCodes(text) {
+      const codes = new Set();
+      const triggerRe = /\b(?:promo\s+)?codes?\b[:\s]+((?:[A-Za-z0-9]{4,12}[\s,]+)*[A-Za-z0-9]{4,12})/gi;
+      let m;
+      while ((m = triggerRe.exec(text))) {
+        m[1].split(/[\s,]+/).forEach((tok) => { if (classifyIsCodeShaped(tok)) codes.add(tok); });
+      }
+      return Array.from(codes);
+    }
+
+    function classifyHasAccountParam(url) {
+      try {
+        const u = new URL(url);
+        for (const key of u.searchParams.keys()) {
+          if (CLASSIFY_ACCOUNT_PARAMS.has(key.toLowerCase())) return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+
+    // Clean domain+path (safe to publish) vs. an account-tied tracking
+    // redirect (root domain + "check your account" only, since the link
+    // itself won't work for anyone but the original recipient).
+    function classifyLink(url) {
+      const host = domainOf(url);
+      if (!host) return null;
+      if (CLASSIFY_TRACKING_DOMAINS.some((re) => re.test(host)) || classifyHasAccountParam(url)) {
+        return { type: 'tracking', root: rootOf(host), url: null };
+      }
+      let clean = url;
+      try { clean = cleanDropUrl(url); } catch (e) {}
+      return { type: 'clean', root: rootOf(host), url: clean };
+    }
+
+    // Explicit timestamp > explicit relative duration > a vague-but-present
+    // temporal phrase (treated as end of today) > the flat 24h default -
+    // real marketing copy uses all four, not just the two extremes.
+    function classifyParseTTL(text, referenceDate) {
+      const ref = referenceDate || new Date();
+      const absMatch = text.match(/\b(\d{4}-\d{2}-\d{2}(?:[ T]\d{1,2}:\d{2})?)\s*(ET|EST|EDT|PT|PST|PDT|UTC)?\b/);
+      if (absMatch) return { type: 'timestamp', raw: absMatch[0], expiresAt: null };
+      const relMatch = text.match(/\b(\d{1,3})\s*(hour|hr|day)s?\b/i);
+      if (relMatch) {
+        const n = parseInt(relMatch[1], 10);
+        const unitMs = /day/i.test(relMatch[2]) ? 86400000 : 3600000;
+        return { type: 'relative', raw: relMatch[0], expiresAt: ref.getTime() + n * unitMs };
+      }
+      const vagueMatch = text.match(/\b(tonight|midnight|weekend promo|this weekend|today|end of day)\b/i);
+      if (vagueMatch) {
+        const eod = new Date(ref);
+        eod.setHours(23, 59, 59, 999);
+        return { type: 'vague', raw: vagueMatch[0], expiresAt: eod.getTime() };
+      }
+      return { type: 'default', raw: null, expiresAt: ref.getTime() + 24 * 3600000 };
+    }
+
+    function classifyExtractTerms(text) {
+      const terms = [];
+      const pt = text.match(/(\d+)x\s*(?:playthrough|rollover|wagering)/i);
+      if (pt) terms.push(pt[0]);
+      const cap = text.match(/(?:max(?:imum)?\s*(?:cashout|redeem|win)|capped\s+at)\D{0,5}\$?\d+(?:\.\d{2})?/i);
+      if (cap) terms.push(cap[0]);
+      return terms.length ? terms.join(' | ') : null;
+    }
+
+    function classifyIsSpam(text) {
+      return CLASSIFY_SPAM_PATTERNS.some((re) => re.test(text));
+    }
+
+    function classifyHasPurchaseIndicator(text) {
+      return CLASSIFY_PURCHASE_PATTERNS.some((re) => re.test(text));
+    }
+
+    // Splits a pasted dump into candidate offer segments so a message
+    // bundling a purchase-tied headline with a genuine free-registration
+    // bonus in the same block doesn't get collapsed into one verdict.
+    function classifySplitSegments(text) {
+      return text
+        .split(/\n\s*\n|(?<=[.!?])\s{2,}/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 8);
+    }
+
+    function classifyDropText(rawText, opts) {
+      opts = opts || {};
+      const ref = opts.referenceDate || new Date();
+      const segments = classifySplitSegments(rawText).filter((s) => !classifyIsSpam(s));
+      const offers = [];
+      segments.forEach((seg) => {
+        if (!/free|bonus|spin|SC\b|GC\b|code|claim|gift|drop/i.test(seg)) return;
+        const links = extractDropLinks(seg);
+        const codes = classifyExtractCodes(seg);
+        const purchaseTied = classifyHasPurchaseIndicator(seg) &&
+          !CLASSIFY_ZERO_PURCHASE_MARKERS.some((re) => re.test(seg));
+        let bucket;
+        if (purchaseTied) bucket = 'C_purchase';
+        else if (codes.length) bucket = 'A_code';
+        else bucket = 'B_claim';
+        const linkInfo = links.map(classifyLink).filter(Boolean)[0] || null;
+        offers.push({
+          id: uid(), bucket, codes, link: linkInfo, ttl: classifyParseTTL(seg, ref),
+          terms: classifyExtractTerms(seg), snippet: seg.slice(0, 200)
+        });
+      });
+      return offers;
+    }
+
+    function extractDropLinks(text) {
+      return (text.match(/https?:\/\/[^\s<>"')\]]+/gi) || []).map((u) => u.replace(/[.,;]+$/, ''));
+    }
+
+    function loadDropQueue() {
+      try { return JSON.parse(localStorage.getItem(DROP_QUEUE_KEY)) || []; } catch (e) { return []; }
+    }
+    function saveDropQueue(queue) {
+      try { localStorage.setItem(DROP_QUEUE_KEY, JSON.stringify(queue)); } catch (e) {}
+    }
+
+    let lastClassifiedOffers = [];
+
+    function classifyPastedText() {
+      const raw = document.getElementById('dropsInput').value;
+      lastClassifiedOffers = classifyDropText(raw);
+      renderClassifiedOffers();
+    }
+
+    const BUCKET_LABEL = { A_code: 'CODE', B_claim: 'IN-APP CLAIM', C_purchase: 'PURCHASE REQUIRED' };
+    const BUCKET_CLASS = { A_code: 'drop-tag', B_claim: '', C_purchase: 'drop-tag unknown' };
+
+    function renderClassifiedOffers() {
+      const list = document.getElementById('dropsList');
+      if (!lastClassifiedOffers.length) {
+        list.innerHTML = `<div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:18px;">No offers found in that text. (Engagement/referral spam and pure marketing copy are filtered out automatically.)</div>`;
+        return;
+      }
+      list.innerHTML = lastClassifiedOffers.map((o, i) => {
+        const codeHtml = o.codes.length
+          ? `<div class="drop-name">${o.codes.map(escHtml).join(', ')} <button class="btn-open" style="padding:3px 8px; font-size:0.68rem;" onclick="navigator.clipboard.writeText('${o.codes[0]}')">COPY</button></div>`
+          : '';
+        let linkHtml = '';
+        if (o.link) {
+          linkHtml = o.link.type === 'clean'
+            ? `<button class="btn-open" style="padding:7px 12px; font-size:0.72rem;" onclick="window.open('${o.link.url}','_blank')">OPEN</button>`
+            : `<div class="drop-url">Account-tied link &mdash; check ${escHtml(o.link.root || 'your account')} directly, this link won't work for anyone else</div>`;
+        }
+        const ttlText = o.ttl.type === 'timestamp' ? `Expires ${escHtml(o.ttl.raw)}`
+          : o.ttl.type === 'default' ? 'No expiry stated &mdash; treat as ~24h'
+          : `Expires ~${new Date(o.ttl.expiresAt).toLocaleString()}`;
+        const termsHtml = o.terms ? `<span class="drop-tag">${escHtml(o.terms)}</span>` : '';
+        return `<div class="drop-row" style="flex-direction:column; align-items:stretch; gap:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="${BUCKET_CLASS[o.bucket]}">${BUCKET_LABEL[o.bucket]}</span>
+            <button class="btn-open" style="padding:5px 10px; font-size:0.68rem;" onclick="addToDropQueue(${i})">ADD TO INBOX</button>
+          </div>
+          ${codeHtml}
+          <div class="drop-url">${escHtml(o.snippet)}</div>
+          ${linkHtml}
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <span class="drop-tag">${ttlText}</span>
+            ${termsHtml}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function addToDropQueue(i) {
+      const offer = lastClassifiedOffers[i];
+      if (!offer) return;
+      const queue = loadDropQueue();
+      queue.push(Object.assign({}, offer, { addedAt: Date.now() }));
+      saveDropQueue(queue);
+      showToast('Added to Drop Inbox queue.');
     }
 
     // --- Ledger: purchases, redemptions, playthrough ---
