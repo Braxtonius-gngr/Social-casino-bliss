@@ -1,3 +1,9 @@
+    // Optional per-entry field, not yet set on any record below:
+    //   lastVerified: "YYYY-MM-DD" - the date someone actually re-checked
+    //   this entry's URL, cooldown, and reset window are still correct.
+    // Missing means "never verified," which is the honest starting state
+    // for every entry here today. See scripts/validate-catalog.js's review
+    // queue (npm run check:catalog) for which entries are most overdue.
     const CATALOG_DATA = [
       { name: "McLuck", url: "https://www.mcluck.com/home", tier: "S", dailySC: 1.0, speedHours: 24, reliability: 95, cooldown: 24, hasLive: true, minRedeem: "10 GC / 75 Cash", notes: "Use GC to farm VIP level before spinning SC. 1x playthrough on SC." },
       { name: "Spree", url: "https://spree.com/", tier: "S", dailySC: 0.4, speedHours: 24, reliability: 92, cooldown: 24, hasLive: true, minRedeem: "10 GC / 75 Cash", notes: "Regular extra free spins given away. Highly reputable. 1x playthrough." },

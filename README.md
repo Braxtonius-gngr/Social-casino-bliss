@@ -4,6 +4,25 @@ Daily bonus tracker for sweepstakes and social casino platforms. A single
 static `index.html` (plus a handful of small `assets/`/`utils/` scripts and
 stylesheets) - no build step, deployed as-is via GitHub Pages.
 
+Everything is local-first: platforms, timers and settings live only in this
+browser, always. Collection history (the ledger behind streaks/stats - the
+one thing the manual JSON backup doesn't cover) also mirrors to a Supabase
+project automatically, under an anonymous account created on-device with no
+email, password, or button click - Settings → Cloud Sync turns it off for
+anyone who'd rather stay fully local-only. It's an outbox-and-replay design:
+local changes queue up and push when online; pulling replays whatever
+changed elsewhere back in, matched by each entry's own id. The anonymous
+account alone has no credential to sign back in with, so on its own this
+only covers redundancy and multi-tab/multi-browser use on the same device -
+Settings → **Link Email** closes that gap by attaching a passwordless email
+to it (no password anywhere in this app), and **Recover a Linked Account**
+pulls that same account's history onto a new or wiped device via a sign-in
+link, without creating a blank new account if the email was never linked.
+Your very first collection (the moment there's actually data worth losing)
+prompts for this inline before it's logged, rather than leaving it as
+something you might never get around to - browsing and adding platforms
+stays completely unblocked either way.
+
 ## Quality checks
 
 Three dependency-free Node scripts catch the most common ways this kind of
@@ -27,6 +46,15 @@ normalized domains, since this catalog legitimately has a few (e.g. two
 entries tracking different cooldowns on the same underlying platform under
 different names); those are printed for a human to judge, never edited
 automatically.
+
+Each entry also takes an optional `lastVerified: "YYYY-MM-DD"` field: the
+date someone last actually re-checked that its URL, cooldown, and reset
+window are still correct. `check:catalog` validates the format and prints
+a review queue of the entries most overdue for a re-check (missing the
+field, or older than 90 days), oldest/never-verified first - the same
+ordering the in-app Catalogue's "Needs Review First" sort and "Needs
+Review" filter use. Re-checking a platform and bumping its date is a
+manual, human step; nothing here fabricates or auto-updates the field.
 
 No `npm install` needed - both scripts use only Node's standard library.
 They also run automatically on every push and pull request via

@@ -53,7 +53,17 @@ button:focus, a:focus {
   }
 }
 
-/* Lower-power fallback for small screens: remove heavy blurs & many shadows */
+/* Lower-power fallback for small screens: drop the backdrop blur only -
+   that's the actual perf cost (compositing a blurred backdrop on every
+   frame on a low-power phone GPU). The box-shadow and background this
+   used to force here too were flattening every card to one hardcoded
+   dark color+shadow with !important, on every touch device (hover:
+   none) regardless of which theme was active - silently overriding
+   each theme's own designed card look (e.g. Boot Hill's bone-white
+   hero card, Boot Hill's hard offset shadow) since !important beats
+   any theme selector's specificity. Each theme already sets its own
+   backdrop-filter: none and an opaque background on these elements, so
+   dropping blur here is enough; it doesn't need to also repaint them. */
 @media (max-width: 520px), (hover: none) {
   .hero-stat-card,
   .sort-drawer,
@@ -63,11 +73,5 @@ button:focus, a:focus {
   .bulk-tier-panel {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.45) !important;
-    background: rgba(10,12,18,0.94) !important;
-  }
-  .hero-ring-circle,
-  .casino-avatar {
-    box-shadow: none !important;
   }
 }

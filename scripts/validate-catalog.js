@@ -13,14 +13,23 @@
  *
  * Two severities:
  *   - FAILURES: a record's own data is malformed (missing/invalid name,
- *     invalid URL, non-finite or out-of-range numbers). These fail the
- *     check (exit 1) - they are unambiguously bugs.
+ *     invalid URL, non-finite or out-of-range numbers, or a malformed/
+ *     future "lastVerified" date). These fail the check (exit 1) - they
+ *     are unambiguously bugs.
  *   - WARNINGS: duplicate names or duplicate normalized domains. These are
  *     printed but do NOT fail the check, because a repeated domain can be
  *     legitimate here (e.g. two catalog entries deliberately tracking two
  *     different cooldowns on the same platform under different names).
  *     Surfaced for a human to judge, not auto-treated as bugs - this
  *     script never edits catalog data itself.
+ *
+ * Also prints a review queue: entries whose optional "lastVerified"
+ * ("YYYY-MM-DD") is missing or older than REVIEW_STALE_DAYS, oldest/never-
+ * verified first. A 140+ entry catalog of cooldowns and SC values rots
+ * quietly - dead sites, changed reset windows, stale referral links - and
+ * a wrong timer is worse than no timer, so this is the boring nudge to go
+ * re-check the platforms most overdue for it. Informational, not a
+ * failure: nothing here is a bug in the record itself.
  */
 
 const fs = require('fs');
@@ -109,6 +118,49 @@ function validateEntry(entry, index, failures) {
       failures.push(`${label}: field "speedHours" must be positive, got ${entry.speedHours}`);
     }
   }
+
+  if (entry.lastVerified !== undefined) {
+    if (typeof entry.lastVerified !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(entry.lastVerified)) {
+      failures.push(`${label}: field "lastVerified" must be a "YYYY-MM-DD" string, got ${JSON.stringify(entry.lastVerified)}`);
+    } else {
+      const parsed = new Date(entry.lastVerified + 'T00:00:00Z');
+      if (Number.isNaN(parsed.getTime())) {
+        failures.push(`${label}: field "lastVerified" is not a real calendar date ("${entry.lastVerified}")`);
+      } else if (parsed.getTime() > Date.now()) {
+        failures.push(`${label}: field "lastVerified" is in the future ("${entry.lastVerified}")`);
+      }
+    }
+  }
+}
+
+// How many whole days old a "YYYY-MM-DD" verification date is. A missing
+// date is not neutral - it is the most urgent case - so it sorts as
+// Infinity rather than being excluded from the review queue.
+function verifiedAgeDays(entry) {
+  if (typeof entry.lastVerified !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(entry.lastVerified)) return Infinity;
+  const ms = Date.now() - new Date(entry.lastVerified + 'T00:00:00Z').getTime();
+  if (!Number.isFinite(ms)) return Infinity;
+  return Math.max(0, Math.floor(ms / 86400000));
+}
+
+const REVIEW_STALE_DAYS = 90;
+const TIER_RANK = { S: 4, A: 3, B: 2, C: 1 };
+
+// Surfaces the platforms most overdue for a human to re-check: a stale or
+// never-verified cooldown/redeem entry is actively worse than an absent
+// one, because it keeps looking trustworthy right up until it burns
+// someone's timer. Never-verified entries come first (grouped by tier, S
+// most urgent), then dated entries oldest-first - the same ordering the
+// in-app "Needs Review First" catalog sort uses, so the CLI queue and the
+// UI queue always agree.
+function buildReviewQueue(catalog) {
+  return catalog
+    .map((entry, index) => ({ entry, index, age: verifiedAgeDays(entry) }))
+    .filter((row) => row.age > REVIEW_STALE_DAYS)
+    .sort((a, b) => {
+      if (b.age !== a.age) return b.age - a.age;
+      return (TIER_RANK[b.entry.tier] || 0) - (TIER_RANK[a.entry.tier] || 0);
+    });
 }
 
 function findDuplicates(catalog) {
@@ -177,6 +229,19 @@ function main() {
     for (const f of failures) console.log(`  ${f}`);
     console.error(`\nCatalog validation failed: ${failures.length} failure(s) across ${catalog.length} entries.`);
     process.exit(1);
+  }
+
+  const reviewQueue = buildReviewQueue(catalog);
+  if (reviewQueue.length) {
+    const neverVerified = reviewQueue.filter((row) => row.age === Infinity).length;
+    console.log(`Review queue: ${reviewQueue.length}/${catalog.length} entries never verified or checked more than ${REVIEW_STALE_DAYS} days ago (${neverVerified} never verified).`);
+    console.log('Oldest first - re-check the platform, then set/refresh its "lastVerified" date:\n');
+    for (const row of reviewQueue.slice(0, 15)) {
+      const ageLabel = row.age === Infinity ? 'never verified' : `${row.age}d ago`;
+      console.log(`  [${row.entry.tier || '?'}] entry ${row.index + 1} (${row.entry.name}): ${ageLabel}`);
+    }
+    if (reviewQueue.length > 15) console.log(`  ...and ${reviewQueue.length - 15} more.`);
+    console.log('');
   }
 
   console.log(`Catalog validation passed: ${catalog.length}/${catalog.length} entries valid.`);
