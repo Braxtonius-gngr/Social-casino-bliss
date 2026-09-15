@@ -188,8 +188,11 @@
         <input type="text" id="gamesSearch" class="catalog-search glass-panel" style="margin-bottom:0; flex:1;" placeholder="Search your deck..." oninput="renderGames(); saveViewState();" />
         <button class="sort-trigger-btn secondary glass-panel" id="btnDense" title="Compact view" onclick="toggleDense()" style="padding:6px 12px;">&#9776;</button>
       </div>
-      <button class="btn-start-run" id="btnStartDailyRunDeck" onclick="startDailyRun()" disabled>NOTHING READY YET</button>
-      <div id="todayRunHint" class="today-run-hint" aria-live="polite"></div>
+      <!-- The Deck tab used to have its own "RUN TODAY" button here, doing
+           exactly the same thing as the hero ring's button above (both
+           called startDailyRun()) - just duplicated on the one tab you're
+           usually already looking at. Removed rather than kept as a second
+           identical CTA; the hero button covers every tab already. -->
       <div class="filter-sort-row">
         <div class="filter-chips">
           <button class="filter-btn active" id="filterAll" onclick="applyFilter('all', this)">All</button>
@@ -5645,9 +5648,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     function updateDailyRunButton() {
       const btn = document.getElementById('btnStartDailyRun');
-      const deckBtn = document.getElementById('btnStartDailyRunDeck');
-      const hint = document.getElementById('todayRunHint');
-      if (!btn && !deckBtn) return;
+      if (!btn) return;
       let pool = trackedGames.filter(g => getCooldownState(g).isReady && !isSnoozed(g));
       if (currentFilter.startsWith('tag:')) {
         const t = currentFilter.slice(4);
@@ -5655,18 +5656,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
       const readyCount = pool.length;
       if (readyCount > 0) {
-        const text = `RUN TODAY (${readyCount} READY)`;
-        if (btn) { btn.textContent = text; btn.disabled = false; }
-        if (deckBtn) { deckBtn.textContent = text; deckBtn.disabled = false; }
-        if (hint) hint.textContent = currentFilter.startsWith('tag:')
-          ? `Focused on ${currentFilter.slice(4)} platforms.`
-          : 'Work through every ready platform in one focused queue.';
+        btn.textContent = `RUN TODAY (${readyCount} READY)`;
+        btn.disabled = false;
       } else {
-        if (btn) { btn.textContent = 'NOTHING READY YET'; btn.disabled = true; }
-        if (deckBtn) { deckBtn.textContent = 'NOTHING READY YET'; deckBtn.disabled = true; }
-        if (hint) hint.textContent = trackedGames.length
-          ? 'Nothing is ready right now. Use Due soon to see what unlocks next.'
-          : 'Add platforms to build your daily collection queue.';
+        btn.textContent = 'NOTHING READY YET';
+        btn.disabled = true;
       }
     }
 
