@@ -479,8 +479,10 @@
       <div style="margin-top: 20px; display:flex; flex-direction:column; gap:10px;">
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="restartTourFromSettings()">Restart Interactive Tour</button>
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="resetViewState()">Reset View</button>
+        <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="resyncTimersFromCatalog()">Resync Reset Times From Catalogue</button>
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-pink); color:var(--accent-pink); text-shadow:0 0 5px var(--accent-pink);" onclick="resetTrackerData()">Reset All Tracked Data</button>
       </div>
+      <div class="backup-helper" style="margin-top:2px;">Only touches reset/cooldown timing (fixed reset hour, timezone, rolling interval) for platforms you already track, pulling the current values from the built-in Catalogue - the same fix that corrected Zula's reset time. Never touches your tags, notes, balances, or referral links.</div>
       <div class="backup-controls">
         <button class="btn-dock" style="border-color:var(--accent-green); color:var(--accent-green); text-shadow:0 0 5px var(--accent-green);" onclick="exportBackup()">&#8681; EXPORT BACKUP</button>
         <button class="btn-dock" style="border-color:var(--accent-gold); color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold);" onclick="document.getElementById('importBackupInput').click()">&#8679; IMPORT BACKUP</button>
@@ -822,6 +824,18 @@
       <input type="hidden" id="ceGameId" />
       <input type="hidden" id="ceIsRunStep" />
       <div id="ceGameName" style="font-weight:800; color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold); margin-bottom:14px;"></div>
+
+      <!-- Only shown when this platform has a matching Catalogue entry
+           AND that entry's timing differs from what's set here - e.g. a
+           correction like Zula's reset time getting fixed in the
+           Catalogue after this device already added it. Filling the
+           form rather than saving directly keeps this consistent with
+           every other control in this editor: nothing changes on the
+           game until SAVE. -->
+      <div id="ceCatalogSyncHint" class="backup-helper" style="display:none; text-align:left; margin-bottom:14px; padding:8px 10px; border:1px solid var(--accent-cyan); border-radius:8px;">
+        <span id="ceCatalogSyncText"></span>
+        <button type="button" class="btn-open" style="display:block; margin-top:6px; padding:5px 10px; font-size:0.7rem;" onclick="applyCatalogTiming()">USE CATALOGUE VALUE</button>
+      </div>
 
       <div class="form-group">
         <label>Timer type</label>
@@ -2799,6 +2813,29 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // entry point uses, not a second, parallel set of rules.
     let cooldownEditorMode = 'rolling';
 
+    // Catalogue lookup shared by the per-platform hint below and the
+    // Settings "Resync" button - a tracked platform only ever carries its
+    // own copy of these fields (CATALOG_DATA itself is never mutated), so
+    // a later fix to the Catalogue entry (like Zula's reset hour) never
+    // reaches an already-tracked copy on its own.
+    function findCatalogEntry(name) {
+      return CATALOG_DATA.find(c => c.name.toLowerCase() === name.toLowerCase()) || null;
+    }
+
+    // True when the Catalogue's reset timing for this platform no longer
+    // matches the tracked copy - fixed-reset hour/timezone, or the rolling
+    // interval when neither side is on a fixed reset. Doesn't fire just
+    // because the mode itself differs from cooldown to cooldown; it's
+    // comparing "what the Catalogue says now" to "what's saved here".
+    function catalogTimingDiffers(game, entry) {
+      if (!entry) return false;
+      const gHour = typeof game.resetHour === 'number' ? game.resetHour : null;
+      const eHour = typeof entry.resetHour === 'number' ? entry.resetHour : null;
+      if (gHour !== eHour) return true;
+      if (gHour !== null) return (game.resetTZ || null) !== (entry.resetTZ || null);
+      return (game.cooldownHours || 24) !== (entry.cooldown || 24);
+    }
+
     function openCooldownEditor(id, event, isRunStep) {
       if (event) event.stopPropagation();
       const game = trackedGames.find(g => g.id === id);
@@ -2815,7 +2852,83 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('ceResetTZ').value = game.resetTZ || 'device';
       setCooldownEditorMode(isFixed ? 'fixed' : 'rolling');
 
+      const catalogEntry = findCatalogEntry(game.name);
+      const hint = document.getElementById('ceCatalogSyncHint');
+      if (catalogEntry && catalogTimingDiffers(game, catalogEntry)) {
+        const fromLabel = cooldownLabel(game);
+        const toLabel = cooldownLabel({ resetHour: catalogEntry.resetHour, resetTZ: catalogEntry.resetTZ, cooldownHours: catalogEntry.cooldown });
+        document.getElementById('ceCatalogSyncText').textContent =
+          `The Catalogue has a different reset time for ${game.name}: ${fromLabel} → ${toLabel}.`;
+        hint.style.display = '';
+      } else {
+        hint.style.display = 'none';
+      }
+
       document.getElementById('cooldownEditorModal').classList.add('open');
+    }
+
+    // Loads the Catalogue's current timing into the (still-unsaved) form -
+    // SAVE still has to be tapped, same as every other change in this
+    // editor, rather than writing to the game directly from here.
+    function applyCatalogTiming() {
+      const id = document.getElementById('ceGameId').value;
+      const game = trackedGames.find(g => g.id === id);
+      const entry = game && findCatalogEntry(game.name);
+      if (!entry) return;
+      if (typeof entry.resetHour === 'number') {
+        setCooldownEditorMode('fixed');
+        document.getElementById('ceResetHour').value = String(entry.resetHour);
+        document.getElementById('ceResetTZ').value = entry.resetTZ || 'device';
+      } else {
+        setCooldownEditorMode('rolling');
+        document.getElementById('ceInterval').value = entry.cooldown || 24;
+      }
+      document.getElementById('ceCatalogSyncHint').style.display = 'none';
+      showToast('Catalogue value loaded below - hit SAVE to apply.', null);
+    }
+
+    // Settings' bulk version of the same fix: walks every tracked platform,
+    // and for any whose reset timing has drifted from the Catalogue (the
+    // Zula case - a correction landing in the Catalogue after the platform
+    // was already tracked), applies the Catalogue's current value. Only
+    // resetHour/resetTZ/cooldownHours ever change here - never tags,
+    // userNotes, balance, referralUrl, or a renamed/re-URLed platform,
+    // since those are things a player deliberately customized and this
+    // button has no way to tell that apart from a stale default.
+    function resyncTimersFromCatalog() {
+      // Find what would change first - nothing is written to a game until
+      // the confirm() below is accepted.
+      const pending = trackedGames
+        .map((game) => ({ game, entry: findCatalogEntry(game.name) }))
+        .filter(({ game, entry }) => catalogTimingDiffers(game, entry))
+        .map(({ game, entry }) => ({ game, entry, fromLabel: cooldownLabel(game), toLabel: cooldownLabel({ resetHour: entry.resetHour, resetTZ: entry.resetTZ, cooldownHours: entry.cooldown }) }));
+
+      if (!pending.length) {
+        alert('Every tracked platform already matches the Catalogue’s reset timing.');
+        return;
+      }
+      const preview = pending.map((p) => `${p.game.name}: ${p.fromLabel} → ${p.toLabel}`).join('\n');
+      if (!confirm(`Update reset timing for ${pending.length} platform(s) to match the Catalogue?\n\n${preview}`)) {
+        return;
+      }
+
+      pending.forEach(({ game, entry }) => {
+        if (typeof entry.resetHour === 'number') {
+          game.resetHour = entry.resetHour;
+          if (entry.resetTZ) game.resetTZ = entry.resetTZ; else delete game.resetTZ;
+        } else {
+          delete game.resetHour;
+          delete game.resetTZ;
+          game.cooldownHours = entry.cooldown || 24;
+        }
+        normalizeTimerFields(game);
+      });
+
+      persist();
+      renderGames();
+      updateHeroStats();
+      updateDailyRunButton();
+      alert(`Updated ${pending.length} platform(s):\n\n${preview}`);
     }
 
     function setCooldownEditorMode(mode) {
