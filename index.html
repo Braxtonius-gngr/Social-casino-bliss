@@ -2380,23 +2380,36 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // be generated fresh (and randomly) per run rather than living as
     // hand-computed arc coordinates at N keyframes.
     //
-    // Scattered across the WHOLE surface rather than climbing from the
-    // bottom, and grown well past the point where they all overlap, so
-    // the thing being burned is eaten through completely instead of
-    // charring to a stop partway. Both layers get their own set: the
-    // poster's start first so it's visibly gone before the screen behind
-    // it opens up onto the app.
+    // Radiates outward from a single lit corner instead of scattering
+    // independently - purely random per-hole delays opened moth-eaten
+    // holes all over the card with no relation to each other, which read
+    // as a generic dissolve rather than fire actually eating through a
+    // map from one point. Each hole's delay is now mostly driven by its
+    // distance from that corner (closer = catches first), with a smaller
+    // random jitter so the spreading edge stays irregular the way a real
+    // burn front does, rather than closing in as a clean circle. Grown
+    // well past the point where they all overlap regardless (see
+    // BURN_SURGE_* below), so the thing being burned is still eaten
+    // through completely, not just charred to a stop partway. Both
+    // layers get their own set from the SAME corner (see runBurnHoles) so
+    // the poster and the screen behind it read as one fire, not two
+    // unrelated effects - the poster's starts a beat ahead so it's
+    // visibly gone before the screen behind it opens onto the app.
     // Centers are allowed slightly outside 0..1 so holes can straddle the
     // edges and eat the corners too - kept inside the box, corners are
     // exactly what survives to the end.
-    function makeBurnHoles(count, maxDelay, minR, maxR) {
+    function makeBurnHoles(count, maxDelay, minR, maxR, ignite) {
       const holes = [];
+      const maxDist = Math.hypot(1.1, 1.1); // corner-to-corner across the padded box below
       for (let i = 0; i < count; i++) {
+        const cx = -0.05 + Math.random() * 1.1;
+        const cy = -0.05 + Math.random() * 1.1;
+        const dist = Math.hypot(cx - ignite.x, cy - ignite.y) / maxDist;
+        const jitter = (Math.random() - 0.5) * 0.24;
         holes.push({
-          cx: -0.05 + Math.random() * 1.1,
-          cy: -0.05 + Math.random() * 1.1,
+          cx, cy,
           maxR: minR + Math.random() * (maxR - minR),
-          delay: Math.random() * maxDelay
+          delay: Math.max(0, Math.min(maxDelay, (dist + jitter) * maxDelay))
         });
       }
       return holes;
@@ -2432,9 +2445,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function runBurnHoles(durationMs) {
+      // One shared ignition point (a random corner) per run - a lit match
+      // to a corner of a map, not four independent fires.
+      const CORNERS = [
+        { x: -0.05, y: -0.05 }, { x: 1.05, y: -0.05 },
+        { x: -0.05, y: 1.05 }, { x: 1.05, y: 1.05 }
+      ];
+      const ignite = CORNERS[Math.floor(Math.random() * CORNERS.length)];
       const layers = [
-        { holes: makeBurnHoles(20, 0.5, 0.24, 0.5), group: 'landingBurnHoles' },
-        { holes: makeBurnHoles(18, 0.45, 0.22, 0.48), group: 'landingScreenBurnHoles' }
+        { holes: makeBurnHoles(20, 0.5, 0.24, 0.5, ignite), group: 'landingBurnHoles' },
+        { holes: makeBurnHoles(18, 0.45, 0.22, 0.48, ignite), group: 'landingScreenBurnHoles' }
       ];
       layers.forEach((layer) => { layer.circles = buildBurnCircles(layer.group, layer.holes); });
       const live = layers.filter((layer) => layer.circles);
@@ -2481,8 +2501,18 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         runBurnHoles(1900);
         setTimeout(() => {
           screen.classList.add('hidden');
-          screen.classList.remove('burning');
         }, 2000);
+        // .burning drives the screen's own background (landing-burn-glow)
+        // all the way to a bright ember-orange end state - removing that
+        // class the instant .hidden lands would snap the background back
+        // to its plain unlit gradient a split second before .hidden's own
+        // 0.4s opacity fade even starts, reading as a stray flash right
+        // when the transition is supposed to be finishing. Waiting out
+        // that fade first means the snap happens after the screen is
+        // already invisible, where it can't be seen at all.
+        setTimeout(() => {
+          screen.classList.remove('burning');
+        }, 2400);
       } else {
         screen.classList.add('hidden');
       }

@@ -1709,8 +1709,8 @@
    the ring carries the whole job of catching your eye on its own, so it
    gets more size and more glow than it needed while sharing the screen
    with a second CTA. */
-[data-theme="western"] .hero-ring-wrapper { width: 100px; height: 100px; }
-[data-theme="western"] .hero-ring-circle { font-size: 2.2rem; }
+[data-theme="western"] .hero-ring-wrapper { width: 92px; height: 92px; }
+[data-theme="western"] .hero-ring-circle { font-size: 2rem; }
 @keyframes heartbeat-pulse {
   0%, 100% { transform: scale(1); }
   14% { transform: scale(1.12); }
@@ -1773,7 +1773,7 @@
      Run trigger (the Deck tab's duplicate button is gone), but pulled
      back from an earlier, larger pass - the size itself doesn't need to
      carry the attention here, the motion/glow below does that job. */
-  font-size: 1rem;
+  font-size: 0.92rem;
   padding: 8px 2px;
   /* Hard offset shadow, same as every other header/label in this theme -
      keeps the letters legible against the card behind them during the
@@ -1811,14 +1811,14 @@
    are scoped to :not(:disabled), so "NOTHING READY YET" stays inert
    rather than inviting a tap that does nothing. */
 [data-theme="western"] .hero-run-btn:not(:disabled) {
-  /* Faster sweep, faster/bigger breathe than the inert state gets -
-     the size came down, so the motion picks up the slack. */
-  animation: gold-text-gleam 0.8s linear infinite, run-btn-breathe 1.9s ease-in-out infinite;
+  /* Faster sweep, bigger breathe than the inert state gets - pulled back
+     one notch from an earlier, more frantic pass per feedback. */
+  animation: gold-text-gleam 1s linear infinite, run-btn-breathe 2.2s ease-in-out infinite;
   transform-origin: left center;
 }
 @keyframes run-btn-breathe {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.16); }
+  50% { transform: scale(1.11); }
 }
 /* ::before and ::after have to opt out of the parent's background-clip:
    text / transparent fill, or they inherit it and paint nothing. */
@@ -1831,12 +1831,12 @@
   color: var(--accent-gold);
   font-weight: 900;
   text-shadow: 1px 1px 0 #0B0B0B, 0 0 14px rgba(255, 193, 7, 0.85);
-  animation: run-chevron-nudge 1.1s ease-in-out infinite;
+  animation: run-chevron-nudge 1.3s ease-in-out infinite;
   pointer-events: none;
 }
 @keyframes run-chevron-nudge {
   0%, 100% { transform: translate(0, -50%) scale(1); opacity: 0.55; }
-  50% { transform: translate(12px, -50%) scale(1.25); opacity: 1; }
+  50% { transform: translate(9px, -50%) scale(1.15); opacity: 1; }
 }
 [data-theme="western"] .hero-run-btn:not(:disabled)::before {
   content: '';
@@ -1846,7 +1846,7 @@
   background-size: 220% 100%;
   box-shadow: 0 0 8px 1px rgba(255, 193, 7, 0.6);
   -webkit-text-fill-color: initial;
-  animation: run-underline-sweep 0.85s linear infinite;
+  animation: run-underline-sweep 1s linear infinite;
   pointer-events: none;
 }
 @keyframes run-underline-sweep {
