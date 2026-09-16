@@ -1656,9 +1656,8 @@
    quality problem with the effect itself. Circular splatter dots via
    radial-gradient, not a soft splash - flat-edged like every other mark
    in this theme - scattered across the upper screen, quick punch in and
-   slow fade-settle out. Uses .app-container::before, the one pseudo-slot
-   on that element not already claimed (::after is the hellscape-static
-   layer below). */
+   slow fade-settle out. Uses .app-container::before, the pseudo-slot
+   not used elsewhere on this element. */
 [data-theme="western"] .app-container::before {
   content: '';
   position: fixed;
@@ -1937,72 +1936,13 @@
   100% { transform: translate3d(18px, -140%, 0) scale(2.15) rotate(6deg); opacity: 0; }
 }
 
-/* Hellscape static: a full-viewport signal-corruption sting - a red
-   scanline pattern slammed on/off with a longer, denser run of hard
-   horizontal/vertical jolts and TWO blown-out white-hot frames (filter:
-   brightness, not a color swap - mix-blend-mode itself doesn't
-   interpolate, but a brightness/contrast spike on the same red pattern
-   reads as the signal overloading rather than just flickering), like
-   the whole screen loses its grip more violently than before. Cut from
-   a 24s cycle to 13s and given a longer, busier jolt sequence (was one
-   white-hot frame, now two, plus a skew on the hardest hit) per "more
-   often or intense" - this was the one effect confirmed to actually
-   land, so it's the one worth pushing hardest. steps(1,end) on the
-   parent keyframe keeps every jump a hard cut, never a smooth fade. */
-[data-theme="western"] .app-container::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(129, 0, 0, 0.42) 0px, rgba(129, 0, 0, 0.42) 2px,
-    transparent 2px, transparent 5px
-  );
-  mix-blend-mode: multiply;
-  opacity: 0;
-  animation: hellscape-static 13s steps(1, end) infinite;
-}
-@keyframes hellscape-static {
-  0%, 92.5% { opacity: 0; transform: translate3d(0, 0, 0) skewX(0deg); filter: brightness(1); }
-  92.6% { opacity: 0.55; transform: translate3d(-12px, 0, 0) skewX(0deg); filter: brightness(1); }
-  92.75% { opacity: 0.1; transform: translate3d(9px, 0, 0) skewX(0deg); filter: brightness(1); }
-  92.9% { opacity: 1; transform: translate3d(0, -4px, 0) skewX(-2deg); filter: brightness(2.8) contrast(1.5); }
-  93.05% { opacity: 0.15; transform: translate3d(-7px, 0, 0) skewX(0deg); filter: brightness(1); }
-  93.25% { opacity: 0.7; transform: translate3d(6px, 3px, 0) skewX(1.5deg); filter: brightness(1); }
-  93.4% { opacity: 0.1; transform: translate3d(0, 0, 0) skewX(0deg); filter: brightness(1); }
-  93.6% { opacity: 1; transform: translate3d(-5px, 2px, 0) skewX(0deg); filter: brightness(2.6) contrast(1.5); }
-  93.75% { opacity: 0.3; transform: translate3d(8px, -3px, 0) skewX(1deg); filter: brightness(1); }
-  93.95% { opacity: 0.6; transform: translate3d(-3px, 0, 0) skewX(0deg); filter: brightness(1); }
-  94.2% { opacity: 0.15; transform: translate3d(0, 0, 0) skewX(0deg); filter: brightness(1); }
-  94.4%, 100% { opacity: 0; transform: translate3d(0, 0, 0) skewX(0deg); filter: brightness(1); }
-}
-
-/* The landing screen sits at z-index 200, above everything else in the
-   app including #emberField/#smokeField (z-index 1) and the
-   .app-container hellscape jolt (999, but scoped to .app-container,
-   which the landing screen isn't part of) - so it never got any of this
-   theme's atmosphere. Gets its own copy of the same hellscape-static
-   jolt (own element, own z-index above the landing card) so first
-   contact with the app already feels like this theme, not a plain
-   wanted-poster screen that only catches fire once you tap in. */
-[data-theme="western"] .landing-screen::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 201;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(129, 0, 0, 0.42) 0px, rgba(129, 0, 0, 0.42) 2px,
-    transparent 2px, transparent 5px
-  );
-  mix-blend-mode: multiply;
-  opacity: 0;
-  animation: hellscape-static 13s steps(1, end) infinite;
-}
-[data-motion="off"] [data-theme="western"] .landing-screen::after { animation: none; }
+/* The blood-splatter burst above uses .app-container::before - the
+   full-viewport signal-corruption jolt that used to live here on
+   .app-container::after ("hellscape-static") has moved to its own
+   theme (Dead Channel, see the end of this file) since it's a
+   different visual language from the rest of Boot Hill's smoke/ember
+   palette and plenty of people never read it as an intentional
+   effect in the first place. */
 
 /* Landing-screen smoke: the same dark drifting plumes the app carries
    behind its top section (#smokeField, and the demon-smoke keyframe
@@ -2067,8 +2007,8 @@
 }
 /* More stops than a plain fade needs, on purpose - firelight flickers
    irregularly rather than brightening on one smooth curve, echoing the
-   torch-flicker/hellscape-static hard-jolt language already used
-   elsewhere in this theme instead of a clean glow ramp. */
+   torch-flicker hard-jolt language already used elsewhere in this
+   theme instead of a clean glow ramp. */
 @keyframes landing-burn-glow {
   0%   { background: radial-gradient(140% 100% at 50% 30%, #810000 0%, #3a0000 45%, #0B0B0B 90%); }
   12%  { background: radial-gradient(140% 100% at 50% 35%, #C1121F 0%, #5a0000 42%, #0B0B0B 90%); }
@@ -2265,3 +2205,301 @@
 [data-theme="western"] .strategy-row-header { color: var(--accent-gold); text-shadow: none; }
 [data-theme="western"] .strategy-row-body { background: rgba(11,11,11,0.5); border-top: 1px solid #0B0B0B; }
 
+
+/* =========================================================
+   THEME: Dead Channel ("glitch")
+   Broken-CRT / signal-corruption aesthetic, built around the
+   full-viewport static jolt that used to live exclusively in Boot
+   Hill (as "hellscape-static") - pulled out of that theme because
+   plenty of people never clocked it as an intentional effect there,
+   and it deserved to be the headline of its own theme rather than a
+   rare accent buried in a different one. Phosphor/acid green as the
+   primary accent (the "gold" role), alarm red for tier-S and the
+   danger/corruption palette, amber/cyan for A/B tiers. Sharp 4px
+   corners everywhere (no pill shapes, no soft glow-only outlines
+   pretending to be rounded) plus corner-bracket accents on cards,
+   mimicking a terminal readout rather than neon's soft light
+   sources. Chromatic-aberration titles use layered text-shadow
+   offsets, not a content:attr() duplicate-layer trick - simpler,
+   and it never risks the two copies of the text drifting out of
+   sync with real page content changes. This is a first pass: the
+   goal here is to get Dead Channel's identity right (the palette,
+   the terminal shapes, and - above all - the signal-corruption
+   jolt itself running more often since it's the reason this theme
+   exists), not to match Boot Hill's much more heavily-iterated
+   depth on day one.
+   ========================================================= */
+
+[data-theme="glitch"] body, [data-theme="glitch"] { background: #060806; }
+
+/* Ambient scanline sweep - a single soft highlight band drifting
+   down the screen on a slow loop, on top of the baked-in scanline
+   texture in the theme's bodyBg. Cheap, always-on CRT-refresh cue
+   that reads as "this is a screen" even in the long stretches
+   between corruption jolts. */
+[data-theme="glitch"] body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 0%, rgba(57, 255, 20, 0.05) 48%, transparent 100%);
+  background-size: 100% 220%;
+  animation: scanline-sweep 7s linear infinite;
+}
+@keyframes scanline-sweep {
+  0% { background-position: 0 -120%; }
+  100% { background-position: 0 120%; }
+}
+[data-theme="glitch"] .app-container, [data-theme="glitch"] .docked-footer { position: relative; z-index: 2; }
+[data-motion="off"] [data-theme="glitch"] body::after { animation: none; background-position: 0 0; }
+
+/* Typography: solid phosphor-green fill with a hard red/cyan
+   chromatic-aberration fringe instead of neon's outline-only
+   text-stroke look - reads as a mis-converged CRT signal rather
+   than a glow. */
+[data-theme="glitch"] .app-title,
+[data-theme="glitch"] .landing-title {
+  font-family: 'VT323', 'Courier New', monospace;
+  -webkit-text-stroke: 0;
+  color: var(--accent-gold);
+  text-shadow: -2px 0 0 rgba(255, 42, 42, 0.75), 2px 0 0 rgba(0, 229, 255, 0.6), 0 0 14px rgba(57, 255, 20, 0.5);
+  letter-spacing: 0.02em;
+}
+[data-theme="glitch"] .app-title span,
+[data-theme="glitch"] .landing-title span {
+  -webkit-text-stroke: 0;
+  color: var(--accent-pink);
+  text-shadow: -2px 0 0 rgba(0, 229, 255, 0.6), 2px 0 0 rgba(57, 255, 20, 0.6), 0 0 14px rgba(255, 42, 42, 0.55);
+}
+
+/* Cards: flat terminal-window panels with hairline green edges and
+   bracket accents at two opposite corners, standing in for a proper
+   CRT-bezel frame without needing four extra elements per panel. */
+[data-theme="glitch"] .glass-panel {
+  position: relative;
+  background: rgba(4, 10, 6, 0.72);
+  border: 1px solid var(--glass-border);
+  border-top-color: var(--glass-border);
+  border-left-color: var(--glass-border);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+[data-theme="glitch"] .glass-panel::before,
+[data-theme="glitch"] .glass-panel::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  opacity: 0.85;
+}
+[data-theme="glitch"] .glass-panel::before {
+  top: -1px; left: -1px;
+  border-top: 2px solid var(--accent-gold);
+  border-left: 2px solid var(--accent-gold);
+}
+[data-theme="glitch"] .glass-panel::after {
+  bottom: -1px; right: -1px;
+  border-bottom: 2px solid var(--accent-gold);
+  border-right: 2px solid var(--accent-gold);
+}
+
+/* Hero ring + Daily Run CTA: square terminal readout instead of a
+   soft radial glow circle. */
+[data-theme="glitch"] .hero-ring-circle {
+  border-radius: 4px;
+  border: 2px solid var(--accent-gold);
+  background: rgba(0, 0, 0, 0.55);
+  font-family: 'VT323', monospace;
+  font-size: 1.9rem;
+  color: var(--accent-gold);
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.75);
+  box-shadow: 0 0 14px rgba(57, 255, 20, 0.3), inset 0 0 10px rgba(57, 255, 20, 0.22);
+}
+[data-theme="glitch"] .hero-stat-card { border-radius: 4px; }
+[data-theme="glitch"] .btn-start-run {
+  border-radius: 4px;
+  font-family: 'VT323', monospace;
+  letter-spacing: 0.08em;
+  font-size: 1.05rem;
+}
+
+/* Nav / filter chips: hard corners, "channel select" underline glow
+   instead of a filled pill. */
+[data-theme="glitch"] .nav-tab,
+[data-theme="glitch"] .filter-btn,
+[data-theme="glitch"] .sort-trigger-btn {
+  border-radius: 4px;
+}
+[data-theme="glitch"] .nav-tab.active {
+  background: rgba(57, 255, 20, 0.12);
+  border-color: var(--accent-gold);
+  color: var(--text-main);
+  text-shadow: 0 0 8px var(--accent-gold);
+  box-shadow: inset 0 -2px 0 var(--accent-gold);
+}
+[data-theme="glitch"] .filter-btn.active {
+  background: var(--accent-cyan-dim);
+  border-color: var(--accent-cyan);
+  color: var(--text-main);
+  text-shadow: 0 0 8px var(--accent-cyan);
+  box-shadow: inset 0 -2px 0 var(--accent-cyan);
+}
+
+/* General buttons: black terminal fields, hairline border, no
+   gradient fills - hover inverts to filled instead of just glowing
+   harder, the classic "select this line" terminal cue. */
+[data-theme="glitch"] .btn-open {
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--accent-pink);
+  color: var(--accent-pink);
+  border-radius: 4px;
+  text-shadow: 0 0 6px var(--accent-pink);
+  box-shadow: none;
+}
+[data-theme="glitch"] .btn-open:hover {
+  background: var(--accent-pink);
+  color: #060806;
+  text-shadow: none;
+  box-shadow: 0 0 18px rgba(255, 42, 42, 0.5);
+  transform: none;
+}
+[data-theme="glitch"] .btn-open.cooldown { background: rgba(0,0,0,0.4); border-color: var(--glass-border); color: var(--text-dim); }
+[data-theme="glitch"] .btn-primary {
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+  border-radius: 4px;
+  text-shadow: 0 0 6px var(--accent-gold);
+  box-shadow: none;
+}
+[data-theme="glitch"] .btn-primary:hover { background: var(--accent-gold); color: #060806; text-shadow: none; box-shadow: 0 0 18px rgba(57, 255, 20, 0.5); }
+[data-theme="glitch"] .btn-run-collect {
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--accent-pink);
+  color: var(--accent-pink);
+  border-radius: 4px;
+  text-shadow: 0 0 6px var(--accent-pink);
+  box-shadow: none;
+}
+[data-theme="glitch"] .btn-dock {
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+  border-radius: 4px;
+  text-shadow: 0 0 6px var(--accent-gold);
+  box-shadow: none;
+}
+[data-theme="glitch"] .btn-dock:hover { background: var(--accent-gold-dim); box-shadow: 0 0 14px rgba(57, 255, 20, 0.35); }
+[data-theme="glitch"] .btn-cancel { border-radius: 4px; }
+[data-theme="glitch"] .btn-danger { border-radius: 4px; }
+[data-theme="glitch"] .landing-btn {
+  border-radius: 4px;
+  border: 2px solid var(--accent-gold);
+  color: var(--accent-gold);
+  box-shadow: none;
+  text-shadow: 0 0 8px var(--accent-gold);
+}
+[data-theme="glitch"] .landing-btn:hover { background: var(--accent-gold-dim); box-shadow: 0 0 18px rgba(57, 255, 20, 0.35); }
+
+/* Avatars + tier badges: square, monospace, no soft glow ring. */
+[data-theme="glitch"] .casino-avatar {
+  border-radius: 4px;
+  border: 2px solid var(--accent-gold);
+  background: rgba(0, 0, 0, 0.6);
+  font-family: 'VT323', 'Courier New', monospace;
+  text-shadow: 0 0 5px var(--accent-gold);
+  box-shadow: inset 0 0 10px rgba(57, 255, 20, 0.25);
+}
+[data-theme="glitch"] .tier-badge { border-radius: 2px; font-family: 'VT323', monospace; letter-spacing: 0.06em; box-shadow: none; }
+[data-theme="glitch"] .tier-S { background: rgba(255, 42, 42, 0.18); }
+[data-theme="glitch"] .tier-A { background: rgba(255, 176, 0, 0.16); }
+[data-theme="glitch"] .tier-B { background: rgba(0, 229, 255, 0.16); }
+[data-theme="glitch"] .tier-C { background: rgba(63, 92, 63, 0.3); }
+[data-theme="glitch"] .status-dot { border-radius: 2px; }
+
+[data-theme="glitch"] .docked-footer {
+  background: rgba(2, 4, 2, 0.82);
+  border-top: 1px solid var(--glass-border);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Landing screen: a plain "dead air" backdrop instead of Boot
+   Hill's bespoke burn-through - dismissLanding() already falls back
+   to a straight .hidden toggle for every non-western theme, so all
+   this theme needs is its own look for that toggle. A hard, stepped
+   cut instead of the default smooth fade sells "the channel just
+   changed" without any extra JS. */
+[data-theme="glitch"] .landing-screen {
+  background: repeating-linear-gradient(0deg, rgba(57,255,20,0.05) 0px, rgba(57,255,20,0.05) 1px, transparent 1px, transparent 3px), radial-gradient(circle at center, #0a120a 0%, #020302 100%);
+  transition: opacity 0.12s steps(4, end), visibility 0.12s;
+}
+[data-motion="off"] [data-theme="glitch"] .landing-screen { transition: opacity 0.3s ease, visibility 0.3s; }
+
+/* Signal corruption: the star effect this whole theme is built
+   around. Same full-viewport hard-cut jolt mechanism the Boot Hill
+   theme used to carry as "hellscape-static" (a repeating-gradient
+   layer slammed on/off via steps(1,end), with blown-out
+   brightness/contrast spikes at the peak of the jolt) - recolored to
+   an alternating red/green corrupted-signal band instead of pure
+   red, given a touch of hue-rotate on the hottest frames for a more
+   chromatic "wrong colors" read, and - since this is now the
+   headline effect instead of a rare accent - cut from a 13s cycle
+   down to 6s so it fires roughly twice as often. Applied twice, same
+   as before: once on .app-container::after for the main app, and
+   again on .landing-screen::after so the landing screen carries the
+   same atmosphere from first paint. */
+[data-theme="glitch"] .app-container::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 42, 42, 0.36) 0px, rgba(255, 42, 42, 0.36) 2px,
+    transparent 2px, transparent 3px,
+    rgba(57, 255, 20, 0.22) 3px, rgba(57, 255, 20, 0.22) 4px,
+    transparent 4px, transparent 6px
+  );
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: signal-corruption 6s steps(1, end) infinite;
+}
+[data-theme="glitch"] .landing-screen::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 201;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 42, 42, 0.36) 0px, rgba(255, 42, 42, 0.36) 2px,
+    transparent 2px, transparent 3px,
+    rgba(57, 255, 20, 0.22) 3px, rgba(57, 255, 20, 0.22) 4px,
+    transparent 4px, transparent 6px
+  );
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: signal-corruption 6s steps(1, end) infinite;
+}
+@keyframes signal-corruption {
+  0%, 90% { opacity: 0; transform: translate3d(0, 0, 0) skewX(0deg); filter: brightness(1); }
+  90.2% { opacity: 0.6; transform: translate3d(-14px, 0, 0) skewX(0deg); filter: brightness(1); }
+  90.35% { opacity: 0.1; transform: translate3d(10px, 0, 0) skewX(0deg); filter: brightness(1); }
+  90.5% { opacity: 1; transform: translate3d(0, -4px, 0) skewX(-3deg); filter: brightness(2.6) contrast(1.6) hue-rotate(15deg); }
+  90.65% { opacity: 0.15; transform: translate3d(-8px, 0, 0) skewX(0deg); filter: brightness(1); }
+  90.85% { opacity: 0.75; transform: translate3d(7px, 3px, 0) skewX(2deg); filter: brightness(1); }
+  91% { opacity: 0.1; transform: translate3d(0, 0, 0) skewX(0deg); filter: brightness(1); }
+  91.2% { opacity: 1; transform: translate3d(-6px, 2px, 0) skewX(0deg); filter: brightness(2.4) contrast(1.6) hue-rotate(-10deg); }
+  91.35% { opacity: 0.3; transform: translate3d(9px, -3px, 0) skewX(1deg); filter: brightness(1); }
+  91.55% { opacity: 0.65; transform: translate3d(-3px, 0, 0) skewX(0deg); filter: brightness(1); }
+  91.75% { opacity: 0.15; transform: translate3d(0, 0, 0) skewX(0deg); filter: brightness(1); }
+  92%, 100% { opacity: 0; transform: translate3d(0, 0, 0) skewX(0deg); filter: brightness(1); }
+}
+[data-motion="off"] [data-theme="glitch"] .app-container::after { animation: none; opacity: 0; }
+[data-motion="off"] [data-theme="glitch"] .landing-screen::after { animation: none; opacity: 0; }
