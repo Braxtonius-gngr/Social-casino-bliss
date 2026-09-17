@@ -46,7 +46,7 @@
       { name: "Dara Casino", resetHour: 0, resetTZ: "UTC", cooldown: 24, url: "https://daracasino.com/", tier: "B", dailySC: 0.45, speedHours: 24, reliability: 72, hasLive: false, minRedeem: "Varies", notes: "Collect via + then Daily bonus; Best: Mines" },
       { name: "Dime Sweeps", url: "https://dimesweeps.com/", tier: "C", dailySC: 0.2, speedHours: 24, reliability: 60, cooldown: 24, hasLive: false, minRedeem: "Varies", notes: "SpeedSweeps clone" },
       { name: "Ember Fund", url: "https://emberfund.io/", tier: "B", dailySC: 0.85, scIsAveraged: true, scRange: "0.20–1.50", speedHours: 24, reliability: 72, cooldown: 24, hasLive: false, minRedeem: "Varies", notes: "Up to 1.50/day via referrals; redeem limited to once a month" },
-      wn: 24, hasLive: false, minRedeem: "Varies", notes: "Best: Dice Twice" },
+      
       { name: "Funrize", resetHour: 5, cooldown: 24, url: "https://funrize.com/", tier: "C", dailySC: 0.25, speedHours: 24, reliability: 56, hasLive: false, minRedeem: "Varies", notes: "Freebie win withdrawals capped at $25" },
       { name: "Funz City", resetHour: 5, cooldown: 24, url: "https://funzcity.com/", tier: "C", dailySC: 0.15, speedHours: 24, reliability: 56, hasLive: false, minRedeem: "Varies", notes: "Freebie win withdrawals capped at $25" },
       { name: "Gains", url: "https://gains.com/", tier: "C", dailySC: 0.2, speedHours: 24, reliability: 56, cooldown: 24, hasLive: false, minRedeem: "Varies", notes: "One account per IP; freebie wins capped at $100 lifetime" },
