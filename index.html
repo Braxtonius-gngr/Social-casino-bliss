@@ -386,6 +386,24 @@
       <span id="runUndoText"></span>
       <button type="button" class="run-undo-btn" onclick="triggerRunUndo()">UNDO</button>
     </div>
+    <!-- Bound to the platform you JUST collected, not the one on screen.
+         After OPEN & COLLECT the card has already advanced to the next
+         platform, so by the time you're back from the site and can see
+         your SC, the visible card is the wrong one to attach this to.
+         Sibling of the undo bar rather than part of it so the undo bar's
+         single-row flex layout and theme overrides stay untouched.
+         Shown/cleared by showRunBalanceBar()/hideRunBalanceBar(). -->
+    <div class="run-balance-bar" id="runBalanceBar" hidden>
+      <div class="run-balance-head">
+        <span id="runBalanceBarLabel"></span>
+        <span class="run-balance-hint" id="runBalanceBarHint">blank clears it</span>
+      </div>
+      <div id="runBalanceBarChart"></div>
+      <div class="run-balance-row">
+        <input type="number" step="0.01" min="0" inputmode="decimal" id="runBalanceBarInput" class="run-balance-input" placeholder="0" aria-label="Current wallet balance for the platform you just collected" />
+        <button type="button" class="run-balance-btn" onclick="saveRunUndoBalance()">SAVE</button>
+      </div>
+    </div>
     <div class="run-actions" id="runActions">
       <button class="btn-run-collect" onclick="collectCurrentDailyRun()">OPEN &amp; COLLECT</button>
       <button class="btn-skip" onclick="skipCurrentDailyRun()">Skip this one</button>
@@ -1522,6 +1540,52 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return Math.max(...nums.map(Number));
     }
 
+    // The cashout bar, in one place. It started life inline inside the
+    // Keen Info popover; the Daily Run card shows the same bar now, and
+    // the run screen is where a stale balance actually gets noticed, so
+    // these two must not drift into separate copies of the same markup.
+    // Returns '' when there's nothing to draw (no balance recorded, or a
+    // platform whose minRedeem has no number in it to aim at).
+    function cashBarHtml(game) {
+      const t = redeemTarget(game);
+      if (!game || typeof game.balance !== 'number' || !t) return '';
+      const pct = Math.max(0, Math.min(100, (game.balance / t) * 100));
+      const done = game.balance >= t;
+      return `<div class="cash-wrap">
+        <div class="cash-head"><span>${game.balance} / ${t}</span><span class="${done ? 'cash-ready' : ''}">${done ? 'CASHOUT READY' : Math.round(pct) + '%'}</span></div>
+        <div class="cash-bar"><div class="cash-fill ${done ? 'done' : ''}" style="width:${pct}%"></div></div>
+      </div>`;
+    }
+
+    // Blank clears the field rather than storing 0: "I don't track a
+    // balance here" and "my balance is zero" are different states, and
+    // only the first one should make the bar go away entirely.
+    function parseBalanceInput(raw) {
+      const s = String(raw == null ? '' : raw).trim();
+      if (s === '') return { ok: true, value: null };
+      const n = Number(s);
+      if (!Number.isFinite(n) || n < 0) return { ok: false, value: null };
+      return { ok: true, value: Math.round(n * 100) / 100 };
+    }
+
+    // Single writer for game.balance - the edit modal and both Daily Run
+    // entry points all come through here, so validation and persistence
+    // can't diverge between them. persist() marks the deck dirty, which
+    // is what carries the new balance to your other devices.
+    function setPlatformBalance(id, raw) {
+      const game = trackedGames.find(g => g.id === id);
+      if (!game) return false;
+      const parsed = parseBalanceInput(raw);
+      if (!parsed.ok) {
+        showToast('Enter a balance of 0 or more', null);
+        return false;
+      }
+      if (parsed.value === null) delete game.balance;
+      else game.balance = parsed.value;
+      persist();
+      return true;
+    }
+
     function cooldownProgress(game, remainingMs) {
       let total;
       // Same fixed-vs-rolling gate as getCooldownState() - a malformed
@@ -1855,16 +1919,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           <div id="keen_${game.id}" class="keen-info-popover ${openKeenIds.has(game.id) ? 'open' : ''}">
             <div class="keen-title">Keen Info - Min Redeem: ${game.minRedeem || 'Varies'}</div>
             ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:4px; font-weight:700;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
-            ${(() => {
-              const t = redeemTarget(game);
-              if (typeof game.balance !== 'number' || !t) return '';
-              const pct = Math.max(0, Math.min(100, (game.balance / t) * 100));
-              const done = game.balance >= t;
-              return `<div class="cash-wrap">
-                <div class="cash-head"><span>${game.balance} / ${t}</span><span class="${done ? 'cash-ready' : ''}">${done ? 'CASHOUT READY' : Math.round(pct) + '%'}</span></div>
-                <div class="cash-bar"><div class="cash-fill ${done ? 'done' : ''}" style="width:${pct}%"></div></div>
-              </div>`;
-            })()}
+            ${cashBarHtml(game)}
             ${game.userNotes ? `<div class="user-note"><strong>Your note:</strong> ${escHtml(game.userNotes)}</div>` : ''}
             ${(game.tags || []).length ? `<div style="margin-bottom:6px;">${game.tags.map(t=>`<span class="tag-pill">${escHtml(t)}</span>`).join('')}</div>` : ''}
             <div>${game.notes || 'No specific warning flags. 24h standard reset cycle.'}</div>
@@ -2146,11 +2201,38 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const url = document.getElementById('modalGameUrl').value.trim();
       const referralUrl = document.getElementById('modalReferralUrl').value.trim();
       const cooldownHours = parseInt(document.getElementById('modalCooldown').value) || 24;
+      // These three were being read into the form on open and then
+      // thrown away on save - the inputs existed, populated correctly,
+      // and silently did nothing, so a typed balance/tag/note never
+      // survived SAVE. Tags especially: they drive the filter chips and
+      // tag-scoped runs, and until this was fixed the only way to get
+      // one onto a platform was importing a deck that already had it.
+      const balanceParsed = parseBalanceInput(document.getElementById('modalBalance').value);
+      const tags = document.getElementById('modalTags').value
+        .split(',').map(t => t.trim()).filter(Boolean);
+      const userNotes = document.getElementById('modalUserNotes').value.trim();
 
       if (!name || !url) {
         alert('Please provide a name and URL');
         return;
       }
+
+      if (!balanceParsed.ok) {
+        alert('Current SC balance must be a number of 0 or more (or left blank).');
+        return;
+      }
+
+      // Same "blank clears it" contract as setPlatformBalance(), applied
+      // through the same parser so the modal and the run screen can't
+      // disagree about what an empty box means.
+      const applyOptionalFields = (game) => {
+        if (balanceParsed.value === null) delete game.balance;
+        else game.balance = balanceParsed.value;
+        if (tags.length) game.tags = [...new Set(tags)];
+        else delete game.tags;
+        if (userNotes) game.userNotes = userNotes;
+        else delete game.userNotes;
+      };
 
       if (id) {
         const game = trackedGames.find(g => g.id === id);
@@ -2159,6 +2241,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           game.url = url;
           game.referralUrl = referralUrl;
           game.cooldownHours = cooldownHours;
+          applyOptionalFields(game);
           normalizeTimerFields(game); // e.g. a typed "0" or "-5" hours recovers to the 24h default
         }
       } else {
@@ -2177,11 +2260,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           notes: 'User created platform',
           lastCollected: 0
         };
+        applyOptionalFields(g);
         normalizeTimerFields(g);
         trackedGames.push(g);
       }
 
       persist();
+      renderTagChips(); // tags are editable here now, so the chip row can go stale
       closeModals();
     }
 
@@ -5983,6 +6068,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           ${game.hasLive ? '<span class="type-badge">LIVE</span>' : ''}
         </div>
         <div class="run-redeem">Min Redeem: ${game.minRedeem || 'Varies'}</div>
+        <div class="run-balance" id="runCardBalance">
+          <div id="runCardBalanceChart">${cashBarHtml(game)}</div>
+          <div class="run-balance-row">
+            <label class="run-balance-label" for="runCardBalanceInput">Wallet</label>
+            <input type="number" step="0.01" min="0" inputmode="decimal" id="runCardBalanceInput" class="run-balance-input" placeholder="0" value="${typeof game.balance === 'number' ? game.balance : ''}" aria-label="Current wallet balance for ${escHtml(game.name)}" />
+            <button type="button" class="run-balance-btn" onclick="saveRunCardBalance()">SAVE</button>
+          </div>
+        </div>
         <div class="run-cooldown-row">
           <span>Cooldown</span>
           <button type="button" class="cooldown-chip" title="Edit cooldown" aria-label="Edit cooldown for ${escHtml(game.name)}, currently ${cooldownLabel(game)}" onclick="openCooldownEditor('${game.id}', event, true)">${cooldownLabel(game)}</button>
@@ -6001,22 +6094,92 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // reassigned to the newer one), same as "undo" only ever meaning
     // "undo the last thing" anywhere else in the app.
     let runUndoFn = null;
-    function showRunUndoBar(name, undoFn) {
+    function showRunUndoBar(game, undoFn) {
       runUndoFn = undoFn;
       const bar = document.getElementById('runUndoBar');
       const text = document.getElementById('runUndoText');
       if (!bar || !text) return;
-      text.textContent = `${name} marked collected`;
+      text.textContent = `${game.name} marked collected`;
       bar.hidden = false;
+      showRunBalanceBar(game);
     }
     function hideRunUndoBar() {
       runUndoFn = null;
       const bar = document.getElementById('runUndoBar');
       if (bar) bar.hidden = true;
+      hideRunBalanceBar();
     }
     function triggerRunUndo() {
       if (runUndoFn) runUndoFn();
       hideRunUndoBar();
+    }
+
+    // --- Wallet balance entry during a run ---
+    // Two entry points, deliberately: the card's own field (fix a stale
+    // number before you open the site) and this one under the undo bar,
+    // which follows the platform you just collected - the only one whose
+    // balance you actually know once you're back. Both prefill whatever
+    // was last saved so the common case is editing a number, not typing
+    // one from scratch, and neither ever invents a figure you didn't see.
+    let runBalanceGameId = null;
+
+    function showRunBalanceBar(game) {
+      const bar = document.getElementById('runBalanceBar');
+      const label = document.getElementById('runBalanceBarLabel');
+      const input = document.getElementById('runBalanceBarInput');
+      if (!bar || !label || !input || !game) return;
+      runBalanceGameId = game.id;
+      label.textContent = `${game.name} balance`;
+      input.value = (typeof game.balance === 'number' ? game.balance : '');
+      bar.hidden = false;
+      refreshRunBalanceBar();
+    }
+
+    function hideRunBalanceBar() {
+      runBalanceGameId = null;
+      const bar = document.getElementById('runBalanceBar');
+      if (bar) bar.hidden = true;
+    }
+
+    // Repaints only the bar, never the input - a full re-render here
+    // would blow away focus and anything half-typed.
+    function refreshRunBalanceBar() {
+      const chart = document.getElementById('runBalanceBarChart');
+      if (!chart) return;
+      const game = trackedGames.find(g => g.id === runBalanceGameId);
+      chart.innerHTML = game ? cashBarHtml(game) : '';
+    }
+
+    function saveRunUndoBalance() {
+      const input = document.getElementById('runBalanceBarInput');
+      const game = trackedGames.find(g => g.id === runBalanceGameId);
+      if (!input || !game) return;
+      if (!setPlatformBalance(game.id, input.value)) return;
+      refreshRunBalanceBar();
+      refreshRunCardBalance(); // same platform could still be on screen after an undo
+      const hint = document.getElementById('runBalanceBarHint');
+      if (hint) {
+        hint.textContent = 'saved';
+        setTimeout(() => { if (hint) hint.textContent = 'blank clears it'; }, 2000);
+      }
+      hapticBuzz([12]);
+    }
+
+    function saveRunCardBalance() {
+      const game = dailyRunQueue[dailyRunIndex];
+      const input = document.getElementById('runCardBalanceInput');
+      if (!game || !input) return;
+      if (!setPlatformBalance(game.id, input.value)) return;
+      refreshRunCardBalance();
+      refreshRunBalanceBar();
+      hapticBuzz([12]);
+    }
+
+    function refreshRunCardBalance() {
+      const chart = document.getElementById('runCardBalanceChart');
+      if (!chart) return;
+      const game = dailyRunQueue[dailyRunIndex];
+      chart.innerHTML = game ? cashBarHtml(game) : '';
     }
 
     function collectCurrentDailyRun() {
@@ -6042,7 +6205,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           dailyRunStats.collected++;
           hapticBuzz([18, 24, 42]);
           screenShake();
-          showRunUndoBar(result.game.name, result.undo);
+          showRunUndoBar(result.game, result.undo);
         }
       }
       dailyRunIndex++;

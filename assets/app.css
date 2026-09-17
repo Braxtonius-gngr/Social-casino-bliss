@@ -399,8 +399,29 @@
        Sits right above .run-actions (same width/centering) so it reads
        as "attached to" the collect button below it. */
     .run-undo-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; max-width: 460px; align-self: center; flex-shrink: 0; margin-bottom: 10px; padding: 10px 14px; border-radius: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); font-size: 0.82rem; color: var(--text-muted); }
+    /* [hidden] is a UA default of display:none, and the display:flex
+       above outranks it - so without this the bar stayed on screen for
+       the whole run with empty text and a dead UNDO button, which is
+       exactly what it looked like in practice. Same fix (and same
+       cause) as .redeem-editor[hidden] further down. */
+    .run-undo-bar[hidden] { display: none; }
     .run-undo-btn { flex-shrink: 0; background: transparent; border: 1px solid var(--accent-cyan); color: var(--accent-cyan); border-radius: 8px; padding: 6px 12px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.05em; cursor: pointer; }
     .run-undo-btn:active { transform: scale(0.95); }
+    /* Wallet balance entry. Two placements, one visual language: a
+       compact block on the run card, and a sibling of the undo bar
+       (same width/centering, so the pair reads as one unit sitting
+       above the collect button). */
+    .run-balance-bar { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 460px; align-self: center; flex-shrink: 0; margin-bottom: 10px; padding: 10px 14px; border-radius: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); }
+    .run-balance-bar[hidden] { display: none; }
+    .run-balance-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 0.78rem; font-weight: 800; color: var(--accent-cyan); letter-spacing: 0.03em; }
+    .run-balance-hint { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.04em; color: var(--text-muted); text-transform: uppercase; }
+    .run-balance { width: 100%; max-width: 460px; margin-bottom: 10px; }
+    .run-balance-row { display: flex; align-items: center; gap: 8px; }
+    .run-balance-label { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); flex-shrink: 0; }
+    .run-balance-input { flex: 1; min-width: 0; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: var(--text-main); padding: 8px 10px; border-radius: 8px; font-family: "Courier New", monospace; font-size: 0.85rem; }
+    .run-balance-input:focus { outline: none; border-color: var(--accent-cyan); }
+    .run-balance-btn { flex-shrink: 0; background: transparent; border: 1px solid var(--accent-green); color: var(--accent-green); border-radius: 8px; padding: 8px 14px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.05em; cursor: pointer; }
+    .run-balance-btn:active { transform: scale(0.95); }
     .run-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 460px; align-self: center; flex-shrink: 0; }
     .btn-run-collect { padding: 18px; font-size: 1.15rem; font-weight: 900; border: none; border-radius: 14px; cursor: pointer; background: linear-gradient(90deg, var(--accent-pink), var(--accent-orange)); color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5); box-shadow: 0 6px 24px rgba(255,0,127,0.45); }
     .btn-run-collect:active { transform: scale(0.98); }
@@ -2101,6 +2122,15 @@
   border-radius: 0; border: 2px solid var(--accent-gold); color: var(--accent-gold);
 }
 [data-theme="western"] .run-undo-btn:active { color: #FFD54F; border-color: #FFD54F; }
+[data-theme="western"] .run-balance-bar {
+  border-radius: 0; border: 2px solid #0B0B0B; background: #1E2126;
+  box-shadow: 3px 3px 0 #0B0B0B;
+}
+[data-theme="western"] .run-balance-input { border-radius: 0; border: 2px solid #0B0B0B; background: #14161A; }
+[data-theme="western"] .run-balance-btn {
+  border-radius: 0; border: 2px solid var(--accent-gold); color: var(--accent-gold);
+}
+[data-theme="western"] .run-balance-btn:active { color: #FFD54F; border-color: #FFD54F; }
 [data-theme="western"] .run-progress-bar { background: #0B0B0B; border: 2px solid #0B0B0B; border-radius: 0; }
 [data-theme="western"] .run-progress-fill {
   background: var(--accent-pink);
