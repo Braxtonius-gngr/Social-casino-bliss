@@ -540,6 +540,7 @@
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan);" onclick="openGuideModal()">&#9776; FULL WALKTHROUGH</button>
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--text-dim); color:var(--text-muted);" onclick="openCalcModal()">&#9878; PACKAGE VALUE (PURCHASE TOOL)</button>
       </div>
+      <div id="launchContextNote" class="backup-helper" style="margin-top:10px; text-align:left;"></div>
       <div class="pwa-install-container">
         <button id="btnInstallPwa" class="btn-dock" style="display:none; max-width:100%; width:100%; margin-bottom:10px; border-color:var(--accent-pink); color:var(--accent-pink); text-shadow:0 0 5px var(--accent-pink);" onclick="installPWA()">&#8595; INSTALL APP</button>
         <div class="backup-helper" style="margin-top:0;">
@@ -1784,7 +1785,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // localStorage/exports actually persist.
       const prevCollected = game.lastCollected;
       const prevSnooze = game.snoozedUntil;
-      if (opensLink) window.open(game.url, '_blank');
+      if (opensLink) openExternal(game.url);
       game.lastCollected = serverNow();
       delete game.snoozedUntil;
       logCollection(id);
@@ -2406,6 +2407,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       refreshNotifyUI();
       refreshDropInboxUI();
       refreshRecoveryUI();
+      refreshLaunchContextNote();
       refreshLedgerNet();
       const saved = Number(localStorage.getItem('almanac_last_saved_v1'));
       const status = document.getElementById('lastSavedStatus');
@@ -3864,6 +3866,74 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
+    // Whether an outbound link can reach the user's real browser depends
+    // on what this page is running inside, and the difference is invisible
+    // until a sign-in mysteriously fails - so say it out loud in Settings.
+    //
+    // The `wv` token is Android's own marker for a WebView, which is the
+    // case that genuinely breaks: Google refuses its OAuth endpoint inside
+    // an embedded webview (error disallowed_useragent), and the visible
+    // symptom is exactly the sign-in page closing itself and returning to
+    // the host app. Nothing this app does from inside a WebView can change
+    // that - hence a note telling the user where to go instead, rather
+    // than a workaround that looks like a fix.
+    //
+    // An installed PWA in Chrome is NOT this case, despite looking like
+    // it: an out-of-scope link from a standalone PWA opens in a Chrome
+    // Custom Tab, which shares Chrome's cookie jar and session and which
+    // Google's policy explicitly permits for sign-in.
+    function isEmbeddedWebView() {
+      return /\bwv\b/.test(navigator.userAgent);
+    }
+
+    function refreshLaunchContextNote() {
+      const el = document.getElementById('launchContextNote');
+      if (!el) return;
+      if (isEmbeddedWebView()) {
+        el.innerHTML = '&#9888; This page is running inside an in-app browser, not your real browser. Platform links can&rsquo;t hand off properly from here, and Google sign-in will refuse to load at all &mdash; Google blocks it in embedded browsers, which looks like the sign-in page closing itself. Open the almanac in Chrome, or install it from Chrome, and platform links will behave normally.';
+        el.style.color = 'var(--accent-orange)';
+        return;
+      }
+      const installed = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      el.textContent = installed
+        ? 'Running as an installed app. Platform links open outside it, in a browser tab that shares your normal browser session and sign-ins.'
+        : 'Running in your browser. Platform links open in a new tab.';
+      el.style.color = '';
+    }
+
+    // Single place every outbound platform/offer link goes through. Hands
+    // the URL to the browser as a real link activation instead of
+    // window.open(), for three separate reasons:
+    //
+    //  - rel="noopener" severs window.opener, so a site we open can't
+    //    reach back and navigate the almanac's own tab.
+    //  - rel="noreferrer" also drops the Referer header, so the request
+    //    looks like a typed URL rather than a click from an unrelated
+    //    domain. Links opened from here used to arrive at the platform
+    //    carrying the almanac's origin as the referrer, and sweepstakes
+    //    sites do referrer-based attribution and anti-fraud checks - a
+    //    plausible reason a site loads when typed into the address bar
+    //    but not when opened from the app.
+    //  - a click on <a target="_blank"> goes through the browser's
+    //    link-handling path rather than the popup path. If this page is
+    //    embedded (an Android WebView, an in-app browser), that is the
+    //    path the host can route out to the real browser; window.open()
+    //    there commonly returns null or loads in place.
+    //
+    // Callers must already be inside a user gesture - every one is a click
+    // handler. This does not itself create user activation.
+    function openExternal(url) {
+      if (!url) return;
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
     // Looks the platform up by id rather than interpolating the URL into an
     // inline handler, which would break on URLs containing quotes.
     async function shareReferral(btn, id) {
@@ -5260,7 +5330,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // matched platform) - opening an untracked/unmatched link creates
       // no data, so there's nothing here for the gate to protect.
       if (d.tracked && d.match && interceptForEmailGate(() => openDrop(i))) return;
-      window.open(d.url, '_blank');
+      openExternal(d.url);
       if (d.tracked && d.match) {
         const g = trackedGames.find(x => x.id === d.match.id);
         if (g) {
@@ -5322,7 +5392,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         let linkHtml = '';
         if (o.link) {
           linkHtml = o.link.type === 'clean'
-            ? `<button class="btn-open" style="padding:7px 12px; font-size:0.72rem;" onclick="window.open('${o.link.url}','_blank')">OPEN</button>`
+            ? `<button class="btn-open" style="padding:7px 12px; font-size:0.72rem;" onclick="openClassifiedOfferLink(${i})">OPEN</button>`
             : `<div class="drop-url">Account-tied link &mdash; check ${escHtml(o.link.root || 'your account')} directly, this link won't work for anyone else</div>`;
         }
         const ttlText = o.ttl.type === 'timestamp' ? `Expires ${escHtml(o.ttl.raw)}`
@@ -5399,6 +5469,27 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderPublicFreebies(publicFreebiesCache);
     }
 
+    // Both of these look the URL up by index instead of interpolating it
+    // into an inline handler, for the same reason shareReferral() does it
+    // by id - and it was a live bug in both: a URL containing a quote
+    // broke the attribute. escHtml() is not a fix in that position either,
+    // since an HTML entity decodes back to a quote before the JS inside
+    // the attribute is parsed. Drop text is pasted from anywhere, which
+    // made the classified-offer one reachable with arbitrary input.
+    function openClassifiedOfferLink(i) {
+      const o = lastClassifiedOffers[i];
+      if (o && o.link) openExternal(o.link.url);
+    }
+
+    function openFreebieLink(i) {
+      const r = renderedFreebies[i];
+      if (r) openExternal(r.claim_url);
+    }
+
+    // The rows currently on screen, so openFreebieLink()'s index can't
+    // drift from what was rendered.
+    let renderedFreebies = [];
+
     function renderPublicFreebies(rows) {
       const list = document.getElementById('freebiesList');
       if (!list) return;
@@ -5406,7 +5497,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         list.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:18px;">Nothing posted yet &mdash; check back soon.</div>';
         return;
       }
-      list.innerHTML = rows.map((r) => {
+      renderedFreebies = rows;
+      list.innerHTML = rows.map((r, i) => {
         const codeHtml = r.code
           ? `<div class="drop-name">${escHtml(r.code)} <button class="btn-open" style="padding:3px 8px; font-size:0.68rem;" onclick="navigator.clipboard.writeText('${escHtml(r.code).replace(/'/g, "\\'")}')">COPY</button></div>`
           : '';
@@ -5414,7 +5506,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (r.is_account_tied) {
           linkHtml = `<div class="drop-url">Account-tied link &mdash; check ${escHtml(r.root_domain || r.platform_name)} directly, this link won't work for anyone else</div>`;
         } else if (r.claim_url) {
-          linkHtml = `<button class="btn-open" style="padding:7px 12px; font-size:0.72rem;" onclick="window.open('${escHtml(r.claim_url)}','_blank')">OPEN</button>`;
+          linkHtml = `<button class="btn-open" style="padding:7px 12px; font-size:0.72rem;" onclick="openFreebieLink(${i})">OPEN</button>`;
         }
         const ttlText = r.expires_at ? `Expires ${new Date(r.expires_at).toLocaleString()}` : 'No expiry stated';
         const termsHtml = r.terms ? `<span class="drop-tag">${escHtml(r.terms)}</span>` : '';
