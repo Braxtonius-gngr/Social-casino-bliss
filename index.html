@@ -505,7 +505,7 @@
         <button class="btn-dock" style="border-color:var(--accent-green); color:var(--accent-green); text-shadow:0 0 5px var(--accent-green);" onclick="exportBackup()">&#8681; EXPORT BACKUP</button>
         <button class="btn-dock" style="border-color:var(--accent-gold); color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold);" onclick="document.getElementById('importBackupInput').click()">&#8679; IMPORT BACKUP</button>
       </div>
-      <div class="backup-helper" style="margin-top:6px;">Your platform list &mdash; timers, tags, notes, referral links &mdash; also mirrors to the cloud via Cloud Sync below once you're signed in. These buttons still give you an offline, on-demand copy &mdash; handy for a manual transfer or as a snapshot to keep.</div>
+      <div class="backup-helper" style="margin-top:6px;">A backup file is everything portable: your platforms (timers, tags, notes, balances, referral links), your collection and daily-run history, your spend/redeem ledger, and your preferences. It deliberately leaves out anything tied to this device or account, so restoring it elsewhere can't disturb Cloud Sync. Your platform list also mirrors to the cloud via Cloud Sync below once you're signed in; these buttons still give you an offline, on-demand copy &mdash; handy for a manual transfer or as a snapshot to keep.</div>
       <div style="margin-top: 14px;">
         <button id="syncToggleBtn" class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="toggleCloudSync()">Disable Cloud Sync</button>
         <div id="syncStatusBox" class="backup-helper" style="margin-top:6px;">Up to date</div>
@@ -524,6 +524,10 @@
           <div class="backup-helper" style="margin-top:4px;">Already linked an email somewhere else? Enter it here to pull that account's history onto THIS device instead of starting a new one. You'll get a sign-in link by email.</div>
         </div>
       </div>
+      <div style="margin-top:14px;">
+        <button id="btnRestorePrevious" class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="restoreFromRecoverySnapshot()">Restore Previous State (Undo Last Import)</button>
+        <div id="restorePreviousHint" class="backup-helper" style="margin-top:6px;"></div>
+      </div>
       <div class="backup-controls" style="margin-top:10px;">
         <button class="btn-dock" onclick="exportDeck()">&#8681; SHARE DECK</button>
         <button class="btn-dock" onclick="document.getElementById('importDeckInput').click()">&#8679; IMPORT DECK</button>
@@ -536,6 +540,7 @@
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan);" onclick="openGuideModal()">&#9776; FULL WALKTHROUGH</button>
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--text-dim); color:var(--text-muted);" onclick="openCalcModal()">&#9878; PACKAGE VALUE (PURCHASE TOOL)</button>
       </div>
+      <div id="launchContextNote" class="backup-helper" style="margin-top:10px; text-align:left;"></div>
       <div class="pwa-install-container">
         <button id="btnInstallPwa" class="btn-dock" style="display:none; max-width:100%; width:100%; margin-bottom:10px; border-color:var(--accent-pink); color:var(--accent-pink); text-shadow:0 0 5px var(--accent-pink);" onclick="installPWA()">&#8595; INSTALL APP</button>
         <div class="backup-helper" style="margin-top:0;">
@@ -918,6 +923,35 @@
     </div>
   </div>
 
+  <div id="importPreviewModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel">
+      <h3 style="color:var(--accent-gold); text-shadow:0 0 10px var(--accent-gold);">Import Preview</h3>
+      <div class="form-group">
+        <div class="toggle-row"><span>Schema version</span><span id="importPreviewVersion" style="font-weight:800;"></span></div>
+        <div class="toggle-row"><span>Export date</span><span id="importPreviewDate" style="font-weight:800;"></span></div>
+        <div class="toggle-row"><span>Platforms</span><span id="importPreviewPlatforms" style="font-weight:800; color:var(--accent-cyan);"></span></div>
+        <div class="toggle-row"><span>Collection history entries</span><span id="importPreviewHistory" style="font-weight:800; color:var(--accent-cyan);"></span></div>
+        <div class="toggle-row"><span>Ledger entries</span><span id="importPreviewLedger" style="font-weight:800; color:var(--accent-cyan);"></span></div>
+        <div id="importPreviewDropped" style="display:none; font-size:0.75rem; color:var(--accent-orange); margin-top:8px;"></div>
+        <div id="importPreviewNewer" style="display:none; font-size:0.75rem; color:var(--accent-orange); margin-top:8px;">This file was made by a newer version of the app. It will still import, but anything this version doesn't recognise is not included.</div>
+        <div id="importPreviewMergeNote" style="display:none; font-size:0.75rem; color:var(--accent-orange); margin-top:8px;">Cloud Sync is on, so this is a MERGE, not a clean replace: collections stored in the cloud that aren't in this file will sync back down afterwards. To restore this file exactly, turn Cloud Sync off in Settings first.</div>
+      </div>
+      <div class="hint" style="font-size:0.72rem; color:var(--text-muted); margin-bottom:14px;">Importing replaces your current platforms, history, ledger and listed preferences on this device. A snapshot of everything as it is right now is saved first, so you can undo this from Settings &rarr; Restore Previous State.</div>
+      <div id="importPreviewNoUndo" style="display:none; border:1px solid var(--accent-pink); border-radius:8px; padding:10px; margin-bottom:14px;">
+        <div style="font-weight:800; color:var(--accent-pink); margin-bottom:6px;">No undo available</div>
+        <div style="font-size:0.75rem; color:var(--text-muted);">The recovery snapshot could not be saved because browser storage is full, so this import could not be undone. Nothing has been changed yet. Export a backup and free some space, then try again &mdash; or import anyway, knowing there is no way back and that some sections may fail to save for the same reason.</div>
+      </div>
+      <div class="modal-actions" id="importPreviewActions">
+        <button class="btn-primary" onclick="confirmPendingImport()">IMPORT</button>
+        <button class="btn-cancel" onclick="cancelPendingImport()">CANCEL</button>
+      </div>
+      <div class="modal-actions" id="importPreviewNoUndoActions" style="display:none;">
+        <button class="btn-primary" style="background:linear-gradient(90deg, var(--accent-pink), var(--accent-orange)); box-shadow:0 0 20px rgba(255, 0, 102, 0.4);" onclick="importWithoutUndo()">IMPORT WITHOUT UNDO</button>
+        <button class="btn-cancel" onclick="cancelPendingImport()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
   <div id="importModal" class="sheet-backdrop">
     <div class="sheet-modal glass-panel">
       <h3 style="color:var(--accent-orange); text-shadow:0 0 10px var(--accent-orange);">Bulk Import</h3>
@@ -1209,13 +1243,48 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } catch (e) {}
     }
 
+    // Pure: takes a parsed (untrusted) view-state object plus the games to
+    // resolve tag references against, and returns a fully-populated, safe
+    // object. Every field is validated independently and falls back to the
+    // app's normal default if missing, malformed, or - for a tag filter -
+    // if the tag doesn't exist on any of the given platforms. Never a
+    // pass-through of the input: the returned object is a fresh literal.
+    // Shared by restoreViewState() (startup, trusted-ish local key) and
+    // validateAndMigrateBackup() (an imported file), so this validation
+    // lives in exactly one place rather than two drifting copies.
+    function sanitizeViewState(state, gamesForTagCheck) {
+      const knownTags = new Set();
+      (gamesForTagCheck || []).forEach(g => (g.tags || []).forEach(t => knownTags.add(t)));
+
+      let gamesFilter = 'all';
+      if (state && typeof state.gamesFilter === 'string') {
+        if (VALID_GAMES_FILTERS.includes(state.gamesFilter)) gamesFilter = state.gamesFilter;
+        else if (state.gamesFilter.startsWith('tag:') && knownTags.has(state.gamesFilter.slice(4))) gamesFilter = state.gamesFilter;
+      }
+
+      const validSortKeys = Object.keys(SORT_CONFIG);
+      function sanitizeSortStack(v) {
+        if (!Array.isArray(v)) return ['tier', 'reliability'];
+        const seen = new Set();
+        return v.filter(k => typeof k === 'string' && validSortKeys.includes(k) && !seen.has(k) && seen.add(k));
+      }
+
+      return {
+        tab: (state && typeof state.tab === 'string' && VALID_TABS.includes(state.tab)) ? state.tab : 'games',
+        gamesFilter: gamesFilter,
+        catalogFilter: (state && typeof state.catalogFilter === 'string' && VALID_CATALOG_FILTERS.includes(state.catalogFilter))
+          ? state.catalogFilter : 'all',
+        sortStackGames: sanitizeSortStack(state && state.sortStackGames),
+        sortStackCatalog: sanitizeSortStack(state && state.sortStackCatalog),
+        gamesSearch: (state && typeof state.gamesSearch === 'string') ? state.gamesSearch : '',
+        catalogSearch: (state && typeof state.catalogSearch === 'string') ? state.catalogSearch : ''
+      };
+    }
+
     // Called once at startup, after trackedGames is loaded and the DOM
     // above this script has parsed (this script runs at the end of <body>,
     // so both are already true here - see the call site near the bottom).
-    // Every field is validated independently and falls back to the app's
-    // normal default if missing, malformed, or - for a tag filter - if the
-    // tag no longer exists on any tracked platform. Corrupt JSON simply
-    // leaves the defaults already set above untouched.
+    // Corrupt JSON simply leaves the defaults already set above untouched.
     function restoreViewState() {
       let raw;
       try { raw = localStorage.getItem(VIEW_STATE_KEY); } catch (e) { return; }
@@ -1224,36 +1293,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try { state = JSON.parse(raw); } catch (e) { return; }
       if (!state || typeof state !== 'object') return;
 
-      const knownTags = new Set();
-      trackedGames.forEach(g => (g.tags || []).forEach(t => knownTags.add(t)));
+      const clean = sanitizeViewState(state, trackedGames);
+      currentFilter = clean.gamesFilter;
+      currentCatalogFilter = clean.catalogFilter;
+      sortStackGames = clean.sortStackGames;
+      sortStackCatalog = clean.sortStackCatalog;
 
-      let gamesFilter = 'all';
-      if (typeof state.gamesFilter === 'string') {
-        if (VALID_GAMES_FILTERS.includes(state.gamesFilter)) gamesFilter = state.gamesFilter;
-        else if (state.gamesFilter.startsWith('tag:') && knownTags.has(state.gamesFilter.slice(4))) gamesFilter = state.gamesFilter;
-      }
-      currentFilter = gamesFilter;
-
-      currentCatalogFilter = (typeof state.catalogFilter === 'string' && VALID_CATALOG_FILTERS.includes(state.catalogFilter))
-        ? state.catalogFilter : 'all';
-
-      const validSortKeys = Object.keys(SORT_CONFIG);
-      function sanitizeSortStack(v) {
-        if (!Array.isArray(v)) return ['tier', 'reliability'];
-        const seen = new Set();
-        return v.filter(k => typeof k === 'string' && validSortKeys.includes(k) && !seen.has(k) && seen.add(k));
-      }
-      sortStackGames = sanitizeSortStack(state.sortStackGames);
-      sortStackCatalog = sanitizeSortStack(state.sortStackCatalog);
-
-      if (typeof state.gamesSearch === 'string') {
-        const el = document.getElementById('gamesSearch');
-        if (el) el.value = state.gamesSearch;
-      }
-      if (typeof state.catalogSearch === 'string') {
-        const el = document.getElementById('catalogSearchInput');
-        if (el) el.value = state.catalogSearch;
-      }
+      const gsEl = document.getElementById('gamesSearch');
+      if (gsEl) gsEl.value = clean.gamesSearch;
+      const csEl = document.getElementById('catalogSearchInput');
+      if (csEl) csEl.value = clean.catalogSearch;
 
       setGamesFilterButtonUI(currentFilter.startsWith('tag:') ? '' : currentFilter);
       setCatalogFilterButtonUI(currentCatalogFilter);
@@ -1261,9 +1310,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       updateSortUI('games');
       updateSortUI('catalog');
 
-      const tab = (typeof state.tab === 'string' && VALID_TABS.includes(state.tab)) ? state.tab : 'games';
-      const tabBtn = document.getElementById(TAB_BUTTON_IDS[tab]);
-      if (tab !== 'games' && tabBtn) switchMainTab(tab, tabBtn);
+      const tabBtn = document.getElementById(TAB_BUTTON_IDS[clean.tab]);
+      if (clean.tab !== 'games' && tabBtn) switchMainTab(clean.tab, tabBtn);
     }
 
     function resetViewState() {
@@ -1737,7 +1785,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // localStorage/exports actually persist.
       const prevCollected = game.lastCollected;
       const prevSnooze = game.snoozedUntil;
-      if (opensLink) window.open(game.url, '_blank');
+      if (opensLink) openExternal(game.url);
       game.lastCollected = serverNow();
       delete game.snoozedUntil;
       logCollection(id);
@@ -2358,6 +2406,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       refreshTZUI();
       refreshNotifyUI();
       refreshDropInboxUI();
+      refreshRecoveryUI();
+      refreshLaunchContextNote();
       refreshLedgerNet();
       const saved = Number(localStorage.getItem('almanac_last_saved_v1'));
       const status = document.getElementById('lastSavedStatus');
@@ -3548,6 +3598,24 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } catch (e) { return { ...NOTIFY_DEFAULTS }; }
     }
 
+    // Field-by-field whitelist for an *untrusted* notify-prefs object (a
+    // backup import) - unlike getNotifyPrefs() above, which merges our own
+    // previously-saved prefs and can trust their shape.
+    //
+    // Deliberately only {enabled, start, end}: `last`, `pausedUntil` and
+    // `pausedEnabled` are this device's scheduler bookkeeping, not a
+    // portable preference, so a restore must not carry another device's
+    // values in. Applying this through saveNotifyPrefs() (which merges)
+    // therefore leaves those three as this device already had them.
+    function sanitizeNotifyPrefs(v) {
+      if (!v || typeof v !== 'object') return { enabled: NOTIFY_DEFAULTS.enabled, start: NOTIFY_DEFAULTS.start, end: NOTIFY_DEFAULTS.end };
+      return {
+        enabled: typeof v.enabled === 'boolean' ? v.enabled : NOTIFY_DEFAULTS.enabled,
+        start: (typeof v.start === 'string' && /^\d{2}:\d{2}$/.test(v.start)) ? v.start : NOTIFY_DEFAULTS.start,
+        end: (typeof v.end === 'string' && /^\d{2}:\d{2}$/.test(v.end)) ? v.end : NOTIFY_DEFAULTS.end
+      };
+    }
+
     // Merges and saves. Deliberately does NOT read the DOM -- an earlier version
     // did, which meant any call made while the settings modal had never been
     // opened would overwrite quiet hours with empty strings and silently break
@@ -3796,6 +3864,74 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return String(s == null ? '' : s)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // Whether an outbound link can reach the user's real browser depends
+    // on what this page is running inside, and the difference is invisible
+    // until a sign-in mysteriously fails - so say it out loud in Settings.
+    //
+    // The `wv` token is Android's own marker for a WebView, which is the
+    // case that genuinely breaks: Google refuses its OAuth endpoint inside
+    // an embedded webview (error disallowed_useragent), and the visible
+    // symptom is exactly the sign-in page closing itself and returning to
+    // the host app. Nothing this app does from inside a WebView can change
+    // that - hence a note telling the user where to go instead, rather
+    // than a workaround that looks like a fix.
+    //
+    // An installed PWA in Chrome is NOT this case, despite looking like
+    // it: an out-of-scope link from a standalone PWA opens in a Chrome
+    // Custom Tab, which shares Chrome's cookie jar and session and which
+    // Google's policy explicitly permits for sign-in.
+    function isEmbeddedWebView() {
+      return /\bwv\b/.test(navigator.userAgent);
+    }
+
+    function refreshLaunchContextNote() {
+      const el = document.getElementById('launchContextNote');
+      if (!el) return;
+      if (isEmbeddedWebView()) {
+        el.innerHTML = '&#9888; This page is running inside an in-app browser, not your real browser. Platform links can&rsquo;t hand off properly from here, and Google sign-in will refuse to load at all &mdash; Google blocks it in embedded browsers, which looks like the sign-in page closing itself. Open the almanac in Chrome, or install it from Chrome, and platform links will behave normally.';
+        el.style.color = 'var(--accent-orange)';
+        return;
+      }
+      const installed = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      el.textContent = installed
+        ? 'Running as an installed app. Platform links open outside it, in a browser tab that shares your normal browser session and sign-ins.'
+        : 'Running in your browser. Platform links open in a new tab.';
+      el.style.color = '';
+    }
+
+    // Single place every outbound platform/offer link goes through. Hands
+    // the URL to the browser as a real link activation instead of
+    // window.open(), for three separate reasons:
+    //
+    //  - rel="noopener" severs window.opener, so a site we open can't
+    //    reach back and navigate the almanac's own tab.
+    //  - rel="noreferrer" also drops the Referer header, so the request
+    //    looks like a typed URL rather than a click from an unrelated
+    //    domain. Links opened from here used to arrive at the platform
+    //    carrying the almanac's origin as the referrer, and sweepstakes
+    //    sites do referrer-based attribution and anti-fraud checks - a
+    //    plausible reason a site loads when typed into the address bar
+    //    but not when opened from the app.
+    //  - a click on <a target="_blank"> goes through the browser's
+    //    link-handling path rather than the popup path. If this page is
+    //    embedded (an Android WebView, an in-app browser), that is the
+    //    path the host can route out to the real browser; window.open()
+    //    there commonly returns null or loads in place.
+    //
+    // Callers must already be inside a user gesture - every one is a click
+    // handler. This does not itself create user activation.
+    function openExternal(url) {
+      if (!url) return;
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
 
     // Looks the platform up by id rather than interpolating the URL into an
@@ -5194,7 +5330,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // matched platform) - opening an untracked/unmatched link creates
       // no data, so there's nothing here for the gate to protect.
       if (d.tracked && d.match && interceptForEmailGate(() => openDrop(i))) return;
-      window.open(d.url, '_blank');
+      openExternal(d.url);
       if (d.tracked && d.match) {
         const g = trackedGames.find(x => x.id === d.match.id);
         if (g) {
@@ -5256,7 +5392,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         let linkHtml = '';
         if (o.link) {
           linkHtml = o.link.type === 'clean'
-            ? `<button class="btn-open" style="padding:7px 12px; font-size:0.72rem;" onclick="window.open('${o.link.url}','_blank')">OPEN</button>`
+            ? `<button class="btn-open" style="padding:7px 12px; font-size:0.72rem;" onclick="openClassifiedOfferLink(${i})">OPEN</button>`
             : `<div class="drop-url">Account-tied link &mdash; check ${escHtml(o.link.root || 'your account')} directly, this link won't work for anyone else</div>`;
         }
         const ttlText = o.ttl.type === 'timestamp' ? `Expires ${escHtml(o.ttl.raw)}`
@@ -5333,6 +5469,27 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderPublicFreebies(publicFreebiesCache);
     }
 
+    // Both of these look the URL up by index instead of interpolating it
+    // into an inline handler, for the same reason shareReferral() does it
+    // by id - and it was a live bug in both: a URL containing a quote
+    // broke the attribute. escHtml() is not a fix in that position either,
+    // since an HTML entity decodes back to a quote before the JS inside
+    // the attribute is parsed. Drop text is pasted from anywhere, which
+    // made the classified-offer one reachable with arbitrary input.
+    function openClassifiedOfferLink(i) {
+      const o = lastClassifiedOffers[i];
+      if (o && o.link) openExternal(o.link.url);
+    }
+
+    function openFreebieLink(i) {
+      const r = renderedFreebies[i];
+      if (r) openExternal(r.claim_url);
+    }
+
+    // The rows currently on screen, so openFreebieLink()'s index can't
+    // drift from what was rendered.
+    let renderedFreebies = [];
+
     function renderPublicFreebies(rows) {
       const list = document.getElementById('freebiesList');
       if (!list) return;
@@ -5340,7 +5497,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         list.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:18px;">Nothing posted yet &mdash; check back soon.</div>';
         return;
       }
-      list.innerHTML = rows.map((r) => {
+      renderedFreebies = rows;
+      list.innerHTML = rows.map((r, i) => {
         const codeHtml = r.code
           ? `<div class="drop-name">${escHtml(r.code)} <button class="btn-open" style="padding:3px 8px; font-size:0.68rem;" onclick="navigator.clipboard.writeText('${escHtml(r.code).replace(/'/g, "\\'")}')">COPY</button></div>`
           : '';
@@ -5348,7 +5506,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (r.is_account_tied) {
           linkHtml = `<div class="drop-url">Account-tied link &mdash; check ${escHtml(r.root_domain || r.platform_name)} directly, this link won't work for anyone else</div>`;
         } else if (r.claim_url) {
-          linkHtml = `<button class="btn-open" style="padding:7px 12px; font-size:0.72rem;" onclick="window.open('${escHtml(r.claim_url)}','_blank')">OPEN</button>`;
+          linkHtml = `<button class="btn-open" style="padding:7px 12px; font-size:0.72rem;" onclick="openFreebieLink(${i})">OPEN</button>`;
         }
         const ttlText = r.expires_at ? `Expires ${new Date(r.expires_at).toLocaleString()}` : 'No expiry stated';
         const termsHtml = r.terms ? `<span class="drop-tag">${escHtml(r.terms)}</span>` : '';
@@ -5864,12 +6022,325 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return out;
     }
 
+    // Schema history: v7 exported trackedGames only. v8 is a complete
+    // application backup - platforms, collection history, daily-run
+    // history, the spend/redeem ledger, the portable preferences, and (if
+    // present) persisted view state. v7 files still import unchanged (see
+    // validateAndMigrateBackup()); everything from here on exports as v8.
+    const BACKUP_SCHEMA_VERSION = 'v8';
+    const BACKUP_SCHEMA_NUMBER = 8;
+    const RECOVERY_KEY = 'almanac_recovery_v1';
+    // A recovery snapshot older than this is treated as absent: an "undo"
+    // from a month ago is far more likely to destroy current data than to
+    // rescue anything, and it is a full second copy of every key in a
+    // storage budget that is already tight.
+    const RECOVERY_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
+    // Every key a backup carries AND the exact set the pre-import recovery
+    // snapshot saves. Deliberately one explicit list rather than derived
+    // from localStorage, so a future new key is a conscious addition here
+    // rather than something a snapshot silently misses - and, critically,
+    // so nothing sweeps up a key that must never travel (see below).
+    const ALL_APP_STORAGE_KEYS = [
+      'the_casino_almanac_v7', 'the_casino_almanac_history_v1', 'the_casino_almanac_runs_v1',
+      LEDGER_KEY, THEME_KEY, 'almanac_tz_v1', NOTIFY_KEY,
+      'almanac_hide_collected', 'almanac_show_landing', 'almanac_dense', VIEW_STATE_KEY
+    ];
+
+    // WHY THE EXCLUSIONS ABOVE, so the next schema bump doesn't have to
+    // rediscover any of this. A backup file moves between devices and
+    // accounts; these keys describe THIS device or THIS account, so
+    // restoring them elsewhere corrupts cloud sync rather than restoring
+    // anything. None of them is exported, and none is written by a restore.
+    //
+    // Sync identity and bookkeeping:
+    //   SYNC_DEVICE_KEY                   two devices sharing one id makes
+    //                                     server-side write attribution lie.
+    //   SYNC_CURSOR_KEY                   a cursor from ahead of this device's
+    //                                     real replay position permanently
+    //                                     SKIPS collection_events rows - silent,
+    //                                     unrecoverable history loss.
+    //   SYNC_OUTBOX_KEY                   replays another device's pending ops,
+    //                                     tombstones included: an import could
+    //                                     DELETE cloud history.
+    //   SYNC_META_KEY                     per-device timestamps/error strings.
+    //   SYNC_SEEDED_KEY                   seeding runs once PER DEVICE; a
+    //                                     restored 'true' means imported history
+    //                                     never uploads at all.
+    //   DECK_SYNC_CURSOR_KEY              deck sync is whole-array
+    //                                     last-write-wins, so a wrong cursor
+    //                                     silently discards one side entirely.
+    //   DECK_SYNC_DIRTY_KEY               must be SET deliberately by a restore
+    //                                     (see nudgeSyncAfterRestore()), never
+    //                                     carried in from a file.
+    //   DECK_SYNC_BOOTSTRAPPED_UID_KEY    holds the Supabase account uuid, and
+    //                                     pre-satisfies the guard that stops a
+    //                                     fresh device pushing its empty deck
+    //                                     over a real cloud one.
+    //   EMAIL_GATE_PASSED_KEY             asserts THIS device's account has an
+    //                                     email attached; restoring it defeats
+    //                                     the first-collect gate on a different
+    //                                     anonymous account.
+    //   SERVER_TIME_OFFSET_KEY            this device's measured clock skew. A
+    //                                     wrong offset is worse than none, and
+    //                                     it self-heals to 0 when absent.
+    //   SYNC_ENABLED_KEY                  a per-device decision, not portable
+    //                                     user data. Note isSyncEnabled() reads
+    //                                     `!== 'false'`, so an ABSENT key means
+    //                                     ENABLED: a restore must leave this key
+    //                                     exactly as it found it and must NOT
+    //                                     remove it. Deleting it is not neutral,
+    //                                     it silently turns sync on - and
+    //                                     emailGateSatisfied() returns true when
+    //                                     sync is off, so the blast radius is
+    //                                     wider than it looks.
+    // Device presentation / accessibility:
+    //   MOTION_KEY                        reduced-motion is about this device,
+    //                                     and exists as an escape hatch for
+    //                                     devices that flip the system flag from
+    //                                     battery saver. An imported file must
+    //                                     never turn animation back on for
+    //                                     someone who needs it off: on an
+    //                                     accessibility preference the device's
+    //                                     current setting wins.
+    //   'almanac_dropinbox_unlocked_v1'   deliberately a per-device reveal;
+    //                                     exporting it leaks the unlock to
+    //                                     anyone a backup file is shared with.
+    // Ephemeral / derived:
+    //   'almanac_last_saved_v1'           metadata about THIS device's write
+    //                                     history; a foreign value just lies.
+    //   'almanac_break_reminder_v1'       only ever read by a setTimeout closure
+    //                                     created in the same call, so a
+    //                                     persisted value is unreachable after
+    //                                     a reload.
+    // Never ours to touch at all:
+    //   supabase-js's own auth-token key holds a LIVE session. This is why
+    //   export is allowlist-based and never iterates localStorage.
+    //
+    // Out of scope for v8, but reasonable candidates for the next bump:
+    //   'almanac_reviewed_v1' (prune "keep" decisions), 'almanac_drop_queue_v1'
+    //   (the offline drop inbox) and 'almanac_tour_completed'.
+
+    function isPlainObject(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
+
+    // ---- Per-record whitelists ----
+    // Every value that ends up in application state is built field by field
+    // from an explicit whitelist. Nothing here spreads an untrusted object
+    // into anything the app reads, so unknown fields (a future schema, an
+    // extra property, a __proto__ key) are dropped rather than carried
+    // through - each migrated object is a fresh literal.
+
+    // Tier 1 (strict): a platform missing a usable name or url rejects the
+    // whole import, matching what the v7 import always did. Secondary
+    // fields are defaulted rather than rejected, also as before.
+    function migratePlatformEntry(g, index) {
+      if (!g || typeof g !== 'object') return { ok: false, error: `entry ${index + 1}: not an object` };
+      if (typeof g.name !== 'string' || g.name.trim() === '') return { ok: false, error: `entry ${index + 1}: missing a valid name` };
+      if (typeof g.url !== 'string' || g.url.trim() === '') return { ok: false, error: `entry ${index + 1} ("${g.name}"): missing a valid URL` };
+
+      const n = {
+        id: String(g.id || uid()),
+        name: g.name.trim(),
+        url: g.url.trim(),
+        tier: typeof g.tier === 'string' && g.tier ? g.tier : 'Unranked',
+        dailySC: typeof g.dailySC === 'number' && Number.isFinite(g.dailySC) ? g.dailySC : 0,
+        speedHours: typeof g.speedHours === 'number' && Number.isFinite(g.speedHours) ? g.speedHours : 24,
+        reliability: typeof g.reliability === 'number' && Number.isFinite(g.reliability) ? g.reliability : 68,
+        cooldownHours: typeof g.cooldownHours === 'number' && Number.isFinite(g.cooldownHours) && g.cooldownHours > 0 ? g.cooldownHours : 24,
+        hasLive: typeof g.hasLive === 'boolean' ? g.hasLive : false,
+        minRedeem: typeof g.minRedeem === 'string' && g.minRedeem ? g.minRedeem : 'Varies',
+        notes: typeof g.notes === 'string' ? g.notes : '',
+        referralUrl: typeof g.referralUrl === 'string' ? g.referralUrl : '',
+        lastCollected: typeof g.lastCollected === 'number' && Number.isFinite(g.lastCollected) ? g.lastCollected : 0
+      };
+      if (typeof g.balance === 'number' && Number.isFinite(g.balance)) n.balance = g.balance;
+      if (Array.isArray(g.tags)) n.tags = g.tags.filter(t => typeof t === 'string');
+      if (typeof g.userNotes === 'string') n.userNotes = g.userNotes;
+      if (typeof g.resetHour === 'number') n.resetHour = g.resetHour;
+      if (typeof g.resetTZ === 'string') n.resetTZ = g.resetTZ;
+      if (typeof g.snoozedUntil === 'number' && Number.isFinite(g.snoozedUntil)) n.snoozedUntil = g.snoozedUntil;
+      if (typeof g.scIsAveraged === 'boolean') n.scIsAveraged = g.scIsAveraged;
+      if (typeof g.scRange === 'string') n.scRange = g.scRange;
+      if (typeof g.bestGames === 'string') n.bestGames = g.bestGames;
+      // _prevCollected is deliberately never whitelisted above, so an
+      // older backup that happens to carry one drops it here.
+      // The same gate every other write path uses, rather than a second,
+      // looser copy of the resetHour/resetTZ rules living in here.
+      normalizeTimerFields(n);
+      return { ok: true, game: n };
+    }
+
+    // Tier 2 (lenient): these three return null for a malformed record
+    // rather than failing the whole import - secondary data, unlike the
+    // platform list, so one bad row from an old or hand-edited file
+    // shouldn't block restoring everything else. Every skip is counted and
+    // reported in the preview, never silent.
+    function migrateHistoryEntry(h) {
+      if (!h || typeof h !== 'object') return null;
+      if (typeof h.platformName !== 'string' || !h.platformName.trim()) return null;
+      if (typeof h.collectedAt !== 'number' || !Number.isFinite(h.collectedAt)) return null;
+      // The id is load-bearing, not decoration: cloud sync keys every
+      // collection_events row by it (see ensureHistoryEntryIds()). Dropping
+      // it here would orphan every imported entry from its cloud row.
+      return { id: String(h.id || uid()), platformName: h.platformName, collectedAt: h.collectedAt };
+    }
+
+    function migrateRunEntry(r) {
+      if (!r || typeof r !== 'object') return null;
+      const fields = [r.startedAt, r.endedAt, r.collected, r.skipped];
+      if (!fields.every(v => typeof v === 'number' && Number.isFinite(v))) return null;
+      return { startedAt: r.startedAt, endedAt: r.endedAt, collected: r.collected, skipped: r.skipped };
+    }
+
+    function migrateLedgerEntry(e) {
+      if (!e || typeof e !== 'object') return null;
+      if (typeof e.date !== 'string' || !e.date) return null;
+      if (typeof e.platform !== 'string' || !e.platform) return null;
+      if (e.type !== 'purchase' && e.type !== 'redemption') return null;
+      if (typeof e.amount !== 'number' || !Number.isFinite(e.amount)) return null;
+      return {
+        id: String(e.id || uid()),
+        date: e.date,
+        platform: e.platform,
+        type: e.type,
+        amount: e.amount,
+        sc: (typeof e.sc === 'number' && Number.isFinite(e.sc)) ? e.sc : null,
+        playthrough: (typeof e.playthrough === 'number' && Number.isFinite(e.playthrough)) ? e.playthrough : null,
+        // Redemption tracking fields - part of a ledger record since the
+        // payout pipeline landed, so a backup has to round-trip them.
+        method: typeof e.method === 'string' ? e.method : null,
+        approvedDate: typeof e.approvedDate === 'string' ? e.approvedDate : null,
+        receivedDate: typeof e.receivedDate === 'string' ? e.receivedDate : null,
+        note: typeof e.note === 'string' ? e.note : ''
+      };
+    }
+
+    // The single gate every byte from an import file passes through before
+    // anything in the app changes. Returns {ok:true, migrated, summary} or
+    // {ok:false, error}. PURE - never touches localStorage or the DOM and
+    // never assigns a global, so it is safe to call just to preview a file.
+    function validateAndMigrateBackup(data) {
+      if (!data || typeof data !== 'object') return { ok: false, error: 'Invalid backup file: not a JSON object.' };
+      if (!Array.isArray(data.trackedGames)) return { ok: false, error: "Invalid backup file: missing the 'trackedGames' array." };
+
+      const games = [];
+      for (let i = 0; i < data.trackedGames.length; i++) {
+        const r = migratePlatformEntry(data.trackedGames[i], i);
+        if (!r.ok) return { ok: false, error: `Invalid backup file: ${r.error}.` };
+        games.push(r.game);
+      }
+
+      // A v7 file only ever had trackedGames - everything else in v8 is
+      // simply absent for it, not "invalid", so junk in those fields can
+      // never make an old backup unimportable.
+      const isV7 = data.schemaVersion === 'v7';
+      const historyIn = isV7 ? undefined : data.collectionHistory;
+      const runsIn = isV7 ? undefined : data.dailyRunsHistory;
+      const ledgerIn = isV7 ? undefined : data.ledger;
+
+      if (historyIn !== undefined && historyIn !== null && !Array.isArray(historyIn)) {
+        return { ok: false, error: "Invalid backup file: 'collectionHistory' is present but not an array." };
+      }
+      if (runsIn !== undefined && runsIn !== null && !Array.isArray(runsIn)) {
+        return { ok: false, error: "Invalid backup file: 'dailyRunsHistory' is present but not an array." };
+      }
+      if (ledgerIn !== undefined && ledgerIn !== null && !Array.isArray(ledgerIn)) {
+        return { ok: false, error: "Invalid backup file: 'ledger' is present but not an array." };
+      }
+
+      const migratedHistory = (historyIn || []).map(migrateHistoryEntry).filter(Boolean);
+      const migratedRuns = (runsIn || []).map(migrateRunEntry).filter(Boolean);
+      const migratedLedger = (ledgerIn || []).map(migrateLedgerEntry).filter(Boolean);
+
+      let migratedPrefs = null;
+      if (!isV7 && isPlainObject(data.preferences)) {
+        const p = data.preferences;
+        migratedPrefs = {
+          theme: (typeof p.theme === 'string' && p.theme) ? p.theme : null,
+          // The locked home timezone travels deliberately: it is user data
+          // about what a platform's resetHour MEANS, locked precisely so
+          // travelling doesn't shift timers, so it belongs with the
+          // platforms whose resets it interprets. A wrong value is visible
+          // and fixable in Settings.
+          timezone: typeof p.timezone === 'string' ? p.timezone : null,
+          notify: sanitizeNotifyPrefs(p.notify),
+          hideCollected: typeof p.hideCollected === 'boolean' ? p.hideCollected : null,
+          showLanding: typeof p.showLanding === 'boolean' ? p.showLanding : null,
+          dense: typeof p.dense === 'boolean' ? p.dense : null
+        };
+      }
+
+      // sanitizeViewState() always returns a fully-populated, safe object -
+      // this is never a pass-through of data.viewState. It gets the
+      // MIGRATED games so a `tag:` filter resolves against the incoming
+      // deck rather than whatever this device happens to track today.
+      const migratedViewState = (!isV7 && isPlainObject(data.viewState))
+        ? sanitizeViewState(data.viewState, games)
+        : null;
+
+      // Forward compatibility: a file from a newer schema still takes the
+      // v8 path, which means anything this version doesn't recognise is
+      // dropped by the whitelists above. That is the safe behaviour, but it
+      // must not be a silent one - the preview says so.
+      const versionMatch = (typeof data.schemaVersion === 'string') ? data.schemaVersion.match(/^v(\d+)$/) : null;
+      const isNewerSchema = !!versionMatch && Number(versionMatch[1]) > BACKUP_SCHEMA_NUMBER;
+
+      return {
+        ok: true,
+        migrated: {
+          trackedGames: games,
+          collectionHistory: migratedHistory,
+          dailyRunsHistory: migratedRuns,
+          ledger: migratedLedger,
+          preferences: migratedPrefs,
+          viewState: migratedViewState
+        },
+        summary: {
+          schemaVersion: typeof data.schemaVersion === 'string' && data.schemaVersion ? data.schemaVersion : 'unknown (legacy)',
+          isNewerSchema: isNewerSchema,
+          exportedAt: typeof data.exportedAt === 'string' ? data.exportedAt : null,
+          platformCount: games.length,
+          historyCount: migratedHistory.length,
+          ledgerCount: migratedLedger.length,
+          runsCount: migratedRuns.length,
+          historyDropped: (historyIn || []).length - migratedHistory.length,
+          ledgerDropped: (ledgerIn || []).length - migratedLedger.length,
+          runsDropped: (runsIn || []).length - migratedRuns.length
+        }
+      };
+    }
+
     function exportBackup() {
       const dateStr = new Date().toISOString().split('T')[0];
       const exportData = {
-        schemaVersion: "v7",
+        schemaVersion: BACKUP_SCHEMA_VERSION,
         exportedAt: new Date().toISOString(),
-        trackedGames: trackedGames.map(exportableGame)
+        trackedGames: trackedGames.map(exportableGame),
+        collectionHistory: collectionHistory,
+        dailyRunsHistory: dailyRunsHistory,
+        ledger: ledger,
+        preferences: (() => {
+          const notify = getNotifyPrefs();
+          return {
+            theme: localStorage.getItem(THEME_KEY) || null,
+            timezone: localStorage.getItem('almanac_tz_v1') || null,
+            // Only the portable three - see sanitizeNotifyPrefs().
+            notify: { enabled: notify.enabled, start: notify.start, end: notify.end },
+            hideCollected: localStorage.getItem('almanac_hide_collected') === 'true',
+            showLanding: localStorage.getItem('almanac_show_landing') !== 'false',
+            dense: localStorage.getItem('almanac_dense') === 'true'
+          };
+        })(),
+        viewState: (() => {
+          try { return JSON.parse(localStorage.getItem(VIEW_STATE_KEY)); } catch (e) { return null; }
+        })()
+        // Deliberately absent, and NOT an oversight (full reasoning at
+        // ALL_APP_STORAGE_KEYS): every sync/device/account key, the
+        // reduced-motion preference (accessibility - the device wins), and
+        // the cloud-sync on/off flag (a per-device decision). Also never
+        // included: Notification.permission (a browser grant, not app
+        // data), service-worker/cache state, or anything resembling a
+        // secret - a backup file is something people share.
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -5883,6 +6354,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       URL.revokeObjectURL(url);
     }
 
+    // ---- Import flow: read -> validate -> preview -> confirm/cancel ----
+
+    // { migrated, summary } awaiting confirmation in the preview modal.
+    // Nothing in the app has changed while this is set.
+    let pendingImport = null;
+
     function importBackup(event) {
       const input = event.target;
       const file = input.files[0];
@@ -5891,89 +6368,348 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const reader = new FileReader();
 
       reader.onerror = function() {
-        alert("Could not read that file. It may be corrupted or unreadable.");
+        showToast('Could not read that file - it may be corrupted or unreadable.', null);
         input.value = '';
       };
 
       reader.onload = function(e) {
-        // Parse + validate inside try/catch. Everything AFTER validation is
-        // kept outside it, so a rendering error isn't misreported as bad JSON.
         let data;
         try {
           data = JSON.parse(e.target.result);
         } catch (err) {
-          alert("Invalid backup file: not valid JSON.");
+          showToast('Invalid backup file: not valid JSON.', null);
           input.value = '';
           return;
         }
 
-        if (!data || typeof data !== 'object' || !Array.isArray(data.trackedGames)) {
-          alert("Invalid backup file: missing the 'trackedGames' array.");
-          input.value = '';
-          return;
-        }
-
-        const importedGames = data.trackedGames;
-        for (let i = 0; i < importedGames.length; i++) {
-          const g = importedGames[i];
-          if (!g || typeof g.name !== 'string' || g.name.trim() === '') {
-            alert(`Invalid backup file: entry ${i + 1} is missing a valid name.`);
-            input.value = '';
-            return;
-          }
-          if (typeof g.url !== 'string' || g.url.trim() === '') {
-            alert(`Invalid backup file: entry ${i + 1} ("${g.name}") is missing a valid URL.`);
-            input.value = '';
-            return;
-          }
-        }
-
-        const confirmMsg = `This backup contains ${importedGames.length} platform(s).\n` +
-          `You currently have ${trackedGames.length} tracked.\n\n` +
-          `WARNING: importing REPLACES all current tracked data, including cooldown timers. Proceed?`;
-        if (!confirm(confirmMsg)) {
-          input.value = '';
-          return;
-        }
-
-        trackedGames = importedGames.map(g => {
-          const n = {
-            id: String(g.id || uid()),
-            name: g.name.trim(),
-            url: g.url.trim(),
-            tier: g.tier || "Unranked",
-            dailySC: typeof g.dailySC === 'number' ? g.dailySC : 0,
-            speedHours: typeof g.speedHours === 'number' ? g.speedHours : 24,
-            reliability: typeof g.reliability === 'number' ? g.reliability : 68,
-            cooldownHours: typeof g.cooldownHours === 'number' ? g.cooldownHours : 24,
-            hasLive: typeof g.hasLive === 'boolean' ? g.hasLive : false,
-            minRedeem: g.minRedeem || "Varies",
-            notes: g.notes || "",
-            referralUrl: g.referralUrl || "",
-            lastCollected: typeof g.lastCollected === 'number' ? g.lastCollected : 0
-          };
-          if (typeof g.balance === 'number') n.balance = g.balance;
-          if (Array.isArray(g.tags)) n.tags = g.tags;
-          if ('userNotes' in g) n.userNotes = g.userNotes;
-          if ('resetHour' in g) n.resetHour = g.resetHour;
-          if ('resetTZ' in g) n.resetTZ = g.resetTZ;
-          if (typeof g.snoozedUntil === 'number') n.snoozedUntil = g.snoozedUntil;
-          if ('scIsAveraged' in g) n.scIsAveraged = g.scIsAveraged;
-          if ('scRange' in g) n.scRange = g.scRange;
-          if ('bestGames' in g) n.bestGames = g.bestGames;
-          // _prevCollected is deliberately never whitelisted above, so an
-          // older backup that happens to carry one drops it here.
-          normalizeTimerFields(n);
-          return n;
-        });
-
-        persist();
+        const result = validateAndMigrateBackup(data);
         input.value = '';
-        alert(`Imported ${trackedGames.length} platform(s) successfully.`);
-        closeModals();
+        if (!result.ok) {
+          showToast(result.error, null, 8000);
+          return;
+        }
+
+        pendingImport = result;
+        showImportPreview(result.summary);
       };
 
       reader.readAsText(file);
+    }
+
+    function showImportPreview(summary) {
+      document.getElementById('importPreviewVersion').textContent = summary.schemaVersion;
+      document.getElementById('importPreviewDate').textContent = summary.exportedAt
+        ? new Date(summary.exportedAt).toLocaleString() : 'Unknown';
+      document.getElementById('importPreviewPlatforms').textContent = summary.platformCount;
+      document.getElementById('importPreviewHistory').textContent = summary.historyCount;
+      document.getElementById('importPreviewLedger').textContent = summary.ledgerCount;
+
+      const dropped = [];
+      if (summary.historyDropped > 0) dropped.push(`${summary.historyDropped} history`);
+      if (summary.ledgerDropped > 0) dropped.push(`${summary.ledgerDropped} ledger`);
+      if (summary.runsDropped > 0) dropped.push(`${summary.runsDropped} daily-run`);
+      const droppedEl = document.getElementById('importPreviewDropped');
+      droppedEl.textContent = dropped.length
+        ? `Skipping ${dropped.join(', ')} record(s) with malformed data. Everything else still imports.` : '';
+      droppedEl.style.display = dropped.length ? 'block' : 'none';
+
+      // A newer-schema file imports, but anything this version doesn't
+      // understand is dropped by the whitelists - say so rather than
+      // quietly losing it.
+      const newerEl = document.getElementById('importPreviewNewer');
+      newerEl.style.display = summary.isNewerSchema ? 'block' : 'none';
+
+      // With sync on, an import cannot be a clean wipe: entries this file
+      // doesn't contain still replay back down from the cloud afterwards.
+      // The user must not believe they got a replace when they got a merge.
+      const mergeEl = document.getElementById('importPreviewMergeNote');
+      mergeEl.style.display = isSyncEnabled() ? 'block' : 'none';
+
+      // Reset the modal to its normal state - the no-undo branch below can
+      // have left it swapped from a previous attempt.
+      document.getElementById('importPreviewNoUndo').style.display = 'none';
+      document.getElementById('importPreviewActions').style.display = '';
+      document.getElementById('importPreviewNoUndoActions').style.display = 'none';
+
+      closeModals();
+      document.getElementById('importPreviewModal').classList.add('open');
+    }
+
+    function cancelPendingImport() {
+      pendingImport = null;
+      closeModals();
+    }
+
+    function confirmPendingImport() {
+      if (!pendingImport) { closeModals(); return; }
+
+      // The recovery snapshot is the whole reason this import is allowed to
+      // be a local replace at all: small blast radius BECAUSE there is an
+      // undo. If it can't be written, the user has no undo - so that is a
+      // stop, not a footnote. Storage really does fill up here (the
+      // snapshot roughly doubles usage at this moment, history being the
+      // largest key), which is why persist() already has a quota toast.
+      if (!snapshotCurrentState()) {
+        document.getElementById('importPreviewNoUndo').style.display = 'block';
+        document.getElementById('importPreviewActions').style.display = 'none';
+        document.getElementById('importPreviewNoUndoActions').style.display = '';
+        // pendingImport is deliberately kept: nothing has been written, so
+        // the user can still cancel with nothing changed, or take the
+        // explicit no-undo path below.
+        return;
+      }
+
+      applyPendingImport();
+    }
+
+    // The explicit second click from the "no undo available" state. Only
+    // reachable after a failed snapshot, and never the default path.
+    function importWithoutUndo() {
+      if (!pendingImport) { closeModals(); return; }
+      applyPendingImport();
+    }
+
+    function applyPendingImport() {
+      const outcome = applyImportedBackup(pendingImport.migrated);
+      pendingImport = null;
+      refreshAllViewsAfterImport();
+      nudgeSyncAfterRestore();
+      closeModals();
+      showToast(describeWriteOutcome(outcome, 'Backup imported'), null, outcome.failed.length ? 12000 : 6000);
+    }
+
+    // Turns applyImportedBackup()'s per-section record into something that
+    // tells the truth. A partial write is the EXPECTED result when the
+    // recovery snapshot already failed for want of space - the section
+    // writes are the same volume that just didn't fit - so reporting a flat
+    // success there would leave a half-applied import looking clean.
+    function describeWriteOutcome(outcome, successPrefix) {
+      if (!outcome.failed.length) return `${successPrefix}: ${outcome.written.join(', ')}.`;
+      return `${successPrefix} partially: saved ${outcome.written.length ? outcome.written.join(', ') : 'nothing'}. ` +
+        `Could not save ${outcome.failed.join(', ')} - browser storage is full, so those revert when the app reloads. ` +
+        `Free space and try again.`;
+    }
+
+    // ---- Applying a validated import ----
+
+    // Writes each section, every setItem individually guarded so one
+    // failure can't abort the rest - but each guard RECORDS the outcome
+    // instead of swallowing it, and the caller reports what actually
+    // landed. Note the in-memory globals are assigned either way, so a
+    // failed section leaves the screen showing data storage doesn't have:
+    // that is what makes saying so out loud non-optional.
+    function applyImportedBackup(migrated) {
+      const written = [];
+      const failed = [];
+      function writeSection(label, key, value) {
+        try {
+          localStorage.setItem(key, JSON.stringify(value));
+          written.push(label);
+        } catch (e) {
+          failed.push(label);
+        }
+      }
+
+      trackedGames = migrated.trackedGames;
+      writeSection('platforms', 'the_casino_almanac_v7', trackedGames);
+
+      collectionHistory = migrated.collectionHistory;
+      writeSection('collection history', 'the_casino_almanac_history_v1', collectionHistory);
+
+      dailyRunsHistory = migrated.dailyRunsHistory;
+      writeSection('daily-run history', 'the_casino_almanac_runs_v1', dailyRunsHistory);
+
+      ledger = migrated.ledger;
+      writeSection('ledger', LEDGER_KEY, ledger);
+
+      if (migrated.preferences) {
+        const p = migrated.preferences;
+        let prefsOk = true;
+        function writePref(key, value) {
+          try { localStorage.setItem(key, value); } catch (e) { prefsOk = false; }
+        }
+        if (p.theme) writePref(THEME_KEY, p.theme);
+        if (p.timezone !== null) writePref('almanac_tz_v1', p.timezone);
+        // Merged, not replaced: keeps this device's own scheduler fields
+        // (last, pausedUntil, pausedEnabled) - see sanitizeNotifyPrefs().
+        try {
+          localStorage.setItem(NOTIFY_KEY, JSON.stringify({ ...getNotifyPrefs(), ...p.notify }));
+        } catch (e) { prefsOk = false; }
+        if (typeof p.hideCollected === 'boolean') writePref('almanac_hide_collected', String(p.hideCollected));
+        if (typeof p.showLanding === 'boolean') writePref('almanac_show_landing', String(p.showLanding));
+        if (typeof p.dense === 'boolean') writePref('almanac_dense', String(p.dense));
+        (prefsOk ? written : failed).push('preferences');
+      }
+
+      if (migrated.viewState) writeSection('view state', VIEW_STATE_KEY, migrated.viewState);
+
+      return { written, failed };
+    }
+
+    // An import or recovery restore replaces local state wholesale, which
+    // leaves two sync flags saying the wrong thing. Both of these are real
+    // failures that were found by reading the sync code, not speculation:
+    //
+    //  - Without DECK_SYNC_DIRTY_KEY set, syncTrackedGamesSnapshot() takes
+    //    its PULL branch (the deck cursor still points at a recent server
+    //    snapshot) and the cloud deck silently overwrites everything that
+    //    was just imported.
+    //  - With SYNC_SEEDED_KEY still 'true', ensureHistorySeeded() returns
+    //    early forever, so the imported collection history is never
+    //    uploaded at all.
+    //
+    // Everything else is left exactly as this device had it: the device id,
+    // both cursors, the outbox, sync meta, the bootstrapped account uid,
+    // the email gate, the server-time offset, and the sync on/off flag -
+    // which is specifically NOT removed, since absent means enabled.
+    function nudgeSyncAfterRestore() {
+      if (!isSyncEnabled()) return;
+      markDeckDirty();
+      try { localStorage.removeItem(SYNC_SEEDED_KEY); } catch (e) {}
+      kickSync();
+    }
+
+    // ---- Snapshot / recovery ----
+
+    // Raw string snapshot (not re-migrated) of every key this app owns,
+    // taken immediately before an import replaces anything. Restoring it
+    // writes those exact strings back rather than round-tripping through
+    // the migration logic a second time.
+    //
+    // Returns true only if the snapshot is actually on disk. The caller
+    // must not proceed with an import on false - see confirmPendingImport().
+    function snapshotCurrentState() {
+      const keys = {};
+      ALL_APP_STORAGE_KEYS.forEach(k => { keys[k] = localStorage.getItem(k); });
+      try {
+        // Drop the previous snapshot first: there is exactly one undo slot,
+        // and freeing the old copy before writing the new one is the
+        // difference between needing 1x and 2x the space at this moment.
+        localStorage.removeItem(RECOVERY_KEY);
+        localStorage.setItem(RECOVERY_KEY, JSON.stringify({ snapshotAt: new Date().toISOString(), keys }));
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // Returns the usable snapshot or null. A snapshot past
+    // RECOVERY_MAX_AGE_MS is treated as absent and cleared on sight.
+    function readRecoverySnapshot() {
+      let snap;
+      try { snap = JSON.parse(localStorage.getItem(RECOVERY_KEY)); } catch (e) { return null; }
+      if (!snap || !isPlainObject(snap.keys)) return null;
+      const at = Date.parse(snap.snapshotAt);
+      if (!Number.isFinite(at)) return null;
+      if (Date.now() - at > RECOVERY_MAX_AGE_MS) {
+        try { localStorage.removeItem(RECOVERY_KEY); } catch (e) {}
+        return null;
+      }
+      return snap;
+    }
+
+    function restoreFromRecoverySnapshot() {
+      const snap = readRecoverySnapshot();
+      if (!snap) {
+        showToast('No recovery snapshot available.', null);
+        return;
+      }
+      const when = new Date(snap.snapshotAt).toLocaleString();
+      if (!confirm(`Restore everything to how it was just before your last import (snapshot from ${when})? This replaces your current data.`)) return;
+
+      const written = [];
+      const failed = [];
+      ALL_APP_STORAGE_KEYS.forEach(k => {
+        const v = snap.keys[k];
+        try {
+          if (v === null || v === undefined) localStorage.removeItem(k);
+          else localStorage.setItem(k, v);
+          written.push(k);
+        } catch (e) {
+          failed.push(k);
+        }
+      });
+
+      reloadAppStateFromStorage();
+      refreshAllViewsAfterImport();
+      nudgeSyncAfterRestore();
+      // The undo has been spent. Keeping it would waste a full second copy
+      // of everything and invite an "undo the undo" that restores the very
+      // import the user just rejected.
+      try { localStorage.removeItem(RECOVERY_KEY); } catch (e) {}
+      refreshRecoveryUI();
+      closeModals();
+      showToast(failed.length
+        ? `Previous state restored, but ${failed.length} key(s) could not be written - browser storage is full.`
+        : 'Previous state restored.', null, failed.length ? 12000 : 6000);
+    }
+
+    // Re-hydrates every in-memory variable this app keeps a live copy of
+    // from whatever is currently in localStorage. Used after writing raw
+    // key values directly (a recovery restore) rather than through the
+    // normal single-key setters.
+    function reloadAppStateFromStorage() {
+      try {
+        const g = JSON.parse(localStorage.getItem('the_casino_almanac_v7'));
+        trackedGames = Array.isArray(g) ? g : [];
+      } catch (e) { trackedGames = []; }
+      trackedGames.forEach(normalizeTimerFields);
+      initHistory();
+      try {
+        const l = JSON.parse(localStorage.getItem(LEDGER_KEY));
+        ledger = Array.isArray(l) ? l : [];
+      } catch (e) { ledger = []; }
+    }
+
+    // Nothing told you whether an undo actually existed until you pressed
+    // the button, so show the snapshot's age up front and disable it when
+    // there's nothing to restore.
+    function refreshRecoveryUI() {
+      const btn = document.getElementById('btnRestorePrevious');
+      const hint = document.getElementById('restorePreviousHint');
+      if (!btn) return;
+      const snap = readRecoverySnapshot();
+      btn.disabled = !snap;
+      btn.style.opacity = snap ? '' : '0.45';
+      if (hint) {
+        hint.textContent = snap
+          ? `Undoes your last backup import, restoring everything as it was on ${new Date(snap.snapshotAt).toLocaleString()}. Kept for 30 days, and cleared once used.`
+          : 'No snapshot saved. One is taken automatically just before a backup import, so you can undo it.';
+      }
+    }
+
+    // Re-renders/re-applies everything a successful import (or a recovery
+    // restore) could have changed: platforms, history-derived stats, the
+    // ledger, every preference's own UI, and view state.
+    function refreshAllViewsAfterImport() {
+      // persist() rethrows on a quota failure (deliberately - see there),
+      // and it leads this fan-out, so without a guard one full disk would
+      // abort every refresh below it and leave the UI mid-import.
+      try { persist(); } catch (e) {}
+      renderTagChips();
+      updateSortUI('games');
+      updateSortUI('catalog');
+      updateDailyRunButton();
+      if (document.getElementById('viewCatalog').style.display !== 'none') renderCatalogList();
+      if (document.getElementById('statsModal').classList.contains('open')) renderStats();
+      if (document.getElementById('ledgerModal').classList.contains('open')) renderLedger();
+      refreshLedgerNet();
+
+      applyTheme(getActiveThemeId());
+      renderThemeUI();
+      refreshTZUI();
+      refreshNotifyUI();
+      refreshRecoveryUI();
+      const landingToggle = document.getElementById('settingLandingToggle');
+      if (landingToggle) landingToggle.checked = localStorage.getItem('almanac_show_landing') !== 'false';
+      const hideToggle = document.getElementById('settingHideCollected');
+      if (hideToggle) hideToggle.checked = localStorage.getItem('almanac_hide_collected') === 'true';
+      const denseOn = localStorage.getItem('almanac_dense') === 'true';
+      document.body.classList.toggle('dense', denseOn);
+      const denseToggle = document.getElementById('settingDenseToggle');
+      if (denseToggle) denseToggle.checked = denseOn;
+
+      restoreViewState();
     }
 
     // --- Daily Run mode ---
@@ -6075,6 +6811,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             <input type="number" step="0.01" min="0" inputmode="decimal" id="runCardBalanceInput" class="run-balance-input" placeholder="0" value="${typeof game.balance === 'number' ? game.balance : ''}" aria-label="Current wallet balance for ${escHtml(game.name)}" />
             <button type="button" class="run-balance-btn" onclick="saveRunCardBalance()">SAVE</button>
           </div>
+          <div class="hint" style="font-size:0.68rem; color:var(--text-muted); margin-top:5px;">Don't know it yet? Collect first &mdash; the box under the undo bar below follows the platform you just collected.</div>
         </div>
         <div class="run-cooldown-row">
           <span>Cooldown</span>
