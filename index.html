@@ -6719,6 +6719,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             <input type="number" step="0.01" min="0" inputmode="decimal" id="runCardBalanceInput" class="run-balance-input" placeholder="0" value="${typeof game.balance === 'number' ? game.balance : ''}" aria-label="Current wallet balance for ${escHtml(game.name)}" />
             <button type="button" class="run-balance-btn" onclick="saveRunCardBalance()">SAVE</button>
           </div>
+          <div class="hint" style="font-size:0.68rem; color:var(--text-muted); margin-top:5px;">Don't know it yet? Collect first &mdash; the box under the undo bar below follows the platform you just collected.</div>
         </div>
         <div class="run-cooldown-row">
           <span>Cooldown</span>
