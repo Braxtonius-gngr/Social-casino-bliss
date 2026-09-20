@@ -119,6 +119,14 @@ function validateEntry(entry, index, failures) {
     }
   }
 
+  if (entry.scSource !== undefined) {
+    const SC_SOURCES = ['measured', 'stated', 'ladder-full', 'ladder-partial',
+                        'wheel', 'midpoint', 'third-party', 'gated'];
+    if (!SC_SOURCES.includes(entry.scSource)) {
+      failures.push(`${label}: field "scSource" must be one of ${SC_SOURCES.join(', ')}, got ${JSON.stringify(entry.scSource)}`);
+    }
+  }
+
   if (entry.lastVerified !== undefined) {
     if (typeof entry.lastVerified !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(entry.lastVerified)) {
       failures.push(`${label}: field "lastVerified" must be a "YYYY-MM-DD" string, got ${JSON.stringify(entry.lastVerified)}`);
