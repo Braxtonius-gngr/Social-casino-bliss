@@ -3361,10 +3361,18 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         name: 'Executive Lounge',
         description: 'Dark-mode fintech meets VIP floor. Obsidian, frosted glass, metallic gold.',
         vars: {
-          '--bg-base': '#0B0C10',
+          '--bg-base': '#050507',
           '--accent-gold': '#D4AF37',
           '--accent-gold-hover': '#E8C860',
           '--accent-gold-dim': 'rgba(212, 175, 55, 0.16)',
+          // The brief's own --accent-gold-glow. Distinct from -dim: -dim is a
+          // fill behind an active control, this is the halo around one.
+          '--accent-gold-glow': 'rgba(212, 175, 55, 0.15)',
+          // Silver and bronze exist for the tier podium below. They have no
+          // equivalent anywhere else in the app's variable vocabulary, which
+          // is why they're additions rather than remappings.
+          '--accent-silver': '#E3E4E5',
+          '--accent-bronze': '#CD7F32',
           '--accent-green': '#3FBF8F',
           '--accent-green-dim': 'rgba(63, 191, 143, 0.16)',
           '--accent-pink': '#C8455E',
@@ -3373,18 +3381,37 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           '--accent-orange-dim': 'rgba(217, 138, 60, 0.16)',
           '--accent-cyan': '#4FD8E8',
           '--accent-cyan-dim': 'rgba(79, 216, 232, 0.14)',
-          '--glass-border': 'rgba(212, 175, 55, 0.14)',
+          '--glass-border': 'rgba(255, 255, 255, 0.08)',
           '--glass-highlight': 'rgba(255, 255, 255, 0.07)',
-          '--text-main': '#F2F4F8',
-          '--text-muted': '#9BA3B0',
-          '--text-dim': '#5E6672',
+          '--text-main': '#F8F9FA',
+          '--text-muted': '#8A8D93',
+          '--text-dim': '#5A5D63',
+          // Gold / silver / bronze is the podium the tier letters always
+          // wanted. The previous cyan-for-A, green-for-B carried no meaning -
+          // a reader had to learn the key. Nobody has to learn this one.
           '--tier-s': '#D4AF37',
-          '--tier-a': '#4FD8E8',
-          '--tier-b': '#3FBF8F',
-          '--tier-c': '#8A93A3'
+          '--tier-a': '#E3E4E5',
+          '--tier-b': '#CD7F32',
+          '--tier-c': '#8A8D93'
         },
-        bodyBg: 'radial-gradient(120% 80% at 50% -10%, rgba(212,175,55,0.07) 0%, transparent 55%), linear-gradient(180deg, #101218 0%, #0B0C10 62%, #07080B 100%)',
-        metaColor: '#0B0C10'
+        // THIS CARRIES THE BACKGROUND IMAGE, AND IT HAS TO.
+        //
+        // applyTheme() assigns this to document.body.style.background - an
+        // inline SHORTHAND, which resets background-image/-size/-position/
+        // -attachment to their initial values. So the equivalent rule written
+        // in app.css would be silently wiped on every theme apply.
+        //
+        // The path is also only correct from here. CSS resolves a relative
+        // url() against the STYLESHEET's URL, and app.css lives in assets/,
+        // so 'assets/background.webp' written there would resolve to
+        // assets/assets/background.webp. An inline style resolves against the
+        // DOCUMENT, where the path is right - and stays right under a GitHub
+        // Pages subpath, since it never starts with a slash.
+        //
+        // Until the .webp lands this simply paints the gradient over #050507,
+        // which is the intended look anyway, just flatter.
+        bodyBg: "linear-gradient(rgba(5,5,7,0.75), rgba(5,5,7,0.85)) center/cover fixed, url('assets/background.webp') center/cover fixed #050507",
+        metaColor: '#050507'
       },
       glitch: {
         name: 'Dead Channel',

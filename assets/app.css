@@ -2575,20 +2575,22 @@
    at the component level, so a variable swap alone can't produce a restrained
    theme. These rules strip the lighting and restate the surfaces.
 
-   The one deliberate departure from the other themes: panels here are near-
-   opaque (0.85) with a much smaller blur radius. Backdrop-filter is priced
-   per-pixel per-frame, and this app renders a scrolling column of them, so
-   the frosted look is carried by the border and the highlight rather than by
-   blurring a backdrop nobody can see through 85% ink anyway.
+   Panels are rgba(22,24,29,0.75) with backdrop-filter: blur(12px), both
+   straight from the brief. An earlier pass used 0.85/6px on frame-budget
+   grounds - backdrop-filter is priced per pixel per frame and this app
+   scrolls a long column of panels - but at 0.75 the blur is genuinely
+   visible rather than decorative, so it earns its cost. If this ever needs
+   clawing back on low-end hardware, lower the radius here; don't raise the
+   opacity, which is what makes the glass read as glass.
    ========================================================================== */
 [data-theme="executive"] * { text-shadow: none !important; }
 [data-theme="executive"] body,
-[data-theme="executive"] { background: #0B0C10; }
+[data-theme="executive"] { background: #050507; }
 
 [data-theme="executive"] .glass-panel {
-  background: rgba(22, 24, 29, 0.85);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(22, 24, 29, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
   border-top: 1px solid var(--glass-highlight);
   border-left: 1px solid var(--glass-highlight);
@@ -2633,9 +2635,9 @@
   font-weight: 700;
 }
 [data-theme="executive"] .tier-S { color: var(--tier-s); background: rgba(212,175,55,0.10); }
-[data-theme="executive"] .tier-A { color: var(--tier-a); background: rgba(79,216,232,0.10); }
-[data-theme="executive"] .tier-B { color: var(--tier-b); background: rgba(63,191,143,0.10); }
-[data-theme="executive"] .tier-C { color: var(--tier-c); background: rgba(138,147,163,0.10); }
+[data-theme="executive"] .tier-A { color: var(--tier-a); background: rgba(227,228,229,0.10); }
+[data-theme="executive"] .tier-B { color: var(--tier-b); background: rgba(205,127,50,0.12); }
+[data-theme="executive"] .tier-C { color: var(--tier-c); background: rgba(138,141,147,0.10); }
 [data-theme="executive"] .tier-D { color: var(--tier-d); background: transparent; border-style: dashed; }
 
 /* Gold is reserved for the one thing on a card you can actually act on. */
@@ -2690,7 +2692,7 @@
    restated. Gold stays reserved for primary actions; cyan carries secondary
    ones; nothing glows. */
 [data-theme="executive"] .date-header { color: var(--text-muted); font-weight: 700; }
-[data-theme="executive"] .hero-stat-card { background: rgba(22,24,29,0.72); }
+[data-theme="executive"] .hero-stat-card { background: rgba(22,24,29,0.62); }
 [data-theme="executive"] .empty-state-title { color: var(--text-main); }
 
 [data-theme="executive"] .btn-primary {
@@ -2718,7 +2720,7 @@
   box-shadow: 0 -6px 20px rgba(0,0,0,0.6);
 }
 
-[data-theme="executive"] .landing-screen { background: radial-gradient(circle at 50% 30%, #14161D 0%, #0B0C10 70%, #07080B 100%); }
+[data-theme="executive"] .landing-screen { background: radial-gradient(circle at 50% 30%, #101218 0%, #050507 70%, #030304 100%); }
 [data-theme="executive"] .landing-btn { box-shadow: none; border-color: var(--accent-gold); color: var(--accent-gold); }
 [data-theme="executive"] .landing-btn:hover { background: var(--accent-gold-dim); box-shadow: none; }
 

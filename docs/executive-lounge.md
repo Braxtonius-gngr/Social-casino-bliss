@@ -39,9 +39,9 @@ Ground and surface:
 
 | Token | Value | Use |
 |---|---|---|
-| `--bg-obsidian` | `#0B0C10` | Page ground. Also `<meta name="theme-color">`. |
+| `--color-obsidian` | `#050507` | Page ground. Also `<meta name="theme-color">`. |
 | `--bg-raised` | `#101218` | Top of the body gradient; sheet and modal grounds. |
-| `--glass` | `rgba(22, 24, 29, 0.85)` | Every card, header, and panel. |
+| `--color-glass` | `rgba(22, 24, 29, 0.75)` | Every card, header, and panel, under `blur(12px)`. |
 | `--glass-border` | `rgba(212, 175, 55, 0.14)` | Hairline edge - gold at 14%, not grey. |
 | `--glass-highlight` | `rgba(255, 255, 255, 0.07)` | Top/left edge only, simulating a light source above. |
 
@@ -60,8 +60,8 @@ Text - three steps, no more:
 
 | Token | Value | Use |
 |---|---|---|
-| `--text-main` | `#F2F4F8` | Platform names, values, headings. |
-| `--text-muted` | `#9BA3B0` | Labels, badges, countdown digits. |
+| `--text-primary` | `#F8F9FA` | Platform names, values, headings. |
+| `--text-muted` | `#8A8D93` | Labels, badges, countdown digits. |
 | `--text-dim` | `#5E6672` | Eyebrow labels, disabled, metadata. |
 
 Tier ramp - deliberately *not* a red-to-green "good/bad" scale. These are
@@ -70,9 +70,9 @@ red D would read as "dangerous" rather than "slow":
 
 | Tier | Value |
 |---|---|
-| S | `#D4AF37` |
-| A | `#4FD8E8` |
-| B | `#3FBF8F` |
+| S | `#D4AF37` (gold) |
+| A | `#E3E4E5` (silver) |
+| B | `#CD7F32` (bronze) |
 | C | `#8A93A3` |
 | D | `#7D8590` |
 | Unranked | `#4A5160` |
@@ -379,7 +379,8 @@ real gaps." Rewriting any of the above would be a regression - in particular:
 1. **No tabular figures anywhere.** `font-variant-numeric` appeared zero times
    in the repo. Every countdown in the app jittered. Fixed globally.
 2. **No theme matching the brief.** Added `executive` to `THEMES`, using the
-   brief's exact values (`#0B0C10`, `rgba(22,24,29,0.85)`, `#D4AF37`).
+   brief's exact values (`#050507`, `rgba(22,24,29,0.75)`, `#D4AF37`),
+   plus `--accent-silver` and `--accent-bronze` for the tier podium.
 3. **No layout reference.** Added the prototype as a runnable spec.
 
 ### 3.3 Wiring the theme in (done)
@@ -402,11 +403,32 @@ rgba(0,255,102,0.4)`). No variable swap can reach those, so each surface is
 restated. This is the same shape as the existing Obsidian Ledger block - follow
 that precedent rather than inventing a new mechanism.
 
-One deliberate performance departure: panels here are near-opaque (0.85) with
-`blur(6px)` instead of the base `blur(16px)`. `backdrop-filter` is priced per
-pixel per frame, this app scrolls a long column of panels, and at 85% ink
-there is nothing meaningful to see through anyway. The frosted read is carried
-by the border and highlight, not the blur.
+On blur: panels are `rgba(22,24,29,0.75)` under `backdrop-filter: blur(12px)`,
+both straight from the brief. An earlier pass used 0.85/6px on frame-budget
+grounds - `backdrop-filter` is priced per pixel per frame and this app scrolls
+a long column of panels - but at 0.75 the blur is genuinely visible rather
+than decorative, so it earns its cost. If it ever needs clawing back on
+low-end hardware, lower the radius; don't raise the opacity, which is what
+makes the glass read as glass.
+
+### 3.3a The background image
+
+`assets/background.webp` is referenced from `THEMES.executive.bodyBg`, not from
+a `body { }` rule in `app.css`, and that placement is load-bearing twice over:
+
+- `applyTheme()` assigns `bodyBg` to `document.body.style.background` - an
+  inline **shorthand**, which resets `background-image/-size/-position/
+  -attachment`. The equivalent CSS rule would be wiped on every theme apply.
+- CSS resolves a relative `url()` against the **stylesheet's** URL. `app.css`
+  lives in `assets/`, so `url('assets/background.webp')` written there resolves
+  to `assets/assets/background.webp`. An inline style resolves against the
+  **document**, where the path is correct - and stays correct under a GitHub
+  Pages subpath, since it never starts with a slash.
+
+Until the file exists the two gradient stops simply paint over `#050507`.
+`check:refs` never scans CSS `url()`, so the dangling reference cannot break
+CI - but `PRECACHE_URLS` **is** scanned, which is why the service worker entry
+and the `CACHE_NAME` bump wait until the file is actually committed.
 
 ### 3.4 Order of work if you take this further
 
