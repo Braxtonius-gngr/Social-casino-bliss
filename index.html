@@ -5509,7 +5509,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderedFreebies = rows;
       list.innerHTML = rows.map((r, i) => {
         const codeHtml = r.code
-          ? `<div class="drop-name">${escHtml(r.code)} <button class="btn-open" style="padding:3px 8px; font-size:0.68rem;" onclick="navigator.clipboard.writeText('${escHtml(r.code).replace(/'/g, "\\'")}')">COPY</button></div>`
+          ? `<div class="drop-name">${escHtml(r.code)} <button class="btn-open" style="padding:3px 8px; font-size:0.68rem;" onclick="navigator.clipboard.writeText('${escHtml(r.code).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}')">COPY</button></div>`
           : '';
         let linkHtml = '';
         if (r.is_account_tied) {
