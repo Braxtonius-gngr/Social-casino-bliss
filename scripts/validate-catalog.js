@@ -170,15 +170,17 @@ function validateEntry(entry, index, failures) {
     // Both inputs are present, so the derivation must be WRITTEN DOWN. Letting a
     // missing daysToRedeem through would skip every check below it and leave the
     // tier asserted again - the exact failure this rework exists to prevent.
-    if (!isFiniteNumber(entry.daysToRedeem)) {
+    // A "blocker" entry is exempt from the REQUIREMENT, because the contract says
+    // no day count applies where a rule stops free play reaching the floor at all.
+    if (!entry.blocker && !isFiniteNumber(entry.daysToRedeem)) {
       failures.push(`${label}: has cashFloor and dailySC but no "daysToRedeem" - record the derivation rather than implying it`);
-    } else {
+    } else if (isFiniteNumber(entry.daysToRedeem)) {
+      // A blocker that does record a day count still has it checked for accuracy.
       const expectedDays = Math.round(entry.cashFloor / entry.dailySC);
       if (Math.abs(entry.daysToRedeem - expectedDays) > 1) {
         failures.push(`${label}: "daysToRedeem" is ${entry.daysToRedeem} but cashFloor/dailySC = ${expectedDays}`);
       }
-      // A "blocker" entry is deliberately exempt: a documented rule stops free
-      // play reaching the floor at all, so no band over a day count applies.
+      // The BAND is what a blocker overrides: it is ranked by rule, not arithmetic.
       if (!entry.blocker) {
         const d = entry.daysToRedeem;
         // Bands are INCLUSIVE of their upper bound: 60 days is S, 250 is B, 500
@@ -190,10 +192,12 @@ function validateEntry(entry, index, failures) {
         }
       }
     }
-  } else if (!entry.blocker && entry.tier !== undefined && entry.tier !== 'Unranked') {
+  } else if (!entry.blocker && entry.tier !== 'Unranked') {
     // No arithmetic behind the letter. A stray daysToRedeem is not a licence to
-    // keep one, so this no longer waits for daysToRedeem to be absent too.
-    failures.push(`${label}: tier "${entry.tier}" has no cashFloor/dailySC behind it - an unranked-worthy entry must say "Unranked"`);
+    // keep one, and neither is omitting the tier altogether - the contract wants
+    // the gap stated as "Unranked", not left blank.
+    const shown = entry.tier === undefined ? 'no tier at all' : `tier "${entry.tier}"`;
+    failures.push(`${label}: has ${shown} but no cashFloor/dailySC behind it - an entry missing either input must say "Unranked"`);
   }
 
   if (entry.lastVerified !== undefined) {
