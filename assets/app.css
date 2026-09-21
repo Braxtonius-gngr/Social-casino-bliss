@@ -77,7 +77,7 @@
     .hero-details p { font-size: 0.78rem; color: var(--accent-cyan); font-family: "Courier New", Courier, monospace; text-shadow: 0 0 8px rgba(0, 229, 255, 0.5); }
 
     .nav-pill-group { display: flex; gap: 6px; margin-bottom: 12px; padding: 6px; border-radius: 30px; }
-    .nav-tab { flex: 1; padding: 9px 6px; background: transparent; border: 1px solid transparent; border-radius: 24px; color: var(--text-muted); font-size: 0.76rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.3s ease; }
+    .nav-tab { flex: 1; padding: 9px 6px; background: transparent; border: 1px solid transparent; border-radius: 24px; color: var(--text-muted); font-size: 0.76rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 3px; transition: all 0.3s ease; }
     .nav-tab.active { background: rgba(255, 0, 127, 0.15); color: #fff; border: 1px solid var(--accent-pink); text-shadow: 0 0 8px var(--accent-pink); box-shadow: 0 0 15px rgba(255, 0, 127, 0.3), inset 0 0 10px rgba(255, 0, 127, 0.2); }
 
     .filter-sort-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
@@ -2742,3 +2742,13 @@
 [data-theme="executive"] .tour-tooltip-box::before { border-color: transparent transparent var(--accent-gold) transparent; }
 [data-theme="executive"] .tour-tooltip-box.arrow-below::before { border-color: var(--accent-gold) transparent transparent transparent; }
 [data-theme="executive"] .tour-target-active { animation: none !important; box-shadow: 0 0 0 2px var(--accent-gold) !important; }
+
+/* Nav-tab glyphs. Stacked above the label rather than beside it: an inline
+   icon adds ~20px per tab, which four tabs cannot afford at 320px, while a
+   stacked one costs no horizontal space at all.
+
+   fill="currentColor" is the whole point - the glyph inherits whatever the
+   active theme has set on .nav-tab, so Executive Lounge renders it gold,
+   Boot Hill blood red and Dead Channel acid green with no per-theme rule. */
+.tab-ico { flex-shrink: 0; display: block; }
+.nav-tab > span { line-height: 1.1; }
