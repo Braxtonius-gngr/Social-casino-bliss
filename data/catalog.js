@@ -12,8 +12,9 @@
     //                   purpose: the question is when real money comes out.
     //   daysToRedeem  - cashFloor / dailySC. How long a free player grinds
     //                   before a first cash redemption is even possible.
-    //   tier          - a band over daysToRedeem: S under 60 days, A under
-    //                   120, B under 250, C under 500, D beyond 500. Unranked
+    //   tier          - a band over daysToRedeem, each INCLUSIVE of its upper
+    //                   bound: S up to 60 days, A up to 120, B up to 250, C up
+    //                   to 500, D beyond 500. So 250 days is B, not C. Unranked
     //                   when either input is unknown - which is most of the
     //                   file, and is the point: an honest gap beats a letter
     //                   nothing supports. One redeem screenshot fixes each.

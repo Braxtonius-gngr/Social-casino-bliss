@@ -58,6 +58,16 @@ function normalizeDomain(rawUrl) {
   }
 }
 
+// The provenance values a dailySC may carry. Missing means inherited from the
+// original sheets and unsourced, which is why captureNeeded below will not
+// treat such a rate as verified.
+const SC_SOURCES = ['measured', 'stated', 'ladder-full', 'ladder-partial',
+                    'wheel', 'midpoint', 'third-party', 'gated'];
+
+function hasSourcedRate(entry) {
+  return isFiniteNumber(entry.dailySC) && entry.dailySC > 0 && SC_SOURCES.includes(entry.scSource);
+}
+
 function isFiniteNumber(v) {
   return typeof v === 'number' && Number.isFinite(v);
 }
@@ -120,8 +130,6 @@ function validateEntry(entry, index, failures) {
   }
 
   if (entry.scSource !== undefined) {
-    const SC_SOURCES = ['measured', 'stated', 'ladder-full', 'ladder-partial',
-                        'wheel', 'midpoint', 'third-party', 'gated'];
     if (!SC_SOURCES.includes(entry.scSource)) {
       failures.push(`${label}: field "scSource" must be one of ${SC_SOURCES.join(', ')}, got ${JSON.stringify(entry.scSource)}`);
     }
@@ -159,21 +167,33 @@ function validateEntry(entry, index, failures) {
   }
 
   if (isFiniteNumber(entry.cashFloor) && isFiniteNumber(entry.dailySC) && entry.dailySC > 0) {
-    const expectedDays = Math.round(entry.cashFloor / entry.dailySC);
-    if (isFiniteNumber(entry.daysToRedeem) && Math.abs(entry.daysToRedeem - expectedDays) > 1) {
-      failures.push(`${label}: "daysToRedeem" is ${entry.daysToRedeem} but cashFloor/dailySC = ${expectedDays}`);
-    }
-    // A "blocker" entry is deliberately exempt: a documented rule stops free
-    // play reaching the floor at all, so no band over a day count applies.
-    if (!entry.blocker && isFiniteNumber(entry.daysToRedeem)) {
-      const d = entry.daysToRedeem;
-      const expectedTier = d <= 60 ? 'S' : d <= 120 ? 'A' : d <= 250 ? 'B' : d <= 500 ? 'C' : 'D';
-      if (entry.tier !== expectedTier) {
-        failures.push(`${label}: tier is "${entry.tier}" but ${d} days to redeem derives "${expectedTier}"`);
+    // Both inputs are present, so the derivation must be WRITTEN DOWN. Letting a
+    // missing daysToRedeem through would skip every check below it and leave the
+    // tier asserted again - the exact failure this rework exists to prevent.
+    if (!isFiniteNumber(entry.daysToRedeem)) {
+      failures.push(`${label}: has cashFloor and dailySC but no "daysToRedeem" - record the derivation rather than implying it`);
+    } else {
+      const expectedDays = Math.round(entry.cashFloor / entry.dailySC);
+      if (Math.abs(entry.daysToRedeem - expectedDays) > 1) {
+        failures.push(`${label}: "daysToRedeem" is ${entry.daysToRedeem} but cashFloor/dailySC = ${expectedDays}`);
+      }
+      // A "blocker" entry is deliberately exempt: a documented rule stops free
+      // play reaching the floor at all, so no band over a day count applies.
+      if (!entry.blocker) {
+        const d = entry.daysToRedeem;
+        // Bands are INCLUSIVE of their upper bound: 60 days is S, 250 is B, 500
+        // is C. That is what every entry note states and what makes "D beyond
+        // 500" true, since 500 itself is not beyond 500.
+        const expectedTier = d <= 60 ? 'S' : d <= 120 ? 'A' : d <= 250 ? 'B' : d <= 500 ? 'C' : 'D';
+        if (entry.tier !== expectedTier) {
+          failures.push(`${label}: tier is "${entry.tier}" but ${d} days to redeem derives "${expectedTier}"`);
+        }
       }
     }
-  } else if (entry.tier !== undefined && entry.tier !== 'Unranked' && entry.daysToRedeem === undefined) {
-    failures.push(`${label}: tier "${entry.tier}" has no daysToRedeem behind it - an unranked-worthy entry must say "Unranked"`);
+  } else if (!entry.blocker && entry.tier !== undefined && entry.tier !== 'Unranked') {
+    // No arithmetic behind the letter. A stray daysToRedeem is not a licence to
+    // keep one, so this no longer waits for daysToRedeem to be absent too.
+    failures.push(`${label}: tier "${entry.tier}" has no cashFloor/dailySC behind it - an unranked-worthy entry must say "Unranked"`);
   }
 
   if (entry.lastVerified !== undefined) {
@@ -226,7 +246,10 @@ function buildReviewQueue(catalog) {
 // shooting list, where each line says what to open and what to capture.
 function captureNeeded(entry) {
   const hasFloor = typeof entry.cashFloor === 'number';
-  const hasRate = typeof entry.dailySC === 'number' && entry.dailySC > 0;
+  // Provenance is required, not just a number: an inherited dailySC with no
+  // scSource is unsourced by the catalog's own definition, and counting it as
+  // known would let the queue below claim a verified rate this entry lacks.
+  const hasRate = hasSourcedRate(entry);
   if (entry.blocker) return null;             // ranked by rule, not by arithmetic
   if (!entry.lastVerified && !hasFloor && !hasRate) return 'everything - never verified';
   if (!hasRate && !hasFloor) return 'the daily-claim panel AND the redeem screen';
