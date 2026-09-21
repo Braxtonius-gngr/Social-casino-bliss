@@ -2539,3 +2539,204 @@
 }
 [data-motion="off"] [data-theme="glitch"] .app-container::after { animation: none; opacity: 0; }
 [data-motion="off"] [data-theme="glitch"] .landing-screen::after { animation: none; opacity: 0; }
+
+/* ==========================================================================
+   Tabular figures on every ticking or tabulated number
+   --------------------------------------------------------------------------
+   These elements re-render on a timer (the per-card countdown, the next-batch
+   line, the ready ring, the ledger net) and are the only places in the app
+   where a digit changing width moves the layout around it. Proportional
+   figures make "9h 59m" narrower than "10h 00m", which nudges the whole
+   .card-bottom-row a pixel left and right once a minute; tabular-nums locks
+   every digit to one advance width so the row is dead still while the number
+   changes underneath it. `slashed-zero` is along for the ride because these
+   are monospace-ish readouts where 0/O ambiguity is worth removing.
+
+   Theme-agnostic on purpose - this is a correctness property of a countdown,
+   not a look, so it applies under all six themes rather than only Executive
+   Lounge, which is simply the theme that made the jitter obvious.
+   ========================================================================== */
+.status-time,
+.ready-at,
+.cooldown-chip,
+.next-batch,
+.hero-ring-circle,
+.ledger-quick-net,
+.exec-countdown {
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+
+/* ==========================================================================
+   Executive Lounge
+   --------------------------------------------------------------------------
+   Same override strategy the Obsidian Ledger block above uses, and for the
+   same reason: the base rules bake neon glow and literal rgba backgrounds in
+   at the component level, so a variable swap alone can't produce a restrained
+   theme. These rules strip the lighting and restate the surfaces.
+
+   The one deliberate departure from the other themes: panels here are near-
+   opaque (0.85) with a much smaller blur radius. Backdrop-filter is priced
+   per-pixel per-frame, and this app renders a scrolling column of them, so
+   the frosted look is carried by the border and the highlight rather than by
+   blurring a backdrop nobody can see through 85% ink anyway.
+   ========================================================================== */
+[data-theme="executive"] * { text-shadow: none !important; }
+[data-theme="executive"] body,
+[data-theme="executive"] { background: #0B0C10; }
+
+[data-theme="executive"] .glass-panel {
+  background: rgba(22, 24, 29, 0.85);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid var(--glass-border);
+  border-top: 1px solid var(--glass-highlight);
+  border-left: 1px solid var(--glass-highlight);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 6px 24px rgba(0,0,0,0.55);
+}
+
+/* Wordmark: the luxury half of the hybrid. Everything else stays a
+   dashboard, so the serif is confined to the two title elements. */
+[data-theme="executive"] .app-title,
+[data-theme="executive"] .landing-title {
+  -webkit-text-stroke: 0;
+  color: var(--text-main);
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+[data-theme="executive"] .app-title span,
+[data-theme="executive"] .landing-title span { -webkit-text-stroke: 0; color: var(--accent-gold); }
+
+[data-theme="executive"] .hero-ring-circle {
+  border: 2px solid var(--accent-gold);
+  background: rgba(0,0,0,0.38);
+  box-shadow: none;
+  color: var(--text-main);
+}
+[data-theme="executive"] .casino-avatar {
+  border: 1px solid var(--glass-border);
+  background: rgba(0,0,0,0.55);
+  box-shadow: none;
+  color: var(--text-muted);
+}
+
+/* Tier reads as a quiet left-edge rule, not a glowing pill - the letter is
+   derived arithmetic (see data/catalog.js), so it should look like a rating,
+   not an advertisement. */
+[data-theme="executive"] .tier-badge {
+  box-shadow: none;
+  border-radius: 3px;
+  background: transparent;
+  border: 1px solid currentColor;
+  font-weight: 700;
+}
+[data-theme="executive"] .tier-S { color: var(--tier-s); background: rgba(212,175,55,0.10); }
+[data-theme="executive"] .tier-A { color: var(--tier-a); background: rgba(79,216,232,0.10); }
+[data-theme="executive"] .tier-B { color: var(--tier-b); background: rgba(63,191,143,0.10); }
+[data-theme="executive"] .tier-C { color: var(--tier-c); background: rgba(138,147,163,0.10); }
+[data-theme="executive"] .tier-D { color: var(--tier-d); background: transparent; border-style: dashed; }
+
+/* Gold is reserved for the one thing on a card you can actually act on. */
+[data-theme="executive"] .btn-open {
+  background: linear-gradient(180deg, #E8C860 0%, var(--accent-gold) 55%, #B8912B 100%);
+  color: #14151A;
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset, 0 3px 10px rgba(0,0,0,0.5);
+  font-weight: 800;
+}
+[data-theme="executive"] .btn-open:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 5px 16px rgba(0,0,0,0.6); }
+
+/* A platform on cooldown gets the recessed well instead: inset shadow, no
+   fill, muted text. Not-yet-actionable should look pressed into the card. */
+[data-theme="executive"] .btn-open.cooldown {
+  background: rgba(0,0,0,0.42);
+  border: 1px solid rgba(0,0,0,0.6);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.75), 0 1px 0 rgba(255,255,255,0.04);
+  color: var(--text-muted);
+}
+
+[data-theme="executive"] .status-dot { box-shadow: none; }
+[data-theme="executive"] .cd-fill { opacity: 0.5; }
+
+/* Segmented control: the sort/filter chips read as one connected switch
+   rather than six separate buttons. */
+[data-theme="executive"] .filter-btn {
+  background: rgba(0,0,0,0.35);
+  border-radius: 8px;
+  border-color: var(--glass-border);
+}
+[data-theme="executive"] .filter-btn.active {
+  background: var(--accent-gold-dim);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  box-shadow: none;
+}
+[data-theme="executive"] .nav-tab.active {
+  background: rgba(212,175,55,0.12);
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+  box-shadow: none;
+}
+[data-theme="executive"] .cooldown-chip { border-radius: 4px; }
+[data-theme="executive"] .cooldown-chip.flash { box-shadow: none; }
+[data-theme="executive"] .btn-start-run { box-shadow: none; }
+[data-theme="executive"] .btn-start-run:hover:not(:disabled) { box-shadow: none; background: var(--accent-green-dim); }
+
+/* Remaining surfaces that bake neon lighting in at the component level.
+   Same shape as the Obsidian Ledger block: the variables alone can't reach
+   a literal `box-shadow: 0 0 20px rgba(0,255,102,.4)`, so each one is
+   restated. Gold stays reserved for primary actions; cyan carries secondary
+   ones; nothing glows. */
+[data-theme="executive"] .date-header { color: var(--text-muted); font-weight: 700; }
+[data-theme="executive"] .hero-stat-card { background: rgba(22,24,29,0.72); }
+[data-theme="executive"] .empty-state-title { color: var(--text-main); }
+
+[data-theme="executive"] .btn-primary {
+  background: linear-gradient(180deg, #E8C860 0%, var(--accent-gold) 55%, #B8912B 100%);
+  color: #14151A;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset, 0 3px 10px rgba(0,0,0,0.5);
+}
+[data-theme="executive"] .btn-primary:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 5px 16px rgba(0,0,0,0.6); }
+[data-theme="executive"] .btn-run-collect {
+  background: linear-gradient(180deg, #E8C860 0%, var(--accent-gold) 55%, #B8912B 100%);
+  color: #14151A;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset, 0 3px 10px rgba(0,0,0,0.5);
+}
+
+[data-theme="executive"] .btn-dock {
+  background: rgba(0,0,0,0.45);
+  border-color: var(--glass-border);
+  color: var(--text-main);
+  box-shadow: none;
+}
+[data-theme="executive"] .btn-dock:hover { background: var(--accent-gold-dim); border-color: var(--accent-gold); box-shadow: none; }
+[data-theme="executive"] .docked-footer {
+  background: rgba(11,12,16,0.92);
+  border-top-color: var(--glass-border);
+  box-shadow: 0 -6px 20px rgba(0,0,0,0.6);
+}
+
+[data-theme="executive"] .landing-screen { background: radial-gradient(circle at 50% 30%, #14161D 0%, #0B0C10 70%, #07080B 100%); }
+[data-theme="executive"] .landing-btn { box-shadow: none; border-color: var(--accent-gold); color: var(--accent-gold); }
+[data-theme="executive"] .landing-btn:hover { background: var(--accent-gold-dim); box-shadow: none; }
+
+[data-theme="executive"] .sort-trigger-btn,
+[data-theme="executive"] .sort-stack-chip,
+[data-theme="executive"] .sort-priority-num,
+[data-theme="executive"] .type-badge,
+[data-theme="executive"] .catalog-item-row.tracked,
+[data-theme="executive"] .btn-share:hover { box-shadow: none; }
+
+[data-theme="executive"] .keen-info-popover {
+  border-style: solid;
+  border-color: var(--glass-border);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.55);
+}
+
+/* The onboarding tour reads as a gold callout rather than a cyan flare. */
+[data-theme="executive"] .tour-tooltip-box { background: var(--accent-gold); color: #14151A; box-shadow: 0 6px 24px rgba(0,0,0,0.6); }
+[data-theme="executive"] .tour-tooltip-box::before { border-color: transparent transparent var(--accent-gold) transparent; }
+[data-theme="executive"] .tour-tooltip-box.arrow-below::before { border-color: var(--accent-gold) transparent transparent transparent; }
+[data-theme="executive"] .tour-target-active { animation: none !important; box-shadow: 0 0 0 2px var(--accent-gold) !important; }

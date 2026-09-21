@@ -91,11 +91,15 @@ function main() {
     results.push(checkFile(rel, source));
   }
 
-  // index.html plus any standalone page this app ships (e.g. admin/*.html) -
-  // each gets its own inline <script> block(s) checked the same way.
+  // index.html plus any standalone page this app ships (e.g. admin/*.html)
+  // or documents (docs/*.html) - each gets its own inline <script> block(s)
+  // checked the same way. docs/ pages aren't served by the app and aren't
+  // precached, but they're still hand-written script that can rot silently,
+  // which is exactly what this check exists to catch.
   const htmlPaths = [
     path.join(ROOT, 'index.html'),
     ...findHtmlFiles(path.join(ROOT, 'admin')),
+    ...findHtmlFiles(path.join(ROOT, 'docs')),
   ];
   for (const htmlPath of htmlPaths) {
     if (!fs.existsSync(htmlPath)) continue;
