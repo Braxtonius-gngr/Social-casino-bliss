@@ -219,7 +219,7 @@
           <span style="cursor:pointer; color:var(--accent-pink); text-shadow:0 0 8px var(--accent-pink);" onclick="clearSortStack('games')">Clear All</span>
         </div>
         <div class="sort-options-grid">
-          <button class="sort-option-btn" data-key="tier" onclick="toggleSortKey('tier', 'games')"><span>Tier (S to C)</span><span class="sort-priority-num" style="display:none;"></span></button>
+          <button class="sort-option-btn" data-key="tier" onclick="toggleSortKey('tier', 'games')"><span>Tier (S to D)</span><span class="sort-priority-num" style="display:none;"></span></button>
           <button class="sort-option-btn" data-key="reliability" onclick="toggleSortKey('reliability', 'games')"><span>Reliability Index</span><span class="sort-priority-num" style="display:none;"></span></button>
           <button class="sort-option-btn" data-key="dailySC" onclick="toggleSortKey('dailySC', 'games')"><span>Daily SC (High to Low)</span><span class="sort-priority-num" style="display:none;"></span></button>
           <button class="sort-option-btn" data-key="speed" onclick="toggleSortKey('speed', 'games')"><span>Redeem Speed (Fastest)</span><span class="sort-priority-num" style="display:none;"></span></button>
@@ -261,7 +261,7 @@
           <span style="cursor:pointer; color:var(--accent-pink); text-shadow:0 0 8px var(--accent-pink);" onclick="clearSortStack('catalog')">Clear All</span>
         </div>
         <div class="sort-options-grid">
-          <button class="sort-option-btn" data-key="tier" onclick="toggleSortKey('tier', 'catalog')"><span>Tier (S to C)</span><span class="sort-priority-num" style="display:none;"></span></button>
+          <button class="sort-option-btn" data-key="tier" onclick="toggleSortKey('tier', 'catalog')"><span>Tier (S to D)</span><span class="sort-priority-num" style="display:none;"></span></button>
           <button class="sort-option-btn" data-key="reliability" onclick="toggleSortKey('reliability', 'catalog')"><span>Reliability Index</span><span class="sort-priority-num" style="display:none;"></span></button>
           <button class="sort-option-btn" data-key="dailySC" onclick="toggleSortKey('dailySC', 'catalog')"><span>Daily SC (High to Low)</span><span class="sort-priority-num" style="display:none;"></span></button>
           <button class="sort-option-btn" data-key="speed" onclick="toggleSortKey('speed', 'catalog')"><span>Redeem Speed (Fastest)</span><span class="sort-priority-num" style="display:none;"></span></button>
@@ -415,7 +415,7 @@
   <div id="bulkTierModal" class="sheet-backdrop">
     <div class="sheet-modal glass-panel">
       <h3 style="color:var(--accent-orange); text-shadow: 0 0 10px var(--accent-orange); margin-bottom: 6px;">Bulk Group Add</h3>
-      <p style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 20px; opacity:0.9;">Add or remove platforms instantly by tier.</p>
+      <p style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 20px; opacity:0.9;">Add or remove platforms instantly by tier. Tiers are days to first cash redemption, counting the boundary into the higher tier: S up to 60, A up to 120, B up to 250, C up to 500, D beyond that.</p>
       
       <div class="tier-action-grid">
         <div class="tier-action-card">
@@ -444,6 +444,13 @@
           <div class="tier-btn-pair">
             <button class="btn-tier-toggle add" onclick="bulkToggleTier('C', true)">+ Add</button>
             <button class="btn-tier-toggle remove" onclick="bulkToggleTier('C', false)">- Remove</button>
+          </div>
+        </div>
+        <div class="tier-action-card">
+          <div class="tier-action-card-header"><span class="tier-label-badge tier-D">D-Tier</span></div>
+          <div class="tier-btn-pair">
+            <button class="btn-tier-toggle add" onclick="bulkToggleTier('D', true)">+ Add</button>
+            <button class="btn-tier-toggle remove" onclick="bulkToggleTier('D', false)">- Remove</button>
           </div>
         </div>
       </div>
@@ -1154,7 +1161,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     let sortStackCatalog = ['tier', 'reliability'];
 
     const SORT_CONFIG = {
-      tier: { label: "Tier (S to C)" },
+      tier: { label: "Tier (S to D)" },
       reliability: { label: "Reliability" },
       dailySC: { label: "Daily SC" },
       speed: { label: "Redeem Speed" },
@@ -1424,7 +1431,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function compareByStack(a, b, stack) {
-      const tierRank = { 'S': 4, 'A': 3, 'B': 2, 'C': 1, 'Unranked': 0 };
+      const tierRank = { 'S': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1, 'Unranked': 0 };
 
       for (let key of stack) {
         let diff = 0;
