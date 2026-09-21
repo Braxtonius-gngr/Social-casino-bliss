@@ -3607,12 +3607,18 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // portable preference, so a restore must not carry another device's
     // values in. Applying this through saveNotifyPrefs() (which merges)
     // therefore leaves those three as this device already had them.
+    function isValidNotifyTime(value) {
+      if (typeof value !== 'string' || !/^\d{2}:\d{2}$/.test(value)) return false;
+      const [hours, minutes] = value.split(':').map(Number);
+      return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59;
+    }
+
     function sanitizeNotifyPrefs(v) {
       if (!v || typeof v !== 'object') return { enabled: NOTIFY_DEFAULTS.enabled, start: NOTIFY_DEFAULTS.start, end: NOTIFY_DEFAULTS.end };
       return {
         enabled: typeof v.enabled === 'boolean' ? v.enabled : NOTIFY_DEFAULTS.enabled,
-        start: (typeof v.start === 'string' && /^\d{2}:\d{2}$/.test(v.start)) ? v.start : NOTIFY_DEFAULTS.start,
-        end: (typeof v.end === 'string' && /^\d{2}:\d{2}$/.test(v.end)) ? v.end : NOTIFY_DEFAULTS.end
+        start: isValidNotifyTime(v.start) ? v.start : NOTIFY_DEFAULTS.start,
+        end: isValidNotifyTime(v.end) ? v.end : NOTIFY_DEFAULTS.end
       };
     }
 
