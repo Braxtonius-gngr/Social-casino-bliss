@@ -127,6 +127,55 @@ function validateEntry(entry, index, failures) {
     }
   }
 
+  // Tier is DERIVED, not asserted: it is a band over daysToRedeem, which is
+  // itself cashFloor / dailySC. Checking that here is the whole point - it
+  // stops a letter drifting away from the arithmetic that produced it, which
+  // is exactly how the previous inherited tiers ended up meaningless (S-tier
+  // entries needing 5,000+ days to reach their own redemption floor).
+  const TIERS = ['S', 'A', 'B', 'C', 'D', 'Unranked'];
+  if (entry.tier !== undefined && !TIERS.includes(entry.tier)) {
+    failures.push(`${label}: field "tier" must be one of ${TIERS.join(', ')}, got ${JSON.stringify(entry.tier)}`);
+  }
+
+  for (const key of ['cashFloor', 'daysToRedeem']) {
+    if (entry[key] !== undefined) {
+      if (!isFiniteNumber(entry[key])) {
+        failures.push(`${label}: field "${key}" must be a finite number, got ${JSON.stringify(entry[key])}`);
+      } else if (entry[key] <= 0) {
+        failures.push(`${label}: field "${key}" must be positive, got ${entry[key]}`);
+      }
+    }
+  }
+
+  if (entry.confidence !== undefined) {
+    const LEVELS = ['high', 'medium', 'low', 'none'];
+    if (!LEVELS.includes(entry.confidence)) {
+      failures.push(`${label}: field "confidence" must be one of ${LEVELS.join(', ')}, got ${JSON.stringify(entry.confidence)}`);
+    }
+  }
+
+  if (entry.blocker !== undefined && (typeof entry.blocker !== 'string' || !entry.blocker.trim())) {
+    failures.push(`${label}: field "blocker" must be a non-empty string, got ${JSON.stringify(entry.blocker)}`);
+  }
+
+  if (isFiniteNumber(entry.cashFloor) && isFiniteNumber(entry.dailySC) && entry.dailySC > 0) {
+    const expectedDays = Math.round(entry.cashFloor / entry.dailySC);
+    if (isFiniteNumber(entry.daysToRedeem) && Math.abs(entry.daysToRedeem - expectedDays) > 1) {
+      failures.push(`${label}: "daysToRedeem" is ${entry.daysToRedeem} but cashFloor/dailySC = ${expectedDays}`);
+    }
+    // A "blocker" entry is deliberately exempt: a documented rule stops free
+    // play reaching the floor at all, so no band over a day count applies.
+    if (!entry.blocker && isFiniteNumber(entry.daysToRedeem)) {
+      const d = entry.daysToRedeem;
+      const expectedTier = d <= 60 ? 'S' : d <= 120 ? 'A' : d <= 250 ? 'B' : d <= 500 ? 'C' : 'D';
+      if (entry.tier !== expectedTier) {
+        failures.push(`${label}: tier is "${entry.tier}" but ${d} days to redeem derives "${expectedTier}"`);
+      }
+    }
+  } else if (entry.tier !== undefined && entry.tier !== 'Unranked' && entry.daysToRedeem === undefined) {
+    failures.push(`${label}: tier "${entry.tier}" has no daysToRedeem behind it - an unranked-worthy entry must say "Unranked"`);
+  }
+
   if (entry.lastVerified !== undefined) {
     if (typeof entry.lastVerified !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(entry.lastVerified)) {
       failures.push(`${label}: field "lastVerified" must be a "YYYY-MM-DD" string, got ${JSON.stringify(entry.lastVerified)}`);
@@ -152,7 +201,7 @@ function verifiedAgeDays(entry) {
 }
 
 const REVIEW_STALE_DAYS = 90;
-const TIER_RANK = { S: 4, A: 3, B: 2, C: 1 };
+const TIER_RANK = { S: 5, A: 4, B: 3, C: 2, D: 1 };
 
 // Surfaces the platforms most overdue for a human to re-check: a stale or
 // never-verified cooldown/redeem entry is actively worse than an absent
@@ -168,6 +217,36 @@ function buildReviewQueue(catalog) {
     .sort((a, b) => {
       if (b.age !== a.age) return b.age - a.age;
       return (TIER_RANK[b.entry.tier] || 0) - (TIER_RANK[a.entry.tier] || 0);
+    });
+}
+
+// What single screenshot would move an entry forward. Since tier is derived
+// from cashFloor/dailySC, an entry is Unranked for exactly one of two missing
+// inputs - and naming which one turns a vague "needs checking" list into a
+// shooting list, where each line says what to open and what to capture.
+function captureNeeded(entry) {
+  const hasFloor = typeof entry.cashFloor === 'number';
+  const hasRate = typeof entry.dailySC === 'number' && entry.dailySC > 0;
+  if (entry.blocker) return null;             // ranked by rule, not by arithmetic
+  if (!entry.lastVerified && !hasFloor && !hasRate) return 'everything - never verified';
+  if (!hasRate && !hasFloor) return 'the daily-claim panel AND the redeem screen';
+  if (!hasRate) return 'the daily-claim panel (no SC rate known)';
+  if (!hasFloor) return 'the redeem screen (no cash floor known)';
+  if (entry.scSource === 'ladder-partial') return 'optional: Day 1 of the ladder, to close the lower bound';
+  return null;
+}
+
+function buildCaptureQueue(catalog) {
+  return catalog
+    .map((entry, index) => ({ entry, index, need: captureNeeded(entry) }))
+    .filter((row) => row.need && !row.need.startsWith('optional'))
+    .sort((a, b) => {
+      // Entries that already carry a verified daily rate are the cheapest wins:
+      // one redeem screenshot each and they re-enter the ranking.
+      const aOne = a.need.startsWith('the redeem') ? 0 : 1;
+      const bOne = b.need.startsWith('the redeem') ? 0 : 1;
+      if (aOne !== bOne) return aOne - bOne;
+      return (b.entry.dailySC || 0) - (a.entry.dailySC || 0);
     });
 }
 
@@ -249,6 +328,21 @@ function main() {
       console.log(`  [${row.entry.tier || '?'}] entry ${row.index + 1} (${row.entry.name}): ${ageLabel}`);
     }
     if (reviewQueue.length > 15) console.log(`  ...and ${reviewQueue.length - 15} more.`);
+    console.log('');
+  }
+
+  const captureQueue = buildCaptureQueue(catalog);
+  if (captureQueue.length) {
+    const oneShot = captureQueue.filter((r) => r.need.startsWith('the redeem')).length;
+    const showAll = process.argv.includes('--captures');
+    console.log(`Capture queue: ${captureQueue.length}/${catalog.length} entries cannot be tiered until something is captured.`);
+    console.log(`${oneShot} of them need only a REDEEM SCREEN - they already have a verified daily rate, so one screenshot each puts them back in the ranking.`);
+    console.log(showAll ? '' : 'Run with --captures for the full list.\n');
+    for (const row of showAll ? captureQueue : captureQueue.slice(0, 12)) {
+      const sc = row.entry.dailySC ? `${row.entry.dailySC}/day` : 'no rate';
+      console.log(`  ${row.entry.name.padEnd(22)} ${String(sc).padEnd(10)} needs ${row.need}`);
+    }
+    if (!showAll && captureQueue.length > 12) console.log(`  ...and ${captureQueue.length - 12} more.`);
     console.log('');
   }
 
