@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Executive Lounge - Layout Reference</title>
+  <meta name="theme-color" content="#0B0C10" />
+  <style>
+    /* ====================================================================
+       EXECUTIVE LOUNGE - design tokens
+       Deep obsidian ground, dark frosted glass components, metallic gold
+       for anything actionable, bright cyan as the secondary accent.
+       ==================================================================== */
+    :root {
+      --bg-obsidian:    #050507;
+      --bg-raised:      #101218;
+      --glass:          rgba(22, 24, 29, 0.75);
+      --glass-border:   rgba(255, 255, 255, 0.08);
+      --glass-highlight: rgba(255, 255, 255, 0.07);
+
+      --gold:           #D4AF37;
+      --gold-bright:    #E8C860;
+      --gold-deep:      #B8912B;
+      --gold-dim:       rgba(212, 175, 55, 0.16);
+      --cyan:           #4FD8E8;
+      --cyan-dim:       rgba(79, 216, 232, 0.14);
+
+      --text-main:      #F8F9FA;
+      --text-muted:     #8A8D93;
+      --text-dim:       #5A5D63;
+
+      --tier-S: #D4AF37;
+      --tier-A: #E3E4E5;
+      --tier-B: #CD7F32;
+      --tier-C: #8A8D93;
+      --tier-D: #5A5D63;
+      --tier-Unranked: #40434A;
+
+      /* One scale, used everywhere. 4px base. */
+      --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px;
+      --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
+      --r-sm: 6px;  --r-md: 10px; --r-lg: 16px; --r-pill: 999px;
+
+      --header-h: 56px;
+      --control-h: 52px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(120% 80% at 50% -10%, rgba(212,175,55,0.07) 0%, transparent 55%),
+        linear-gradient(180deg, #0B0C10 0%, #050507 62%, #030304 100%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Every ticking or tabulated number. Proportional digits make "9h 59m"
+       narrower than "10h 00m", which shifts the row around it once a minute;
+       tabular figures lock each digit to one advance width so the layout is
+       still while the value changes. This is the single most important line
+       of CSS in a timer-driven interface. */
+    .tnum {
+      font-variant-numeric: tabular-nums slashed-zero;
+      font-feature-settings: "tnum" 1, "zero" 1;
+    }
+
+    .shell { max-width: 640px; margin: 0 auto; padding-bottom: var(--sp-6); }
+
+    /* ---- 1. GLOBAL HEADER (sticky top) -------------------------------- */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      height: var(--header-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--sp-3);
+      padding: 0 var(--sp-4);
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .logo {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+    .logo span { color: var(--gold); }
+
+    /* Global countdown to the next 5:00 AM reset. Right-aligned, two lines,
+       label above value so the value keeps a fixed baseline as it ticks. */
+    .global-reset { text-align: right; flex-shrink: 0; }
+    .global-reset .label {
+      display: block;
+      font-size: 0.6rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .global-reset .value {
+      display: block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    /* ---- 2. CONTROL BAR (sticky sub-header) --------------------------- */
+    .control-bar {
+      position: sticky;
+      top: var(--header-h);
+      z-index: 29;
+      height: var(--control-h);
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: 0 var(--sp-4);
+      background: rgba(11, 12, 16, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* Segmented control: one connected switch, not two loose buttons. */
+    .segmented {
+      display: flex;
+      flex: 1;
+      padding: 3px;
+      gap: 3px;
+      background: rgba(0,0,0,0.45);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--r-md);
+    }
+    .segmented button {
+      flex: 1;
+      padding: 7px 10px;
+      border: 0;
+      border-radius: var(--r-sm);
+      background: transparent;
+      color: var(--text-muted);
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.18s ease, color 0.18s ease;
+    }
+    .segmented button[aria-pressed="true"] {
+      background: var(--gold-dim);
+      color: var(--gold);
+    }
+    .segmented button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+    /* ---- 3. CASINO CARDS (horizontal auto-layout) --------------------- */
+    .card-list { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-4); }
+
+    .casino-card {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      padding: var(--sp-3);
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-top-color: var(--glass-highlight);
+      border-radius: var(--r-lg);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 6px 24px rgba(0,0,0,0.55);
+    }
+
+    /* LEFT ZONE - icon carrying the tier as a colored ring. */
+    .zone-left { flex-shrink: 0; }
+    .casino-icon {
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: var(--r-md);
+      background: rgba(0,0,0,0.5);
+      border: 2px solid var(--tier-color, var(--tier-Unranked));
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--tier-color, var(--text-muted));
+    }
+
+    /* MIDDLE ZONE - the only flexible zone, so it absorbs all slack and is
+       the only place text is allowed to truncate. min-width:0 is required
+       for ellipsis to work inside a flex child. */
+    .zone-mid { flex: 1; min-width: 0; }
+    .casino-name {
+      display: block;
+      font-weight: 600;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .badge-row { display: flex; align-items: center; gap: var(--sp-2); margin-top: 3px; }
+    .freq-badge {
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--r-sm);
+      padding: 1px 6px;
+      white-space: nowrap;
+    }
+    .tier-label {
+      font-size: 0.66rem;
+      font-weight: 700;
+      color: var(--tier-color, var(--text-dim));
+    }
+
+    /* RIGHT ZONE - fixed width so Claim and the countdown occupy exactly the
+       same footprint. Without this the whole row reflows the instant a timer
+       expires and the button swaps in. */
+    .zone-right { flex-shrink: 0; width: 92px; display: flex; justify-content: flex-end; }
+
+    .btn-claim {
+      width: 100%;
+      padding: 9px 0;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: var(--r-md);
+      background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold) 55%, var(--gold-deep) 100%);
+      color: #14151A;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset, 0 3px 10px rgba(0,0,0,0.5);
+    }
+    .btn-claim:active { transform: translateY(1px); }
+    .btn-claim:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+    /* The recessed well: not-yet-actionable reads as pressed into the card,
+       the exact inverse of the raised gold button. */
+    .countdown-well {
+      width: 100%;
+      padding: 8px 0;
+      text-align: center;
+      border-radius: var(--r-md);
+      background: rgba(0,0,0,0.42);
+      border: 1px solid rgba(0,0,0,0.6);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.75), 0 1px 0 rgba(255,255,255,0.04);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .empty { padding: var(--sp-6) var(--sp-4); text-align: center; color: var(--text-dim); }
+
+    .note {
+      margin: 0 var(--sp-4);
+      padding: var(--sp-3);
+      border-left: 2px solid var(--gold);
+      background: rgba(212,175,55,0.05);
+      border-radius: 0 var(--r-sm) var(--r-sm) 0;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="shell">
+
+    <header class="app-header">
+      <div class="logo">The Casino <span>Almanac</span></div>
+      <div class="global-reset">
+        <span class="label">Next 5:00 AM reset</span>
+        <span class="value tnum" id="globalReset">--:--:--</span>
+      </div>
+    </header>
+
+    <div class="control-bar">
+      <div class="segmented" role="group" aria-label="Sort platforms">
+        <button type="button" id="sortTier" aria-pressed="true"  onclick="setSort('tier')">Sort by Tier</button>
+        <button type="button" id="sortFreq" aria-pressed="false" onclick="setSort('frequency')">Sort by Frequency</button>
+      </div>
+    </div>
+
+    <p class="note">
+      Layout reference for the Executive Lounge treatment. Self-contained and
+      build-free - open it directly. The shipped app lives in
+      <code>index.html</code>; this file is documentation, not a second app,
+      and is never registered with the service worker.
+    </p>
+
+    <div class="card-list" id="cardList"></div>
+  </div>
+
+<script>
+  /* ======================================================================
+     STATE
+     Sample rows only. Shapes mirror data/catalog.js so the sort comparators
+     below can be lifted into the real app unchanged:
+       tier        - "S" | "A" | "B" | "C" | "D" | "Unranked"
+       cooldown    - rolling window in hours
+       resetHour   - fixed local-hour reset (0-23); when present it wins over
+                     cooldown, because the two are different mechanisms
+     ====================================================================== */
+  var PLATFORMS = [
+    { id: 'p1', name: 'HelloMillions', tier: 'A', cooldown: 24, resetHour: null },
+    { id: 'p2', name: 'Stake.us',      tier: 'S', cooldown: 24, resetHour: 5    },
+    { id: 'p3', name: 'McLuck',        tier: 'D', cooldown: 24, resetHour: null },
+    { id: 'p4', name: 'Chumba Casino', tier: 'B', cooldown: 4,  resetHour: null },
+    { id: 'p5', name: 'Jackpota',      tier: 'C', cooldown: 24, resetHour: null },
+    { id: 'p6', name: 'SweepsRoyal',   tier: 'Unranked', cooldown: 12, resetHour: null }
+  ];
+
+  var STORAGE_KEY = 'exec_lounge_prototype_v1';
+  var RESET_HOUR = 5;                  // 5:00 AM, device-local
+  var TIER_ORDER = { S: 0, A: 1, B: 2, C: 3, D: 4, Unranked: 5 };
+
+  var state = { sort: 'tier', collected: {} };
+
+  /* ----------------------------------------------------------------------
+     PERSISTENCE
+     Every read is defensive: localStorage throws outright in Safari private
+     mode, and the stored value is user-editable text that may be malformed
+     or left over from an older shape. A corrupt key must degrade to defaults,
+     never take the app down on boot.
+     ---------------------------------------------------------------------- */
+  function loadState() {
+    try {
+      var parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if (parsed && typeof parsed === 'object') {
+        if (parsed.sort === 'tier' || parsed.sort === 'frequency') state.sort = parsed.sort;
+        if (parsed.collected && typeof parsed.collected === 'object') {
+          // Whitelist by known id and coerce to a finite number - a stale id
+          // or a NaN timestamp would otherwise produce a permanent countdown.
+          PLATFORMS.forEach(function (p) {
+            var ts = Number(parsed.collected[p.id]);
+            if (Number.isFinite(ts) && ts > 0) state.collected[p.id] = ts;
+          });
+        }
+      }
+    } catch (e) { /* defaults stand */ }
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        sort: state.sort,
+        collected: state.collected
+      }));
+    } catch (e) { /* quota or private mode - the UI stays correct in-session */ }
+  }
+
+  /* ----------------------------------------------------------------------
+     5:00 AM RESET MATH
+     setHours() on a local Date is DST-correct for a device-local reset: on a
+     spring-forward day it still resolves to the real 5 AM wall-clock instant,
+     which naive `+ 24 * 3600 * 1000` arithmetic does not. That is the whole
+     reason this is written as a wall-clock rollover rather than a fixed
+     millisecond addition.
+
+     A reset pinned to a *fixed* zone (a platform that resets at 5 AM ET no
+     matter where you are) is a different problem - it needs Intl-based zone
+     conversion, which is what zonedHourToUtc()/lastResetInstant() in
+     index.html already implement. Don't reimplement that here.
+     ---------------------------------------------------------------------- */
+  function lastResetAt(now) {
+    var d = new Date(now);
+    d.setHours(RESET_HOUR, 0, 0, 0);
+    if (d.getTime() > now) d.setDate(d.getDate() - 1);   // before 5 AM: yesterday's
+    return d.getTime();
+  }
+
+  function nextResetAt(now) {
+    var d = new Date(lastResetAt(now));
+    d.setDate(d.getDate() + 1);
+    d.setHours(RESET_HOUR, 0, 0, 0);   // restated after the date roll so a DST
+    return d.getTime();                // boundary cannot drift the hour
+  }
+
+  /* Readiness. Two distinct mechanisms, never blended:
+       fixed  - ready once the clock passes today's reset instant
+       rolling- ready once `cooldown` hours have elapsed since collection */
+  function readiness(platform, now) {
+    var last = state.collected[platform.id] || 0;
+    if (typeof platform.resetHour === 'number') {
+      var boundary = lastResetAt(now);
+      if (last >= boundary) return { ready: false, remaining: nextResetAt(now) - now };
+      return { ready: true, remaining: 0 };
+    }
+    var remaining = Math.max(0, (platform.cooldown * 3600000) - (now - last));
+    return { ready: remaining === 0, remaining: remaining };
+  }
+
+  // Hours are zero-padded as well as minutes and seconds. tabular-nums makes
+  // every digit the same width, but it cannot help when the string loses a
+  // CHARACTER - "10:00:00" -> "9:59:59" is a real width change that tabular
+  // figures don't address. Padding to a fixed HH:MM:SS shape is what actually
+  // makes the readout dimensionally constant for its whole life.
+  function formatCountdown(ms) {
+    var total = Math.floor(ms / 1000);
+    var h = Math.floor(total / 3600);
+    var m = Math.floor((total % 3600) / 60);
+    var s = total % 60;
+    function pad(n) { return n < 10 ? '0' + n : String(n); }
+    return pad(h) + ':' + pad(m) + ':' + pad(s);
+  }
+
+  function frequencyHours(p) {
+    // A fixed daily reset is a 24-hour cadence for ranking purposes, so the
+    // two mechanisms remain comparable on one axis.
+    return typeof p.resetHour === 'number' ? 24 : p.cooldown;
+  }
+
+  function frequencyLabel(p) {
+    if (typeof p.resetHour === 'number') {
+      var h = p.resetHour;
+      var disp = h === 0 ? '12 AM' : h < 12 ? h + ' AM' : h === 12 ? '12 PM' : (h - 12) + ' PM';
+      return 'Daily @ ' + disp;
+    }
+    return 'Every ' + p.cooldown + 'h';
+  }
+
+  /* ----------------------------------------------------------------------
+     SORTING
+     Both comparators are total orderings with a name tiebreak, so the list
+     never reshuffles between renders when the primary keys are equal.
+     ---------------------------------------------------------------------- */
+  function sortedPlatforms() {
+    var now = Date.now();
+    return PLATFORMS.slice().sort(function (a, b) {
+      var diff;
+      if (state.sort === 'tier') {
+        diff = (TIER_ORDER[a.tier] ?? 9) - (TIER_ORDER[b.tier] ?? 9);
+      } else {
+        diff = frequencyHours(a) - frequencyHours(b);
+      }
+      if (diff !== 0) return diff;
+      // Secondary: anything claimable now outranks anything still counting.
+      var ra = readiness(a, now), rb = readiness(b, now);
+      if (ra.ready !== rb.ready) return ra.ready ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  function setSort(mode) {
+    state.sort = mode;
+    document.getElementById('sortTier').setAttribute('aria-pressed', String(mode === 'tier'));
+    document.getElementById('sortFreq').setAttribute('aria-pressed', String(mode === 'frequency'));
+    saveState();
+    render();
+  }
+
+  function claim(id) {
+    state.collected[id] = Date.now();
+    saveState();
+    render();
+  }
+
+  function initials(name) {
+    return name.replace(/[^A-Za-z0-9 ]/g, '').split(/\s+/)
+      .map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase();
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* ----------------------------------------------------------------------
+     RENDER
+     Full re-render on state change; tick() only rewrites the countdown text
+     nodes. Re-rendering the whole list once a second would drop focus and
+     defeat the point of the fixed-width right zone.
+     ---------------------------------------------------------------------- */
+  function render() {
+    var now = Date.now();
+    var list = document.getElementById('cardList');
+
+    var rows = sortedPlatforms();
+    if (!rows.length) {
+      list.innerHTML = '<div class="empty">No platforms tracked yet.</div>';
+      return;
+    }
+
+    list.innerHTML = rows.map(function (p) {
+      var r = readiness(p, now);
+      var right = r.ready
+        ? '<button type="button" class="btn-claim" onclick="claim(\'' + p.id + '\')" ' +
+          'aria-label="Claim ' + escHtml(p.name) + '">CLAIM</button>'
+        : '<div class="countdown-well tnum" data-cd="' + p.id + '" role="timer" ' +
+          'aria-label="' + escHtml(p.name) + ' ready in ' + formatCountdown(r.remaining) + '">' +
+          formatCountdown(r.remaining) + '</div>';
+
+      return '' +
+        '<article class="casino-card" style="--tier-color: var(--tier-' + escHtml(p.tier) + ')">' +
+          '<div class="zone-left">' +
+            '<div class="casino-icon" aria-hidden="true">' + escHtml(initials(p.name)) + '</div>' +
+          '</div>' +
+          '<div class="zone-mid">' +
+            '<span class="casino-name">' + escHtml(p.name) + '</span>' +
+            '<div class="badge-row">' +
+              '<span class="tier-label">' + escHtml(p.tier) + '</span>' +
+              '<span class="freq-badge">' + escHtml(frequencyLabel(p)) + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="zone-right">' + right + '</div>' +
+        '</article>';
+    }).join('');
+  }
+
+  /* One interval for the whole page. Per-card intervals would multiply with
+     the list length and keep drifting apart from each other. */
+  function tick() {
+    var now = Date.now();
+    document.getElementById('globalReset').textContent = formatCountdown(nextResetAt(now) - now);
+
+    var needsRerender = false;
+    document.querySelectorAll('[data-cd]').forEach(function (el) {
+      var p = PLATFORMS.find(function (x) { return x.id === el.getAttribute('data-cd'); });
+      if (!p) return;
+      var r = readiness(p, now);
+      // A timer reaching zero changes which control belongs in the right
+      // zone, so that case escalates to a full render rather than writing
+      // "00:00" and leaving a dead well where a Claim button belongs.
+      if (r.ready) { needsRerender = true; return; }
+      el.textContent = formatCountdown(r.remaining);
+    });
+    if (needsRerender) render();
+  }
+
+  loadState();
+  setSort(state.sort);
+  tick();
+  setInterval(tick, 1000);
+
+  // A backgrounded tab throttles timers, so the clock can be well behind on
+  // return. Re-render on wake rather than waiting for the next tick.
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) { render(); tick(); }
+  });
+</script>
+</body>
+</html>

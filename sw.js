@@ -11,12 +11,17 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v30';
+const CACHE_NAME = 'almanac-v31';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
 // and silently fail.
-const PRECACHE_URLS = ['./', './index.html', './manifest.json', './assets/app.css', './data/catalog.js'];
+const PRECACHE_URLS = ['./', './index.html', './manifest.json', './assets/app.css', './data/catalog.js',
+  // Ground texture for the Executive Lounge theme. Precached because a theme
+  // whose background only appears once the network is back is not the theme.
+  // NOTE: no apostrophes in comments inside this array - check-references.js
+  // regex-scans it for quoted strings and would read one as a broken path.
+  './assets/background.webp'];
 
 self.addEventListener('install', (event) => {
   // Precache the shell so the very first offline load works, even if the

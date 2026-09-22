@@ -3,23 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <!-- Sets data-theme before the stylesheet paints anything, so the
-       landing screen never flashes the base (unthemed, purple/cyan)
-       look before switching to the saved theme a moment later. Every
-       [data-theme="..."] rule in app.css only matches once this
-       attribute is present - without it, first paint uses whatever the
-       untagged base rules say, which is the Prism-era default look, not
-       "no theme." Mirrors getActiveThemeId()'s own fallback (western)
-       so the two never disagree. Deliberately tiny and synchronous -
-       this has to finish before the browser's first paint, so it can't
-       wait for the rest of the page or any external script. -->
+       landing screen never flashes the wrong look before switching to the
+       saved theme a moment later. Every [data-theme="..."] rule in app.css
+       only matches once this attribute is present - without it, first paint
+       uses whatever the untagged base rules say, which is now Executive
+       Lounge itself (the base stylesheet IS this theme's palette; see
+       "BASE = EXECUTIVE LOUNGE" in app.css), so falling through to no
+       attribute at all is already correct - this still sets one explicitly
+       so every [data-theme="executive"] rule matches too. Mirrors
+       getActiveThemeId()'s own fallback (executive) so the two never
+       disagree. Deliberately tiny and synchronous - this has to finish
+       before the browser's first paint, so it can't wait for the rest of
+       the page or any external script. -->
   <script>
     (function () {
       try {
         var id = localStorage.getItem('almanac_theme_v1');
-        var valid = ['western', 'prism', 'neon', 'obsidian', 'glitch'];
-        document.documentElement.setAttribute('data-theme', valid.indexOf(id) !== -1 ? id : 'western');
+        var valid = ['western', 'prism', 'neon', 'obsidian', 'glitch', 'executive'];
+        document.documentElement.setAttribute('data-theme', valid.indexOf(id) !== -1 ? id : 'executive');
       } catch (e) {
-        document.documentElement.setAttribute('data-theme', 'western');
+        document.documentElement.setAttribute('data-theme', 'executive');
       }
     })();
   </script>
@@ -177,10 +180,10 @@
     </div>
 
     <div class="nav-pill-group glass-panel" id="navGroup">
-      <button class="nav-tab active" id="tabPlatforms" onclick="switchMainTab('games', this)">Deck</button>
-      <button class="nav-tab" id="tabCatalog" onclick="switchMainTab('catalog', this)">Catalogue</button>
-      <button class="nav-tab" id="tabResources" onclick="switchMainTab('resources', this)">Resources</button>
-      <button class="nav-tab" id="tabFreebies" onclick="switchMainTab('freebies', this)">Freebies</button>
+      <button class="nav-tab active" id="tabPlatforms" onclick="switchMainTab('games', this)"><svg class="tab-ico" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true" focusable="false"><path d="M12 3C8.1 3 5 4.34 5 6s3.1 3 7 3 7-1.34 7-3-3.1-3-7-3z"/><path d="M5 9.2V11c0 1.66 3.1 3 7 3s7-1.34 7-3V9.2c-1.5 1.2-4.1 1.8-7 1.8s-5.5-.6-7-1.8z"/><path d="M5 14.6v1.8c0 1.66 3.1 3 7 3s7-1.34 7-3v-1.8c-1.5 1.2-4.1 1.8-7 1.8s-5.5-.6-7-1.8z"/></svg><span>Deck</span></button>
+      <button class="nav-tab" id="tabCatalog" onclick="switchMainTab('catalog', this)"><svg class="tab-ico" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true" focusable="false"><rect x="3" y="3" width="8" height="8" rx="1.6"/><rect x="13" y="3" width="8" height="8" rx="1.6"/><rect x="3" y="13" width="8" height="8" rx="1.6"/><rect x="13" y="13" width="8" height="8" rx="1.6"/></svg><span>Catalogue</span></button>
+      <button class="nav-tab" id="tabResources" onclick="switchMainTab('resources', this)"><svg class="tab-ico" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true" focusable="false"><path d="M11 6.6C9.3 5.3 6.9 4.6 4 4.6c-.7 0-1.4.05-2 .15v13.5c.6-.1 1.3-.15 2-.15 2.9 0 5.3.7 7 2V6.6z"/><path d="M13 6.6c1.7-1.3 4.1-2 7-2 .7 0 1.4.05 2 .15v13.5c-.6-.1-1.3-.15-2-.15-2.9 0-5.3.7-7 2V6.6z"/></svg><span>Resources</span></button>
+      <button class="nav-tab" id="tabFreebies" onclick="switchMainTab('freebies', this)"><svg class="tab-ico" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M4.5 5h15A2.5 2.5 0 0 1 22 7.5v1.6a2.9 2.9 0 0 0 0 5.8v1.6a2.5 2.5 0 0 1-2.5 2.5h-15A2.5 2.5 0 0 1 2 16.5v-1.6a2.9 2.9 0 0 0 0-5.8V7.5A2.5 2.5 0 0 1 4.5 5zm10.2 3.1a.85.85 0 1 0 0 1.7.85.85 0 0 0 0-1.7zm0 3.05a.85.85 0 1 0 0 1.7.85.85 0 0 0 0-1.7zm0 3.05a.85.85 0 1 0 0 1.7.85.85 0 0 0 0-1.7z"/></svg><span>Freebies</span></button>
     </div>
 
     <section id="viewGames">
@@ -504,10 +507,10 @@
       <div style="margin-top: 20px; display:flex; flex-direction:column; gap:10px;">
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="restartTourFromSettings()">Restart Interactive Tour</button>
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="resetViewState()">Reset View</button>
-        <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="resyncTimersFromCatalog()">Resync Reset Times From Catalogue</button>
+        <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="resyncFromCatalog()">Resync From Catalogue</button>
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-pink); color:var(--accent-pink); text-shadow:0 0 5px var(--accent-pink);" onclick="resetTrackerData()">Reset All Tracked Data</button>
       </div>
-      <div class="backup-helper" style="margin-top:2px;">Only touches reset/cooldown timing (fixed reset hour, timezone, rolling interval) for platforms you already track, pulling the current values from the built-in Catalogue - the same fix that corrected Zula's reset time. Never touches your tags, notes, balances, or referral links.</div>
+      <div class="backup-helper" style="margin-top:2px;">Pulls the built-in Catalogue's current reset timing, tier, daily rate, redeem floor, link and research notes onto platforms you already track - the same fix that corrected Zula's reset time, now covering the whole entry. Shows exactly what would change before anything is applied. Never touches your own balance, tags, your notes, or your saved referral link.</div>
       <div class="backup-controls">
         <button class="btn-dock" style="border-color:var(--accent-green); color:var(--accent-green); text-shadow:0 0 5px var(--accent-green);" onclick="exportBackup()">&#8681; EXPORT BACKUP</button>
         <button class="btn-dock" style="border-color:var(--accent-gold); color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold);" onclick="document.getElementById('importBackupInput').click()">&#8679; IMPORT BACKUP</button>
@@ -3008,6 +3011,38 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return (game.cooldownHours || 24) !== (entry.cooldown || 24);
     }
 
+    // Catalogue-owned fields a tracked platform can drift from once a
+    // correction lands after the platform was already tracked - a tier
+    // recount, a corrected daily rate, or (new) the canonical link itself
+    // being pointed at a referral program that didn't exist yet when this
+    // platform was first added. Deliberately excludes anything the player
+    // could have typed themselves: id, lastCollected, snoozedUntil,
+    // referralUrl, balance, tags, userNotes. Same reasoning
+    // resyncTimersFromCatalog's own comment already gives for timing - this
+    // just widens it to the rest of what toggleCatalogItem() snapshots.
+    const CATALOG_SYNCABLE_FIELDS = [
+      'url', 'tier', 'dailySC', 'minRedeem', 'notes', 'scRange',
+      'scIsAveraged', 'hasLive', 'speedHours', 'bestGames', 'lastVerified'
+    ];
+    function catalogFieldDiffs(game, entry) {
+      if (!entry) return [];
+      const diffs = [];
+      for (const field of CATALOG_SYNCABLE_FIELDS) {
+        const gv = game[field] === undefined ? null : game[field];
+        const ev = entry[field] === undefined ? null : entry[field];
+        // Arrays (bestGames) compare by content, not reference.
+        const same = Array.isArray(gv) || Array.isArray(ev)
+          ? JSON.stringify(gv || []) === JSON.stringify(ev || [])
+          : gv === ev;
+        if (!same) diffs.push({ field, from: gv, to: ev });
+      }
+      return diffs;
+    }
+    function fieldDiffLabel(d) {
+      const fmt = (v) => (v === null || v === '' ? '(blank)' : String(v).length > 40 ? String(v).slice(0, 37) + '...' : String(v));
+      return d.field + ': ' + fmt(d.from) + ' → ' + fmt(d.to);
+    }
+
     function openCooldownEditor(id, event, isRunStep) {
       if (event) event.stopPropagation();
       const game = trackedGames.find(g => g.id === id);
@@ -3067,40 +3102,93 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // userNotes, balance, referralUrl, or a renamed/re-URLed platform,
     // since those are things a player deliberately customized and this
     // button has no way to tell that apart from a stale default.
-    function resyncTimersFromCatalog() {
-      // Find what would change first - nothing is written to a game until
-      // the confirm() below is accepted.
+    // Walks every tracked platform and finds two kinds of drift from the
+    // Catalogue at once: reset timing (the original scope of this
+    // function - a Zula-style correction landing after the platform was
+    // already tracked) and everything in CATALOG_SYNCABLE_FIELDS (tier,
+    // daily rate, redeem floor, the link itself, etc.) Nothing is written
+    // until the confirm() below is accepted, and the preview names every
+    // field that's about to change so a deliberately-customized value
+    // (someone hand-edited their own URL, say) is visible before it's
+    // overwritten rather than silently replaced.
+    function resyncFromCatalog() {
       const pending = trackedGames
         .map((game) => ({ game, entry: findCatalogEntry(game.name) }))
-        .filter(({ game, entry }) => catalogTimingDiffers(game, entry))
-        .map(({ game, entry }) => ({ game, entry, fromLabel: cooldownLabel(game), toLabel: cooldownLabel({ resetHour: entry.resetHour, resetTZ: entry.resetTZ, cooldownHours: entry.cooldown }) }));
+        .filter(({ entry }) => entry)
+        .map(({ game, entry }) => {
+          const timingChanged = catalogTimingDiffers(game, entry);
+          const fieldDiffs = catalogFieldDiffs(game, entry);
+          return { game, entry, timingChanged, fieldDiffs };
+        })
+        .filter(({ timingChanged, fieldDiffs }) => timingChanged || fieldDiffs.length);
 
       if (!pending.length) {
-        alert('Every tracked platform already matches the Catalogue’s reset timing.');
-        return;
-      }
-      const preview = pending.map((p) => `${p.game.name}: ${p.fromLabel} → ${p.toLabel}`).join('\n');
-      if (!confirm(`Update reset timing for ${pending.length} platform(s) to match the Catalogue?\n\n${preview}`)) {
+        alert('Every tracked platform already matches the Catalogue.');
         return;
       }
 
-      pending.forEach(({ game, entry }) => {
-        if (typeof entry.resetHour === 'number') {
-          game.resetHour = entry.resetHour;
-          if (entry.resetTZ) game.resetTZ = entry.resetTZ; else delete game.resetTZ;
-        } else {
-          delete game.resetHour;
-          delete game.resetTZ;
-          game.cooldownHours = entry.cooldown || 24;
+      const preview = pending.map(({ game, entry, timingChanged, fieldDiffs }) => {
+        const lines = [];
+        if (timingChanged) lines.push('  ' + cooldownLabel(game) + ' → ' + cooldownLabel({ resetHour: entry.resetHour, resetTZ: entry.resetTZ, cooldownHours: entry.cooldown }));
+        fieldDiffs.forEach((d) => lines.push('  ' + fieldDiffLabel(d)));
+        return game.name + ':\n' + lines.join('\n');
+      }).join('\n\n');
+
+      if (!confirm(`Update ${pending.length} platform(s) to match the Catalogue?\n\n${preview}`)) {
+        return;
+      }
+
+      pending.forEach(({ game, entry, timingChanged, fieldDiffs }) => {
+        if (timingChanged) {
+          if (typeof entry.resetHour === 'number') {
+            game.resetHour = entry.resetHour;
+            if (entry.resetTZ) game.resetTZ = entry.resetTZ; else delete game.resetTZ;
+          } else {
+            delete game.resetHour;
+            delete game.resetTZ;
+            game.cooldownHours = entry.cooldown || 24;
+          }
+          normalizeTimerFields(game);
         }
-        normalizeTimerFields(game);
+        fieldDiffs.forEach((d) => {
+          if (d.to === null) delete game[d.field]; else game[d.field] = entry[d.field];
+        });
       });
 
       persist();
       renderGames();
+      renderCatalogList();
       updateHeroStats();
       updateDailyRunButton();
-      alert(`Updated ${pending.length} platform(s):\n\n${preview}`);
+      alert(`Updated ${pending.length} platform(s). See Settings any time to run this again.`);
+    }
+
+    // Read-only version of the same walk, used to decide whether to nudge
+    // the user on load - never writes anything itself.
+    function countPendingCatalogSync() {
+      return trackedGames.reduce((n, game) => {
+        const entry = findCatalogEntry(game.name);
+        if (!entry) return n;
+        if (catalogTimingDiffers(game, entry) || catalogFieldDiffs(game, entry).length) return n + 1;
+        return n;
+      }, 0);
+    }
+
+    // Fired once per load, after trackedGames is populated - the whole
+    // point is to reach someone who never opens Settings on their own, so
+    // this can't be something they have to go looking for. A transient
+    // toast rather than a persistent badge: it costs nothing to show again
+    // next launch for as long as something is actually out of date, and it
+    // disappears on its own the moment resyncFromCatalog() clears the drift.
+    function checkForCatalogUpdates() {
+      const n = countPendingCatalogSync();
+      if (!n) return;
+      showToast(
+        `${n} tracked platform${n === 1 ? '' : 's'} ${n === 1 ? 'has' : 'have'} updated info in the Catalogue.`,
+        resyncFromCatalog,
+        10000,
+        'REVIEW'
+      );
     }
 
     function setCooldownEditorMode(mode) {
@@ -3226,37 +3314,78 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- Theme engine ---
     const THEME_KEY = 'almanac_theme_v1';
 
-    // "neon" reproduces the existing :root block verbatim. Do not "tidy" these
-    // values - they are the current look and must stay pixel-identical.
+    // Object order is picker order - renderThemeUI() iterates
+    // Object.entries(THEMES) with no explicit sort. Executive Lounge is
+    // listed first because it is the default (see getActiveThemeId() and
+    // the pre-paint bootstrap above); the renamed western theme is last,
+    // demoted out of its old first-and-default slot.
     const THEMES = {
-      western: {
-        name: 'Boot Hill',
-        description: 'Gritty spaghetti-western macabre. Blood red, pitch black, high-voltage gold.',
+      // Executive Lounge: the brief's own palette, taken literally -
+      // deep obsidian #0B0C10, dark frosted glass rgba(22,24,29,0.85),
+      // metallic gold #D4AF37 for anything actionable, bright cyan as
+      // the secondary. Unlike the other five, this one leans on opaque
+      // panels rather than heavy blur: a tall list of cards blurring a
+      // 137-entry backdrop is where the low-end mobile frame budget
+      // actually goes, so the glass here is depth-by-border, not
+      // depth-by-backdrop-filter. See assets/app.css for the overrides -
+      // and note this theme's vars are also the app's base :root now, so
+      // most of what used to be a per-theme override for it has folded
+      // into the base and this override block is comparatively small.
+      executive: {
+        name: 'Executive Lounge',
+        description: 'Dark-mode fintech meets VIP floor. Obsidian, frosted glass, metallic gold.',
         vars: {
-          '--bg-base': '#0B0B0B',
-          '--accent-gold': '#FFC107',
-          '--accent-gold-hover': '#E0A800',
-          '--accent-gold-dim': 'rgba(255, 193, 7, 0.18)',
-          '--accent-green': '#8AA624',
-          '--accent-green-dim': 'rgba(138, 166, 36, 0.18)',
-          '--accent-pink': '#810000',
-          '--accent-pink-dim': 'rgba(129, 0, 0, 0.22)',
-          '--accent-orange': '#C16B2C',
-          '--accent-orange-dim': 'rgba(193, 107, 44, 0.18)',
-          '--accent-cyan': '#6E7C7C',
-          '--accent-cyan-dim': 'rgba(110, 124, 124, 0.18)',
-          '--glass-border': 'rgba(234, 234, 234, 0.15)',
-          '--glass-highlight': 'rgba(234, 234, 234, 0.08)',
-          '--text-main': '#E3DAC9',
-          '--text-muted': '#B8AD9A',
-          '--text-dim': '#6b6b66',
-          '--tier-s': '#810000',
-          '--tier-a': '#C16B2C',
-          '--tier-b': '#6E7C7C',
-          '--tier-c': '#5C4B51'
+          '--bg-base': '#050507',
+          '--accent-gold': '#D4AF37',
+          '--accent-gold-hover': '#E8C860',
+          '--accent-gold-dim': 'rgba(212, 175, 55, 0.16)',
+          // The brief's own --accent-gold-glow. Distinct from -dim: -dim is a
+          // fill behind an active control, this is the halo around one.
+          '--accent-gold-glow': 'rgba(212, 175, 55, 0.15)',
+          // Silver and bronze exist for the tier podium below. They have no
+          // equivalent anywhere else in the app's variable vocabulary, which
+          // is why they're additions rather than remappings.
+          '--accent-silver': '#E3E4E5',
+          '--accent-bronze': '#CD7F32',
+          '--accent-green': '#3FBF8F',
+          '--accent-green-dim': 'rgba(63, 191, 143, 0.16)',
+          '--accent-pink': '#C8455E',
+          '--accent-pink-dim': 'rgba(200, 69, 94, 0.16)',
+          '--accent-orange': '#D98A3C',
+          '--accent-orange-dim': 'rgba(217, 138, 60, 0.16)',
+          '--accent-cyan': '#4FD8E8',
+          '--accent-cyan-dim': 'rgba(79, 216, 232, 0.14)',
+          '--glass-border': 'rgba(255, 255, 255, 0.08)',
+          // Warm gold-white rather than plain white - the top hairline
+          // every glass surface catches (see .glass-panel in app.css) reads
+          // as light off metal instead of light off glass.
+          '--glass-highlight': 'rgba(232, 205, 140, 0.09)',
+          '--text-main': '#F8F9FA',
+          '--text-muted': '#8A8D93',
+          '--text-dim': '#5A5D63',
+          // Gold / silver / bronze is the podium the tier letters always
+          // wanted. The previous cyan-for-A, green-for-B carried no meaning -
+          // a reader had to learn the key. Nobody has to learn this one.
+          '--tier-s': '#D4AF37',
+          '--tier-a': '#E3E4E5',
+          '--tier-b': '#CD7F32',
+          '--tier-c': '#8A8D93'
         },
-        bodyBg: 'radial-gradient(130% 90% at 50% 15%, rgba(129,0,0,0.72) 0%, rgba(58,0,0,0.58) 42%, #0B0B0B 86%), linear-gradient(180deg, #0B0B0B 0%, #050505 100%)',
-        metaColor: '#0B0B0B'
+        // THIS CARRIES THE BACKGROUND IMAGE, AND IT HAS TO.
+        //
+        // applyTheme() assigns this to document.body.style.background - an
+        // inline SHORTHAND, which resets background-image/-size/-position/
+        // -attachment to their initial values. So the equivalent rule written
+        // in app.css would be silently wiped on every theme apply.
+        //
+        // The path is also only correct from here. CSS resolves a relative
+        // url() against the STYLESHEET's URL, and app.css lives in assets/,
+        // so 'assets/background.webp' written there would resolve to
+        // assets/assets/background.webp. An inline style resolves against the
+        // DOCUMENT, where the path is right - and stays right under a GitHub
+        // Pages subpath, since it never starts with a slash.
+        bodyBg: "linear-gradient(rgba(5,5,7,0.75), rgba(5,5,7,0.85)) center/cover fixed, url('assets/background.webp') center/cover fixed #050507",
+        metaColor: '#050507'
       },
       prism: {
         name: 'Prism Noir',
@@ -3377,16 +3506,55 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         },
         bodyBg: 'repeating-linear-gradient(0deg, rgba(57,255,20,0.035) 0px, rgba(57,255,20,0.035) 1px, transparent 1px, transparent 3px), radial-gradient(120% 90% at 50% 15%, rgba(57,255,20,0.09) 0%, transparent 55%), linear-gradient(180deg, #060806 0%, #020302 100%)',
         metaColor: '#060806'
+      },
+      // Texas Chainsaw Massacre: the renamed, re-tinted Boot Hill. Display
+      // name and description only - the object key stays 'western' so the
+      // 187 [data-theme="western"] selectors in app.css, isWesternTheme(),
+      // and any localStorage value already saved as 'western' all keep
+      // working with no migration. Demoted to the last picker slot, last in
+      // this object, since renderThemeUI() reads picker order straight from
+      // Object.entries(THEMES). --accent-pink moves from the old near-black
+      // #810000 toward a fresh, saturated arterial red - the rest of the
+      // gore treatment (splatter, jagged torn edges, a rougher tearing
+      // animation character) lives in assets/app.css.
+      western: {
+        name: 'Texas Chainsaw Massacre',
+        description: 'Western Texas gore fest. Arterial red, bone, rust, oil-black - dark and jagged.',
+        vars: {
+          '--bg-base': '#0B0B0B',
+          '--accent-gold': '#FFC107',
+          '--accent-gold-hover': '#E0A800',
+          '--accent-gold-dim': 'rgba(255, 193, 7, 0.18)',
+          '--accent-green': '#8AA624',
+          '--accent-green-dim': 'rgba(138, 166, 36, 0.18)',
+          '--accent-pink': '#C41E2E',
+          '--accent-pink-dim': 'rgba(196, 30, 46, 0.24)',
+          '--accent-orange': '#C16B2C',
+          '--accent-orange-dim': 'rgba(193, 107, 44, 0.18)',
+          '--accent-cyan': '#6E7C7C',
+          '--accent-cyan-dim': 'rgba(110, 124, 124, 0.18)',
+          '--glass-border': 'rgba(234, 234, 234, 0.15)',
+          '--glass-highlight': 'rgba(234, 234, 234, 0.08)',
+          '--text-main': '#E3DAC9',
+          '--text-muted': '#B8AD9A',
+          '--text-dim': '#6b6b66',
+          '--tier-s': '#C41E2E',
+          '--tier-a': '#C16B2C',
+          '--tier-b': '#6E7C7C',
+          '--tier-c': '#5C4B51'
+        },
+        bodyBg: 'radial-gradient(130% 90% at 50% 15%, rgba(196,30,46,0.72) 0%, rgba(90,10,16,0.58) 42%, #0B0B0B 86%), linear-gradient(180deg, #0B0B0B 0%, #050505 100%)',
+        metaColor: '#0B0B0B'
       }
     };
 
     function getActiveThemeId() {
       const id = localStorage.getItem(THEME_KEY);
-      return THEMES[id] ? id : 'western';
+      return THEMES[id] ? id : 'executive';
     }
 
     function applyTheme(themeId) {
-      const theme = THEMES[themeId] || THEMES.western;
+      const theme = THEMES[themeId] || THEMES.executive;
       const root = document.documentElement;
       Object.entries(theme.vars).forEach(([k, v]) => root.style.setProperty(k, v));
       root.setAttribute('data-theme', themeId);
@@ -3395,16 +3563,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (meta) meta.setAttribute('content', theme.metaColor);
     }
 
-    // Western-only interaction effects (see Boot Hill theme in THEMES
-    // above): haptic buzz on collect actions, screen-shake on the daily
-    // run's completion milestone. Every other theme is CSS-only, same as
-    // before - these two are gated behind the active theme so nothing
-    // about the shared collect/daily-run code paths changes for anyone
-    // not using Boot Hill.
+    // isWesternTheme() keeps its name - the object key never changed (see
+    // the Texas Chainsaw Massacre entry in THEMES above) - but only two of
+    // the three effects it gates are still theme-exclusive. screenShake()
+    // and collectFlash() stay Chainsaw-only: a screen shake and a red flash
+    // are off-brand for a restrained default. hapticBuzz() is different -
+    // a buzz on collect is feedback, not decoration, and gating it to one
+    // theme meant switching to Executive Lounge silently lost it. It's
+    // global now.
     function isWesternTheme() { return getActiveThemeId() === 'western'; }
 
     function hapticBuzz(pattern) {
-      if (!isWesternTheme()) return;
       try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
     }
 
@@ -4012,6 +4181,24 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         } catch (err) {
           console.warn('Service worker registration error:', err);
         }
+      });
+
+      // sw.js calls skipWaiting() on install and clients.claim() on
+      // activate (see sw.js), so a shipped update takes over an
+      // already-open tab within moments of the next network fetch - it
+      // doesn't wait for every tab to close first. That's exactly what
+      // makes this event meaningful here: controllerchange only fires when
+      // the worker controlling an ALREADY-controlled page changes out from
+      // under it, which is precisely "you had this open while a new
+      // version shipped." The tab's own JS is still the old version until
+      // it reloads, so this surfaces that rather than reloading on its
+      // own - an unsaved balance edit or an open modal shouldn't vanish
+      // out from under someone who didn't ask for a refresh.
+      let swRefreshToastShown = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (swRefreshToastShown) return;
+        swRefreshToastShown = true;
+        showToast('The app was updated. Refresh to get the latest.', () => location.reload(), 30000, 'REFRESH');
       });
     }
 
@@ -7014,6 +7201,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     scheduleNextNotification();
     applyTheme(getActiveThemeId());
     initSync();
+    // Deliberately after the first paint, not before: this is a courtesy
+    // nudge toward Settings, not something that should compete with the
+    // deck itself for the first thing the user sees.
+    setTimeout(checkForCatalogUpdates, 1500);
   </script>
 </body>
 </html>
