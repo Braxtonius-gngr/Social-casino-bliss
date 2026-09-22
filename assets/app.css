@@ -383,6 +383,28 @@
 
     .landing-screen { position: fixed; inset: 0; background: radial-gradient(circle at center, #0c0d11 0%, #050507 100%); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; transition: opacity 0.4s ease, visibility 0.4s; }
     .landing-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    /* A very faint film-grain layer over every theme's landing screen, to
+       mask 8-bit colour banding on the near-black radial gradients behind
+       it - two colour stops as close as #0c0d11 and #050507 don't have
+       enough real steps between them to interpolate smoothly on an actual
+       phone display, and paint as a visible ring instead of a blend
+       ("like there's a wall" rather than atmosphere). Grain breaks a flat
+       band up into high-frequency noise the eye reads as texture rather
+       than an edge - it's the standard fix for this, not unique to this
+       app, and it's also just a more expensive-looking surface than flat
+       CSS gradients on their own. [data-theme="glitch"] .landing-screen::
+       after (its own signal-corruption effect) outranks this by
+       specificity, so that theme keeps its own texture instead of
+       stacking both. */
+    .landing-screen::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.05;
+      mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
 
     /* ---- Landing circuit board ---- */
     #circuitBg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; transition: opacity .6s ease; }
@@ -575,8 +597,33 @@
     .run-name { font-size: 1.5rem; font-weight: 900; color: var(--text-main); margin-bottom: 10px; }
     .run-badges { display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
     .run-redeem { color: var(--accent-gold); font-weight: 800; font-size: 0.9rem; margin-bottom: 10px; }
-    .run-notes { opacity: 0.85; font-size: 0.88rem; line-height: 1.5; max-width: 460px; }
+    /* Capped and independently scrollable on purpose. Some catalog notes
+       run to several paragraphs (see data/catalog.js) - uncapped, this
+       block could grow taller than .run-card's own flex-allocated height,
+       and since .run-card has no overflow control of its own, that excess
+       just paints past the box into whatever sits below it in the
+       column - the undo bar, the balance bar, the collect button - which
+       is exactly what made them "impossible to press" on a long-note
+       platform. A left-aligned, bounded, scrollable block can't grow past
+       its own box no matter how long the note is, so nothing below it can
+       ever be covered again. Left-aligned rather than inheriting
+       .run-card's centered text too - centered long-form paragraphs are
+       hard to track line to line; this reads like actual prose. */
+    .run-notes { opacity: 0.85; font-size: 0.88rem; line-height: 1.5; max-width: 460px; max-height: 30vh; overflow-y: auto; text-align: left; scrollbar-width: thin; }
     .run-bestgames { margin-top: 18px; text-align: left; width: 100%; max-width: 460px; border-top: 1px solid var(--glass-border); padding-top: 14px; font-size: 0.75rem; }
+    /* position:relative here (and on .run-balance-bar / .run-actions
+       below) is defensive, not decorative. .run-card carries .glass-panel,
+       and at least one theme (Amped) gives .glass-panel position:relative
+       for its own reasons (an ::before sweep needs a positioned ancestor
+       to clip against). A positioned element paints ABOVE its later,
+       non-positioned static siblings regardless of DOM order - so without
+       this, .run-card would paint over these three buttons on any theme
+       that ever makes it positioned, independent of whatever content-
+       overflow fix .run-notes above has. Making these three positioned
+       too puts everyone back in the same stacking bucket, where normal DOM
+       order (all three come after .run-card) decides the paint order
+       again - the buttons stay on top the way a reader would expect. */
+    .run-undo-bar, .run-balance-bar, .run-actions { position: relative; }
     /* Persistent undo, not a toast - hidden by default via [hidden];
        showRunUndoBar()/hideRunUndoBar() in the main script toggle it.
        Sits right above .run-actions (same width/centering) so it reads
@@ -3230,11 +3277,24 @@
    black no matter what the gold/emerald ambient glow in bodyBg was doing -
    this is the surface a first-time visitor sees before anything else, so
    it gets the same two-tone glow rather than its own disconnected one. */
+/* Two soft glows fading straight into --bg-base, no separate vignette
+   shape in between - the same recipe THEMES.executive.bodyBg already uses
+   successfully for the app itself (see index.html). The vignette that used
+   to sit here (radial-gradient(circle at 50% 35%, #101218 0%, #050507 65%,
+   #030304 100%)) was a third, independently-edged shape UNDER the two
+   glows - close, low-contrast colour stops that band on a real display,
+   and a boundary that doesn't line up with either glow's own falloff, so
+   it read as a stacked layer rather than one light source. Sizing in
+   vmin/px rather than the glows' old %-of-box units too: percentages
+   stretch a shape tuned for a ~390px phone into something enormous and
+   misshapen on a desktop-width window, which is the other half of "not
+   so nice on computer" - vmin keeps the glow's actual size consistent
+   regardless of viewport width. */
 [data-theme="executive"] .landing-screen {
   background:
-    radial-gradient(120% 70% at 15% 0%, rgba(212,175,55,0.22) 0%, transparent 55%),
-    radial-gradient(100% 65% at 100% 100%, rgba(63,191,143,0.16) 0%, transparent 58%),
-    radial-gradient(circle at 50% 35%, #101218 0%, #050507 65%, #030304 100%);
+    radial-gradient(min(70vmin, 620px) min(50vmin, 460px) at 12% 0%, rgba(212,175,55,0.26) 0%, transparent 72%),
+    radial-gradient(min(65vmin, 560px) min(48vmin, 420px) at 100% 100%, rgba(63,191,143,0.19) 0%, transparent 74%),
+    var(--bg-base);
 }
 /* base's own .landing-btn is a filled gold button (see the base rule up top) -
    Executive Lounge's is the outline/ghost version instead, so background has
@@ -3495,11 +3555,15 @@
    fully occlude body - same lesson from Executive's own landing-screen fix
    (see assets/app.css history), so each gets its own copy of the ambient
    mesh below rather than relying on whatever body is doing underneath. */
+/* Same fix as Executive's own landing-screen (see its comment above): two
+   glows straight into --bg-base, vmin/px-capped sizing instead of
+   %-of-box, no separate vignette shape fighting them for an edge. Amped
+   still gets the extra animated mesh on ::before on top of this. */
 [data-theme="amped"] .landing-screen {
   background:
-    radial-gradient(120% 70% at 15% 0%, rgba(212,175,55,0.30) 0%, transparent 55%),
-    radial-gradient(100% 65% at 100% 100%, rgba(63,191,143,0.24) 0%, transparent 58%),
-    radial-gradient(circle at 50% 35%, #14161d 0%, #050507 65%, #030304 100%);
+    radial-gradient(min(72vmin, 640px) min(52vmin, 480px) at 12% 0%, rgba(212,175,55,0.34) 0%, transparent 74%),
+    radial-gradient(min(68vmin, 580px) min(50vmin, 440px) at 100% 100%, rgba(63,191,143,0.27) 0%, transparent 76%),
+    var(--bg-base);
 }
 [data-theme="amped"] .landing-btn { background: transparent; box-shadow: 0 0 0 1px rgba(212,175,55,0.15); border-color: var(--accent-gold); color: var(--accent-gold); }
 [data-theme="amped"] .landing-btn:hover { background: var(--accent-gold-dim); box-shadow: 0 0 16px rgba(212,175,55,0.35); }
