@@ -3244,6 +3244,298 @@
    cyan flare - restraint extends to motion, not just colour. */
 [data-theme="executive"] .tour-target-active { animation: none !important; box-shadow: 0 0 0 2px var(--accent-gold) !important; }
 
+/* ====================================================================
+   EXECUTIVE LOUNGE: AMPED
+
+   Same brief, same tokens (THEMES.amped.vars in index.html is
+   byte-identical to executive's - tier colour still means the same thing
+   in both), turned all the way up. Executive Lounge's argument for
+   "expensive" is restraint; this is the other argument for it - motion
+   and light everywhere the quiet version holds back. Every selector here
+   is its own full rule rather than a delta on top of [data-theme=
+   "executive"], because [data-theme="X"] and [data-theme="Y"] never
+   cascade into each other - same reason every other theme block in this
+   file is self-contained.
+
+   html[data-motion="off"] * already kills every animation added here
+   (see assets/app.css's global kill switch) - no per-rule guard needed,
+   verified the same way the Chainsaw gore pass was.
+   ==================================================================== */
+
+/* Wordmark: same poured-metal gradient-clip as Executive, but the gradient
+   itself now sweeps across the letters instead of sitting still. */
+[data-theme="amped"] .app-title,
+[data-theme="amped"] .landing-title {
+  position: relative;
+  padding-bottom: 16px;
+}
+[data-theme="amped"] .app-title span,
+[data-theme="amped"] .landing-title span {
+  background: linear-gradient(110deg, #A87A22 0%, #F3DA92 25%, #D4AF37 50%, #F3DA92 75%, #A87A22 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: amped-wordmark-shimmer 5s linear infinite;
+}
+@keyframes amped-wordmark-shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: -250% 50%; }
+}
+[data-theme="amped"] .app-title::after,
+[data-theme="amped"] .landing-title::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  height: 2px;
+  background: var(--gold-metal);
+  box-shadow: 0 0 12px rgba(212,175,55,0.6);
+}
+[data-theme="amped"] .app-title::after { width: 52px; }
+[data-theme="amped"] .landing-title::after { width: 72px; }
+
+/* Glass panels: blur/saturate pushed further than Executive's own, plus a
+   specular sweep that actually crosses the surface on a loop rather than
+   sitting there as a static highlight - the "glass catches light" idea
+   Executive only implies, made literal and continuous. */
+[data-theme="amped"] .glass-panel {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(160deg, rgba(42,38,52,0.62) 0%, rgba(18,20,25,0.40) 100%);
+  backdrop-filter: blur(28px) saturate(185%);
+  -webkit-backdrop-filter: blur(28px) saturate(185%);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-top: 1px solid rgba(255,255,255,0.28);
+  border-left: 1px solid rgba(255,255,255,0.18);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.10) inset,
+    0 -12px 20px -14px rgba(0,0,0,0.5) inset,
+    0 16px 40px rgba(0,0,0,0.55),
+    0 0 32px rgba(212,175,55,0.14);
+}
+[data-theme="amped"] .glass-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -60%;
+  width: 40%; height: 100%;
+  background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.16) 50%, transparent 100%);
+  transform: skewX(-20deg);
+  animation: amped-panel-sweep 6s ease-in-out infinite;
+  pointer-events: none;
+}
+/* A little stagger on the deck's own cards, so 137 of them don't flash in
+   lockstep - reads as a light passing down the list, not a strobe. */
+[data-theme="amped"] .ledger-card:nth-child(2n)::before { animation-delay: 2s; }
+[data-theme="amped"] .ledger-card:nth-child(3n)::before { animation-delay: 4s; }
+@keyframes amped-panel-sweep {
+  0%, 15% { left: -60%; }
+  65%, 100% { left: 140%; }
+}
+[data-theme="amped"] .hero-stat-card { background: linear-gradient(160deg, rgba(42,38,52,0.54) 0%, rgba(18,20,25,0.34) 100%); }
+
+/* Hero ring: a rotating gold halo behind it, a breathing pulse that quickens
+   as more of the deck comes ready (same --ready-ratio Executive's glow
+   scales off), and a one-shot burst (.ring-pulse, toggled from JS in
+   updateHeroStats() whenever the ready count ticks up) for the moment
+   something actually becomes collectible. */
+[data-theme="amped"] .hero-ring-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--accent-gold), transparent 30%, var(--accent-gold) 60%, transparent 90%, var(--accent-gold));
+  filter: blur(3px);
+  animation: amped-ring-spin 4s linear infinite;
+  z-index: 0;
+}
+@keyframes amped-ring-spin { to { transform: rotate(360deg); } }
+[data-theme="amped"] .hero-ring-circle {
+  position: relative;
+  z-index: 1;
+  border: 2px solid var(--accent-gold);
+  background: rgba(0,0,0,0.42);
+  color: var(--text-main);
+  box-shadow:
+    0 0 calc(14px + 34px * var(--ready-ratio, 0)) rgba(212, 175, 55, calc(0.22 + 0.45 * var(--ready-ratio, 0))),
+    inset 0 0 14px rgba(212,175,55,0.16);
+  animation: amped-ring-breathe calc(3.2s - 1.4s * var(--ready-ratio, 0)) ease-in-out infinite;
+}
+@keyframes amped-ring-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+}
+[data-theme="amped"] .hero-ring-circle.ring-pulse { animation: amped-ring-burst 0.8s ease-out; }
+@keyframes amped-ring-burst {
+  0% { box-shadow: 0 0 0 0 rgba(212,175,55,0.55), inset 0 0 14px rgba(212,175,55,0.16); }
+  60% { box-shadow: 0 0 0 22px rgba(212,175,55,0), inset 0 0 14px rgba(212,175,55,0.16); }
+  100% { box-shadow: 0 0 0 0 rgba(212,175,55,0), inset 0 0 14px rgba(212,175,55,0.16); }
+}
+
+/* Avatars: the hue border becomes a hue glow - same per-name colour as
+   Executive, just lit rather than merely outlined. */
+[data-theme="amped"] .casino-avatar {
+  border: 1px solid hsl(var(--avatar-hue, 45) 70% 62% / 0.55);
+  background: radial-gradient(circle at 32% 28%, hsl(var(--avatar-hue, 45) 55% 30% / 0.75) 0%, rgba(0,0,0,0.5) 72%);
+  box-shadow: 0 0 14px hsl(var(--avatar-hue, 45) 70% 55% / 0.35), inset 0 1px 2px rgba(0,0,0,0.5);
+  color: var(--text-main);
+}
+
+/* Tier: S keeps Executive's whisper-of-halo idea but lets it breathe -
+   still the only tier that glows, still never a neon pill. */
+[data-theme="amped"] .tier-badge {
+  box-shadow: none;
+  border-radius: 3px;
+  background: transparent;
+  border: 1px solid currentColor;
+  font-weight: 700;
+}
+[data-theme="amped"] .tier-S {
+  color: var(--tier-s);
+  background: rgba(212,175,55,0.16);
+  animation: amped-tier-s-pulse 2.4s ease-in-out infinite;
+}
+@keyframes amped-tier-s-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(212,175,55,0.4); }
+  50% { box-shadow: 0 0 18px rgba(212,175,55,0.65); }
+}
+[data-theme="amped"] .tier-A { color: var(--tier-a); background: rgba(227,228,229,0.14); box-shadow: 0 0 8px rgba(227,228,229,0.25); }
+[data-theme="amped"] .tier-B { color: var(--tier-b); background: rgba(205,127,50,0.16); box-shadow: 0 0 8px rgba(205,127,50,0.25); }
+[data-theme="amped"] .tier-C { color: var(--tier-c); background: rgba(138,141,147,0.12); }
+[data-theme="amped"] .tier-D { color: var(--tier-d); background: transparent; border-style: dashed; }
+
+/* Primary buttons: the gold-sheen sweep runs more than twice as often as
+   Executive's, plus a glow that breathes at rest instead of only lighting
+   up on hover - the button never fully stops casting light. */
+[data-theme="amped"] .btn-open,
+[data-theme="amped"] .btn-primary,
+[data-theme="amped"] .btn-run-collect {
+  position: relative;
+  overflow: hidden;
+  background: var(--gold-metal);
+  color: #14151A;
+  animation: amped-btn-glow-pulse 2.6s ease-in-out infinite;
+}
+@keyframes amped-btn-glow-pulse {
+  0%, 100% { box-shadow: 0 1px 0 rgba(255,255,255,0.32) inset, 0 3px 12px rgba(0,0,0,0.55), 0 8px 32px rgba(212,175,55,0.42); }
+  50% { box-shadow: 0 1px 0 rgba(255,255,255,0.32) inset, 0 3px 12px rgba(0,0,0,0.55), 0 10px 40px rgba(212,175,55,0.68); }
+}
+[data-theme="amped"] .btn-open { border: 1px solid rgba(255,255,255,0.22); font-weight: 800; }
+[data-theme="amped"] .btn-open:hover,
+[data-theme="amped"] .btn-primary:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 5px 18px rgba(0,0,0,0.6), 0 10px 40px rgba(212,175,55,0.55); }
+[data-theme="amped"] .btn-open::after,
+[data-theme="amped"] .btn-primary::after,
+[data-theme="amped"] .btn-run-collect::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -60%;
+  width: 34%; height: 100%;
+  background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.75) 50%, transparent 100%);
+  transform: skewX(-20deg);
+  animation: gold-sheen 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+[data-theme="amped"] .btn-primary::after { animation-delay: 0.4s; }
+[data-theme="amped"] .btn-run-collect::after { animation-delay: 0.8s; }
+[data-motion="off"] [data-theme="amped"] .btn-open::after,
+[data-motion="off"] [data-theme="amped"] .btn-primary::after,
+[data-motion="off"] [data-theme="amped"] .btn-run-collect::after { animation: none; opacity: 0; }
+
+[data-theme="amped"] .btn-open.cooldown {
+  background: rgba(0,0,0,0.42);
+  border: 1px solid rgba(0,0,0,0.6);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.75), 0 1px 0 rgba(255,255,255,0.04);
+  color: var(--text-muted);
+}
+[data-theme="amped"] .btn-open.cooldown::after { display: none; }
+
+[data-theme="amped"] .btn-check {
+  background: rgba(0,0,0,0.42);
+  border: 1px solid rgba(0,0,0,0.6);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.75), 0 1px 0 rgba(255,255,255,0.06);
+  color: var(--text-main);
+}
+[data-theme="amped"] .btn-check:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.75), 0 0 10px rgba(212,175,55,0.35);
+}
+
+[data-theme="amped"] .cd-fill { background: var(--gold-metal); opacity: 0.9; }
+
+[data-theme="amped"] .filter-btn {
+  background: rgba(0,0,0,0.35);
+  border-radius: 8px;
+  border-color: var(--glass-border);
+}
+[data-theme="amped"] .cooldown-chip { border-radius: 4px; }
+
+[data-theme="amped"] .docked-footer {
+  background: rgba(11,12,16,0.92);
+  border-top-color: var(--glass-border);
+  box-shadow: 0 -6px 24px rgba(212,175,55,0.15), 0 -6px 20px rgba(0,0,0,0.6);
+}
+
+/* Landing, and the daily-run overlay: both position:fixed;inset:0, both
+   fully occlude body - same lesson from Executive's own landing-screen fix
+   (see assets/app.css history), so each gets its own copy of the ambient
+   mesh below rather than relying on whatever body is doing underneath. */
+[data-theme="amped"] .landing-screen {
+  background:
+    radial-gradient(120% 70% at 15% 0%, rgba(212,175,55,0.30) 0%, transparent 55%),
+    radial-gradient(100% 65% at 100% 100%, rgba(63,191,143,0.24) 0%, transparent 58%),
+    radial-gradient(circle at 50% 35%, #14161d 0%, #050507 65%, #030304 100%);
+}
+[data-theme="amped"] .landing-btn { background: transparent; box-shadow: 0 0 0 1px rgba(212,175,55,0.15); border-color: var(--accent-gold); color: var(--accent-gold); }
+[data-theme="amped"] .landing-btn:hover { background: var(--accent-gold-dim); box-shadow: 0 0 16px rgba(212,175,55,0.35); }
+
+[data-theme="amped"] .keen-info-popover {
+  border-style: solid;
+  border-color: var(--glass-border);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.55);
+}
+
+/* Tour stays still even here - a pulsing highlight fighting a pulsing S-tier
+   badge for attention would defeat the tour's own job of pointing at one
+   thing, so restraint applies to this one surface regardless of theme. */
+[data-theme="amped"] .tour-target-active { animation: none !important; box-shadow: 0 0 0 2px var(--accent-gold) !important; }
+
+/* Ambient mesh: a slow-drifting three-colour glow behind everything, on its
+   own ::before rather than folded into body's background, because
+   applyTheme() writes body.style.background as an inline SHORTHAND
+   (documented on THEMES.executive.bodyBg above) - any animation on a CSS
+   background property there would be inline-overridden the instant the
+   theme applies, silently. A pseudo-element has no inline style for JS to
+   ever touch, so it's the only surface here JS can't stomp on. z-index:-1
+   keeps it under each layer's own real content while still painting above
+   that layer's own background (negative z-index paints above a stacking
+   context's own background, below its normal-flow content - not "the very
+   bottom of the page"). Same three fixed, inset:0 layers Executive's own
+   landing-screen fix had to account for: body, the landing screen, and the
+   daily-run overlay each occlude whatever is under them, so each needs its
+   own copy. */
+[data-theme="amped"] body::before,
+[data-theme="amped"] .landing-screen::before,
+[data-theme="amped"] #dailyRunOverlay::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 20% 15%, rgba(212,175,55,0.28) 0%, transparent 60%),
+    radial-gradient(55% 45% at 85% 80%, rgba(63,191,143,0.22) 0%, transparent 62%),
+    radial-gradient(50% 40% at 90% 10%, rgba(79,216,232,0.14) 0%, transparent 60%);
+  background-size: 180% 180%;
+  animation: amped-mesh-drift 22s ease-in-out infinite;
+}
+@keyframes amped-mesh-drift {
+  0%, 100% { background-position: 0% 0%, 100% 100%, 100% 0%; }
+  50% { background-position: 20% 15%, 80% 85%, 85% 15%; }
+}
+
 /* Nav-tab glyphs. Stacked above the label rather than beside it: an inline
    icon adds ~20px per tab, which four tabs cannot afford at 320px, while a
    stacked one costs no horizontal space at all.
