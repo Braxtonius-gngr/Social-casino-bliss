@@ -3384,7 +3384,20 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // assets/assets/background.webp. An inline style resolves against the
         // DOCUMENT, where the path is right - and stays right under a GitHub
         // Pages subpath, since it never starts with a slash.
-        bodyBg: "linear-gradient(rgba(5,5,7,0.75), rgba(5,5,7,0.85)) center/cover fixed, url('assets/background.webp') center/cover fixed #050507",
+        //
+        // background.webp is itself a subtle, near-black brushed-metal
+        // texture - it was never going to read as anything but flat black
+        // once a 0.75-0.85 alpha wash sat on top of it (the previous value
+        // here). That's the actual bug behind "the background reads as
+        // primarily black": not a rendering issue, a wash heavy enough to
+        // bury an already-dark source image. Two things fix it - a much
+        // lighter, single-stop wash so the texture itself is visible, and
+        // real ambient light: a gold glow top-left and a cool emerald glow
+        // lower-right, both large and soft. This is also the light source
+        // .glass-panel's backdrop-filter: saturate() is meant to pick up -
+        // frosted glass over a flat color can only ever look like a dark
+        // grey box, no matter how much blur it carries.
+        bodyBg: "radial-gradient(130% 90% at 12% -8%, rgba(212,175,55,0.20) 0%, transparent 52%) center/cover fixed, radial-gradient(110% 80% at 92% 20%, rgba(63,191,143,0.14) 0%, transparent 55%) center/cover fixed, linear-gradient(180deg, rgba(5,5,7,0.30) 0%, rgba(5,5,7,0.48) 45%, rgba(5,5,7,0.66) 100%) center/cover fixed, url('assets/background.webp') center/cover fixed #050507",
         metaColor: '#050507'
       },
       prism: {
