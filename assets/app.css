@@ -1,4 +1,113 @@
+    /* ==========================================================================
+       BASE = EXECUTIVE LOUNGE
+       --------------------------------------------------------------------
+       These are the app's defaults: no data-theme attribute means Executive
+       Lounge. Until recently this block held the Neon Grid palette, which is
+       why Neon had no [data-theme="neon"] rules of its own - the base WAS
+       the neon skin, and every other theme was a patch over it. Neon is a
+       normal theme now, and anything added to the base from here on inherits
+       the restrained look rather than a cyberpunk one.
+
+       applyTheme() in index.html overwrites all of these as inline styles on
+       <html> the moment JS runs, so what is written here only governs first
+       paint. The per-theme token blocks further down keep that first paint
+       correct for the other five themes.
+       ========================================================================== */
     :root {
+      --bg-base: #050507;
+      --accent-gold: #D4AF37;
+      --accent-gold-hover: #E5C158;
+      --accent-gold-dim: rgba(212, 175, 55, 0.15);
+      --accent-gold-glow: rgba(212, 175, 55, 0.15);
+      --accent-silver: #E3E4E5;
+      --accent-bronze: #CD7F32;
+      --accent-green: #3FBF8F;
+      --accent-green-dim: rgba(63, 191, 143, 0.15);
+      --accent-pink: #B4485C;
+      --accent-pink-dim: rgba(180, 72, 92, 0.15);
+      --accent-orange: #C2843C;
+      --accent-orange-dim: rgba(194, 132, 60, 0.15);
+      --accent-cyan: #7E8794;
+      --accent-cyan-dim: rgba(126, 135, 148, 0.15);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-highlight: rgba(255, 255, 255, 0.06);
+      --text-main: #F8F9FA;
+      --text-muted: #8A8D93;
+      --text-dim: #5A5D63;
+      /* Podium ramp: gold, silver, bronze. The tier washes downstream derive
+         from these, so remapping a tier here remaps its badge fill too. */
+      --tier-s: var(--accent-gold);
+      --tier-a: var(--accent-silver);
+      --tier-b: var(--accent-bronze);
+      --tier-c: #8A8D93;
+      --tier-d: #5A5D63;
+    }
+
+    /* ==========================================================================
+       PER-THEME TOKEN OVERRIDES
+       --------------------------------------------------------------------
+       Mirrors THEMES.<id>.vars in index.html exactly. Without this block, a
+       theme's first paint (before applyTheme() runs) fell through to
+       whatever :root held - previously always the neon palette, now always
+       Executive's. A Prism or Obsidian user's very first frame used to be
+       (very briefly) neon-colored; this closes that gap for every theme.
+       [data-theme="X"] and :root share specificity (both a single attribute/
+       pseudo-class selector) on the same <html> element, so source order
+       decides the tie - these must stay AFTER :root to win it.
+       Executive Lounge has no block here: it IS the base now. ========================================================================== */
+    [data-theme="western"] {
+      --bg-base: #0B0B0B;
+      --accent-gold: #FFC107;
+      --accent-gold-hover: #E0A800;
+      --accent-gold-dim: rgba(255, 193, 7, 0.18);
+      --accent-green: #8AA624;
+      --accent-green-dim: rgba(138, 166, 36, 0.18);
+      --accent-pink: #810000;
+      --accent-pink-dim: rgba(129, 0, 0, 0.22);
+      --accent-orange: #C16B2C;
+      --accent-orange-dim: rgba(193, 107, 44, 0.18);
+      --accent-cyan: #6E7C7C;
+      --accent-cyan-dim: rgba(110, 124, 124, 0.18);
+      --glass-border: rgba(234, 234, 234, 0.15);
+      --glass-highlight: rgba(234, 234, 234, 0.08);
+      --text-main: #E3DAC9;
+      --text-muted: #B8AD9A;
+      --text-dim: #6b6b66;
+      --tier-s: #810000;
+      --tier-a: #C16B2C;
+      --tier-b: #6E7C7C;
+      --tier-c: #5C4B51;
+    }
+
+    [data-theme="prism"] {
+      --bg-base: #0a0b0a;
+      --accent-gold: #c9a227;
+      --accent-gold-hover: #e0bb45;
+      --accent-gold-dim: rgba(201, 162, 39, 0.14);
+      --accent-green: #3d8767;
+      --accent-green-dim: rgba(61, 135, 103, 0.14);
+      --accent-pink: #9e3540;
+      --accent-pink-dim: rgba(158, 53, 64, 0.16);
+      --accent-orange: #a8763f;
+      --accent-orange-dim: rgba(168, 118, 63, 0.14);
+      --accent-cyan: #c4b998;
+      --accent-cyan-dim: rgba(196, 185, 152, 0.12);
+      --glass-border: rgba(201, 162, 39, 0.18);
+      --glass-highlight: rgba(255, 250, 235, 0.07);
+      --text-main: #f4efe4;
+      --text-muted: #9c958a;
+      --text-dim: #645e56;
+      --tier-s: #c9a227;
+      --tier-a: #b9c0c4;
+      --tier-b: #3d8767;
+      --tier-c: #7a736a;
+      --wire-cyan: #00e5ff;
+      --wire-magenta: #ff2fb0;
+      --wire-amber: #ff8a1f;
+      --wire-violet: #a45cff;
+    }
+
+    [data-theme="neon"] {
       --bg-base: #070a10;
       --accent-gold: #ffcc00;
       --accent-gold-hover: #e6b800;
@@ -16,11 +125,58 @@
       --text-main: #e2f1ec;
       --text-muted: #8b9bb4;
       --text-dim: #4d665b;
-      --tier-s: var(--accent-pink);
-      --tier-a: var(--accent-orange);
-      --tier-b: var(--accent-cyan);
-      --tier-c: #8b5cf6; 
-      --tier-d: #7d8590; 
+      --tier-s: #ff007f;
+      --tier-a: #ff6600;
+      --tier-b: #00e5ff;
+      --tier-c: #8b5cf6;
+    }
+
+    [data-theme="obsidian"] {
+      --bg-base: #161514;
+      --accent-gold: #b08d57;
+      --accent-gold-hover: #9a7a49;
+      --accent-gold-dim: rgba(176, 141, 87, 0.15);
+      --accent-green: #7d9b7a;
+      --accent-green-dim: rgba(125, 155, 122, 0.15);
+      --accent-pink: #a86b62;
+      --accent-pink-dim: rgba(168, 107, 98, 0.15);
+      --accent-orange: #a07450;
+      --accent-orange-dim: rgba(160, 116, 80, 0.15);
+      --accent-cyan: #5e7c6e;
+      --accent-cyan-dim: rgba(94, 124, 110, 0.15);
+      --glass-border: rgba(240, 232, 220, 0.10);
+      --glass-highlight: rgba(240, 232, 220, 0.06);
+      --text-main: #ece5d9;
+      --text-muted: #9b9287;
+      --text-dim: #655e56;
+      --tier-s: #b08d57;
+      --tier-a: #a07450;
+      --tier-b: #5e7c6e;
+      --tier-c: #7a6e8c;
+    }
+
+    [data-theme="glitch"] {
+      --bg-base: #060806;
+      --accent-gold: #39FF14;
+      --accent-gold-hover: #5EFF42;
+      --accent-gold-dim: rgba(57, 255, 20, 0.16);
+      --accent-green: #00FFA0;
+      --accent-green-dim: rgba(0, 255, 160, 0.16);
+      --accent-pink: #FF2A2A;
+      --accent-pink-dim: rgba(255, 42, 42, 0.18);
+      --accent-orange: #FFB000;
+      --accent-orange-dim: rgba(255, 176, 0, 0.16);
+      --accent-cyan: #00E5FF;
+      --accent-cyan-dim: rgba(0, 229, 255, 0.16);
+      --glass-border: rgba(57, 255, 20, 0.18);
+      --glass-highlight: rgba(57, 255, 20, 0.08);
+      --text-main: #D6FFD6;
+      --text-muted: #7FAE7F;
+      --text-dim: #3F5C3F;
+      --tier-s: #FF2A2A;
+      --tier-a: #FFB000;
+      --tier-b: #00E5FF;
+      --tier-c: #3F5C3F;
     }
 
     * {
@@ -32,10 +188,13 @@
     }
 
     body {
-      background: radial-gradient(circle at 20% 30%, rgba(255, 0, 127, 0.18), transparent 45%), 
-                  radial-gradient(circle at 80% 60%, rgba(0, 229, 255, 0.18), transparent 45%), 
-                  radial-gradient(circle at 50% 100%, rgba(0, 255, 102, 0.15), transparent 50%),
-                  linear-gradient(135deg, #05070d 0%, #0a0612 50%, #030a14 100%);
+      /* Pre-paint ground only. applyTheme() overwrites this with the active
+         theme's bodyBg as soon as JS runs, and Executive Lounge's version is
+         the one carrying assets/background.webp. That url() cannot live in
+         this file: CSS resolves relative urls against the STYLESHEET, so
+         "assets/background.webp" here would mean assets/assets/... and 404.
+         It is set from index.html instead, where the document is the base. */
+      background: linear-gradient(180deg, #050507 0%, #08090c 100%);
       background-attachment: fixed;
       color: var(--text-main);
       min-height: 100vh;
@@ -43,29 +202,37 @@
       overflow-x: hidden;
     }
 
+    /* Dark frosted glass. 0.75 opacity with a 12px blur is the Executive
+       Lounge card: opaque enough to read as a surface, blurred enough that
+       the ground texture still moves behind it. Don't trade blur radius for
+       opacity if this ever needs clawing back on low-end hardware - the
+       opacity is what makes it read as glass. */
     .glass-panel {
-      background: rgba(16, 22, 32, 0.35);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      background: rgba(22, 24, 29, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--glass-border);
       border-top: 1px solid var(--glass-highlight);
-      border-left: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      border-left: 1px solid var(--glass-highlight);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 6px 24px rgba(0, 0, 0, 0.55);
     }
 
     .app-container { max-width: 640px; margin: 0 auto; position: relative; }
     .top-bar-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .date-header { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent-pink); text-shadow: 0 0 10px var(--accent-pink); }
+    .date-header { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); }
     .btn-settings-gear { background: transparent; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; padding: 4px; transition: all 0.2s; }
-    .btn-settings-gear:hover { color: var(--accent-cyan); text-shadow: 0 0 10px var(--accent-cyan); }
+    .btn-settings-gear:hover { color: var(--accent-gold); }
 
-    .app-title { font-family: "Courier New", Courier, monospace; font-size: 2.3rem; font-weight: 900; color: transparent; -webkit-text-stroke: 1.2px var(--accent-cyan); margin-bottom: 24px; letter-spacing: -0.05em; text-transform: uppercase; text-shadow: 0 0 15px rgba(0, 229, 255, 0.5); text-align: center; }
-    .app-title span { -webkit-text-stroke: 1.2px var(--accent-pink); text-shadow: 0 0 15px rgba(255, 0, 127, 0.5); }
+    /* The wordmark is the one place the base gets to be ornamental: a served
+       serif, the brand word in gold. Neon's hollow monospace stroke is an
+       override now, not the default. */
+    .app-title { font-family: Georgia, "Times New Roman", serif; font-size: 2rem; font-weight: 700; color: var(--text-main); margin-bottom: 24px; letter-spacing: 0.01em; text-transform: none; text-align: center; }
+    .app-title span { color: var(--accent-gold); }
 
     .hero-stat-card { border-radius: 20px; padding: 20px; display: flex; align-items: center; gap: 18px; margin-bottom: 20px; }
     .btn-start-run.hero-run-btn { width: auto; margin: 0; padding: 6px 2px; font-size: 0.85rem; text-align: left; }
     .hero-ring-wrapper { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
-    .hero-ring-circle { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--accent-green); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; color: #ffffff; background: rgba(0, 255, 102, 0.05); box-shadow: 0 0 20px rgba(0, 255, 102, 0.4), inset 0 0 15px rgba(0, 255, 102, 0.3); text-shadow: 0 0 10px rgba(0, 255, 102, 0.8); cursor: pointer; }
+    .hero-ring-circle { width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--accent-green); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; color: var(--text-main); background: color-mix(in srgb, var(--accent-green) 8%, transparent); cursor: pointer; }
     /* Popout: collapsed by default, tapping the ring number reveals it -
        the ring used to just sit there looking pretty; now it's the way
        in to this detail instead of the detail being permanently on
@@ -73,19 +240,19 @@
        closes instead of snapping. */
     .hero-details-popout { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
     .hero-details-popout.open { max-height: 160px; }
-    .hero-details h2 { font-size: 1.15rem; font-weight: 800; color: #fff; margin: 8px 0 4px; text-shadow: 0 0 5px #fff, 0 0 15px var(--accent-orange); }
-    .hero-details p { font-size: 0.78rem; color: var(--accent-cyan); font-family: "Courier New", Courier, monospace; text-shadow: 0 0 8px rgba(0, 229, 255, 0.5); }
+    .hero-details h2 { font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin: 8px 0 4px; }
+    .hero-details p { font-size: 0.78rem; color: var(--text-muted); font-family: "Courier New", Courier, monospace; }
 
     .nav-pill-group { display: flex; gap: 6px; margin-bottom: 12px; padding: 6px; border-radius: 30px; }
     .nav-tab { flex: 1; padding: 9px 6px; background: transparent; border: 1px solid transparent; border-radius: 24px; color: var(--text-muted); font-size: 0.76rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 3px; transition: all 0.3s ease; }
-    .nav-tab.active { background: rgba(255, 0, 127, 0.15); color: #fff; border: 1px solid var(--accent-pink); text-shadow: 0 0 8px var(--accent-pink); box-shadow: 0 0 15px rgba(255, 0, 127, 0.3), inset 0 0 10px rgba(255, 0, 127, 0.2); }
+    .nav-tab.active { background: var(--accent-gold-dim); color: var(--accent-gold); border: 1px solid var(--accent-gold); }
 
     .filter-sort-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
     .filter-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; flex: 1; }
     .filter-chips::-webkit-scrollbar { display: none; }
     .filter-btn { padding: 6px 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); border-radius: 20px; color: var(--text-muted); font-size: 0.76rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
-    .filter-btn.active { background: var(--accent-cyan-dim); color: #fff; border-color: var(--accent-cyan); text-shadow: 0 0 8px var(--accent-cyan); box-shadow: 0 0 12px rgba(0, 229, 255, 0.3); }
-    .sort-trigger-btn { padding: 6px 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--accent-gold); border-radius: 20px; color: var(--accent-gold); font-size: 0.78rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0; white-space: nowrap; box-shadow: 0 0 10px rgba(255, 204, 0, 0.2); text-shadow: 0 0 8px var(--accent-gold); }
+    .filter-btn.active { background: var(--accent-gold-dim); color: var(--accent-gold); border-color: var(--accent-gold); }
+    .sort-trigger-btn { padding: 6px 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--accent-gold); border-radius: 20px; color: var(--accent-gold); font-size: 0.78rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0; white-space: nowrap; }
     .sort-trigger-btn.secondary { color: var(--text-main); border-color: var(--glass-highlight); box-shadow: none; text-shadow: none; }
 
     .tier-action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -93,22 +260,22 @@
     .tier-action-card-header { display: flex; align-items: center; justify-content: space-between; }
     .tier-btn-pair { display: flex; gap: 6px; width: 100%; }
     .btn-tier-toggle { flex: 1; padding: 8px 4px; border-radius: 6px; border: 1px solid var(--glass-border); font-size: 0.72rem; font-weight: 800; cursor: pointer; background: rgba(0,0,0,0.5); color: var(--text-main); transition: all 0.2s; }
-    .btn-tier-toggle.add:hover { background: var(--accent-green-dim); color: #fff; border-color: var(--accent-green); text-shadow: 0 0 8px var(--accent-green); box-shadow: 0 0 15px rgba(0, 255, 102, 0.4); }
-    .btn-tier-toggle.remove:hover { background: var(--accent-pink-dim); color: #ffffff; border-color: var(--accent-pink); text-shadow: 0 0 8px var(--accent-pink); box-shadow: 0 0 15px rgba(255, 0, 127, 0.4); }
+    .btn-tier-toggle.add:hover { background: var(--accent-green-dim); color: var(--text-main); border-color: var(--accent-green); }
+    .btn-tier-toggle.remove:hover { background: var(--accent-pink-dim); color: var(--text-main); border-color: var(--accent-pink); }
 
     .active-sort-stack { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; min-height: 24px; }
-    .sort-stack-chip { background: rgba(0, 0, 0, 0.5); border: 1px solid var(--accent-orange); color: var(--accent-orange); font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; display: flex; align-items: center; gap: 6px; box-shadow: 0 0 8px rgba(255, 102, 0, 0.2); }
+    .sort-stack-chip { background: rgba(0, 0, 0, 0.5); border: 1px solid var(--accent-orange); color: var(--accent-orange); font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; display: flex; align-items: center; gap: 6px; }
     .sort-stack-chip .btn-remove-sort { cursor: pointer; opacity: 0.7; }
-    .sort-stack-chip .btn-remove-sort:hover { opacity: 1; text-shadow: 0 0 5px var(--accent-orange); }
+    .sort-stack-chip .btn-remove-sort:hover { opacity: 1; }
 
     .sort-drawer { display: none; border-radius: 14px; padding: 14px; margin-bottom: 14px; animation: fadeIn 0.2s ease-in-out; }
     .sort-drawer.open { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-    .sort-drawer-header { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-cyan); margin-bottom: 12px; display: flex; justify-content: space-between; text-shadow: 0 0 8px rgba(0, 229, 255, 0.5); }
+    .sort-drawer-header { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-gold); margin-bottom: 12px; display: flex; justify-content: space-between; }
     .sort-options-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .sort-option-btn { padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); border-radius: 8px; color: var(--text-muted); font-size: 0.76rem; font-weight: 600; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
-    .sort-option-btn.active { border-color: var(--accent-orange); color: #fff; background: var(--accent-orange-dim); text-shadow: 0 0 5px var(--accent-orange); box-shadow: inset 0 0 10px rgba(255, 102, 0, 0.2); }
-    .sort-priority-num { background: var(--accent-orange); color: #000; width: 18px; height: 18px; border-radius: 50%; font-size: 0.65rem; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 8px var(--accent-orange); text-shadow: none; }
+    .sort-option-btn.active { border-color: var(--accent-orange); color: var(--text-main); background: var(--accent-orange-dim); }
+    .sort-priority-num { background: var(--accent-orange); color: #000; width: 18px; height: 18px; border-radius: 50%; font-size: 0.65rem; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; text-shadow: none; }
 
     .game-list { display: flex; flex-direction: column; gap: 12px; }
     .ledger-card-wrapper { display: flex; flex-direction: column; gap: 6px; }
@@ -130,19 +297,19 @@
        agreed on where anything sat. Status takes the slack and truncates;
        the button cluster never moves. */
     .card-bottom-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: nowrap; position: relative; z-index: 1; }
-    .casino-avatar { width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--accent-cyan); background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; font-family: "Courier New", Courier, monospace; font-weight: 900; font-size: 1rem; color: #fff; flex-shrink: 0; box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.4), 0 0 10px rgba(0, 229, 255, 0.3); text-shadow: 0 0 5px var(--accent-cyan); cursor: pointer; transition: all 0.2s; }
-    .casino-avatar:active { transform: scale(0.9); box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.8), 0 0 15px rgba(0, 229, 255, 0.6); }
+    .casino-avatar { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; font-family: "Courier New", Courier, monospace; font-weight: 900; font-size: 1rem; color: var(--text-main); flex-shrink: 0; cursor: pointer; transition: all 0.2s; }
+    .casino-avatar:active { transform: scale(0.9); }
 
-    .keen-info-popover { display: none; border: 1px dashed var(--accent-pink); border-radius: 12px; padding: 12px 14px; font-size: 0.8rem; color: var(--text-main); line-height: 1.5; animation: fadeIn 0.2s ease-in-out; box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 20px rgba(255, 0, 127, 0.05); background: rgba(10, 16, 22, 0.85); backdrop-filter: blur(10px); }
+    .keen-info-popover { display: none; border: 1px dashed var(--accent-pink); border-radius: 12px; padding: 12px 14px; font-size: 0.8rem; color: var(--text-main); line-height: 1.5; animation: fadeIn 0.2s ease-in-out; box-shadow: 0 8px 32px rgba(0,0,0,0.5); background: rgba(10, 16, 22, 0.85); backdrop-filter: blur(10px); }
     .keen-info-popover.open { display: block; }
-    .keen-title { font-weight: 800; color: var(--accent-pink); margin-bottom: 4px; text-shadow: 0 0 8px rgba(255, 0, 127, 0.5); }
+    .keen-title { font-weight: 800; color: var(--accent-pink); margin-bottom: 4px; }
 
     .strategy-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
     .strategy-row { background: rgba(0, 0, 0, 0.4); border: 1px solid var(--glass-border); border-radius: 8px; overflow: hidden; transition: all 0.2s; }
     .strategy-row.interactive { cursor: pointer; }
-    .strategy-row.interactive:hover { border-color: var(--accent-cyan); background: rgba(0, 229, 255, 0.08); box-shadow: 0 0 10px rgba(0, 229, 255, 0.15); }
-    .strategy-row-header { padding: 8px 10px; font-size: 0.78rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; color: var(--accent-cyan); text-shadow: 0 0 5px rgba(0, 229, 255, 0.4); }
-    .strategy-row-body { display: none; padding: 10px; font-size: 0.75rem; color: var(--text-main); background: rgba(0,0,0,0.6); border-top: 1px solid rgba(0, 229, 255, 0.3); line-height: 1.5; }
+    .strategy-row.interactive:hover { border-color: var(--accent-gold); background: color-mix(in srgb, var(--accent-gold) 8%, transparent); }
+    .strategy-row-header { padding: 8px 10px; font-size: 0.78rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; color: var(--accent-gold); }
+    .strategy-row-body { display: none; padding: 10px; font-size: 0.75rem; color: var(--text-main); background: rgba(0,0,0,0.6); border-top: 1px solid var(--glass-border); line-height: 1.5; }
     .strategy-row.expanded .strategy-row-body { display: block; }
     .strategy-row.expanded .expand-icon { transform: rotate(180deg); }
 
@@ -157,21 +324,24 @@
     /* Pushed to the far end of the title row, so every card has its
        cooldown in the same place. */
     .card-title-row .cooldown-chip { margin-left: auto; flex-shrink: 0; }
-    .casino-name { flex-shrink: 1; min-width: 0; font-size: 0.98rem; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
-    .tier-badge { font-size: 0.65rem; font-weight: 900; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; box-shadow: 0 0 8px currentColor; }
-    .type-badge { font-size: 0.62rem; font-weight: 800; padding: 2px 5px; border-radius: 4px; background: var(--accent-orange-dim); color: #fff; border: 1px solid var(--accent-orange); text-shadow: 0 0 5px var(--accent-orange); box-shadow: 0 0 8px rgba(255, 102, 0, 0.4); }
+    .casino-name { flex-shrink: 1; min-width: 0; font-size: 0.98rem; font-weight: 800; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tier-badge { font-size: 0.65rem; font-weight: 900; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+    .type-badge { font-size: 0.62rem; font-weight: 800; padding: 2px 5px; border-radius: 4px; background: var(--accent-orange-dim); color: var(--accent-orange); border: 1px solid var(--accent-orange); }
 
-    .tier-S { background: rgba(255,0,127,0.2); color: var(--tier-s); border: 1px solid var(--tier-s); text-shadow: 0 0 5px var(--tier-s); }
-    .tier-A { background: rgba(255,102,0,0.2); color: var(--tier-a); border: 1px solid var(--tier-a); text-shadow: 0 0 5px var(--tier-a); }
-    .tier-B { background: rgba(0,229,255,0.2); color: var(--tier-b); border: 1px solid var(--tier-b); text-shadow: 0 0 5px var(--tier-b); }
-    .tier-C { background: rgba(139,92,246,0.2); color: var(--tier-c); border: 1px solid var(--tier-c); text-shadow: 0 0 5px var(--tier-c); }
-    .tier-D { background: rgba(125,133,144,0.18); color: var(--tier-d); border: 1px dashed var(--tier-d); text-shadow: none; }
-    .tier-Unranked { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+    /* Tier washes derive from the tier token rather than restating its hex,
+       so a theme that remaps a tier (Executive Lounge runs gold/silver/bronze
+       for S/A/B) gets the matching wash for free. */
+    .tier-S { background: color-mix(in srgb, var(--tier-s) 20%, transparent); color: var(--tier-s); border: 1px solid var(--tier-s); }
+    .tier-A { background: color-mix(in srgb, var(--tier-a) 20%, transparent); color: var(--tier-a); border: 1px solid var(--tier-a); }
+    .tier-B { background: color-mix(in srgb, var(--tier-b) 20%, transparent); color: var(--tier-b); border: 1px solid var(--tier-b); }
+    .tier-C { background: color-mix(in srgb, var(--tier-c) 20%, transparent); color: var(--tier-c); border: 1px solid var(--tier-c); }
+    .tier-D { background: color-mix(in srgb, var(--tier-d) 18%, transparent); color: var(--tier-d); border: 1px dashed var(--tier-d); text-shadow: none; }
+    .tier-Unranked { background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--glass-border); }
 
     .card-status { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-main); opacity: 0.8; flex: 1; min-width: 0; overflow: hidden; }
     .status-time { font-family: monospace; font-weight: 600; flex-shrink: 0; }
     .card-status .ready-at { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); display: inline-block; box-shadow: 0 0 8px var(--accent-green), 0 0 12px var(--accent-green); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); display: inline-block; }
     .status-dot.cooldown { background: var(--text-muted); box-shadow: none; }
 
     /* Catalog data-freshness signal: neutral once actually verified,
@@ -181,17 +351,20 @@
     .verify-tag.stale { color: var(--accent-orange); font-weight: 600; }
 
     .card-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-    .btn-open { padding: 8px 18px; background: linear-gradient(90deg, var(--accent-pink), var(--accent-orange)); color: #fff; border: none; border-radius: 20px; font-size: 0.85rem; font-weight: 900; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; text-shadow: 0 1px 2px rgba(0,0,0,0.5); box-shadow: 0 4px 15px rgba(255, 0, 127, 0.4); transition: all 0.2s; }
-    .btn-open:hover { box-shadow: 0 4px 25px rgba(255, 102, 0, 0.6); transform: translateY(-1px); }
+    /* The primary action on every card. Executive Lounge reads it as solid
+       metallic gold on near-black rather than a lit gradient - this is the
+       one control that must look expensive. */
+    .btn-open { padding: 8px 18px; background: var(--accent-gold); color: #0a0a0a; border: none; border-radius: 20px; font-size: 0.85rem; font-weight: 900; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45); transition: all 0.2s; }
+    .btn-open:hover { background: var(--accent-gold-hover); transform: translateY(-1px); }
     .btn-open.cooldown { background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: var(--text-muted); font-weight: 700; font-size: 0.75rem; padding: 7px 14px; box-shadow: none; text-shadow: none; }
     .btn-dots { background: transparent; border: none; color: var(--text-main); font-size: 1.2rem; padding: 4px 8px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s; }
-    .btn-dots:hover { opacity: 1; text-shadow: 0 0 10px #fff; }
+    .btn-dots:hover { opacity: 1; }
 
-    .catalog-search { width: 100%; padding: 12px 16px; border-radius: 12px; color: #fff; font-size: 0.9rem; margin-bottom: 14px; outline: none; transition: all 0.2s; }
-    .catalog-search:focus { border-color: var(--accent-cyan); box-shadow: 0 0 15px rgba(0, 229, 255, 0.3), inset 0 0 10px rgba(0, 229, 255, 0.1); }
+    .catalog-search { width: 100%; padding: 12px 16px; border-radius: 12px; color: var(--text-main); font-size: 0.9rem; margin-bottom: 14px; outline: none; transition: all 0.2s; }
+    .catalog-search:focus { border-color: var(--accent-gold); }
     .catalog-item-row { border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s; }
     .catalog-item-row:hover { background: rgba(255,255,255,0.05); }
-    .catalog-item-row.tracked { border-color: var(--accent-green); background: var(--accent-green-dim); box-shadow: inset 0 0 15px rgba(0, 255, 102, 0.1); }
+    .catalog-item-row.tracked { border-color: var(--accent-green); background: var(--accent-green-dim); }
 
     .docked-footer { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(5, 7, 13, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--glass-highlight); padding: 16px; display: flex; justify-content: center; z-index: 50; box-shadow: 0 -10px 40px rgba(0,0,0,0.8); }
     /* Two rows: Start Daily Run (moved here from the Platforms tab so
@@ -200,10 +373,10 @@
        the rest of the app uses. */
     .docked-footer-inner { width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 10px; }
     .docked-footer-row { display: flex; justify-content: center; gap: 12px; }
-    .btn-dock { flex: 1; max-width: 240px; padding: 12px 16px; background: rgba(0,0,0,0.6); border: 1px solid var(--accent-cyan); border-radius: 12px; color: #fff; font-size: 0.9rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; text-shadow: 0 0 5px var(--accent-cyan); box-shadow: inset 0 0 10px rgba(0, 229, 255, 0.2); }
-    .btn-dock:hover { background: var(--accent-cyan-dim); box-shadow: 0 0 15px rgba(0, 229, 255, 0.4), inset 0 0 15px rgba(0, 229, 255, 0.4); }
+    .btn-dock { flex: 1; max-width: 240px; padding: 12px 16px; background: rgba(0,0,0,0.6); border: 1px solid var(--glass-border); border-radius: 12px; color: var(--text-main); font-size: 0.9rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+    .btn-dock:hover { background: var(--accent-gold-dim); border-color: var(--accent-gold); color: var(--accent-gold); }
 
-    .landing-screen { position: fixed; inset: 0; background: radial-gradient(circle at center, #10061a 0%, #05070d 100%); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; transition: opacity 0.4s ease, visibility 0.4s; }
+    .landing-screen { position: fixed; inset: 0; background: radial-gradient(circle at center, #0c0d11 0%, #050507 100%); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; transition: opacity 0.4s ease, visibility 0.4s; }
     .landing-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
     /* ---- Landing circuit board ---- */
@@ -345,55 +518,58 @@
         100% { mask-position: 10% 8%;  -webkit-mask-position: 10% 8%; }
       }
 
-    .landing-title { font-family: "Courier New", Courier, monospace; font-size: 3rem; color: transparent; -webkit-text-stroke: 1.5px var(--accent-cyan); letter-spacing: -0.05em; margin-bottom: 12px; text-transform: uppercase; text-shadow: 0 0 20px var(--accent-cyan); }
-    .landing-title span { -webkit-text-stroke: 1.5px var(--accent-pink); text-shadow: 0 0 20px var(--accent-pink); }
-    .landing-subtitle { font-size: 0.9rem; color: #fff; margin-bottom: 40px; font-family: monospace; letter-spacing: 0.15em; font-weight: 700; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
-    .landing-btn { padding: 14px 36px; background: transparent; color: #fff; border: 2px solid var(--accent-green); border-radius: 30px; font-size: 1rem; font-weight: 900; cursor: pointer; box-shadow: 0 0 20px rgba(0, 255, 102, 0.3), inset 0 0 15px rgba(0, 255, 102, 0.2); text-shadow: 0 0 8px var(--accent-green); transition: all 0.2s; }
-    .landing-btn:hover { background: var(--accent-green-dim); box-shadow: 0 0 30px rgba(0, 255, 102, 0.6), inset 0 0 20px rgba(0, 255, 102, 0.4); }
+    .landing-title { font-family: Georgia, "Times New Roman", serif; font-size: 2.6rem; font-weight: 700; color: var(--text-main); letter-spacing: 0.01em; margin-bottom: 12px; text-transform: none; }
+    .landing-title span { color: var(--accent-gold); }
+    .landing-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 40px; font-family: monospace; letter-spacing: 0.15em; font-weight: 700; }
+    .landing-btn { padding: 14px 36px; background: var(--accent-gold); color: #0a0a0a; border: 1px solid var(--accent-gold); border-radius: 30px; font-size: 1rem; font-weight: 900; cursor: pointer; transition: all 0.2s; }
+    .landing-btn:hover { background: var(--accent-gold-hover); border-color: var(--accent-gold-hover); }
 
     .sheet-backdrop { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
     .sheet-backdrop.open { display: flex; }
     #bulkTierModal.sheet-backdrop { background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(1px); align-items: flex-start; padding-top: 12vh; }
     .sheet-modal { border-radius: 20px; width: 100%; max-width: 440px; padding: 24px; }
-    .sheet-modal h3 { font-size: 1.35rem; color: #fff; margin-bottom: 8px; font-family: "Courier New", Courier, monospace; text-transform: uppercase; font-weight: 900; letter-spacing: -0.02em; text-shadow: 0 0 10px var(--accent-cyan); }
+    .sheet-modal h3 { font-size: 1.35rem; color: var(--text-main); margin-bottom: 8px; font-family: Georgia, "Times New Roman", serif; text-transform: uppercase; font-weight: 400; letter-spacing: 0.04em; }
     .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 0.75rem; color: var(--accent-cyan); margin-bottom: 6px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; text-shadow: 0 0 5px rgba(0, 229, 255, 0.5); }
-    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: #fff; font-size: 0.9rem; transition: all 0.2s; }
-    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--accent-pink); box-shadow: 0 0 15px rgba(255, 0, 127, 0.3), inset 0 0 10px rgba(255, 0, 127, 0.1); }
+    .form-group label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: var(--text-main); font-size: 0.9rem; transition: all 0.2s; }
+    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--accent-gold); }
     .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--glass-border); font-size: 0.9rem; font-weight: 600; }
     .toggle-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent-pink); }
     .modal-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
-    .btn-primary { flex: 1; padding: 12px; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green)); color: #000; border: none; border-radius: 10px; font-weight: 900; font-size: 0.9rem; cursor: pointer; box-shadow: 0 0 20px rgba(0, 255, 102, 0.4); transition: all 0.2s; }
-    .btn-primary:hover { box-shadow: 0 0 30px rgba(0, 255, 102, 0.6); }
-    .btn-cancel { flex: 1; padding: 12px; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid var(--glass-border); border-radius: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { flex: 1; padding: 12px; background: var(--accent-gold); color: #0a0a0a; border: none; border-radius: 10px; font-weight: 900; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
+    .btn-primary:hover { background: var(--accent-gold-hover); }
+    .btn-cancel { flex: 1; padding: 12px; background: rgba(0,0,0,0.6); color: var(--text-main); border: 1px solid var(--glass-border); border-radius: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
     .btn-cancel:hover { background: rgba(255,255,255,0.1); }
-    .btn-danger { flex: 1; padding: 12px; background: rgba(255, 0, 85, 0.15); border: 1px solid var(--accent-pink); color: var(--accent-pink); border-radius: 10px; font-weight: 800; cursor: pointer; text-shadow: 0 0 5px var(--accent-pink); transition: all 0.2s; }
-    .btn-danger:hover { background: var(--accent-pink); color: #fff; box-shadow: 0 0 20px rgba(255, 0, 127, 0.5); text-shadow: none; }
+    .btn-danger { flex: 1; padding: 12px; background: var(--accent-pink-dim); border: 1px solid var(--accent-pink); color: var(--accent-pink); border-radius: 10px; font-weight: 800; cursor: pointer; transition: all 0.2s; }
+    .btn-danger:hover { background: var(--accent-pink); color: var(--text-main); text-shadow: none; }
 
-    .tour-tooltip-box { position: fixed; background: rgba(0, 229, 255, 0.95); backdrop-filter: blur(10px); color: #000; padding: 14px 16px; border-radius: 14px; font-size: 0.85rem; font-weight: 900; box-shadow: 0 10px 40px rgba(0, 229, 255, 0.5), inset 0 0 10px rgba(255,255,255,0.6); z-index: 150; cursor: pointer; display: none; line-height: 1.4; transition: opacity 0.2s, top 0.3s cubic-bezier(0.16, 1, 0.3, 1), left 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-    .tour-tooltip-box::before { content: ""; position: absolute; top: -10px; left: var(--arrow-pos, 50%); transform: translateX(-50%); border-width: 0 10px 10px 10px; border-style: solid; border-color: transparent transparent rgba(0, 229, 255, 0.95) transparent; transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-    .tour-tooltip-box.arrow-below::before { top: auto; bottom: -10px; border-width: 10px 10px 0 10px; border-color: rgba(0, 229, 255, 0.95) transparent transparent transparent; }
+    .tour-tooltip-box { position: fixed; background: var(--accent-gold); backdrop-filter: blur(10px); color: #0a0a0a; padding: 14px 16px; border-radius: 14px; font-size: 0.85rem; font-weight: 900; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55); z-index: 150; cursor: pointer; display: none; line-height: 1.4; transition: opacity 0.2s, top 0.3s cubic-bezier(0.16, 1, 0.3, 1), left 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .tour-tooltip-box::before { content: ""; position: absolute; top: -10px; left: var(--arrow-pos, 50%); transform: translateX(-50%); border-width: 0 10px 10px 10px; border-style: solid; border-color: transparent transparent var(--accent-gold) transparent; transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .tour-tooltip-box.arrow-below::before { top: auto; bottom: -10px; border-width: 10px 10px 0 10px; border-color: var(--accent-gold) transparent transparent transparent; }
     .tour-tooltip-box.no-arrow::before { display: none; }
     .tour-advance-subtext { display: block; font-size: 0.65rem; font-weight: 900; color: rgba(0, 0, 0, 0.6); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; border-top: 1px solid rgba(0, 0, 0, 0.2); padding-top: 6px; }
     .tour-target-active { position: relative; z-index: 151; animation: targetPulse 1.5s infinite !important; }
-    @keyframes targetPulse { 0% { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.9); } 70% { box-shadow: 0 0 0 12px rgba(0, 229, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0); } }
+    /* currentColor, not a literal: the pulse then takes the colour of whatever
+       it is highlighting, so every theme gets a correct ring without its own
+       copy of this keyframe. */
+    @keyframes targetPulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-gold) 90%, transparent); } 70% { box-shadow: 0 0 0 12px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
 
-    .tour-popover-highlight { border: 1px dashed var(--accent-cyan) !important; box-shadow: 0 0 0 3px rgba(0,229,255,0.35), 0 0 20px rgba(0,229,255,0.4) !important; }
+    .tour-popover-highlight { border: 1px dashed var(--accent-gold) !important; box-shadow: 0 0 0 3px var(--accent-gold-dim) !important; }
 
     /* Daily Run mode */
-    #dailyRunOverlay { position: fixed; inset: 0; z-index: 300; display: none; flex-direction: column; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); background: radial-gradient(circle at 30% 10%, rgba(255,0,127,0.15), transparent 50%), radial-gradient(circle at 70% 80%, rgba(0,229,255,0.15), transparent 50%), #05070d; overflow-y: auto; }
+    #dailyRunOverlay { position: fixed; inset: 0; z-index: 300; display: none; flex-direction: column; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent-gold) 10%, transparent), transparent 60%), var(--bg-base); overflow-y: auto; }
     #dailyRunOverlay.open { display: flex; }
     .run-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-shrink: 0; }
-    .run-progress-text { font-family: "Courier New", Courier, monospace; font-weight: 900; font-size: 0.85rem; color: var(--accent-cyan); text-shadow: 0 0 8px rgba(0,229,255,0.5); letter-spacing: 0.1em; }
+    .run-progress-text { font-family: "Courier New", Courier, monospace; font-weight: 900; font-size: 0.85rem; color: var(--accent-gold); letter-spacing: 0.1em; }
     .btn-exit-run { background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); border-radius: 20px; padding: 6px 14px; font-size: 0.75rem; font-weight: 800; cursor: pointer; }
     .btn-exit-run:hover { border-color: var(--accent-pink); color: var(--accent-pink); }
     .run-progress-bar { height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; margin-top: 12px; overflow: hidden; flex-shrink: 0; }
-    .run-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green)); width: 0%; transition: width 0.35s ease; box-shadow: 0 0 12px rgba(0,255,102,0.6); }
+    .run-progress-fill { height: 100%; background: var(--accent-gold); width: 0%; transition: width 0.35s ease; }
     .run-card { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px 18px; margin: 18px 0; border-radius: 20px; min-height: 0; }
-    .run-avatar { width: 84px; height: 84px; border-radius: 50%; border: 3px solid var(--accent-cyan); background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; font-family: "Courier New", Courier, monospace; font-weight: 900; font-size: 1.8rem; color: #fff; margin-bottom: 16px; box-shadow: inset 0 0 25px rgba(0,229,255,0.4), 0 0 20px rgba(0,229,255,0.35); text-shadow: 0 0 8px var(--accent-cyan); }
-    .run-name { font-size: 1.5rem; font-weight: 900; color: #fff; margin-bottom: 10px; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+    .run-avatar { width: 84px; height: 84px; border-radius: 50%; border: 1px solid var(--accent-gold); background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; font-family: "Courier New", Courier, monospace; font-weight: 900; font-size: 1.8rem; color: var(--accent-gold); margin-bottom: 16px; }
+    .run-name { font-size: 1.5rem; font-weight: 900; color: var(--text-main); margin-bottom: 10px; }
     .run-badges { display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
-    .run-redeem { color: var(--accent-gold); font-weight: 800; font-size: 0.9rem; margin-bottom: 10px; text-shadow: 0 0 8px rgba(255,204,0,0.4); }
+    .run-redeem { color: var(--accent-gold); font-weight: 800; font-size: 0.9rem; margin-bottom: 10px; }
     .run-notes { opacity: 0.85; font-size: 0.88rem; line-height: 1.5; max-width: 460px; }
     .run-bestgames { margin-top: 18px; text-align: left; width: 100%; max-width: 460px; border-top: 1px solid var(--glass-border); padding-top: 14px; font-size: 0.75rem; }
     /* Persistent undo, not a toast - hidden by default via [hidden];
@@ -421,19 +597,19 @@
     .run-balance-row { display: flex; align-items: center; gap: 8px; }
     .run-balance-label { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); flex-shrink: 0; }
     .run-balance-input { flex: 1; min-width: 0; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: var(--text-main); padding: 8px 10px; border-radius: 8px; font-family: "Courier New", monospace; font-size: 0.85rem; }
-    .run-balance-input:focus { outline: none; border-color: var(--accent-cyan); }
+    .run-balance-input:focus { outline: none; border-color: var(--accent-gold); }
     .run-balance-btn { flex-shrink: 0; background: transparent; border: 1px solid var(--accent-green); color: var(--accent-green); border-radius: 8px; padding: 8px 14px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.05em; cursor: pointer; }
     .run-balance-btn:active { transform: scale(0.95); }
     .run-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 460px; align-self: center; flex-shrink: 0; }
-    .btn-run-collect { padding: 18px; font-size: 1.15rem; font-weight: 900; border: none; border-radius: 14px; cursor: pointer; background: linear-gradient(90deg, var(--accent-pink), var(--accent-orange)); color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5); box-shadow: 0 6px 24px rgba(255,0,127,0.45); }
+    .btn-run-collect { padding: 18px; font-size: 1.15rem; font-weight: 900; border: none; border-radius: 14px; cursor: pointer; background: var(--accent-gold); color: #0a0a0a; box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
     .btn-run-collect:active { transform: scale(0.98); }
     .btn-skip { background: transparent; color: var(--text-muted); border: none; padding: 12px; font-size: 0.9rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.08em; }
-    .btn-skip:hover { color: #fff; }
-    .btn-start-run { width: 100%; padding: 14px; margin-bottom: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 900; cursor: pointer; background: rgba(0,0,0,0.5); border: 1px solid var(--accent-green); color: var(--accent-green); text-shadow: 0 0 8px var(--accent-green); box-shadow: inset 0 0 15px rgba(0,255,102,0.15); letter-spacing: 0.05em; }
-    .btn-start-run:hover:not(:disabled) { background: var(--accent-green-dim); box-shadow: 0 0 20px rgba(0,255,102,0.35), inset 0 0 20px rgba(0,255,102,0.3); }
+    .btn-skip:hover { color: var(--text-main); }
+    .btn-start-run { width: 100%; padding: 14px; margin-bottom: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 900; cursor: pointer; background: rgba(0,0,0,0.5); border: 1px solid var(--accent-green); color: var(--accent-green); letter-spacing: 0.05em; }
+    .btn-start-run:hover:not(:disabled) { background: var(--accent-green-dim); }
     .btn-start-run:disabled { border-color: var(--glass-border); color: var(--text-dim); text-shadow: none; box-shadow: none; cursor: default; }
     .empty-state { margin: 10px 0; padding: 28px 16px; border-radius: 16px; text-align: center; color: var(--text-muted); }
-    .empty-state-title { margin-bottom: 6px; color: var(--accent-cyan); font-size: 1.05rem; font-weight: 900; text-shadow: 0 0 8px var(--accent-cyan); }
+    .empty-state-title { margin-bottom: 6px; color: var(--text-main); font-size: 1.05rem; font-weight: 900; }
     .empty-state p:not(.empty-state-title) { font-size: 0.8rem; line-height: 1.45; }
     .empty-state-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px; }
     .empty-state-actions button { flex: 1 1 140px; min-width: 0; }
@@ -445,7 +621,7 @@
 
     /* Stats modal */
     .stats-section { margin-bottom: 22px; }
-    .stats-section h4 { color: var(--accent-cyan); border-bottom: 1px solid var(--glass-border); padding-bottom: 6px; margin-bottom: 12px; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 800; text-shadow: 0 0 8px rgba(0,229,255,0.4); }
+    .stats-section h4 { color: var(--accent-gold); border-bottom: 1px solid var(--glass-border); padding-bottom: 6px; margin-bottom: 12px; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 800; }
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
     .stat-box { background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); border-radius: 10px; padding: 14px 8px; text-align: center; }
     .stat-value { font-size: 1.5rem; font-weight: 900; margin-bottom: 4px; font-family: "Courier New", Courier, monospace; }
@@ -491,7 +667,7 @@
     .ledger-track { flex-basis:100%; display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:7px; }
     .track-chip { font-family:inherit; font-size:0.64rem; font-weight:700; letter-spacing:0.04em; border-radius:999px; padding:3px 10px; cursor:pointer; background:rgba(0,0,0,0.35); }
     .track-chip.pending { border:1px solid rgba(255,193,7,0.5); color:var(--accent-gold); }
-    .track-chip.approved { border:1px solid rgba(255,102,0,0.55); color:var(--accent-orange); }
+    .track-chip.approved { border:1px solid color-mix(in srgb, var(--accent-orange) 55%, transparent); color:var(--accent-orange); }
     .track-chip.paid { border:1px solid rgba(61,135,103,0.5); color:var(--accent-green); }
     .track-quick { font-family:inherit; font-size:0.64rem; font-weight:700; background:none; border:none; color:var(--text-dim); text-decoration:underline; cursor:pointer; padding:3px 2px; }
     .track-quick:hover { color:var(--accent-green); }
@@ -568,18 +744,18 @@
 
     /* Referral manager */
     .btn-share { background: transparent; border: 1px solid var(--accent-cyan); color: var(--accent-cyan); padding: 6px 10px; border-radius: 8px; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; cursor: pointer; flex-shrink: 0; }
-    .btn-share:hover { background: rgba(0,229,255,0.12); box-shadow: 0 0 10px rgba(0,229,255,0.3); }
+    .btn-share:hover { background: var(--accent-gold-dim); color: var(--accent-gold); }
 
     /* Quick cooldown editing */
     .cooldown-chip { display: inline-flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700; color: var(--text-muted); background: transparent; border: 1px solid var(--glass-border); border-radius: 12px; padding: 1px 7px; margin-left: 6px; cursor: pointer; user-select: none; transition: all 0.2s; vertical-align: middle; font-family: "Courier New", Courier, monospace; }
     .cooldown-chip:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
     .cooldown-chip:active { transform: scale(0.92); }
-    .cooldown-chip.flash { border-color: var(--accent-gold); color: var(--accent-gold); box-shadow: 0 0 10px rgba(255,204,0,0.4); }
+    .cooldown-chip.flash { border-color: var(--accent-gold); color: var(--accent-gold); background: var(--accent-gold-dim); }
     .run-cooldown-row { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px; }
 
     /* Notifications */
     .notify-settings { margin-top: 18px; border-top: 1px solid var(--glass-border); padding-top: 14px; }
-    .notify-settings h4 { margin: 0 0 10px; font-size: 0.8rem; color: var(--accent-cyan); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; text-shadow: 0 0 8px rgba(0,229,255,0.4); }
+    .notify-settings h4 { margin: 0 0 10px; font-size: 0.8rem; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; }
     .notify-message { font-size: 0.72rem; margin-bottom: 10px; line-height: 1.5; color: var(--text-muted); }
     .notify-error { color: var(--accent-pink); font-weight: 700; }
     .time-inputs { display: flex; gap: 12px; margin-top: 12px; }
@@ -589,12 +765,12 @@
 
     /* Review & prune */
     .prune-card { background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; }
-    .prune-title { font-size: 1.15rem; font-weight: 900; color: #fff; margin: 0 0 4px; text-shadow: 0 0 10px rgba(255,255,255,0.25); }
+    .prune-title { font-size: 1.15rem; font-weight: 900; color: var(--text-main); margin: 0 0 4px; }
     .prune-flagged-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-orange); font-weight: 800; margin: 12px 0 8px; }
     .prune-reasons { margin: 0; padding: 0; list-style: none; }
     .prune-reasons li { font-size: 0.85rem; color: var(--text-main); margin-bottom: 7px; display: flex; align-items: flex-start; line-height: 1.4; }
     .prune-reasons li::before { content: '\2022'; color: var(--accent-orange); margin-right: 8px; font-weight: 900; flex-shrink: 0; }
-    .prune-warning { color: var(--accent-pink); font-size: 0.78rem; margin-top: 14px; padding: 11px; background: rgba(255,0,127,0.08); border: 1px solid var(--accent-pink); border-radius: 8px; line-height: 1.45; }
+    .prune-warning { color: var(--accent-pink); font-size: 0.78rem; margin-top: 14px; padding: 11px; background: var(--accent-pink-dim); border: 1px solid var(--accent-pink); border-radius: 8px; line-height: 1.45; }
     .prune-summary-grid { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
     .prune-summary-item { padding: 16px 10px; text-align: center; flex: 1; border-radius: 10px; background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); }
     .prune-summary-item .val { font-size: 1.7rem; font-weight: 900; margin-bottom: 4px; font-family: "Courier New", Courier, monospace; }
@@ -825,7 +1001,7 @@
     [data-theme="obsidian"] .sort-priority-num { box-shadow: none; }
     [data-theme="obsidian"] .keen-info-popover { border-style: solid; border-color: var(--glass-border); box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
     [data-theme="obsidian"] .catalog-item-row.tracked { box-shadow: none; }
-    [data-theme="obsidian"] .landing-btn { box-shadow: none; border-color: var(--accent-gold); color: var(--accent-gold); }
+    [data-theme="obsidian"] .landing-btn { background: transparent; box-shadow: none; border-color: var(--accent-gold); color: var(--accent-gold); }
     [data-theme="obsidian"] .landing-btn:hover { background: rgba(176,141,87,0.12); box-shadow: none; }
     [data-theme="obsidian"] .tour-tooltip-box { background: var(--accent-gold); box-shadow: 0 6px 24px rgba(0,0,0,0.6); }
     [data-theme="obsidian"] .tour-tooltip-box::before { border-color: transparent transparent var(--accent-gold) transparent; }
@@ -1440,6 +1616,68 @@
 [data-theme="western"] .keen-info-popover { border-style: solid; background: #E3DAC9; color: #0B0B0B; }
 [data-theme="western"] .ledger-card:active,
 [data-theme="western"] .catalog-item-row:active { transform: scale(0.98) translate(1px, 1px); }
+
+/* Gore fest: torn edges, ambient splatter, and a rougher, stuttering entry
+   than the smooth cubic-bezier every other theme rises with. */
+
+/* Jagged clip-path instead of a straight rectangle. Small, irregular teeth
+   along every edge - big enough to read as torn at card size, subtle enough
+   that the 137-row catalogue list doesn't turn into visual noise. clip-path
+   crops box-shadow too, which is why these two get their shadow restated as
+   a drop-shadow() filter instead (it isn't clipped the way box-shadow is). */
+[data-theme="western"] .ledger-card,
+[data-theme="western"] .sheet-modal {
+  clip-path: polygon(
+    0% 2%, 4% 0%, 11% 1.5%, 18% 0%, 27% 1%, 35% 0%, 44% 1.5%, 52% 0%,
+    61% 1%, 69% 0%, 78% 1.5%, 86% 0%, 94% 1%, 100% 0%,
+    100% 97%, 96% 100%, 89% 98.5%, 82% 100%, 73% 99%, 65% 100%,
+    56% 98.5%, 48% 100%, 39% 99%, 31% 100%, 22% 98.5%, 14% 100%,
+    6% 99%, 0% 100%
+  );
+  box-shadow: none;
+  filter: drop-shadow(4px 4px 0 rgba(11,11,11,0.7));
+}
+
+/* Ambient splatter, always present rather than only on collect - a handful
+   of dark marks fixed in the upper corners, reusing splatter-burst so a
+   fresh set punches in and settles every time it loops instead of a static
+   decal. .app-container::before is already spoken for by the collect-flash
+   burst above, hence ::after here. */
+[data-theme="western"] .app-container::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.5;
+  background:
+    radial-gradient(circle 5px at 6% 4%, #6b0000 99%, transparent 100%),
+    radial-gradient(circle 3px at 14% 9%, #4a0000 99%, transparent 100%),
+    radial-gradient(circle 8px at 92% 3%, #810000 99%, transparent 100%),
+    radial-gradient(circle 4px at 85% 11%, #6b0000 99%, transparent 100%),
+    radial-gradient(circle 2px at 97% 14%, #5a0000 99%, transparent 100%);
+  animation: splatter-burst 14s ease-in-out infinite;
+}
+[data-motion="off"] [data-theme="western"] .app-container::after { animation: none; opacity: 0.35; }
+
+/* Cards don't glide in, they stutter in - hard-eased steps() rather than a
+   smooth curve, so the motion reads as something being torn into place
+   instead of gliding. Small rotation jitter per step sells the same idea
+   run-card gets on Daily Run open. */
+[data-theme="western"] .ledger-card-wrapper {
+  animation: rip-in 0.36s steps(4, end) both;
+}
+@keyframes rip-in {
+  0%   { opacity: 0; transform: translateY(14px) rotate(-2deg) scale(0.94); }
+  35%  { opacity: 1; transform: translateY(3px) rotate(1.5deg) scale(1.02); }
+  70%  { transform: translateY(-1px) rotate(-0.5deg) scale(0.99); }
+  100% { opacity: 1; transform: none; }
+}
+[data-theme="western"] #dailyRunOverlay.open .run-card {
+  animation: rip-in 0.4s steps(5, end);
+}
+[data-motion="off"] [data-theme="western"] .ledger-card-wrapper,
+[data-motion="off"] [data-theme="western"] #dailyRunOverlay.open .run-card { animation: none; }
 
 /* Avatars & badges: square plates and filled tags, not glowing gems */
 [data-theme="western"] .casino-avatar,
@@ -2431,6 +2669,7 @@
 [data-theme="glitch"] .btn-cancel { border-radius: 4px; }
 [data-theme="glitch"] .btn-danger { border-radius: 4px; }
 [data-theme="glitch"] .landing-btn {
+  background: transparent;
   border-radius: 4px;
   border: 2px solid var(--accent-gold);
   color: var(--accent-gold);
@@ -2568,6 +2807,190 @@
 }
 
 /* ==========================================================================
+   Neon Grid
+   --------------------------------------------------------------------------
+   Until this rebase the base stylesheet WAS this theme - hence 0 rules here
+   before now. Restraint became the default (see BASE = EXECUTIVE LOUNGE at
+   the top of this file), so what used to be baked into every selector for
+   free has to be restated here to keep Neon Grid's cyberpunk identity: heavy
+   glow, hollow gradient wordmark, 0.35-opacity glass at a 16px blur, and
+   colour-coded box-shadows on badges and buttons. Every value below is
+   exactly what the base used to render for these selectors - built with this
+   theme's own tokens rather than restated literals, so it can't drift from
+   [data-theme="neon"]'s vars block above if those are ever retuned. */
+
+[data-theme="neon"] .app-title,
+[data-theme="neon"] .landing-title {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--accent-cyan);
+  text-shadow: 0 0 15px rgba(0,229,255,0.5);
+}
+[data-theme="neon"] .landing-title { text-shadow: 0 0 20px var(--accent-cyan); }
+[data-theme="neon"] .app-title span,
+[data-theme="neon"] .landing-title span {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--accent-pink);
+  text-shadow: 0 0 15px rgba(255,0,127,0.5);
+}
+[data-theme="neon"] .landing-title span { text-shadow: 0 0 20px var(--accent-pink); }
+[data-theme="neon"] .landing-subtitle { color: var(--text-main); text-shadow: 0 0 10px rgba(255,255,255,0.8); }
+[data-theme="neon"] .landing-screen,
+[data-theme="neon"] .landing-screen.hidden { background: radial-gradient(circle at center, #10061a 0%, #05070d 100%); }
+
+/* Glass surfaces: brighter, more transparent, more blur than the restrained
+   default - this is what "glass" meant before Executive Lounge's opaque,
+   barely-blurred take. One shared declaration, same as the base gives every
+   .glass-panel-family selector its look in one place. */
+[data-theme="neon"] .glass-panel,
+[data-theme="neon"] .hero-stat-card,
+[data-theme="neon"] .catalog-search,
+[data-theme="neon"] .nav-pill-group,
+[data-theme="neon"] .res-brief,
+[data-theme="neon"] .res-ext-link,
+[data-theme="neon"] .res-legend-card,
+[data-theme="neon"] .run-card,
+[data-theme="neon"] .sheet-modal,
+[data-theme="neon"] .sort-drawer,
+[data-theme="neon"] .ledger-card {
+  background: rgba(16, 22, 32, 0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top-color: var(--glass-highlight);
+  border-left-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+[data-theme="neon"] .sort-trigger-btn,
+[data-theme="neon"] .sort-trigger-btn.secondary { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+
+[data-theme="neon"] .date-header { color: var(--accent-pink); text-shadow: 0 0 10px var(--accent-pink); }
+[data-theme="neon"] .form-group label { color: var(--accent-cyan); text-shadow: 0 0 5px rgba(0,229,255,0.5); }
+[data-theme="neon"] .hero-details p,
+[data-theme="neon"] .next-batch { color: var(--accent-cyan); text-shadow: 0 0 8px rgba(0,229,255,0.5); }
+[data-theme="neon"] .strategy-row-header { color: var(--accent-cyan); text-shadow: 0 0 5px rgba(0,229,255,0.4); }
+[data-theme="neon"] .sort-drawer-header,
+[data-theme="neon"] .run-progress-text { color: var(--accent-cyan); text-shadow: 0 0 8px rgba(0,229,255,0.5); }
+[data-theme="neon"] .notify-settings h4 { color: var(--accent-cyan); text-shadow: 0 0 8px rgba(0,229,255,0.4); }
+[data-theme="neon"] .hero-details h2 { color: var(--text-main); text-shadow: 0 0 5px #fff, 0 0 15px var(--accent-orange); }
+[data-theme="neon"] .keen-title { text-shadow: 0 0 8px rgba(255,0,127,0.5); }
+[data-theme="neon"] .keen-info-popover { box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,0,127,0.05); }
+[data-theme="neon"] .strategy-row-body { border-top-color: rgba(0,229,255,0.3); }
+[data-theme="neon"] .casino-name,
+[data-theme="neon"] .card-title-row .casino-name { text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+
+[data-theme="neon"] .casino-avatar {
+  border-color: var(--accent-cyan);
+  box-shadow: inset 0 0 15px rgba(0,229,255,0.4), 0 0 10px rgba(0,229,255,0.3);
+  text-shadow: 0 0 5px var(--accent-cyan);
+}
+[data-theme="neon"] .casino-avatar:active { box-shadow: inset 0 0 20px rgba(0,229,255,0.8), 0 0 15px rgba(0,229,255,0.6); }
+[data-theme="neon"] .run-avatar { border-color: var(--accent-cyan); box-shadow: inset 0 0 25px rgba(0,229,255,0.4), 0 0 20px rgba(0,229,255,0.35); text-shadow: 0 0 8px var(--accent-cyan); }
+
+[data-theme="neon"] .hero-ring-circle {
+  box-shadow: 0 0 20px rgba(0,255,102,0.4), inset 0 0 15px rgba(0,255,102,0.3);
+  text-shadow: 0 0 10px rgba(0,255,102,0.8);
+}
+[data-theme="neon"] .status-dot { box-shadow: 0 0 8px var(--accent-green), 0 0 12px var(--accent-green); }
+[data-theme="neon"] .btn-start-run,
+[data-theme="neon"] .btn-start-run.hero-run-btn { box-shadow: inset 0 0 15px rgba(0,255,102,0.15); text-shadow: 0 0 8px var(--accent-green); }
+[data-theme="neon"] .btn-start-run:hover:not(:disabled) { box-shadow: 0 0 20px rgba(0,255,102,0.35), inset 0 0 20px rgba(0,255,102,0.3); }
+[data-theme="neon"] .run-progress-fill { background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green)); box-shadow: 0 0 12px rgba(0,255,102,0.6); }
+
+/* Badges glow their own colour via currentColor, same trick the pre-rebase
+   base used - one rule covers every tier without repeating five colours. */
+[data-theme="neon"] .tier-badge { box-shadow: 0 0 8px currentColor; }
+[data-theme="neon"] .tier-S { text-shadow: 0 0 5px var(--tier-s); }
+[data-theme="neon"] .tier-A { text-shadow: 0 0 5px var(--tier-a); }
+[data-theme="neon"] .tier-B { text-shadow: 0 0 5px var(--tier-b); }
+[data-theme="neon"] .tier-C { text-shadow: 0 0 5px var(--tier-c); }
+[data-theme="neon"] .tier-D { box-shadow: none; }
+[data-theme="neon"] .tier-Unranked { box-shadow: 0 0 8px var(--text-main); }
+[data-theme="neon"] .type-badge { color: var(--text-main); text-shadow: 0 0 5px var(--accent-orange); box-shadow: 0 0 8px rgba(255,102,0,0.4); }
+
+/* Nav tabs and the sort/filter chips light up their active state instead of
+   just tinting it. */
+[data-theme="neon"] .nav-tab.active {
+  background: rgba(255,0,127,0.15);
+  color: var(--text-main);
+  border-color: var(--accent-pink);
+  text-shadow: 0 0 8px var(--accent-pink);
+  box-shadow: 0 0 15px rgba(255,0,127,0.3), inset 0 0 10px rgba(255,0,127,0.2);
+}
+[data-theme="neon"] .filter-btn.active {
+  background: var(--accent-cyan-dim);
+  color: var(--text-main);
+  border-color: var(--accent-cyan);
+  text-shadow: 0 0 8px var(--accent-cyan);
+  box-shadow: 0 0 12px rgba(0,229,255,0.3);
+}
+[data-theme="neon"] .sort-stack-chip { box-shadow: 0 0 8px rgba(255,102,0,0.2); }
+[data-theme="neon"] .sort-priority-num { box-shadow: 0 0 8px var(--accent-orange); }
+[data-theme="neon"] .sort-option-btn.active { text-shadow: 0 0 5px var(--accent-orange); box-shadow: inset 0 0 10px rgba(255,102,0,0.2); }
+[data-theme="neon"] .btn-dock { border-color: var(--accent-cyan); color: var(--text-main); text-shadow: 0 0 5px var(--accent-cyan); box-shadow: inset 0 0 10px rgba(0,229,255,0.2); }
+[data-theme="neon"] .btn-dock:hover { background: var(--accent-cyan-dim); box-shadow: 0 0 15px rgba(0,229,255,0.4), inset 0 0 15px rgba(0,229,255,0.4); }
+
+/* Gold-flat everywhere else in the base becomes each surface's original
+   lit gradient here - the CTA is the single most "neon" control in the app. */
+[data-theme="neon"] .btn-open,
+[data-theme="neon"] .btn-open:not(.cooldown) {
+  background: linear-gradient(90deg, var(--accent-pink), var(--accent-orange));
+  color: var(--text-main);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 15px rgba(255,0,127,0.4);
+}
+[data-theme="neon"] .btn-open:hover { box-shadow: 0 4px 25px rgba(255,102,0,0.6); }
+[data-theme="neon"] .btn-run-collect {
+  background: linear-gradient(90deg, var(--accent-pink), var(--accent-orange));
+  color: var(--text-main);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  box-shadow: 0 6px 24px rgba(255,0,127,0.45);
+}
+[data-theme="neon"] .btn-primary {
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+  color: #000;
+  box-shadow: 0 0 20px rgba(0,255,102,0.4);
+}
+[data-theme="neon"] .btn-primary:hover { box-shadow: 0 0 30px rgba(0,255,102,0.6); }
+[data-theme="neon"] .btn-danger { background: rgba(255,0,85,0.15); text-shadow: 0 0 5px var(--accent-pink); }
+[data-theme="neon"] .btn-cancel { color: var(--text-main); }
+[data-theme="neon"] .landing-btn {
+  background: transparent;
+  color: var(--text-main);
+  border-color: var(--accent-green);
+  text-shadow: 0 0 8px var(--accent-green);
+  box-shadow: 0 0 20px rgba(0,255,102,0.3), inset 0 0 15px rgba(0,255,102,0.2);
+}
+[data-theme="neon"] .landing-btn:hover { box-shadow: 0 0 30px rgba(0,255,102,0.6), inset 0 0 20px rgba(0,255,102,0.4); }
+
+[data-theme="neon"] .tour-tooltip-box {
+  background: rgba(0,229,255,0.95);
+  color: #000;
+  box-shadow: 0 10px 40px rgba(0,229,255,0.5), inset 0 0 10px rgba(255,255,255,0.6);
+}
+[data-theme="neon"] .tour-tooltip-box::before { border-color: transparent transparent rgba(0,229,255,0.95) transparent; }
+[data-theme="neon"] .tour-tooltip-box.arrow-below::before { border-color: rgba(0,229,255,0.95) transparent transparent transparent; }
+[data-theme="neon"] .tour-target-active { box-shadow: 0 0 0 0 rgba(0,229,255,0.9); }
+[data-theme="neon"] .tour-popover-highlight { border-color: var(--accent-cyan) !important; box-shadow: 0 0 0 3px rgba(0,229,255,0.35), 0 0 20px rgba(0,229,255,0.4) !important; }
+
+[data-theme="neon"] .backup-controls .btn-dock { box-shadow: inset 0 0 10px rgba(0,229,255,0.2); }
+/* These three also carry the shared .glass-panel class in markup (see
+   index.html), which the grouped glow-restoration rule above matches with
+   equal specificity - as an attribute selector it now ties .glass-panel's
+   own single-class specificity, and being later in this file it would win
+   that tie by source order, silently erasing each control's distinct look.
+   Restated explicitly here (after that rule) to win back on purpose. */
+[data-theme="neon"] .catalog-item-row.tracked {
+  border-color: var(--accent-green);
+  background: var(--accent-green-dim);
+  box-shadow: inset 0 0 15px rgba(0,255,102,0.1);
+}
+[data-theme="neon"] .sort-trigger-btn { background: rgba(0,0,0,0.4); border-color: var(--accent-gold); box-shadow: none; }
+[data-theme="neon"] .sort-trigger-btn.secondary { background: rgba(0,0,0,0.4); border-color: var(--glass-highlight); box-shadow: none; }
+[data-theme="neon"] #dailyRunOverlay {
+  background-image: radial-gradient(circle at 30% 10%, rgba(255,0,127,0.15), transparent 50%),
+                     radial-gradient(circle at 70% 80%, rgba(0,229,255,0.15), transparent 50%);
+}
+
+/* ==========================================================================
    Executive Lounge
    --------------------------------------------------------------------------
    Same override strategy the Obsidian Ledger block above uses, and for the
@@ -2583,33 +3006,14 @@
    clawing back on low-end hardware, lower the radius here; don't raise the
    opacity, which is what makes the glass read as glass.
    ========================================================================== */
-[data-theme="executive"] * { text-shadow: none !important; }
-[data-theme="executive"] body,
-[data-theme="executive"] { background: #050507; }
-
-[data-theme="executive"] .glass-panel {
-  background: rgba(22, 24, 29, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  border-top: 1px solid var(--glass-highlight);
-  border-left: 1px solid var(--glass-highlight);
-  box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 6px 24px rgba(0,0,0,0.55);
-}
-
-/* Wordmark: the luxury half of the hybrid. Everything else stays a
-   dashboard, so the serif is confined to the two title elements. */
-[data-theme="executive"] .app-title,
-[data-theme="executive"] .landing-title {
-  -webkit-text-stroke: 0;
-  color: var(--text-main);
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 700;
-  text-transform: none;
-  letter-spacing: 0.01em;
-}
-[data-theme="executive"] .app-title span,
-[data-theme="executive"] .landing-title span { -webkit-text-stroke: 0; color: var(--accent-gold); }
+/* Everything this block used to restate for glass panels, the wordmark, and
+   text-shadow suppression is now simply what the base looks like (Executive
+   Lounge IS the base - see BASE = EXECUTIVE LOUNGE at the top of this file).
+   What remains below is what's genuinely still distinct about this theme:
+   choices other themes rely on the base NOT making (hero-ring-circle stays
+   green in the base because Neon Grid needs it green), plus decoration the
+   base was never going to carry for everyone (the metallic button gradient,
+   the recessed cooldown well, the segmented filter-chip shape). */
 
 [data-theme="executive"] .hero-ring-circle {
   border: 2px solid var(--accent-gold);
@@ -2659,7 +3063,6 @@
   color: var(--text-muted);
 }
 
-[data-theme="executive"] .status-dot { box-shadow: none; }
 [data-theme="executive"] .cd-fill { opacity: 0.5; }
 
 /* Segmented control: the sort/filter chips read as one connected switch
@@ -2669,31 +3072,9 @@
   border-radius: 8px;
   border-color: var(--glass-border);
 }
-[data-theme="executive"] .filter-btn.active {
-  background: var(--accent-gold-dim);
-  border-color: var(--accent-gold);
-  color: var(--accent-gold);
-  box-shadow: none;
-}
-[data-theme="executive"] .nav-tab.active {
-  background: rgba(212,175,55,0.12);
-  border: 1px solid var(--accent-gold);
-  color: var(--accent-gold);
-  box-shadow: none;
-}
 [data-theme="executive"] .cooldown-chip { border-radius: 4px; }
-[data-theme="executive"] .cooldown-chip.flash { box-shadow: none; }
-[data-theme="executive"] .btn-start-run { box-shadow: none; }
-[data-theme="executive"] .btn-start-run:hover:not(:disabled) { box-shadow: none; background: var(--accent-green-dim); }
 
-/* Remaining surfaces that bake neon lighting in at the component level.
-   Same shape as the Obsidian Ledger block: the variables alone can't reach
-   a literal `box-shadow: 0 0 20px rgba(0,255,102,.4)`, so each one is
-   restated. Gold stays reserved for primary actions; cyan carries secondary
-   ones; nothing glows. */
-[data-theme="executive"] .date-header { color: var(--text-muted); font-weight: 700; }
 [data-theme="executive"] .hero-stat-card { background: rgba(22,24,29,0.62); }
-[data-theme="executive"] .empty-state-title { color: var(--text-main); }
 
 [data-theme="executive"] .btn-primary {
   background: linear-gradient(180deg, #E8C860 0%, var(--accent-gold) 55%, #B8912B 100%);
@@ -2707,13 +3088,6 @@
   box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset, 0 3px 10px rgba(0,0,0,0.5);
 }
 
-[data-theme="executive"] .btn-dock {
-  background: rgba(0,0,0,0.45);
-  border-color: var(--glass-border);
-  color: var(--text-main);
-  box-shadow: none;
-}
-[data-theme="executive"] .btn-dock:hover { background: var(--accent-gold-dim); border-color: var(--accent-gold); box-shadow: none; }
 [data-theme="executive"] .docked-footer {
   background: rgba(11,12,16,0.92);
   border-top-color: var(--glass-border);
@@ -2721,15 +3095,11 @@
 }
 
 [data-theme="executive"] .landing-screen { background: radial-gradient(circle at 50% 30%, #101218 0%, #050507 70%, #030304 100%); }
-[data-theme="executive"] .landing-btn { box-shadow: none; border-color: var(--accent-gold); color: var(--accent-gold); }
+/* base's own .landing-btn is a filled gold button (see the base rule up top) -
+   Executive Lounge's is the outline/ghost version instead, so background has
+   to be reclaimed explicitly or gold text lands on a gold fill. */
+[data-theme="executive"] .landing-btn { background: transparent; box-shadow: none; border-color: var(--accent-gold); color: var(--accent-gold); }
 [data-theme="executive"] .landing-btn:hover { background: var(--accent-gold-dim); box-shadow: none; }
-
-[data-theme="executive"] .sort-trigger-btn,
-[data-theme="executive"] .sort-stack-chip,
-[data-theme="executive"] .sort-priority-num,
-[data-theme="executive"] .type-badge,
-[data-theme="executive"] .catalog-item-row.tracked,
-[data-theme="executive"] .btn-share:hover { box-shadow: none; }
 
 [data-theme="executive"] .keen-info-popover {
   border-style: solid;
@@ -2737,10 +3107,8 @@
   box-shadow: 0 4px 16px rgba(0,0,0,0.55);
 }
 
-/* The onboarding tour reads as a gold callout rather than a cyan flare. */
-[data-theme="executive"] .tour-tooltip-box { background: var(--accent-gold); color: #14151A; box-shadow: 0 6px 24px rgba(0,0,0,0.6); }
-[data-theme="executive"] .tour-tooltip-box::before { border-color: transparent transparent var(--accent-gold) transparent; }
-[data-theme="executive"] .tour-tooltip-box.arrow-below::before { border-color: var(--accent-gold) transparent transparent transparent; }
+/* The onboarding tour reads as a still gold callout rather than a pulsing
+   cyan flare - restraint extends to motion, not just colour. */
 [data-theme="executive"] .tour-target-active { animation: none !important; box-shadow: 0 0 0 2px var(--accent-gold) !important; }
 
 /* Nav-tab glyphs. Stacked above the label rather than beside it: an inline
