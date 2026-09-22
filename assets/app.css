@@ -19,6 +19,11 @@
       --accent-gold-hover: #E5C158;
       --accent-gold-dim: rgba(212, 175, 55, 0.15);
       --accent-gold-glow: rgba(212, 175, 55, 0.15);
+      /* Poured-metal fill for the controls that mean money: the primary CTA,
+         the collect button, the wordmark's brand word. One definition
+         instead of the same three-stop gradient copy-pasted per selector -
+         retune the bar once, every gold surface follows. */
+      --gold-metal: linear-gradient(180deg, #F3DA92 0%, #D4AF37 48%, #A87A22 100%);
       --accent-silver: #E3E4E5;
       --accent-bronze: #CD7F32;
       --accent-green: #3FBF8F;
@@ -30,7 +35,7 @@
       --accent-cyan: #7E8794;
       --accent-cyan-dim: rgba(126, 135, 148, 0.15);
       --glass-border: rgba(255, 255, 255, 0.08);
-      --glass-highlight: rgba(255, 255, 255, 0.06);
+      --glass-highlight: rgba(232, 205, 140, 0.09);
       --text-main: #F8F9FA;
       --text-muted: #8A8D93;
       --text-dim: #5A5D63;
@@ -3015,10 +3020,47 @@
    base was never going to carry for everyone (the metallic button gradient,
    the recessed cooldown well, the segmented filter-chip shape). */
 
+/* Wordmark, upgraded from flat gold to a poured-metal gradient clipped to
+   the text itself, plus a short gold rule underneath - the signature mark a
+   private-bank logotype gets, not just a colored word. */
+[data-theme="executive"] .app-title,
+[data-theme="executive"] .landing-title {
+  position: relative;
+  padding-bottom: 16px;
+}
+[data-theme="executive"] .app-title span,
+[data-theme="executive"] .landing-title span {
+  background: var(--gold-metal);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+[data-theme="executive"] .app-title::after,
+[data-theme="executive"] .landing-title::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  height: 2px;
+  background: var(--gold-metal);
+}
+[data-theme="executive"] .app-title::after { width: 52px; }
+[data-theme="executive"] .landing-title::after { width: 72px; }
+
+/* The inset top-edge line every .glass-panel already carries (see app.css
+   base rule) picks up the same warm tint as --glass-highlight above, so the
+   card's inner bevel reads as light catching metal rather than glass. */
+[data-theme="executive"] .glass-panel { box-shadow: 0 1px 0 rgba(232,205,140,0.05) inset, 0 6px 24px rgba(0,0,0,0.55); }
+
 [data-theme="executive"] .hero-ring-circle {
   border: 2px solid var(--accent-gold);
   background: rgba(0,0,0,0.38);
-  box-shadow: none;
+  /* A ready count is the clearest "money waiting" signal on the whole
+     screen - it earns the one ambient glow this restrained theme allows
+     itself, kept soft enough to read as warmth rather than neon. */
+  box-shadow: 0 0 16px rgba(212,175,55,0.22), inset 0 0 10px rgba(212,175,55,0.10);
   color: var(--text-main);
 }
 [data-theme="executive"] .casino-avatar {
@@ -3030,7 +3072,9 @@
 
 /* Tier reads as a quiet left-edge rule, not a glowing pill - the letter is
    derived arithmetic (see data/catalog.js), so it should look like a rating,
-   not an advertisement. */
+   not an advertisement. S is the one exception: it's the tier that is
+   actually worth the most, so it gets a whisper of the same warm halo the
+   ready-count ring carries - still a whisper, never a neon pill. */
 [data-theme="executive"] .tier-badge {
   box-shadow: none;
   border-radius: 3px;
@@ -3038,21 +3082,53 @@
   border: 1px solid currentColor;
   font-weight: 700;
 }
-[data-theme="executive"] .tier-S { color: var(--tier-s); background: rgba(212,175,55,0.10); }
+[data-theme="executive"] .tier-S { color: var(--tier-s); background: rgba(212,175,55,0.10); box-shadow: 0 0 8px rgba(212,175,55,0.28); }
 [data-theme="executive"] .tier-A { color: var(--tier-a); background: rgba(227,228,229,0.10); }
 [data-theme="executive"] .tier-B { color: var(--tier-b); background: rgba(205,127,50,0.12); }
 [data-theme="executive"] .tier-C { color: var(--tier-c); background: rgba(138,141,147,0.10); }
 [data-theme="executive"] .tier-D { color: var(--tier-d); background: transparent; border-style: dashed; }
 
-/* Gold is reserved for the one thing on a card you can actually act on. */
-[data-theme="executive"] .btn-open {
-  background: linear-gradient(180deg, #E8C860 0%, var(--accent-gold) 55%, #B8912B 100%);
+/* Gold is reserved for the one thing on a card you can actually act on -
+   and now it's poured metal, not a flat swatch, with a slow specular sweep
+   so the surface actually catches light instead of just sitting there gold.
+   overflow:hidden clips the sweep to the button's own rounded corners. */
+[data-theme="executive"] .btn-open,
+[data-theme="executive"] .btn-primary,
+[data-theme="executive"] .btn-run-collect {
+  position: relative;
+  overflow: hidden;
+  background: var(--gold-metal);
   color: #14151A;
-  border: 1px solid rgba(255,255,255,0.18);
   box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset, 0 3px 10px rgba(0,0,0,0.5);
-  font-weight: 800;
 }
-[data-theme="executive"] .btn-open:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 5px 16px rgba(0,0,0,0.6); }
+[data-theme="executive"] .btn-open { border: 1px solid rgba(255,255,255,0.18); font-weight: 800; }
+[data-theme="executive"] .btn-open:hover,
+[data-theme="executive"] .btn-primary:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 5px 16px rgba(0,0,0,0.6); }
+[data-theme="executive"] .btn-open::after,
+[data-theme="executive"] .btn-primary::after,
+[data-theme="executive"] .btn-run-collect::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -60%;
+  width: 34%; height: 100%;
+  background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%);
+  transform: skewX(-20deg);
+  animation: gold-sheen 4.2s ease-in-out infinite;
+  pointer-events: none;
+}
+[data-theme="executive"] .btn-primary::after { animation-delay: 0.6s; }
+[data-theme="executive"] .btn-run-collect::after { animation-delay: 1.2s; }
+@keyframes gold-sheen {
+  0%, 8% { left: -60%; }
+  38%, 100% { left: 130%; }
+}
+/* Global animation kill switch (html[data-motion="off"] *) already covers
+   this - restated per the pattern the rest of this file follows, so an
+   audit of "what does motion-off actually silence" doesn't have to trust
+   an ancestor rule it can't see from here. */
+[data-motion="off"] [data-theme="executive"] .btn-open::after,
+[data-motion="off"] [data-theme="executive"] .btn-primary::after,
+[data-motion="off"] [data-theme="executive"] .btn-run-collect::after { animation: none; opacity: 0; }
 
 /* A platform on cooldown gets the recessed well instead: inset shadow, no
    fill, muted text. Not-yet-actionable should look pressed into the card. */
@@ -3062,8 +3138,12 @@
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.75), 0 1px 0 rgba(255,255,255,0.04);
   color: var(--text-muted);
 }
+[data-theme="executive"] .btn-open.cooldown::after { display: none; }
 
-[data-theme="executive"] .cd-fill { opacity: 0.5; }
+/* Cooldown fill bar: money accruing toward ready, not a generic orange
+   loading bar - it counts up in the same metal as everything else worth
+   having. */
+[data-theme="executive"] .cd-fill { background: var(--gold-metal); opacity: 0.85; }
 
 /* Segmented control: the sort/filter chips read as one connected switch
    rather than six separate buttons. */
@@ -3075,18 +3155,6 @@
 [data-theme="executive"] .cooldown-chip { border-radius: 4px; }
 
 [data-theme="executive"] .hero-stat-card { background: rgba(22,24,29,0.62); }
-
-[data-theme="executive"] .btn-primary {
-  background: linear-gradient(180deg, #E8C860 0%, var(--accent-gold) 55%, #B8912B 100%);
-  color: #14151A;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset, 0 3px 10px rgba(0,0,0,0.5);
-}
-[data-theme="executive"] .btn-primary:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 5px 16px rgba(0,0,0,0.6); }
-[data-theme="executive"] .btn-run-collect {
-  background: linear-gradient(180deg, #E8C860 0%, var(--accent-gold) 55%, #B8912B 100%);
-  color: #14151A;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset, 0 3px 10px rgba(0,0,0,0.5);
-}
 
 [data-theme="executive"] .docked-footer {
   background: rgba(11,12,16,0.92);

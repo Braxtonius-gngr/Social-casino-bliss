@@ -3271,7 +3271,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           '--accent-cyan': '#4FD8E8',
           '--accent-cyan-dim': 'rgba(79, 216, 232, 0.14)',
           '--glass-border': 'rgba(255, 255, 255, 0.08)',
-          '--glass-highlight': 'rgba(255, 255, 255, 0.07)',
+          // Warm gold-white rather than plain white - the top hairline
+          // every glass surface catches (see .glass-panel in app.css) reads
+          // as light off metal instead of light off glass.
+          '--glass-highlight': 'rgba(232, 205, 140, 0.09)',
           '--text-main': '#F8F9FA',
           '--text-muted': '#8A8D93',
           '--text-dim': '#5A5D63',
