@@ -507,10 +507,10 @@
       <div style="margin-top: 20px; display:flex; flex-direction:column; gap:10px;">
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="restartTourFromSettings()">Restart Interactive Tour</button>
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="resetViewState()">Reset View</button>
-        <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="resyncTimersFromCatalog()">Resync Reset Times From Catalogue</button>
+        <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="resyncFromCatalog()">Resync From Catalogue</button>
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-pink); color:var(--accent-pink); text-shadow:0 0 5px var(--accent-pink);" onclick="resetTrackerData()">Reset All Tracked Data</button>
       </div>
-      <div class="backup-helper" style="margin-top:2px;">Only touches reset/cooldown timing (fixed reset hour, timezone, rolling interval) for platforms you already track, pulling the current values from the built-in Catalogue - the same fix that corrected Zula's reset time. Never touches your tags, notes, balances, or referral links.</div>
+      <div class="backup-helper" style="margin-top:2px;">Pulls the built-in Catalogue's current reset timing, tier, daily rate, redeem floor, link and research notes onto platforms you already track - the same fix that corrected Zula's reset time, now covering the whole entry. Shows exactly what would change before anything is applied. Never touches your own balance, tags, your notes, or your saved referral link.</div>
       <div class="backup-controls">
         <button class="btn-dock" style="border-color:var(--accent-green); color:var(--accent-green); text-shadow:0 0 5px var(--accent-green);" onclick="exportBackup()">&#8681; EXPORT BACKUP</button>
         <button class="btn-dock" style="border-color:var(--accent-gold); color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold);" onclick="document.getElementById('importBackupInput').click()">&#8679; IMPORT BACKUP</button>
@@ -3011,6 +3011,38 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return (game.cooldownHours || 24) !== (entry.cooldown || 24);
     }
 
+    // Catalogue-owned fields a tracked platform can drift from once a
+    // correction lands after the platform was already tracked - a tier
+    // recount, a corrected daily rate, or (new) the canonical link itself
+    // being pointed at a referral program that didn't exist yet when this
+    // platform was first added. Deliberately excludes anything the player
+    // could have typed themselves: id, lastCollected, snoozedUntil,
+    // referralUrl, balance, tags, userNotes. Same reasoning
+    // resyncTimersFromCatalog's own comment already gives for timing - this
+    // just widens it to the rest of what toggleCatalogItem() snapshots.
+    const CATALOG_SYNCABLE_FIELDS = [
+      'url', 'tier', 'dailySC', 'minRedeem', 'notes', 'scRange',
+      'scIsAveraged', 'hasLive', 'speedHours', 'bestGames', 'lastVerified'
+    ];
+    function catalogFieldDiffs(game, entry) {
+      if (!entry) return [];
+      const diffs = [];
+      for (const field of CATALOG_SYNCABLE_FIELDS) {
+        const gv = game[field] === undefined ? null : game[field];
+        const ev = entry[field] === undefined ? null : entry[field];
+        // Arrays (bestGames) compare by content, not reference.
+        const same = Array.isArray(gv) || Array.isArray(ev)
+          ? JSON.stringify(gv || []) === JSON.stringify(ev || [])
+          : gv === ev;
+        if (!same) diffs.push({ field, from: gv, to: ev });
+      }
+      return diffs;
+    }
+    function fieldDiffLabel(d) {
+      const fmt = (v) => (v === null || v === '' ? '(blank)' : String(v).length > 40 ? String(v).slice(0, 37) + '...' : String(v));
+      return d.field + ': ' + fmt(d.from) + ' → ' + fmt(d.to);
+    }
+
     function openCooldownEditor(id, event, isRunStep) {
       if (event) event.stopPropagation();
       const game = trackedGames.find(g => g.id === id);
@@ -3070,40 +3102,93 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // userNotes, balance, referralUrl, or a renamed/re-URLed platform,
     // since those are things a player deliberately customized and this
     // button has no way to tell that apart from a stale default.
-    function resyncTimersFromCatalog() {
-      // Find what would change first - nothing is written to a game until
-      // the confirm() below is accepted.
+    // Walks every tracked platform and finds two kinds of drift from the
+    // Catalogue at once: reset timing (the original scope of this
+    // function - a Zula-style correction landing after the platform was
+    // already tracked) and everything in CATALOG_SYNCABLE_FIELDS (tier,
+    // daily rate, redeem floor, the link itself, etc.) Nothing is written
+    // until the confirm() below is accepted, and the preview names every
+    // field that's about to change so a deliberately-customized value
+    // (someone hand-edited their own URL, say) is visible before it's
+    // overwritten rather than silently replaced.
+    function resyncFromCatalog() {
       const pending = trackedGames
         .map((game) => ({ game, entry: findCatalogEntry(game.name) }))
-        .filter(({ game, entry }) => catalogTimingDiffers(game, entry))
-        .map(({ game, entry }) => ({ game, entry, fromLabel: cooldownLabel(game), toLabel: cooldownLabel({ resetHour: entry.resetHour, resetTZ: entry.resetTZ, cooldownHours: entry.cooldown }) }));
+        .filter(({ entry }) => entry)
+        .map(({ game, entry }) => {
+          const timingChanged = catalogTimingDiffers(game, entry);
+          const fieldDiffs = catalogFieldDiffs(game, entry);
+          return { game, entry, timingChanged, fieldDiffs };
+        })
+        .filter(({ timingChanged, fieldDiffs }) => timingChanged || fieldDiffs.length);
 
       if (!pending.length) {
-        alert('Every tracked platform already matches the Catalogue’s reset timing.');
-        return;
-      }
-      const preview = pending.map((p) => `${p.game.name}: ${p.fromLabel} → ${p.toLabel}`).join('\n');
-      if (!confirm(`Update reset timing for ${pending.length} platform(s) to match the Catalogue?\n\n${preview}`)) {
+        alert('Every tracked platform already matches the Catalogue.');
         return;
       }
 
-      pending.forEach(({ game, entry }) => {
-        if (typeof entry.resetHour === 'number') {
-          game.resetHour = entry.resetHour;
-          if (entry.resetTZ) game.resetTZ = entry.resetTZ; else delete game.resetTZ;
-        } else {
-          delete game.resetHour;
-          delete game.resetTZ;
-          game.cooldownHours = entry.cooldown || 24;
+      const preview = pending.map(({ game, entry, timingChanged, fieldDiffs }) => {
+        const lines = [];
+        if (timingChanged) lines.push('  ' + cooldownLabel(game) + ' → ' + cooldownLabel({ resetHour: entry.resetHour, resetTZ: entry.resetTZ, cooldownHours: entry.cooldown }));
+        fieldDiffs.forEach((d) => lines.push('  ' + fieldDiffLabel(d)));
+        return game.name + ':\n' + lines.join('\n');
+      }).join('\n\n');
+
+      if (!confirm(`Update ${pending.length} platform(s) to match the Catalogue?\n\n${preview}`)) {
+        return;
+      }
+
+      pending.forEach(({ game, entry, timingChanged, fieldDiffs }) => {
+        if (timingChanged) {
+          if (typeof entry.resetHour === 'number') {
+            game.resetHour = entry.resetHour;
+            if (entry.resetTZ) game.resetTZ = entry.resetTZ; else delete game.resetTZ;
+          } else {
+            delete game.resetHour;
+            delete game.resetTZ;
+            game.cooldownHours = entry.cooldown || 24;
+          }
+          normalizeTimerFields(game);
         }
-        normalizeTimerFields(game);
+        fieldDiffs.forEach((d) => {
+          if (d.to === null) delete game[d.field]; else game[d.field] = entry[d.field];
+        });
       });
 
       persist();
       renderGames();
+      renderCatalogList();
       updateHeroStats();
       updateDailyRunButton();
-      alert(`Updated ${pending.length} platform(s):\n\n${preview}`);
+      alert(`Updated ${pending.length} platform(s). See Settings any time to run this again.`);
+    }
+
+    // Read-only version of the same walk, used to decide whether to nudge
+    // the user on load - never writes anything itself.
+    function countPendingCatalogSync() {
+      return trackedGames.reduce((n, game) => {
+        const entry = findCatalogEntry(game.name);
+        if (!entry) return n;
+        if (catalogTimingDiffers(game, entry) || catalogFieldDiffs(game, entry).length) return n + 1;
+        return n;
+      }, 0);
+    }
+
+    // Fired once per load, after trackedGames is populated - the whole
+    // point is to reach someone who never opens Settings on their own, so
+    // this can't be something they have to go looking for. A transient
+    // toast rather than a persistent badge: it costs nothing to show again
+    // next launch for as long as something is actually out of date, and it
+    // disappears on its own the moment resyncFromCatalog() clears the drift.
+    function checkForCatalogUpdates() {
+      const n = countPendingCatalogSync();
+      if (!n) return;
+      showToast(
+        `${n} tracked platform${n === 1 ? '' : 's'} ${n === 1 ? 'has' : 'have'} updated info in the Catalogue.`,
+        resyncFromCatalog,
+        10000,
+        'REVIEW'
+      );
     }
 
     function setCooldownEditorMode(mode) {
@@ -4096,6 +4181,24 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         } catch (err) {
           console.warn('Service worker registration error:', err);
         }
+      });
+
+      // sw.js calls skipWaiting() on install and clients.claim() on
+      // activate (see sw.js), so a shipped update takes over an
+      // already-open tab within moments of the next network fetch - it
+      // doesn't wait for every tab to close first. That's exactly what
+      // makes this event meaningful here: controllerchange only fires when
+      // the worker controlling an ALREADY-controlled page changes out from
+      // under it, which is precisely "you had this open while a new
+      // version shipped." The tab's own JS is still the old version until
+      // it reloads, so this surfaces that rather than reloading on its
+      // own - an unsaved balance edit or an open modal shouldn't vanish
+      // out from under someone who didn't ask for a refresh.
+      let swRefreshToastShown = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (swRefreshToastShown) return;
+        swRefreshToastShown = true;
+        showToast('The app was updated. Refresh to get the latest.', () => location.reload(), 30000, 'REFRESH');
       });
     }
 
@@ -7098,6 +7201,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     scheduleNextNotification();
     applyTheme(getActiveThemeId());
     initSync();
+    // Deliberately after the first paint, not before: this is a courtesy
+    // nudge toward Settings, not something that should compete with the
+    // deck itself for the first thing the user sees.
+    setTimeout(checkForCatalogUpdates, 1500);
   </script>
 </body>
 </html>
