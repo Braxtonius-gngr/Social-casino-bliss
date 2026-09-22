@@ -3049,10 +3049,35 @@
 [data-theme="executive"] .app-title::after { width: 52px; }
 [data-theme="executive"] .landing-title::after { width: 72px; }
 
-/* The inset top-edge line every .glass-panel already carries (see app.css
-   base rule) picks up the same warm tint as --glass-highlight above, so the
-   card's inner bevel reads as light catching metal rather than glass. */
-[data-theme="executive"] .glass-panel { box-shadow: 0 1px 0 rgba(232,205,140,0.05) inset, 0 6px 24px rgba(0,0,0,0.55); }
+/* Real glass, not a dark rounded rectangle: the base .glass-panel (0.75
+   opacity, 12px blur, flat fill) reads as a solid card because it basically
+   is one - at that opacity there's nothing behind it left to see, and
+   nothing for backdrop-filter to actually do. Executive Lounge is the one
+   theme with real light to catch (the gold + emerald glow bodyBg now
+   carries), so it's the one that can afford to actually be translucent:
+   - opacity down to ~0.5 and a diagonal gradient fill rather than flat,
+     so the panel has its own subtle depth even before anything sits on it
+   - blur nearly doubled, plus saturate() - the actual glassmorphism trick.
+     A blurred, desaturated backdrop reads as a dirty smear; saturating
+     what shows through first is what makes it read as glass instead
+   - a brighter top/left edge and a matching dark inset on the opposite
+     corner, so the card has one consistent light source rather than a
+     border that's the same shade on all four sides
+   - a soft gold-tinted outer glow alongside the drop shadow, so cards read
+     as sitting IN the ambient light rather than punched into flat black */
+[data-theme="executive"] .glass-panel {
+  background: linear-gradient(160deg, rgba(36,39,47,0.58) 0%, rgba(18,20,25,0.44) 100%);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-top: 1px solid rgba(255,255,255,0.20);
+  border-left: 1px solid rgba(255,255,255,0.13);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.07) inset,
+    0 -12px 20px -14px rgba(0,0,0,0.5) inset,
+    0 14px 36px rgba(0,0,0,0.5),
+    0 0 24px rgba(212,175,55,0.06);
+}
 
 [data-theme="executive"] .hero-ring-circle {
   border: 2px solid var(--accent-gold);
@@ -3099,11 +3124,14 @@
   overflow: hidden;
   background: var(--gold-metal);
   color: #14151A;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset, 0 3px 10px rgba(0,0,0,0.5);
+  /* The outer term is what the reference fintech screenshots actually have
+     that a flat metallic fill doesn't: the button casts its own light onto
+     the glass around it, instead of just sitting on top of it. */
+  box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset, 0 3px 10px rgba(0,0,0,0.5), 0 6px 24px rgba(212,175,55,0.28);
 }
 [data-theme="executive"] .btn-open { border: 1px solid rgba(255,255,255,0.18); font-weight: 800; }
 [data-theme="executive"] .btn-open:hover,
-[data-theme="executive"] .btn-primary:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 5px 16px rgba(0,0,0,0.6); }
+[data-theme="executive"] .btn-primary:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 5px 16px rgba(0,0,0,0.6), 0 8px 30px rgba(212,175,55,0.4); }
 [data-theme="executive"] .btn-open::after,
 [data-theme="executive"] .btn-primary::after,
 [data-theme="executive"] .btn-run-collect::after {
@@ -3140,6 +3168,28 @@
 }
 [data-theme="executive"] .btn-open.cooldown::after { display: none; }
 
+/* .btn-check (Zz snooze, checkmark mark-collected) never had an executive
+   override - it was inheriting the theme-agnostic base rule verbatim:
+   transparent fill, --text-muted glyph, a hairline border at 0.08 alpha.
+   That was already low-contrast against the old flat-black card; against
+   the new translucent, gradient-filled glass card it's worse; a grey glyph
+   on a semi-transparent backdrop over more glass has nothing to separate
+   it from what's behind it. Same recessed-well language as
+   .btn-open.cooldown above (this theme already has that vocabulary), but
+   with a bright glyph rather than a muted one - these are always tappable,
+   never a "not yet available" state, so they shouldn't read as dimmed. */
+[data-theme="executive"] .btn-check {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(0,0,0,0.55);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.05);
+  color: var(--text-main);
+}
+[data-theme="executive"] .btn-check:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.7), 0 0 0 1px rgba(212,175,55,0.15);
+}
+
 /* Cooldown fill bar: money accruing toward ready, not a generic orange
    loading bar - it counts up in the same metal as everything else worth
    having. */
@@ -3154,7 +3204,7 @@
 }
 [data-theme="executive"] .cooldown-chip { border-radius: 4px; }
 
-[data-theme="executive"] .hero-stat-card { background: rgba(22,24,29,0.62); }
+[data-theme="executive"] .hero-stat-card { background: linear-gradient(160deg, rgba(36,39,47,0.5) 0%, rgba(18,20,25,0.38) 100%); }
 
 [data-theme="executive"] .docked-footer {
   background: rgba(11,12,16,0.92);
@@ -3162,7 +3212,18 @@
   box-shadow: 0 -6px 20px rgba(0,0,0,0.6);
 }
 
-[data-theme="executive"] .landing-screen { background: radial-gradient(circle at 50% 30%, #101218 0%, #050507 70%, #030304 100%); }
+/* .landing-screen is position:fixed; inset:0 - a full-viewport layer that
+   sits on top of and completely hides whatever body carries underneath it.
+   The old flat, colorless radial here meant the landing screen stayed pure
+   black no matter what the gold/emerald ambient glow in bodyBg was doing -
+   this is the surface a first-time visitor sees before anything else, so
+   it gets the same two-tone glow rather than its own disconnected one. */
+[data-theme="executive"] .landing-screen {
+  background:
+    radial-gradient(120% 70% at 15% 0%, rgba(212,175,55,0.22) 0%, transparent 55%),
+    radial-gradient(100% 65% at 100% 100%, rgba(63,191,143,0.16) 0%, transparent 58%),
+    radial-gradient(circle at 50% 35%, #101218 0%, #050507 65%, #030304 100%);
+}
 /* base's own .landing-btn is a filled gold button (see the base rule up top) -
    Executive Lounge's is the outline/ghost version instead, so background has
    to be reclaimed explicitly or gold text lands on a gold fill. */
