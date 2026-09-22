@@ -919,7 +919,7 @@
     .btn-snooze:hover { border-color: var(--accent-orange); color: var(--accent-orange); }
     body.dense .streak-badge { font-size: 0.5rem; padding: 0 4px; top: -3px; right: -4px; }
     .ready-at { color: var(--text-dim); font-size: 0.7rem; font-family: "Courier New", monospace; }
-    .btn-check { background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); border-radius: 8px; padding: 7px 10px; font-size: 0.9rem; cursor: pointer; flex-shrink: 0; line-height: 1; }
+    .btn-check { background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); border-radius: 8px; padding: 7px 10px; font-size: 0.9rem; cursor: pointer; flex-shrink: 0; line-height: 1; transition: all 0.2s ease; }
     .btn-check:hover { border-color: var(--accent-green); color: var(--accent-green); }
     #toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%) translateY(220%); opacity: 0; pointer-events: none; background: rgba(20,22,18,0.97); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px 14px; border-radius: 10px; z-index: 400; display: flex; align-items: center; gap: 14px; font-size: 0.85rem; box-shadow: 0 10px 30px rgba(0,0,0,0.7); transition: transform .28s cubic-bezier(.22,1,.36,1), opacity .2s ease; max-width: calc(100% - 32px); }
     #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
@@ -3145,14 +3145,22 @@
   width: 34%; height: 100%;
   background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%);
   transform: skewX(-20deg);
-  animation: gold-sheen 4.2s ease-in-out infinite;
+  animation: gold-sheen 4.5s linear infinite;
   pointer-events: none;
 }
-[data-theme="executive"] .btn-primary::after { animation-delay: 0.6s; }
-[data-theme="executive"] .btn-run-collect::after { animation-delay: 1.2s; }
+[data-theme="executive"] .btn-primary::after { animation-delay: 1.5s; }
+[data-theme="executive"] .btn-run-collect::after { animation-delay: 3s; }
+/* A straight 0%->100% sweep, no repeated keyframe value anywhere in
+   between. The previous version held the streak still at each end (0-8%
+   and 38-100% both pinned to the same `left`), which reads as exactly what
+   it was: motion that stops and waits rather than one continuous pass -
+   the "barely appears, pauses, then catches up" effect. linear timing
+   keeps the speed constant through the loop point too, so the seam where
+   one pass ends and the next begins doesn't have a visible flicker of
+   acceleration the way ease-in-out would give it. */
 @keyframes gold-sheen {
-  0%, 8% { left: -60%; }
-  38%, 100% { left: 130%; }
+  0% { left: -60%; }
+  100% { left: 130%; }
 }
 /* Global animation kill switch (html[data-motion="off"] *) already covers
    this - restated per the pattern the rest of this file follows, so an
@@ -3323,16 +3331,21 @@
   width: 40%; height: 100%;
   background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.16) 50%, transparent 100%);
   transform: skewX(-20deg);
-  animation: amped-panel-sweep 6s ease-in-out infinite;
+  animation: amped-panel-sweep 4s linear infinite;
   pointer-events: none;
 }
 /* A little stagger on the deck's own cards, so 137 of them don't flash in
    lockstep - reads as a light passing down the list, not a strobe. */
-[data-theme="amped"] .ledger-card:nth-child(2n)::before { animation-delay: 2s; }
-[data-theme="amped"] .ledger-card:nth-child(3n)::before { animation-delay: 4s; }
+[data-theme="amped"] .ledger-card:nth-child(2n)::before { animation-delay: 1.33s; }
+[data-theme="amped"] .ledger-card:nth-child(3n)::before { animation-delay: 2.67s; }
+/* Same fix as gold-sheen above: a straight 0%->100% pass with no held
+   value in the middle, linear timing so the loop seam doesn't stutter. The
+   previous version sat still at each end for a combined 50% of the cycle -
+   that dead time is what read as "barely appears in the corner, pauses,
+   then catches up". */
 @keyframes amped-panel-sweep {
-  0%, 15% { left: -60%; }
-  65%, 100% { left: 140%; }
+  0% { left: -60%; }
+  100% { left: 140%; }
 }
 [data-theme="amped"] .hero-stat-card { background: linear-gradient(160deg, rgba(42,38,52,0.54) 0%, rgba(18,20,25,0.34) 100%); }
 
@@ -3434,11 +3447,11 @@
   width: 34%; height: 100%;
   background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.75) 50%, transparent 100%);
   transform: skewX(-20deg);
-  animation: gold-sheen 2.2s ease-in-out infinite;
+  animation: gold-sheen 2s linear infinite;
   pointer-events: none;
 }
-[data-theme="amped"] .btn-primary::after { animation-delay: 0.4s; }
-[data-theme="amped"] .btn-run-collect::after { animation-delay: 0.8s; }
+[data-theme="amped"] .btn-primary::after { animation-delay: 0.67s; }
+[data-theme="amped"] .btn-run-collect::after { animation-delay: 1.33s; }
 [data-motion="off"] [data-theme="amped"] .btn-open::after,
 [data-motion="off"] [data-theme="amped"] .btn-primary::after,
 [data-motion="off"] [data-theme="amped"] .btn-run-collect::after { animation: none; opacity: 0; }
@@ -3502,20 +3515,32 @@
    thing, so restraint applies to this one surface regardless of theme. */
 [data-theme="amped"] .tour-target-active { animation: none !important; box-shadow: 0 0 0 2px var(--accent-gold) !important; }
 
-/* Ambient mesh: a slow-drifting three-colour glow behind everything, on its
-   own ::before rather than folded into body's background, because
-   applyTheme() writes body.style.background as an inline SHORTHAND
-   (documented on THEMES.executive.bodyBg above) - any animation on a CSS
-   background property there would be inline-overridden the instant the
-   theme applies, silently. A pseudo-element has no inline style for JS to
-   ever touch, so it's the only surface here JS can't stomp on. z-index:-1
-   keeps it under each layer's own real content while still painting above
-   that layer's own background (negative z-index paints above a stacking
-   context's own background, below its normal-flow content - not "the very
-   bottom of the page"). Same three fixed, inset:0 layers Executive's own
-   landing-screen fix had to account for: body, the landing screen, and the
-   daily-run overlay each occlude whatever is under them, so each needs its
-   own copy. */
+/* Ambient mesh: a three-colour glow behind everything that actually drifts
+   and shifts hue, on its own ::before rather than folded into body's
+   background, because applyTheme() writes body.style.background as an
+   inline SHORTHAND (documented on THEMES.executive.bodyBg above) - any
+   animation on a CSS background property there would be inline-overridden
+   the instant the theme applies, silently. A pseudo-element has no inline
+   style for JS to ever touch, so it's the only surface here JS can't stomp
+   on. z-index:-1 keeps it under each layer's own real content while still
+   painting above that layer's own background (negative z-index paints
+   above a stacking context's own background, below its normal-flow
+   content - not "the very bottom of the page"). Same three inset:0 layers
+   Executive's own landing-screen fix had to account for: body, the landing
+   screen, and the daily-run overlay each occlude whatever is under them,
+   so each needs its own copy.
+
+   position differs by layer on purpose. body itself is the outermost
+   element on the page, so body::before as position:fixed has no ancestor
+   that's also fixed - no ambiguity there. .landing-screen and
+   #dailyRunOverlay are ALREADY position:fixed;inset:0 themselves, so their
+   ::before uses position:absolute instead: it resolves against that
+   already-fixed parent and covers it exactly the same, but sidesteps a
+   real class of mobile WebKit bug where a fixed-position element nested
+   inside another fixed-position element can fail to paint at all - which
+   is the likely reason this mesh was invisible on a real phone even though
+   headless Chromium (used for this file's own verification) rendered it
+   fine; headless Chromium doesn't reproduce that bug. */
 [data-theme="amped"] body::before,
 [data-theme="amped"] .landing-screen::before,
 [data-theme="amped"] #dailyRunOverlay::before {
@@ -3525,15 +3550,33 @@
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(60% 50% at 20% 15%, rgba(212,175,55,0.28) 0%, transparent 60%),
-    radial-gradient(55% 45% at 85% 80%, rgba(63,191,143,0.22) 0%, transparent 62%),
-    radial-gradient(50% 40% at 90% 10%, rgba(79,216,232,0.14) 0%, transparent 60%);
-  background-size: 180% 180%;
-  animation: amped-mesh-drift 22s ease-in-out infinite;
+    radial-gradient(55% 48% at 18% 18%, rgba(212,175,55,0.42) 0%, transparent 65%),
+    radial-gradient(52% 45% at 85% 78%, rgba(63,191,143,0.34) 0%, transparent 66%),
+    radial-gradient(48% 40% at 88% 12%, rgba(79,216,232,0.26) 0%, transparent 64%);
+  background-size: 220% 220%;
+  animation: amped-mesh-drift 14s ease-in-out infinite, amped-mesh-hue 19s linear infinite;
 }
+[data-theme="amped"] .landing-screen::before,
+[data-theme="amped"] #dailyRunOverlay::before {
+  position: absolute;
+}
+/* A real sweep across a much wider range than before (the previous version
+   moved each blob by ~15-20 percentage points over 22s, which is well
+   below what a glance can register as motion rather than a static image) -
+   this one visibly relocates each glow across a third of the screen and
+   completes a pass in 14s. Distinct start/mid/end values throughout, so
+   there's no flat hold anywhere in the loop either. */
 @keyframes amped-mesh-drift {
-  0%, 100% { background-position: 0% 0%, 100% 100%, 100% 0%; }
-  50% { background-position: 20% 15%, 80% 85%, 85% 15%; }
+  0% { background-position: 5% 10%, 95% 90%, 92% 8%; }
+  50% { background-position: 45% 55%, 55% 40%, 40% 60%; }
+  100% { background-position: 5% 10%, 95% 90%, 92% 8%; }
+}
+/* Layered on top of the position drift - the three glows also slowly cycle
+   hue, which reads as actual colour "swirl" rather than just three fixed
+   colours sliding around. Cheap (one filter on one fullscreen layer). */
+@keyframes amped-mesh-hue {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
 }
 
 /* Nav-tab glyphs. Stacked above the label rather than beside it: an inline
