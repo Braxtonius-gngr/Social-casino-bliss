@@ -3168,6 +3168,28 @@
 }
 [data-theme="executive"] .btn-open.cooldown::after { display: none; }
 
+/* .btn-check (Zz snooze, checkmark mark-collected) never had an executive
+   override - it was inheriting the theme-agnostic base rule verbatim:
+   transparent fill, --text-muted glyph, a hairline border at 0.08 alpha.
+   That was already low-contrast against the old flat-black card; against
+   the new translucent, gradient-filled glass card it's worse; a grey glyph
+   on a semi-transparent backdrop over more glass has nothing to separate
+   it from what's behind it. Same recessed-well language as
+   .btn-open.cooldown above (this theme already has that vocabulary), but
+   with a bright glyph rather than a muted one - these are always tappable,
+   never a "not yet available" state, so they shouldn't read as dimmed. */
+[data-theme="executive"] .btn-check {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(0,0,0,0.55);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.05);
+  color: var(--text-main);
+}
+[data-theme="executive"] .btn-check:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.7), 0 0 0 1px rgba(212,175,55,0.15);
+}
+
 /* Cooldown fill bar: money accruing toward ready, not a generic orange
    loading bar - it counts up in the same metal as everything else worth
    having. */
