@@ -219,7 +219,10 @@
       <div id="sortDrawerGames" class="sort-drawer glass-panel">
         <div class="sort-drawer-header">
           <span>Sort Priority Stack</span>
-          <span style="cursor:pointer; color:var(--accent-pink); text-shadow:0 0 8px var(--accent-pink);" onclick="clearSortStack('games')">Clear All</span>
+          <span style="display:flex; gap:12px;">
+            <span style="cursor:pointer; color:var(--accent-cyan); text-shadow:0 0 8px var(--accent-cyan);" onclick="resetSortStack('games')">Reset to Default</span>
+            <span style="cursor:pointer; color:var(--accent-pink); text-shadow:0 0 8px var(--accent-pink);" onclick="clearSortStack('games')">Clear All</span>
+          </span>
         </div>
         <div class="sort-options-grid">
           <button class="sort-option-btn" data-key="tier" onclick="toggleSortKey('tier', 'games')"><span>Tier (S to D)</span><span class="sort-priority-num" style="display:none;"></span></button>
@@ -261,7 +264,10 @@
       <div id="sortDrawerCatalog" class="sort-drawer glass-panel">
         <div class="sort-drawer-header">
           <span>Sort Priority Stack</span>
-          <span style="cursor:pointer; color:var(--accent-pink); text-shadow:0 0 8px var(--accent-pink);" onclick="clearSortStack('catalog')">Clear All</span>
+          <span style="display:flex; gap:12px;">
+            <span style="cursor:pointer; color:var(--accent-cyan); text-shadow:0 0 8px var(--accent-cyan);" onclick="resetSortStack('catalog')">Reset to Default</span>
+            <span style="cursor:pointer; color:var(--accent-pink); text-shadow:0 0 8px var(--accent-pink);" onclick="clearSortStack('catalog')">Clear All</span>
+          </span>
         </div>
         <div class="sort-options-grid">
           <button class="sort-option-btn" data-key="tier" onclick="toggleSortKey('tier', 'catalog')"><span>Tier (S to D)</span><span class="sort-priority-num" style="display:none;"></span></button>
@@ -323,6 +329,25 @@
           <dd>The preferred pick for that platform &mdash; play this one first.</dd>
           <dt>BB</dt>
           <dd>Bonus buy: paying up front to trigger a feature round. Counts toward playthrough but burns balance fast.</dd>
+        </dl>
+        <p class="res-legend-intro" style="margin-top:16px;">The tier badge (tap any badge in the app for this same breakdown) is days of daily claims to reach a platform's own minimum CASH redemption &mdash; lower is faster:</p>
+        <dl class="res-legend-list tier-legend">
+          <dt><span class="tier-badge tier-S">S</span></dt>
+          <dd>Up to 60 days</dd>
+          <dt><span class="tier-badge tier-A">A</span></dt>
+          <dd>61&ndash;120 days</dd>
+          <dt><span class="tier-badge tier-B">B</span></dt>
+          <dd>121&ndash;182 days</dd>
+          <dt><span class="tier-badge tier-C">C</span></dt>
+          <dd>183&ndash;242 days</dd>
+          <dt><span class="tier-badge tier-D">D</span></dt>
+          <dd>243&ndash;304 days</dd>
+          <dt><span class="tier-badge tier-F">F</span></dt>
+          <dd>Beyond 304 days</dd>
+          <dt><span class="tier-badge tier-Unranked">Unranked</span></dt>
+          <dd>Not yet verified &mdash; a screenshot would give it a tier.</dd>
+          <dt><span class="tier-badge tier-Not-Rankable">Not Rankable</span></dt>
+          <dd>Permanent, not a gap: the only daily here is chance-based, so there's no guaranteed rate to rank.</dd>
         </dl>
       </div>
 
@@ -418,7 +443,7 @@
   <div id="bulkTierModal" class="sheet-backdrop">
     <div class="sheet-modal glass-panel">
       <h3 style="color:var(--accent-orange); text-shadow: 0 0 10px var(--accent-orange); margin-bottom: 6px;">Bulk Group Add</h3>
-      <p style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 20px; opacity:0.9;">Add or remove platforms instantly by tier. Tiers are days to first cash redemption, counting the boundary into the higher tier: S up to 60, A up to 120, B up to 250, C up to 500, D beyond that.</p>
+      <p style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 20px; opacity:0.9;">Add or remove platforms instantly by tier. Tiers are days to first cash redemption, counting the boundary into the higher tier: S up to 60, A up to 120, B up to 182, C up to 242, D up to 304, F beyond that. Tap the <span class="tier-badge tier-Unranked" style="vertical-align:middle;" onclick="openTierInfoModal(event)">?</span> in Resources for the full breakdown, including Unranked and Not Rankable.</p>
       
       <div class="tier-action-grid">
         <div class="tier-action-card">
@@ -454,6 +479,13 @@
           <div class="tier-btn-pair">
             <button class="btn-tier-toggle add" onclick="bulkToggleTier('D', true)">+ Add</button>
             <button class="btn-tier-toggle remove" onclick="bulkToggleTier('D', false)">- Remove</button>
+          </div>
+        </div>
+        <div class="tier-action-card">
+          <div class="tier-action-card-header"><span class="tier-label-badge tier-F">F-Tier</span></div>
+          <div class="tier-btn-pair">
+            <button class="btn-tier-toggle add" onclick="bulkToggleTier('F', true)">+ Add</button>
+            <button class="btn-tier-toggle remove" onclick="bulkToggleTier('F', false)">- Remove</button>
           </div>
         </div>
       </div>
@@ -933,6 +965,34 @@
     </div>
   </div>
 
+  <div id="tierInfoModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel">
+      <h3>How Tiers Work</h3>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">A tier is how many days of daily claims it takes a free player to reach a platform's own minimum CASH redemption &mdash; lower is faster. Each band is inclusive of its upper bound.</p>
+      <dl class="res-legend-list tier-legend">
+        <dt><span class="tier-badge tier-S">S</span></dt>
+        <dd>Up to 60 days</dd>
+        <dt><span class="tier-badge tier-A">A</span></dt>
+        <dd>61&ndash;120 days</dd>
+        <dt><span class="tier-badge tier-B">B</span></dt>
+        <dd>121&ndash;182 days</dd>
+        <dt><span class="tier-badge tier-C">C</span></dt>
+        <dd>183&ndash;242 days</dd>
+        <dt><span class="tier-badge tier-D">D</span></dt>
+        <dd>243&ndash;304 days</dd>
+        <dt><span class="tier-badge tier-F">F</span></dt>
+        <dd>Beyond 304 days</dd>
+        <dt><span class="tier-badge tier-Unranked">Unranked</span></dt>
+        <dd>Not yet verified &mdash; a screenshot of the daily claim or redeem screen would give this one a tier.</dd>
+        <dt><span class="tier-badge tier-Not-Rankable">Not Rankable</span></dt>
+        <dd>Permanent, not a data gap: this platform's only daily is chance-based (a wheel with GC-only segments, where SC is one possible outcome rather than every spin), so there's no guaranteed rate to rank in the first place.</dd>
+      </dl>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeModals()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
   <div id="importPreviewModal" class="sheet-backdrop">
     <div class="sheet-modal glass-panel">
       <h3 style="color:var(--accent-gold); text-shadow:0 0 10px var(--accent-gold);">Import Preview</h3>
@@ -991,6 +1051,25 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const uid = () => 'id_' + Math.random().toString(36).substr(2, 9);
+
+    // Tier badge text doubles as its own CSS class suffix. That broke the
+    // moment "Not Rankable" (added 2026-09-23) existed - a bare space in a
+    // class attribute splits into two separate class tokens ("tier-Not" and
+    // "Rankable"), neither of which matches any rule in app.css. Sanitizing
+    // the class separately from the display text fixes every render site at
+    // once instead of patching each one by hand.
+    function tierClass(tier) {
+      return (tier || 'Unranked').replace(/\s+/g, '-');
+    }
+    function tierBadgeHtml(tier) {
+      const t = tier || 'Unranked';
+      return `<span class="tier-badge tier-${tierClass(t)}" onclick="openTierInfoModal(event)" role="button" tabindex="0" title="Tap for what tiers mean">${escHtml(t)}</span>`;
+    }
+    function openTierInfoModal(event) {
+      if (event) event.stopPropagation();
+      closeModals();
+      document.getElementById('tierInfoModal').classList.add('open');
+    }
 
     function getInitials(name) {
       if (!name) return '??';
@@ -1177,8 +1256,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     let currentTab = 'games';
     let currentFilter = 'all';
     let currentCatalogFilter = 'all';
-    let sortStackGames = ['tier', 'reliability'];
-    let sortStackCatalog = ['tier', 'reliability'];
+    // The app's own opinion of "best first": tier ranking, then daily SC
+    // (high to low) as the tie-breaker within a tier, then alphabetical so
+    // the remainder is at least predictable rather than insertion-order.
+    // Every place that resets or falls back to a default sort stack reads
+    // this one constant - copy it with a fresh array (DEFAULT_SORT_STACK
+    // itself is never mutated) since toggleSortKey() pushes/splices in place.
+    const DEFAULT_SORT_STACK = ['tier', 'dailySC', 'name'];
+    let sortStackGames = [...DEFAULT_SORT_STACK];
+    let sortStackCatalog = [...DEFAULT_SORT_STACK];
 
     const SORT_CONFIG = {
       tier: { label: "Tier (S to D)" },
@@ -1291,7 +1377,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
       const validSortKeys = Object.keys(SORT_CONFIG);
       function sanitizeSortStack(v) {
-        if (!Array.isArray(v)) return ['tier', 'reliability'];
+        if (!Array.isArray(v)) return [...DEFAULT_SORT_STACK];
         const seen = new Set();
         return v.filter(k => typeof k === 'string' && validSortKeys.includes(k) && !seen.has(k) && seen.add(k));
       }
@@ -1345,8 +1431,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try { localStorage.removeItem(VIEW_STATE_KEY); } catch (e) {}
       currentFilter = 'all';
       currentCatalogFilter = 'all';
-      sortStackGames = ['tier', 'reliability'];
-      sortStackCatalog = ['tier', 'reliability'];
+      sortStackGames = [...DEFAULT_SORT_STACK];
+      sortStackCatalog = [...DEFAULT_SORT_STACK];
       const gs = document.getElementById('gamesSearch'); if (gs) gs.value = '';
       const cs = document.getElementById('catalogSearchInput'); if (cs) cs.value = '';
       setGamesFilterButtonUI('all');
@@ -1418,6 +1504,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       saveViewState();
     }
 
+    // Distinct from clearSortStack (which empties the stack): this restores
+    // the app's own default ordering rather than turning sorting off.
+    function resetSortStack(view) {
+      if (view === 'games') sortStackGames = [...DEFAULT_SORT_STACK];
+      else sortStackCatalog = [...DEFAULT_SORT_STACK];
+      updateSortUI(view);
+      if (view === 'games') renderGames();
+      else renderCatalogList();
+      saveViewState();
+    }
+
     function updateSortUI(view) {
       const stack = view === 'games' ? sortStackGames : sortStackCatalog;
       const drawer = view === 'games' ? document.getElementById('sortDrawerGames') : document.getElementById('sortDrawerCatalog');
@@ -1451,7 +1548,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function compareByStack(a, b, stack) {
-      const tierRank = { 'S': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1, 'Unranked': 0 };
+      const tierRank = { 'S': 6, 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'F': 1, 'Unranked': 0, 'Not Rankable': 0 };
 
       for (let key of stack) {
         let diff = 0;
@@ -1801,6 +1898,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // Returns { game, undo } so a caller that suppressed the toast still
     // has a way to trigger (and know about) the same undo logic - or null
     // if the email gate intercepted and this collection didn't happen.
+    // Owner lock on OPEN's destination. game.referralUrl exists for the
+    // Share feature - a player storing THEIR OWN link to send to THEIR OWN
+    // friends - and that stays fully functional either way. What's locked
+    // is whether OPEN itself will navigate through that stored link
+    // instead of the catalog's own url. Locked (the default for every
+    // distributed copy) means OPEN always uses the catalog's url - for the
+    // handful of platforms Braxtonius has a referral program with, that IS
+    // his referral link (see data/catalog.js), so it can't be quietly
+    // redirected to someone else's code by typing into a field. There is
+    // deliberately no UI for this: to release the lock on a given device,
+    // set localStorage.almanac_referral_unlocked to '1' from the browser
+    // console - a decision Braxtonius makes for his own install, not
+    // something exposed to anyone who receives the app.
+    function referralOverrideUnlocked() {
+      try { return localStorage.getItem('almanac_referral_unlocked') === '1'; } catch (e) { return false; }
+    }
+
     function collectWithUndo(id, opensLink, opts) {
       opts = opts || {};
       const game = trackedGames.find(g => g.id === id);
@@ -1812,7 +1926,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // localStorage/exports actually persist.
       const prevCollected = game.lastCollected;
       const prevSnooze = game.snoozedUntil;
-      if (opensLink) openExternal(game.url);
+      const useReferralOverride = referralOverrideUnlocked() && game.referralUrl && game.referralUrl.trim();
+      if (opensLink) openExternal(useReferralOverride ? game.referralUrl : game.url);
       game.lastCollected = serverNow();
       delete game.snoozedUntil;
       logCollection(id);
@@ -1964,7 +2079,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               </div>
               <div class="card-title-row">
                 <span class="casino-name">${game.name}</span>
-                <span class="tier-badge tier-${game.tier || 'Unranked'}">${game.tier || 'A'}</span>
+                ${tierBadgeHtml(game.tier)}
                 ${game.hasLive ? '<span class="type-badge">LIVE</span>' : ''}
                 <!-- The cooldown chip lives up here rather than in the status
                      line: it fills the dead space to the right of the name,
@@ -2135,7 +2250,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               <div>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span class="casino-name" style="font-size:0.95rem;">${item.name}</span>
-                  <span class="tier-badge tier-${item.tier}">${item.tier}</span>
+                  ${tierBadgeHtml(item.tier)}
                   ${item.hasLive ? '<span class="type-badge" style="font-size:0.6rem;">LIVE</span>' : ''}
                 </div>
                 <div class="card-status">$${item.dailySC.toFixed(2)}${item.scIsAveraged ? '*' : ''} / ${typeof item.resetHour === 'number' ? cooldownLabel(item) : item.cooldown + 'h'} - Score: ${item.reliability}%</div>
@@ -3816,7 +3931,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       body.innerHTML = `
         <div class="prune-card">
           <div class="prune-title">${escHtml(item.game.name)}</div>
-          <span class="tier-badge tier-${item.game.tier || 'Unranked'}">${escHtml(item.game.tier || 'Unranked')}</span>
+          ${tierBadgeHtml(item.game.tier)}
           <div class="prune-flagged-label">Flagged because</div>
           <ul class="prune-reasons">${item.reasons.map(r => `<li>${escHtml(r)}</li>`).join('')}</ul>
           ${hasReferral ? `<div class="prune-warning"><strong>Heads up:</strong> you have a referral link saved for this platform. Removing it deletes that link permanently &mdash; it can't be recovered from the Catalogue.</div>` : ''}
@@ -7090,7 +7205,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         <div class="run-avatar">${getInitials(game.name)}</div>
         <div class="run-name">${game.name}</div>
         <div class="run-badges">
-          <span class="tier-badge tier-${game.tier || 'Unranked'}">${game.tier || 'Unranked'}</span>
+          ${tierBadgeHtml(game.tier)}
           ${game.hasLive ? '<span class="type-badge">LIVE</span>' : ''}
         </div>
         <div class="run-redeem">Min Redeem: ${game.minRedeem || 'Varies'}</div>
