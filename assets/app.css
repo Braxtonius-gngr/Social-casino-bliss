@@ -592,7 +592,19 @@
     .btn-exit-run:hover { border-color: var(--accent-pink); color: var(--accent-pink); }
     .run-progress-bar { height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; margin-top: 12px; overflow: hidden; flex-shrink: 0; }
     .run-progress-fill { height: 100%; background: var(--accent-gold); width: 0%; transition: width 0.35s ease; }
-    .run-card { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px 18px; margin: 18px 0; border-radius: 20px; min-height: 0; }
+    /* justify-content: center, not plain center. .run-card sits
+       inside #dailyRunOverlay's overflow-y: auto, and plain "center" on a
+       flex item taller than its box centers by pushing the excess equally
+       above AND below - the part pushed above the container's scrollTop:0
+       line becomes permanently unreachable, since scroll position can't go
+       negative. That's exactly what happened on a long catalog note: the
+       avatar/name/badges/redeem/balance block (everything before the
+       notes) got shoved out of scroll range, leaving only notes + buttons
+       visible with no way to see which platform the card was even for.
+       "safe" falls back to start-alignment - reachable by scrolling from
+       the top - whenever the content doesn't fit, and behaves exactly like
+       plain "center" whenever it does. */
+    .run-card { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: safe center; text-align: center; padding: 24px 18px; margin: 18px 0; border-radius: 20px; min-height: 0; }
     .run-avatar { width: 84px; height: 84px; border-radius: 50%; border: 1px solid var(--accent-gold); background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; font-family: "Courier New", Courier, monospace; font-weight: 900; font-size: 1.8rem; color: var(--accent-gold); margin-bottom: 16px; }
     .run-name { font-size: 1.5rem; font-weight: 900; color: var(--text-main); margin-bottom: 10px; }
     .run-badges { display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
