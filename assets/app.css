@@ -3384,28 +3384,34 @@
     0 16px 40px rgba(0,0,0,0.55),
     0 0 32px rgba(212,175,55,0.14);
 }
+/* Deliberately NOT the buttons' gold-sheen - a card is glass, a button is
+   polished metal, and giving both the same tight bright streak made every
+   translucent surface in the app read as the same material. Buttons keep
+   the hard, fast, bright metallic glint (it's supposed to look like
+   something you'd press). Cards get something a glass surface would
+   actually do: a soft, blurred, low-contrast highlight that drifts slowly
+   rather than sweeps - less "a light passed over this" and more "light is
+   coming through this". Ping-pong (0%/100% share a value, 50% doesn't) is
+   genuine continuous back-and-forth motion, not the held-still bug fixed
+   above on gold-sheen - there's a distinct value at every point except the
+   shared loop seam. */
 [data-theme="amped"] .glass-panel::before {
   content: '';
   position: absolute;
-  top: 0; left: -60%;
-  width: 40%; height: 100%;
-  background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.16) 50%, transparent 100%);
-  transform: skewX(-20deg);
-  animation: amped-panel-sweep 4s linear infinite;
+  top: 5%; left: -20%;
+  width: 55%; height: 90%;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.13) 0%, transparent 70%);
+  filter: blur(10px);
+  animation: amped-panel-drift 10s ease-in-out infinite;
   pointer-events: none;
 }
-/* A little stagger on the deck's own cards, so 137 of them don't flash in
-   lockstep - reads as a light passing down the list, not a strobe. */
-[data-theme="amped"] .ledger-card:nth-child(2n)::before { animation-delay: 1.33s; }
-[data-theme="amped"] .ledger-card:nth-child(3n)::before { animation-delay: 2.67s; }
-/* Same fix as gold-sheen above: a straight 0%->100% pass with no held
-   value in the middle, linear timing so the loop seam doesn't stutter. The
-   previous version sat still at each end for a combined 50% of the cycle -
-   that dead time is what read as "barely appears in the corner, pauses,
-   then catches up". */
-@keyframes amped-panel-sweep {
-  0% { left: -60%; }
-  100% { left: 140%; }
+/* A little stagger on the deck's own cards, so 137 of them don't drift in
+   lockstep - reads as ambient light shifting across the room, not a wave. */
+[data-theme="amped"] .ledger-card:nth-child(2n)::before { animation-delay: 3.3s; }
+[data-theme="amped"] .ledger-card:nth-child(3n)::before { animation-delay: 6.6s; }
+@keyframes amped-panel-drift {
+  0%, 100% { transform: translate(0%, 0%); }
+  50% { transform: translate(220%, 15%); }
 }
 [data-theme="amped"] .hero-stat-card { background: linear-gradient(160deg, rgba(42,38,52,0.54) 0%, rgba(18,20,25,0.34) 100%); }
 
