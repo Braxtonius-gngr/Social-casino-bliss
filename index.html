@@ -993,6 +993,25 @@
     </div>
   </div>
 
+  <div id="resyncPreviewModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel" style="max-height:88vh; display:flex; flex-direction:column;">
+      <h3>Update From Catalogue?</h3>
+      <div id="resyncPreviewCount" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;"></div>
+      <!-- The bug this replaces: native confirm() with a long multi-line
+           message doesn't scroll reliably on Android Chrome (it does on
+           iPadOS Safari), so a resync touching many platforms could show a
+           dialog with no way to read past the fold. A confirm() the app
+           doesn't own can't be fixed from here - only replaced with a modal
+           the app fully controls the scrolling of, the same way .run-notes
+           was fixed for the Daily Run card. -->
+      <pre id="resyncPreviewText" style="flex:1; overflow-y:auto; min-height:0; white-space:pre-wrap; font-family:inherit; font-size:0.8rem; line-height:1.5; color:var(--text-main); background:rgba(0,0,0,0.25); border:1px solid var(--glass-border); border-radius:8px; padding:10px 12px; margin:0 0 16px;"></pre>
+      <div class="modal-actions">
+        <button type="button" class="btn-primary" onclick="confirmResyncFromCatalog()">UPDATE</button>
+        <button type="button" class="btn-cancel" onclick="closeModals()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
   <div id="importPreviewModal" class="sheet-backdrop">
     <div class="sheet-modal glass-panel">
       <h3 style="color:var(--accent-gold); text-shadow:0 0 10px var(--accent-gold);">Import Preview</h3>
@@ -2253,7 +2272,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
                   ${tierBadgeHtml(item.tier)}
                   ${item.hasLive ? '<span class="type-badge" style="font-size:0.6rem;">LIVE</span>' : ''}
                 </div>
-                <div class="card-status">$${item.dailySC.toFixed(2)}${item.scIsAveraged ? '*' : ''} / ${typeof item.resetHour === 'number' ? cooldownLabel(item) : item.cooldown + 'h'} - Score: ${item.reliability}%</div>
+                <div class="card-status">${typeof item.dailySC === 'number' ? '$' + item.dailySC.toFixed(2) + (item.scIsAveraged ? '*' : '') : 'No guaranteed daily'} / ${typeof item.resetHour === 'number' ? cooldownLabel(item) : item.cooldown + 'h'} - Score: ${item.reliability}%</div>
                 <div class="verify-tag ${catalogIsStale(item) ? 'stale' : ''}">${catalogVerifiedLabel(item)}</div>
               </div>
             </div>
@@ -3255,6 +3274,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // field that's about to change so a deliberately-customized value
     // (someone hand-edited their own URL, say) is visible before it's
     // overwritten rather than silently replaced.
+    // Holds the walk's result between resyncFromCatalog() (which computes it
+    // and opens the preview modal) and confirmResyncFromCatalog() (which
+    // applies it on UPDATE) - module-level because the modal's buttons are
+    // static HTML with no way to carry a closure's data themselves.
+    let resyncPending = null;
+
     function resyncFromCatalog() {
       const pending = trackedGames
         .map((game) => ({ game, entry: findCatalogEntry(game.name) }))
@@ -3278,9 +3303,18 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         return game.name + ':\n' + lines.join('\n');
       }).join('\n\n');
 
-      if (!confirm(`Update ${pending.length} platform(s) to match the Catalogue?\n\n${preview}`)) {
-        return;
-      }
+      resyncPending = pending;
+      document.getElementById('resyncPreviewCount').textContent = `${pending.length} platform(s) differ from the Catalogue:`;
+      document.getElementById('resyncPreviewText').textContent = preview;
+      closeModals();
+      document.getElementById('resyncPreviewModal').classList.add('open');
+    }
+
+    function confirmResyncFromCatalog() {
+      const pending = resyncPending;
+      resyncPending = null;
+      closeModals();
+      if (!pending) return;
 
       pending.forEach(({ game, entry, timingChanged, fieldDiffs }) => {
         if (timingChanged) {
@@ -3304,7 +3338,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderCatalogList();
       updateHeroStats();
       updateDailyRunButton();
-      alert(`Updated ${pending.length} platform(s). See Settings any time to run this again.`);
+      showToast(`Updated ${pending.length} platform(s). See Settings any time to run this again.`, null);
     }
 
     // Read-only version of the same walk, used to decide whether to nudge
