@@ -1812,7 +1812,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // localStorage/exports actually persist.
       const prevCollected = game.lastCollected;
       const prevSnooze = game.snoozedUntil;
-      if (opensLink) openExternal(game.url);
+      // A player's own referralUrl (set via the Share feature) always wins
+      // over the catalog's own url - someone who already has an account
+      // under a different referral relationship shouldn't have that
+      // silently overridden by whatever the catalog ships with. Falls back
+      // to game.url, which is the catalog's own default and, for the
+      // platforms Braxtonius has a referral program with, is that referral
+      // link itself (same pattern Dorados already used) - so a fresh
+      // install with nothing overridden opens through it automatically.
+      if (opensLink) openExternal(game.referralUrl && game.referralUrl.trim() ? game.referralUrl : game.url);
       game.lastCollected = serverNow();
       delete game.snoozedUntil;
       logCollection(id);
