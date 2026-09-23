@@ -324,6 +324,25 @@
           <dt>BB</dt>
           <dd>Bonus buy: paying up front to trigger a feature round. Counts toward playthrough but burns balance fast.</dd>
         </dl>
+        <p class="res-legend-intro" style="margin-top:16px;">The tier badge (tap any badge in the app for this same breakdown) is days of daily claims to reach a platform's own minimum CASH redemption &mdash; lower is faster:</p>
+        <dl class="res-legend-list tier-legend">
+          <dt><span class="tier-badge tier-S">S</span></dt>
+          <dd>Up to 60 days</dd>
+          <dt><span class="tier-badge tier-A">A</span></dt>
+          <dd>61&ndash;120 days</dd>
+          <dt><span class="tier-badge tier-B">B</span></dt>
+          <dd>121&ndash;182 days</dd>
+          <dt><span class="tier-badge tier-C">C</span></dt>
+          <dd>183&ndash;242 days</dd>
+          <dt><span class="tier-badge tier-D">D</span></dt>
+          <dd>243&ndash;304 days</dd>
+          <dt><span class="tier-badge tier-F">F</span></dt>
+          <dd>Beyond 304 days</dd>
+          <dt><span class="tier-badge tier-Unranked">Unranked</span></dt>
+          <dd>Not yet verified &mdash; a screenshot would give it a tier.</dd>
+          <dt><span class="tier-badge tier-Not-Rankable">Not Rankable</span></dt>
+          <dd>Permanent, not a gap: the only daily here is chance-based, so there's no guaranteed rate to rank.</dd>
+        </dl>
       </div>
 
       <div class="res-links-label">External</div>
@@ -418,7 +437,7 @@
   <div id="bulkTierModal" class="sheet-backdrop">
     <div class="sheet-modal glass-panel">
       <h3 style="color:var(--accent-orange); text-shadow: 0 0 10px var(--accent-orange); margin-bottom: 6px;">Bulk Group Add</h3>
-      <p style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 20px; opacity:0.9;">Add or remove platforms instantly by tier. Tiers are days to first cash redemption, counting the boundary into the higher tier: S up to 60, A up to 120, B up to 250, C up to 500, D beyond that.</p>
+      <p style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 20px; opacity:0.9;">Add or remove platforms instantly by tier. Tiers are days to first cash redemption, counting the boundary into the higher tier: S up to 60, A up to 120, B up to 182, C up to 242, D up to 304, F beyond that. Tap the <span class="tier-badge tier-Unranked" style="vertical-align:middle;" onclick="openTierInfoModal(event)">?</span> in Resources for the full breakdown, including Unranked and Not Rankable.</p>
       
       <div class="tier-action-grid">
         <div class="tier-action-card">
@@ -454,6 +473,13 @@
           <div class="tier-btn-pair">
             <button class="btn-tier-toggle add" onclick="bulkToggleTier('D', true)">+ Add</button>
             <button class="btn-tier-toggle remove" onclick="bulkToggleTier('D', false)">- Remove</button>
+          </div>
+        </div>
+        <div class="tier-action-card">
+          <div class="tier-action-card-header"><span class="tier-label-badge tier-F">F-Tier</span></div>
+          <div class="tier-btn-pair">
+            <button class="btn-tier-toggle add" onclick="bulkToggleTier('F', true)">+ Add</button>
+            <button class="btn-tier-toggle remove" onclick="bulkToggleTier('F', false)">- Remove</button>
           </div>
         </div>
       </div>
@@ -933,6 +959,34 @@
     </div>
   </div>
 
+  <div id="tierInfoModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel">
+      <h3>How Tiers Work</h3>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">A tier is how many days of daily claims it takes a free player to reach a platform's own minimum CASH redemption &mdash; lower is faster. Each band is inclusive of its upper bound.</p>
+      <dl class="res-legend-list tier-legend">
+        <dt><span class="tier-badge tier-S">S</span></dt>
+        <dd>Up to 60 days</dd>
+        <dt><span class="tier-badge tier-A">A</span></dt>
+        <dd>61&ndash;120 days</dd>
+        <dt><span class="tier-badge tier-B">B</span></dt>
+        <dd>121&ndash;182 days</dd>
+        <dt><span class="tier-badge tier-C">C</span></dt>
+        <dd>183&ndash;242 days</dd>
+        <dt><span class="tier-badge tier-D">D</span></dt>
+        <dd>243&ndash;304 days</dd>
+        <dt><span class="tier-badge tier-F">F</span></dt>
+        <dd>Beyond 304 days</dd>
+        <dt><span class="tier-badge tier-Unranked">Unranked</span></dt>
+        <dd>Not yet verified &mdash; a screenshot of the daily claim or redeem screen would give this one a tier.</dd>
+        <dt><span class="tier-badge tier-Not-Rankable">Not Rankable</span></dt>
+        <dd>Permanent, not a data gap: this platform's only daily is chance-based (a wheel with GC-only segments, where SC is one possible outcome rather than every spin), so there's no guaranteed rate to rank in the first place.</dd>
+      </dl>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeModals()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
   <div id="importPreviewModal" class="sheet-backdrop">
     <div class="sheet-modal glass-panel">
       <h3 style="color:var(--accent-gold); text-shadow:0 0 10px var(--accent-gold);">Import Preview</h3>
@@ -991,6 +1045,25 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const uid = () => 'id_' + Math.random().toString(36).substr(2, 9);
+
+    // Tier badge text doubles as its own CSS class suffix. That broke the
+    // moment "Not Rankable" (added 2026-09-23) existed - a bare space in a
+    // class attribute splits into two separate class tokens ("tier-Not" and
+    // "Rankable"), neither of which matches any rule in app.css. Sanitizing
+    // the class separately from the display text fixes every render site at
+    // once instead of patching each one by hand.
+    function tierClass(tier) {
+      return (tier || 'Unranked').replace(/\s+/g, '-');
+    }
+    function tierBadgeHtml(tier) {
+      const t = tier || 'Unranked';
+      return `<span class="tier-badge tier-${tierClass(t)}" onclick="openTierInfoModal(event)" role="button" tabindex="0" title="Tap for what tiers mean">${escHtml(t)}</span>`;
+    }
+    function openTierInfoModal(event) {
+      if (event) event.stopPropagation();
+      closeModals();
+      document.getElementById('tierInfoModal').classList.add('open');
+    }
 
     function getInitials(name) {
       if (!name) return '??';
@@ -1451,7 +1524,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function compareByStack(a, b, stack) {
-      const tierRank = { 'S': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1, 'Unranked': 0 };
+      const tierRank = { 'S': 6, 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'F': 1, 'Unranked': 0, 'Not Rankable': 0 };
 
       for (let key of stack) {
         let diff = 0;
@@ -1982,7 +2055,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               </div>
               <div class="card-title-row">
                 <span class="casino-name">${game.name}</span>
-                <span class="tier-badge tier-${game.tier || 'Unranked'}">${game.tier || 'A'}</span>
+                ${tierBadgeHtml(game.tier)}
                 ${game.hasLive ? '<span class="type-badge">LIVE</span>' : ''}
                 <!-- The cooldown chip lives up here rather than in the status
                      line: it fills the dead space to the right of the name,
@@ -2153,7 +2226,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               <div>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span class="casino-name" style="font-size:0.95rem;">${item.name}</span>
-                  <span class="tier-badge tier-${item.tier}">${item.tier}</span>
+                  ${tierBadgeHtml(item.tier)}
                   ${item.hasLive ? '<span class="type-badge" style="font-size:0.6rem;">LIVE</span>' : ''}
                 </div>
                 <div class="card-status">$${item.dailySC.toFixed(2)}${item.scIsAveraged ? '*' : ''} / ${typeof item.resetHour === 'number' ? cooldownLabel(item) : item.cooldown + 'h'} - Score: ${item.reliability}%</div>
@@ -3834,7 +3907,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       body.innerHTML = `
         <div class="prune-card">
           <div class="prune-title">${escHtml(item.game.name)}</div>
-          <span class="tier-badge tier-${item.game.tier || 'Unranked'}">${escHtml(item.game.tier || 'Unranked')}</span>
+          ${tierBadgeHtml(item.game.tier)}
           <div class="prune-flagged-label">Flagged because</div>
           <ul class="prune-reasons">${item.reasons.map(r => `<li>${escHtml(r)}</li>`).join('')}</ul>
           ${hasReferral ? `<div class="prune-warning"><strong>Heads up:</strong> you have a referral link saved for this platform. Removing it deletes that link permanently &mdash; it can't be recovered from the Catalogue.</div>` : ''}
@@ -7108,7 +7181,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         <div class="run-avatar">${getInitials(game.name)}</div>
         <div class="run-name">${game.name}</div>
         <div class="run-badges">
-          <span class="tier-badge tier-${game.tier || 'Unranked'}">${game.tier || 'Unranked'}</span>
+          ${tierBadgeHtml(game.tier)}
           ${game.hasLive ? '<span class="type-badge">LIVE</span>' : ''}
         </div>
         <div class="run-redeem">Min Redeem: ${game.minRedeem || 'Varies'}</div>

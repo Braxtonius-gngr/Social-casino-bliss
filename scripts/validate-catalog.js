@@ -140,7 +140,7 @@ function validateEntry(entry, index, failures) {
   // stops a letter drifting away from the arithmetic that produced it, which
   // is exactly how the previous inherited tiers ended up meaningless (S-tier
   // entries needing 5,000+ days to reach their own redemption floor).
-  const TIERS = ['S', 'A', 'B', 'C', 'D', 'Unranked'];
+  const TIERS = ['S', 'A', 'B', 'C', 'D', 'F', 'Unranked', 'Not Rankable'];
   if (entry.tier !== undefined && !TIERS.includes(entry.tier)) {
     failures.push(`${label}: field "tier" must be one of ${TIERS.join(', ')}, got ${JSON.stringify(entry.tier)}`);
   }
@@ -166,6 +166,28 @@ function validateEntry(entry, index, failures) {
     failures.push(`${label}: field "blocker" must be a non-empty string, got ${JSON.stringify(entry.blocker)}`);
   }
 
+  // noGuaranteedDaily marks a DIFFERENT kind of gap than "Unranked": not "we
+  // haven't verified this yet" but "this platform's only daily mechanic is
+  // chance-based (a wheel with GC-only segments, SC as one possible outcome
+  // rather than every spin), so no dailySC belongs here at all, ever - a
+  // future screenshot cannot fix it the way it fixes a plain Unranked gap."
+  if (entry.noGuaranteedDaily !== undefined) {
+    if (typeof entry.noGuaranteedDaily !== 'boolean') {
+      failures.push(`${label}: field "noGuaranteedDaily" must be a boolean, got ${JSON.stringify(entry.noGuaranteedDaily)}`);
+    } else if (entry.noGuaranteedDaily) {
+      if (entry.tier !== 'Not Rankable') {
+        failures.push(`${label}: has noGuaranteedDaily but tier is "${entry.tier}" - it must be "Not Rankable"`);
+      }
+      if (entry.dailySC !== undefined) {
+        failures.push(`${label}: has noGuaranteedDaily but also a dailySC - a chance mechanic has no guaranteed rate to record`);
+      }
+    }
+  }
+
+  if (entry.tier === 'Not Rankable' && !entry.noGuaranteedDaily) {
+    failures.push(`${label}: tier is "Not Rankable" but noGuaranteedDaily is not set - that combination only means "no guaranteed daily SC"`);
+  }
+
   if (isFiniteNumber(entry.cashFloor) && isFiniteNumber(entry.dailySC) && entry.dailySC > 0) {
     // Both inputs are present, so the derivation must be WRITTEN DOWN. Letting a
     // missing daysToRedeem through would skip every check below it and leave the
@@ -183,21 +205,27 @@ function validateEntry(entry, index, failures) {
       // The BAND is what a blocker overrides: it is ranked by rule, not arithmetic.
       if (!entry.blocker) {
         const d = entry.daysToRedeem;
-        // Bands are INCLUSIVE of their upper bound: 60 days is S, 250 is B, 500
-        // is C. That is what every entry note states and what makes "D beyond
-        // 500" true, since 500 itself is not beyond 500.
-        const expectedTier = d <= 60 ? 'S' : d <= 120 ? 'A' : d <= 250 ? 'B' : d <= 500 ? 'C' : 'D';
+        // Bands are INCLUSIVE of their upper bound: 60 days is S, 182 is B, 304
+        // is D. That is what every entry note states and what makes "F beyond
+        // 304" true, since 304 itself is not beyond 304. Revised 2026-09-23 to
+        // six bands (was five) so the slow end of the catalog differentiates
+        // "merely bad" from "essentially unreachable" instead of lumping both
+        // under one D tier.
+        const expectedTier = d <= 60 ? 'S' : d <= 120 ? 'A' : d <= 182 ? 'B' : d <= 242 ? 'C' : d <= 304 ? 'D' : 'F';
         if (entry.tier !== expectedTier) {
           failures.push(`${label}: tier is "${entry.tier}" but ${d} days to redeem derives "${expectedTier}"`);
         }
       }
     }
-  } else if (!entry.blocker && entry.tier !== 'Unranked') {
+  } else if (!entry.blocker && !entry.noGuaranteedDaily && entry.tier !== 'Unranked') {
     // No arithmetic behind the letter. A stray daysToRedeem is not a licence to
     // keep one, and neither is omitting the tier altogether - the contract wants
-    // the gap stated as "Unranked", not left blank.
+    // the gap stated as "Unranked", not left blank. "Not Rankable" is a DIFFERENT
+    // gap (see noGuaranteedDaily above) and is handled by that check instead of
+    // this one - conflating "not yet verified" with "structurally has no
+    // guaranteed daily" is exactly what this split exists to stop.
     const shown = entry.tier === undefined ? 'no tier at all' : `tier "${entry.tier}"`;
-    failures.push(`${label}: has ${shown} but no cashFloor/dailySC behind it - an entry missing either input must say "Unranked"`);
+    failures.push(`${label}: has ${shown} but no cashFloor/dailySC behind it - an entry missing either input must say "Unranked" (or "Not Rankable" with noGuaranteedDaily: true, if it structurally has no guaranteed daily SC)`);
   }
 
   if (entry.lastVerified !== undefined) {
@@ -225,7 +253,7 @@ function verifiedAgeDays(entry) {
 }
 
 const REVIEW_STALE_DAYS = 90;
-const TIER_RANK = { S: 5, A: 4, B: 3, C: 2, D: 1 };
+const TIER_RANK = { S: 6, A: 5, B: 4, C: 3, D: 2, F: 1 };
 
 // Surfaces the platforms most overdue for a human to re-check: a stale or
 // never-verified cooldown/redeem entry is actively worse than an absent
@@ -255,6 +283,7 @@ function captureNeeded(entry) {
   // known would let the queue below claim a verified rate this entry lacks.
   const hasRate = hasSourcedRate(entry);
   if (entry.blocker) return null;             // ranked by rule, not by arithmetic
+  if (entry.noGuaranteedDaily) return null;   // structural finding, not a data gap - no screenshot fixes this
   if (!entry.lastVerified && !hasFloor && !hasRate) return 'everything - never verified';
   if (!hasRate && !hasFloor) return 'the daily-claim panel AND the redeem screen';
   if (!hasRate) return 'the daily-claim panel (no SC rate known)';

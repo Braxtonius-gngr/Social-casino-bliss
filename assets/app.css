@@ -46,6 +46,12 @@
       --tier-b: var(--accent-bronze);
       --tier-c: #8A8D93;
       --tier-d: #5A5D63;
+      /* Added 2026-09-23 with the six-band tier system. Not per-themed, same
+         as --tier-d above - the ramp's bottom rungs stay one shared neutral
+         (or, for F, one shared warning tone) across every theme rather than
+         each theme tuning its own "this platform is bad" color. */
+      --tier-f: #8B4A4A;
+      --tier-notrankable: #6E5A8C;
     }
 
     /* ==========================================================================
@@ -341,7 +347,14 @@
     .tier-B { background: color-mix(in srgb, var(--tier-b) 20%, transparent); color: var(--tier-b); border: 1px solid var(--tier-b); }
     .tier-C { background: color-mix(in srgb, var(--tier-c) 20%, transparent); color: var(--tier-c); border: 1px solid var(--tier-c); }
     .tier-D { background: color-mix(in srgb, var(--tier-d) 18%, transparent); color: var(--tier-d); border: 1px dashed var(--tier-d); text-shadow: none; }
+    .tier-F { background: color-mix(in srgb, var(--tier-f) 20%, transparent); color: var(--tier-f); border: 1px dashed var(--tier-f); text-shadow: none; }
     .tier-Unranked { background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--glass-border); }
+    /* Deliberately NOT styled like Unranked, even though both are "nothing to
+       show" badges - Unranked is a data gap (a screenshot fixes it),
+       Not Rankable is permanent (this platform has no guaranteed daily SC to
+       rank at all). A dotted violet border keeps the two from reading as the
+       same badge at a glance. */
+    .tier-Not-Rankable { background: color-mix(in srgb, var(--tier-notrankable) 14%, transparent); color: var(--tier-notrankable); border: 1px dotted var(--tier-notrankable); text-shadow: none; }
 
     .card-status { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-main); opacity: 0.8; flex: 1; min-width: 0; overflow: hidden; }
     .status-time { font-family: monospace; font-weight: 600; flex-shrink: 0; }
@@ -1011,6 +1024,13 @@
     .res-legend-list { display: grid; grid-template-columns: 28px 1fr; gap: 8px 12px; margin: 0; }
     .res-legend-list dt { font-weight: 800; color: var(--accent-gold); }
     .res-legend-list dd { margin: 0; font-size: 0.76rem; color: var(--text-muted); line-height: 1.5; }
+    /* The fixed 28px first column above fits a single glyph ("★", "BB")
+       but clips and overlaps a tier badge - "Not Rankable" is nowhere close
+       to 28px wide. This modifier sizes the column to its content instead,
+       for any legend list whose dt holds a real .tier-badge rather than a
+       short symbol. */
+    .res-legend-list.tier-legend { grid-template-columns: auto 1fr; align-items: start; }
+    .res-legend-list.tier-legend dt { display: flex; align-items: center; padding-top: 1px; }
     .res-links-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 10px 2px; }
     .res-ext-group { margin-bottom: 14px; }
     .res-ext-group:last-child { margin-bottom: 0; }
