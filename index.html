@@ -219,7 +219,10 @@
       <div id="sortDrawerGames" class="sort-drawer glass-panel">
         <div class="sort-drawer-header">
           <span>Sort Priority Stack</span>
-          <span style="cursor:pointer; color:var(--accent-pink); text-shadow:0 0 8px var(--accent-pink);" onclick="clearSortStack('games')">Clear All</span>
+          <span style="display:flex; gap:12px;">
+            <span style="cursor:pointer; color:var(--accent-cyan); text-shadow:0 0 8px var(--accent-cyan);" onclick="resetSortStack('games')">Reset to Default</span>
+            <span style="cursor:pointer; color:var(--accent-pink); text-shadow:0 0 8px var(--accent-pink);" onclick="clearSortStack('games')">Clear All</span>
+          </span>
         </div>
         <div class="sort-options-grid">
           <button class="sort-option-btn" data-key="tier" onclick="toggleSortKey('tier', 'games')"><span>Tier (S to D)</span><span class="sort-priority-num" style="display:none;"></span></button>
@@ -261,7 +264,10 @@
       <div id="sortDrawerCatalog" class="sort-drawer glass-panel">
         <div class="sort-drawer-header">
           <span>Sort Priority Stack</span>
-          <span style="cursor:pointer; color:var(--accent-pink); text-shadow:0 0 8px var(--accent-pink);" onclick="clearSortStack('catalog')">Clear All</span>
+          <span style="display:flex; gap:12px;">
+            <span style="cursor:pointer; color:var(--accent-cyan); text-shadow:0 0 8px var(--accent-cyan);" onclick="resetSortStack('catalog')">Reset to Default</span>
+            <span style="cursor:pointer; color:var(--accent-pink); text-shadow:0 0 8px var(--accent-pink);" onclick="clearSortStack('catalog')">Clear All</span>
+          </span>
         </div>
         <div class="sort-options-grid">
           <button class="sort-option-btn" data-key="tier" onclick="toggleSortKey('tier', 'catalog')"><span>Tier (S to D)</span><span class="sort-priority-num" style="display:none;"></span></button>
@@ -1250,8 +1256,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     let currentTab = 'games';
     let currentFilter = 'all';
     let currentCatalogFilter = 'all';
-    let sortStackGames = ['tier', 'reliability'];
-    let sortStackCatalog = ['tier', 'reliability'];
+    // The app's own opinion of "best first": tier ranking, then daily SC
+    // (high to low) as the tie-breaker within a tier, then alphabetical so
+    // the remainder is at least predictable rather than insertion-order.
+    // Every place that resets or falls back to a default sort stack reads
+    // this one constant - copy it with a fresh array (DEFAULT_SORT_STACK
+    // itself is never mutated) since toggleSortKey() pushes/splices in place.
+    const DEFAULT_SORT_STACK = ['tier', 'dailySC', 'name'];
+    let sortStackGames = [...DEFAULT_SORT_STACK];
+    let sortStackCatalog = [...DEFAULT_SORT_STACK];
 
     const SORT_CONFIG = {
       tier: { label: "Tier (S to D)" },
@@ -1364,7 +1377,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
       const validSortKeys = Object.keys(SORT_CONFIG);
       function sanitizeSortStack(v) {
-        if (!Array.isArray(v)) return ['tier', 'reliability'];
+        if (!Array.isArray(v)) return [...DEFAULT_SORT_STACK];
         const seen = new Set();
         return v.filter(k => typeof k === 'string' && validSortKeys.includes(k) && !seen.has(k) && seen.add(k));
       }
@@ -1418,8 +1431,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try { localStorage.removeItem(VIEW_STATE_KEY); } catch (e) {}
       currentFilter = 'all';
       currentCatalogFilter = 'all';
-      sortStackGames = ['tier', 'reliability'];
-      sortStackCatalog = ['tier', 'reliability'];
+      sortStackGames = [...DEFAULT_SORT_STACK];
+      sortStackCatalog = [...DEFAULT_SORT_STACK];
       const gs = document.getElementById('gamesSearch'); if (gs) gs.value = '';
       const cs = document.getElementById('catalogSearchInput'); if (cs) cs.value = '';
       setGamesFilterButtonUI('all');
@@ -1485,6 +1498,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function clearSortStack(view) {
       if (view === 'games') sortStackGames = [];
       else sortStackCatalog = [];
+      updateSortUI(view);
+      if (view === 'games') renderGames();
+      else renderCatalogList();
+      saveViewState();
+    }
+
+    // Distinct from clearSortStack (which empties the stack): this restores
+    // the app's own default ordering rather than turning sorting off.
+    function resetSortStack(view) {
+      if (view === 'games') sortStackGames = [...DEFAULT_SORT_STACK];
+      else sortStackCatalog = [...DEFAULT_SORT_STACK];
       updateSortUI(view);
       if (view === 'games') renderGames();
       else renderCatalogList();
