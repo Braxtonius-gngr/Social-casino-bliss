@@ -1801,6 +1801,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // Returns { game, undo } so a caller that suppressed the toast still
     // has a way to trigger (and know about) the same undo logic - or null
     // if the email gate intercepted and this collection didn't happen.
+    // Owner lock on OPEN's destination. game.referralUrl exists for the
+    // Share feature - a player storing THEIR OWN link to send to THEIR OWN
+    // friends - and that stays fully functional either way. What's locked
+    // is whether OPEN itself will navigate through that stored link
+    // instead of the catalog's own url. Locked (the default for every
+    // distributed copy) means OPEN always uses the catalog's url - for the
+    // handful of platforms Braxtonius has a referral program with, that IS
+    // his referral link (see data/catalog.js), so it can't be quietly
+    // redirected to someone else's code by typing into a field. There is
+    // deliberately no UI for this: to release the lock on a given device,
+    // set localStorage.almanac_referral_unlocked to '1' from the browser
+    // console - a decision Braxtonius makes for his own install, not
+    // something exposed to anyone who receives the app.
+    function referralOverrideUnlocked() {
+      try { return localStorage.getItem('almanac_referral_unlocked') === '1'; } catch (e) { return false; }
+    }
+
     function collectWithUndo(id, opensLink, opts) {
       opts = opts || {};
       const game = trackedGames.find(g => g.id === id);
@@ -1812,15 +1829,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // localStorage/exports actually persist.
       const prevCollected = game.lastCollected;
       const prevSnooze = game.snoozedUntil;
-      // A player's own referralUrl (set via the Share feature) always wins
-      // over the catalog's own url - someone who already has an account
-      // under a different referral relationship shouldn't have that
-      // silently overridden by whatever the catalog ships with. Falls back
-      // to game.url, which is the catalog's own default and, for the
-      // platforms Braxtonius has a referral program with, is that referral
-      // link itself (same pattern Dorados already used) - so a fresh
-      // install with nothing overridden opens through it automatically.
-      if (opensLink) openExternal(game.referralUrl && game.referralUrl.trim() ? game.referralUrl : game.url);
+      const useReferralOverride = referralOverrideUnlocked() && game.referralUrl && game.referralUrl.trim();
+      if (opensLink) openExternal(useReferralOverride ? game.referralUrl : game.url);
       game.lastCollected = serverNow();
       delete game.snoozedUntil;
       logCollection(id);
