@@ -1731,6 +1731,44 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return Math.max(...nums.map(Number));
     }
 
+    // Short, human phrases for the catalog's "blocker" slugs (a documented
+    // rule that stops free play from ever reaching the redeem floor, e.g.
+    // a purchase gate or a lifetime cap). Unrecognized slugs still degrade
+    // gracefully - dashes become spaces - rather than showing raw kebab-case.
+    const BLOCKER_LABELS = {
+      'purchase-gated-daily': 'Requires a purchase to unlock the daily claim',
+      'free-play-cannot-reach-floor': "Free play alone can't reach the redeem floor",
+      '20x-promo-playthrough-last-in-queue': 'Promo SC needs 20x playthrough before free SC clears',
+      'lifetime-cap-one-redemption': 'Lifetime cap - only one redemption, ever',
+    };
+    function blockerLabel(slug) {
+      return BLOCKER_LABELS[slug] || slug.replace(/-/g, ' ');
+    }
+
+    // The one-line, plain-English readout at the top of Keen Info: what a
+    // casual user actually wants before diving into (or skipping) the full
+    // research notes below it. Built entirely from the catalog's structured
+    // fields - dailySC, tier, cashFloor, daysToRedeem, confidence - so it
+    // needs no separate summary text maintained per platform.
+    function keenSummaryHtml(game) {
+      if (game.blocker) {
+        return `<div class="keen-summary keen-summary-blocked">&#9888; ${escHtml(blockerLabel(game.blocker))}</div>`;
+      }
+      if (game.noGuaranteedDaily) {
+        return `<div class="keen-summary">Chance-based daily - no guaranteed SC, so this platform isn't rankable.</div>`;
+      }
+      const rate = typeof game.dailySC === 'number' && game.dailySC > 0
+        ? '$' + game.dailySC.toFixed(2) + '/day' + (game.scIsAveraged ? ' (avg)' : '')
+        : null;
+      if (game.tier === 'Unranked' || !rate) {
+        return `<div class="keen-summary">${rate ? `${rate} - ` : ''}Redeem floor not yet confirmed, so no tier yet.</div>`;
+      }
+      const floor = typeof game.cashFloor === 'number' ? '$' + game.cashFloor : null;
+      const days = typeof game.daysToRedeem === 'number' ? '~' + game.daysToRedeem + ' days to first cash-out' : null;
+      const conf = game.confidence ? `confidence: ${game.confidence}` : null;
+      return `<div class="keen-summary">${[rate, floor, days, conf].filter(Boolean).join(' &middot; ')}</div>`;
+    }
+
     // The cashout bar, in one place. It started life inline inside the
     // Keen Info popover; the Daily Run card shows the same bar now, and
     // the run screen is where a stale balance actually gets noticed, so
@@ -2127,11 +2165,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           </div>
           <div id="keen_${game.id}" class="keen-info-popover ${openKeenIds.has(game.id) ? 'open' : ''}">
             <div class="keen-title">Keen Info - Min Redeem: ${game.minRedeem || 'Varies'}</div>
+            ${keenSummaryHtml(game)}
             ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:4px; font-weight:700;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
             ${cashBarHtml(game)}
             ${game.userNotes ? `<div class="user-note"><strong>Your note:</strong> ${escHtml(game.userNotes)}</div>` : ''}
             ${(game.tags || []).length ? `<div style="margin-bottom:6px;">${game.tags.map(t=>`<span class="tag-pill">${escHtml(t)}</span>`).join('')}</div>` : ''}
-            <div>${game.notes || 'No specific warning flags. 24h standard reset cycle.'}</div>
+            <details class="keen-notes-toggle">
+              <summary>Research notes</summary>
+              <div class="keen-notes-body">${game.notes || 'No specific warning flags. 24h standard reset cycle.'}</div>
+            </details>
             ${goToGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">RECOMMENDED MODULES:</strong>${goToGames}</div>` : ''}
           </div>
         `;
@@ -2283,8 +2325,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           <div id="keen_${catId}" class="keen-info-popover ${openKeenIds.has(catId) ? 'open' : ''}">
             <div class="keen-title">${item.name} - Min Redeem: ${item.minRedeem || 'Varies'}</div>
             <div class="verify-tag ${catalogIsStale(item) ? 'stale' : ''}" style="margin-bottom:4px;">${catalogVerifiedLabel(item)}${item.lastVerified ? ` (${item.lastVerified})` : ''}</div>
+            ${keenSummaryHtml(item)}
             ${item.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:4px; font-weight:700;">*Averaged from reported range ${item.scRange}/day</div>` : ''}
-            <div>${item.notes || 'No critical flags. Normal 1x playthrough.'}</div>
+            <details class="keen-notes-toggle">
+              <summary>Research notes</summary>
+              <div class="keen-notes-body">${item.notes || 'No critical flags. Normal 1x playthrough.'}</div>
+            </details>
             ${item.bestGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">RECOMMENDED MODULES:</strong>${item.bestGames}</div>` : ''}
           </div>
         `;
@@ -7257,7 +7303,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           <button type="button" class="cooldown-chip" title="Edit cooldown" aria-label="Edit cooldown for ${escHtml(game.name)}, currently ${cooldownLabel(game)}" onclick="openCooldownEditor('${game.id}', event, true)">${cooldownLabel(game)}</button>
         </div>
         ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:8px;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
-        ${game.notes ? `<div class="run-notes">${game.notes}</div>` : ''}
+        ${keenSummaryHtml(game)}
+        ${game.notes ? `<details class="keen-notes-toggle"><summary>Research notes</summary><div class="keen-notes-body run-notes">${game.notes}</div></details>` : ''}
         ${goToGames ? `<div class="run-bestgames"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0,229,255,0.4);">RECOMMENDED MODULES:</strong>${goToGames}</div>` : ''}
       `;
     }

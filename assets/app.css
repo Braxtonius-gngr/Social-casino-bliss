@@ -315,6 +315,22 @@
     .keen-info-popover.open { display: block; }
     .keen-title { font-weight: 800; color: var(--accent-pink); margin-bottom: 4px; }
 
+    /* The plain-English readout casual users actually want, built from
+       structured fields rather than the verbose research notes below it.
+       Blocked platforms (a purchase gate, a lifetime cap) get a louder
+       warning treatment since that's the one fact nobody should miss. */
+    .keen-summary { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px; }
+    .keen-summary-blocked { color: var(--accent-orange); font-weight: 700; }
+
+    /* Full research notes: collapsed by default behind a native <details>
+       disclosure, so the history stays on record without burying the
+       summary above it under a wall of text. */
+    .keen-notes-toggle { margin-bottom: 4px; }
+    .keen-notes-toggle summary { cursor: pointer; font-size: 0.72rem; font-weight: 700; color: var(--text-dim); letter-spacing: 0.03em; text-transform: uppercase; padding: 2px 0; }
+    .keen-notes-toggle summary:hover { color: var(--text-muted); }
+    .keen-notes-toggle[open] summary { color: var(--accent-cyan); margin-bottom: 6px; }
+    .keen-notes-body { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
+
     .strategy-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
     .strategy-row { background: rgba(0, 0, 0, 0.4); border: 1px solid var(--glass-border); border-radius: 8px; overflow: hidden; transition: all 0.2s; }
     .strategy-row.interactive { cursor: pointer; }
