@@ -4635,9 +4635,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     function showLaunchFailure(url, retryFn, reason) {
       const current = dailyRunQueue[dailyRunIndex];
-      if (document.getElementById('dailyRunOverlay').classList.contains('open')
+      let validatedUrl = null;
+      try {
+        const parsed = new URL(url, location.href);
+        if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+          validatedUrl = parsed.href;
+        }
+      } catch (e) {}
+      if (reason === 'embedded-webview' && validatedUrl
+        && document.getElementById('dailyRunOverlay').classList.contains('open')
         && current && current.url === url) {
-        dailyRunLaunchFallback = { url, retryFn };
+        dailyRunLaunchFallback = { url: validatedUrl, retryFn };
         renderDailyRunStep();
       }
       showToast(`${launchFailureMessage(reason)} Retry?`, retryFn, 10000, 'RETRY');
