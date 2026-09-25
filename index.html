@@ -5059,6 +5059,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // should've fired) is the one to avoid, so EMAIL_GATE_PASSED_KEY is
     // the actual source of truth once a device has cleared the gate once.
     let cachedHasLinkedEmail = false;
+    let cachedLinkedEmail = null;
     let pendingGatedAction = null;
 
     // --- Server-corrected clock ---------------------------------------
@@ -5212,8 +5213,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try {
         session = client && client.auth ? (await client.auth.getSession()).data.session : null;
       } catch (error) {}
-      const linkedEmail = resolveLinkedEmail(session);
-      if (!client || !session || !linkedEmail) {
+      const linkedEmail = resolveLinkedEmail(session) || cachedLinkedEmail;
+      if (!client || !session) {
+        showToast('Cloud sync is unavailable. Check your connection and try again.');
+        return;
+      }
+      if (!linkedEmail) {
         showToast('Please link your email address in Settings before upgrading.');
         openSettingsModal();
         return;
@@ -5809,6 +5814,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const session = sessionData && sessionData.session;
       const email = resolveLinkedEmail(session);
       cachedHasLinkedEmail = !!email;
+      cachedLinkedEmail = email;
       if (email) {
         linkedBox.textContent = `Linked: ${email} — recoverable on any device via "Recover a Linked Account" below.`;
         linkedBox.style.display = '';
@@ -5817,6 +5823,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         linkedBox.style.display = 'none';
         linkForm.style.display = '';
       }
+      updateBillingUI();
     }
 
     // Shared core: attaches `email` to the CURRENT session via
@@ -5833,6 +5840,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       await ensureSyncSignedIn(client);
       const { error } = await client.auth.updateUser({ email }, { emailRedirectTo: getEmailRedirectTo() });
       if (error) throw error;
+      cachedHasLinkedEmail = true;
+      cachedLinkedEmail = email;
+      updateBillingUI();
       try { localStorage.setItem(EMAIL_GATE_PASSED_KEY, 'true'); } catch (e) {}
     }
 
