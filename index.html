@@ -5251,21 +5251,20 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try {
         session = client && client.auth ? (await client.auth.getSession()).data.session : null;
       } catch (error) {}
-      const linkedEmail = resolveLinkedEmail(session) || getLinkedEmail();
-      if (!client || !session) {
+      if (!client) {
         showToast('Cloud sync is unavailable. Check your connection and try again.');
         return;
       }
-      if (!linkedEmail) {
-        showToast('Please link your email address in Settings before upgrading.');
-        openSettingsModal();
-        return;
-      }
+      // No longer blocks on missing/anonymous email - checkout proceeds
+      // regardless, and Stripe's hosted checkout page collects an email
+      // directly from the buyer when we don't have one to prefill with
+      // (see the request body below, which omits `email` in that case).
+      const email = resolveLinkedEmail(session) || getLinkedEmail() || '';
       try {
         showToast('Connecting to secure checkout...');
-        const { data, error } = await client.functions.invoke('create-checkout-session', {
-          body: { priceId: priceId || 'price_pro_monthly', returnUrl: billingReturnUrl(), email: linkedEmail }
-        });
+        const body = { priceId: priceId || 'price_pro_monthly', returnUrl: billingReturnUrl() };
+        if (email) body.email = email;
+        const { data, error } = await client.functions.invoke('create-checkout-session', { body });
         if (error || !data?.url) throw new Error(error?.message || data?.error || 'Unable to start checkout.');
         window.location.href = data.url;
       } catch (error) {
@@ -5307,33 +5306,30 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const manage = document.getElementById('btnManageBilling');
       const anonNotice = document.getElementById('billingAnonNotice');
       if (!badge || !label || !desc || !upgrade || !manage || !anonNotice) return;
-      const sessionPromise = getSupabaseClient()?.auth?.getSession
-        ? getSupabaseClient().auth.getSession()
-        : Promise.resolve({ data: { session: null } });
-      sessionPromise.then(result => {
-        const hasLinkedEmail = !!(resolveLinkedEmail(result?.data?.session) || getLinkedEmail());
-        const isPro = clientEntitlements.isPro;
-        badge.className = isPro ? 'badge badge-pro' : 'badge';
-        badge.textContent = isPro ? 'PRO' : 'FREE';
-        label.textContent = isPro ? 'Casino Almanac Pro' : 'Free Plan';
-        desc.textContent = isPro
-          ? 'Active subscription: unlimited tags and granular payout turnaround analytics.'
-          : 'Standard catalog, local collection tracking, and community drops feed.';
-        upgrade.classList.toggle('hidden', isPro || !hasLinkedEmail);
-        manage.classList.toggle('hidden', !isPro);
-        if (hasLinkedEmail) anonNotice.classList.add('hidden');
-        else anonNotice.classList.remove('hidden');
-        if (isPro && clientEntitlements.currentPeriodEnd) {
-          datesRow.style.display = 'block';
-          const date = new Date(clientEntitlements.currentPeriodEnd).toLocaleDateString();
-          periodText.textContent = clientEntitlements.cancelAtPeriodEnd
-            ? `Cancels at end of period: ${date}`
-            : `Renews on: ${date}`;
-        } else {
-          datesRow.style.display = 'none';
-          periodText.textContent = '';
-        }
-      }).catch(() => {});
+      const isPro = clientEntitlements.isPro;
+      badge.className = isPro ? 'badge badge-pro' : 'badge';
+      badge.textContent = isPro ? 'PRO' : 'FREE';
+      label.textContent = isPro ? 'Casino Almanac Pro' : 'Free Plan';
+      desc.textContent = isPro
+        ? 'Active subscription: unlimited tags and granular payout turnaround analytics.'
+        : 'Standard catalog, local collection tracking, and community drops feed.';
+      // Checkout no longer requires a linked email (Stripe's hosted
+      // checkout collects one directly when we don't have one), so the
+      // upgrade button and its "link an email first" notice are no
+      // longer gated on a linked email - anonNotice stays hidden always.
+      upgrade.classList.toggle('hidden', isPro);
+      manage.classList.toggle('hidden', !isPro);
+      anonNotice.classList.add('hidden');
+      if (isPro && clientEntitlements.currentPeriodEnd) {
+        datesRow.style.display = 'block';
+        const date = new Date(clientEntitlements.currentPeriodEnd).toLocaleDateString();
+        periodText.textContent = clientEntitlements.cancelAtPeriodEnd
+          ? `Cancels at end of period: ${date}`
+          : `Renews on: ${date}`;
+      } else {
+        datesRow.style.display = 'none';
+        periodText.textContent = '';
+      }
     }
 
     function renderGranularSpeedMetrics(platformId) {
