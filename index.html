@@ -5075,7 +5075,18 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // directly. Still not the source of truth; resolveLinkedEmail(session)
     // is, this just avoids blocking on that async lookup.
     function getLinkedEmail() {
-      return cachedLinkedEmail || null;
+      if (cachedLinkedEmail) return cachedLinkedEmail;
+      // Last-resort fallback: scrape the rendered "Linked: <email>" text
+      // if the in-memory/persisted cache hasn't caught up yet for some
+      // reason (e.g. cache cleared mid-session). Only trusted when the
+      // box is actually visible - a hidden box's stale textContent from a
+      // prior render must not count as "linked."
+      const box = document.getElementById('syncLinkedEmailBox');
+      if (box && box.offsetParent !== null) {
+        const match = /^Linked:\s*(\S+@\S+?)(?:\s|$)/.exec(box.textContent || '');
+        if (match) return match[1];
+      }
+      return null;
     }
 
     // Updates the in-memory cache and its localStorage mirror together so
@@ -5300,7 +5311,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         ? getSupabaseClient().auth.getSession()
         : Promise.resolve({ data: { session: null } });
       sessionPromise.then(result => {
-        const hasLinkedEmail = cachedHasLinkedEmail || !!resolveLinkedEmail(result?.data?.session);
+        const hasLinkedEmail = !!(resolveLinkedEmail(result?.data?.session) || getLinkedEmail());
         const isPro = clientEntitlements.isPro;
         badge.className = isPro ? 'badge badge-pro' : 'badge';
         badge.textContent = isPro ? 'PRO' : 'FREE';
@@ -5310,7 +5321,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           : 'Standard catalog, local collection tracking, and community drops feed.';
         upgrade.classList.toggle('hidden', isPro || !hasLinkedEmail);
         manage.classList.toggle('hidden', !isPro);
-        anonNotice.classList.toggle('hidden', hasLinkedEmail);
+        if (hasLinkedEmail) anonNotice.classList.add('hidden');
+        else anonNotice.classList.remove('hidden');
         if (isPro && clientEntitlements.currentPeriodEnd) {
           datesRow.style.display = 'block';
           const date = new Date(clientEntitlements.currentPeriodEnd).toLocaleDateString();
