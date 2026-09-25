@@ -5244,6 +5244,24 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return window.location.origin + window.location.pathname;
     }
 
+    // Stripe sends the buyer back to `?billing=success`. Strip it once we
+    // have handled it so a later refresh (or a bookmark of that URL) does
+    // not keep re-announcing a checkout that already completed.
+    function consumeBillingReturnParam() {
+      let params;
+      try {
+        params = new URLSearchParams(window.location.search);
+      } catch (e) {
+        return;
+      }
+      if (params.get('billing') !== 'success') return;
+      window.history.replaceState({}, document.title, window.location.pathname);
+      showToast('Thanks for upgrading! Your Pro access is being activated.');
+      // The Stripe webhook may land a moment after the redirect, so give
+      // the entitlement row a second chance to come back as pro.
+      setTimeout(syncUserEntitlements, 2500);
+    }
+
     // supabase-js throws a FunctionsHttpError (or FunctionsRelayError /
     // FunctionsFetchError) on a non-2xx response - `.context` is the raw
     // Response the edge function actually returned, which is where the
@@ -5352,8 +5370,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // upgrade button is no longer gated on a linked email, and the
       // "link an email first" notice markup (#billingAnonNotice) was
       // removed entirely rather than kept as permanently-hidden dead UI.
+      // There is no global `.hidden` rule in the stylesheet (only
+      // `.landing-screen.hidden`), so the class alone never actually hid
+      // these buttons - the inline display is what does the work. The
+      // class is still kept in sync so the markup's state stays readable.
       upgrade.classList.toggle('hidden', isPro);
       manage.classList.toggle('hidden', !isPro);
+      upgrade.style.display = isPro ? 'none' : 'inline-block';
+      manage.style.display = isPro ? 'inline-block' : 'none';
       if (isPro && clientEntitlements.currentPeriodEnd) {
         datesRow.style.display = 'block';
         const date = new Date(clientEntitlements.currentPeriodEnd).toLocaleDateString();
@@ -8750,6 +8774,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     applyTheme(getActiveThemeId());
     initSync();
     syncUserEntitlements();
+    consumeBillingReturnParam();
     setTimeout(checkModeratorAccess, 1000);
     // Deliberately after the first paint, not before: this is a courtesy
     // nudge toward Settings, not something that should compete with the
