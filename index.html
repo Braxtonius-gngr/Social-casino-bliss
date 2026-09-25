@@ -5212,7 +5212,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try {
         session = client && client.auth ? (await client.auth.getSession()).data.session : null;
       } catch (error) {}
-      if (!client || !session || session.user?.is_anonymous || !session.user?.email) {
+      const linkedEmail = resolveLinkedEmail(session);
+      if (!client || !session || !linkedEmail) {
         showToast('Please link your email address in Settings before upgrading.');
         openSettingsModal();
         return;
@@ -5220,7 +5221,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try {
         showToast('Connecting to secure checkout...');
         const { data, error } = await client.functions.invoke('create-checkout-session', {
-          body: { priceId: priceId || 'price_pro_monthly', returnUrl: billingReturnUrl() }
+          body: { priceId: priceId || 'price_pro_monthly', returnUrl: billingReturnUrl(), email: linkedEmail }
         });
         if (error || !data?.url) throw new Error(error?.message || data?.error || 'Unable to start checkout.');
         window.location.href = data.url;
@@ -5267,7 +5268,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         ? getSupabaseClient().auth.getSession()
         : Promise.resolve({ data: { session: null } });
       sessionPromise.then(result => {
-        const anonymous = !result?.data?.session || result.data.session.user?.is_anonymous;
+        const anonymous = !resolveLinkedEmail(result?.data?.session);
         const isPro = clientEntitlements.isPro;
         badge.className = isPro ? 'badge badge-pro' : 'badge';
         badge.textContent = isPro ? 'PRO' : 'FREE';
@@ -5782,6 +5783,18 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
+    // Resolves the email linked to a session's account, if any - checks
+    // the confirmed `user.email` first, then falls back to
+    // `user.user_metadata.email` for accounts where the address was
+    // supplied but not yet reflected on the top-level field. Deliberately
+    // does NOT gate on `user.is_anonymous`: a linked email is still valid
+    // even while the account remains anonymous pending confirmation.
+    function resolveLinkedEmail(session) {
+      const user = session && session.user;
+      if (!user) return null;
+      return user.email || (user.user_metadata && user.user_metadata.email) || null;
+    }
+
     // Reflects whether the current session has a linked, non-anonymous
     // email - shows it plainly (a recoverable account exists) or falls
     // back to the link/recover forms. Async because session lookup is,
@@ -5794,7 +5807,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (!client) { linkedBox.style.display = 'none'; linkForm.style.display = ''; return; }
       const { data: sessionData } = await client.auth.getSession();
       const session = sessionData && sessionData.session;
-      const email = session && session.user && !session.user.is_anonymous ? session.user.email : null;
+      const email = resolveLinkedEmail(session);
       cachedHasLinkedEmail = !!email;
       if (email) {
         linkedBox.textContent = `Linked: ${email} — recoverable on any device via "Recover a Linked Account" below.`;
