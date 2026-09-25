@@ -707,7 +707,7 @@
         </div>
         <div id="notifyControls">
           <div class="toggle-row">
-            <span style="color:#fff; font-size:0.85rem;">Alert me when platforms are ready</span>
+            <span style="color:#fff; font-size:0.85rem;">Cooldown Ready Notifications<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Alerts you when a platform's cooldown rolls over and its drop is ready</span></span>
             <input type="checkbox" id="notifyToggle" onchange="toggleNotifications(this.checked)" />
           </div>
           <div class="time-inputs" id="notifyQuietHours" style="display:none;">
@@ -871,6 +871,25 @@
       <div class="modal-actions" style="margin-top:12px;">
         <button type="button" class="btn-dock" onclick="closeModals()">CANCEL</button>
         <button type="button" class="btn-primary" id="btnConfirmContribute" onclick="confirmRedemptionContribution()">CONFIRM &amp; SHARE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Opens ON TOP of the platform edit modal, so every dismissal path
+       here calls closeProUpsell() (self only) rather than closeModals()
+       (every open backdrop), which would discard unsaved platform edits
+       underneath. -->
+  <div id="proUpsellModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px;">
+        <h3 style="margin:0;">Casino Almanac Pro</h3>
+        <button class="btn-close-x" onclick="closeProUpsell()">&#10005;</button>
+      </div>
+      <p id="proUpsellHeadline" style="color:var(--text-main); font-size:0.95rem; font-weight:700; margin:0 0 6px;">Unlock unlimited custom tags with Casino Almanac Pro.</p>
+      <p id="proUpsellDetail" class="drops-note" style="margin:0 0 12px;"></p>
+      <div class="modal-actions" style="margin-top:12px;">
+        <button type="button" class="btn-dock" onclick="closeProUpsell()">NOT NOW</button>
+        <button type="button" class="btn-primary" onclick="upgradeFromUpsell()">UPGRADE TO PRO ($4.99/MO)</button>
       </div>
     </div>
   </div>
@@ -2672,13 +2691,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const tags = document.getElementById('modalTags').value
         .split(',').map(t => t.trim()).filter(Boolean);
       const userNotes = document.getElementById('modalUserNotes').value.trim();
-      const nextTagSet = new Set();
-      trackedGames.forEach(game => {
-        if (game.id === id) return;
-        (game.tags || []).forEach(tag => nextTagSet.add(tag));
-      });
-      tags.forEach(tag => nextTagSet.add(tag));
-      if (!canAddCustomTag(nextTagSet.size)) return;
+      // Per-platform cap, not a global one: the limit the user is sold on
+      // is "3 custom tags per platform", so it counts this platform's own
+      // tag list. Deduplicated first, since "vip, vip" is one tag to
+      // every other part of the app and shouldn't burn two slots.
+      if (!canAddCustomTag(new Set(tags).size)) return;
 
       if (!name || !url) {
         alert('Please provide a name and URL');
@@ -4521,7 +4538,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         return;
       }
       try {
-        const n = new Notification('Casino Almanac', { body: 'Test alert: your ready queue will appear here.' });
+        const n = new Notification('Casino Almanac', { body: 'Test alert: your ready queue will appear here.', icon: NOTIFY_ICON });
         n.onclick = () => window.focus();
         showToast('Test alert sent.', null);
       } catch (err) {
@@ -4579,8 +4596,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // re-deriving readiness from lastCollected+cooldownHours, which was
     // wrong for any fixed-reset platform. Snoozed platforms are excluded:
     // the user asked not to be bothered about them right now.
+    function readyPlatformsNow() {
+      return trackedGames.filter(g => getCooldownState(g).isReady && !isSnoozed(g));
+    }
+
     function countReadyNow() {
-      return trackedGames.filter(g => getCooldownState(g).isReady && !isSnoozed(g)).length;
+      return readyPlatformsNow().length;
     }
 
     function scheduleNextNotification() {
@@ -4633,6 +4654,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
     }
 
+    // Relative path, deliberately: this app is served from a GitHub Pages
+    // SUBPATH, so a leading-slash icon URL resolves to the domain root and
+    // silently fails to load. icon-192.webp is the manifest's own icon and
+    // is already precached by the service worker.
+    const NOTIFY_ICON = './assets/icon-192.webp';
+
     function fireNotification() {
       if (!notificationsSupported()) return;
       const prefs = getNotifyPrefs();
@@ -4640,17 +4667,26 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
       if (isQuietHours(serverNow(), prefs.start, prefs.end)) { scheduleNextNotification(); return; }
 
-      const readyCount = countReadyNow();
-      if (readyCount === 0) { scheduleNextNotification(); return; }
+      const ready = readyPlatformsNow();
+      if (ready.length === 0) { scheduleNextNotification(); return; }
 
-      const body = `${readyCount} platform${readyCount !== 1 ? 's' : ''} ready to collect`;
+      // One ready platform can be named outright, which is far more
+      // actionable than a count. Two or more keeps the aggregate wording -
+      // the hourly batching rule means a single alert often stands in for
+      // several platforms, and a single name would misrepresent that.
+      const single = ready.length === 1 ? ready[0] : null;
+      const title = single ? 'Platform Ready!' : 'Casino Almanac';
+      const body = single
+        ? `${single.name} daily drop is ready to collect!`
+        : `${ready.length} platforms ready to collect`;
+      const options = { body, icon: NOTIFY_ICON, badge: NOTIFY_ICON, tag: 'almanac-ready', renotify: false };
       try {
         if (navigator.serviceWorker && navigator.serviceWorker.ready) {
           navigator.serviceWorker.ready
-            .then(reg => reg.showNotification('Casino Almanac', { body, tag: 'almanac-ready', renotify: false }))
-            .catch(() => { try { new Notification('Casino Almanac', { body }); } catch (e) {} });
+            .then(reg => reg.showNotification(title, options))
+            .catch(() => { try { new Notification(title, options); } catch (e) {} });
         } else {
-          const n = new Notification('Casino Almanac', { body });
+          const n = new Notification(title, options);
           n.onclick = () => window.focus();
         }
       } catch (e) { /* notification failed; don't break the app */ }
@@ -5244,9 +5280,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return window.location.origin + window.location.pathname;
     }
 
-    // Stripe sends the buyer back to `?billing=success`. Strip it once we
-    // have handled it so a later refresh (or a bookmark of that URL) does
-    // not keep re-announcing a checkout that already completed.
+    // Stripe sends the buyer back to `?billing=success` after checkout and
+    // `?billing=portal_return` after the customer portal. Handle whichever
+    // it is, then strip it so a later refresh (or a bookmark of that URL)
+    // doesn't keep re-announcing something that already happened.
     function consumeBillingReturnParam() {
       let params;
       try {
@@ -5254,11 +5291,18 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } catch (e) {
         return;
       }
-      if (params.get('billing') !== 'success') return;
+      const billing = params.get('billing');
+      if (billing !== 'success' && billing !== 'portal_return' && billing !== 'canceled') return;
       window.history.replaceState({}, document.title, window.location.pathname);
-      showToast('Thanks for upgrading! Your Pro access is being activated.');
-      // The Stripe webhook may land a moment after the redirect, so give
-      // the entitlement row a second chance to come back as pro.
+      if (billing === 'success') {
+        showToast('Thanks for upgrading! Your Pro access is being activated.');
+      } else if (billing === 'canceled') {
+        showToast('Checkout canceled. Nothing was charged.');
+      }
+      // Every case re-pulls entitlements, not just success: a cancellation
+      // made inside the portal changes them too, and the Stripe webhook
+      // can land a moment after the browser redirect either way.
+      syncUserEntitlements();
       setTimeout(syncUserEntitlements, 2500);
     }
 
@@ -5333,20 +5377,72 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
       try {
         showToast('Loading billing portal...');
+        // Same sign-in guarantee as checkout: without it a fresh tab with
+        // no session yet sends the anon key as the bearer token, which the
+        // edge function can't resolve to a user at all.
+        await ensureSyncSignedIn(client);
         const { data, error } = await client.functions.invoke('create-portal-session', {
           body: { returnUrl: billingReturnUrl() }
         });
-        if (error || !data?.url) throw new Error(error?.message || data?.error || 'Unable to open billing portal.');
+        if (error || !data?.url) {
+          const { status, body: errBody } = await extractFunctionsErrorDetail(error);
+          // 409/no_customer is not a failure - it's a free account that
+          // has never checked out, so point at the upgrade path instead
+          // of showing it a billing error it can't act on.
+          if (status === 409 || (errBody && errBody.code === 'no_customer')) {
+            showToast('No active subscription to manage yet. Use Upgrade to Pro to get started.', null, 8000);
+            return;
+          }
+          const detail = (errBody && (errBody.error || errBody.message))
+            || (data && data.error)
+            || (error && error.message)
+            || 'Unable to open billing portal.';
+          console.error('Portal session failure:', status, errBody || error);
+          showToast(status ? `Billing portal failed (${status}): ${detail}` : `Billing portal failed: ${detail}`);
+          return;
+        }
         window.location.href = data.url;
       } catch (error) {
-        showToast(error.message || 'Portal redirect failed.');
+        console.error('Portal session failure:', error);
+        showToast((error && error.message) || 'Portal redirect failed.');
       }
     }
 
+    const FREE_TAG_LIMIT = 3;
+
+    // Returns false (and opens the upsell) when a free account's tag list
+    // for ONE platform would exceed the cap. Pro bypasses entirely.
     function canAddCustomTag(currentTagCount) {
-      if (clientEntitlements.isPro || currentTagCount <= 3) return true;
-      showToast('Free accounts can create up to 3 custom tags. Upgrade to Pro for unlimited tags.');
+      if (clientEntitlements.isPro || currentTagCount <= FREE_TAG_LIMIT) return true;
+      openProUpsell(
+        'Unlock unlimited custom tags with Casino Almanac Pro.',
+        `Free accounts can keep up to ${FREE_TAG_LIMIT} custom tags per platform. You entered ${currentTagCount}.`
+      );
       return false;
+    }
+
+    // Deliberately NOT closeModals(): that clears every open backdrop,
+    // which here would also close the platform edit modal underneath and
+    // throw away whatever the user had typed but not saved. The upsell
+    // opens on top of that modal and must only close itself.
+    function openProUpsell(headline, detail) {
+      const modal = document.getElementById('proUpsellModal');
+      if (!modal) return;
+      const h = document.getElementById('proUpsellHeadline');
+      const d = document.getElementById('proUpsellDetail');
+      if (h) h.textContent = headline || 'Unlock more with Casino Almanac Pro.';
+      if (d) d.textContent = detail || '';
+      modal.classList.add('open');
+    }
+
+    function closeProUpsell() {
+      const modal = document.getElementById('proUpsellModal');
+      if (modal) modal.classList.remove('open');
+    }
+
+    function upgradeFromUpsell() {
+      closeProUpsell();
+      initiateProCheckout();
     }
 
     function updateBillingUI() {
@@ -5388,6 +5484,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         datesRow.style.display = 'none';
         periodText.textContent = '';
       }
+      // The ledger's analytics section is entitlement-dependent, so a late
+      // entitlement pull (or a portal cancellation) must repaint it - and
+      // only while it's actually on screen, since renderLedger() writes
+      // into elements the modal owns.
+      const ledgerModal = document.getElementById('ledgerModal');
+      if (ledgerModal && ledgerModal.classList.contains('open')) renderLedger();
     }
 
     function renderGranularSpeedMetrics(platformId) {
@@ -7479,6 +7581,101 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       </div>`;
     }
 
+    // Pro analytics over the local ledger. Everything here is derived from
+    // entries the user already logged - no new persisted field, no server
+    // call - so it works offline and needs no migration.
+    function computeLedgerAnalytics() {
+      const reds = ledger.filter(e => e.type === 'redemption');
+      const done = reds
+        .map(e => ({ e, days: ledDaysBetween(e.date, e.receivedDate) }))
+        .filter(x => x.days != null && x.days >= 0);
+
+      const byPlatform = {};
+      ledger.forEach(e => {
+        if (e.type !== 'purchase' && e.type !== 'redemption') return;
+        const key = e.platform || 'Unspecified';
+        if (!byPlatform[key]) byPlatform[key] = { spent: 0, back: 0, days: [] };
+        if (e.type === 'purchase') byPlatform[key].spent += e.amount;
+        else byPlatform[key].back += e.amount;
+      });
+      done.forEach(x => {
+        const key = x.e.platform || 'Unspecified';
+        if (byPlatform[key]) byPlatform[key].days.push(x.days);
+      });
+
+      const timed = Object.keys(byPlatform)
+        .filter(name => byPlatform[name].days.length)
+        .map(name => ({ name, avg: byPlatform[name].days.reduce((a, b) => a + b, 0) / byPlatform[name].days.length, n: byPlatform[name].days.length }))
+        .sort((a, b) => a.avg - b.avg);
+
+      const allDays = done.map(x => x.days);
+      return {
+        sampleCount: allDays.length,
+        pendingCount: reds.length - done.length,
+        avgDays: allDays.length ? allDays.reduce((a, b) => a + b, 0) / allDays.length : null,
+        fastest: timed[0] || null,
+        // Guarded so a single timed platform isn't reported as both the
+        // fastest and the slowest, which reads like a bug to the user.
+        slowest: timed.length > 1 ? timed[timed.length - 1] : null,
+        platforms: Object.keys(byPlatform)
+          .map(name => ({ name, net: byPlatform[name].back - byPlatform[name].spent, spent: byPlatform[name].spent, back: byPlatform[name].back }))
+          .sort((a, b) => b.net - a.net)
+      };
+    }
+
+    // Average turnaround reads more naturally in hours below a day - "0.4d"
+    // is a worse answer to "how fast did it pay" than "10h".
+    function fmtTurnaround(days) {
+      if (days == null) return 'n/a';
+      if (days < 1) return Math.round(days * 24) + 'h';
+      return fmtDays(days);
+    }
+
+    function renderLedgerAnalytics() {
+      if (!clientEntitlements.isPro) {
+        return `<div class="pro-locked-card">
+          <div class="billing-card-header"><strong>Granular Payout Turnaround Analytics</strong><span class="badge badge-pro">PRO</span></div>
+          <div class="pro-locked-preview" aria-hidden="true">
+            <div class="speed-headline">Typically <strong>3.4d</strong> from redeem to paid</div>
+            <div class="speed-row"><span class="speed-plat">Fastest platform</span><span class="speed-days">1.2d</span></div>
+            <div class="speed-row"><span class="speed-plat">Slowest platform</span><span class="speed-days">9.5d</span></div>
+          </div>
+          <p class="text-sm text-muted" style="margin:10px 0 0;">Average processing days per platform &amp; speed rankings &mdash; available on Pro.</p>
+          <button type="button" class="btn-primary" style="margin-top:10px;" onclick="initiateProCheckout()">Upgrade to Pro ($4.99/mo)</button>
+        </div>`;
+      }
+
+      const a = computeLedgerAnalytics();
+      if (!a.sampleCount) {
+        return `<div class="pro-metrics-card">
+          <div class="billing-card-header"><strong>Payout turnaround analytics</strong><span class="badge badge-pro">PRO</span></div>
+          <div class="speed-empty">No payouts dated yet. Set the day a redemption landed and this fills in automatically.</div>
+        </div>`;
+      }
+
+      const compare = (a.fastest && a.slowest)
+        ? `<div class="speed-row"><span class="speed-plat">Fastest &mdash; ${escHtml(a.fastest.name)}</span><span class="speed-days">${fmtTurnaround(a.fastest.avg)}</span><span class="speed-n${a.fastest.n < 3 ? ' thin' : ''}">n=${a.fastest.n}</span></div>
+           <div class="speed-row"><span class="speed-plat">Slowest &mdash; ${escHtml(a.slowest.name)}</span><span class="speed-days">${fmtTurnaround(a.slowest.avg)}</span><span class="speed-n${a.slowest.n < 3 ? ' thin' : ''}">n=${a.slowest.n}</span></div>`
+        : `<div class="speed-empty">Date payouts on a second platform to compare fastest against slowest.</div>`;
+
+      const netRows = a.platforms.map(p => {
+        const sign = p.net >= 0 ? '+' : '\u2212';
+        const cls = p.net >= 0 ? 'net-positive' : 'net-negative';
+        return `<div class="speed-row"><span class="speed-plat">${escHtml(p.name)}</span><span class="speed-days ${cls}">${sign}$${Math.abs(p.net).toFixed(2)}</span><span class="speed-n">out $${p.spent.toFixed(2)} / in $${p.back.toFixed(2)}</span></div>`;
+      }).join('');
+
+      return `<div class="pro-metrics-card">
+        <div class="billing-card-header"><strong>Payout turnaround analytics</strong><span class="badge badge-pro">PRO</span></div>
+        <div class="speed-headline" style="margin-top:8px;">Average <strong>${fmtTurnaround(a.avgDays)}</strong> from redeem to paid
+          <span class="speed-sub">${a.sampleCount} payout${a.sampleCount === 1 ? '' : 's'} dated${a.pendingCount ? ' \u00b7 ' + a.pendingCount + ' still pending' : ''}</span>
+        </div>
+        <div class="payout-breakdown-head" style="margin-top:10px;">Fastest vs slowest</div>
+        <div class="speed-rows">${compare}</div>
+        <div class="payout-breakdown-head" style="margin-top:10px;">Net by platform</div>
+        <div class="speed-rows">${netRows}</div>
+      </div>`;
+    }
+
     function renderLedger() {
       refreshLedgerNet();
       const spent = ledger.filter(e => e.type === 'purchase').reduce((a, e) => a + e.amount, 0);
@@ -7508,7 +7705,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         </div>
         <div class="ledger-ytd">${year} to date &nbsp;&mdash;&nbsp; out $${ytdSpent.toFixed(2)} &nbsp;/&nbsp; in $${ytdBack.toFixed(2)}</div>
         ${renderPayoutBreakdown()}
-        ${renderPayoutSpeed()}`;
+        ${renderPayoutSpeed()}
+        ${renderLedgerAnalytics()}`;
 
       const list = document.getElementById('ledgerList');
       if (ledger.length === 0) {

@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v39';
+const CACHE_NAME = 'almanac-v40';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -42,6 +42,25 @@ self.addEventListener('activate', (event) => {
       ))
       .then(() => self.clients.claim())
   );
+});
+
+// Cooldown-ready alerts are shown through registration.showNotification()
+// (see fireNotification() in index.html), which means the click lands here,
+// not on an onclick in the page. Without this handler, tapping the alert
+// dismisses it and does nothing at all.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    // Prefer an already-open copy of the app over spawning a second tab.
+    // Scope-prefix match rather than an exact URL compare, since the app
+    // lives under a GitHub Pages subpath and may carry query strings.
+    const scope = self.registration.scope;
+    for (const client of clientList) {
+      if (client.url.startsWith(scope) && 'focus' in client) return client.focus();
+    }
+    if (self.clients.openWindow) return self.clients.openWindow(scope);
+  })());
 });
 
 self.addEventListener('fetch', (event) => {
