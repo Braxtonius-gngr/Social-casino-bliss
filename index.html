@@ -5244,14 +5244,39 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return window.location.origin + window.location.pathname;
     }
 
+    // supabase-js throws a FunctionsHttpError (or FunctionsRelayError /
+    // FunctionsFetchError) on a non-2xx response - `.context` is the raw
+    // Response the edge function actually returned, which is where the
+    // real status code and JSON error body live. error.message alone is
+    // just a generic "Edge Function returned a non-2xx status code."
+    async function extractFunctionsErrorDetail(error) {
+      const response = error && error.context;
+      if (!response || typeof response.json !== 'function') return { status: null, body: null };
+      try {
+        return { status: response.status, body: await response.clone().json() };
+      } catch (e) {
+        return { status: response.status, body: null };
+      }
+    }
+
     async function initiateProCheckout(priceId) {
       const client = getSupabaseClient();
-      let session = null;
-      try {
-        session = client && client.auth ? (await client.auth.getSession()).data.session : null;
-      } catch (error) {}
       if (!client) {
         showToast('Cloud sync is unavailable. Check your connection and try again.');
+        return;
+      }
+      let session = null;
+      try {
+        // Guarantees a real (even anonymous) signed-in session - and
+        // therefore a genuine user JWT for the Authorization header -
+        // instead of just reading whatever session happens to already
+        // exist. Without this, a fresh device/tab with no session yet
+        // falls back to sending the anon key as the bearer token, which
+        // the edge function can't resolve to a user at all.
+        session = await ensureSyncSignedIn(client);
+      } catch (error) {
+        console.error('Checkout sign-in failed:', error);
+        showToast('Could not start a cloud session: ' + ((error && error.message) || 'unknown error'));
         return;
       }
       // No longer blocks on missing/anonymous email - checkout proceeds
@@ -5265,10 +5290,20 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (priceId) body.priceId = priceId;
         if (email) body.email = email;
         const { data, error } = await client.functions.invoke('create-checkout-session', { body });
-        if (error || !data?.url) throw new Error(error?.message || data?.error || 'Unable to start checkout.');
+        if (error || !data?.url) {
+          const { status, body: errBody } = await extractFunctionsErrorDetail(error);
+          const detail = (errBody && (errBody.error || errBody.message))
+            || (data && data.error)
+            || (error && error.message)
+            || 'Unable to start checkout.';
+          console.error('Checkout session failure:', status, errBody || error);
+          showToast(status ? `Checkout failed (${status}): ${detail}` : `Checkout failed: ${detail}`);
+          return;
+        }
         window.location.href = data.url;
       } catch (error) {
-        showToast(error.message || 'Checkout failed.');
+        console.error('Checkout session failure:', error);
+        showToast((error && error.message) || 'Checkout failed.');
       }
     }
 

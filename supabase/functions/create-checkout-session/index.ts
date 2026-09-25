@@ -83,25 +83,55 @@ function resolveTargetPriceId(rawPriceId: unknown): string | undefined {
 
 serve(async (req) => {
   const cors = corsHeaders(req);
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+
+  // Logged on every invocation, not just failures - this is the only way
+  // to tell "gateway rejected the request before our code ran" (nothing
+  // below this line will have executed) apart from "our code ran and
+  // failed" once Supabase's dashboard shows nothing but boot/listening
+  // lines. Authorization is redacted to a presence flag + length only -
+  // it's a bearer token (anon key or a real user JWT), not something to
+  // put in plaintext logs.
+  const redactedHeaders = Object.fromEntries(
+    Array.from(req.headers.entries()).map(([key, value]) =>
+      key.toLowerCase() === "authorization"
+        ? [key, value ? `<redacted, len=${value.length}>` : value]
+        : [key, value]
+    )
+  );
+  console.log("Incoming request method:", req.method, "headers:", redactedHeaders);
+
+  if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: cors });
   if (req.method !== "POST") {
     return jsonResponse({ error: "POST required." }, 405, cors);
   }
 
   try {
     const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
-    if (!token) throw new Error("Missing authorization.");
+    if (!token) {
+      console.error("Rejecting request: no Authorization header present.");
+      return jsonResponse({ error: "Missing authorization." }, 401, cors);
+    }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    const body = await req.json();
-    const email = user?.email || user?.user_metadata?.email || body?.email;
-    if (authError || !user || !email) {
-      return jsonResponse({ error: "Email linking required before purchasing Pro." }, 400, cors);
+    console.log("Auth check result:", { hasUser: !!user, isAnonymous: user?.is_anonymous, authError: authError?.message });
+    // A bare anon key is itself a validly-signed JWT (it just has no
+    // `sub` claim pointing at a real user row), so it reaches this point
+    // rather than being rejected earlier by Supabase's gateway - but
+    // getUser() can't resolve it to a user, which is exactly what we
+    // need to reject here: not "no email", an actual missing/invalid
+    // user identity. A real anonymous-auth session (signInAnonymously())
+    // does resolve to a user and is allowed through with no email.
+    if (authError || !user) {
+      console.error("Rejecting request: no resolvable user for the given token.", authError?.message);
+      return jsonResponse({ error: "Not authenticated. Please reload and try again." }, 401, cors);
     }
+
+    const body = await req.json();
+    const email = user.email || user.user_metadata?.email || body?.email || undefined;
 
     const targetPriceId = resolveTargetPriceId(body?.priceId);
     if (!targetPriceId || !allowedPrices.has(targetPriceId)) {
@@ -149,11 +179,13 @@ serve(async (req) => {
       subscription_data: { metadata: { supabase_uid: user.id } },
     });
 
+    console.log("Checkout session created:", { userId: user.id, hasEmail: !!email, priceId: targetPriceId });
     return new Response(JSON.stringify({ url: session.url }), {
       status: 200,
       headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (error) {
+    console.error("create-checkout-session failed:", error instanceof Error ? error.stack || error.message : error);
     return jsonResponse({ error: errorMessage(error) }, 400, cors);
   }
 });
