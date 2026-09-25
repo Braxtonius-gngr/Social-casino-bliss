@@ -77,8 +77,7 @@ CREATE TABLE IF NOT EXISTS public.drop_submissions (
   content_hash TEXT NOT NULL CHECK (content_hash ~ '^[0-9a-f]{64}$'),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT drop_expiry_in_future CHECK (expires_at IS NULL OR expires_at > created_at),
-  CONSTRAINT drop_content_hash_unique UNIQUE (content_hash)
+  CONSTRAINT drop_expiry_in_future CHECK (expires_at IS NULL OR expires_at > created_at)
 );
 
 CREATE TABLE IF NOT EXISTS public.drop_votes (
@@ -135,8 +134,15 @@ CREATE INDEX IF NOT EXISTS drop_votes_drop_idx
   ON public.drop_votes (drop_id);
 CREATE INDEX IF NOT EXISTS drop_reports_drop_idx
   ON public.drop_reports (drop_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS drop_reports_one_per_reporter_uidx
+  ON public.drop_reports (drop_id, reporter_id);
 CREATE INDEX IF NOT EXISTS redemption_reports_platform_status_idx
   ON public.redemption_reports (platform_id, status, received_on);
+ALTER TABLE public.drop_submissions
+  DROP CONSTRAINT IF EXISTS drop_content_hash_unique;
+CREATE UNIQUE INDEX IF NOT EXISTS drop_submissions_active_hash_uidx
+  ON public.drop_submissions (content_hash)
+  WHERE status IN ('pending', 'published');
 
 CREATE OR REPLACE FUNCTION public.set_phase3_updated_at()
 RETURNS trigger
@@ -198,6 +204,43 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.assert_active_member()
+RETURNS VOID
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+  IF EXISTS (
+    SELECT 1
+    FROM public.community_profiles
+    WHERE id = auth.uid()
+      AND is_flagged = TRUE
+  ) THEN
+    RAISE EXCEPTION 'Account is not permitted to contribute';
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.expire_community_drops()
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  UPDATE public.drop_submissions
+  SET status = 'expired'
+  WHERE status = 'published'
+    AND expires_at IS NOT NULL
+    AND expires_at <= now();
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.submit_community_drop(
   p_platform_id TEXT,
   p_platform_name TEXT,
@@ -224,9 +267,8 @@ DECLARE
   content_hash TEXT;
   new_id UUID;
 BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Authentication required';
-  END IF;
+  PERFORM public.assert_active_member();
+  PERFORM public.expire_community_drops();
   IF length(normalized_platform_id) NOT BETWEEN 1 AND 120
     OR length(normalized_platform_name) NOT BETWEEN 1 AND 160
     OR length(normalized_domain) NOT BETWEEN 1 AND 253
@@ -237,10 +279,11 @@ BEGIN
     RAISE EXCEPTION 'Only HTTPS claim URLs are allowed';
   END IF;
   IF normalized_domain !~ '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$'
+    OR normalized_url ~ '[[:space:][:cntrl:]]'
     OR normalized_url !~* (
-      '^https://([^/]+\.)?'
+      '^https://([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)*'
       || regexp_replace(normalized_domain, '\.', '\\.', 'g')
-      || '(:[0-9]+)?(/|$)'
+      || '(:[0-9]{1,5})?([/?#]|$)'
     ) THEN
     RAISE EXCEPTION 'Claim URL must belong to the supplied root domain';
   END IF;
@@ -254,7 +297,11 @@ BEGIN
   END IF;
 
   content_hash := encode(
-    digest(normalized_platform_id || '|' || normalized_domain || '|' || normalized_code, 'sha256'),
+    digest(
+      normalized_platform_id || '|' || normalized_domain || '|' || normalized_bucket || '|'
+      || CASE WHEN normalized_code = '' THEN lower(normalized_url) ELSE normalized_code END,
+      'sha256'
+    ),
     'hex'
   );
 
@@ -287,9 +334,7 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Authentication required';
-  END IF;
+  PERFORM public.assert_active_member();
   IF p_vote NOT IN (-1, 1) THEN
     RAISE EXCEPTION 'Vote must be -1 or 1';
   END IF;
@@ -322,14 +367,20 @@ AS $$
 DECLARE
   new_id UUID;
 BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Authentication required';
-  END IF;
+  PERFORM public.assert_active_member();
   IF p_detail IS NOT NULL AND length(p_detail) > 1000 THEN
     RAISE EXCEPTION 'Report detail is too long';
   END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.drop_submissions
+    WHERE id = p_drop_id AND status = 'published'
+  ) THEN
+    RAISE EXCEPTION 'Drop is not available for reporting';
+  END IF;
   INSERT INTO public.drop_reports (drop_id, reporter_id, reason, detail)
   VALUES (p_drop_id, auth.uid(), p_reason, nullif(trim(p_detail), ''))
+  ON CONFLICT (drop_id, reporter_id)
+  DO UPDATE SET reason = EXCLUDED.reason, detail = EXCLUDED.detail
   RETURNING id INTO new_id;
   RETURN new_id;
 END;
@@ -352,11 +403,11 @@ AS $$
 DECLARE
   new_id UUID;
 BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Authentication required';
-  END IF;
+  PERFORM public.assert_active_member();
   IF length(trim(p_platform_id)) NOT BETWEEN 1 AND 120
     OR p_requested_on > current_date
+    OR p_approved_on > current_date
+    OR p_received_on > current_date
     OR (p_approved_on IS NOT NULL AND p_approved_on < p_requested_on)
     OR (p_received_on IS NOT NULL AND (p_approved_on IS NULL OR p_received_on < p_approved_on))
     OR length(coalesce(p_note, '')) > 1000 THEN
@@ -401,6 +452,7 @@ CREATE OR REPLACE VIEW public.platform_speed_rollups AS
 WITH accepted AS (
   SELECT
     platform_id,
+    submitted_by,
     (approved_on - requested_on)::NUMERIC AS days_to_approve,
     (received_on - requested_on)::NUMERIC AS days_to_receive
   FROM public.redemption_reports
@@ -418,13 +470,13 @@ SELECT
   round(percentile_cont(0.75) WITHIN GROUP (ORDER BY days_to_receive)::NUMERIC, 1)
     AS p75_days_to_receive,
   CASE
-    WHEN COUNT(*) >= 20 THEN 'high'
-    WHEN COUNT(*) >= 10 THEN 'medium'
+    WHEN COUNT(DISTINCT submitted_by) >= 20 THEN 'high'
+    WHEN COUNT(DISTINCT submitted_by) >= 10 THEN 'medium'
     ELSE 'low'
   END AS confidence_rating
 FROM accepted
 GROUP BY platform_id
-HAVING COUNT(*) >= 5;
+HAVING COUNT(DISTINCT submitted_by) >= 5;
 
 ALTER TABLE public.community_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.drop_submissions ENABLE ROW LEVEL SECURITY;
@@ -440,6 +492,12 @@ REVOKE ALL ON TABLE public.drop_reports FROM anon, authenticated;
 REVOKE ALL ON TABLE public.redemption_reports FROM anon, authenticated;
 REVOKE ALL ON TABLE public.moderation_actions FROM anon, authenticated;
 
+GRANT SELECT ON TABLE public.community_profiles TO authenticated;
+GRANT SELECT ON TABLE public.drop_submissions TO authenticated;
+GRANT SELECT ON TABLE public.drop_votes TO authenticated;
+GRANT SELECT ON TABLE public.drop_reports TO authenticated;
+GRANT SELECT ON TABLE public.redemption_reports TO authenticated;
+GRANT SELECT ON TABLE public.moderation_actions TO authenticated;
 GRANT SELECT ON public.published_drops TO anon, authenticated;
 GRANT SELECT ON public.platform_speed_rollups TO anon, authenticated;
 
@@ -484,12 +542,15 @@ CREATE POLICY moderation_actions_moderator_read
 REVOKE ALL ON FUNCTION public.set_phase3_updated_at() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.is_moderator() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.create_community_profile() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.assert_active_member() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.expire_community_drops() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.submit_community_drop(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TIMESTAMPTZ, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.cast_drop_vote(UUID, SMALLINT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.submit_drop_report(UUID, public.report_reason_type, TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.submit_redemption_report(TEXT, DATE, DATE, DATE, public.redemption_method_type, public.amount_band_type, TEXT) FROM PUBLIC;
 
 GRANT EXECUTE ON FUNCTION public.create_community_profile() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_moderator() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.submit_community_drop(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TIMESTAMPTZ, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.cast_drop_vote(UUID, SMALLINT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.submit_drop_report(UUID, public.report_reason_type, TEXT) TO authenticated;

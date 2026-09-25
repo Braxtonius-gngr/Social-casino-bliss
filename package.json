@@ -6,6 +6,7 @@
     "check": "npm run check:syntax && npm run check:refs && npm run check:catalog",
     "check:syntax": "node scripts/check-syntax.js",
     "check:refs": "node scripts/check-references.js",
-    "check:catalog": "node scripts/validate-catalog.js"
+    "check:catalog": "node scripts/validate-catalog.js",
+    "build:seo": "node scripts/generate-seo-pages.js"
   }
 }

@@ -184,6 +184,8 @@
       <button class="nav-tab" id="tabCatalog" onclick="switchMainTab('catalog', this)"><svg class="tab-ico" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true" focusable="false"><rect x="3" y="3" width="8" height="8" rx="1.6"/><rect x="13" y="3" width="8" height="8" rx="1.6"/><rect x="3" y="13" width="8" height="8" rx="1.6"/><rect x="13" y="13" width="8" height="8" rx="1.6"/></svg><span>Catalogue</span></button>
       <button class="nav-tab" id="tabResources" onclick="switchMainTab('resources', this)"><svg class="tab-ico" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true" focusable="false"><path d="M11 6.6C9.3 5.3 6.9 4.6 4 4.6c-.7 0-1.4.05-2 .15v13.5c.6-.1 1.3-.15 2-.15 2.9 0 5.3.7 7 2V6.6z"/><path d="M13 6.6c1.7-1.3 4.1-2 7-2 .7 0 1.4.05 2 .15v13.5c-.6-.1-1.3-.15-2-.15-2.9 0-5.3.7-7 2V6.6z"/></svg><span>Resources</span></button>
       <button class="nav-tab" id="tabFreebies" onclick="switchMainTab('freebies', this)"><svg class="tab-ico" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M4.5 5h15A2.5 2.5 0 0 1 22 7.5v1.6a2.9 2.9 0 0 0 0 5.8v1.6a2.5 2.5 0 0 1-2.5 2.5h-15A2.5 2.5 0 0 1 2 16.5v-1.6a2.9 2.9 0 0 0 0-5.8V7.5A2.5 2.5 0 0 1 4.5 5zm10.2 3.1a.85.85 0 1 0 0 1.7.85.85 0 0 0 0-1.7zm0 3.05a.85.85 0 1 0 0 1.7.85.85 0 0 0 0-1.7zm0 3.05a.85.85 0 1 0 0 1.7.85.85 0 0 0 0-1.7z"/></svg><span>Freebies</span></button>
+      <button class="nav-tab" id="tabCommunity" onclick="switchMainTab('community', this)"><span class="tab-ico" aria-hidden="true">&#9733;</span><span>Community</span></button>
+      <button class="nav-tab" id="tabModDashboard" style="display:none;" onclick="switchMainTab('moderation', this)">Staff</button>
     </div>
 
     <section id="viewGames">
@@ -386,6 +388,46 @@
       <div class="drops-note" style="margin-bottom:10px;">Codes and claim links pulled from Discord/email sweeps and verified before posting. Account-tied links only work for whoever originally received them &mdash; those show which platform to check directly instead of a dead link.</div>
       <div id="freebiesList"><div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:18px;">Loading...</div></div>
     </section>
+
+    <section id="communityView" style="display: none;">
+      <div class="glass-panel" style="padding:16px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+          <div>
+            <h2 style="margin:0 0 5px;">Community Hub</h2>
+            <p class="drops-note" style="margin:0;">Published drops and anonymous payout turnaround metrics from the community.</p>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-dock" onclick="loadCommunityData(true)">REFRESH</button>
+            <button class="btn-primary" onclick="openSubmitDropModal()">+ SUBMIT DROP</button>
+          </div>
+        </div>
+      </div>
+      <div class="glass-panel" style="padding:16px; margin-bottom:12px;">
+        <h3 style="margin:0 0 12px;">Redemption turnaround speeds</h3>
+        <div id="speedRollupsContainer"><div class="drops-note">Loading turnaround data...</div></div>
+      </div>
+      <div class="glass-panel" style="padding:16px;">
+        <h3 style="margin:0 0 12px;">Live community drops</h3>
+        <div id="communityDropsContainer"><div class="drops-note">Loading community drops...</div></div>
+      </div>
+    </section>
+
+    <section id="modDashboardView" style="display:none;">
+      <div class="glass-panel" style="padding:16px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+          <div>
+            <h2 style="margin:0 0 5px;">Staff moderation console</h2>
+            <p class="drops-note" style="margin:0;">Review community submissions and user reports. Every decision is audit logged.</p>
+          </div>
+          <button class="btn-dock" onclick="loadModQueue(true)">REFRESH QUEUES</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <button class="btn-dock mod-pill active" id="pillPendingDrops" onclick="switchModQueue('drops')">PENDING DROPS (<span id="countPendingDrops">0</span>)</button>
+        <button class="btn-dock mod-pill" id="pillReports" onclick="switchModQueue('reports')">ABUSE REPORTS (<span id="countReports">0</span>)</button>
+      </div>
+      <div id="modQueueFeed"><div class="drops-note">Loading moderation items...</div></div>
+    </section>
   </div>
 
   <div class="docked-footer">
@@ -521,6 +563,26 @@
     <div class="sheet-modal glass-panel" style="max-height:88vh; display:flex; flex-direction:column;">
       <h3 style="flex-shrink:0; margin-bottom:12px; cursor:default;" onclick="tapSettingsTitle()">Ledger Settings</h3>
       <div style="flex:1; overflow-y:auto; min-height:0; padding-right:4px;">
+      <div class="billing-section settings-group">
+        <h4>Membership &amp; Billing</h4>
+        <div class="billing-card" id="billingCard">
+          <div class="billing-card-header">
+            <div>
+              <h5 id="billingTierLabel">Free Plan</h5>
+              <p id="billingStatusDesc" class="text-sm text-muted">Standard catalog, local collection tracking, and community access.</p>
+            </div>
+            <span id="billingTierBadge" class="badge">FREE</span>
+          </div>
+          <div id="billingAnonNotice" class="alert-box text-sm hidden">Link an email address below before purchasing Pro.</div>
+          <div id="billingDatesRow" class="billing-dates text-sm text-muted" style="display:none;">
+            <span id="billingPeriodText"></span>
+          </div>
+          <div class="billing-actions">
+            <button id="btnUpgradePro" class="btn-primary" onclick="initiateProCheckout()">Upgrade to Pro ($4.99/mo)</button>
+            <button id="btnManageBilling" class="btn-dock hidden" onclick="openCustomerPortal()">Manage Subscription</button>
+          </div>
+        </div>
+      </div>
       <button class="settings-ledger-card" onclick="openLedgerModal()">
         <span class="slc-icon" aria-hidden="true">$</span>
         <span class="slc-text">
@@ -765,6 +827,66 @@
       <div class="modal-actions" style="flex-shrink:0; border-top:1px solid var(--glass-border); padding-top:14px;">
         <button class="btn-dock" style="max-width:none; flex:1;" onclick="exportLedgerCSV()">EXPORT CSV</button>
         <button class="btn-primary" onclick="closeModals()">DONE</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="submitDropModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel" style="max-height:88vh; display:flex; flex-direction:column;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px;">
+        <h3 style="margin:0;">Submit a community drop</h3>
+        <button class="btn-close-x" onclick="closeModals()">&#10005;</button>
+      </div>
+      <form id="submitDropForm" onsubmit="handleSubmitDrop(event)" style="overflow-y:auto;">
+        <label class="led-date"><span>Platform</span><select id="dropPlatformSelect" class="led-field" required></select></label>
+        <label class="led-date"><span>Claim URL (HTTPS only)</span><input type="url" id="dropClaimUrl" class="led-field" placeholder="https://..." required /></label>
+        <label class="led-date"><span>Drop type</span><select id="dropBucket" class="led-field"><option value="daily">Daily</option><option value="code">Code</option><option value="purchase">Purchase</option></select></label>
+        <label class="led-date"><span>Reward / terms</span><input type="text" id="dropTerms" class="led-field" maxlength="1000" /></label>
+        <label class="led-date"><span>Promo code (optional)</span><input type="text" id="dropCode" class="led-field" maxlength="500" /></label>
+        <label class="led-date"><span>Expires (optional)</span><input type="datetime-local" id="dropExpires" class="led-field" /></label>
+        <label class="led-date"><span>Source note (optional)</span><input type="text" id="dropNote" class="led-field" maxlength="1000" /></label>
+        <div class="modal-actions" style="margin-top:12px;">
+          <button type="button" class="btn-dock" onclick="closeModals()">CANCEL</button>
+          <button type="submit" class="btn-primary" id="btnSubmitDrop">SUBMIT FOR REVIEW</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="redemptionContributeModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel" style="max-height:88vh; display:flex; flex-direction:column;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px;">
+        <h3 style="margin:0;">Share anonymous speed data</h3>
+        <button class="btn-close-x" onclick="closeModals()">&#10005;</button>
+      </div>
+      <div class="drops-note" style="margin-bottom:12px;">Your exact payout amount and private local note stay on this device. Only the coarse band, dates, and payment method below are shared after you confirm.</div>
+      <dl class="ledger-note" style="display:grid; grid-template-columns:1fr 1fr; gap:8px 14px;">
+        <dt>Platform</dt><dd id="contribPlatform">-</dd>
+        <dt>Requested</dt><dd id="contribRequested">-</dd>
+        <dt>Approved</dt><dd id="contribApproved">-</dd>
+        <dt>Received</dt><dd id="contribReceived">-</dd>
+        <dt>Method</dt><dd id="contribMethod">-</dd>
+        <dt>Amount band</dt><dd id="contribBand">-</dd>
+      </dl>
+      <label class="led-date"><span>Public note (optional)</span><input type="text" id="contribPublicNote" class="led-field" maxlength="280" placeholder="Optional context, not your private ledger note" /></label>
+      <div class="modal-actions" style="margin-top:12px;">
+        <button type="button" class="btn-dock" onclick="closeModals()">CANCEL</button>
+        <button type="button" class="btn-primary" id="btnConfirmContribute" onclick="confirmRedemptionContribution()">CONFIRM &amp; SHARE</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modActionModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel" style="max-height:88vh; display:flex; flex-direction:column;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px;">
+        <h3 id="modActionModalTitle" style="margin:0;">Confirm moderation action</h3>
+        <button class="btn-close-x" onclick="closeModals()">&#10005;</button>
+      </div>
+      <p id="modActionModalDesc" class="drops-note"></p>
+      <label class="led-date"><span>Audit reason</span><input type="text" id="modActionReason" class="led-field" maxlength="1000" required /></label>
+      <div class="modal-actions" style="margin-top:12px;">
+        <button type="button" class="btn-dock" onclick="closeModals()">CANCEL</button>
+        <button type="button" class="btn-primary" id="btnConfirmModAction" onclick="confirmModAction()">APPLY</button>
       </div>
     </div>
   </div>
@@ -1398,10 +1520,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // versioned key so a future shape change can be migrated or dropped
     // independently of the platform data.
     const VIEW_STATE_KEY = 'almanac_view_state_v1';
-    const VALID_TABS = ['games', 'catalog', 'resources'];
+    const VALID_TABS = ['games', 'catalog', 'resources', 'freebies', 'community', 'moderation'];
     const VALID_GAMES_FILTERS = ['all', 'ready', 'soon', 'never', 'balance', 'snoozed', 'live', 'cooldown', 'referral'];
     const VALID_CATALOG_FILTERS = ['all', 'S', 'A', 'live', 'stale'];
-    const TAB_BUTTON_IDS = { games: 'tabPlatforms', catalog: 'tabCatalog', resources: 'tabResources' };
+    const TAB_BUTTON_IDS = { games: 'tabPlatforms', catalog: 'tabCatalog', resources: 'tabResources', freebies: 'tabFreebies', community: 'tabCommunity', moderation: 'tabModDashboard' };
     const GAMES_FILTER_BTN_IDS = {
       all: 'filterAll', ready: 'filterReady', soon: 'filterSoon', never: 'filterNever',
       balance: 'filterBalance', snoozed: 'filterSnoozed', live: 'filterLive',
@@ -2551,6 +2673,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const tags = document.getElementById('modalTags').value
         .split(',').map(t => t.trim()).filter(Boolean);
       const userNotes = document.getElementById('modalUserNotes').value.trim();
+      const nextTagSet = new Set();
+      trackedGames.forEach(game => {
+        if (game.id === id) return;
+        (game.tags || []).forEach(tag => nextTagSet.add(tag));
+      });
+      tags.forEach(tag => nextTagSet.add(tag));
+      if (!canAddCustomTag(nextTagSet.size)) return;
 
       if (!name || !url) {
         alert('Please provide a name and URL');
@@ -3231,10 +3360,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('viewCatalog').style.display = (tab === 'catalog') ? 'block' : 'none';
       document.getElementById('viewResources').style.display = (tab === 'resources') ? 'block' : 'none';
       document.getElementById('viewFreebies').style.display = (tab === 'freebies') ? 'block' : 'none';
+      document.getElementById('communityView').style.display = (tab === 'community') ? 'block' : 'none';
+      document.getElementById('modDashboardView').style.display = (tab === 'moderation') ? 'block' : 'none';
 
       if (tab === 'catalog') renderCatalogList();
       if (tab === 'games') renderGames();
       if (tab === 'freebies') loadPublicFreebies();
+      if (tab === 'community') loadCommunityData();
+      if (tab === 'moderation') loadModQueue();
 
       if (tab === 'catalog') tourCheckpoint(1);
       if (tab === 'games') tourCheckpoint(5);
@@ -4908,6 +5041,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     let supabaseClient = null;
     let syncInFlight = false;
+    const clientEntitlements = {
+      tier: 'free',
+      isPro: false,
+      status: 'active',
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
+      loaded: false
+    };
     // Kept current by renderSyncEmailUI() (boot, every auth change, after
     // enableCloudSync()) so the email gate below - which fires from
     // synchronous onclick handlers (markCollected(), collect(), etc.) -
@@ -5015,8 +5156,614 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       supabaseClient.auth.onAuthStateChange(() => {
         renderSyncEmailUI();
         kickSync();
+        syncUserEntitlements();
       });
       return supabaseClient;
+    }
+
+    function resetClientEntitlements() {
+      clientEntitlements.tier = 'free';
+      clientEntitlements.isPro = false;
+      clientEntitlements.status = 'active';
+      clientEntitlements.currentPeriodEnd = null;
+      clientEntitlements.cancelAtPeriodEnd = false;
+      clientEntitlements.loaded = true;
+      updateBillingUI();
+      return clientEntitlements;
+    }
+
+    async function syncUserEntitlements() {
+      const client = getSupabaseClient();
+      let session = null;
+      try {
+        session = client && client.auth && client.auth.getSession
+          ? (await client.auth.getSession()).data.session
+          : null;
+      } catch (error) {
+        session = null;
+      }
+      if (!client || !session || session.user?.is_anonymous) return resetClientEntitlements();
+
+      try {
+        const { data, error } = await client.rpc('get_my_entitlement');
+        if (error || !Array.isArray(data) || !data.length) return resetClientEntitlements();
+        const entitlement = data[0];
+        clientEntitlements.tier = entitlement.tier === 'pro' ? 'pro' : 'free';
+        clientEntitlements.isPro = Boolean(entitlement.is_pro_active);
+        clientEntitlements.status = entitlement.status || 'active';
+        clientEntitlements.currentPeriodEnd = entitlement.current_period_end || null;
+        clientEntitlements.cancelAtPeriodEnd = Boolean(entitlement.cancel_at_period_end);
+      } catch (error) {
+        resetClientEntitlements();
+      } finally {
+        clientEntitlements.loaded = true;
+        updateBillingUI();
+      }
+      return clientEntitlements;
+    }
+
+    function billingReturnUrl() {
+      return window.location.origin + window.location.pathname;
+    }
+
+    async function initiateProCheckout(priceId) {
+      const client = getSupabaseClient();
+      let session = null;
+      try {
+        session = client && client.auth ? (await client.auth.getSession()).data.session : null;
+      } catch (error) {}
+      if (!client || !session || session.user?.is_anonymous || !session.user?.email) {
+        showToast('Please link your email address in Settings before upgrading.');
+        openSettingsModal();
+        return;
+      }
+      try {
+        showToast('Connecting to secure checkout...');
+        const { data, error } = await client.functions.invoke('create-checkout-session', {
+          body: { priceId: priceId || 'price_pro_monthly', returnUrl: billingReturnUrl() }
+        });
+        if (error || !data?.url) throw new Error(error?.message || data?.error || 'Unable to start checkout.');
+        window.location.href = data.url;
+      } catch (error) {
+        showToast(error.message || 'Checkout failed.');
+      }
+    }
+
+    async function openCustomerPortal() {
+      const client = getSupabaseClient();
+      if (!client) {
+        showToast('Billing is unavailable while cloud services are offline.');
+        return;
+      }
+      try {
+        showToast('Loading billing portal...');
+        const { data, error } = await client.functions.invoke('create-portal-session', {
+          body: { returnUrl: billingReturnUrl() }
+        });
+        if (error || !data?.url) throw new Error(error?.message || data?.error || 'Unable to open billing portal.');
+        window.location.href = data.url;
+      } catch (error) {
+        showToast(error.message || 'Portal redirect failed.');
+      }
+    }
+
+    function canAddCustomTag(currentTagCount) {
+      if (clientEntitlements.isPro || currentTagCount <= 3) return true;
+      showToast('Free accounts can create up to 3 custom tags. Upgrade to Pro for unlimited tags.');
+      return false;
+    }
+
+    function updateBillingUI() {
+      const badge = document.getElementById('billingTierBadge');
+      const label = document.getElementById('billingTierLabel');
+      const desc = document.getElementById('billingStatusDesc');
+      const datesRow = document.getElementById('billingDatesRow');
+      const periodText = document.getElementById('billingPeriodText');
+      const upgrade = document.getElementById('btnUpgradePro');
+      const manage = document.getElementById('btnManageBilling');
+      const anonNotice = document.getElementById('billingAnonNotice');
+      if (!badge || !label || !desc || !upgrade || !manage || !anonNotice) return;
+      const sessionPromise = getSupabaseClient()?.auth?.getSession
+        ? getSupabaseClient().auth.getSession()
+        : Promise.resolve({ data: { session: null } });
+      sessionPromise.then(result => {
+        const anonymous = !result?.data?.session || result.data.session.user?.is_anonymous;
+        const isPro = clientEntitlements.isPro;
+        badge.className = isPro ? 'badge badge-pro' : 'badge';
+        badge.textContent = isPro ? 'PRO' : 'FREE';
+        label.textContent = isPro ? 'Casino Almanac Pro' : 'Free Plan';
+        desc.textContent = isPro
+          ? 'Active subscription: unlimited tags and granular payout turnaround analytics.'
+          : 'Standard catalog, local collection tracking, and community drops feed.';
+        upgrade.classList.toggle('hidden', isPro || anonymous);
+        manage.classList.toggle('hidden', !isPro);
+        anonNotice.classList.toggle('hidden', !anonymous);
+        if (isPro && clientEntitlements.currentPeriodEnd) {
+          datesRow.style.display = 'block';
+          const date = new Date(clientEntitlements.currentPeriodEnd).toLocaleDateString();
+          periodText.textContent = clientEntitlements.cancelAtPeriodEnd
+            ? `Cancels at end of period: ${date}`
+            : `Renews on: ${date}`;
+        } else {
+          datesRow.style.display = 'none';
+          periodText.textContent = '';
+        }
+      }).catch(() => {});
+    }
+
+    function renderGranularSpeedMetrics(platformId) {
+      if (!clientEntitlements.isPro) {
+        return `<div class="pro-locked-card">
+          <div class="billing-card-header"><strong>Method Breakdown &amp; Percentiles</strong><span class="badge badge-pro">PRO FEATURE</span></div>
+          <p class="text-sm text-muted">Unlock detailed turnaround breakdowns for ${escHtml(platformId || 'this platform')}.</p>
+          <button class="btn-primary" onclick="initiateProCheckout()">Upgrade to Pro ($4.99/mo)</button>
+        </div>`;
+      }
+      return `<div class="pro-metrics-card"><strong>Method breakdown</strong><p class="text-sm text-muted">Detailed Pro telemetry will appear as method rollups become available.</p></div>`;
+    }
+
+    // Community data is intentionally transient: it is public presentation
+    // data, not part of the local ledger or collection-history contracts.
+    const communityState = {
+      drops: [],
+      rollups: [],
+      dropsLoaded: false,
+      rollupsLoaded: false,
+      pendingContribution: null
+    };
+
+    const COMMUNITY_AMOUNT_BANDS = ['under_50', '50_to_100', '100_to_500', 'over_500'];
+    const COMMUNITY_METHODS = {
+      'Bank / ACH': 'ach',
+      'Debit card': 'instant_bank',
+      'Prepaid card': 'gift_card',
+      'Gift card': 'gift_card',
+      'Crypto': 'crypto',
+      'Skrill / PayPal': 'other',
+      'Check': 'other',
+      'Other': 'other'
+    };
+
+    function mapAmountToBand(amount) {
+      const n = Number(amount);
+      if (!isFinite(n) || n < 50) return 'under_50';
+      if (n <= 100) return '50_to_100';
+      if (n <= 500) return '100_to_500';
+      return 'over_500';
+    }
+
+    function formatAmountBand(band) {
+      const labels = {
+        under_50: '< $50',
+        '50_to_100': '$50 - $100',
+        '100_to_500': '$100 - $500',
+        over_500: '$500+'
+      };
+      return labels[band] || 'Unknown band';
+    }
+
+    function requireCommunityClient() {
+      const client = getSupabaseClient();
+      if (!client) throw new Error('Community data is unavailable while cloud sync is offline.');
+      return client;
+    }
+
+    function parseCommunityHttpsUrl(value) {
+      let parsed;
+      try { parsed = new URL(String(value || '').trim()); } catch (e) { parsed = null; }
+      if (!parsed || parsed.protocol !== 'https:' || !parsed.hostname) {
+        throw new Error('Claim URL must be a valid HTTPS address.');
+      }
+      return parsed;
+    }
+
+    async function fetchPublishedDrops() {
+      const client = requireCommunityClient();
+      const { data, error } = await client
+        .from('published_drops')
+        .select('id, platform_id, platform_name, bucket, claim_url, root_domain, terms, expires_at, created_at, net_score')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      communityState.drops = Array.isArray(data) ? data : [];
+      communityState.dropsLoaded = true;
+      return communityState.drops;
+    }
+
+    async function fetchPlatformSpeedRollups() {
+      const client = requireCommunityClient();
+      const { data, error } = await client
+        .from('platform_speed_rollups')
+        .select('platform_id, sample_count, median_days_to_approve, median_days_to_receive, p75_days_to_receive, confidence_rating')
+        .order('sample_count', { ascending: false });
+      if (error) throw error;
+      communityState.rollups = Array.isArray(data) ? data : [];
+      communityState.rollupsLoaded = true;
+      return communityState.rollups;
+    }
+
+    async function submitCommunityDrop(payload) {
+      const client = requireCommunityClient();
+      const url = parseCommunityHttpsUrl(payload.claim_url);
+      const platformId = String(payload.platform_id || '').trim().toLowerCase();
+      const platformName = String(payload.platform_name || '').trim();
+      const bucket = String(payload.bucket || 'daily').trim().toLowerCase();
+      if (!platformId || !platformName || !['code', 'daily', 'purchase'].includes(bucket)) {
+        throw new Error('Choose a platform and drop type first.');
+      }
+      const { data, error } = await client.rpc('submit_community_drop', {
+        p_platform_id: platformId,
+        p_platform_name: platformName,
+        p_claim_url: url.href,
+        p_root_domain: url.hostname.toLowerCase(),
+        p_bucket: bucket,
+        p_terms: String(payload.terms || '').trim() || null,
+        p_code: String(payload.code || '').trim() || null,
+        p_expires_at: payload.expires_at || null,
+        p_source_note: String(payload.source_note || '').trim() || null
+      });
+      if (error) throw error;
+      return data;
+    }
+
+    async function castDropVote(dropId, vote) {
+      const client = requireCommunityClient();
+      if (!/^[0-9a-f-]{36}$/i.test(String(dropId || '')) || (vote !== 1 && vote !== -1)) {
+        throw new Error('Invalid community vote.');
+      }
+      const { error } = await client.rpc('cast_drop_vote', { p_drop_id: dropId, p_vote: vote });
+      if (error) throw error;
+      return true;
+    }
+
+    async function submitRedemptionReport(payload) {
+      const client = requireCommunityClient();
+      if (!COMMUNITY_AMOUNT_BANDS.includes(payload.amount_band)) throw new Error('Choose a valid amount band.');
+      const { data, error } = await client.rpc('submit_redemption_report', {
+        p_platform_id: String(payload.platform_id || '').trim().toLowerCase(),
+        p_requested_on: payload.requested_on,
+        p_approved_on: payload.approved_on || null,
+        p_received_on: payload.received_on || null,
+        p_method: payload.method || 'other',
+        p_amount_band: payload.amount_band,
+        p_note: String(payload.note || '').trim() || null
+      });
+      if (error) throw error;
+      return data;
+    }
+
+    function safeCommunityUrl(value) {
+      try {
+        const url = parseCommunityHttpsUrl(value);
+        return url.href;
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function communityPlatformName(platformId) {
+      const entry = CATALOG_DATA.find(item => item.name.toLowerCase() === String(platformId || '').toLowerCase());
+      return entry ? entry.name : platformId;
+    }
+
+    async function loadCommunityData(force) {
+      const dropsEl = document.getElementById('communityDropsContainer');
+      const speedEl = document.getElementById('speedRollupsContainer');
+      if (!dropsEl || !speedEl) return;
+      if (!force && communityState.dropsLoaded && communityState.rollupsLoaded) {
+        renderCommunityDrops();
+        renderSpeedRollups();
+        return;
+      }
+      dropsEl.innerHTML = '<div class="drops-note">Loading community drops...</div>';
+      speedEl.innerHTML = '<div class="drops-note">Loading turnaround data...</div>';
+      try {
+        await Promise.all([fetchPublishedDrops(), fetchPlatformSpeedRollups()]);
+        renderCommunityDrops();
+        renderSpeedRollups();
+      } catch (error) {
+        const message = escHtml(error && error.message ? error.message : 'The community feed is unavailable.');
+        dropsEl.innerHTML = `<div class="drops-note">${message}</div>`;
+        speedEl.innerHTML = `<div class="drops-note">${message}</div>`;
+      }
+    }
+
+    function renderSpeedRollups() {
+      const container = document.getElementById('speedRollupsContainer');
+      if (!communityState.rollups.length) {
+        container.innerHTML = '<div class="drops-note">No platform speed metrics are available yet.</div>';
+        return;
+      }
+      container.innerHTML = communityState.rollups.map(row => {
+        const confidence = String(row.confidence_rating || 'low').toLowerCase();
+        const confidenceClass = ['low', 'medium', 'high'].includes(confidence) ? confidence : 'low';
+        const approve = row.median_days_to_approve == null ? 'n/a' : `${escHtml(row.median_days_to_approve)}d`;
+        const receive = row.median_days_to_receive == null ? 'n/a' : `${escHtml(row.median_days_to_receive)}d`;
+        const p75 = row.p75_days_to_receive == null ? 'n/a' : `${escHtml(row.p75_days_to_receive)}d`;
+        return `<div class="stat-box" style="margin-bottom:10px; text-align:left;">
+          <div style="display:flex; justify-content:space-between; gap:8px;"><strong>${escHtml(communityPlatformName(row.platform_id))}</strong><span class="drops-note">${escHtml(confidence.toUpperCase())} confidence</span></div>
+          <div class="ledger-meta" style="margin-top:8px;">Median approval <strong>${approve}</strong> &middot; median receive <strong>${receive}</strong> &middot; p75 receive <strong>${p75}</strong></div>
+          <div class="drops-note" style="margin-top:5px;">${escHtml(row.sample_count)} verified reports</div>
+          ${renderGranularSpeedMetrics(row.platform_id)}
+        </div>`;
+      }).join('');
+    }
+
+    function renderCommunityDrops() {
+      const container = document.getElementById('communityDropsContainer');
+      if (!communityState.drops.length) {
+        container.innerHTML = '<div class="drops-note">No active community drops found.</div>';
+        return;
+      }
+      container.innerHTML = communityState.drops.map(drop => {
+        const claimUrl = safeCommunityUrl(drop.claim_url);
+        const claimButton = claimUrl
+          ? `<button type="button" class="btn-primary" data-community-url="${escHtml(claimUrl)}" onclick="handleCommunityClaim(this)">CLAIM</button>`
+          : '<span class="drops-note">Claim link unavailable</span>';
+        return `<div class="ledger-row" style="align-items:flex-start; margin-bottom:10px;">
+          <div class="ledger-row-main">
+            <span class="ledger-plat">${escHtml(drop.platform_name)} <span class="drops-note">${escHtml(drop.bucket)}</span></span>
+            <span class="ledger-meta">${drop.terms ? escHtml(drop.terms) : 'Community-submitted drop'}${drop.expires_at ? ` &middot; Expires ${escHtml(new Date(drop.expires_at).toLocaleDateString())}` : ''}</span>
+            <span class="ledger-meta">Score: ${escHtml(Number(drop.net_score) || 0)}${drop.root_domain ? ` &middot; ${escHtml(drop.root_domain)}` : ''}</span>
+          </div>
+          <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end;">
+            <button type="button" class="btn-dock" data-drop-id="${escHtml(drop.id)}" onclick="handleCommunityVote(this, 1)" aria-label="Upvote ${escHtml(drop.platform_name)}">&#9650;</button>
+            <button type="button" class="btn-dock" data-drop-id="${escHtml(drop.id)}" onclick="handleCommunityVote(this, -1)" aria-label="Downvote ${escHtml(drop.platform_name)}">&#9660;</button>
+            ${claimButton}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function handleCommunityClaim(button) {
+      const url = safeCommunityUrl(button.dataset.communityUrl);
+      if (!url) { showToast('This claim link is not a safe HTTPS address.', null); return; }
+      const result = openExternal(url);
+      if (!result.ok) showToast('The claim link could not be opened.', null);
+    }
+
+    async function handleCommunityVote(button, vote) {
+      button.disabled = true;
+      try {
+        await castDropVote(button.dataset.dropId, vote);
+        const drop = communityState.drops.find(item => item.id === button.dataset.dropId);
+        if (drop) drop.net_score = (Number(drop.net_score) || 0) + vote;
+        renderCommunityDrops();
+        showToast('Vote recorded.', null);
+      } catch (error) {
+        showToast(error && error.message ? error.message : 'Vote failed.', null);
+        button.disabled = false;
+      }
+    }
+
+    function openSubmitDropModal() {
+      const select = document.getElementById('dropPlatformSelect');
+      select.innerHTML = '<option value="">Select platform...</option>' +
+        CATALOG_DATA.map(item => `<option value="${escHtml(item.name)}">${escHtml(item.name)}</option>`).join('');
+      document.getElementById('submitDropForm').reset();
+      document.getElementById('submitDropModal').classList.add('open');
+    }
+
+    async function handleSubmitDrop(event) {
+      event.preventDefault();
+      const button = document.getElementById('btnSubmitDrop');
+      button.disabled = true;
+      const platformName = document.getElementById('dropPlatformSelect').value;
+      try {
+        await submitCommunityDrop({
+          platform_id: platformName,
+          platform_name: platformName,
+          claim_url: document.getElementById('dropClaimUrl').value,
+          bucket: document.getElementById('dropBucket').value,
+          terms: document.getElementById('dropTerms').value,
+          code: document.getElementById('dropCode').value,
+          expires_at: document.getElementById('dropExpires').value ? new Date(document.getElementById('dropExpires').value).toISOString() : null,
+          source_note: document.getElementById('dropNote').value
+        });
+        closeModals();
+        showToast('Drop submitted for moderation.', null);
+      } catch (error) {
+        showToast(error && error.message ? error.message : 'Drop submission failed.', null);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function previewRedemptionContribution(entry) {
+      const platformId = String(entry.platform || '').trim();
+      const method = COMMUNITY_METHODS[entry.method] || 'other';
+      const pending = {
+        platform_id: platformId,
+        requested_on: entry.date,
+        approved_on: entry.approvedDate || null,
+        received_on: entry.receivedDate || null,
+        method,
+        amount_band: mapAmountToBand(entry.amount)
+      };
+      communityState.pendingContribution = pending;
+      document.getElementById('contribPlatform').textContent = communityPlatformName(platformId);
+      document.getElementById('contribRequested').textContent = entry.date || '-';
+      document.getElementById('contribApproved').textContent = entry.approvedDate || 'Pending';
+      document.getElementById('contribReceived').textContent = entry.receivedDate || 'Pending';
+      document.getElementById('contribMethod').textContent = method;
+      document.getElementById('contribBand').textContent = formatAmountBand(pending.amount_band);
+      document.getElementById('contribPublicNote').value = '';
+      document.getElementById('redemptionContributeModal').classList.add('open');
+    }
+
+    function previewRedemptionContributionById(id) {
+      const entry = ledger.find(item => item.id === id && item.type === 'redemption');
+      if (entry) previewRedemptionContribution(entry);
+    }
+
+    async function confirmRedemptionContribution() {
+      if (!communityState.pendingContribution) return;
+      const button = document.getElementById('btnConfirmContribute');
+      button.disabled = true;
+      try {
+        await submitRedemptionReport({
+          ...communityState.pendingContribution,
+          note: document.getElementById('contribPublicNote').value
+        });
+        communityState.pendingContribution = null;
+        closeModals();
+        showToast('Anonymous speed data submitted.', null);
+      } catch (error) {
+        showToast(error && error.message ? error.message : 'Contribution failed.', null);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    let currentModQueue = 'drops';
+    let activeModTarget = null;
+
+    async function fetchPendingDrops() {
+      const client = requireCommunityClient();
+      const { data, error } = await client.rpc('fetch_pending_drop_submissions');
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    }
+
+    async function fetchOpenReports() {
+      const client = requireCommunityClient();
+      const { data, error } = await client.rpc('fetch_open_drop_reports');
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    }
+
+    async function executeDropModeration(dropId, newStatus, reason) {
+      const client = requireCommunityClient();
+      if (!['published', 'rejected'].includes(newStatus)) throw new Error('Invalid moderation decision.');
+      const { error } = await client.rpc('moderate_drop_submission', {
+        p_drop_id: dropId,
+        p_new_status: newStatus,
+        p_reason: String(reason || '').trim()
+      });
+      if (error) throw error;
+    }
+
+    async function executeRedemptionModeration(reportId, newStatus, reason) {
+      const client = requireCommunityClient();
+      if (!['published', 'rejected'].includes(newStatus)) throw new Error('Invalid moderation decision.');
+      const { error } = await client.rpc('moderate_redemption_report', {
+        p_report_id: reportId,
+        p_new_status: newStatus,
+        p_reason: String(reason || '').trim()
+      });
+      if (error) throw error;
+    }
+
+    async function checkModeratorAccess() {
+      const client = getSupabaseClient();
+      const tab = document.getElementById('tabModDashboard');
+      if (!client || !tab) return false;
+      try {
+        const { data, error } = await client.rpc('is_moderator');
+        if (error || data !== true) return false;
+        tab.style.display = '';
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function switchModQueue(queue) {
+      currentModQueue = queue === 'reports' ? 'reports' : 'drops';
+      document.getElementById('pillPendingDrops').classList.toggle('active', currentModQueue === 'drops');
+      document.getElementById('pillReports').classList.toggle('active', currentModQueue === 'reports');
+      loadModQueue();
+    }
+
+    async function loadModQueue() {
+      const feed = document.getElementById('modQueueFeed');
+      if (!feed) return;
+      feed.innerHTML = '<div class="drops-note">Refreshing moderation queue...</div>';
+      try {
+        if (currentModQueue === 'drops') {
+          const items = await fetchPendingDrops();
+          document.getElementById('countPendingDrops').textContent = String(items.length);
+          renderPendingDrops(items);
+        } else {
+          const items = await fetchOpenReports();
+          document.getElementById('countReports').textContent = String(items.length);
+          renderOpenReports(items);
+        }
+      } catch (error) {
+        feed.innerHTML = `<div class="drops-note">${escHtml(error && error.message ? error.message : 'Moderation queue unavailable.')}</div>`;
+      }
+    }
+
+    function renderPendingDrops(items) {
+      const feed = document.getElementById('modQueueFeed');
+      if (!items.length) {
+        feed.innerHTML = '<div class="drops-note">No pending drops in the review queue.</div>';
+        return;
+      }
+      feed.innerHTML = items.map(drop => {
+        const safeUrl = safeCommunityUrl(drop.claim_url);
+        return `<div class="ledger-row" style="display:block; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; gap:8px;"><strong>${escHtml(drop.platform_name)}</strong><span class="drops-note">${escHtml(drop.bucket)} &middot; ${escHtml(new Date(drop.created_at).toLocaleString())}</span></div>
+          <div class="ledger-meta" style="margin-top:7px;">${safeUrl ? `<button type="button" class="btn-dock" data-community-url="${escHtml(safeUrl)}" onclick="handleCommunityClaim(this)">OPEN CLAIM URL</button> <span>${escHtml(safeUrl)}</span>` : 'Unsafe claim URL blocked'}</div>
+          ${drop.code_value ? `<div class="ledger-meta">Code: <code>${escHtml(drop.code_value)}</code></div>` : ''}
+          ${drop.terms ? `<div class="ledger-meta">Terms: ${escHtml(drop.terms)}</div>` : ''}
+          ${drop.source_note ? `<div class="ledger-meta">Source: ${escHtml(drop.source_note)}</div>` : ''}
+          <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:9px;">
+            <button type="button" class="btn-dock" data-mod-type="drop" data-mod-id="${escHtml(drop.id)}" data-mod-decision="rejected" onclick="promptModAction(this)">REJECT</button>
+            <button type="button" class="btn-primary" data-mod-type="drop" data-mod-id="${escHtml(drop.id)}" data-mod-decision="published" onclick="promptModAction(this)">APPROVE &amp; PUBLISH</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderOpenReports(items) {
+      const feed = document.getElementById('modQueueFeed');
+      if (!items.length) {
+        feed.innerHTML = '<div class="drops-note">No open abuse reports.</div>';
+        return;
+      }
+      feed.innerHTML = items.map(report => `<div class="ledger-row" style="display:block; margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; gap:8px;"><strong>${escHtml(report.platform_name || 'Unknown drop')}</strong><span class="drops-note">${escHtml(report.reason)} &middot; ${escHtml(new Date(report.created_at).toLocaleString())}</span></div>
+        ${report.detail ? `<div class="ledger-meta" style="margin-top:7px;">${escHtml(report.detail)}</div>` : ''}
+        <div class="ledger-meta">${safeCommunityUrl(report.claim_url) ? escHtml(safeCommunityUrl(report.claim_url)) : 'Unsafe claim URL blocked'}</div>
+        <div style="display:flex; justify-content:flex-end; margin-top:9px;"><button type="button" class="btn-dock" data-mod-type="drop" data-mod-id="${escHtml(report.drop_id)}" data-mod-decision="rejected" onclick="promptModAction(this)">REJECT DROP</button></div>
+      </div>`).join('');
+    }
+
+    function promptModAction(button) {
+      activeModTarget = {
+        type: button.dataset.modType,
+        targetId: button.dataset.modId,
+        decision: button.dataset.modDecision
+      };
+      document.getElementById('modActionModalTitle').textContent = activeModTarget.decision === 'published' ? 'Approve drop' : 'Reject drop';
+      document.getElementById('modActionModalDesc').textContent = `This will mark the submission ${activeModTarget.decision}.`;
+      document.getElementById('modActionReason').value = activeModTarget.decision === 'published'
+        ? 'Verified working link'
+        : 'Invalid, expired, or duplicate submission';
+      document.getElementById('modActionModal').classList.add('open');
+    }
+
+    async function confirmModAction() {
+      if (!activeModTarget) return;
+      const button = document.getElementById('btnConfirmModAction');
+      const reason = document.getElementById('modActionReason').value.trim();
+      if (!reason) { showToast('Add an audit reason first.', null); return; }
+      button.disabled = true;
+      try {
+        if (activeModTarget.type === 'drop') {
+          await executeDropModeration(activeModTarget.targetId, activeModTarget.decision, reason);
+        } else {
+          await executeRedemptionModeration(activeModTarget.targetId, activeModTarget.decision, reason);
+        }
+        closeModals();
+        showToast('Moderation action recorded.', null);
+        loadModQueue(true);
+      } catch (error) {
+        showToast(error && error.message ? error.message : 'Moderation action failed.', null);
+      } finally {
+        button.disabled = false;
+        activeModTarget = null;
+      }
     }
 
     // Where a magic-link/confirmation email sends the user back to. No
@@ -6668,6 +7415,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           <div class="ledger-track">
             <button type="button" class="track-chip ${status.cls}" onclick="toggleRedeemEditor('${e.id}')" aria-expanded="false" aria-controls="redeemEdit_${e.id}">${status.text}</button>
             ${status.cls !== 'paid' ? `<button type="button" class="track-quick" onclick="markRedeemedToday('${e.id}')">Landed today</button>` : ''}
+            <button type="button" class="track-quick" onclick="previewRedemptionContributionById('${e.id}')">Share speed data</button>
             <div class="redeem-editor" id="redeemEdit_${e.id}" hidden>
               <label class="led-date"><span>Approved</span><input type="date" class="led-field" id="redeemApproved_${e.id}" value="${e.approvedDate || ''}" /></label>
               <label class="led-date"><span>Received</span><input type="date" class="led-field" id="redeemReceived_${e.id}" value="${e.receivedDate || ''}" /></label>
@@ -7911,6 +8659,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     scheduleNextNotification();
     applyTheme(getActiveThemeId());
     initSync();
+    syncUserEntitlements();
+    setTimeout(checkModeratorAccess, 1000);
     // Deliberately after the first paint, not before: this is a courtesy
     // nudge toward Settings, not something that should compete with the
     // deck itself for the first thing the user sees.
