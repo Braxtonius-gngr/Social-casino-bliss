@@ -1,6 +1,7 @@
 -- Phase 4 billing schema, retry-safe webhook ledger, and entitlements.
 
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- pgcrypto is already enabled by 20260925_phase3_community_schema.sql
+-- (which runs before this migration); gen_random_uuid() below relies on it.
 
 DO $$ BEGIN
   CREATE TYPE public.subscription_tier_type AS ENUM ('free', 'pro');
