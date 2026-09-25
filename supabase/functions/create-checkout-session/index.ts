@@ -9,6 +9,8 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
 
 const allowedOrigins = new Set([
   "https://casino-almanac.app",
+  "https://dailyrollover.com",
+  "https://www.dailyrollover.com",
   "https://braxtonius-gngr.github.io",
   "http://localhost:8080",
   "http://localhost:5173",
@@ -33,6 +35,13 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Checkout creation failed.";
 }
 
+function jsonResponse(body: Record<string, unknown>, status: number, cors: Record<string, string>) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
+}
+
 function validReturnUrl(value: unknown) {
   const url = new URL(String(value ?? ""));
   if (!allowedOrigins.has(url.origin) || url.protocol !== "https:" && !url.hostname.startsWith("localhost")) {
@@ -45,10 +54,7 @@ serve(async (req) => {
   const cors = corsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "POST required." }), {
-      status: 405,
-      headers: { ...cors, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "POST required." }, 405, cors);
   }
 
   try {
@@ -61,10 +67,7 @@ serve(async (req) => {
     );
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user || user.is_anonymous || !user.email) {
-      return new Response(JSON.stringify({ error: "Email linking required before purchasing Pro." }), {
-        status: 400,
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Email linking required before purchasing Pro." }, 401, cors);
     }
 
     const body = await req.json();
@@ -115,9 +118,6 @@ serve(async (req) => {
       headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: errorMessage(error) }), {
-      status: 400,
-      headers: { ...cors, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: errorMessage(error) }, 400, cors);
   }
 });
