@@ -95,6 +95,16 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   );
   const payload = event.data.object as unknown as Record<string, unknown>;
+  // The stripe_webhook_events ledger is only a best-effort idempotency/audit
+  // aid, not the source of truth for entitlements - that's user_subscriptions.
+  // If the ledger itself is unreachable (e.g. a transient DB error), we still
+  // want to apply the actual subscription change below rather than bouncing
+  // the whole webhook with a 500: Stripe upserts are idempotent (same status/
+  // period data reapplied is a no-op), so it's safer to risk a harmless
+  // duplicate apply than to risk never applying a real entitlement change.
+  // ledgerDegraded tracks this so we skip ledger bookkeeping we can't do
+  // reliably, without ever fabricating a "processed"/dedup result.
+  let ledgerDegraded = false;
   const { data: existing, error: existingError } = await supabase
     .from("stripe_webhook_events")
     .select("process_status, created_at")
@@ -112,37 +122,39 @@ serve(async (req) => {
         hint: existingError.hint,
       }),
     );
-    return jsonResponse({ error: "Ledger lookup failed." }, 500, cors);
+    ledgerDegraded = true;
   }
-  if (existing?.process_status === "processed") {
-    return jsonResponse({ received: true, deduplicated: true }, 200, cors);
-  }
-  if (!existing) {
-    const { error: insertError } = await supabase.from("stripe_webhook_events").insert({
-      event_id: event.id,
-      event_type: event.type,
-      payload,
-      process_status: "pending",
-    });
-    if (insertError && insertError.code !== "23505") {
-      return jsonResponse({ error: "Ledger write failed." }, 500, cors);
+  if (!ledgerDegraded) {
+    if (existing?.process_status === "processed") {
+      return jsonResponse({ received: true, deduplicated: true }, 200, cors);
     }
-    if (insertError?.code === "23505") {
-      return jsonResponse({ received: true, retry: true }, 409, cors);
+    if (!existing) {
+      const { error: insertError } = await supabase.from("stripe_webhook_events").insert({
+        event_id: event.id,
+        event_type: event.type,
+        payload,
+        process_status: "pending",
+      });
+      if (insertError && insertError.code !== "23505") {
+        console.error("Ledger write failed for event", event.id, event.type, insertError.message);
+        ledgerDegraded = true;
+      } else if (insertError?.code === "23505") {
+        return jsonResponse({ received: true, retry: true }, 409, cors);
+      }
+    } else if (existing.process_status === "pending") {
+      const createdAt = Date.parse(existing.created_at);
+      if (Number.isFinite(createdAt) && Date.now() - createdAt < 5 * 60 * 1000) {
+        return new Response(JSON.stringify({ received: true, retry: true }), { status: 409 });
+      }
+      await supabase.from("stripe_webhook_events")
+        .update({ process_status: "pending", last_error: null })
+        .eq("event_id", event.id)
+        .eq("process_status", "pending");
+    } else {
+      await supabase.from("stripe_webhook_events")
+        .update({ process_status: "pending", last_error: null })
+        .eq("event_id", event.id);
     }
-  } else if (existing.process_status === "pending") {
-    const createdAt = Date.parse(existing.created_at);
-    if (Number.isFinite(createdAt) && Date.now() - createdAt < 5 * 60 * 1000) {
-      return new Response(JSON.stringify({ received: true, retry: true }), { status: 409 });
-    }
-    await supabase.from("stripe_webhook_events")
-      .update({ process_status: "pending", last_error: null })
-      .eq("event_id", event.id)
-      .eq("process_status", "pending");
-  } else {
-    await supabase.from("stripe_webhook_events")
-      .update({ process_status: "pending", last_error: null })
-      .eq("event_id", event.id);
   }
 
   try {
@@ -249,20 +261,28 @@ serve(async (req) => {
       if (error) throw error;
     }
 
-    const { error: processedError } = await supabase.from("stripe_webhook_events")
-      .update({
-        process_status: "processed",
-        processed_at: new Date().toISOString(),
-        last_error: null,
-      })
-      .eq("event_id", event.id);
-    if (processedError) throw processedError;
+    if (!ledgerDegraded) {
+      const { error: processedError } = await supabase.from("stripe_webhook_events")
+        .update({
+          process_status: "processed",
+          processed_at: new Date().toISOString(),
+          last_error: null,
+        })
+        .eq("event_id", event.id);
+      // The business-logic upsert above already succeeded and is durable;
+      // don't fail the whole request over a ledger bookkeeping write.
+      if (processedError) {
+        console.error("Ledger update to 'processed' failed:", event.id, event.type, processedError.message);
+      }
+    }
     return jsonResponse({ received: true }, 200, cors);
   } catch (error) {
-    await supabase.from("stripe_webhook_events").update({
-      process_status: "failed",
-      last_error: errorMessage(error).slice(0, 2000),
-    }).eq("event_id", event.id);
+    if (!ledgerDegraded) {
+      await supabase.from("stripe_webhook_events").update({
+        process_status: "failed",
+        last_error: errorMessage(error).slice(0, 2000),
+      }).eq("event_id", event.id);
+    }
     if (error instanceof UnresolvableOwnerError) {
       console.error("Unresolvable webhook owner:", event.id, event.type, error.message);
       // Acknowledge so Stripe stops redelivering an event that can never
