@@ -254,9 +254,33 @@
     .hero-details h2 { font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin: 8px 0 4px; }
     .hero-details p { font-size: 0.78rem; color: var(--text-muted); font-family: "Courier New", Courier, monospace; }
 
-    .nav-pill-group { display: flex; gap: 6px; margin-bottom: 12px; padding: 6px; border-radius: 30px; }
-    .nav-tab { flex: 1; padding: 9px 6px; background: transparent; border: 1px solid transparent; border-radius: 24px; color: var(--text-muted); font-size: 0.76rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 3px; transition: all 0.3s ease; }
+    /* Horizontally swipeable, like a native segmented control: the six
+       pills (seven with Staff) stopped fitting a phone width, and the
+       flex layout's only answer was to squeeze every label until they
+       all wrapped or truncated. Now they keep their natural width and
+       the rail scrolls instead. Scrollbar hidden the same way
+       .filter-chips below already does it. */
+    .nav-pill-group {
+      display: flex; gap: 6px; margin-bottom: 12px;
+      padding: 6px;
+      /* Extra right padding so the last pill (Community, or Staff when
+         it's revealed) clears the rail's own rounded edge at the end of
+         the scroll instead of sitting flush against it. */
+      padding-right: 12px;
+      border-radius: 30px;
+      overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .nav-pill-group::-webkit-scrollbar { display: none; }
+    /* Grows to share the rail when everything fits (unchanged desktop
+       look) but never shrinks below its label, which is what lets the
+       overflow scroll exist at all. */
+    .nav-tab { flex: 1 0 auto; padding: 9px 10px; background: transparent; border: 1px solid transparent; border-radius: 24px; color: var(--text-muted); font-size: 0.76rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 3px; white-space: nowrap; transition: all 0.3s ease; }
     .nav-tab.active { background: var(--accent-gold-dim); color: var(--accent-gold); border: 1px solid var(--accent-gold); }
+
+    @media (max-width: 520px) {
+      .nav-tab { padding: 6px 10px; font-size: 0.75rem; }
+    }
 
     .filter-sort-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
     .filter-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; flex: 1; }
@@ -1499,7 +1523,10 @@
       [data-theme="prism"] .ledger-card-wrapper:nth-child(4n+4) .ledger-card { border-left-color: rgba(164,92,255,0.16); }
 
       /* Circuit trace along the nav rail */
-      [data-theme="prism"] .nav-pill-group { position: relative; overflow: hidden; }
+      /* overflow-x, not `overflow: hidden` - the base rail is now
+         horizontally scrollable, and a blanket hidden here would pin
+         Prism's nav to whatever fits on screen. */
+      [data-theme="prism"] .nav-pill-group { position: relative; overflow-x: auto; }
       [data-theme="prism"] .nav-pill-group::after {
         content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
         background: linear-gradient(90deg, transparent, var(--wire-cyan) 40%, var(--wire-magenta) 60%, transparent);
