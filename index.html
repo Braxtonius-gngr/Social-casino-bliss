@@ -2049,7 +2049,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const prevCollected = game.lastCollected;
       const prevSnooze = game.snoozedUntil;
       const useReferralOverride = referralOverrideUnlocked() && game.referralUrl && game.referralUrl.trim();
-      if (opensLink) openExternal(useReferralOverride ? game.referralUrl : game.url);
+      if (opensLink) {
+        const launchUrl = useReferralOverride ? game.referralUrl : game.url;
+        const launch = openExternal(launchUrl);
+        if (!launch.ok) {
+          showLaunchFailure(launchUrl, () => collectWithUndo(id, opensLink, opts), launch.reason);
+          return null;
+        }
+      }
       game.lastCollected = serverNow();
       delete game.snoozedUntil;
       logCollection(id);
@@ -2072,7 +2079,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       };
 
       const ms = opts.toastMs || UNDO_TOAST_MS;
-      if (opts.toast !== false) showToast(`${game.name} marked collected`, undo, ms);
+      if (opts.toast !== false) showToast(`${game.name} opened; timer started`, undo, ms);
 
       // Deferred past the undo window, and skipped entirely if the user
       // already undid - a fix suggestion for a collection that no longer
@@ -4543,7 +4550,21 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // Custom Tab, which shares Chrome's cookie jar and session and which
     // Google's policy explicitly permits for sign-in.
     function isEmbeddedWebView() {
-      return /\bwv\b/.test(navigator.userAgent);
+      const ua = typeof navigator !== 'undefined' && navigator.userAgent
+        ? navigator.userAgent
+        : '';
+      const standalone = typeof window !== 'undefined'
+        && ((typeof window.matchMedia === 'function'
+          && window.matchMedia('(display-mode: standalone)').matches)
+          || window.navigator.standalone === true);
+      if (standalone) return false;
+
+      const androidWebView = /;\s*wv\b/i.test(ua)
+        || (/Version\/[\d.]+/i.test(ua)
+          && /Android/i.test(ua)
+          && !/Chrome\/[\d.]+\s+(Mobile\s+)?Safari/i.test(ua));
+      const inAppSocial = /FBAN|FBAV|Instagram|Line|Twitter|MicroMessenger/i.test(ua);
+      return androidWebView || inAppSocial;
     }
 
     function refreshLaunchContextNote() {
@@ -4583,10 +4604,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // Callers must already be inside a user gesture - every one is a click
     // handler. This does not itself create user activation.
     function openExternal(url) {
-      if (!url) return;
+      if (!url) return { ok: false, reason: 'missing-url' };
       let parsed;
-      try { parsed = new URL(url, location.href); } catch (e) { return; }
-      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return;
+      try { parsed = new URL(url, location.href); } catch (e) {
+        return { ok: false, reason: 'invalid-url' };
+      }
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+        return { ok: false, reason: 'unsafe-protocol' };
+      }
+      if (isEmbeddedWebView()) return { ok: false, reason: 'embedded-webview' };
       const a = document.createElement('a');
       a.href = parsed.href;
       a.target = '_blank';
@@ -4595,6 +4621,44 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      return { ok: true };
+    }
+
+    function launchFailureMessage(reason) {
+      if (reason === 'embedded-webview') {
+        return 'This in-app browser cannot open platform links safely.';
+      }
+      if (reason === 'unsafe-protocol') return 'That link uses an unsafe protocol.';
+      if (reason === 'missing-url') return 'This platform has no launch link.';
+      return 'That platform link could not be opened.';
+    }
+
+    function showLaunchFailure(url, retryFn, reason) {
+      const current = dailyRunQueue[dailyRunIndex];
+      let validatedUrl = null;
+      try {
+        const parsed = new URL(url, location.href);
+        if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+          validatedUrl = parsed.href;
+        }
+      } catch (e) {}
+      if (reason === 'embedded-webview' && validatedUrl
+        && document.getElementById('dailyRunOverlay').classList.contains('open')
+        && current && current.url === url) {
+        dailyRunLaunchFallback = { url: validatedUrl, retryFn };
+        renderDailyRunStep();
+      }
+      showToast(`${launchFailureMessage(reason)} Retry?`, retryFn, 10000, 'RETRY');
+    }
+
+    function openLaunchFallback() {
+      const fallback = dailyRunLaunchFallback;
+      if (!fallback) return;
+      let parsed;
+      try { parsed = new URL(fallback.url, location.href); } catch (e) { return; }
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return;
+      dailyRunLaunchFallback = null;
+      window.location.assign(parsed.href);
     }
 
     // Looks the platform up by id rather than interpolating the URL into an
@@ -6094,7 +6158,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // matched platform) - opening an untracked/unmatched link creates
       // no data, so there's nothing here for the gate to protect.
       if (d.tracked && d.match && interceptForEmailGate(() => openDrop(i))) return;
-      openExternal(d.url);
+      const launch = openExternal(d.url);
+      if (!launch.ok) {
+        showLaunchFailure(d.url, () => openDrop(i), launch.reason);
+        return;
+      }
       if (d.tracked && d.match) {
         const g = trackedGames.find(x => x.id === d.match.id);
         if (g) {
@@ -6243,12 +6311,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // made the classified-offer one reachable with arbitrary input.
     function openClassifiedOfferLink(i) {
       const o = lastClassifiedOffers[i];
-      if (o && o.link) openExternal(o.link.url);
+      if (!o || !o.link) return;
+      const launch = openExternal(o.link.url);
+      if (!launch.ok) showLaunchFailure(o.link.url, () => openClassifiedOfferLink(i), launch.reason);
     }
 
     function openFreebieLink(i) {
       const r = renderedFreebies[i];
-      if (r) openExternal(r.claim_url);
+      if (!r) return;
+      const launch = openExternal(r.claim_url);
+      if (!launch.ok) showLaunchFailure(r.claim_url, () => openFreebieLink(i), launch.reason);
     }
 
     // The rows currently on screen, so openFreebieLink()'s index can't
@@ -7485,6 +7557,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     let dailyRunQueue = [];
     let dailyRunIndex = 0;
     let dailyRunStats = { collected: 0, skipped: 0, scEarned: 0 };
+    let dailyRunLaunchFallback = null;
     // Ids already given one "moved to the back of the queue" reprieve by
     // skipCurrentDailyRun() - a second skip on the same platform (i.e. it
     // cycled all the way back around) counts as a real skip instead of
@@ -7541,6 +7614,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       dailyRunStats = { collected: 0, skipped: 0, scEarned: 0 };
       dailyRunRequeued = new Set();
       dailyRunCollectedIds = [];
+      dailyRunLaunchFallback = null;
       recordDailyRunStart();
       hideRunUndoBar();
       document.getElementById('dailyRunOverlay').classList.add('open');
@@ -7635,6 +7709,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:8px;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
         ${keenSummaryHtml(game)}
         ${game.notes ? `<details class="keen-notes-toggle"><summary>Research notes</summary><div class="keen-notes-body run-notes">${game.notes}</div></details>` : ''}
+        ${dailyRunLaunchFallback && dailyRunLaunchFallback.url === game.url
+          ? `<button type="button" class="btn-open" style="width:100%; margin:10px 0 0;" onclick="openLaunchFallback()">OPEN IN THIS TAB</button>`
+          : ''}
         ${goToGames ? `<div class="run-bestgames"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0,229,255,0.4);">RECOMMENDED MODULES:</strong>${goToGames}</div>` : ''}
       `;
     }
@@ -7758,13 +7835,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           }
         });
         if (result) {
+          dailyRunLaunchFallback = null;
           dailyRunStats.collected++;
           if (typeof game.dailySC === 'number') dailyRunStats.scEarned += game.dailySC;
           dailyRunCollectedIds.push(game.id);
           hapticBuzz([18, 24, 42]);
           screenShake();
           showRunUndoBar(result.game, result.undo);
-        }
+        } else return;
       }
       dailyRunIndex++;
       renderDailyRunStep();
@@ -7792,6 +7870,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function exitDailyRun() {
       recordDailyRunEnd();
       hideRunUndoBar();
+      dailyRunLaunchFallback = null;
       document.getElementById('dailyRunOverlay').classList.remove('open');
       renderGames();
       updateHeroStats();
