@@ -4954,6 +4954,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const SYNC_META_KEY = 'almanac_sync_meta_v1';
     const SYNC_SEEDED_KEY = 'almanac_sync_seeded_v1';
     const EMAIL_GATE_PASSED_KEY = 'almanac_email_gate_passed_v1';
+    // A UI-speed mirror of the last known linked email, not the source of
+    // truth (the Supabase session's user.email is) - persisted so it
+    // survives a page refresh instead of only living in the in-memory
+    // cachedLinkedEmail variable, which reset to null on every reload
+    // until renderSyncEmailUI()'s async session lookup caught back up.
+    const CACHED_LINKED_EMAIL_KEY = 'almanac_cached_linked_email_v1';
     // Deck sync (trackedGames): a single-row-per-account snapshot, not an
     // event log like collection_events above - see syncTrackedGamesSnapshot()
     // for why (whole-deck overwrite, not a merge) and for the bootstrap
@@ -5058,9 +5064,30 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // next resolves); wrong in the other direction (skipping a gate that
     // should've fired) is the one to avoid, so EMAIL_GATE_PASSED_KEY is
     // the actual source of truth once a device has cleared the gate once.
-    let cachedHasLinkedEmail = false;
     let cachedLinkedEmail = null;
+    try { cachedLinkedEmail = localStorage.getItem(CACHED_LINKED_EMAIL_KEY) || null; } catch (e) {}
+    let cachedHasLinkedEmail = !!cachedLinkedEmail;
     let pendingGatedAction = null;
+
+    // Synchronous, refresh-safe accessor for the last known linked email -
+    // callers that need an email address right now (the checkout call,
+    // the email gate) should use this instead of reading cachedLinkedEmail
+    // directly. Still not the source of truth; resolveLinkedEmail(session)
+    // is, this just avoids blocking on that async lookup.
+    function getLinkedEmail() {
+      return cachedLinkedEmail || null;
+    }
+
+    // Updates the in-memory cache and its localStorage mirror together so
+    // they can't drift - pass null/'' to clear both (e.g. on sign-out).
+    function setCachedLinkedEmail(email) {
+      cachedLinkedEmail = email || null;
+      cachedHasLinkedEmail = !!cachedLinkedEmail;
+      try {
+        if (cachedLinkedEmail) localStorage.setItem(CACHED_LINKED_EMAIL_KEY, cachedLinkedEmail);
+        else localStorage.removeItem(CACHED_LINKED_EMAIL_KEY);
+      } catch (e) {}
+    }
 
     // --- Server-corrected clock ---------------------------------------
     // Every cooldown and fixed-reset calculation used to read the device's
@@ -5213,7 +5240,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try {
         session = client && client.auth ? (await client.auth.getSession()).data.session : null;
       } catch (error) {}
-      const linkedEmail = resolveLinkedEmail(session) || cachedLinkedEmail;
+      const linkedEmail = resolveLinkedEmail(session) || getLinkedEmail();
       if (!client || !session) {
         showToast('Cloud sync is unavailable. Check your connection and try again.');
         return;
@@ -5813,8 +5840,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const { data: sessionData } = await client.auth.getSession();
       const session = sessionData && sessionData.session;
       const email = resolveLinkedEmail(session);
-      cachedHasLinkedEmail = !!email;
-      cachedLinkedEmail = email;
+      setCachedLinkedEmail(email);
       if (email) {
         linkedBox.textContent = `Linked: ${email} — recoverable on any device via "Recover a Linked Account" below.`;
         linkedBox.style.display = '';
@@ -5840,8 +5866,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       await ensureSyncSignedIn(client);
       const { error } = await client.auth.updateUser({ email }, { emailRedirectTo: getEmailRedirectTo() });
       if (error) throw error;
-      cachedHasLinkedEmail = true;
-      cachedLinkedEmail = email;
+      setCachedLinkedEmail(email);
       updateBillingUI();
       try { localStorage.setItem(EMAIL_GATE_PASSED_KEY, 'true'); } catch (e) {}
     }
