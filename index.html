@@ -5268,7 +5268,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         ? getSupabaseClient().auth.getSession()
         : Promise.resolve({ data: { session: null } });
       sessionPromise.then(result => {
-        const anonymous = !resolveLinkedEmail(result?.data?.session);
+        const hasLinkedEmail = cachedHasLinkedEmail || !!resolveLinkedEmail(result?.data?.session);
         const isPro = clientEntitlements.isPro;
         badge.className = isPro ? 'badge badge-pro' : 'badge';
         badge.textContent = isPro ? 'PRO' : 'FREE';
@@ -5276,9 +5276,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         desc.textContent = isPro
           ? 'Active subscription: unlimited tags and granular payout turnaround analytics.'
           : 'Standard catalog, local collection tracking, and community drops feed.';
-        upgrade.classList.toggle('hidden', isPro || anonymous);
+        upgrade.classList.toggle('hidden', isPro || !hasLinkedEmail);
         manage.classList.toggle('hidden', !isPro);
-        anonNotice.classList.toggle('hidden', !anonymous);
+        anonNotice.classList.toggle('hidden', hasLinkedEmail);
         if (isPro && clientEntitlements.currentPeriodEnd) {
           datesRow.style.display = 'block';
           const date = new Date(clientEntitlements.currentPeriodEnd).toLocaleDateString();

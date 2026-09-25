@@ -59,7 +59,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user || user.is_anonymous || !user.email) {
+    if (authError || !user || !user.email) {
       throw new Error("Email linking required before managing Pro.");
     }
     const body = await req.json();
