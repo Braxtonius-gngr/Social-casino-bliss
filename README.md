@@ -84,6 +84,17 @@ No `npm install` needed - both scripts use only Node's standard library.
 They also run automatically on every push and pull request via
 [`.github/workflows/checks.yml`](.github/workflows/checks.yml).
 
+The optional `npm run build:seo` command uses the same catalog to generate
+semantic static landing pages under `platforms/` and a sitemap. It does not
+change the runtime PWA or introduce a bundler. Set `SEO_BASE_URL` when
+deploying somewhere other than the default GitHub Pages URL.
+
+Phase 3 moderation is also kept behind the database boundary: the staff tab
+is hidden until `is_moderator()` succeeds, and its queue reads and
+approve/reject actions use the moderator-only RPCs in
+`supabase/migrations/20260925_phase3_moderation_rpc.sql`. Browser roles never
+receive direct raw-table moderation access.
+
 **Why not ESLint?** This app has no build step: 130+ inline `onclick="..."`
 handlers in `index.html` call plain global functions defined in a classic
 (non-module) `<script>` block. ESLint only gives meaningful coverage of that
@@ -92,3 +103,53 @@ already does that extraction internally just to run `node --check` on it.
 Doing the same extraction purely for linting, without changing how the app
 actually loads its code, would add a dependency and a build step for little
 real safety gain beyond what syntax checking already catches today.
+
+## Phase 4: Monetization and billing operations
+
+Phase 4 Pro billing keeps the catalog, timers, local collection tracking,
+notifications, and Community browsing/voting free. Pro currently adds
+unlimited custom tags and granular turnaround telemetry. Scheduled automated
+backups remain disabled until a durable external runner is provisioned.
+
+### Stripe configuration
+
+1. Create a Stripe product named **Casino Almanac Pro**.
+2. Create a recurring monthly price of **$4.99 USD** and store its ID as
+   `STRIPE_PRICE_ID_PRO_MONTHLY`.
+3. Optionally create a **$45.00 USD/year** price and store its ID as
+   `STRIPE_PRICE_ID_PRO_ANNUAL`.
+4. Enable Stripe Customer Portal with cancellation and payment-method updates.
+
+### Supabase deployment
+
+Set secrets without committing them:
+
+```bash
+supabase secrets set STRIPE_SECRET_KEY="sk_test_..."
+supabase secrets set STRIPE_WEBHOOK_SECRET="whsec_..."
+supabase secrets set STRIPE_PRICE_ID_PRO_MONTHLY="price_..."
+supabase secrets set STRIPE_PRICE_ID_PRO_ANNUAL="price_..."
+```
+
+Deploy in this order:
+
+```bash
+supabase db push
+supabase functions deploy create-checkout-session
+supabase functions deploy create-portal-session
+supabase functions deploy stripe-webhook
+```
+
+Register the webhook at
+`https://<project-ref>.supabase.co/functions/v1/stripe-webhook` for:
+
+- `customer.subscription.created`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+
+The client reads entitlements through `get_my_entitlement()` and fails closed
+to Free when the account is anonymous, expired, offline, or unavailable. Stripe
+IDs and entitlement authority are never stored in IndexedDB or localStorage.
+Run `npm.cmd run check` and `git diff --check` locally; migration execution,
+Edge Function deployment, webhook registration, and Stripe test-mode events
+still require live Supabase/Stripe verification.
