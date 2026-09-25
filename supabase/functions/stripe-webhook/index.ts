@@ -37,10 +37,6 @@ function mapStatus(status: string): string {
   return supportedStatuses.has(status) ? status : "canceled";
 }
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Webhook processing failed.";
-}
-
 // Stripe subscription period fields are occasionally absent/zero (e.g. some
 // incomplete/trialing edge cases, or fields that don't apply to a given
 // status), and `new Date(NaN * 1000)` or similar throws "Invalid time value"
@@ -111,67 +107,17 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   );
   const payload = event.data.object as unknown as Record<string, unknown>;
-  // The stripe_webhook_events ledger is only a best-effort idempotency/audit
-  // aid, not the source of truth for entitlements - that's user_subscriptions.
-  // If the ledger itself is unreachable (e.g. a transient DB error), we still
-  // want to apply the actual subscription change below rather than bouncing
-  // the whole webhook with a 500: Stripe upserts are idempotent (same status/
-  // period data reapplied is a no-op), so it's safer to risk a harmless
-  // duplicate apply than to risk never applying a real entitlement change.
-  // ledgerDegraded tracks this so we skip ledger bookkeeping we can't do
-  // reliably, without ever fabricating a "processed"/dedup result.
-  let ledgerDegraded = false;
-  const { data: existing, error: existingError } = await supabase
-    .from("stripe_webhook_events")
-    .select("process_status, created_at")
-    .eq("event_id", event.id)
-    .maybeSingle();
-  if (existingError) {
-    console.error(
-      "Ledger lookup failed for event",
-      event.id,
-      event.type,
-      JSON.stringify({
-        message: existingError.message,
-        code: existingError.code,
-        details: existingError.details,
-        hint: existingError.hint,
-      }),
-    );
-    ledgerDegraded = true;
-  }
-  if (!ledgerDegraded) {
-    if (existing?.process_status === "processed") {
-      return jsonResponse({ received: true, deduplicated: true }, 200, cors);
-    }
-    if (!existing) {
-      const { error: insertError } = await supabase.from("stripe_webhook_events").insert({
-        event_id: event.id,
-        event_type: event.type,
-        payload,
-        process_status: "pending",
-      });
-      if (insertError && insertError.code !== "23505") {
-        console.error("Ledger write failed for event", event.id, event.type, insertError.message);
-        ledgerDegraded = true;
-      } else if (insertError?.code === "23505") {
-        return jsonResponse({ received: true, retry: true }, 409, cors);
-      }
-    } else if (existing.process_status === "pending") {
-      const createdAt = Date.parse(existing.created_at);
-      if (Number.isFinite(createdAt) && Date.now() - createdAt < 5 * 60 * 1000) {
-        return new Response(JSON.stringify({ received: true, retry: true }), { status: 409 });
-      }
-      await supabase.from("stripe_webhook_events")
-        .update({ process_status: "pending", last_error: null })
-        .eq("event_id", event.id)
-        .eq("process_status", "pending");
-    } else {
-      await supabase.from("stripe_webhook_events")
-        .update({ process_status: "pending", last_error: null })
-        .eq("event_id", event.id);
-    }
-  }
+  // stripe_webhook_events (idempotency/audit ledger) is not present in the
+  // current database - PostgREST returns PGRST205 ("Could not find the
+  // table 'public.stripe_webhook_events' in the schema cache") for every
+  // query against it, which previously aborted the whole webhook before any
+  // real processing happened. That table was only a best-effort dedup aid,
+  // never the source of truth for entitlements (user_subscriptions is), so
+  // until the migration that creates it is actually applied, skip it
+  // entirely rather than querying/writing a table that doesn't exist.
+  // The upserts below are themselves idempotent (reapplying the same
+  // status/period data is a no-op), so redelivered events are still safe
+  // without this dedup layer - just not deduplicated for logging purposes.
 
   try {
     if (event.type === "checkout.session.completed") {
@@ -216,7 +162,7 @@ serve(async (req) => {
         cancelAtPeriodEnd = subscription.cancel_at_period_end;
       }
 
-      const { error } = await supabase.from("user_subscriptions").upsert({
+      const { error: upsertError } = await supabase.from("user_subscriptions").upsert({
         user_id: userId,
         stripe_customer_id: customerId,
         stripe_subscription_id: subscriptionId ?? null,
@@ -227,7 +173,13 @@ serve(async (req) => {
         cancel_at_period_end: cancelAtPeriodEnd,
         updated_at: new Date().toISOString(),
       });
-      if (error) throw error;
+      if (upsertError) {
+        console.error("Subscription upsert failed:", upsertError);
+        // Entitlement-critical: this is what actually flips the user to
+        // 'pro'. Rethrow (-> 500 below) so Stripe retries instead of
+        // silently leaving the user unpaid-but-paid.
+        throw upsertError;
+      }
     } else if (
       event.type === "customer.subscription.created" ||
       event.type === "customer.subscription.updated"
@@ -252,7 +204,7 @@ serve(async (req) => {
         );
       }
       const status = mapStatus(subscription.status);
-      const { error } = await supabase.from("user_subscriptions").upsert({
+      const { error: upsertError } = await supabase.from("user_subscriptions").upsert({
         user_id: userId,
         stripe_customer_id: customerId,
         stripe_subscription_id: subscription.id,
@@ -263,10 +215,13 @@ serve(async (req) => {
         cancel_at_period_end: subscription.cancel_at_period_end,
         updated_at: new Date().toISOString(),
       });
-      if (error) throw error;
+      if (upsertError) {
+        console.error("Subscription upsert failed:", upsertError);
+        throw upsertError;
+      }
     } else if (event.type === "customer.subscription.deleted") {
       const subscription = payload as unknown as Stripe.Subscription;
-      const { error } = await supabase.from("user_subscriptions")
+      const { error: upsertError } = await supabase.from("user_subscriptions")
         .update({
           tier: "free",
           status: "canceled",
@@ -274,39 +229,30 @@ serve(async (req) => {
           updated_at: new Date().toISOString(),
         })
         .eq("stripe_subscription_id", subscription.id);
-      if (error) throw error;
-    }
-
-    if (!ledgerDegraded) {
-      const { error: processedError } = await supabase.from("stripe_webhook_events")
-        .update({
-          process_status: "processed",
-          processed_at: new Date().toISOString(),
-          last_error: null,
-        })
-        .eq("event_id", event.id);
-      // The business-logic upsert above already succeeded and is durable;
-      // don't fail the whole request over a ledger bookkeeping write.
-      if (processedError) {
-        console.error("Ledger update to 'processed' failed:", event.id, event.type, processedError.message);
+      if (upsertError) {
+        console.error("Subscription upsert failed:", upsertError);
+        throw upsertError;
       }
     }
+
     return jsonResponse({ received: true }, 200, cors);
   } catch (error) {
-    if (!ledgerDegraded) {
-      await supabase.from("stripe_webhook_events").update({
-        process_status: "failed",
-        last_error: errorMessage(error).slice(0, 2000),
-      }).eq("event_id", event.id);
-    }
+    const err = error as { message?: string; stack?: string } | undefined;
+    console.error(
+      "Webhook processing failed DETAILED:",
+      event.id,
+      event.type,
+      err?.message || error,
+      err?.stack,
+      JSON.stringify(error),
+    );
     if (error instanceof UnresolvableOwnerError) {
-      console.error("Unresolvable webhook owner:", event.id, event.type, error.message);
       // Acknowledge so Stripe stops redelivering an event that can never
-      // resolve on retry; the failure is preserved in stripe_webhook_events
-      // (process_status='failed', last_error) for manual reconciliation.
+      // resolve on retry - there's nowhere else to persist this failure now
+      // that the stripe_webhook_events ledger is unavailable, so this is
+      // surfaced purely via the log line above for manual reconciliation.
       return jsonResponse({ received: true, unresolved: true }, 200, cors);
     }
-    console.error("Webhook processing failed:", event.id, event.type, errorMessage(error));
     return jsonResponse({ error: "Webhook processing failed." }, 500, cors);
   }
 });
