@@ -573,7 +573,6 @@
             </div>
             <span id="billingTierBadge" class="badge">FREE</span>
           </div>
-          <div id="billingAnonNotice" class="alert-box text-sm hidden">Link an email address below before purchasing Pro.</div>
           <div id="billingDatesRow" class="billing-dates text-sm text-muted" style="display:none;">
             <span id="billingPeriodText"></span>
           </div>
@@ -5262,7 +5261,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const email = resolveLinkedEmail(session) || getLinkedEmail() || '';
       try {
         showToast('Connecting to secure checkout...');
-        const body = { priceId: priceId || 'price_pro_monthly', returnUrl: billingReturnUrl() };
+        const body = { returnUrl: billingReturnUrl() };
+        if (priceId) body.priceId = priceId;
         if (email) body.email = email;
         const { data, error } = await client.functions.invoke('create-checkout-session', { body });
         if (error || !data?.url) throw new Error(error?.message || data?.error || 'Unable to start checkout.');
@@ -5304,8 +5304,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const periodText = document.getElementById('billingPeriodText');
       const upgrade = document.getElementById('btnUpgradePro');
       const manage = document.getElementById('btnManageBilling');
-      const anonNotice = document.getElementById('billingAnonNotice');
-      if (!badge || !label || !desc || !upgrade || !manage || !anonNotice) return;
+      if (!badge || !label || !desc || !upgrade || !manage) return;
       const isPro = clientEntitlements.isPro;
       badge.className = isPro ? 'badge badge-pro' : 'badge';
       badge.textContent = isPro ? 'PRO' : 'FREE';
@@ -5315,11 +5314,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         : 'Standard catalog, local collection tracking, and community drops feed.';
       // Checkout no longer requires a linked email (Stripe's hosted
       // checkout collects one directly when we don't have one), so the
-      // upgrade button and its "link an email first" notice are no
-      // longer gated on a linked email - anonNotice stays hidden always.
+      // upgrade button is no longer gated on a linked email, and the
+      // "link an email first" notice markup (#billingAnonNotice) was
+      // removed entirely rather than kept as permanently-hidden dead UI.
       upgrade.classList.toggle('hidden', isPro);
       manage.classList.toggle('hidden', !isPro);
-      anonNotice.classList.add('hidden');
       if (isPro && clientEntitlements.currentPeriodEnd) {
         datesRow.style.display = 'block';
         const date = new Date(clientEntitlements.currentPeriodEnd).toLocaleDateString();

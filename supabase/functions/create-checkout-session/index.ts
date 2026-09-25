@@ -68,6 +68,19 @@ function defaultReturnUrl(req: Request) {
   return undefined;
 }
 
+function resolveTargetPriceId(rawPriceId: unknown): string | undefined {
+  const monthlyEnvPrice = Deno.env.get("STRIPE_PRICE_ID_PRO_MONTHLY");
+  // The client may send the literal alias "price_pro_monthly" (a stand-in
+  // for "whichever price this deployment's monthly plan uses"), or omit
+  // priceId entirely - both cases mean "use the configured monthly price",
+  // not an actual Stripe price id, so map them to the env var instead of
+  // passing them straight through to allowedPrices/Stripe.
+  if (typeof rawPriceId !== "string" || !rawPriceId || rawPriceId === "price_pro_monthly" || !rawPriceId.startsWith("price_")) {
+    return monthlyEnvPrice;
+  }
+  return rawPriceId;
+}
+
 serve(async (req) => {
   const cors = corsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -90,7 +103,7 @@ serve(async (req) => {
       return jsonResponse({ error: "Email linking required before purchasing Pro." }, 400, cors);
     }
 
-    const targetPriceId = body?.priceId || Deno.env.get("STRIPE_PRICE_ID_PRO_MONTHLY");
+    const targetPriceId = resolveTargetPriceId(body?.priceId);
     if (!targetPriceId || !allowedPrices.has(targetPriceId)) {
       console.error("Price lookup failed. Received:", body?.priceId, "Allowed:", Array.from(allowedPrices));
       throw new Error("Invalid or unsupported price selection.");
