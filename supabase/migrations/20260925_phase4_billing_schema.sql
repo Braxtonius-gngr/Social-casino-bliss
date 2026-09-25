@@ -77,10 +77,11 @@ REVOKE ALL ON TABLE public.stripe_webhook_events FROM anon, authenticated;
 GRANT SELECT ON TABLE public.user_subscriptions TO authenticated;
 GRANT SELECT ON public.my_entitlements TO authenticated;
 
+DROP FUNCTION IF EXISTS public.get_my_entitlement();
 CREATE OR REPLACE FUNCTION public.get_my_entitlement()
 RETURNS TABLE (
-  tier public.subscription_tier_type,
-  status public.subscription_status_type,
+  tier TEXT,
+  status TEXT,
   current_period_end TIMESTAMPTZ,
   cancel_at_period_end BOOLEAN,
   is_pro_active BOOLEAN
@@ -91,13 +92,13 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
   SELECT
-    subscription.tier,
-    subscription.status,
+    subscription.tier::TEXT,
+    subscription.status::TEXT,
     subscription.current_period_end,
     subscription.cancel_at_period_end,
     (
-      subscription.tier = 'pro'
-      AND subscription.status IN ('active', 'trialing')
+      subscription.tier::TEXT = 'pro'
+      AND subscription.status::TEXT IN ('active', 'trialing')
       AND (
         subscription.current_period_end IS NULL
         OR subscription.current_period_end > timezone('utc', now())
