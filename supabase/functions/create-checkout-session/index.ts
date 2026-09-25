@@ -1,9 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
-import Stripe from "https://esm.sh/stripe@14.14.0?target=deno";
+import Stripe from 'npm:stripe@^17.7.0';
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
-  apiVersion: "2023-10-16",
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
+  apiVersion: '2025-01-27.acacia' as any,
   httpClient: Stripe.createFetchHttpClient(),
 });
 
@@ -44,10 +44,28 @@ function jsonResponse(body: Record<string, unknown>, status: number, cors: Recor
 
 function validReturnUrl(value: unknown) {
   const url = new URL(String(value ?? ""));
-  if (!allowedOrigins.has(url.origin) || url.protocol !== "https:" && !url.hostname.startsWith("localhost")) {
+  const isHttps = url.protocol === "https:";
+  const isLocal = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+  if (!allowedOrigins.has(url.origin) || (!isHttps && !isLocal)) {
     throw new Error("Invalid return URL origin.");
   }
   return url.toString();
+}
+
+function defaultReturnUrl(req: Request) {
+  const origin = req.headers.get("Origin");
+  if (origin && allowedOrigins.has(origin)) return origin;
+
+  const referer = req.headers.get("Referer");
+  if (referer) {
+    try {
+      const refererOrigin = new URL(referer).origin;
+      if (allowedOrigins.has(refererOrigin)) return refererOrigin;
+    } catch {
+      // Ignore malformed Referer headers.
+    }
+  }
+  return undefined;
 }
 
 serve(async (req) => {
@@ -66,13 +84,18 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user || user.is_anonymous || !user.email) {
-      return jsonResponse({ error: "Email linking required before purchasing Pro." }, 401, cors);
+    const body = await req.json();
+    const email = user?.email || user?.user_metadata?.email || body?.email;
+    if (authError || !user || !email) {
+      return jsonResponse({ error: "Email linking required before purchasing Pro." }, 400, cors);
     }
 
-    const body = await req.json();
-    if (!allowedPrices.has(body?.priceId)) throw new Error("Invalid or unsupported price selection.");
-    const returnUrl = validReturnUrl(body?.returnUrl);
+    const targetPriceId = body?.priceId || Deno.env.get("STRIPE_PRICE_ID_PRO_MONTHLY");
+    if (!targetPriceId || !allowedPrices.has(targetPriceId)) {
+      console.error("Price lookup failed. Received:", body?.priceId, "Allowed:", Array.from(allowedPrices));
+      throw new Error("Invalid or unsupported price selection.");
+    }
+    const returnUrl = validReturnUrl(body?.returnUrl || defaultReturnUrl(req));
 
     const { data: existing, error: lookupError } = await supabase
       .from("user_subscriptions")
@@ -84,7 +107,7 @@ serve(async (req) => {
     let customerId = existing?.stripe_customer_id;
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email: user.email,
+        email: email,
         metadata: { supabase_uid: user.id },
       });
       customerId = customer.id;
@@ -104,7 +127,7 @@ serve(async (req) => {
     cancel.searchParams.set("billing", "canceled");
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      line_items: [{ price: body.priceId, quantity: 1 }],
+      line_items: [{ price: targetPriceId, quantity: 1 }],
       mode: "subscription",
       success_url: success.toString(),
       cancel_url: cancel.toString(),

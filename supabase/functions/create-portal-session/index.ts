@@ -1,9 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
-import Stripe from "https://esm.sh/stripe@14.14.0?target=deno";
+import Stripe from 'npm:stripe@^17.7.0';
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
-  apiVersion: "2023-10-16",
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
+  apiVersion: '2025-01-27.acacia' as any,
   httpClient: Stripe.createFetchHttpClient(),
 });
 const allowedOrigins = new Set([
