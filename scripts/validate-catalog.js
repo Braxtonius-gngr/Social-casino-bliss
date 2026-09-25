@@ -1,15 +1,8 @@
 #!/usr/bin/env node
 /*
- * Validates data/catalog.js (CATALOG_DATA) without touching its browser-
- * facing format: it's a classic script (`const CATALOG_DATA = [...]`, no
- * export, no module wrapper), loaded in the browser via a plain
- * <script src>. To read the array's value in Node without changing that,
- * this runs the file's source in a fresh vm context with one bare
- * `CATALOG_DATA` expression appended as the final statement - vm returns
- * the value of the last-evaluated expression, the same trick `const`/`let`
- * relies on for being reachable by later classic <script> tags in a page
- * without ever becoming a `window` property. No dependencies: only Node's
- * built-in `vm`, `fs`, and `path`.
+ * Validates data/catalog.json, the network-loaded source of platform rules.
+ * data/catalog.js is only a bootstrap loader; JSON is the authoritative
+ * editable payload. No dependencies: only Node's built-in fs and path.
  *
  * Two severities:
  *   - FAILURES: a record's own data is malformed (missing/invalid name,
@@ -34,15 +27,11 @@
 
 const fs = require('fs');
 const path = require('path');
-const vm = require('vm');
-
 const ROOT = path.resolve(__dirname, '..');
-const CATALOG_PATH = path.join(ROOT, 'data', 'catalog.js');
+const CATALOG_PATH = path.join(ROOT, 'data', 'catalog.json');
 
 function loadCatalogData() {
-  const source = fs.readFileSync(CATALOG_PATH, 'utf8');
-  const script = new vm.Script(`${source}\nCATALOG_DATA`, { filename: CATALOG_PATH });
-  return script.runInNewContext({}, { timeout: 5000 });
+  return JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf8'));
 }
 
 // Same normalization the app itself uses (see domainOf()/rootOf() in

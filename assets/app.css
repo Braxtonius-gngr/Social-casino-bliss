@@ -401,6 +401,33 @@
     .catalog-item-row.tracked { border-color: var(--accent-green); background: var(--accent-green-dim); }
 
     .docked-footer { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(5, 7, 13, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--glass-highlight); padding: 16px; display: flex; justify-content: center; z-index: 50; box-shadow: 0 -10px 40px rgba(0,0,0,0.8); }
+    /* Sits above .docked-footer (z-index 50) but below any .sheet-backdrop
+       modal (100) or #dailyRunOverlay (300) - both already cover the
+       bottom-right corner when open, so no extra hide/show logic is
+       needed here beyond stacking order. Cleared enough above the footer
+       (2 rows + padding) that it never overlaps its buttons on narrow
+       screens. */
+    .feedback-fab {
+      position: fixed;
+      right: 16px;
+      bottom: calc(150px + env(safe-area-inset-bottom));
+      z-index: 60;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 1px solid var(--glass-border);
+      background: rgba(10, 10, 14, 0.85);
+      color: var(--accent-cyan);
+      font-size: 1.3rem;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    }
+    .feedback-fab:hover, .feedback-fab:focus-visible { border-color: var(--accent-cyan); box-shadow: 0 0 14px var(--accent-cyan); transform: scale(1.06); }
     /* Two rows: Start Daily Run (moved here from the Platforms tab so
        it's reachable from every tab) stacked above the existing
        Add/Import row, both centered and capped at the same max width
@@ -638,6 +665,7 @@
     .run-name { font-size: 1.5rem; font-weight: 900; color: var(--text-main); margin-bottom: 10px; }
     .run-badges { display: flex; gap: 8px; justify-content: center; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
     .run-redeem { color: var(--accent-gold); font-weight: 800; font-size: 0.9rem; margin-bottom: 10px; }
+    .run-expected-value { color: var(--accent-green); font-size: 0.85rem; margin-bottom: 10px; }
     /* Capped and independently scrollable on purpose. Some catalog notes
        run to several paragraphs (see data/catalog.js) - uncapped, this
        block could grow taller than .run-card's own flex-allocated height,
