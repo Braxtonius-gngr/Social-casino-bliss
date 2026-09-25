@@ -7,6 +7,14 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
   httpClient: Stripe.createFetchHttpClient(),
 });
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
+const allowedOrigins = new Set([
+  "https://casino-almanac.app",
+  "https://dailyrollover.com",
+  "https://www.dailyrollover.com",
+  "https://braxtonius-gngr.github.io",
+  "http://localhost:8080",
+  "http://localhost:5173",
+]);
 const supportedStatuses = new Set([
   "active", "trialing", "past_due", "canceled", "incomplete",
   "incomplete_expired", "unpaid",
@@ -20,10 +28,30 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Webhook processing failed.";
 }
 
+function corsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") ?? "";
+  return {
+    "Access-Control-Allow-Origin": allowedOrigins.has(origin) ? origin : "null",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
+
+function jsonResponse(body: Record<string, unknown>, status: number, cors: Record<string, string>) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
+}
+
 serve(async (req) => {
+  const cors = corsHeaders(req);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method !== "POST") return jsonResponse({ error: "POST required." }, 405, cors);
   const signature = req.headers.get("Stripe-Signature");
   const secret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
-  if (!signature || !secret) return new Response("Webhook configuration missing.", { status: 400 });
+  if (!signature || !secret) return jsonResponse({ error: "Webhook configuration missing." }, 400, cors);
 
   let event: Stripe.Event;
   try {
@@ -35,7 +63,7 @@ serve(async (req) => {
       cryptoProvider,
     );
   } catch {
-    return new Response("Webhook signature verification failed.", { status: 400 });
+    return jsonResponse({ error: "Webhook signature verification failed." }, 400, cors);
   }
 
   const supabase = createClient(
@@ -48,9 +76,9 @@ serve(async (req) => {
     .select("process_status, created_at")
     .eq("event_id", event.id)
     .maybeSingle();
-  if (existingError) return new Response("Ledger lookup failed.", { status: 500 });
+  if (existingError) return jsonResponse({ error: "Ledger lookup failed." }, 500, cors);
   if (existing?.process_status === "processed") {
-    return new Response(JSON.stringify({ received: true, deduplicated: true }), { status: 200 });
+    return jsonResponse({ received: true, deduplicated: true }, 200, cors);
   }
   if (!existing) {
     const { error: insertError } = await supabase.from("stripe_webhook_events").insert({
@@ -60,10 +88,10 @@ serve(async (req) => {
       process_status: "pending",
     });
     if (insertError && insertError.code !== "23505") {
-      return new Response("Ledger write failed.", { status: 500 });
+      return jsonResponse({ error: "Ledger write failed." }, 500, cors);
     }
     if (insertError?.code === "23505") {
-      return new Response(JSON.stringify({ received: true, retry: true }), { status: 409 });
+      return jsonResponse({ received: true, retry: true }, 409, cors);
     }
   } else if (existing.process_status === "pending") {
     const createdAt = Date.parse(existing.created_at);
@@ -134,12 +162,12 @@ serve(async (req) => {
       })
       .eq("event_id", event.id);
     if (processedError) throw processedError;
-    return new Response(JSON.stringify({ received: true }), { status: 200 });
+    return jsonResponse({ received: true }, 200, cors);
   } catch (error) {
     await supabase.from("stripe_webhook_events").update({
       process_status: "failed",
       last_error: errorMessage(error).slice(0, 2000),
     }).eq("event_id", event.id);
-    return new Response("Webhook processing failed.", { status: 500 });
+    return jsonResponse({ error: "Webhook processing failed." }, 500, cors);
   }
 });
