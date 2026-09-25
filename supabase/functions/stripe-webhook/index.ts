@@ -41,6 +41,22 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Webhook processing failed.";
 }
 
+// Stripe subscription period fields are occasionally absent/zero (e.g. some
+// incomplete/trialing edge cases, or fields that don't apply to a given
+// status), and `new Date(NaN * 1000)` or similar throws "Invalid time value"
+// on .toISOString() rather than producing an invalid-but-harmless Date. Route
+// every Unix-seconds -> ISO conversion through here so a single bad
+// timestamp degrades to `null` instead of failing the entire webhook.
+function safeIsoDate(unixTimestamp: number | null | undefined): string | null {
+  if (unixTimestamp === null || unixTimestamp === undefined || isNaN(unixTimestamp)) return null;
+  try {
+    const d = new Date(unixTimestamp * 1000);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  } catch {
+    return null;
+  }
+}
+
 // Thrown when a Stripe customer/subscription can't be tied to a real
 // user_subscriptions row (e.g. a customer created outside our own
 // create-checkout-session flow, or genuine data drift). Deliberately never
@@ -195,8 +211,8 @@ serve(async (req) => {
       let cancelAtPeriodEnd = false;
       if (subscriptionId) {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-        periodStart = new Date(subscription.current_period_start * 1000).toISOString();
-        periodEnd = new Date(subscription.current_period_end * 1000).toISOString();
+        periodStart = safeIsoDate(subscription.current_period_start);
+        periodEnd = safeIsoDate(subscription.current_period_end);
         cancelAtPeriodEnd = subscription.cancel_at_period_end;
       }
 
@@ -242,8 +258,8 @@ serve(async (req) => {
         stripe_subscription_id: subscription.id,
         tier: status === "active" || status === "trialing" ? "pro" : "free",
         status,
-        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        current_period_start: safeIsoDate(subscription.current_period_start),
+        current_period_end: safeIsoDate(subscription.current_period_end),
         cancel_at_period_end: subscription.cancel_at_period_end,
         updated_at: new Date().toISOString(),
       });
