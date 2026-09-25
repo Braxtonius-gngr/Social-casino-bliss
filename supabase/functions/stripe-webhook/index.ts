@@ -1,11 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
-import Stripe from "https://esm.sh/stripe@14.14.0?target=deno";
+// Deliberately npm:stripe (not esm.sh/stripe?target=deno) - esm.sh's Deno
+// transform shims Node built-ins via deno.land/std's node compat layer,
+// and that shim is what threw "Deno.core.runMicrotasks() is not supported
+// in this environment" from _next_tick.ts. The npm: specifier resolves
+// through Deno's own native npm compatibility instead, which doesn't hit
+// that code path. Version/apiVersion matched to create-checkout-session
+// and create-portal-session (both already on npm:stripe@^17.7.0 /
+// 2025-01-27.acacia) - the three functions handle the same Stripe
+// customers/subscriptions and must agree on API version, since it
+// determines payload shape (e.g. where current_period_start/end live on
+// a Subscription).
+import Stripe from "npm:stripe@^17.7.0";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
-  apiVersion: "2023-10-16",
+  apiVersion: "2025-01-27.acacia" as any,
   httpClient: Stripe.createFetchHttpClient(),
 });
+// SubtleCrypto-based signature verification - works with Deno's native
+// Web Crypto, no Node 'crypto' polyfill involved.
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
 const allowedOrigins = new Set([
   "https://casino-almanac.app",
@@ -27,6 +40,17 @@ function mapStatus(status: string): string {
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Webhook processing failed.";
 }
+
+// Thrown when a Stripe customer/subscription can't be tied to a real
+// user_subscriptions row (e.g. a customer created outside our own
+// create-checkout-session flow, or genuine data drift). Deliberately never
+// guesses an owner - a wrong guess would misattribute another customer's
+// billing status onto an unrelated real account. This is reported (not
+// retried forever) instead of resolved: Stripe redelivers a failed webhook
+// for up to ~3 days, and retrying an unresolvable mapping can never
+// succeed, so it's marked failed in the ledger for manual reconciliation
+// and acknowledged with 200 so Stripe stops resending it.
+class UnresolvableOwnerError extends Error {}
 
 function corsHeaders(req: Request) {
   const origin = req.headers.get("Origin") ?? "";
@@ -76,7 +100,20 @@ serve(async (req) => {
     .select("process_status, created_at")
     .eq("event_id", event.id)
     .maybeSingle();
-  if (existingError) return jsonResponse({ error: "Ledger lookup failed." }, 500, cors);
+  if (existingError) {
+    console.error(
+      "Ledger lookup failed for event",
+      event.id,
+      event.type,
+      JSON.stringify({
+        message: existingError.message,
+        code: existingError.code,
+        details: existingError.details,
+        hint: existingError.hint,
+      }),
+    );
+    return jsonResponse({ error: "Ledger lookup failed." }, 500, cors);
+  }
   if (existing?.process_status === "processed") {
     return jsonResponse({ received: true, deduplicated: true }, 200, cors);
   }
@@ -109,7 +146,61 @@ serve(async (req) => {
   }
 
   try {
-    if (
+    if (event.type === "checkout.session.completed") {
+      // Fires once, right after a successful Checkout - before
+      // customer.subscription.created/updated necessarily lands, so this
+      // flips the user to 'pro' immediately instead of leaving them on
+      // 'free' until the (usually near-simultaneous, but not guaranteed
+      // ordered) subscription event arrives. That subscription event
+      // still runs its own upsert below with the authoritative
+      // status/period data; this just can't wait for it.
+      const checkoutSession = payload as unknown as Stripe.Checkout.Session;
+      const customerId = typeof checkoutSession.customer === "string"
+        ? checkoutSession.customer
+        : checkoutSession.customer?.id;
+      const subscriptionId = typeof checkoutSession.subscription === "string"
+        ? checkoutSession.subscription
+        : checkoutSession.subscription?.id;
+      let userId = checkoutSession.metadata?.supabase_uid || checkoutSession.client_reference_id || undefined;
+      if (!userId && customerId) {
+        const { data: owner, error: ownerError } = await supabase
+          .from("user_subscriptions")
+          .select("user_id")
+          .eq("stripe_customer_id", customerId)
+          .maybeSingle();
+        if (ownerError) throw ownerError;
+        userId = owner?.user_id;
+      }
+      if (!userId) {
+        throw new UnresolvableOwnerError(
+          `Checkout session owner could not be resolved (customer=${customerId ?? "none"}).`,
+        );
+      }
+      if (!customerId) throw new Error("Checkout session had no customer.");
+
+      let periodStart: string | null = null;
+      let periodEnd: string | null = null;
+      let cancelAtPeriodEnd = false;
+      if (subscriptionId) {
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        periodStart = new Date(subscription.current_period_start * 1000).toISOString();
+        periodEnd = new Date(subscription.current_period_end * 1000).toISOString();
+        cancelAtPeriodEnd = subscription.cancel_at_period_end;
+      }
+
+      const { error } = await supabase.from("user_subscriptions").upsert({
+        user_id: userId,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscriptionId ?? null,
+        tier: "pro",
+        status: "active",
+        current_period_start: periodStart,
+        current_period_end: periodEnd,
+        cancel_at_period_end: cancelAtPeriodEnd,
+        updated_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+    } else if (
       event.type === "customer.subscription.created" ||
       event.type === "customer.subscription.updated"
     ) {
@@ -127,7 +218,11 @@ serve(async (req) => {
         if (ownerError) throw ownerError;
         userId = owner?.user_id;
       }
-      if (!userId) throw new Error("Subscription owner could not be resolved.");
+      if (!userId) {
+        throw new UnresolvableOwnerError(
+          `Subscription owner could not be resolved (customer=${customerId}, subscription=${subscription.id}).`,
+        );
+      }
       const status = mapStatus(subscription.status);
       const { error } = await supabase.from("user_subscriptions").upsert({
         user_id: userId,
@@ -168,6 +263,14 @@ serve(async (req) => {
       process_status: "failed",
       last_error: errorMessage(error).slice(0, 2000),
     }).eq("event_id", event.id);
+    if (error instanceof UnresolvableOwnerError) {
+      console.error("Unresolvable webhook owner:", event.id, event.type, error.message);
+      // Acknowledge so Stripe stops redelivering an event that can never
+      // resolve on retry; the failure is preserved in stripe_webhook_events
+      // (process_status='failed', last_error) for manual reconciliation.
+      return jsonResponse({ received: true, unresolved: true }, 200, cors);
+    }
+    console.error("Webhook processing failed:", event.id, event.type, errorMessage(error));
     return jsonResponse({ error: "Webhook processing failed." }, 500, cors);
   }
 });
