@@ -4,9 +4,13 @@ Daily bonus tracker for sweepstakes and social casino platforms. A single
 static `index.html` (plus a handful of small `assets/`/`utils/` scripts and
 stylesheets) - no build step, deployed as-is via GitHub Pages.
 
-Everything is local-first: platforms, timers and settings live only in this
-browser, always. Collection history (the ledger behind streaks/stats - the
-one thing the manual JSON backup doesn't cover) also mirrors to a Supabase
+Everything is local-first: platforms, timers, notes, balances and settings
+live in this browser, always. User-owned platform records, collection history,
+daily-run history and the spend/redeem ledger are stored in IndexedDB, with a
+versioned migration from the older localStorage keys and a synchronous
+localStorage fallback for first paint or browsers without IndexedDB. Collection
+history (the ledger behind streaks/stats - the one thing the manual JSON backup
+doesn't cover) also mirrors to a Supabase
 project automatically, under an anonymous account created on-device with no
 email, password, or button click - Settings → Cloud Sync turns it off for
 anyone who'd rather stay fully local-only. It's an outbox-and-replay design:
@@ -23,6 +27,23 @@ prompts for this inline before it's logged, rather than leaving it as
 something you might never get around to - browsing and adding platforms
 stays completely unblocked either way.
 
+## Tester feedback
+
+A floating feedback button (bottom-right, above the docked footer) opens a
+small modal for structured bug reports and ideas - a category
+(timer bug / catalogue-rule correction / feature idea / other) plus a free-text
+description. Submitting posts a Discord embed via a webhook, with
+`navigator.userAgent`, the loaded catalogue version, and the last few
+in-memory app errors auto-attached so reports are debuggable without asking
+the tester follow-up questions. Configure it by setting
+`FEEDBACK_WEBHOOK_URL` in `index.html`'s inline script to a Discord channel
+webhook URL (Server/Channel Settings → Integrations → Webhooks); the button
+still opens with an empty value, it just tells the tester feedback isn't
+wired up yet instead of sending anything. Like `SUPABASE_ANON_KEY`, this URL
+is not a real secret once shipped client-side - anyone who extracts it can
+post to the channel directly - so treat it as fine for a small trusted
+tester build, not a substitute for real auth at wider scale.
+
 ## Quality checks
 
 Three dependency-free Node scripts catch the most common ways this kind of
@@ -35,10 +56,13 @@ catalog.
 npm run check           # all three checks below
 npm run check:syntax    # syntax-checks every .js file (assets/, utils/, scripts/, data/) plus index.html's inline <script>
 npm run check:refs      # confirms every local href/src/precache reference resolves to a real file
-npm run check:catalog   # validates data/catalog.js's records (see below)
+npm run check:catalog   # validates data/catalog.json's records (see below)
 ```
 
-`check:catalog` requires every entry to have a non-empty `name` and a valid
+`data/catalog.json` is the authoritative, network-loaded platform-rules
+payload. `data/catalog.js` is only a bootstrap loader that reads the JSON (or
+the last valid local cache) before the first refresh succeeds. `check:catalog`
+requires every entry to have a non-empty `name` and a valid
 `http(s)` URL, and validates numeric fields when present (finite values;
 `reliability` between 0-100; positive `cooldown`/`speedHours`). It also
 warns - without failing the check - about duplicate names or duplicate

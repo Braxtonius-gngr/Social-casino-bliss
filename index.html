@@ -397,6 +397,11 @@
     </div>
   </div>
 
+  <!-- Floating, always-reachable regardless of tab - lower z-index than
+       any .sheet-backdrop modal (100) or #dailyRunOverlay (300), so those
+       correctly cover it rather than fighting for the same corner. -->
+  <button class="feedback-fab" onclick="openFeedbackModal()" aria-label="Report a bug or send feedback" title="Feedback / Bug report">&#128027;</button>
+
   <div id="dailyRunOverlay">
     <div class="run-header">
       <div class="run-progress-text" id="runProgressText"></div>
@@ -852,6 +857,30 @@
     </div>
   </div>
 
+  <div id="feedbackModal" class="sheet-backdrop">
+    <div class="sheet-modal glass-panel">
+      <h3>Report a Bug / Idea</h3>
+      <div class="form-group">
+        <label for="feedbackCategory">Category</label>
+        <select id="feedbackCategory">
+          <option value="Timer bug">Timer bug</option>
+          <option value="Catalogue/rule correction">Catalogue/rule correction</option>
+          <option value="Feature idea">Feature idea</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="feedbackText">What's going on?</label>
+        <textarea id="feedbackText" rows="5" placeholder="Describe what happened, which platform (if any), and what you expected..." style="width:100%; background:rgba(0,0,0,0.5); border:1px solid var(--glass-border); color:var(--text-main); padding:10px 12px; border-radius:10px; font-family:inherit; font-size:0.85rem; resize:vertical;"></textarea>
+      </div>
+      <div class="hint" style="font-size:0.68rem; color:var(--text-muted); margin-bottom:14px;">Your browser info, the loaded catalogue version, and any recent app errors are attached automatically to help us debug - no need to describe your device.</div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="btnFeedbackSubmit" onclick="submitFeedback()">SEND</button>
+        <button class="btn-cancel" onclick="closeModals()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
   <div id="collectionTimeModal" class="sheet-backdrop">
     <div class="sheet-modal glass-panel" style="max-height:88vh; display:flex; flex-direction:column;">
       <h3 style="flex-shrink:0;">Set Collection Time</h3>
@@ -1060,6 +1089,7 @@
   <script src="utils/cleanDropUrl.js"></script>
   <script src="utils/classifyDropText.js"></script>
   <script src="assets/accessibility.js"></script>
+  <script src="assets/storage.js"></script>
   <!-- Cloud sync (optional, opt-in - see the "Cloud sync" block near the
        end of the inline script below). Loaded from a CDN rather than
        vendored, matching how Google Fonts is already loaded here - this
@@ -1069,6 +1099,27 @@
        app is 100% unaffected either way. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    // --- Tester feedback loop: error capture ---
+    // Registered first, before anything else in this script runs, so a
+    // boot-time error is caught too, not just ones that happen after the
+    // feedback button becomes clickable. Capped and in-memory only - this
+    // is a diagnostic breadcrumb attached to a bug report, not persisted
+    // user data, so it deliberately does not go through localStorage/
+    // IndexedDB or survive a reload.
+    const recentAppErrors = [];
+    const MAX_RECENT_APP_ERRORS = 5;
+    function recordAppError(line) {
+      recentAppErrors.push(line);
+      if (recentAppErrors.length > MAX_RECENT_APP_ERRORS) recentAppErrors.shift();
+    }
+    window.addEventListener('error', (e) => {
+      recordAppError(`${e.message || 'Error'} (${e.filename ? e.filename.split('/').pop() : '?'}:${e.lineno || 0}:${e.colno || 0})`);
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+      const reason = e.reason && e.reason.message ? e.reason.message : String(e.reason);
+      recordAppError(`Unhandled rejection: ${reason}`);
+    });
+
     const uid = () => 'id_' + Math.random().toString(36).substr(2, 9);
 
     // Tier badge text doubles as its own CSS class suffix. That broke the
@@ -1249,15 +1300,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
     });
 
-    CATALOG_DATA.forEach(cat => {
-      const cleanName = cat.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const matchedKey = Object.keys(parsedRecommendations).find(k => 
-        cleanName === k || cleanName.startsWith(k) || k.startsWith(cleanName)
-      );
-      if (matchedKey) {
-        cat.bestGames = parsedRecommendations[matchedKey];
-      }
-    });
+    function applyCatalogRecommendations() {
+      CATALOG_DATA.forEach(cat => {
+        const cleanName = cat.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const matchedKey = Object.keys(parsedRecommendations).find(k =>
+          cleanName === k || cleanName.startsWith(k) || k.startsWith(cleanName)
+        );
+        if (matchedKey) cat.bestGames = parsedRecommendations[matchedKey];
+      });
+    }
+    applyCatalogRecommendations();
 
     function getBestGames(name) {
       const found = CATALOG_DATA.find(c => c.name.toLowerCase() === name.toLowerCase());
@@ -1265,6 +1317,18 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     let trackedGames = JSON.parse(localStorage.getItem('the_casino_almanac_v7') || '[]');
+    const INDEXED_STATE_KEYS = [
+      'the_casino_almanac_v7',
+      'the_casino_almanac_history_v1',
+      'the_casino_almanac_runs_v1',
+      'almanac_ledger_v1'
+    ];
+    function saveIndexedState(key, value) {
+      if (!window.AlmanacDB) return;
+      window.AlmanacDB.set(key, value).catch(() => {
+        // localStorage remains the synchronous fallback for older browsers.
+      });
+    }
     // One-time recovery pass for whatever's already on disk: malformed
     // timer fields from before this normalization existed are corrected
     // rather than left to crash the first render, and _prevCollected -
@@ -1466,6 +1530,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function persist() {
       try {
         localStorage.setItem('the_casino_almanac_v7', JSON.stringify(trackedGames));
+        saveIndexedState('the_casino_almanac_v7', trackedGames);
         markDeckDirty();
         const savedAt = Date.now();
         localStorage.setItem('almanac_last_saved_v1', String(savedAt));
@@ -1962,7 +2027,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // instead of the catalog's own url. Locked (the default for every
     // distributed copy) means OPEN always uses the catalog's url - for the
     // handful of platforms Braxtonius has a referral program with, that IS
-    // his referral link (see data/catalog.js), so it can't be quietly
+    // his referral link (see data/catalog.json), so it can't be quietly
     // redirected to someone else's code by typing into a field. There is
     // deliberately no UI for this: to release the lock on a given device,
     // set localStorage.almanac_referral_unlocked to '1' from the browser
@@ -2000,6 +2065,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // roll back the history entry this action added
         const removed = undoLastLoggedCollection(game.name);
         try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
+        saveIndexedState('the_casino_almanac_history_v1', collectionHistory);
         if (removed) enqueueHistorySync(removed, true);
         persist();
         if (opts.onUndo) opts.onUndo();
@@ -3185,7 +3251,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     // Tap the cooldown chip to correct an interval in place.
-    // cooldownHours lives only on the tracked copy; CATALOG_DATA is untouched.
+    // cooldownHours lives only on the tracked copy; live catalogue refreshes
+    // never write timer fields into it.
     // --- Cooldown editor ---
     // Replaces the old tap-to-cycle chip (a fixed sequence of hardcoded
     // rolling/fixed-reset presets, applied instantly on every tap with no
@@ -3199,8 +3266,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     // Catalogue lookup shared by the per-platform hint below and the
     // Settings "Resync" button - a tracked platform only ever carries its
-    // own copy of these fields (CATALOG_DATA itself is never mutated), so
-    // a later fix to the Catalogue entry (like Zula's reset hour) never
+    // own copy of these fields, so a later fix to the Catalogue entry (like
+    // Zula's reset hour) never
     // reaches an already-tracked copy on its own.
     function findCatalogEntry(name) {
       return CATALOG_DATA.find(c => c.name.toLowerCase() === name.toLowerCase()) || null;
@@ -3413,6 +3480,135 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         10000,
         'REVIEW'
       );
+    }
+
+    const EXTERNAL_CATALOG_URL = 'data/catalog.json';
+    const EXTERNAL_CATALOG_REFRESH_MS = 5 * 60 * 1000;
+    const CATALOG_LIVE_FIELDS = [
+      'tier', 'dailySC', 'scSource', 'scIsAveraged', 'scRange', 'speedHours',
+      'reliability', 'hasLive', 'minRedeem', 'cashFloor', 'daysToRedeem',
+      'confidence', 'blocker', 'noGuaranteedDaily', 'notes', 'lastVerified'
+    ];
+    let catalogRefreshInFlight = false;
+    let catalogRefreshErrorShown = false;
+    // When the live fetch last succeeded this session - shown in bug
+    // reports so "is this dev on a stale catalogue?" isn't a guess.
+    let catalogLastRefreshedAt = null;
+
+    function catalogVersionLabel() {
+      const count = Array.isArray(CATALOG_DATA) ? CATALOG_DATA.length : 0;
+      return catalogLastRefreshedAt
+        ? `${count} entries (live, refreshed ${catalogLastRefreshedAt.toISOString()})`
+        : `${count} entries (bootstrap copy - live refresh hasn't completed yet this session)`;
+    }
+
+    function validateExternalCatalog(data) {
+      if (!Array.isArray(data) || data.length === 0) {
+        throw new Error('catalog payload must be a non-empty array');
+      }
+      const seen = new Set();
+      data.forEach((entry, index) => {
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+          throw new Error(`catalog entry ${index + 1} is not an object`);
+        }
+        if (typeof entry.name !== 'string' || !entry.name.trim()) {
+          throw new Error(`catalog entry ${index + 1} has no name`);
+        }
+        if (typeof entry.url !== 'string' || !/^https?:\/\//i.test(entry.url)) {
+          throw new Error(`catalog entry ${index + 1} has an invalid URL`);
+        }
+        const key = entry.name.trim().toLowerCase();
+        if (seen.has(key)) throw new Error(`duplicate catalog name: ${entry.name}`);
+        seen.add(key);
+      });
+      return data;
+    }
+
+    function reconcileLiveCatalog(nextCatalog) {
+      const previousSnapshot = JSON.stringify(CATALOG_DATA.map(({ bestGames, ...entry }) => entry));
+      CATALOG_DATA.splice(0, CATALOG_DATA.length, ...nextCatalog.map(entry => ({ ...entry })));
+      applyCatalogRecommendations();
+
+      let trackedChanged = false;
+      trackedGames.forEach(game => {
+        const entry = CATALOG_DATA.find(cat => cat.name.toLowerCase() === game.name.toLowerCase());
+        if (!entry) return;
+        CATALOG_LIVE_FIELDS.forEach(field => {
+          const before = game[field];
+          const after = entry[field];
+          if (after === undefined) {
+            if (before !== undefined) {
+              delete game[field];
+              trackedChanged = true;
+            }
+          } else if (JSON.stringify(before) !== JSON.stringify(after)) {
+            game[field] = after;
+            trackedChanged = true;
+          }
+        });
+        // Timer fields deliberately stay local. A changed resetHour, resetTZ,
+        // or cooldown is surfaced by the existing review/resync flow instead
+        // of silently moving a user's next-ready time.
+      });
+      if (trackedChanged) persist();
+      return previousSnapshot !== JSON.stringify(nextCatalog) || trackedChanged;
+    }
+
+    async function refreshExternalCatalog() {
+      if (catalogRefreshInFlight) return;
+      catalogRefreshInFlight = true;
+      try {
+        const response = await fetch(`${EXTERNAL_CATALOG_URL}?v=${Date.now()}`, {
+          cache: 'no-store'
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const nextCatalog = validateExternalCatalog(await response.json());
+        localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify(nextCatalog));
+        const changed = reconcileLiveCatalog(nextCatalog);
+        catalogRefreshErrorShown = false;
+        catalogLastRefreshedAt = new Date();
+        if (changed) {
+          renderGames();
+          renderCatalogList();
+          updateHeroStats();
+          updateDailyRunButton();
+          checkForCatalogUpdates();
+        }
+      } catch (error) {
+        if (!catalogRefreshErrorShown) {
+          catalogRefreshErrorShown = true;
+          showToast(`Live Catalogue refresh failed; using the last known rules (${error.message}).`, null, 9000);
+        }
+      } finally {
+        catalogRefreshInFlight = false;
+      }
+    }
+
+    async function hydrateIndexedDBState() {
+      if (!window.AlmanacDB) return;
+      try {
+        await window.AlmanacDB.migrateLegacy(INDEXED_STATE_KEYS);
+        const values = await Promise.all(INDEXED_STATE_KEYS.map(key => window.AlmanacDB.get(key)));
+        const [storedGames, storedHistory, storedRuns, storedLedger] = values;
+        if (Array.isArray(storedGames)) {
+          trackedGames = storedGames;
+          trackedGames.forEach(g => { normalizeTimerFields(g); delete g._prevCollected; });
+        }
+        if (Array.isArray(storedHistory)) collectionHistory = storedHistory;
+        if (Array.isArray(storedRuns)) dailyRunsHistory = storedRuns;
+        if (Array.isArray(storedLedger)) ledger = storedLedger;
+        ensureHistoryEntryIds();
+        restoreViewState();
+        renderGames();
+        renderCatalogList();
+        updateHeroStats();
+        refreshLedgerNet();
+        scheduleNextNotification();
+      } catch (error) {
+        // The synchronous localStorage snapshot remains usable if IndexedDB
+        // is blocked by private browsing, an old browser, or a quota policy.
+        console.warn('IndexedDB hydration unavailable; using local state:', error.message);
+      }
     }
 
     function setCooldownEditorMode(mode) {
@@ -4033,7 +4229,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const idx = trackedGames.findIndex(g => g.id === item.game.id);
         if (idx > -1) {
           trackedGames.splice(idx, 1);
-          persist();   // CATALOG_DATA is untouched; the platform stays browsable
+          persist();   // the platform stays browsable while catalog data refreshes
         }
         pruneStats.removed++;
       } else {
@@ -4516,6 +4712,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       });
       if (changed) {
         try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
+        saveIndexedState('the_casino_almanac_history_v1', collectionHistory);
       }
     }
 
@@ -4526,9 +4723,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // collectionHistory changes (the ledger behind streaks and stats: the
     // one thing a manual Export Backup doesn't even cover) that gets
     // pushed to Supabase, and a pull+replay of whatever's on the server
-    // merged back in. Every write still persists to localStorage first
-    // and immediately, same as today - sync is a mirror of that, never a
-    // dependency for it to work.
+    // merged back in. Every write is persisted locally first and immediately
+    // (IndexedDB is primary, with the legacy localStorage shadow for
+    // compatibility) - sync is a mirror of that, never a dependency for it
+    // to work.
     //
     // Default: ON, opt-OUT (isSyncEnabled() below). The device signs into
     // an anonymous Supabase account automatically, with no button click
@@ -4567,6 +4765,82 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const DECK_SYNC_DIRTY_KEY = 'almanac_deck_sync_dirty_v1';
     const DECK_SYNC_CURSOR_KEY = 'almanac_deck_sync_cursor_v1';
     const DECK_SYNC_BOOTSTRAPPED_UID_KEY = 'almanac_deck_sync_bootstrapped_uid_v1';
+
+    // --- Tester feedback loop ---
+    // A Discord webhook URL, not a real secret - anyone who has it can
+    // post to the channel directly, bypassing this form entirely, the
+    // same way SUPABASE_ANON_KEY above is public-but-RLS-protected rather
+    // than secret. Treat it the same way: fine to ship in client code for
+    // a small trusted tester build, not something to publish widely, and
+    // not a substitute for real auth if this ever needs to resist abuse
+    // at scale. Get one from a Discord channel: Server/Channel Settings ->
+    // Integrations -> Webhooks -> New Webhook -> Copy URL.
+    const FEEDBACK_WEBHOOK_URL = 'https://discord.com/api/webhooks/1552848601137414294/4Tip5oaHSSZxVr7b3tJtxxeVWFbejkdGYAKS2O4IeatIBsaGamXMwIP4HE0c0L6KbDO-';
+    const FEEDBACK_CATEGORY_COLORS = {
+      'Timer bug': 0xff3b30,
+      'Catalogue/rule correction': 0xffcc00,
+      'Feature idea': 0x00e5ff,
+      'Other': 0x8e8e93
+    };
+
+    function openFeedbackModal() {
+      closeModals();
+      const catSelect = document.getElementById('feedbackCategory');
+      const textArea = document.getElementById('feedbackText');
+      if (catSelect) catSelect.value = 'Timer bug';
+      if (textArea) textArea.value = '';
+      document.getElementById('feedbackModal').classList.add('open');
+    }
+
+    // Discord webhooks accept a browser POST with no auth beyond the URL
+    // itself and no preflight-blocking headers, so this goes straight from
+    // the client - no server of our own needed for a tester build.
+    async function submitFeedback() {
+      const category = document.getElementById('feedbackCategory').value;
+      const text = document.getElementById('feedbackText').value.trim();
+      if (!text) { showToast('Add a quick description first', null); return; }
+      if (!FEEDBACK_WEBHOOK_URL) {
+        showToast('Feedback isn\u2019t wired up yet on this build (no webhook configured).', null, 9000);
+        return;
+      }
+      const btn = document.getElementById('btnFeedbackSubmit');
+      const originalLabel = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'SENDING...';
+      const fields = [
+        { name: 'User Agent', value: (navigator.userAgent || 'unknown').slice(0, 1024) },
+        { name: 'Catalogue', value: catalogVersionLabel().slice(0, 1024), inline: true },
+        { name: 'Tracked platforms', value: String(trackedGames.length), inline: true }
+      ];
+      if (recentAppErrors.length) {
+        fields.push({ name: 'Recent app errors', value: recentAppErrors.join('\n').slice(0, 1024) });
+      }
+      const payload = {
+        username: 'Casino Almanac Feedback',
+        embeds: [{
+          title: `[${category}]`,
+          description: text.slice(0, 4000),
+          color: FEEDBACK_CATEGORY_COLORS[category] || 0x00e5ff,
+          fields,
+          timestamp: new Date().toISOString()
+        }]
+      };
+      try {
+        const response = await fetch(FEEDBACK_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        closeModals();
+        showToast('Thanks - feedback sent!', null);
+      } catch (error) {
+        showToast(`Could not send feedback (${error.message}). Try again in a bit.`, null, 9000);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+      }
+    }
 
     let supabaseClient = null;
     let syncInFlight = false;
@@ -4986,6 +5260,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (!changed) return;
       streakCache = null;
       try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
+      saveIndexedState('the_casino_almanac_history_v1', collectionHistory);
       if (document.getElementById('statsModal').classList.contains('open')) renderStats();
       renderGames();
       updateHeroStats();
@@ -5206,6 +5481,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try {
         localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory));
       } catch (e) { /* storage full or unavailable; keep in-memory copy */ }
+      saveIndexedState('the_casino_almanac_history_v1', collectionHistory);
       enqueueHistorySync(entry, false);
       collectFlash();
     }
@@ -5497,6 +5773,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         try {
           localStorage.setItem('the_casino_almanac_runs_v1', JSON.stringify(dailyRunsHistory));
         } catch (e) { /* ignore */ }
+        saveIndexedState('the_casino_almanac_runs_v1', dailyRunsHistory);
       }
       currentDailyRunStartTime = null;
     }
@@ -5683,6 +5960,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       collectionHistory.forEach((h) => enqueueHistorySync(h, true));
       collectionHistory = [];
       dailyRunsHistory = [];
+      saveIndexedState('the_casino_almanac_history_v1', collectionHistory);
+      saveIndexedState('the_casino_almanac_runs_v1', dailyRunsHistory);
       localStorage.removeItem('the_casino_almanac_history_v1');
       localStorage.removeItem('the_casino_almanac_runs_v1');
       renderStats();
@@ -5828,6 +6107,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             g.lastCollected = prev;
             const removed = undoLastLoggedCollection(g.name);
             try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
+            saveIndexedState('the_casino_almanac_history_v1', collectionHistory);
             if (removed) enqueueHistorySync(removed, true);
             persist();
           });
@@ -6014,7 +6294,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const LEDGER_KEY = 'almanac_ledger_v1';
     let ledger = [];
     try { const l = JSON.parse(localStorage.getItem(LEDGER_KEY)); ledger = Array.isArray(l) ? l : []; } catch (e) { ledger = []; }
-    function saveLedger() { try { localStorage.setItem(LEDGER_KEY, JSON.stringify(ledger)); } catch (e) {} }
+    function saveLedger() {
+      try { localStorage.setItem(LEDGER_KEY, JSON.stringify(ledger)); } catch (e) {}
+      saveIndexedState(LEDGER_KEY, ledger);
+    }
 
     // Money out and money in ask for genuinely different things, so the
     // form swaps rather than showing one set of boxes that half apply.
@@ -6989,6 +7272,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       function writeSection(label, key, value) {
         try {
           localStorage.setItem(key, JSON.stringify(value));
+          saveIndexedState(key, value);
           written.push(label);
         } catch (e) {
           failed.push(label);
@@ -7200,7 +7484,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- Daily Run mode ---
     let dailyRunQueue = [];
     let dailyRunIndex = 0;
-    let dailyRunStats = { collected: 0, skipped: 0 };
+    let dailyRunStats = { collected: 0, skipped: 0, scEarned: 0 };
+    // Ids already given one "moved to the back of the queue" reprieve by
+    // skipCurrentDailyRun() - a second skip on the same platform (i.e. it
+    // cycled all the way back around) counts as a real skip instead of
+    // requeuing forever.
+    let dailyRunRequeued = new Set();
+    // Ids actually collected this run, in the order collected - used at
+    // completion to find the soonest reset among what THIS run touched,
+    // not every tracked platform. Kept in sync with an undo via
+    // collectCurrentDailyRun()'s onUndo hook.
+    let dailyRunCollectedIds = [];
 
     function updateDailyRunButton() {
       const btn = document.getElementById('btnStartDailyRun');
@@ -7244,11 +7538,41 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (dailyRunQueue.length === 0) return;
 
       dailyRunIndex = 0;
-      dailyRunStats = { collected: 0, skipped: 0 };
+      dailyRunStats = { collected: 0, skipped: 0, scEarned: 0 };
+      dailyRunRequeued = new Set();
+      dailyRunCollectedIds = [];
       recordDailyRunStart();
       hideRunUndoBar();
       document.getElementById('dailyRunOverlay').classList.add('open');
       renderDailyRunStep();
+    }
+
+    // A dedicated, prominent line on the run card - keenSummaryHtml()
+    // below already mentions the rate inline as part of a longer sentence,
+    // but a runner deciding whether to launch/skip wants the expected
+    // value called out on its own rather than parsed out of prose.
+    function runCardValueHtml(game) {
+      if (typeof game.dailySC !== 'number' || game.dailySC <= 0) return '';
+      return `<div class="run-expected-value">Expected value: <strong>~$${game.dailySC.toFixed(2)}</strong>${game.scIsAveraged ? ' (avg)' : ''}</div>`;
+    }
+
+    // Soonest reset among whatever THIS run actually collected - each
+    // collect() call already set a fresh lastCollected/cooldown, so
+    // getCooldownState() right now gives the real next-ready time rather
+    // than something this function has to compute itself.
+    function nextRunResetLabel() {
+      if (dailyRunCollectedIds.length === 0) return 'Nothing collected this run.';
+      let soonest = null;
+      dailyRunCollectedIds.forEach(id => {
+        const game = trackedGames.find(g => g.id === id);
+        if (!game) return;
+        const state = getCooldownState(game);
+        if (!state.isReady && (soonest === null || state.remainingMs < soonest.remainingMs)) {
+          soonest = state;
+        }
+      });
+      if (!soonest) return 'Next reset: unknown.';
+      return `Next reset ready: ${readyAtLabel(null, soonest.remainingMs)} (in ${formatTime(soonest.remainingMs)})`;
     }
 
     function renderDailyRunStep() {
@@ -7264,10 +7588,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         progressText.textContent = 'RUN COMPLETE';
         progressFill.style.width = '100%';
         actions.style.display = 'none';
+        const scLine = dailyRunStats.scEarned > 0
+          ? `<div style="font-size:1.05rem; margin-bottom:8px;">Added to ledger: <strong style="color:var(--accent-gold);">~$${dailyRunStats.scEarned.toFixed(2)} SC/GC</strong></div>`
+          : '';
         card.innerHTML = `
           <div class="run-name" style="color:var(--accent-green); text-shadow:0 0 15px var(--accent-green);">RUN COMPLETE</div>
           <div style="font-size:1.05rem; margin-bottom:8px;">Collected: <strong style="color:var(--accent-green);">${dailyRunStats.collected}</strong></div>
-          <div style="font-size:1.05rem; margin-bottom:24px;">Skipped: <strong style="color:var(--text-muted);">${dailyRunStats.skipped}</strong></div>
+          <div style="font-size:1.05rem; margin-bottom:8px;">Skipped: <strong style="color:var(--text-muted);">${dailyRunStats.skipped}</strong></div>
+          ${scLine}
+          <div style="font-size:0.95rem; margin-bottom:24px; color:var(--text-muted);">${nextRunResetLabel()}</div>
           <button class="btn-primary" style="flex:0 0 auto; max-width:220px; width:100%; padding:14px;" onclick="exitDailyRun()">DONE</button>
         `;
         return;
@@ -7289,6 +7618,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           ${game.hasLive ? '<span class="type-badge">LIVE</span>' : ''}
         </div>
         <div class="run-redeem">Min Redeem: ${game.minRedeem || 'Varies'}</div>
+        ${runCardValueHtml(game)}
         <div class="run-balance" id="runCardBalance">
           <div id="runCardBalanceChart">${cashBarHtml(game)}</div>
           <div class="run-balance-row">
@@ -7420,12 +7750,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           toast: false,
           onUndo: () => {
             dailyRunStats.collected--;
+            if (typeof game.dailySC === 'number') dailyRunStats.scEarned -= game.dailySC;
+            const idx = dailyRunCollectedIds.indexOf(game.id);
+            if (idx !== -1) dailyRunCollectedIds.splice(idx, 1);
             dailyRunIndex = collectedAtIndex;
             renderDailyRunStep();
           }
         });
         if (result) {
           dailyRunStats.collected++;
+          if (typeof game.dailySC === 'number') dailyRunStats.scEarned += game.dailySC;
+          dailyRunCollectedIds.push(game.id);
           hapticBuzz([18, 24, 42]);
           screenShake();
           showRunUndoBar(result.game, result.undo);
@@ -7435,7 +7770,20 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderDailyRunStep();
     }
 
+    // First skip on a platform just moves it to the back of the queue for
+    // another chance later in the run (skip-because-not-home-yet is common
+    // and shouldn't cost you the collection). A second skip on the same
+    // platform - i.e. it cycled all the way back around and got skipped
+    // again - is a real skip and drops it for good, same as before.
     function skipCurrentDailyRun() {
+      const game = dailyRunQueue[dailyRunIndex];
+      if (game && !dailyRunRequeued.has(game.id) && dailyRunIndex < dailyRunQueue.length - 1) {
+        dailyRunRequeued.add(game.id);
+        dailyRunQueue.splice(dailyRunIndex, 1);
+        dailyRunQueue.push(game);
+        renderDailyRunStep();
+        return;
+      }
       dailyRunStats.skipped++;
       dailyRunIndex++;
       renderDailyRunStep();
@@ -7488,6 +7836,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // nudge toward Settings, not something that should compete with the
     // deck itself for the first thing the user sees.
     setTimeout(checkForCatalogUpdates, 1500);
+    refreshExternalCatalog();
+    setInterval(refreshExternalCatalog, EXTERNAL_CATALOG_REFRESH_MS);
+    window.addEventListener('focus', refreshExternalCatalog);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') refreshExternalCatalog();
+    });
+    hydrateIndexedDBState();
   </script>
 </body>
 </html>
