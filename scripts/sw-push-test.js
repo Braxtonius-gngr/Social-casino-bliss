@@ -123,6 +123,23 @@ const TESTS = [
     expect(sw.shown.map(n => n.title), ['New drop: Smoke Casino', 'Casino Almanac'], 'not shown twice');
   }],
 
+  ['past three drops, the rest are summed up and all count as seen', async () => {
+    const many = [1, 2, 3, 4, 5].map(n => ({ ...DROP, id: `m${n}`, platform_name: 'Smoke Casino', code: `CODE${n}` }));
+    const idb = fakeIndexedDB({ drop_alerts: STATE });
+    const sw = loadWorker({ idb, rows: many });
+    await sw.push();
+    expect(sw.shown.map(n => n.title), ['New drop: Smoke Casino', 'New drop: Smoke Casino', '3 more new drops'], 'two drops and a summary');
+    expect(sw.shown[2].data, { open: 'freebies' }, 'summary opens Freebies');
+    expect(idb.data.get('drop_seen'), ['m1', 'm2', 'm3', 'm4', 'm5'], 'every drop was put in front of the user');
+  }],
+
+  ['up to three drops each get their own alert', async () => {
+    const three = [1, 2, 3].map(n => ({ ...DROP, id: `t${n}` }));
+    const sw = loadWorker({ idb: fakeIndexedDB({ drop_alerts: STATE }), rows: three });
+    await sw.push();
+    expect(sw.shown.length, 3, 'three alerts, no summary');
+  }],
+
   ['drops announced before alerts were turned on are left out', async () => {
     const since = NOW - HOUR;
     const idb = fakeIndexedDB({ drop_alerts: { ...STATE, since } });

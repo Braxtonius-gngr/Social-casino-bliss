@@ -231,14 +231,28 @@ function dropNotificationBody(drop) {
   return parts.join(' · ');
 }
 
+// At most three notifications per push: past that, the last one sums up
+// the rest, so every drop recorded as seen was actually put in front of the
+// user (the rest are listed in Freebies, where the summary opens).
 async function showDrops(drops) {
-  const shown = drops.slice(0, 3);
-  await Promise.all(shown.map(drop => self.registration.showNotification(`New drop: ${drop.platform_name}`, {
+  const individual = drops.length > 3 ? drops.slice(0, 2) : drops;
+  const notes = individual.map(drop => self.registration.showNotification(`New drop: ${drop.platform_name}`, {
     body: dropNotificationBody(drop),
     tag: `almanac-drop-${drop.id}`,
     icon: 'apple-touch-icon.png',
     data: { open: 'freebies' }
-  })));
+  }));
+  const rest = drops.slice(individual.length);
+  if (rest.length) {
+    const names = rest.slice(0, 3).map(drop => drop.platform_name);
+    notes.push(self.registration.showNotification(`${rest.length} more new drops`, {
+      body: `${names.join(', ')}${rest.length > names.length ? ' and more' : ''}. Tap to see them in Freebies.`,
+      tag: 'almanac-drops-more',
+      icon: 'apple-touch-icon.png',
+      data: { open: 'freebies' }
+    }));
+  }
+  await Promise.all(notes);
   const seen = await readPushState(DROP_SEEN_KEY, false);
   const ids = (Array.isArray(seen) ? seen : []).concat(drops.map(drop => drop.id));
   await writePushState(DROP_SEEN_KEY, ids.slice(-100));

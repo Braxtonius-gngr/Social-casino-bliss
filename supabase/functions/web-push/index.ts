@@ -22,6 +22,7 @@ const ADMIN_EMAIL = "johndopamine210@gmail.com";
 // A drop is worth delivering for a few hours; the service worker looks back
 // a little further than this for announced drops.
 const DROP_TTL_SECONDS = 6 * 3600;
+const RESEND_AFTER_MS = 60000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function corsHeaders(req: Request) {
@@ -101,27 +102,43 @@ serve(async (req) => {
     return { status, removed: false };
   }
 
-  // Claims the drop (announced_at is set once, so a second click can't push
-  // it again), then pushes to the opted-in devices tracking that platform.
-  async function announceDrop(id: string) {
+  // Claims the drop by stamping announced_at, so a double click can't send
+  // it twice, then pushes to the opted-in devices tracking that platform.
+  // A resend (after a send that failed or timed out part-way) re-claims a
+  // drop announced over a minute ago; devices that already showed it skip
+  // it, so a repeat only reaches the ones it missed. A failed lookup hands
+  // the claim back.
+  async function announceDrop(id: string, resend: boolean) {
     if (!UUID_RE.test(id)) return jsonResponse({ error: "Unknown drop." }, 400, cors);
     const nowIso = new Date().toISOString();
-    const { data: claimed, error: claimError } = await supabase
+    const { data: before } = await supabase.from("public_freebies").select("announced_at").eq("id", id).maybeSingle();
+    let claim = supabase
       .from("public_freebies")
       .update({ announced_at: nowIso })
       .eq("id", id)
       .eq("active", true)
-      .is("announced_at", null)
-      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
-      .select("id, platform_name, root_domain, claim_url");
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`);
+    claim = resend
+      ? claim.lt("announced_at", new Date(Date.now() - RESEND_AFTER_MS).toISOString())
+      : claim.is("announced_at", null);
+    const { data: claimed, error: claimError } = await claim.select("id, platform_name, root_domain, claim_url");
     if (claimError) {
       console.error("announce: claim failed", claimError);
       return jsonResponse({ error: "Could not mark the drop as announced." }, 500, cors);
     }
     const drop = claimed?.[0];
     if (!drop) {
-      return jsonResponse({ error: "That drop is inactive, expired, missing, or already announced." }, 409, cors);
+      return jsonResponse({
+        error: resend
+          ? "That drop is inactive, expired, missing, or was sent under a minute ago."
+          : "That drop is inactive, expired, missing, or already announced (use RESEND).",
+      }, 409, cors);
     }
+    const release = () => supabase
+      .from("public_freebies")
+      .update({ announced_at: before?.announced_at ?? null })
+      .eq("id", id)
+      .eq("announced_at", nowIso);
     const keys = dropKeys(drop.platform_name, drop.root_domain, drop.claim_url);
     const tally = { matched: 0, sent: 0, removed: 0, failed: 0 };
     if (!keys.length) return jsonResponse({ keys, ...tally }, 200, cors);
@@ -140,6 +157,7 @@ serve(async (req) => {
         .limit(PAGE);
       if (error) {
         console.error("announce: subscriber query failed", error);
+        if (tally.matched === 0) await release();
         return jsonResponse({ error: "Subscriber lookup failed.", keys, ...tally }, 500, cors);
       }
       const rows = (data ?? []) as { id: string; endpoint: string }[];
@@ -173,7 +191,7 @@ serve(async (req) => {
       if (user.is_anonymous || (user.email ?? "").toLowerCase() !== ADMIN_EMAIL) {
         return jsonResponse({ error: "Only the admin can announce drops." }, 403, cors);
       }
-      return await announceDrop(String(body.announce));
+      return await announceDrop(String(body.announce), body.resend === true);
     }
     const { data: own, error: ownError } = await supabase
       .from("push_subscriptions")

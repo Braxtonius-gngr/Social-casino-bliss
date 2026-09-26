@@ -558,7 +558,7 @@ const TESTS = [
       terms: document.getElementById('fTerms').value,
       notify: document.getElementById('fNotify').checked
     }));
-    expect(form, { platform: 'McLuck', code: 'LUCKY5', url: 'https://www.mcluck.com/promo', terms: '5 SC · New players only', notify: true }, 'draft loaded, tracking stripped');
+    expect(form, { platform: 'McLuck', code: 'LUCKY5', url: 'https://www.mcluck.com/promo', terms: '5 SC · New players only', notify: false }, 'draft loaded, tracking stripped, alerting left to a deliberate tick');
     await page.evaluate(() => loadEntries().then(() => announceEntry('11111111-1111-1111-1111-111111111111')));
     calls = await page.calls();
     expect(byType(calls, 'invoke', 'web-push').map(c => c.body), [{ announce: '11111111-1111-1111-1111-111111111111' }], 'announced by id');

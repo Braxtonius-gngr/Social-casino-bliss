@@ -117,7 +117,7 @@
           </div>
           <div class="toggle-row" id="notifyRow" style="border-bottom:none; padding-top:6px;">
             <span>On save, alert the users who track this platform and turned on drop alerts</span>
-            <input type="checkbox" id="fNotify" />
+            <input type="checkbox" id="fNotify" aria-label="On save, alert the users who track this platform" />
           </div>
         </div>
       </div>
@@ -222,7 +222,7 @@
             <div class="drop-url">${BUCKET_LABEL[r.bucket] || escHtml(r.bucket)}${r.code ? ' &bull; ' + escHtml(r.code) : ''}${r.expires_at ? ' &bull; expires ' + new Date(r.expires_at).toLocaleString() : ' &bull; no expiry'}</div>
           </div>
           <div style="display:flex; gap:6px; flex-shrink:0;">
-            ${r.active && !r.announced_at && !isExpired(r) ? `<button class="btn-open" style="padding:5px 10px; font-size:0.68rem;" onclick="announceEntry('${r.id}')">NOTIFY</button>` : ''}
+            ${r.active && !isExpired(r) ? `<button class="btn-open" style="padding:5px 10px; font-size:0.68rem;" onclick="announceEntry('${r.id}')">${r.announced_at ? 'RESEND' : 'NOTIFY'}</button>` : ''}
             <button class="btn-open" style="padding:5px 10px; font-size:0.68rem;" onclick="editEntry('${r.id}')">EDIT</button>
             <button class="btn-open" style="padding:5px 10px; font-size:0.68rem;" onclick="toggleActive('${r.id}')">${r.active ? 'DEACTIVATE' : 'ACTIVATE'}</button>
             <button class="btn-open" style="padding:5px 10px; font-size:0.68rem; background:transparent; border:1px solid var(--accent-pink); color:var(--accent-pink); box-shadow:none;" onclick="deleteEntry('${r.id}')">DELETE</button>
@@ -358,14 +358,19 @@
   }
 
   // --- New-drop alerts ---
-  // Pushes once per entry: the web-push function stamps announced_at and
-  // refuses a second announcement.
+  // The web-push function stamps announced_at when it sends. RESEND (for a
+  // send that failed or timed out part-way) is safe to repeat: devices that
+  // already showed the drop skip it.
   async function announceEntry(id, skipConfirm) {
     const r = entries.find((e) => e.id === id);
     if (!r) return;
-    if (!skipConfirm && !confirm(`Alert every device that tracks ${r.platform_name} and turned on drop alerts? This goes out once.`)) return;
+    const resend = !!r.announced_at;
+    const question = resend
+      ? `Send the ${r.platform_name} alert again? Devices that already showed it won't show it twice.`
+      : `Alert every device that tracks ${r.platform_name} and turned on drop alerts?`;
+    if (!skipConfirm && !confirm(question)) return;
     showStatus(`Sending alerts for ${r.platform_name}...`);
-    const { data, error } = await client.functions.invoke('web-push', { body: { announce: id } });
+    const { data, error } = await client.functions.invoke('web-push', { body: resend ? { announce: id, resend: true } : { announce: id } });
     if (error) {
       showStatus('Alert failed: ' + await functionErrorMessage(error), true);
     } else {
@@ -510,8 +515,9 @@
       source_note: `Discord screenshot, read ${new Date().toLocaleDateString()}`,
       active: true
     });
+    // Alerting stays a deliberate tick, never a side effect of loading a draft.
     document.getElementById('notifyRow').style.display = '';
-    document.getElementById('fNotify').checked = true;
+    document.getElementById('fNotify').checked = false;
     document.getElementById('formHeading').textContent = d.catalog_match
       ? 'New Entry (from screenshot - check it)'
       : 'New Entry (from screenshot - platform not in the catalog, check the name)';
