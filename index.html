@@ -5220,7 +5220,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } catch (error) {
         session = null;
       }
-      if (!client || !session || session.user?.is_anonymous) return resetClientEntitlements();
+      // Anonymous sessions are queried too: checkout accepts them, so an
+      // anonymous user can own a paid subscription.
+      if (!client || !session) return resetClientEntitlements();
 
       try {
         const { data, error } = await client.rpc('get_my_entitlement');
@@ -5315,6 +5317,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             || (error && error.message)
             || 'Unable to start checkout.';
           console.error('Checkout session failure:', status, errBody || error);
+          if (status === 409) {
+            showToast(detail);
+            syncUserEntitlements();
+            return;
+          }
           showToast(status ? `Checkout failed (${status}): ${detail}` : `Checkout failed: ${detail}`);
           return;
         }

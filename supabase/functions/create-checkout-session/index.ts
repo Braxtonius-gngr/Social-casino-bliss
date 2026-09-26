@@ -142,10 +142,22 @@ serve(async (req) => {
 
     const { data: existing, error: lookupError } = await supabase
       .from("user_subscriptions")
-      .select("stripe_customer_id")
+      .select("stripe_customer_id, stripe_subscription_id")
       .eq("user_id", user.id)
       .maybeSingle();
     if (lookupError) throw lookupError;
+
+    // Stripe happily attaches a second subscription to the same customer,
+    // so a stale client that still shows "Upgrade" must not double-bill.
+    // Asks Stripe rather than trusting our row, which lags a missed webhook.
+    if (existing?.stripe_subscription_id) {
+      const current = await stripe.subscriptions.retrieve(existing.stripe_subscription_id);
+      if (["active", "trialing", "past_due", "unpaid"].includes(current.status)) {
+        return jsonResponse({
+          error: "This account already has a Pro subscription. Use Manage Billing to update or cancel it.",
+        }, 409, cors);
+      }
+    }
 
     let customerId = existing?.stripe_customer_id;
     if (!customerId) {
