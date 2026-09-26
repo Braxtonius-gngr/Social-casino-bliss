@@ -352,6 +352,10 @@
           <dt><span class="tier-badge tier-Not-Rankable">Not Rankable</span></dt>
           <dd>Permanent, not a gap: the only daily here is chance-based, so there's no guaranteed rate to rank.</dd>
         </dl>
+        <div class="res-share-row">
+          <a class="tactic-full-guide" href="platforms/index.html">The full tier list &#8599;</a>
+          <button type="button" class="res-share-btn" onclick="shareTierList()">SHARE IT</button>
+        </div>
       </div>
 
       <div class="res-links-label">External</div>
@@ -656,7 +660,7 @@
         <div class="backup-helper" style="margin-top:0;">
           <strong style="color:var(--text-main);">Install for offline use:</strong><br>
           Android &mdash; browser menu &rarr; "Add to Home screen".<br>
-          iPad &mdash; Share button &rarr; "Add to Home Screen".
+          iPhone / iPad &mdash; Share button &rarr; "Add to Home Screen". On iPhone this is also what lets alerts reach you while the app is closed.
         </div>
       </div>
 
@@ -719,6 +723,36 @@
           <div class="time-inputs" id="notifyQuietHours" style="display:none;">
             <label>Quiet from <input type="time" id="notifyStart" onchange="saveNotifyPrefsFromInputs()" /></label>
             <label>Quiet until <input type="time" id="notifyEnd" onchange="saveNotifyPrefsFromInputs()" /></label>
+          </div>
+          <div class="alert-rules" id="alertRules" style="display:none;">
+            <div class="alert-rules-head">Alert rules <span class="pro-tag">PRO</span></div>
+            <div class="toggle-row">
+              <span style="color:#fff; font-size:0.85rem;">Only alert for</span>
+              <select id="alertMinTier" aria-label="Only alert for these tiers" onchange="saveAlertRulesFromInputs()">
+                <option value="all">Every tier</option>
+                <option value="S">S only</option>
+                <option value="A">S and A</option>
+                <option value="B">S to B</option>
+                <option value="C">S to C</option>
+                <option value="D">S to D</option>
+              </select>
+            </div>
+            <div class="toggle-row" id="alertUnrankedRow" style="display:none;">
+              <span style="color:#fff; font-size:0.85rem;">Include unranked platforms</span>
+              <input type="checkbox" id="alertIncludeUnranked" aria-label="Include unranked platforms" onchange="saveAlertRulesFromInputs()" />
+            </div>
+            <div class="toggle-row">
+              <span style="color:#fff; font-size:0.85rem;">One daily digest instead<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">A single alert a day listing what's ready</span></span>
+              <input type="checkbox" id="alertDigest" aria-label="One daily digest instead" onchange="saveAlertRulesFromInputs()" />
+            </div>
+            <div class="time-inputs" id="alertDigestTimeRow" style="display:none;">
+              <label>Digest at <input type="time" id="alertDigestTime" onchange="saveAlertRulesFromInputs()" /></label>
+            </div>
+            <div id="alertMutedList" class="alert-muted"></div>
+            <div id="alertRulesLocked" class="alert-rules-locked" style="display:none;">
+              Pro narrows alerts to the tiers you care about, mutes single platforms, and can send one daily digest instead of an alert every time something resets.
+              <button class="btn-primary" onclick="initiateProCheckout()">Upgrade to Pro ($4.99/mo)</button>
+            </div>
           </div>
           <div class="notify-message" style="margin-top:12px; margin-bottom:0;">
             Alerts are generated on this device. They fire while the app is open or in the background; if you fully close it, the timer stops until you reopen it &mdash; unless &ldquo;when the app is closed&rdquo; is on. That uploads only your upcoming alert times and counts (never your deck or history) so the server can wake this device.
@@ -976,6 +1010,10 @@
       <div class="form-group"><label>Current SC balance</label><input type="number" step="0.01" id="modalBalance" placeholder="0" /><div class="hint" style="font-size:0.68rem; color:var(--text-muted); margin-top:5px;">Optional. Shows a progress bar toward this platform's cashout minimum.</div></div>
       <div class="form-group"><label>Runs / tags</label><input type="text" id="modalTags" placeholder="morning, crypto, high value" /><div class="hint" style="font-size:0.68rem; color:var(--text-muted); margin-top:5px;">Comma separated. Tags become filter chips you can run on their own.</div></div>
       <div class="form-group"><label>My notes</label><textarea id="modalUserNotes" rows="2" placeholder="Login via Google, KYC done, needs VPN..." style="width:100%; background:rgba(0,0,0,0.5); border:1px solid var(--glass-border); color:var(--text-main); padding:10px 12px; border-radius:10px; font-family:inherit; font-size:0.85rem; resize:vertical;"></textarea></div>
+      <div class="toggle-row" id="modalAlertsRow" style="display:none; padding-top:0; margin-bottom:14px;">
+        <span style="color:#fff; font-size:0.85rem;">Alerts for this platform <span class="pro-tag">PRO</span><br><span id="modalAlertsHint" style="font-size:0.7rem; color:var(--text-muted); font-weight:400;"></span></span>
+        <input type="checkbox" id="modalAlertsOn" aria-label="Alerts for this platform" />
+      </div>
       <button class="btn-dock" id="btnSetCollectionTime" style="max-width:100%; width:100%; margin-bottom:14px; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="openCollectionTimeModal(document.getElementById('modalGameId').value)">SET COLLECTION TIME</button>
       <div class="modal-actions">
         <button class="btn-primary" onclick="saveModalEntry()">SAVE</button>
@@ -2322,6 +2360,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         return;
       }
 
+      const alertRulesOn = alertRulesActive();
+      const pagePaths = platformPageMap();
       list.forEach((game, cardIndex) => {
         const { isReady, remainingMs } = getCooldownState(game);
         const cardWrapper = document.createElement('div');
@@ -2341,6 +2381,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
                 <span class="casino-name">${game.name}</span>
                 ${tierBadgeHtml(game.tier)}
                 ${game.hasLive ? '<span class="type-badge">LIVE</span>' : ''}
+                ${game.alertsMuted && alertRulesOn ? '<span class="type-badge" title="Alerts muted for this platform">MUTED</span>' : ''}
                 <!-- The cooldown chip lives up here rather than in the status
                      line: it fills the dead space to the right of the name,
                      and taking it out of the status line is what lets the
@@ -2378,6 +2419,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               <div class="keen-notes-body">${game.notes || 'No specific warning flags. 24h standard reset cycle.'}</div>
             </details>
             ${goToGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">RECOMMENDED MODULES:</strong>${goToGames}</div>` : ''}
+            ${pagePaths.has(game.name.trim().toLowerCase()) ? `<button type="button" class="keen-share" data-share-name="${escHtml(game.name)}" onclick="sharePlatformFrom(this, event)">Share this platform</button>` : ''}
           </div>
         `;
         container.appendChild(cardWrapper);
@@ -2500,6 +2542,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       });
 
       filtered.sort((a, b) => compareByStack(a, b, sortStackCatalog));
+      const pagePaths = platformPageMap();
 
       filtered.forEach((item, index) => {
         const isTracked = trackedGames.some(g => g.name.toLowerCase() === item.name.toLowerCase());
@@ -2535,6 +2578,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               <div class="keen-notes-body">${item.notes || 'No critical flags. Normal 1x playthrough.'}</div>
             </details>
             ${item.bestGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">RECOMMENDED MODULES:</strong>${item.bestGames}</div>` : ''}
+            ${pagePaths.has(item.name.trim().toLowerCase()) ? `<button type="button" class="keen-share" data-share-name="${escHtml(item.name)}" onclick="sharePlatformFrom(this, event)">Share this platform</button>` : ''}
           </div>
         `;
         container.appendChild(cardWrapper);
@@ -2628,6 +2672,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('modalUserNotes').value = '';
       document.getElementById('btnModalDelete').style.display = 'none';
       document.getElementById('btnSetCollectionTime').style.display = 'none';
+      document.getElementById('modalAlertsRow').style.display = 'none';
       document.getElementById('gameModal').classList.add('open');
     }
 
@@ -2646,6 +2691,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('modalUserNotes').value = game.userNotes || '';
       document.getElementById('btnModalDelete').style.display = 'block';
       document.getElementById('btnSetCollectionTime').style.display = 'block';
+      // Muting is a Pro rule; without Pro the box shows the saved state but
+      // can't change it (a mute saved earlier just has no effect meanwhile).
+      const rulesActive = alertRulesActive();
+      const alertsBox = document.getElementById('modalAlertsOn');
+      alertsBox.checked = !game.alertsMuted;
+      alertsBox.disabled = !rulesActive;
+      document.getElementById('modalAlertsHint').textContent = rulesActive
+        ? 'Untick to never get an alert for this platform.'
+        : 'Muting single platforms is part of Pro.';
+      document.getElementById('modalAlertsRow').style.display = 'flex';
       document.getElementById('gameModal').classList.add('open');
     }
 
@@ -2720,6 +2775,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           game.cooldownHours = cooldownHours;
           applyOptionalFields(game);
           normalizeTimerFields(game); // e.g. a typed "0" or "-5" hours recovers to the 24h default
+          const alertsBox = document.getElementById('modalAlertsOn');
+          if (alertsBox && !alertsBox.disabled) {
+            if (alertsBox.checked) delete game.alertsMuted;
+            else game.alertsMuted = true;
+          }
         }
       } else {
         const g = {
@@ -4405,7 +4465,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     // --- Local notifications ---
     const NOTIFY_KEY = 'almanac_notify_v1';
-    const NOTIFY_DEFAULTS = { enabled: false, start: '23:00', end: '08:00', last: 0, pausedUntil: 0, pausedEnabled: false };
+    const NOTIFY_DEFAULTS = {
+      enabled: false, start: '23:00', end: '08:00', last: 0, pausedUntil: 0, pausedEnabled: false,
+      // Pro alert rules - see alertRulesActive().
+      minTier: 'all', includeUnranked: true, digest: false, digestTime: '08:00'
+    };
+    const ALERT_MIN_TIERS = ['all', 'S', 'A', 'B', 'C', 'D'];
     let notifyTimer = null;
 
     function getNotifyPrefs() {
@@ -4419,11 +4484,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // backup import) - unlike getNotifyPrefs() above, which merges our own
     // previously-saved prefs and can trust their shape.
     //
-    // Deliberately only {enabled, start, end}: `last`, `pausedUntil` and
-    // `pausedEnabled` are this device's scheduler bookkeeping, not a
-    // portable preference, so a restore must not carry another device's
-    // values in. Applying this through saveNotifyPrefs() (which merges)
-    // therefore leaves those three as this device already had them.
+    // Deliberately only {enabled, start, end} plus the alert rules:
+    // `last`, `pausedUntil` and `pausedEnabled` are this device's scheduler
+    // bookkeeping, not a portable preference, so a restore must not carry
+    // another device's values in. Applying this through saveNotifyPrefs()
+    // (which merges) therefore leaves those three as this device already
+    // had them. The rules are only included when the file has them, so an
+    // older backup leaves this device's rules alone.
     function isValidNotifyTime(value) {
       if (typeof value !== 'string' || !/^\d{2}:\d{2}$/.test(value)) return false;
       const [hours, minutes] = value.split(':').map(Number);
@@ -4432,11 +4499,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     function sanitizeNotifyPrefs(v) {
       if (!v || typeof v !== 'object') return { enabled: NOTIFY_DEFAULTS.enabled, start: NOTIFY_DEFAULTS.start, end: NOTIFY_DEFAULTS.end };
-      return {
+      const out = {
         enabled: typeof v.enabled === 'boolean' ? v.enabled : NOTIFY_DEFAULTS.enabled,
         start: isValidNotifyTime(v.start) ? v.start : NOTIFY_DEFAULTS.start,
         end: isValidNotifyTime(v.end) ? v.end : NOTIFY_DEFAULTS.end
       };
+      if (ALERT_MIN_TIERS.includes(v.minTier)) out.minTier = v.minTier;
+      if (typeof v.includeUnranked === 'boolean') out.includeUnranked = v.includeUnranked;
+      if (typeof v.digest === 'boolean') out.digest = v.digest;
+      if (isValidNotifyTime(v.digestTime)) out.digestTime = v.digestTime;
+      return out;
     }
 
     // Merges and saves. Deliberately does NOT read the DOM -- an earlier version
@@ -4500,6 +4572,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const on = prefs.enabled && !paused && Notification.permission === 'granted';
       if (toggle) toggle.checked = on;
       if (quiet) quiet.style.display = on ? 'flex' : 'none';
+      const rules = document.getElementById('alertRules');
+      if (rules) rules.style.display = on ? 'block' : 'none';
+      refreshAlertRulesUI();
       const pushRow = document.getElementById('pushRow');
       const pushToggle = document.getElementById('pushToggle');
       if (pushRow) pushRow.style.display = prefs.enabled && Notification.permission === 'granted' ? 'flex' : 'none';
@@ -4644,16 +4719,186 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return d.getTime();
     }
 
+    // --- Smart alert rules (Pro) ---
+    // Basic alerts are free and cover every tracked platform. Pro adds three
+    // rules on top: a minimum tier, per-platform mutes (game.alertsMuted) and
+    // one daily digest in place of an alert every time something resets. The
+    // rules are saved with the notify prefs but only apply while Pro is
+    // active, so a lapsed subscription falls back to basic alerts instead of
+    // going quiet.
+    const ALERT_TIER_RANK = { 'S': 6, 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'F': 1 };
+    const PRO_CACHE_KEY = 'almanac_pro_cache_v1';
+    // The rule state the current alert schedule was built with, so an
+    // entitlement answer only reschedules when it actually changes things.
+    let alertRulesScheduledWith = null;
+
+    // The last entitlement the server confirmed, so the rules hold at boot
+    // and offline instead of switching off until the lookup answers. Only a
+    // real answer rewrites it; a failed lookup leaves it as it was.
+    function saveProCache(isPro, until) {
+      try { localStorage.setItem(PRO_CACHE_KEY, JSON.stringify({ isPro: !!isPro, until: until || null })); } catch (e) {}
+    }
+
+    function cachedProActive() {
+      try {
+        const cached = JSON.parse(localStorage.getItem(PRO_CACHE_KEY));
+        if (!cached || cached.isPro !== true) return false;
+        return !cached.until || new Date(cached.until).getTime() > serverNow();
+      } catch (e) { return false; }
+    }
+
+    function alertRulesActive() {
+      return clientEntitlements.isPro || cachedProActive();
+    }
+
+    // Whether a platform counts toward an alert under the rules. Unranked
+    // (no data yet) has its own switch; Not Rankable never clears a tier
+    // bar, since it has no guaranteed daily at all.
+    function alertEligible(game, prefs, rulesOn) {
+      if (!rulesOn) return true;
+      if (game.alertsMuted) return false;
+      const bar = ALERT_TIER_RANK[prefs.minTier];
+      if (!bar) return true;
+      const rank = ALERT_TIER_RANK[game.tier];
+      if (rank) return rank >= bar;
+      return game.tier === 'Not Rankable' ? false : !!prefs.includeUnranked;
+    }
+
+    function alertGames(prefs) {
+      const rulesOn = alertRulesActive();
+      return trackedGames.filter(g => alertEligible(g, prefs, rulesOn));
+    }
+
+    function digestActive(prefs) {
+      return !!prefs.digest && isValidNotifyTime(prefs.digestTime) && alertRulesActive();
+    }
+
+    // When a platform next counts as ready for an alert. getCooldownState()'s
+    // nextReadyAt is already correct for both rolling and fixed-reset
+    // platforms (and equals `now` itself for one that's already ready). A
+    // snoozed platform isn't worth an alert until the snooze itself expires,
+    // even if the underlying cooldown finished first - so whichever of the
+    // two is later.
+    function alertReadyAt(game, now) {
+      let readyAt = getCooldownState(game, now).nextReadyAt;
+      if (isSnoozed(game) && readyAt < game.snoozedUntil) readyAt = game.snoozedUntil;
+      return readyAt;
+    }
+
+    // Best first, so a digest names the platforms most worth opening.
+    function rankForAlert(games) {
+      return games.slice().sort((a, b) =>
+        (ALERT_TIER_RANK[b.tier] || 0) - (ALERT_TIER_RANK[a.tier] || 0)
+        || (Number(b.dailySC) || 0) - (Number(a.dailySC) || 0));
+    }
+
+    // The next daily digest due at or after fromMs, in this device's local
+    // time, skipping one that already went out (lastMs).
+    function nextDigestAt(fromMs, timeStr, lastMs) {
+      const [h, m] = timeStr.split(':').map(Number);
+      const d = new Date(fromMs);
+      d.setHours(h, m, 0, 0);
+      for (let i = 0; i < 400 && (d.getTime() < fromMs || d.getTime() <= (Number(lastMs) || 0)); i++) {
+        d.setDate(d.getDate() + 1);
+      }
+      return d.getTime();
+    }
+
+    // "Zula, Punt and 3 more" - how a digest names what's ready. sw.js
+    // keeps a copy for the closed-app digest.
+    function readySummary(names, count) {
+      if (!names.length) return `${count} platform${count === 1 ? '' : 's'}`;
+      const shown = names.slice(0, 3);
+      const rest = count - shown.length;
+      if (rest > 0) return `${shown.join(', ')} and ${rest} more`;
+      return shown.length > 1 ? `${shown.slice(0, -1).join(', ')} and ${shown[shown.length - 1]}` : shown[0];
+    }
+
+    function refreshAlertRulesUI() {
+      const box = document.getElementById('alertRules');
+      if (!box) return;
+      const prefs = getNotifyPrefs();
+      const active = alertRulesActive();
+      const minTier = document.getElementById('alertMinTier');
+      const unranked = document.getElementById('alertIncludeUnranked');
+      const digest = document.getElementById('alertDigest');
+      const digestTime = document.getElementById('alertDigestTime');
+      if (minTier) minTier.value = ALERT_MIN_TIERS.includes(prefs.minTier) ? prefs.minTier : 'all';
+      if (unranked) unranked.checked = !!prefs.includeUnranked;
+      if (digest) digest.checked = !!prefs.digest;
+      if (digestTime) digestTime.value = isValidNotifyTime(prefs.digestTime) ? prefs.digestTime : NOTIFY_DEFAULTS.digestTime;
+      [minTier, unranked, digest, digestTime].forEach(el => { if (el) el.disabled = !active; });
+      const unrankedRow = document.getElementById('alertUnrankedRow');
+      if (unrankedRow) unrankedRow.style.display = prefs.minTier && prefs.minTier !== 'all' ? 'flex' : 'none';
+      const timeRow = document.getElementById('alertDigestTimeRow');
+      if (timeRow) timeRow.style.display = prefs.digest ? 'flex' : 'none';
+      const locked = document.getElementById('alertRulesLocked');
+      if (locked) locked.style.display = active ? 'none' : 'block';
+      const mutedList = document.getElementById('alertMutedList');
+      if (mutedList) {
+        // Unmuting stays open without Pro, so a lapsed mute can always be cleared.
+        const muted = trackedGames.filter(g => g.alertsMuted);
+        mutedList.innerHTML = muted.length
+          ? 'Muted: ' + muted.map(g => `<button type="button" class="tag-pill alert-unmute" aria-label="Unmute ${escHtml(g.name)}" onclick="setAlertsMuted('${g.id}', false)">${escHtml(g.name)} &times;</button>`).join(' ')
+          : (active ? 'To mute a single platform, open its &hellip; menu.' : '');
+      }
+    }
+
+    function saveAlertRulesFromInputs() {
+      if (!alertRulesActive()) { refreshAlertRulesUI(); return; }
+      const minTier = document.getElementById('alertMinTier');
+      const unranked = document.getElementById('alertIncludeUnranked');
+      const digest = document.getElementById('alertDigest');
+      const digestTime = document.getElementById('alertDigestTime');
+      const patch = {};
+      if (minTier && ALERT_MIN_TIERS.includes(minTier.value)) patch.minTier = minTier.value;
+      if (unranked) patch.includeUnranked = unranked.checked;
+      if (digest) patch.digest = digest.checked;
+      if (digestTime && isValidNotifyTime(digestTime.value)) patch.digestTime = digestTime.value;
+      const prefs = saveNotifyPrefs(patch);   // this reschedules
+      refreshAlertRulesUI();
+      trackEvent('alert_rules_saved', {
+        minTier: prefs.minTier,
+        digest: prefs.digest,
+        muted: trackedGames.filter(g => g.alertsMuted).length
+      });
+    }
+
+    function setAlertsMuted(id, muted) {
+      const game = trackedGames.find(g => g.id === id);
+      if (!game || (muted && !alertRulesActive())) return;
+      if (muted) game.alertsMuted = true;
+      else delete game.alertsMuted;
+      persist();   // saves, re-renders the deck and reschedules alerts
+      refreshAlertRulesUI();
+    }
+
+    // Called whenever an entitlement answer comes back: Pro switching on or
+    // off changes which alerts should exist, and the deck's MUTED badges.
+    function noteAlertRulesAccess() {
+      if (alertRulesScheduledWith !== null && alertRulesActive() !== alertRulesScheduledWith) {
+        scheduleNextNotification();
+        renderGames();
+      }
+      refreshAlertRulesUI();
+    }
+
     // Reuses getCooldownState() - the same canonical calculation every
     // card, filter, and sort already goes through - rather than
     // re-deriving readiness from lastCollected+cooldownHours, which was
     // wrong for any fixed-reset platform. Snoozed platforms are excluded:
-    // the user asked not to be bothered about them right now.
-    function countReadyNow() {
-      return trackedGames.filter(g => getCooldownState(g).isReady && !isSnoozed(g)).length;
+    // the user asked not to be bothered about them right now. So is
+    // anything the alert rules leave out.
+    function readyAlertGames(prefs) {
+      return alertGames(prefs).filter(g => getCooldownState(g).isReady && !isSnoozed(g));
+    }
+
+    function countReadyNow(prefs = getNotifyPrefs()) {
+      return readyAlertGames(prefs).length;
     }
 
     function scheduleNextNotification() {
+      alertRulesScheduledWith = alertRulesActive();
       scheduleLocalNotification();
       queuePushScheduleSync();
     }
@@ -4675,19 +4920,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         }
         return;
       }
-      if (prefs.pausedUntil) saveNotifyPrefs({ pausedUntil: 0, pausedEnabled: false });
+      // Clearing an expired pause saves, and saving reschedules - so stop
+      // here rather than arm a second timer next to the one that sets.
+      if (prefs.pausedUntil) { saveNotifyPrefs({ pausedUntil: 0, pausedEnabled: false }); return; }
+
+      if (digestActive(prefs)) {
+        const dueAt = nextDigestAt(now, prefs.digestTime, prefs.last);
+        const delay = dueAt - now;
+        if (delay > 0 && delay < 2147483647) notifyTimer = setTimeout(() => fireNotification(dueAt), delay);
+        return;
+      }
+
       let nextReady = Infinity;
-      trackedGames.forEach(g => {
-        // getCooldownState()'s nextReadyAt is already correct for both
-        // rolling and fixed-reset platforms (and equals `now` itself for
-        // one that's already ready, which the `> now` check below then
-        // naturally excludes - it's already counted by countReadyNow(),
-        // not something to schedule a *future* notification for).
-        let readyAt = getCooldownState(g, now).nextReadyAt;
-        // A snoozed platform isn't worth notifying about until the snooze
-        // itself expires, even if the underlying cooldown finished first -
-        // schedule for whichever of the two is later.
-        if (isSnoozed(g) && readyAt < g.snoozedUntil) readyAt = g.snoozedUntil;
+      alertGames(prefs).forEach(g => {
+        // A platform that's already ready has readyAt === now, which the
+        // `> now` check excludes - it's already counted by countReadyNow(),
+        // not something to schedule a *future* notification for.
+        const readyAt = alertReadyAt(g, now);
         if (readyAt > now && readyAt < nextReady) nextReady = readyAt;
       });
       if (nextReady === Infinity) return;
@@ -4704,33 +4953,43 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // setTimeout overflows past ~24.8 days; cooldowns never approach that,
       // but guard anyway.
       if (delay > 0 && delay < 2147483647) {
-        notifyTimer = setTimeout(fireNotification, delay);
+        notifyTimer = setTimeout(() => fireNotification(), delay);
       }
     }
 
-    function fireNotification() {
+    // dueAt is the digest time the timer was armed for; recording it as
+    // `last` (not just "now") keeps a timer that fires a moment early from
+    // counting as a different digest and going out twice.
+    function fireNotification(dueAt) {
       if (!notificationsSupported()) return;
       const prefs = getNotifyPrefs();
       if (!prefs.enabled || Notification.permission !== 'granted') return;
+      const digest = digestActive(prefs);
 
-      if (isQuietHours(serverNow(), prefs.start, prefs.end)) { scheduleNextNotification(); return; }
+      // A digest goes out at the time picked for it, quiet hours or not.
+      if (!digest && isQuietHours(serverNow(), prefs.start, prefs.end)) { scheduleNextNotification(); return; }
 
-      const readyCount = countReadyNow();
-      if (readyCount === 0) { scheduleNextNotification(); return; }
+      const ready = rankForAlert(readyAlertGames(prefs));
+      if (ready.length === 0 && !digest) { scheduleNextNotification(); return; }
 
-      const body = `${readyCount} platform${readyCount !== 1 ? 's' : ''} ready to collect`;
-      try {
-        if (navigator.serviceWorker && navigator.serviceWorker.ready) {
-          navigator.serviceWorker.ready
-            .then(reg => reg.showNotification('Casino Almanac', { body, tag: 'almanac-ready', renotify: false }))
-            .catch(() => { try { new Notification('Casino Almanac', { body }); } catch (e) {} });
-        } else {
-          const n = new Notification('Casino Almanac', { body });
-          n.onclick = () => window.focus();
-        }
-      } catch (e) { /* notification failed; don't break the app */ }
+      if (ready.length) {
+        const body = digest
+          ? `Daily digest: ${readySummary(ready.map(g => g.name), ready.length)} ready to collect`
+          : `${ready.length} platform${ready.length !== 1 ? 's' : ''} ready to collect`;
+        try {
+          if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+            navigator.serviceWorker.ready
+              .then(reg => reg.showNotification('Casino Almanac', { body, tag: 'almanac-ready', renotify: false }))
+              .catch(() => { try { new Notification('Casino Almanac', { body }); } catch (e) {} });
+          } else {
+            const n = new Notification('Casino Almanac', { body });
+            n.onclick = () => window.focus();
+          }
+        } catch (e) { /* notification failed; don't break the app */ }
+      }
 
-      saveNotifyPrefs({ last: serverNow() });   // this reschedules
+      // An empty digest still counts as today's, so it isn't retried.
+      saveNotifyPrefs({ last: Math.max(serverNow(), Number(dueAt) || 0) });   // this reschedules
     }
 
     // --- Background push alerts ---
@@ -4771,20 +5030,33 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // Every alert the local scheduler would fire from now on if nothing is
     // collected in between: each platform's next ready time, moved out of
     // quiet hours and batched no closer than an hour apart - the same rules
-    // as scheduleLocalNotification(). Collecting changes the answer, and the
-    // open app re-uploads it whenever it does.
+    // as scheduleLocalNotification(), including the Pro alert rules.
+    // Collecting changes the answer, and the open app re-uploads it whenever
+    // it does.
     function buildPushSchedule(now) {
       const prefs = getNotifyPrefs();
       if (!prefs.enabled || !notificationsSupported() || Notification.permission !== 'granted') return [];
       const HOUR = 3600000;
       const horizon = now + 14 * 24 * HOUR;
       const startAt = Math.max(now, Number(prefs.pausedUntil) || 0);
-      const readyNow = countReadyNow();
-      const times = trackedGames.map(g => {
-        let readyAt = getCooldownState(g, now).nextReadyAt;
-        if (isSnoozed(g) && readyAt < g.snoozedUntil) readyAt = g.snoozedUntil;
-        return readyAt;
-      }).filter(t => t > now && t < horizon).sort((a, b) => a - b);
+      const games = alertGames(prefs);
+      if (digestActive(prefs)) {
+        // One entry a day at the digest time, counting what will be ready by
+        // then if nothing is collected first; a day with nothing ready is
+        // left out. The names stay in this device's copy (syncPushSchedule()).
+        const readyTimes = games.map(g => ({ game: g, at: alertReadyAt(g, now) }));
+        const digests = [];
+        let at = nextDigestAt(startAt, prefs.digestTime, prefs.last);
+        while (at < horizon && digests.length < 48) {
+          const ready = rankForAlert(readyTimes.filter(r => r.at <= at).map(r => r.game));
+          if (ready.length) digests.push({ at, count: ready.length, digest: true, names: ready.slice(0, 3).map(g => g.name) });
+          at = nextDigestAt(at + 1, prefs.digestTime, 0);
+        }
+        return digests;
+      }
+      const readyNow = countReadyNow(prefs);
+      const times = games.map(g => alertReadyAt(g, now))
+        .filter(t => t > now && t < horizon).sort((a, b) => a - b);
       const schedule = [];
       let lastFire = Number(prefs.last) || 0;
       let i = 0;
@@ -4822,14 +5094,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (!sub) return;
         const schedule = buildPushSchedule(serverNow());
         if (window.AlmanacDB) window.AlmanacDB.set(PUSH_SCHEDULE_KEY, schedule).catch(() => {});
-        const payloadJson = JSON.stringify([sub.endpoint, schedule]);
+        // Platform names stay in this device's copy, where the service worker
+        // reads them for a digest; the server only ever gets times and counts.
+        const uploaded = schedule.map(entry => ({ at: entry.at, count: entry.count }));
+        const payloadJson = JSON.stringify([sub.endpoint, uploaded]);
         if (!force && payloadJson === lastPushScheduleJson) return;
         const session = await ensureSyncSignedIn(client);
         const { error } = await client.from('push_subscriptions').upsert({
           user_id: session.user.id,
           endpoint: sub.endpoint,
-          schedule,
-          next_notify_at: schedule.length ? new Date(schedule[0].at).toISOString() : null
+          schedule: uploaded,
+          next_notify_at: uploaded.length ? new Date(uploaded[0].at).toISOString() : null
         }, { onConflict: 'user_id,endpoint' });
         if (error) throw error;
         lastPushScheduleJson = payloadJson;
@@ -5066,6 +5341,94 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
     }
 
+    // --- Sharing platforms and the tier list ---
+    // Shared links point at the static pages scripts/generate-seo-pages.js
+    // builds from the same catalog, tagged ?src=share; those pages hand the
+    // tag on to their links into the app, so a visit that starts from a
+    // share is credited to it in app_open.
+    function seoSlug(name) {
+      return String(name || '')
+        .normalize('NFKD')
+        .replace(/[̀-ͯ]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
+    // Lower-cased catalog name -> its page path. Same rule as the generator:
+    // the same entries, in catalog order, a "-2" suffix on a clash.
+    function platformPageMap() {
+      const used = new Set(['index']);
+      const paths = new Map();
+      CATALOG_DATA.forEach(entry => {
+        if (!entry || typeof entry.name !== 'string' || !entry.name.trim() || !entry.url) return;
+        const base = seoSlug(entry.name);
+        if (!base) return;
+        let slug = base;
+        let n = 2;
+        while (used.has(slug)) slug = `${base}-${n++}`;
+        used.add(slug);
+        const key = entry.name.trim().toLowerCase();
+        if (!paths.has(key)) paths.set(key, `platforms/${slug}.html`);
+      });
+      return paths;
+    }
+
+    function shareTextFor(entry) {
+      const name = entry.name.trim();
+      if (entry.noGuaranteedDaily) return `${name} has no guaranteed daily bonus. Here's what it does have.`;
+      if (/^[SABCDF]$/.test(entry.tier || '') && typeof entry.dailySC === 'number' && typeof entry.daysToRedeem === 'number') {
+        return `${name} is tier ${entry.tier}: ${entry.dailySC} SC a day, about ${entry.daysToRedeem} days of free daily bonuses to the first cash-out.`;
+      }
+      return `${name}: daily bonus, redemption minimum and payout speed.`;
+    }
+
+    // Native share sheet where there is one, otherwise the clipboard.
+    async function shareLink({ title, text, path, kind, name }) {
+      const url = new URL(path, window.location.href);
+      url.searchParams.set('src', 'share');
+      const href = url.href;
+      let method = 'native';
+      if (navigator.share) {
+        try {
+          await navigator.share({ title, text, url: href });
+        } catch (err) {
+          if (err && err.name === 'AbortError') return;   // the user closed the sheet
+          method = 'clipboard';
+        }
+      } else {
+        method = 'clipboard';
+      }
+      if (method === 'clipboard') {
+        try {
+          await navigator.clipboard.writeText(href);
+          showToast('Link copied.', null);
+        } catch (err) {
+          method = 'prompt';
+          window.prompt('Copy this link:', href);
+        }
+      }
+      trackEvent('shared', { kind, name: name || null, method });
+    }
+
+    function sharePlatformFrom(btn, event) {
+      if (event) event.stopPropagation();
+      const entry = findCatalogEntry(btn.dataset.shareName || '');
+      const path = entry && platformPageMap().get(entry.name.trim().toLowerCase());
+      if (!path) return;
+      shareLink({ title: `${entry.name.trim()} daily bonus guide`, text: shareTextFor(entry), path, kind: 'platform', name: entry.name.trim() });
+    }
+
+    function shareTierList() {
+      const ranked = CATALOG_DATA.filter(e => e && /^[SABCDF]$/.test(e.tier || '')).length;
+      shareLink({
+        title: 'Sweepstakes casino daily bonus tier list',
+        text: `${ranked} sweepstakes casinos ranked by how many days of free daily bonuses it takes to reach the first cash-out.`,
+        path: 'platforms/index.html',
+        kind: 'tier_list'
+      });
+    }
+
     // --- PWA install & offline ---
     let deferredPrompt = null;
 
@@ -5080,7 +5443,66 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       deferredPrompt = null;
       const btn = document.getElementById('btnInstallPwa');
       if (btn) btn.style.display = 'none';
+      trackEvent('app_installed');
     });
+
+    // Installed, the Almanac opens like an app, and on iPhone the Home Screen
+    // app is the only way alerts reach a closed app. So from the third day
+    // it's used, it offers to install - at most three times, two weeks
+    // apart, and only where installing is actually possible.
+    const VISIT_DAYS_KEY = 'almanac_visit_days_v1';
+    const INSTALL_NUDGE_KEY = 'almanac_install_nudge_v1';
+
+    function isStandaloneApp() {
+      return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+        || window.navigator.standalone === true;
+    }
+
+    function isIOSDevice() {
+      return /iphone|ipad|ipod/i.test(navigator.userAgent || '')
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    // Distinct days the app was opened on, not page loads.
+    function noteVisitDay() {
+      let visits = { days: 0, last: '' };
+      try { visits = Object.assign(visits, JSON.parse(localStorage.getItem(VISIT_DAYS_KEY)) || {}); } catch (e) {}
+      const d = new Date();
+      const today = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+      if (visits.last !== today) {
+        visits.days = (Number(visits.days) || 0) + 1;
+        visits.last = today;
+        try { localStorage.setItem(VISIT_DAYS_KEY, JSON.stringify(visits)); } catch (e) {}
+      }
+      return visits.days;
+    }
+
+    function maybeOfferInstall(attempt = 0) {
+      if (isStandaloneApp() || isCrawler()) return;
+      let days = 0;
+      try { days = Number((JSON.parse(localStorage.getItem(VISIT_DAYS_KEY)) || {}).days) || 0; } catch (e) {}
+      if (days < 3) return;
+      let nudge = { shown: 0, at: 0 };
+      try { nudge = Object.assign(nudge, JSON.parse(localStorage.getItem(INSTALL_NUDGE_KEY)) || {}); } catch (e) {}
+      if (nudge.shown >= 3 || Date.now() - (Number(nudge.at) || 0) < 14 * 86400000) return;
+      const ios = isIOSDevice();
+      if (!ios && !deferredPrompt) return;   // this browser can't install from here
+      // Don't talk over another message (an undo, a sync notice); try again shortly.
+      const toast = document.getElementById('toast');
+      if (toast && toast.classList.contains('show')) {
+        if (attempt < 5) setTimeout(() => maybeOfferInstall(attempt + 1), 8000);
+        return;
+      }
+      nudge.shown = (Number(nudge.shown) || 0) + 1;
+      nudge.at = Date.now();
+      try { localStorage.setItem(INSTALL_NUDGE_KEY, JSON.stringify(nudge)); } catch (e) {}
+      trackEvent('install_prompt_shown', { platform: ios ? 'ios' : 'native', days });
+      if (ios) {
+        showToast('Add the Almanac to your Home Screen: tap Share, then "Add to Home Screen". On iPhone that is also what lets alerts reach you while it is closed.', null, 15000);
+      } else {
+        showToast('Install the Almanac: it opens like an app, and alerts can reach you while it is closed.', installPWA, 15000, 'INSTALL');
+      }
+    }
 
     function installPWA() {
       if (!deferredPrompt) return;
@@ -5456,6 +5878,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       clientEntitlements.cancelAtPeriodEnd = false;
       clientEntitlements.loaded = true;
       updateBillingUI();
+      noteAlertRulesAccess();
       return clientEntitlements;
     }
 
@@ -5475,18 +5898,25 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
       try {
         const { data, error } = await client.rpc('get_my_entitlement');
-        if (error || !Array.isArray(data) || !data.length) return resetClientEntitlements();
+        if (error || !Array.isArray(data)) return resetClientEntitlements();
+        // An empty answer is still an answer: this account has no Pro.
+        if (!data.length) {
+          saveProCache(false, null);
+          return resetClientEntitlements();
+        }
         const entitlement = data[0];
         clientEntitlements.tier = entitlement.tier === 'pro' ? 'pro' : 'free';
         clientEntitlements.isPro = Boolean(entitlement.is_pro_active);
         clientEntitlements.status = entitlement.status || 'active';
         clientEntitlements.currentPeriodEnd = entitlement.current_period_end || null;
         clientEntitlements.cancelAtPeriodEnd = Boolean(entitlement.cancel_at_period_end);
+        saveProCache(clientEntitlements.isPro, clientEntitlements.currentPeriodEnd);
       } catch (error) {
         resetClientEntitlements();
       } finally {
         clientEntitlements.loaded = true;
         updateBillingUI();
+        noteAlertRulesAccess();
       }
       return clientEntitlements;
     }
@@ -5648,7 +6078,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       badge.textContent = isPro ? 'PRO' : 'FREE';
       label.textContent = isPro ? 'Casino Almanac Pro' : 'Free Plan';
       desc.textContent = isPro
-        ? 'Active subscription: unlimited tags and granular payout turnaround analytics.'
+        ? 'Active subscription: unlimited tags, smart alert rules and granular payout turnaround analytics.'
         : 'Standard catalog, local collection tracking, and community drops feed.';
       // Checkout no longer requires a linked email (Stripe's hosted
       // checkout collects one directly when we don't have one), so the
@@ -6334,7 +6764,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // anything leaving this device - and never deck contents, emails or notes.
     const ANALYTICS_EVENTS = new Set([
       'app_open', 'platform_tracked', 'daily_run_started', 'daily_run_finished',
-      'push_enabled', 'checkout_started', 'pro_activated'
+      'push_enabled', 'checkout_started', 'pro_activated', 'alert_rules_saved',
+      'shared', 'install_prompt_shown', 'app_installed'
     ]);
     let analyticsQueue = [];
     let analyticsTimer = null;
@@ -8082,6 +8513,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if ('resetHour' in g) out.resetHour = g.resetHour;
       if ('resetTZ' in g) out.resetTZ = g.resetTZ;
       if (typeof g.snoozedUntil === 'number') out.snoozedUntil = g.snoozedUntil;
+      if (g.alertsMuted === true) out.alertsMuted = true;
       if ('scIsAveraged' in g) out.scIsAveraged = g.scIsAveraged;
       if ('scRange' in g) out.scRange = g.scRange;
       if ('bestGames' in g) out.bestGames = g.bestGames;
@@ -8225,6 +8657,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (typeof g.resetHour === 'number') n.resetHour = g.resetHour;
       if (typeof g.resetTZ === 'string') n.resetTZ = g.resetTZ;
       if (typeof g.snoozedUntil === 'number' && Number.isFinite(g.snoozedUntil)) n.snoozedUntil = g.snoozedUntil;
+      if (g.alertsMuted === true) n.alertsMuted = true;
       if (typeof g.scIsAveraged === 'boolean') n.scIsAveraged = g.scIsAveraged;
       if (typeof g.scRange === 'string') n.scRange = g.scRange;
       if (typeof g.bestGames === 'string') n.bestGames = g.bestGames;
@@ -8390,8 +8823,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           return {
             theme: localStorage.getItem(THEME_KEY) || null,
             timezone: localStorage.getItem('almanac_tz_v1') || null,
-            // Only the portable three - see sanitizeNotifyPrefs().
-            notify: { enabled: notify.enabled, start: notify.start, end: notify.end },
+            // Only the portable preferences - see sanitizeNotifyPrefs().
+            notify: {
+              enabled: notify.enabled, start: notify.start, end: notify.end,
+              minTier: notify.minTier, includeUnranked: notify.includeUnranked,
+              digest: notify.digest, digestTime: notify.digestTime
+            },
             hideCollected: localStorage.getItem('almanac_hide_collected') === 'true',
             showLanding: localStorage.getItem('almanac_show_landing') !== 'false',
             dense: localStorage.getItem('almanac_dense') === 'true'
@@ -9147,6 +9584,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (document.visibilityState === 'hidden') flushAnalytics();
     });
     consumeBillingReturnParam();
+    noteVisitDay();
+    // Late enough for the browser to have offered its install event, and
+    // clear of the first-paint nudges below.
+    setTimeout(maybeOfferInstall, 10000);
     setTimeout(checkModeratorAccess, 1000);
     // Deliberately after the first paint, not before: this is a courtesy
     // nudge toward Settings, not something that should compete with the

@@ -130,6 +130,20 @@ function compareEntries(a, b) {
   return a.entry.name.localeCompare(b.entry.name);
 }
 
+// A shared link arrives as ?src=share (shareLink() in index.html). This hands
+// the tag on to the page's links into the app, so the visit that follows is
+// credited to the share instead of to search.
+const FORWARD_SRC_SCRIPT = `<script>
+    (function () {
+      var match = /[?&]src=([a-z0-9_-]{1,32})(?:&|$)/i.exec(location.search);
+      if (!match) return;
+      var links = document.querySelectorAll('a[href*="index.html?src="]');
+      for (var i = 0; i < links.length; i++) {
+        links[i].setAttribute('href', links[i].getAttribute('href').replace(/src=[^&#]*/, 'src=' + match[1]));
+      }
+    })();
+  </script>`;
+
 function isIsoDate(value) {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
@@ -224,6 +238,7 @@ ${facts.map(([label, value]) => `        <div><dt>${escapeHtml(label)}</dt><dd>$
     <p><a href="index.html">Full tier list</a> &middot; <a href="../index.html?src=seo">Back to The Casino Almanac tracker</a></p>
     <p><a href="../privacy.html">Privacy</a> &middot; <a href="../terms.html">Terms</a></p>
   </footer>
+  ${FORWARD_SRC_SCRIPT}
 </body>
 </html>
 `;
@@ -284,6 +299,7 @@ ${sections}
     <p><a href="../index.html?src=seo-hub">The Casino Almanac tracker</a></p>
     <p><a href="../privacy.html">Privacy</a> &middot; <a href="../terms.html">Terms</a></p>
   </footer>
+  ${FORWARD_SRC_SCRIPT}
 </body>
 </html>
 `;
