@@ -126,6 +126,32 @@ function text(value: unknown, max: number): string | null {
   return trimmed ? trimmed.slice(0, max) : null;
 }
 
+// The prompt asks Claude to leave personal details out; this enforces it
+// for the free-text fields, whatever the screenshot or the model did:
+// email addresses, @handles, phone numbers and long ID numbers (player and
+// Discord IDs) are cut. Amounts like "5,000 GC" are untouched.
+const PERSONAL_PATTERNS = [
+  /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g,
+  /(?<![A-Za-z0-9])@[A-Za-z0-9_.]{2,32}/g,
+  /\+?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b/g,
+  /\b\d{8,}\b/g,
+  /\b(?:user(?:name)?|player(?:\s*id)?|account(?:\s*(?:id|number|no\.?))?|id)\s*[:#]\s*\S+/gi,
+];
+
+export function redactPersonal(value: string | null): string | null {
+  if (!value) return value;
+  let out = value;
+  for (const pattern of PERSONAL_PATTERNS) {
+    out = out.replace(pattern, "[removed]");
+  }
+  out = out.replace(/\s+/g, " ").trim();
+  return out && out.replace(/\[removed\]/g, "").trim() ? out : null;
+}
+
+function freeText(value: unknown, max: number): string | null {
+  return redactPersonal(text(value, max));
+}
+
 function rootDomain(value: string | null): string | null {
   if (!value) return null;
   let host = value.toLowerCase().replace(/^https?:\/\//, "").replace(/[/?#].*$/, "");
@@ -145,7 +171,7 @@ export function cleanDrops(raw: unknown, platforms: string[]): { drops: Drop[]; 
   for (const item of list.slice(0, 20)) {
     if (!item || typeof item !== "object") continue;
     const d = item as Record<string, unknown>;
-    const platform = text(d.platform_name, 80);
+    const platform = freeText(d.platform_name, 80);
     if (!platform) continue;
     let claimUrl = text(d.claim_url, 500);
     if (claimUrl) {
@@ -166,13 +192,13 @@ export function cleanDrops(raw: unknown, platforms: string[]): { drops: Drop[]; 
       code: text(d.code, 40),
       claim_url: claimUrl,
       root_domain: rootDomain(text(d.root_domain, 120)) ?? (claimUrl ? rootDomain(claimUrl) : null),
-      reward: text(d.reward, 120),
+      reward: freeText(d.reward, 120),
       expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
-      terms: text(d.terms, 240),
+      terms: freeText(d.terms, 240),
       is_account_tied: d.is_account_tied === true,
       confidence: d.confidence === "high" || d.confidence === "medium" ? d.confidence : "low",
-      evidence: text(d.evidence, 200) ?? "",
+      evidence: freeText(d.evidence, 200) ?? "",
     });
   }
-  return { drops, unreadable: text(answer.unreadable, 300) };
+  return { drops, unreadable: freeText(answer.unreadable, 300) };
 }

@@ -1,4 +1,4 @@
-import { cleanDrops, discordImageUrl, isDiscordMessageLink, sniffImageType } from "./extract.ts";
+import { cleanDrops, discordImageUrl, isDiscordMessageLink, redactPersonal, sniffImageType } from "./extract.ts";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -78,4 +78,31 @@ Deno.test("answers are cleaned before the admin sees them", () => {
   assert(b.is_account_tied === false, "non-boolean account-tied kept");
   assert(b.confidence === "low", b.confidence);
   assert(unreadable === null, "unreadable invented");
+});
+
+Deno.test("personal details are cut from free text, amounts and codes are kept", () => {
+  const cases: [string, string | null][] = [
+    ["Claim 5,000 GC + 2 SC today", "Claim 5,000 GC + 2 SC today"],
+    ["Sent to jane.doe@example.com: 2 SC", "Sent to [removed]: 2 SC"],
+    ["thanks @LuckyLarry for the tip", "thanks [removed] for the tip"],
+    ["Player ID: 88231940 gets 5 SC", "[removed] gets 5 SC"],
+    ["from 123456789012345678", "from [removed]"],
+    ["call (555) 123-4567 now", "call [removed] now"],
+    ["jane@example.com", null],
+  ];
+  for (const [input, expected] of cases) {
+    const got = redactPersonal(input);
+    assert(got === expected, `${input} -> ${got}`);
+  }
+  const { drops } = cleanDrops({
+    drops: [{
+      platform_name: "Stake", catalog_match: null, bucket: "A_code", code: "WIN20", claim_url: null,
+      root_domain: null, reward: "5 SC", expires_at: null, terms: "user: bigwinner99 only",
+      is_account_tied: false, confidence: "high", evidence: "@bigwinner99 posted WIN20",
+    }],
+    unreadable: null,
+  }, []);
+  assert(drops[0].code === "WIN20", "code kept");
+  assert(drops[0].terms === "[removed] only", String(drops[0].terms));
+  assert(drops[0].evidence === "[removed] posted WIN20", drops[0].evidence);
 });

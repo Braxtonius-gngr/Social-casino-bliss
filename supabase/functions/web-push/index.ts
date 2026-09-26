@@ -144,9 +144,14 @@ serve(async (req) => {
     if (!keys.length) return jsonResponse({ keys, ...tally }, 200, cors);
     // Paged by id rather than offset: send() deletes dead subscriptions as
     // it goes, which would shift an offset and skip rows.
+    // Bounded so one call finishes inside the function's time limit; when
+    // it stops at the bound it says so, and a RESEND picks up the rest
+    // (devices that already showed the drop skip it).
     const PAGE = 1000;
+    const MAX_PAGES = 50;
+    let truncated = false;
     let after = "00000000-0000-0000-0000-000000000000";
-    for (let page = 0; page < 50; page++) {
+    for (let page = 0; page < MAX_PAGES; page++) {
       const { data, error } = await supabase
         .from("push_subscriptions")
         .select("id, endpoint")
@@ -172,9 +177,10 @@ serve(async (req) => {
       }
       if (rows.length < PAGE) break;
       after = rows[rows.length - 1].id;
+      if (page === MAX_PAGES - 1) truncated = true;
     }
-    console.log("announce", drop.id, keys, tally);
-    return jsonResponse({ keys, ...tally }, 200, cors);
+    console.log("announce", drop.id, keys, tally, truncated ? "truncated" : "");
+    return jsonResponse({ keys, ...tally, truncated }, 200, cors);
   }
 
   const cronSecret = Deno.env.get("PUSH_CRON_SECRET") ?? "";

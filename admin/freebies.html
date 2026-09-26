@@ -376,9 +376,10 @@
     } else {
       const sent = data && typeof data.sent === 'number' ? data.sent : 0;
       const matched = data && typeof data.matched === 'number' ? data.matched : 0;
-      showStatus(matched
+      const more = data && data.truncated ? ' It stopped at its limit: press RESEND in a minute to reach the rest.' : '';
+      showStatus((matched
         ? `Alerted ${sent} of ${matched} device${matched === 1 ? '' : 's'} tracking ${r.platform_name}.`
-        : `Saved. No device that tracks ${r.platform_name} has drop alerts on yet.`);
+        : `Saved. No device that tracks ${r.platform_name} has drop alerts on yet.`) + more);
     }
     await loadEntries();
   }
