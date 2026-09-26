@@ -651,8 +651,12 @@
     @media (max-width: 360px) { .roll-stage { transform: scale(0.88); } }
 
     .roll-cup { position: absolute; left: -30px; top: 150px; width: 90px; height: 100px; transform-origin: 50% 90%; opacity: 0; overflow: visible; }
-    .roll-cup-body { fill: #1b1512; stroke: var(--accent-gold); stroke-width: 1.5; }
-    .roll-cup-rim, .roll-cup-band { fill: var(--accent-gold); }
+    .roll-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+    /* Leather, brass and the dice are drawn with the gradients in
+       .roll-defs, not theme tokens: they are physical objects under one
+       warm key light, and should read the same whatever the skin. */
+    .roll-cup { filter: drop-shadow(0 10px 14px rgba(0,0,0,0.55)); }
+    .roll-cup-shadow { fill: #000; opacity: 0; }
     .intro-play .roll-cup { animation: roll-cup-throw 1.3s ease-in-out both; }
     @keyframes roll-cup-throw {
       0% { transform: translate(-150px, 120px) rotate(-20deg); opacity: 0; }
@@ -668,8 +672,24 @@
     .roll-die-2 { --dx: 117px; --spin: -540deg; }
     .roll-die-y, .roll-die { width: 34px; height: 34px; display: block; }
     .roll-die { opacity: 0; overflow: visible; }
-    .roll-die rect { fill: #b3122e; fill-opacity: 0.94; stroke: rgba(255,255,255,0.28); stroke-width: 1.2; }
-    .roll-die circle { fill: #f8f9fa; }
+    .roll-die { filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5)); }
+    /* Contact shadow on the floor under each die: it rides the die's x
+       track but not its bounce, and tightens and darkens as the die comes
+       down - the cue that sells the height of each hop. Keyframe stops
+       mirror roll-die-y, and it fades with the pop at the end. */
+    .roll-die-shadow { position: absolute; left: 2px; top: 96px; width: 30px; height: 8px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,0.75), rgba(0,0,0,0)); opacity: 0; }
+    .intro-play .roll-die-shadow { animation: roll-die-shadow 1.1s linear 0.78s both; }
+    .intro-play .roll-die-2 .roll-die-shadow { animation-delay: 0.84s; }
+    @keyframes roll-die-shadow {
+      0% { transform: scale(0.55); opacity: 0; animation-timing-function: ease-out; }
+      22% { transform: scale(0.4); opacity: 0.18; animation-timing-function: ease-in; }
+      52% { transform: scale(1); opacity: 0.8; animation-timing-function: ease-out; }
+      66% { transform: scale(0.78); opacity: 0.5; animation-timing-function: ease-in; }
+      78% { transform: scale(1); opacity: 0.8; animation-timing-function: ease-out; }
+      85% { transform: scale(0.92); opacity: 0.7; animation-timing-function: ease-in; }
+      91% { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(1.3); opacity: 0; }
+    }
     .intro-play .roll-die-x { animation: roll-die-x 1.1s cubic-bezier(0.2, 0.7, 0.3, 1) 0.78s both; }
     .intro-play .roll-die-2 { animation-delay: 0.84s; }
     .intro-play .roll-die-y { animation: roll-die-y 1.1s linear 0.78s both; }
@@ -698,19 +718,23 @@
       100% { transform: rotate(var(--spin)) scale(1.8); opacity: 0; }
     }
 
-    .roll-flash { position: absolute; left: calc(var(--x) - 30px); top: 297px; width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--accent-gold); opacity: 0; }
+    .roll-flash { position: absolute; left: calc(var(--x) - 30px); top: 297px; width: 60px; height: 60px; opacity: 0; }
+    .roll-flash svg, .roll-cash svg { display: block; width: 100%; height: 100%; overflow: visible; }
     .intro-play .roll-flash { animation: roll-flash 0.5s ease-out 1.74s forwards; }
     .intro-play .roll-flash + .roll-flash { animation-delay: 1.8s; }
     @keyframes roll-flash {
-      0% { transform: scale(0.2); opacity: 1; }
-      100% { transform: scale(2.2); opacity: 0; }
+      0% { transform: scale(0.2) rotate(0deg); opacity: 1; }
+      35% { opacity: 1; }
+      100% { transform: scale(1.9) rotate(20deg); opacity: 0; }
     }
 
-    .roll-cash { position: absolute; left: var(--x); top: 327px; display: flex; align-items: center; justify-content: center; font-weight: 800; opacity: 0; transform: translate(-50%, -50%) scale(0); }
-    .roll-bill { width: 50px; height: 24px; border-radius: 3px; background: var(--accent-green); color: rgba(0,0,0,0.6); box-shadow: inset 0 0 0 2px rgba(255,255,255,0.3), 0 4px 10px rgba(0,0,0,0.4); font-family: Georgia, "Times New Roman", serif; font-size: 14px; }
-    .roll-coin { width: 24px; height: 24px; border-radius: 50%; background: var(--gold-metal); box-shadow: inset 0 0 0 3px rgba(0,0,0,0.18), 0 3px 8px rgba(0,0,0,0.45); }
-    .roll-crypto { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-orange); color: #14151A; font-size: 16px; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.25), 0 3px 8px rgba(0,0,0,0.45); }
-    .roll-crypto.roll-eth { background: var(--accent-silver, #E3E4E5); }
+    /* Banknotes, gold coins and the two crypto coins are drawn from
+       #rollBill / #rollCoin* in .roll-defs: engraved frame and guilloche
+       on the notes, reeded edges and a struck face on every coin. */
+    .roll-cash { position: absolute; left: var(--x); top: 327px; opacity: 0; transform: translate(-50%, -50%) scale(0); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+    .roll-bill { width: 60px; height: 28px; }
+    .roll-coin { width: 28px; height: 28px; }
+    .roll-crypto { width: 32px; height: 32px; }
     .intro-play .roll-cash { animation: roll-cash-float 1.7s cubic-bezier(0.15, 0.6, 0.3, 1) calc(1.78s + var(--d)) both; }
     @keyframes roll-cash-float {
       0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
