@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 /*
  * Generates dependency-free static landing pages from the authoritative
- * platform catalog. The generated files are ordinary deployment artifacts:
- * the runtime PWA remains index.html plus its existing assets.
+ * platform catalog, with each platform's ranking history from
+ * data/catalog-history.json (scripts/catalog-history.js). The generated
+ * files are ordinary deployment artifacts: the runtime PWA remains
+ * index.html plus its existing assets.
  */
 
 const fs = require('fs');
 const path = require('path');
+const { readHistoryFile } = require('./catalog-history');
 
 const ROOT = path.resolve(__dirname, '..');
 const CATALOG_PATH = path.join(ROOT, 'data', 'catalog.json');
@@ -100,7 +103,13 @@ const PAGE_STYLE = `
     th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.08); }
     th { color: #8A8D93; font-weight: 600; }
     td:not(:first-child), th:not(:first-child) { text-align: right; }
-    ul.plain { columns: 2; padding-left: 18px; }`;
+    table .text { text-align: left; }
+    table .day { width: 3em; }
+    tfoot th, tfoot td { border-bottom: 0; color: #F8F9FA; font-weight: 600; }
+    td.unread { color: #8A8D93; }
+    ul.plain { columns: 2; padding-left: 18px; }
+    ul.history { padding-left: 18px; }
+    ul.history li { margin: 6px 0; }`;
 
 const TIER_ORDER = ['S', 'A', 'B', 'C', 'D', 'F', 'Not Rankable', 'Unranked'];
 const TIER_HEADINGS = {
@@ -144,6 +153,159 @@ const FORWARD_SRC_SCRIPT = `<script>
     })();
   </script>`;
 
+function formatSC(value) {
+  return value.toFixed(2);
+}
+
+// A daily average: two decimals, or three below 0.1 so 0.014 doesn't read as 0.01.
+function formatRate(value) {
+  return value >= 0.1 ? value.toFixed(2) : value.toFixed(3).replace(/(\.\d\d)0$/, '$1');
+}
+
+function formatCount(value) {
+  return Math.round(value).toLocaleString('en-US');
+}
+
+// The daily streak as a table, Day 1 first. Columns only appear when some
+// day uses them; a day that wasn't readable says so across the row.
+function ladderMarkup(entry) {
+  const ladder = Array.isArray(entry.ladder) ? entry.ladder : null;
+  if (!ladder || !ladder.length) return '';
+  const read = ladder.filter(Boolean);
+  const hasGC = read.some(r => typeof r.gc === 'number');
+  const hasExtra = read.some(r => r.extra);
+  const columns = 1 + (hasGC ? 1 : 0) + (hasExtra ? 1 : 0);
+  const rows = ladder.map((rung, i) => {
+    if (!rung) return `          <tr><td>${i + 1}</td><td class="unread" colspan="${columns}">Not read yet</td></tr>`;
+    const cells = [`<td>${typeof rung.sc === 'number' ? escapeHtml(formatSC(rung.sc)) : '&mdash;'}</td>`];
+    if (hasGC) cells.push(`<td>${typeof rung.gc === 'number' ? escapeHtml(formatCount(rung.gc)) : '&mdash;'}</td>`);
+    if (hasExtra) cells.push(`<td class="text">${escapeHtml(rung.extra || '')}</td>`);
+    return `          <tr><td>${i + 1}</td>${cells.join('')}</tr>`;
+  });
+  const total = read.reduce((sum, r) => sum + (typeof r.sc === 'number' ? r.sc : 0), 0);
+  const complete = read.length === ladder.length;
+  // "About X a day" only when it is the rate the page states above; a day
+  // that pays a variable amount (a wheel) can make the fixed amounts short of it.
+  const average = total / ladder.length;
+  const isTheRate = typeof entry.dailySC === 'number' && Math.abs(average - entry.dailySC) <= 0.006;
+  const summary = complete && isTheRate
+    ? `${formatSC(total)} SC over ${ladder.length} days, about ${formatRate(average)} SC a day`
+    : `At least ${formatSC(total)} SC over ${ladder.length} days, counting only ${complete ? 'the fixed amounts' : 'the days read'}`;
+  const head = ['<th class="day">Day</th>', '<th>Sweepstakes Coins</th>'];
+  if (hasGC) head.push('<th>Gold Coins</th>');
+  if (hasExtra) head.push('<th class="text">Also</th>');
+  const note = entry.ladderNote ? `\n        <p class="disclosure">${escapeHtml(entry.ladderNote)}</p>` : '';
+  return `
+      <section>
+        <h2>Daily login ladder</h2>
+        <p>What the free daily bonus pays on each day of an unbroken streak, as read from the site.</p>
+        <table>
+          <thead><tr>${head.join('')}</tr></thead>
+          <tbody>
+${rows.join('\n')}
+          </tbody>
+          <tfoot><tr><th scope="row">Total</th><td colspan="${columns}">${escapeHtml(summary)}</td></tr></tfoot>
+        </table>${note}
+      </section>`;
+}
+
+function redeemMarkup(entry, name) {
+  const methods = Array.isArray(entry.redeemMethods) ? entry.redeemMethods.filter(m => m && m.method) : [];
+  if (!methods.length) return '';
+  const hasMin = methods.some(m => typeof m.min === 'number');
+  const hasNote = methods.some(m => m.note);
+  const head = ['<th class="text">Method</th>'];
+  if (hasMin) head.push('<th>Minimum</th>');
+  if (hasNote) head.push('<th class="text">Notes</th>');
+  const rows = methods.map(m => {
+    const cells = [`<td class="text">${escapeHtml(m.method)}</td>`];
+    if (hasMin) cells.push(`<td>${typeof m.min === 'number' ? escapeHtml(`${m.min.toLocaleString('en-US')} SC`) : '&mdash;'}</td>`);
+    if (hasNote) cells.push(`<td class="text">${escapeHtml(m.note || '')}</td>`);
+    return `          <tr>${cells.join('')}</tr>`;
+  });
+  return `
+      <section>
+        <h2>How to cash out</h2>
+        <table>
+          <thead><tr>${head.join('')}</tr></thead>
+          <tbody>
+${rows.join('\n')}
+          </tbody>
+        </table>
+        <p class="disclosure">As last read from ${escapeHtml(name)}'s redeem screen or rules. Sites change these, so check before you rely on them.</p>
+      </section>`;
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// Days the tier rule itself changed, so a move on one of them says why
+// rather than reading as a verdict on the platform.
+const RULE_CHANGES = {
+  '2026-09-21': 'as tiers switched to days to first cash-out',
+  '2026-09-22': 'as the tier bands were tightened'
+};
+
+function formatDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${MONTHS[m - 1]} ${d}, ${y}`;
+}
+
+function describeRanking(to) {
+  const parts = [];
+  if (typeof to.dailySC === 'number' && to.dailySC > 0) parts.push(`${formatRate(to.dailySC)} SC a day`);
+  if (typeof to.cashFloor === 'number') parts.push(`${to.cashFloor} SC cash minimum`);
+  if (typeof to.daysToRedeem === 'number') parts.push(`about ${formatCount(to.daysToRedeem)} days to cash out`);
+  return parts.join(', ');
+}
+
+// One line of a platform's history, from data/catalog-history.json.
+function historyLine(event) {
+  const { from, to } = event;
+  if (event.added) {
+    const ranked = RANKED.has(to.tier);
+    return `Added to the tier list${ranked ? ` at tier ${to.tier}: ${describeRanking(to)}` : ''}.`;
+  }
+  const details = [];
+  if (from.dailySC !== to.dailySC) {
+    const had = typeof from.dailySC === 'number' && from.dailySC > 0;
+    if (typeof to.dailySC === 'number' && to.dailySC > 0) {
+      details.push(had ? `daily rate ${formatRate(from.dailySC)} to ${formatRate(to.dailySC)} SC` : `daily rate recorded at ${formatRate(to.dailySC)} SC`);
+    } else if (had) {
+      details.push('daily rate withdrawn');
+    }
+  }
+  if (from.cashFloor !== to.cashFloor) {
+    if (typeof to.cashFloor === 'number') {
+      details.push(typeof from.cashFloor === 'number' ? `cash minimum ${from.cashFloor} to ${to.cashFloor} SC` : `cash minimum recorded at ${to.cashFloor} SC`);
+    } else if (typeof from.cashFloor === 'number') {
+      details.push('cash minimum withdrawn');
+    }
+  }
+  if (RANKED.has(to.tier) && typeof to.daysToRedeem === 'number') details.push(`about ${formatCount(to.daysToRedeem)} days to cash out`);
+  const renamed = event.renamedFrom ? ` (listed as ${event.renamedFrom} before)` : '';
+  if (to.tier === 'Not Rankable' && from.tier !== 'Not Rankable') {
+    return `Marked not rankable${renamed}, as it has no guaranteed daily bonus.`;
+  }
+  let headline;
+  if (from.tier === to.tier) headline = RANKED.has(to.tier) ? `Numbers updated, still tier ${to.tier}` : 'Numbers updated';
+  else if (to.tier === 'Unranked') headline = RANKED.has(from.tier) ? `Taken out of tier ${from.tier} until its numbers are confirmed` : 'Moved to not yet ranked';
+  else if (!RANKED.has(from.tier)) headline = `Ranked tier ${to.tier}`;
+  else headline = `Moved from tier ${from.tier} to ${to.tier}${RULE_CHANGES[event.date] ? ` ${RULE_CHANGES[event.date]}` : ''}`;
+  return `${headline}${renamed}${details.length ? `: ${details.join(', ')}` : ''}.`;
+}
+
+function historyMarkup(events) {
+  const shown = (events || []).filter(e => e && !e.removed && isIsoDate(e.date)).slice(0, 12);
+  if (!shown.length) return '';
+  return `
+      <section>
+        <h2>Ranking history</h2>
+        <ul class="history">
+${shown.map(e => `          <li><time datetime="${escapeHtml(e.date)}">${escapeHtml(formatDate(e.date))}</time>: ${escapeHtml(historyLine(e))}</li>`).join('\n')}
+        </ul>
+      </section>`;
+}
+
 function isIsoDate(value) {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
@@ -171,7 +333,7 @@ function headMarkup(title, description, canonicalUrl, jsonLd) {
 </head>`;
 }
 
-function pageMarkup(entry, slug, baseUrl, related) {
+function pageMarkup(entry, slug, baseUrl, related, history) {
   const name = entry.name.trim();
   const ranked = RANKED.has(entry.tier) && typeof entry.dailySC === 'number' && typeof entry.daysToRedeem === 'number';
   const title = ranked
@@ -231,7 +393,7 @@ ${facts.map(([label, value]) => `        <div><dt>${escapeHtml(label)}</dt><dd>$
       </dl>
       <p>${escapeHtml(summarize(entry, name))}</p>
       <p><a class="cta" href="${escapeHtml(entry.url)}" rel="sponsored noopener noreferrer">Visit ${escapeHtml(name)}</a></p>
-      <p class="disclosure">This may be a referral link; The Casino Almanac can earn a bonus if you sign up through it.</p>${relatedMarkup}
+      <p class="disclosure">This may be a referral link; The Casino Almanac can earn a bonus if you sign up through it.</p>${ladderMarkup(entry)}${redeemMarkup(entry, name)}${historyMarkup(history)}${relatedMarkup}
     </article>
   </main>
   <footer>
@@ -348,6 +510,8 @@ function main() {
   const catalog = loadCatalog();
   const entries = withSlugs(catalog).sort(compareEntries);
   const updated = entries.map(({ entry }) => entry.lastVerified).filter(isIsoDate).sort().pop() || null;
+  // The committed file, not git, so --check gives the same answer in CI.
+  const history = readHistoryFile();
 
   // Keys are paths relative to the repo root.
   const expected = new Map();
@@ -355,7 +519,7 @@ function main() {
     const related = entries
       .filter(other => other !== item && tierOf(other.entry) === tierOf(item.entry))
       .slice(0, 6);
-    expected.set(`platforms/${item.slug}.html`, pageMarkup(item.entry, item.slug, baseUrl, related));
+    expected.set(`platforms/${item.slug}.html`, pageMarkup(item.entry, item.slug, baseUrl, related, history[item.entry.name.trim()]));
   }
   expected.set('platforms/index.html', hubMarkup(entries, baseUrl, updated));
   expected.set('platforms/sitemap.xml', sitemapMarkup(entries, baseUrl, updated));

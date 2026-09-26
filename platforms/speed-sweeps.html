@@ -28,7 +28,13 @@
     th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.08); }
     th { color: #8A8D93; font-weight: 600; }
     td:not(:first-child), th:not(:first-child) { text-align: right; }
+    table .text { text-align: left; }
+    table .day { width: 3em; }
+    tfoot th, tfoot td { border-bottom: 0; color: #F8F9FA; font-weight: 600; }
+    td.unread { color: #8A8D93; }
     ul.plain { columns: 2; padding-left: 18px; }
+    ul.history { padding-left: 18px; }
+    ul.history li { margin: 6px 0; }
   </style>
 </head>
 <body>
@@ -51,6 +57,37 @@
       <p>Collecting only the free daily bonus reaches the $100 cash redemption minimum in about 2000 days.</p>
       <p><a class="cta" href="https://speedsweeps.com/?ref=r_braxtonius" rel="sponsored noopener noreferrer">Visit Speed Sweeps</a></p>
       <p class="disclosure">This may be a referral link; The Casino Almanac can earn a bonus if you sign up through it.</p>
+      <section>
+        <h2>Daily login ladder</h2>
+        <p>What the free daily bonus pays on each day of an unbroken streak, as read from the site.</p>
+        <table>
+          <thead><tr><th class="day">Day</th><th>Sweepstakes Coins</th><th>Gold Coins</th></tr></thead>
+          <tbody>
+          <tr><td>1</td><td>0.05</td><td>5,000</td></tr>
+          <tr><td>2</td><td>0.05</td><td>7,500</td></tr>
+          </tbody>
+          <tfoot><tr><th scope="row">Total</th><td colspan="2">0.10 SC over 2 days, about 0.05 SC a day</td></tr></tfoot>
+        </table>
+        <p class="disclosure">Later days were still locked when read.</p>
+      </section>
+      <section>
+        <h2>How to cash out</h2>
+        <table>
+          <thead><tr><th class="text">Method</th><th>Minimum</th></tr></thead>
+          <tbody>
+          <tr><td class="text">Debit card</td><td>100 SC</td></tr>
+          <tr><td class="text">Crypto transfer</td><td>100 SC</td></tr>
+          </tbody>
+        </table>
+        <p class="disclosure">As last read from Speed Sweeps's redeem screen or rules. Sites change these, so check before you rely on them.</p>
+      </section>
+      <section>
+        <h2>Ranking history</h2>
+        <ul class="history">
+          <li><time datetime="2026-09-26">Sep 26, 2026</time>: Ranked tier F: cash minimum recorded at 100 SC, about 2,000 days to cash out.</li>
+          <li><time datetime="2026-09-21">Sep 21, 2026</time>: Taken out of tier C until its numbers are confirmed: daily rate 0.20 to 0.05 SC.</li>
+        </ul>
+      </section>
       <section>
         <h2>Other tier F platforms</h2>
         <ul>

@@ -69,7 +69,11 @@ warns - without failing the check - about duplicate names or duplicate
 normalized domains, since this catalog legitimately has a few (e.g. two
 entries tracking different cooldowns on the same underlying platform under
 different names); those are printed for a human to judge, never edited
-automatically.
+automatically. It also checks the optional fields the platform pages print:
+`ladder` (the daily streak as read off the site, Day 1 first, `null` for an
+unread day; a `ladder-full` ladder must average out to its own `dailySC`,
+which catches a mistyped rung), `ladderNote`, and `redeemMethods` (the
+cash-out methods seen, each with its minimum when one was shown).
 
 Each entry also takes an optional `lastVerified: "YYYY-MM-DD"` field: the
 date someone last actually re-checked that its URL, cooldown, and reset
