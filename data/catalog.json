@@ -1696,10 +1696,11 @@
     "speedHours": 24,
     "reliability": 68,
     "hasLive": false,
-    "minRedeem": "Varies",
+    "minRedeem": "100 SC (cash)",
     "confidence": "low",
-    "lastVerified": "2026-09-16",
-    "notes": "Cooldown corrected 2026-09-16 via in-app screenshot: 'Available in 23:59:50' plus explicit copy ('Collect your reward within 1 day or miss out! Come back later for your next reward') confirms a rolling 24h-from-last-claim cycle, not the fixed-midnight reset previously modeled - resetHour removed. Confirmed a 7-day 'spin to win' streak ladder: Day 1 is GC-only (up to 10K GC, no SC), Day 2/4/6 up to 1 SC, Day 3 up to 3 SC, Day 5 up to 2 SC, Day 7 up to 5 SC - all variable spin outcomes (maximums, not guaranteed), so dailySC left at 0 pending real average payout data. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: low."
+    "lastVerified": "2026-09-26",
+    "notes": "RECAPTURED 2026-09-26 (owner screenshots, jumbo88.com/daily-rewards and /redeem): the Day 1 wheel shows eight segments and every one is Gold Coins only - 1k, 2k, 3k, 4k, 5k, 6k, 8k and 10k GC - matching the Day-1-is-GC-only reading below (\"Day 1 reward collected!\"). Redeem floor CONFIRMED: \"Minimum redeemable balance is 100.00\" on the Cash tab; payout processors not listed. Timeline: \"Redemptions are reviewed within 24 hours. Funds usually arrive within 1-3 business days depending on your bank. First-time redemptions may require additional verification.\" Redeemable balance at capture 0.30. STILL UNRANKED, NOT YET NOT RANKABLE: every day of this ladder is a spin, and only Day 1's wheel has been read. If any Day 2-7 wheel has a Gold-Coin-only segment, no day guarantees SC and this belongs in Not Rankable; if every Day 2-7 wheel pays SC on every segment, the smallest SC segment of each day gives a guaranteed lower bound. ONE CAPTURE OF A DAY 2-7 WHEEL SETTLES WHICH. | Cooldown corrected 2026-09-16 via in-app screenshot: 'Available in 23:59:50' plus explicit copy ('Collect your reward within 1 day or miss out! Come back later for your next reward') confirms a rolling 24h-from-last-claim cycle, not the fixed-midnight reset previously modeled - resetHour removed. Confirmed a 7-day 'spin to win' streak ladder: Day 1 is GC-only (up to 10K GC, no SC), Day 2/4/6 up to 1 SC, Day 3 up to 3 SC, Day 5 up to 2 SC, Day 7 up to 5 SC - all variable spin outcomes (maximums, not guaranteed), so dailySC left at 0 pending real average payout data. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: low.",
+    "cashFloor": 100
   },
   {
     "name": "FireSevens",
@@ -1858,15 +1859,20 @@
   {
     "name": "KingPrize",
     "url": "https://kingprize.com/",
-    "tier": "Unranked",
-    "dailySC": 0,
-    "speedHours": 24,
+    "tier": "F",
+    "dailySC": 0.2,
+    "speedHours": 96,
     "reliability": 68,
     "cooldown": 24,
     "hasLive": false,
-    "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Checked across three research passes with no public data found. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "minRedeem": "100 SC (via Breeze)",
+    "confidence": "medium",
+    "notes": "FIRST CAPTURE 2026-09-26 (owner screenshots, kingprize.com/rewards, /spin, /scratchcard and /redeem). THREE daily mechanics, and only one of them is guaranteed. (1) A \"Rewards\" streak ladder that pays SC on every visible day: Day 3 0.2 SC + 2,500 GC, Day 4 0.2 SC + 2,500 GC, Day 5 0.2 SC + 2,500 GC, Day 6 0.35 SC + 3,500 GC, Day 7 0.45 SC + 4,500 GC. Days 1-2 were not visible. (2) A Lucky Wheel with SC segments (1, 2, 5 SC) and Gold-Coin-only segments (15K, 25K, 50K, 100K, 250K GC). (3) A \"Find any 3 to win\" scratchcard with SC tiers (Crown 10, Cup 5, Coins 1) and GC tiers (500K, 250K, 100K, 50K). The wheel and scratchcard can land on Gold Coins only, so they are CHANCE EXTRAS and are not counted - but the ladder is a guaranteed daily in its own right, so the platform is ranked on the ladder rather than filed as Not Rankable. dailySC is the documented LOWER BOUND: Days 3-7 total 1.40 SC, and with Days 1-2 treated as zero, a 7-day cycle is at least 1.40/7 = 0.20/day. ONE CAPTURE OF DAYS 1-2 WOULD FIX THE RATE. Fixed reset CONFIRMED at 7:00 PM device-local (\"Next streak reward unlocks in 08:29:06 - 9/24/2026, 7:00:00 PM\"; the wheel reads \"07:00 PM Next Reset\"), recorded as resetHour 19. Redeem floor CONFIRMED at 100.00 SC, paid out through Breeze (\"You will be redirected to Breeze to select your payout method and complete verification\"), \"reviewed and processed within 3-5 business days\" - speedHours set to 96 as the midpoint of that window, replacing an unsourced 24. PLAYTHROUGH: the account showed \"2.00 SC locked / 1 active bonus - 20 SC to wager\", i.e. a 10x playthrough on a bonus, so promo SC is not immediately redeemable. TIER 2026-09-26: at 0.20 SC/day against a 100 SC floor, about 500 days to first cash redemption - tier F, and an upper bound on the days since the true rate can only be higher once Days 1-2 are read. | PREVIOUS: no data had been sourced across three research passes; reliability 68 remains an unsourced placeholder.",
+    "resetHour": 19,
+    "scSource": "ladder-partial",
+    "cashFloor": 100,
+    "daysToRedeem": 500,
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "SweepJungle",
@@ -1939,15 +1945,16 @@
   {
     "name": "Joya",
     "url": "https://joya.us/",
-    "tier": "Unranked",
-    "dailySC": 0,
+    "tier": "Not Rankable",
     "speedHours": 24,
     "reliability": 68,
     "cooldown": 24,
     "hasLive": false,
     "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Checked across three research passes with no public data found. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "confidence": "medium",
+    "notes": "FIRST CAPTURE 2026-09-26 (owner screenshots, the \"JOYA .US SCRATCHCARD\" served from is-us.games.xtremepush.com): the daily is a 9-tile scratchcard - \"Find any of the below icons 4 times in the grid to win\" - with prize tiers man-in-fedora 0.2 SC, woman-in-visor 0.4 SC, slot reel 1 SC and trophy 2 SC. This capture won 0.2 SC (\"You Won 0.2 SC!\", then \"Use Your Prize Now! / CLAIM\"). A match-4 card can come up without four of a kind, so it does not guarantee SC and is NOT RANKABLE, the same treatment as the Coinz scratchcard. Caveat: no losing card has actually been observed yet (Coinz was confirmed by a seen \"Missed\" day); if every Joya card turns out to win, this becomes a guaranteed daily of at least 0.2 SC and should be re-ranked. Cooldown, redeem floor and redeem methods were not visible. | PREVIOUS: no data had been sourced across three research passes; reliability 68 remains an unsourced placeholder.",
+    "noGuaranteedDaily": true,
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "LuckyOne",
