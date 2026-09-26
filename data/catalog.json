@@ -74,7 +74,7 @@
     "url": "https://playfame.com/",
     "tier": "F",
     "dailySC": 0.014,
-    "scSource": "ladder-partial",
+    "scSource": "ladder-full",
     "speedHours": 24,
     "reliability": 90,
     "cooldown": 24,
@@ -82,9 +82,9 @@
     "minRedeem": "10 Gift / 75 Cash",
     "cashFloor": 75,
     "daysToRedeem": 5357,
-    "confidence": "medium",
-    "lastVerified": "2026-09-20",
-    "notes": "VERIFIED 2026-09-20 (owner screenshots, playfame.com/lobby): redemption CONFIRMED at SC 10.00 for gift cards and SC 75.00 for a cash prize. Rolling 24h CONFIRMED and stated outright. THE DAILY WAS BADLY OVERSTATED: Days 2-6 pay GC 200 each and NO SC AT ALL; only Day 7 pays SC, at GC 2,500 + SC 0.10. Day 1 was hidden behind its checkmark. That is at most 0.10 SC per 7-day cycle, or 0.014/day, against the 0.25 recorded here - overstated by roughly 18x. This ladder is IDENTICAL to SpinBlitz’s, which independently confirms that SpinBlitz reading was not a misread. A term worth knowing before funding an account: \"Sweepstake Coins earned using crypto can only be redeemed with crypto\" - the redemption rail is locked to how the coins were acquired. FAMILY NOTE: HelloMillions, Jackpota, PlayFame, SpinBlitz and McLuck all share the same \"Daily Login Rewards\" engine (same 7/14/21/28 cadence, same \"rewards are available 24 hours after the last claimed reward\" wording) and the same SC 10 / SC 75 redeem pair. They were ALSO all carrying an identical dailySC of 0.25 in this catalog, which was a blanket family value rather than a measurement. FOUR of the five ladders have now been read and they differ by roughly 80x: HelloMillions pays 8.00 SC across Days 2-7 (1.14/day), McLuck 0.55 SC across Days 2-7 (0.09/day), PlayFame and SpinBlitz pay 0.10 SC across a whole cycle (0.014/day). Jackpota is the only sibling still unread. Shared engine does NOT mean shared generosity - do not infer one sibling's daily from another's. | INHERITED (unsourced): great welcome deals and expansive Pragmatic catalog; reliability 90 is still an unsourced placeholder. TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.014/day against a cash floor of 75 SC, a free player reaches the minimum CASH redemption in about 5357 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is D (changed from S). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is medium. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 5357 days to redeem this is now tier F (was D under the old five-band system)."
+    "confidence": "high",
+    "lastVerified": "2026-09-26",
+    "notes": "LADDER NOW FULL 2026-09-26 (owner screenshot, Daily Login Rewards): Day 1 is visible this time and pays GC 200 with no SC, the same as Days 2-6, so the whole 7-day cycle pays exactly one SC amount - GC 2,500 + SC 0.10 on Day 7. That settles the 0.10 SC per cycle (0.014/day) below as complete rather than a lower bound; scSource moves from ladder-partial to ladder-full and confidence to high. Rolling 24h reconfirmed in the same wording; milestone chests on the Day 7/14/21/28 track were visible but their contents were not captured. VERIFIED 2026-09-20 (owner screenshots, playfame.com/lobby): redemption CONFIRMED at SC 10.00 for gift cards and SC 75.00 for a cash prize. Rolling 24h CONFIRMED and stated outright. THE DAILY WAS BADLY OVERSTATED: Days 2-6 pay GC 200 each and NO SC AT ALL; only Day 7 pays SC, at GC 2,500 + SC 0.10. Day 1 was hidden behind its checkmark. That is at most 0.10 SC per 7-day cycle, or 0.014/day, against the 0.25 recorded here - overstated by roughly 18x. This ladder is IDENTICAL to SpinBlitz’s, which independently confirms that SpinBlitz reading was not a misread. A term worth knowing before funding an account: \"Sweepstake Coins earned using crypto can only be redeemed with crypto\" - the redemption rail is locked to how the coins were acquired. FAMILY NOTE: HelloMillions, Jackpota, PlayFame, SpinBlitz and McLuck all share the same \"Daily Login Rewards\" engine (same 7/14/21/28 cadence, same \"rewards are available 24 hours after the last claimed reward\" wording) and the same SC 10 / SC 75 redeem pair. They were ALSO all carrying an identical dailySC of 0.25 in this catalog, which was a blanket family value rather than a measurement. FOUR of the five ladders have now been read and they differ by roughly 80x: HelloMillions pays 8.00 SC across Days 2-7 (1.14/day), McLuck 0.55 SC across Days 2-7 (0.09/day), PlayFame and SpinBlitz pay 0.10 SC across a whole cycle (0.014/day). Jackpota is the only sibling still unread. Shared engine does NOT mean shared generosity - do not infer one sibling's daily from another's. | INHERITED (unsourced): great welcome deals and expansive Pragmatic catalog; reliability 90 is still an unsourced placeholder. TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.014/day against a cash floor of 75 SC, a free player reaches the minimum CASH redemption in about 5357 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is D (changed from S). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is medium. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 5357 days to redeem this is now tier F (was D under the old five-band system)."
   },
   {
     "name": "Jackpota",
@@ -314,17 +314,19 @@
   {
     "name": "LuckyHands",
     "url": "https://luckyhands.com/",
-    "tier": "A",
-    "dailySC": 0.5,
+    "tier": "F",
+    "dailySC": 0.1,
     "speedHours": 2,
     "reliability": 92,
     "cooldown": 24,
     "hasLive": false,
-    "minRedeem": "50 Cash",
+    "minRedeem": "50 SC (Debit Card / Online Banking / Skrill)",
     "cashFloor": 50,
-    "daysToRedeem": 100,
-    "confidence": "none",
-    "notes": "Very fast payout processing and accessible welcome tiers. TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.5/day against a cash floor of 50 SC, a free player reaches the minimum CASH redemption in about 100 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is A (changed from S). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is none."
+    "daysToRedeem": 500,
+    "confidence": "high",
+    "notes": "VERIFIED 2026-09-26 (owner screenshots, luckyhands.com/wallet/daily-bonus and /wallet/redeem) - first real capture for this entry. THE DAILY WAS OVERSTATED 5x: the Daily Bonus is a fixed claim of 10,000 GC + 0.1 SC, not the 0.5 SC inherited from the original sheets. Rolling 24h CONFIRMED - the countdown read 00 Day 23 Hours 59 Min 58 Sec immediately after claiming. Redeem floor CONFIRMED at SC 50 on every method: Debit Card, Online Banking and Skrill, each listed with a SC 50 minimum and no fee or bonus stated. Balance at capture: 0.57 SC. TIER 2026-09-26, DERIVED FROM DATA: at 0.1 SC/day against a 50 SC cash floor, a free player reaches the minimum cash redemption in about 500 days, which is tier F under the six-band rule (S<=60/A<=120/B<=182/C<=242/D<=304/F>304) - down from A, which rested entirely on the unverified 0.5. | INHERITED (unsourced): Very fast payout processing and accessible welcome tiers; speedHours 2 and reliability 92 are still unverified.",
+    "scSource": "stated",
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "MegaBonanza",
@@ -845,16 +847,17 @@
     "cooldown": 24,
     "url": "https://luckybitsvegas.com/",
     "tier": "F",
-    "dailySC": 0.3,
+    "dailySC": 0.1,
     "speedHours": 24,
     "reliability": 72,
     "hasLive": false,
-    "minRedeem": "100 SC",
+    "minRedeem": "100 SC (Debit Card / Bank / Crypto)",
     "cashFloor": 100,
-    "daysToRedeem": 333,
-    "confidence": "low",
-    "lastVerified": "2026-09-20",
-    "notes": "VERIFIED 2026-09-20 (owner screenshot, fun.luckybitsvegas.com): minimum redemption is SC 100, stated outright. No daily-claim screen was captured, so the midnight reset and dailySC 0.3 both remain INHERITED and NOT verified. | PRIOR: High5 sister site TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.3/day against a cash floor of 100 SC, a free player reaches the minimum CASH redemption in about 333 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is C (changed from B). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is low. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 333 days to redeem this is now tier F (was C under the old five-band system)."
+    "daysToRedeem": 1000,
+    "confidence": "medium",
+    "lastVerified": "2026-09-26",
+    "notes": "DAILY CAPTURED 2026-09-26 (owner screenshots, fun.luckybitsvegas.com): the Daily Bonus pays +SC 0.10, a fixed claim, replacing the inherited and never-verified 0.3. A second card, Bonus Harvest, pays +GC 2,500 + 5 Diamonds and NO SC, so it adds nothing to the daily SC rate. Minimum redemption SC 100 reconfirmed (1 SC = US $1), with Debit Card, Bank and Crypto (Bitcoin, Ethereum) offered and no fee or bonus stated. The cooldown was not visible (both cards read \"Free bonus now available!\"), so the midnight resetHour stays inherited and confidence is medium, not high. Also seen: an XP \"Harvester\" rank track and a RAF (refer-a-friend) leaderboard with a SC 1,000 prize pool - neither is a daily source. TIER 2026-09-26: at 0.1 SC/day against 100 SC, about 1000 days to first cash redemption - still F, now on measured data rather than an inherited guess. | PREVIOUS: VERIFIED 2026-09-20 (owner screenshot, fun.luckybitsvegas.com): minimum redemption is SC 100, stated outright. No daily-claim screen was captured, so the midnight reset and dailySC 0.3 both remain INHERITED and NOT verified. | PRIOR: High5 sister site TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.3/day against a cash floor of 100 SC, a free player reaches the minimum CASH redemption in about 333 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is C (changed from B). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is low. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 333 days to redeem this is now tier F (was C under the old five-band system).",
+    "scSource": "stated"
   },
   {
     "name": "Lunaland Casino",
