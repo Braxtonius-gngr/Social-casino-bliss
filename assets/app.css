@@ -674,7 +674,9 @@
        theme tokens: they are physical objects under one key light and
        should read the same whatever the skin. */
     .roll-cup3 { opacity: 0; will-change: transform; }
-    .roll-cup3 > * { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
+    /* Fades ride --o on the leaves: opacity below 1 on a preserve-3d box
+       would flatten its 3D children. */
+    .roll-cup3 > * { position: absolute; left: 0; top: 0; transform-style: preserve-3d; opacity: var(--o, 1); }
     .roll-slat { backface-visibility: hidden; background: linear-gradient(180deg, #3a2215 0%, #4e2e1c 16%, #5c3721 48%, #4b2c1a 80%, #2c190f 100%); }
     .roll-slat::before, .roll-slat::after { content: ''; position: absolute; left: 0; right: 0; background: linear-gradient(180deg, #7d5f1f 0%, #e6cc78 32%, #f6e5a6 42%, #b8932e 64%, #6b4d14 100%); }
     .roll-slat::before { top: 0; height: 22px; border-bottom: 1px solid rgba(0,0,0,0.55); box-shadow: 0 3px 4px rgba(0,0,0,0.35); }
@@ -689,12 +691,12 @@
     .roll-cup-base .roll-sh { border-radius: 50%; }
 
     .roll-die3, .roll-ghost3 { width: 34px; height: 34px; margin: -17px 0 0 -17px; opacity: 0; will-change: transform; }
-    .roll-face3 { position: absolute; inset: 0; backface-visibility: hidden; }
+    .roll-face3 { position: absolute; inset: 0; backface-visibility: hidden; opacity: var(--o, 1); }
     .roll-face3 svg { display: block; width: 34px; height: 34px; overflow: visible; }
     .roll-face3 .roll-sh, .roll-face3 .roll-sp { border-radius: 1.6px; }
     /* A solid core just inside the faces, so the bevelled corners never
        show daylight through the cube. */
-    .roll-core { position: absolute; inset: 1px; background: #7e0a1a; backface-visibility: hidden; }
+    .roll-core { position: absolute; inset: 1px; background: #7e0a1a; backface-visibility: hidden; opacity: var(--o, 1); }
 
     /* Photographers' flashes on the red carpet: a hot core and a cross of
        light, popped by playRollIntro() during the slow motion. They sit

@@ -3668,7 +3668,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
       const holdStart = ROLL_SLOW.start + ROLL_SLOW.down;
       const glintAt = holdStart + ROLL_SLOW.hold - 0.15;
-      const dyn = [world, cupEl, cupShadow, ...pops];
+      // The flashes keep their inline positions, so they are cleared by hand.
+      const dyn = [world, cupEl, cupShadow];
       dice.forEach(d => dyn.push(d.el, d.shadow, ...d.ghosts));
       const overlays = [...slats.map(s => s.sh), ...slats.map(s => s.sp), base.children[0]];
       dice.forEach(d => d.faces.forEach(f => overlays.push(f.sh, f.sp)));
@@ -3688,6 +3689,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         document.removeEventListener('keydown', end);
         screen.classList.remove('intro-play', 'roll-popped', 'roll-glint');
         dyn.forEach(el => el.removeAttribute('style'));
+        pops.forEach(el => { el.style.opacity = ''; el.style.transform = ''; });
         overlays.forEach(el => { el.style.opacity = ''; });
         stage.querySelectorAll('.roll-cash, .roll-flash').forEach(el => { el.style.removeProperty('--x'); el.style.removeProperty('--y'); });
       };
@@ -3740,7 +3742,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         });
 
         const cup = rollCupState(w);
-        cupEl.style.opacity = cup.opacity.toFixed(3);
+        // Fades go on the leaves (--o) rather than the 3D containers: an
+        // opacity below 1 on a preserve-3d box flattens everything in it.
+        cupEl.style.opacity = cup.opacity > 0 ? '1' : '0';
+        cupEl.style.setProperty('--o', cup.opacity.toFixed(3));
         cupEl.style.transform = rollMatrix3d(rollQRows(cup.q), cup.pos);
         slats.forEach(s => shade(rollQRot(cup.q, s.n), E, cup.pos, s.sh, s.sp, flash));
         const bn = rollQRot(cup.q, [0, 1, 0]);
@@ -3753,7 +3758,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           const p = rollPosAt(d, w);
           const q = rollOrientAt(d, w);
           const vis = w < ROLL_RELEASE ? 0 : rollClamp01((w - ROLL_RELEASE) / 0.05);
-          d.el.style.opacity = vis.toFixed(3);
+          d.el.style.opacity = vis > 0 ? '1' : '0';
+          d.el.style.setProperty('--o', vis.toFixed(3));
           d.el.style.transform = rollMatrix3d(rollQRows(q), p);
           d.faces.forEach(f => shade(rollQRot(q, f.n), E, p, f.sh, f.sp, flash));
           const h = Math.max(0, -p[1] - ROLL_HALF);
@@ -3766,7 +3772,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           d.ghosts.forEach((g, k) => {
             const wl = w - ROLL_GHOST_LAG * (k + 1) * rate;
             const airborne = w > ROLL_RELEASE + 0.05 && w < d.contact;
-            g.style.opacity = airborne ? ((k === 0 ? 0.32 : 0.15) * rate * vis).toFixed(3) : '0';
+            g.style.opacity = airborne ? '1' : '0';
+            g.style.setProperty('--o', airborne ? ((k === 0 ? 0.32 : 0.15) * rate * vis).toFixed(3) : '0');
             if (airborne) g.style.transform = rollMatrix3d(rollQRows(rollOrientAt(d, wl)), rollPosAt(d, wl));
           });
         });
