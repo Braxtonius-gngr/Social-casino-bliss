@@ -208,7 +208,8 @@ function fakeSupabase() {
   const RPC_DEFAULTS = {
     server_time: () => ({ data: new Date().toISOString(), error: null }),
     get_my_entitlement: () => ({ data: [], error: null }),
-    is_moderator: () => ({ data: false, error: null })
+    is_moderator: () => ({ data: false, error: null }),
+    is_owner: () => ({ data: false, error: null })
   };
 
   const auth = {
@@ -630,6 +631,35 @@ const TESTS = [
       'from:public_freebies': { data: [{ id: '11111111-1111-1111-1111-111111111111', platform_name: 'McLuck', bucket: 'A_code', active: true, announced_at: null }], error: null }
     }
   }],
+
+  ['the owner sees the moderator list and adds one by email', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    await page.waitFor(() => document.getElementById('tabModDashboard').style.display === '');
+    await page.waitFor(() => document.getElementById('ownerPanel').style.display === '');
+    await page.waitFor(() => document.querySelectorAll('#moderatorList .ledger-row').length === 2);
+    expect(await page.evaluate(() => document.querySelectorAll('#moderatorList button').length), 1, 'only the non-owner row can be removed');
+    await page.evaluate(() => { document.getElementById('modEmailInput').value = ' New.Mod@example.com '; return addModerator(); });
+    const call = byType(await page.calls(), 'rpc', 'set_moderator')[0];
+    expect(call && call.args, { p_email: 'New.Mod@example.com', p_on: true }, 'promotion sent by email');
+  }, { answers: {
+    'rpc:is_moderator': { data: true, error: null },
+    'rpc:is_owner': { data: true, error: null },
+    'rpc:list_moderators': { data: [
+      { user_id: 'o', email: 'owner@example.com', public_alias: 'Player-1', is_owner: true, is_flagged: false },
+      { user_id: 'm', email: 'mod@example.com', public_alias: 'Player-2', is_owner: false, is_flagged: false }
+    ], error: null },
+    'rpc:set_moderator': { data: [{ user_id: 'n', email: 'new.mod@example.com', public_alias: 'Player-3', is_moderator: true }], error: null }
+  } }],
+
+  ['a moderator who is not the owner never sees the moderator list', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    await page.waitFor(() => document.getElementById('tabModDashboard').style.display === '');
+    await new Promise(r => setTimeout(r, 300));
+    expect(await page.evaluate(() => document.getElementById('ownerPanel').style.display), 'none', 'panel hidden');
+    expect(byType(await page.calls(), 'rpc', 'list_moderators').length, 0, 'list never requested');
+  }, { answers: { 'rpc:is_moderator': { data: true, error: null } } }],
 
   ['deletes the cloud account and stops syncing', async page => {
     await page.goto('/');
