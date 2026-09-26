@@ -3600,7 +3600,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const cupShadow = world.querySelector('.roll-cup-shadow');
       const slats = Array.from(cupEl.querySelectorAll('.roll-slat:not(.roll-slat-in)')).map((el, i) => {
         const th = 2 * Math.PI * i / ROLL_CUP.slats, tl = Math.atan((ROLL_CUP.rTop - ROLL_CUP.rBot) / ROLL_CUP.h);
-        return { n: [Math.sin(th) * Math.cos(tl), -Math.sin(tl), Math.cos(th) * Math.cos(tl)], sh: el.children[0], sp: el.children[1] };
+        // The cone is wider at the top, so each slat's outward normal leans
+        // down (+y) by the tilt, matching its rotateX(-tilt) in the markup.
+        return { n: [Math.sin(th) * Math.cos(tl), Math.sin(tl), Math.cos(th) * Math.cos(tl)], sh: el.children[0], sp: el.children[1] };
       });
       const base = cupEl.querySelector('.roll-cup-base');
       const pops = Array.from(stage.querySelectorAll('.roll-pap'));
