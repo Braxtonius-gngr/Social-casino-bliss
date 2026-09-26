@@ -4562,6 +4562,40 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         showToast('Test alert sent.', null);
       } catch (err) {
         showToast('The browser blocked the test alert.', null);
+        return;
+      }
+      if (isPushEnabled()) sendServerTestPush();
+    }
+
+    // Round trip through the server and the browser's push service - the
+    // path an alert takes when the app is closed - and say what came back.
+    async function sendServerTestPush() {
+      const client = getSupabaseClient();
+      if (!client || !pushSupported()) return;
+      try {
+        await ensureSyncSignedIn(client);
+        // Re-uploads this device's registration if the server dropped it.
+        await syncPushSchedule(true);
+        if (window.AlmanacDB) await window.AlmanacDB.set('push_test', Date.now());
+        const { data, error } = await client.functions.invoke('web-push', { body: { test: true } });
+        if (error) throw error;
+        const results = (data && data.results) || [];
+        if (results.some(r => r.status >= 200 && r.status < 300)) {
+          showToast('Server test sent. A second alert should arrive within a few seconds.', null, 7000);
+        } else if (!results.length || results.some(r => r.removed)) {
+          // The push service no longer knows this registration: make a new one.
+          const sub = await currentPushSubscription();
+          if (sub) await sub.unsubscribe().catch(() => {});
+          if (await enableBackgroundPush()) {
+            showToast("This device's background registration had expired and was renewed. Tap Send Test Alert again.", null, 9000);
+          }
+        } else if (results.every(r => r.status === 429)) {
+          showToast('Wait a few seconds between server tests.', null);
+        } else {
+          showToast(`The push service refused the server test (${results.map(r => r.status).join(', ')}).`, null, 9000);
+        }
+      } catch (err) {
+        showToast('Could not reach the server for the background test.', null);
       }
     }
 

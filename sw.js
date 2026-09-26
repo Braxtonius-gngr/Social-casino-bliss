@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v42';
+const CACHE_NAME = 'almanac-v43';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -105,35 +105,53 @@ const PUSH_DB_VERSION = 1;
 const PUSH_STORE = 'state';
 const PUSH_SCHEDULE_KEY = 'push_schedule';
 
-function readPushSchedule() {
+const PUSH_TEST_KEY = 'push_test';
+
+// Reads (and optionally deletes) one key from the app's IndexedDB state store.
+function readPushState(key, remove) {
   return new Promise((resolve) => {
     let request;
     try {
       request = indexedDB.open(PUSH_DB_NAME, PUSH_DB_VERSION);
     } catch (e) {
-      resolve([]);
+      resolve(undefined);
       return;
     }
     // Same schema assets/storage.js creates, in case the worker opens first.
     request.onupgradeneeded = () => request.result.createObjectStore(PUSH_STORE);
-    request.onerror = () => resolve([]);
+    request.onerror = () => resolve(undefined);
     request.onsuccess = () => {
       try {
-        const get = request.result.transaction(PUSH_STORE, 'readonly').objectStore(PUSH_STORE).get(PUSH_SCHEDULE_KEY);
-        get.onsuccess = () => resolve(Array.isArray(get.result) ? get.result : []);
-        get.onerror = () => resolve([]);
+        const store = request.result.transaction(PUSH_STORE, remove ? 'readwrite' : 'readonly').objectStore(PUSH_STORE);
+        const get = store.get(key);
+        get.onsuccess = () => {
+          if (remove && get.result !== undefined) store.delete(key);
+          resolve(get.result);
+        };
+        get.onerror = () => resolve(undefined);
       } catch (e) {
-        resolve([]);
+        resolve(undefined);
       }
     };
   });
 }
 
 self.addEventListener('push', (event) => {
-  event.waitUntil(readPushSchedule().then((schedule) => {
+  event.waitUntil(Promise.all([
+    readPushState(PUSH_SCHEDULE_KEY, false),
+    readPushState(PUSH_TEST_KEY, true)
+  ]).then(([schedule, testAt]) => {
     const now = Date.now();
+    // The app stamps this just before asking the server for a test push.
+    if (Number(testAt) > now - 120000) {
+      return self.registration.showNotification('Casino Almanac', {
+        body: 'Test from the server: background alerts reach this device.',
+        tag: 'almanac-server-test',
+        icon: 'apple-touch-icon.png'
+      });
+    }
     let due = null;
-    schedule.forEach((entry) => {
+    (Array.isArray(schedule) ? schedule : []).forEach((entry) => {
       if (entry && Number(entry.at) <= now + 60000 && (!due || Number(entry.at) > Number(due.at))) due = entry;
     });
     const count = due ? Number(due.count) : 0;
