@@ -674,29 +674,72 @@
        comes down, the cue that sells the height of each hop. */
     .roll-die-shadow { position: absolute; left: 2px; top: 96px; width: 30px; height: 8px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,0.75), rgba(0,0,0,0)); opacity: 0; }
 
-    /* The light behind the camera: a glint sweeps each die face, a
-       horizontal flare crosses the frame where the dice are held, and a
-       soft bloom lifts the shot for a beat. */
-    .roll-die-glint { opacity: 0; }
-    .roll-glint .roll-die-glint { animation: roll-die-glint 0.45s ease-out both; }
+    /* Motion-blur ghosts: copies of each die body a moment behind it.
+       playRollIntro() spaces and fades them by playback speed, so they
+       streak at full speed and vanish as the shot drops into slow mo. */
+    .roll-ghost { position: absolute; left: 76px; top: 244px; width: 34px; height: 34px; opacity: 0; overflow: visible; filter: blur(0.8px); will-change: transform, opacity; }
+
+    /* Photographers' flashes on the red carpet: a hot core and a cross of
+       light, popped by playRollIntro() during the slow motion. They sit
+       outside the camera, like flashes firing from the crowd. */
+    .roll-pap { position: absolute; width: 96px; height: 96px; margin: -48px 0 0 -48px; border-radius: 50%; opacity: 0; mix-blend-mode: screen; background: radial-gradient(closest-side, #ffffff 0%, rgba(235,245,255,0.85) 18%, rgba(200,225,255,0.25) 45%, rgba(200,225,255,0) 100%); }
+    .roll-pap::before, .roll-pap::after { content: ''; position: absolute; left: 50%; top: 50%; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, #ffffff 50%, rgba(255,255,255,0) 100%); }
+    .roll-pap::before { width: 170px; height: 2px; margin: -1px 0 0 -85px; }
+    .roll-pap::after { width: 2px; height: 110px; margin: -55px 0 0 -1px; background: linear-gradient(180deg, rgba(255,255,255,0) 0%, #ffffff 50%, rgba(255,255,255,0) 100%); }
+
+    /* The light behind the camera, as time ramps back up: a hot sheen
+       rakes each die face (warm halo, white-hot core) and a four-point
+       star catches on its corner; a soft light band sweeps the frame; an
+       anamorphic flare (ice-blue core, gold wings) and a few lens ghosts
+       cross where the dice are held; a bloom lifts the shot for a beat. */
+    .roll-die-glint { opacity: 0; mix-blend-mode: screen; }
+    .roll-glint .roll-die-glint { animation: roll-die-glint 0.55s cubic-bezier(0.45, 0, 0.35, 1) both; }
     @keyframes roll-die-glint {
       0% { transform: translateX(0); opacity: 0; }
       30% { opacity: 1; }
-      100% { transform: translateX(58px); opacity: 0; }
+      60% { opacity: 1; }
+      100% { transform: translateX(76px); opacity: 0; }
     }
-    .roll-streak { position: absolute; left: -60px; top: 249px; width: 480px; height: 3px; border-radius: 2px; opacity: 0; background: linear-gradient(90deg, rgba(255,246,207,0) 0%, rgba(255,246,207,0.9) 42%, #ffffff 50%, rgba(255,246,207,0.9) 58%, rgba(255,246,207,0) 100%); box-shadow: 0 0 14px 3px rgba(243,218,146,0.55), 0 0 40px 8px rgba(212,175,55,0.25); }
-    .roll-glint .roll-streak { animation: roll-streak 0.55s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
-    @keyframes roll-streak {
-      0% { transform: translateX(-160px) scaleX(0.15); opacity: 0; }
+    .roll-die-star { opacity: 0; transform-box: fill-box; transform-origin: center; filter: drop-shadow(0 0 1.5px #ffffff) drop-shadow(0 0 4px rgba(255,225,160,0.9)); }
+    .roll-glint .roll-die-star { animation: roll-die-star 0.55s ease-out 0.16s both; }
+    .roll-glint .roll-die-2 .roll-die-star { animation-delay: 0.24s; }
+    @keyframes roll-die-star {
+      0% { opacity: 0; transform: scale(0) rotate(0deg); }
+      30% { opacity: 1; transform: scale(1.7) rotate(28deg); }
+      100% { opacity: 0; transform: scale(0.2) rotate(70deg); }
+    }
+    .roll-sweep { position: absolute; left: -260px; top: -120px; width: 200px; height: 800px; opacity: 0; mix-blend-mode: screen; background: linear-gradient(90deg, rgba(255,240,210,0) 0%, rgba(255,240,210,0.16) 40%, rgba(255,255,255,0.32) 50%, rgba(255,240,210,0.16) 60%, rgba(255,240,210,0) 100%); transform: rotate(18deg); }
+    .roll-glint .roll-sweep { animation: roll-sweep 0.65s cubic-bezier(0.35, 0.05, 0.25, 1) both; }
+    @keyframes roll-sweep {
+      0% { opacity: 0; transform: rotate(18deg) translateX(0); }
       25% { opacity: 1; }
-      100% { transform: translateX(160px) scaleX(1); opacity: 0; }
+      100% { opacity: 0; transform: rotate(18deg) translateX(820px); }
     }
-    .roll-bloom { position: absolute; left: 30px; top: 100px; width: 300px; height: 300px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, rgba(255,250,230,0.55), rgba(243,218,146,0.18) 55%, rgba(243,218,146,0) 100%); }
-    .roll-glint .roll-bloom { animation: roll-bloom 0.5s ease-out both; }
+    .roll-streak { position: absolute; left: -130px; top: 249px; width: 620px; height: 2px; border-radius: 2px; opacity: 0; mix-blend-mode: screen; background: linear-gradient(90deg, rgba(150,210,255,0) 0%, rgba(150,210,255,0.55) 30%, rgba(210,240,255,0.95) 46%, #ffffff 50%, rgba(210,240,255,0.95) 54%, rgba(150,210,255,0.55) 70%, rgba(150,210,255,0) 100%); box-shadow: 0 0 8px 1px rgba(120,195,255,0.75), 0 0 26px 5px rgba(90,160,255,0.35), 0 0 60px 12px rgba(212,175,55,0.22); }
+    .roll-streak-gold { top: 256px; height: 1px; left: -60px; width: 480px; background: linear-gradient(90deg, rgba(243,218,146,0) 0%, rgba(243,218,146,0.8) 45%, #fff6d6 50%, rgba(243,218,146,0.8) 55%, rgba(243,218,146,0) 100%); box-shadow: 0 0 12px 2px rgba(212,175,55,0.45); }
+    .roll-glint .roll-streak { animation: roll-streak 0.62s cubic-bezier(0.2, 0.7, 0.3, 1) 0.04s both; }
+    .roll-glint .roll-streak-gold { animation-delay: 0.1s; }
+    @keyframes roll-streak {
+      0% { transform: translateX(-150px) scaleX(0.12); opacity: 0; }
+      22% { opacity: 1; }
+      100% { transform: translateX(150px) scaleX(1.05); opacity: 0; }
+    }
+    .roll-orb { position: absolute; border-radius: 50%; opacity: 0; mix-blend-mode: screen; }
+    .roll-orb-1 { left: 88px; top: 184px; width: 26px; height: 26px; background: radial-gradient(closest-side, rgba(243,218,146,0) 55%, rgba(243,218,146,0.55) 78%, rgba(243,218,146,0) 100%); }
+    .roll-orb-2 { left: 226px; top: 268px; width: 46px; height: 46px; background: radial-gradient(closest-side, rgba(140,210,255,0.08) 40%, rgba(140,210,255,0.5) 76%, rgba(140,210,255,0) 100%); }
+    .roll-orb-3 { left: 284px; top: 312px; width: 16px; height: 16px; background: radial-gradient(closest-side, rgba(255,255,255,0.7) 0%, rgba(243,218,146,0.35) 60%, rgba(243,218,146,0) 100%); }
+    .roll-glint .roll-orb { animation: roll-orb 0.62s ease-out 0.06s both; }
+    @keyframes roll-orb {
+      0% { opacity: 0; transform: translate(14px, 9px) scale(0.8); }
+      35% { opacity: 1; }
+      100% { opacity: 0; transform: translate(-16px, -10px) scale(1.1); }
+    }
+    .roll-bloom { position: absolute; left: 70px; top: 140px; width: 220px; height: 220px; border-radius: 50%; opacity: 0; mix-blend-mode: screen; background: radial-gradient(closest-side, rgba(255,255,255,0.85) 0%, rgba(200,232,255,0.35) 28%, rgba(212,175,55,0.14) 60%, rgba(212,175,55,0) 100%); }
+    .roll-glint .roll-bloom { animation: roll-bloom 0.55s ease-out both; }
     @keyframes roll-bloom {
-      0% { opacity: 0; transform: scale(0.7); }
-      30% { opacity: 1; }
-      100% { opacity: 0; transform: scale(1.15); }
+      0% { opacity: 0; transform: scale(0.6); }
+      25% { opacity: 1; }
+      100% { opacity: 0; transform: scale(1.2); }
     }
 
     .roll-flash { position: absolute; left: calc(var(--x) - 30px); top: 297px; width: 60px; height: 60px; opacity: 0; }
