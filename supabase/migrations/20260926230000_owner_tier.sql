@@ -31,7 +31,7 @@ BEGIN
   END IF;
   IF TG_OP = 'UPDATE' AND OLD.is_owner THEN
     IF NOT NEW.is_owner OR NOT NEW.is_moderator OR NEW.is_flagged THEN
-      RAISE EXCEPTION 'OWNER_ACCOUNT: the owner account cannot be demoted, muted or unflagged as owner';
+      RAISE EXCEPTION 'OWNER_ACCOUNT: the owner account cannot be demoted, muted or stripped of the owner flag';
     END IF;
   END IF;
   IF NEW.is_owner AND (TG_OP = 'INSERT' OR NOT OLD.is_owner) THEN
@@ -49,15 +49,23 @@ CREATE TRIGGER community_profiles_guard_owner
   FOR EACH ROW EXECUTE FUNCTION public.community_profiles_guard_owner();
 
 -- Seed the owner: the site's admin account, the same address the
--- public_freebies policies and the edge functions check.
+-- public_freebies policies and the edge functions check. It has to be a
+-- real, confirmed account (not an anonymous device that merely asked to
+-- link the address), and it has to exist: a migration runner records this
+-- version as applied whether or not an owner was set, so committing with
+-- no owner would leave every owner-only RPC unusable with no way back in.
+-- Link and confirm the admin email in the app first, then apply.
 DO $$
 DECLARE
   owner_id UUID;
 BEGIN
-  SELECT id INTO owner_id FROM auth.users WHERE lower(email) = 'johndopamine210@gmail.com' LIMIT 1;
+  SELECT id INTO owner_id FROM auth.users
+  WHERE lower(email) = 'johndopamine210@gmail.com'
+    AND is_anonymous = FALSE
+    AND email_confirmed_at IS NOT NULL
+  LIMIT 1;
   IF owner_id IS NULL THEN
-    RAISE NOTICE 'owner account not found; run this migration again once it exists';
-    RETURN;
+    RAISE EXCEPTION 'OWNER_ACCOUNT: no confirmed account has the owner email; link and confirm it in the app, then apply this migration';
   END IF;
   PERFORM set_config('app.owner_change', 'on', TRUE);
   INSERT INTO public.community_profiles (id, public_alias, is_owner, is_moderator, is_flagged)
