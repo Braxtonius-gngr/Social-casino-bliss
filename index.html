@@ -724,6 +724,10 @@
             <span style="color:#fff; font-size:0.85rem;">Also alert me when the app is closed</span>
             <input type="checkbox" id="pushToggle" onchange="toggleBackgroundPush(this.checked)" />
           </div>
+          <div class="toggle-row" id="dropAlertRow" style="display:none;">
+            <span style="color:#fff; font-size:0.85rem;">Alert me to new drops for platforms I track</span>
+            <input type="checkbox" id="dropAlertToggle" onchange="toggleDropAlerts(this.checked)" />
+          </div>
           <div class="time-inputs" id="notifyQuietHours" style="display:none;">
             <label>Quiet from <input type="time" id="notifyStart" onchange="saveNotifyPrefsFromInputs()" /></label>
             <label>Quiet until <input type="time" id="notifyEnd" onchange="saveNotifyPrefsFromInputs()" /></label>
@@ -4585,6 +4589,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const pushToggle = document.getElementById('pushToggle');
       if (pushRow) pushRow.style.display = prefs.enabled && Notification.permission === 'granted' ? 'flex' : 'none';
       if (pushToggle) pushToggle.checked = isPushEnabled();
+      const dropRow = document.getElementById('dropAlertRow');
+      const dropToggle = document.getElementById('dropAlertToggle');
+      const pushOn = isPushEnabled() && prefs.enabled && Notification.permission === 'granted';
+      if (dropRow) dropRow.style.display = pushOn ? 'flex' : 'none';
+      if (dropToggle) dropToggle.checked = pushOn && isDropAlertsEnabled();
       const pauseButton = document.getElementById('notifyPauseButton');
       if (pauseButton) {
         pauseButton.textContent = paused ? 'RESUME ALERTS' : 'PAUSE ALERTS FOR 24 HOURS';
@@ -5064,6 +5073,51 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const PUSH_HORIZON_MS = 14 * 24 * 3600000;
     let pushSyncTimer = null;
     let lastPushScheduleJson = null;
+    // New-drop alerts (opt-in, on top of background alerts): when on, the
+    // keys of the platforms this device tracks go up with its schedule, and
+    // the admin's announcement of a drop pushes only to devices whose keys
+    // match. The service worker reads the drop itself from the public feed.
+    const DROP_ALERT_PREF_KEY = 'almanac_drop_alerts_v1';
+    const DROP_ALERT_STATE_KEY = 'drop_alerts';
+    // Set when the server predates drop alerts (its table has no columns
+    // for them), so schedule uploads carry on without them.
+    let dropColumnsMissing = false;
+
+    function isDropAlertsEnabled() {
+      return dropAlertsSince() > 0;
+    }
+
+    // When they were turned on: the service worker ignores drops announced
+    // before then.
+    function dropAlertsSince() {
+      try { return Number(localStorage.getItem(DROP_ALERT_PREF_KEY)) || 0; } catch (e) { return 0; }
+    }
+
+    function setDropAlertsEnabled(on) {
+      try {
+        if (on) localStorage.setItem(DROP_ALERT_PREF_KEY, String(Date.now()));
+        else localStorage.removeItem(DROP_ALERT_PREF_KEY);
+      } catch (e) {}
+    }
+
+    // "name:<letters and digits>" and "site:<root domain>" for each tracked
+    // platform - the same keys the web-push function derives from a drop
+    // (supabase/functions/web-push/drops.ts).
+    function dropKeysFor(games) {
+      const keys = new Set();
+      games.forEach(g => {
+        const name = String((g && g.name) || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (name) keys.add(`name:${name}`);
+        const root = g && g.url ? rootOf(domainOf(g.url)) : null;
+        if (root && root.includes('.')) keys.add(`site:${root}`);
+      });
+      return Array.from(keys).slice(0, 400);
+    }
+
+    function isMissingDropColumns(error) {
+      const text = `${(error && error.code) || ''} ${(error && error.message) || ''}`;
+      return /PGRST204/.test(text) || /drop_(alerts|keys)/.test(text);
+    }
 
     function pushSupported() {
       return notificationsSupported() && 'serviceWorker' in navigator && 'PushManager' in window;
@@ -5169,19 +5223,38 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const sub = await currentPushSubscription();
         if (!sub) return;
         const schedule = buildPushSchedule(serverNow());
-        if (window.AlmanacDB) window.AlmanacDB.set(PUSH_SCHEDULE_KEY, schedule).catch(() => {});
+        const dropOn = isDropAlertsEnabled();
+        const dropKeys = dropOn ? dropKeysFor(trackedGames) : [];
+        if (window.AlmanacDB) {
+          window.AlmanacDB.set(PUSH_SCHEDULE_KEY, schedule).catch(() => {});
+          // What the service worker needs to fetch and match an announced
+          // drop: the public feed's address and key (both already public).
+          window.AlmanacDB.set(DROP_ALERT_STATE_KEY, dropOn
+            ? { on: true, keys: dropKeys, since: dropAlertsSince(), url: SUPABASE_URL, key: SUPABASE_ANON_KEY }
+            : { on: false }).catch(() => {});
+        }
         // Platform names stay in this device's copy, where the service worker
-        // reads them for a digest; the server only ever gets times and counts.
+        // reads them for a digest; the server only ever gets times and counts
+        // (and, with drop alerts on, the keys of the platforms tracked).
         const uploaded = schedule.map(entry => ({ at: entry.at, count: entry.count }));
-        const payloadJson = JSON.stringify([sub.endpoint, uploaded]);
+        const payloadJson = JSON.stringify([sub.endpoint, uploaded, dropOn, dropKeys]);
         if (!force && payloadJson === lastPushScheduleJson) return;
         const session = await ensureSyncSignedIn(client, isPushEnabled);
-        const { error } = await client.from('push_subscriptions').upsert({
+        const row = {
           user_id: session.user.id,
           endpoint: sub.endpoint,
           schedule: uploaded,
           next_notify_at: uploaded.length ? new Date(uploaded[0].at).toISOString() : null
-        }, { onConflict: 'user_id,endpoint' });
+        };
+        if (!dropColumnsMissing) Object.assign(row, { drop_alerts: dropOn, drop_keys: dropKeys });
+        const upsert = () => client.from('push_subscriptions').upsert(row, { onConflict: 'user_id,endpoint' });
+        let { error } = await upsert();
+        if (error && !dropColumnsMissing && isMissingDropColumns(error)) {
+          dropColumnsMissing = true;
+          delete row.drop_alerts;
+          delete row.drop_keys;
+          ({ error } = await upsert());
+        }
         if (error) throw error;
         lastPushScheduleJson = payloadJson;
       } catch (err) {
@@ -5239,6 +5312,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     async function disableBackgroundPush() {
       setPushEnabled(false);
+      setDropAlertsEnabled(false);
+      if (window.AlmanacDB) window.AlmanacDB.set(DROP_ALERT_STATE_KEY, { on: false }).catch(() => {});
       lastPushScheduleJson = null;
       try {
         const sub = await currentPushSubscription();
@@ -5255,6 +5330,44 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (on) await enableBackgroundPush();
       else await disableBackgroundPush();
       refreshNotifyUI();
+    }
+
+    async function toggleDropAlerts(on) {
+      if (on && !isPushEnabled()) { refreshNotifyUI(); return; }
+      setDropAlertsEnabled(on);
+      await syncPushSchedule(true);
+      if (on && dropColumnsMissing) {
+        setDropAlertsEnabled(false);
+        await syncPushSchedule(true);
+        showToast("New-drop alerts aren't switched on for this server yet.", null, 8000);
+      } else if (on) {
+        trackEvent('drop_alerts_enabled', { tracked: trackedGames.length });
+        showToast(trackedGames.length
+          ? 'You\'ll get an alert when a new drop is posted for a platform you track.'
+          : 'Drop alerts are on. They cover the platforms you track, so add some to your deck.', null, 7000);
+      }
+      refreshNotifyUI();
+    }
+
+    // A drop alert opens the Freebies tab: through ?open=freebies when the
+    // app wasn't open, or a message from the service worker when it was.
+    function openFreebiesFromAlert() {
+      const landing = document.getElementById('landingScreen');
+      if (landing) landing.classList.add('hidden');
+      const btn = document.getElementById('tabFreebies');
+      if (btn) switchMainTab('freebies', btn);
+      loadPublicFreebies(true);
+    }
+
+    function consumeOpenParam() {
+      try {
+        const url = new URL(window.location.href);
+        const open = url.searchParams.get('open');
+        if (open === null) return;
+        url.searchParams.delete('open');
+        window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+        if (open === 'freebies') openFreebiesFromAlert();
+      } catch (e) {}
     }
 
     // --- Referral management ---
@@ -5614,6 +5727,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // it reloads, so this surfaces that rather than reloading on its
       // own - an unsaved balance edit or an open modal shouldn't vanish
       // out from under someone who didn't ask for a refresh.
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'open-freebies') openFreebiesFromAlert();
+      });
+
       let swRefreshToastShown = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (swRefreshToastShown) return;
@@ -6842,7 +6959,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const ANALYTICS_EVENTS = new Set([
       'app_open', 'platform_tracked', 'daily_run_started', 'daily_run_finished',
       'push_enabled', 'checkout_started', 'pro_activated', 'alert_rules_saved',
-      'shared', 'install_prompt_shown', 'app_installed'
+      'shared', 'install_prompt_shown', 'app_installed', 'drop_alerts_enabled'
     ]);
     let analyticsQueue = [];
     let analyticsTimer = null;
@@ -9746,6 +9863,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (document.visibilityState === 'hidden') flushAnalytics();
     });
     consumeBillingReturnParam();
+    consumeOpenParam();
     noteVisitDay();
     // Late enough for the browser to have offered its install event, and
     // clear of the first-paint nudges below.

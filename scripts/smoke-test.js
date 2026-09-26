@@ -478,6 +478,81 @@ const TESTS = [
     expect(byType(calls, 'push', 'unsubscribe').length, 1, 'browser unsubscribed');
   }, { answers: { 'invoke:web-push': { data: { publicKey: 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U' }, error: null } } }],
 
+  ['turns new-drop alerts on for the platforms tracked', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    await page.evaluate(() => toggleBackgroundPush(true));
+    await page.evaluate(() => toggleDropAlerts(true));
+    const upserts = byType(await page.calls(), 'from', 'push_subscriptions').filter(c => op(c, 'upsert'));
+    const row = upserts.length && op(upserts[upserts.length - 1], 'upsert')[0];
+    expect(row && row.drop_alerts, true, 'drop alerts stored');
+    expect(row && row.drop_keys, ['name:smokecasino', 'site:smoke.example'], 'with the tracked platform\'s keys');
+    const state = await page.evaluate(() => window.AlmanacDB.get('drop_alerts'));
+    expect(state && state.on && state.keys.length === 2 && state.since > 0 && /supabase\.co$/.test(state.url), true, 'service worker copy written');
+    await page.evaluate(() => toggleBackgroundPush(false));
+    expect(await page.evaluate(() => isDropAlertsEnabled()), false, 'off with background alerts');
+  }, { answers: { 'invoke:web-push': { data: { publicKey: 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U' }, error: null } } }],
+
+  ['keeps alert uploads working on a server without drop alerts', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    await page.evaluate(() => toggleBackgroundPush(true));
+    await page.evaluate(() => toggleDropAlerts(true));
+    const upserts = byType(await page.calls(), 'from', 'push_subscriptions').filter(c => op(c, 'upsert')).map(c => op(c, 'upsert')[0]);
+    expect('drop_alerts' in upserts[0], true, 'first upload tried the new columns');
+    expect(upserts.slice(1).every(row => !('drop_alerts' in row) && !('drop_keys' in row)), true, 'later uploads leave them out');
+    expect(await page.evaluate(() => isDropAlertsEnabled()), false, 'drop alerts switched back off');
+    expect(await page.evaluate(() => document.getElementById('toastMsg').textContent.includes("aren't switched on")), true, 'says why');
+  }, { answers: {
+    'invoke:web-push': { data: { publicKey: 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U' }, error: null },
+    'from:push_subscriptions': { data: null, error: { code: 'PGRST204', message: "Could not find the 'drop_alerts' column of 'push_subscriptions' in the schema cache" } }
+  } }],
+
+  ['opens the Freebies tab from a drop alert', async page => {
+    await page.goto('/?open=freebies');
+    await page.waitFor(() => document.getElementById('viewFreebies').style.display === 'block');
+    expect(await page.evaluate(() => location.search), '', 'link parameter removed');
+    expect(await page.evaluate(() => document.getElementById('tabFreebies').classList.contains('active')), true, 'tab marked active');
+  }],
+
+  ['admin: reads a screenshot into the form and alerts once', async page => {
+    await page.goto('/admin/freebies.html');
+    await page.waitFor(() => document.getElementById('adminApp').style.display === '');
+    await page.evaluate(() => {
+      document.getElementById('shotLinks').value = 'See https://cdn.discordapp.com/attachments/1/2/shot.png?ex=1&hm=2.';
+      return readScreenshots();
+    });
+    let calls = await page.calls();
+    const read = byType(calls, 'invoke', 'read-drop')[0];
+    expect(read && read.body.images, [{ url: 'https://cdn.discordapp.com/attachments/1/2/shot.png?ex=1&hm=2' }], 'image link sent, trailing punctuation dropped');
+    expect(read && read.body.platforms.includes('McLuck') && typeof read.body.tz === 'string', true, 'catalogue names and time zone sent');
+    expect(await page.evaluate(() => document.getElementById('shotStatus').textContent), 'Found 1 offer. (about 1.8\u00a2)', 'result and cost shown');
+    await page.evaluate(() => loadShotIntoForm(0));
+    const form = await page.evaluate(() => ({
+      platform: document.getElementById('fPlatform').value,
+      code: document.getElementById('fCode').value,
+      url: document.getElementById('fClaimUrl').value,
+      terms: document.getElementById('fTerms').value,
+      notify: document.getElementById('fNotify').checked
+    }));
+    expect(form, { platform: 'McLuck', code: 'LUCKY5', url: 'https://www.mcluck.com/promo', terms: '5 SC · New players only', notify: true }, 'draft loaded, tracking stripped');
+    await page.evaluate(() => loadEntries().then(() => announceEntry('11111111-1111-1111-1111-111111111111')));
+    calls = await page.calls();
+    expect(byType(calls, 'invoke', 'web-push').map(c => c.body), [{ announce: '11111111-1111-1111-1111-111111111111' }], 'announced by id');
+    expect(await page.evaluate(() => document.getElementById('statusMsg').textContent), 'Alerted 2 of 3 devices tracking McLuck.', 'reports the reach');
+  }, {
+    localStorage: { __smokeSession: { access_token: 'admin-token', user: { id: 'admin-1', email: 'johndopamine210@gmail.com' } } },
+    answers: {
+      'invoke:read-drop': { data: { drops: [{
+        platform_name: 'McLuck Casino', catalog_match: 'McLuck', bucket: 'A_code', code: 'LUCKY5',
+        claim_url: 'https://www.mcluck.com/promo?utm_source=discord', root_domain: 'mcluck.com', reward: '5 SC',
+        expires_at: null, terms: 'New players only', is_account_tied: false, confidence: 'high', evidence: 'Use LUCKY5 for 5 SC'
+      }], unreadable: null, usage: { input_tokens: 2100, output_tokens: 300 } }, error: null },
+      'invoke:web-push': { data: { matched: 3, sent: 2, removed: 1, failed: 0 }, error: null },
+      'from:public_freebies': { data: [{ id: '11111111-1111-1111-1111-111111111111', platform_name: 'McLuck', bucket: 'A_code', active: true, announced_at: null }], error: null }
+    }
+  }],
+
   ['deletes the cloud account and stops syncing', async page => {
     await page.goto('/');
     await signedIn(page);
@@ -537,7 +612,7 @@ async function main() {
     for (const [name, run, options = {}] of TESTS) {
       const page = await new Page(conn, origin).open({
         userAgent: options.userAgent,
-        config: { localStorage: SEED, answers: options.answers || {} }
+        config: { localStorage: options.localStorage || SEED, answers: options.answers || {} }
       });
       try {
         await run(page);

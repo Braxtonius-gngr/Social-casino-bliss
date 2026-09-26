@@ -9,6 +9,7 @@
     "check:catalog": "node scripts/validate-catalog.js",
     "check:seo": "node scripts/generate-seo-pages.js --check",
     "test:smoke": "node scripts/smoke-test.js",
+    "test:sw": "node scripts/sw-push-test.js",
     "build:history": "node scripts/catalog-history.js",
     "build:seo": "node scripts/catalog-history.js && node scripts/generate-seo-pages.js",
     "post:weekly": "node scripts/weekly-post.js",

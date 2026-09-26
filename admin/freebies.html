@@ -18,6 +18,11 @@
   @media (max-width:520px) { .admin-grid { grid-template-columns:1fr; } }
   #statusMsg { min-height:16px; font-size:0.75rem; margin-top:8px; }
   #authGate { max-width:420px; margin:80px auto; text-align:center; }
+  .shot-inputs { display:flex; flex-direction:column; gap:8px; }
+  .shot-meta { font-size:0.7rem; color:var(--text-muted); margin-top:4px; }
+  .shot-conf { font-size:0.62rem; padding:1px 6px; border-radius:6px; border:1px solid var(--text-muted); margin-left:6px; text-transform:uppercase; }
+  .shot-conf.low { border-color:var(--accent-pink); color:var(--accent-pink); }
+  #shotStatus { min-height:16px; font-size:0.75rem; margin-top:8px; color:var(--text-muted); }
 </style>
 </head>
 <body>
@@ -35,6 +40,21 @@
     <div class="admin-header">
       <h1>Freebies Admin</h1>
       <button class="btn-cancel" style="flex:none; padding:8px 14px; font-size:0.78rem;" onclick="signOut()">Sign out</button>
+    </div>
+
+    <div class="glass-panel admin-panel">
+      <h2 style="font-size:0.85rem; color:var(--accent-cyan); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">Read Screenshots</h2>
+      <p class="backup-helper" style="margin-bottom:10px;">Paste Discord image links (in Discord: open the image, then Copy Link / Copy Media Link) or choose the screenshots, up to 4 at a time. Claude reads each offer into a draft; load one into the form, check it, and SAVE. Discord links expire after about a day. Each read costs roughly a cent or two.</p>
+      <div class="shot-inputs">
+        <textarea id="shotLinks" rows="3" style="width:100%; resize:vertical;" placeholder="https://cdn.discordapp.com/attachments/..."></textarea>
+        <input type="file" id="shotFiles" accept="image/png,image/jpeg,image/webp,image/gif" multiple />
+        <textarea id="shotText" rows="2" style="width:100%; resize:vertical;" placeholder="Optional: the message text posted with the screenshots"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="shotReadBtn" class="btn-primary" onclick="readScreenshots()">Read with Claude</button>
+      </div>
+      <div id="shotStatus"></div>
+      <div id="shotResults"></div>
     </div>
 
     <div class="glass-panel admin-panel">
@@ -94,6 +114,10 @@
           <div class="toggle-row" style="border-bottom:none; padding-top:6px;">
             <span>Active (shown in the app)</span>
             <input type="checkbox" id="fActive" checked />
+          </div>
+          <div class="toggle-row" id="notifyRow" style="border-bottom:none; padding-top:6px;">
+            <span>On save, alert the users who track this platform and turned on drop alerts</span>
+            <input type="checkbox" id="fNotify" />
           </div>
         </div>
       </div>
@@ -194,10 +218,11 @@
       <div class="drop-row" style="flex-direction:column; align-items:stretch; gap:6px;">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
           <div>
-            <div class="drop-name">${escHtml(r.platform_name)} ${r.active ? '' : '<span class="drop-tag unknown">INACTIVE</span>'}</div>
+            <div class="drop-name">${escHtml(r.platform_name)} ${r.active ? '' : '<span class="drop-tag unknown">INACTIVE</span>'}${r.announced_at ? ' <span class="drop-tag">ALERTED</span>' : ''}</div>
             <div class="drop-url">${BUCKET_LABEL[r.bucket] || escHtml(r.bucket)}${r.code ? ' &bull; ' + escHtml(r.code) : ''}${r.expires_at ? ' &bull; expires ' + new Date(r.expires_at).toLocaleString() : ' &bull; no expiry'}</div>
           </div>
           <div style="display:flex; gap:6px; flex-shrink:0;">
+            ${r.active && !r.announced_at && !isExpired(r) ? `<button class="btn-open" style="padding:5px 10px; font-size:0.68rem;" onclick="announceEntry('${r.id}')">NOTIFY</button>` : ''}
             <button class="btn-open" style="padding:5px 10px; font-size:0.68rem;" onclick="editEntry('${r.id}')">EDIT</button>
             <button class="btn-open" style="padding:5px 10px; font-size:0.68rem;" onclick="toggleActive('${r.id}')">${r.active ? 'DEACTIVATE' : 'ACTIVATE'}</button>
             <button class="btn-open" style="padding:5px 10px; font-size:0.68rem; background:transparent; border:1px solid var(--accent-pink); color:var(--accent-pink); box-shadow:none;" onclick="deleteEntry('${r.id}')">DELETE</button>
@@ -246,6 +271,8 @@
   function resetForm() {
     editingId = null;
     fillForm({ bucket: 'A_code', active: true });
+    document.getElementById('fNotify').checked = false;
+    document.getElementById('notifyRow').style.display = '';
     document.getElementById('formHeading').textContent = 'New Entry';
     document.getElementById('cancelEditBtn').style.display = 'none';
     showStatus('');
@@ -256,6 +283,9 @@
     if (!r) return;
     editingId = id;
     fillForm(r);
+    // Alerts go out once, from NOTIFY in the list, for an entry already saved.
+    document.getElementById('fNotify').checked = false;
+    document.getElementById('notifyRow').style.display = 'none';
     document.getElementById('formHeading').textContent = 'Editing: ' + r.platform_name;
     document.getElementById('cancelEditBtn').style.display = '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -270,9 +300,16 @@
         if (error) throw error;
         showStatus('Saved.');
       } else {
-        const { error } = await client.from('public_freebies').insert(row);
+        const notify = document.getElementById('fNotify').checked && row.active;
+        const { data, error } = await client.from('public_freebies').insert(row).select('id').single();
         if (error) throw error;
         showStatus('Added.');
+        if (notify && data) {
+          resetForm();
+          await loadEntries();
+          await announceEntry(data.id, true);
+          return;
+        }
       }
       resetForm();
       await loadEntries();
@@ -305,6 +342,182 @@
     } catch (err) {
       showStatus('Delete failed: ' + ((err && err.message) || 'unknown error'), true);
     }
+  }
+
+  function isExpired(r) {
+    return !!(r.expires_at && Date.parse(r.expires_at) < Date.now());
+  }
+
+  // The message a function returned with its error status, when it sent one.
+  async function functionErrorMessage(error) {
+    try {
+      const body = error && error.context && typeof error.context.json === 'function' ? await error.context.json() : null;
+      if (body && body.error) return body.error;
+    } catch (e) {}
+    return (error && error.message) || 'unknown error';
+  }
+
+  // --- New-drop alerts ---
+  // Pushes once per entry: the web-push function stamps announced_at and
+  // refuses a second announcement.
+  async function announceEntry(id, skipConfirm) {
+    const r = entries.find((e) => e.id === id);
+    if (!r) return;
+    if (!skipConfirm && !confirm(`Alert every device that tracks ${r.platform_name} and turned on drop alerts? This goes out once.`)) return;
+    showStatus(`Sending alerts for ${r.platform_name}...`);
+    const { data, error } = await client.functions.invoke('web-push', { body: { announce: id } });
+    if (error) {
+      showStatus('Alert failed: ' + await functionErrorMessage(error), true);
+    } else {
+      const sent = data && typeof data.sent === 'number' ? data.sent : 0;
+      const matched = data && typeof data.matched === 'number' ? data.matched : 0;
+      showStatus(matched
+        ? `Alerted ${sent} of ${matched} device${matched === 1 ? '' : 's'} tracking ${r.platform_name}.`
+        : `Saved. No device that tracks ${r.platform_name} has drop alerts on yet.`);
+    }
+    await loadEntries();
+  }
+
+  // --- Read Screenshots ---
+  let shotDrops = [];
+  let catalogNames = null;
+  // Claude's read of a tall phone screenshot keeps its text legible at this
+  // size, and it keeps the upload well under the function's limit.
+  const SHOT_MAX_EDGE = 2048;
+
+  async function loadCatalogNames() {
+    if (catalogNames) return catalogNames;
+    try {
+      const response = await fetch('../data/catalog.json', { cache: 'no-cache' });
+      const list = await response.json();
+      catalogNames = Array.isArray(list) ? list.map((c) => c && c.name).filter((n) => typeof n === 'string' && n.trim()).map((n) => n.trim()) : [];
+    } catch (e) {
+      catalogNames = [];
+    }
+    return catalogNames;
+  }
+
+  // Shrinks a chosen photo to a JPEG no larger than SHOT_MAX_EDGE on its
+  // long side, returned as bare base64.
+  async function shrinkImage(file) {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, SHOT_MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    if (bitmap.close) bitmap.close();
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+    if (!blob) throw new Error('could not convert ' + file.name);
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+    return String(dataUrl).split(',')[1];
+  }
+
+  function setShotStatus(msg, isError) {
+    const el = document.getElementById('shotStatus');
+    el.textContent = msg || '';
+    el.style.color = isError ? 'var(--accent-pink)' : 'var(--text-muted)';
+  }
+
+  async function readScreenshots() {
+    const links = (document.getElementById('shotLinks').value.match(/https?:\/\/[^\s<>"')\]]+/gi) || [])
+      .map((u) => u.replace(/[.,;]+$/, ''));
+    const files = Array.from(document.getElementById('shotFiles').files || []);
+    const text = document.getElementById('shotText').value.trim();
+    if (!links.length && !files.length) { setShotStatus('Add a Discord image link or choose a screenshot.', true); return; }
+    if (links.length + files.length > 4) { setShotStatus('Up to 4 screenshots at a time.', true); return; }
+    const btn = document.getElementById('shotReadBtn');
+    btn.disabled = true;
+    btn.textContent = 'Reading...';
+    setShotStatus('Reading the screenshots. This takes a few seconds.');
+    try {
+      const images = links.map((url) => ({ url }));
+      for (const file of files) images.push({ data: await shrinkImage(file) });
+      const platforms = await loadCatalogNames();
+      const { data, error } = await client.functions.invoke('read-drop', {
+        body: {
+          images,
+          text,
+          platforms,
+          now: new Date().toISOString(),
+          tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+        }
+      });
+      if (error) { setShotStatus('Read failed: ' + await functionErrorMessage(error), true); return; }
+      shotDrops = (data && Array.isArray(data.drops)) ? data.drops : [];
+      const usage = data && data.usage;
+      // Opus 5 list prices: $5 per million input tokens, $25 per million output.
+      const cents = usage ? ((usage.input_tokens * 5 + usage.output_tokens * 25) / 1e6) * 100 : null;
+      const found = shotDrops.length ? `Found ${shotDrops.length} offer${shotDrops.length === 1 ? '' : 's'}.` : 'No offers found.';
+      setShotStatus(`${found}${data && data.unreadable ? ' ' + data.unreadable : ''}${cents !== null ? ` (about ${cents.toFixed(1)}\u00a2)` : ''}`);
+      renderShotResults();
+    } catch (err) {
+      setShotStatus('Read failed: ' + ((err && err.message) || 'unknown error'), true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Read with Claude';
+    }
+  }
+
+  function renderShotResults() {
+    const box = document.getElementById('shotResults');
+    if (!shotDrops.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">' + shotDrops.map((d, i) => {
+      const name = d.catalog_match || d.platform_name;
+      const bits = [BUCKET_LABEL[d.bucket] || escHtml(d.bucket)];
+      if (d.code) bits.push(escHtml(d.code));
+      if (d.reward) bits.push(escHtml(d.reward));
+      if (d.expires_at) bits.push('ends ' + escHtml(new Date(d.expires_at).toLocaleString()));
+      if (d.is_account_tied) bits.push('account-tied');
+      const unmatched = d.catalog_match ? '' : ' <span class="drop-tag unknown">NOT IN CATALOG</span>';
+      return `
+      <div class="drop-row" style="flex-direction:column; align-items:stretch; gap:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div>
+            <div class="drop-name">${escHtml(name)}${unmatched}<span class="shot-conf ${d.confidence === 'low' ? 'low' : ''}">${escHtml(d.confidence)}</span></div>
+            <div class="drop-url">${bits.join(' &bull; ')}</div>
+            ${d.terms ? `<div class="shot-meta">${escHtml(d.terms)}</div>` : ''}
+            ${d.evidence ? `<div class="shot-meta">&ldquo;${escHtml(d.evidence)}&rdquo;</div>` : ''}
+          </div>
+          <button class="btn-open" style="padding:5px 10px; font-size:0.68rem; flex-shrink:0;" onclick="loadShotIntoForm(${i})">LOAD INTO FORM</button>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+  }
+
+  function loadShotIntoForm(i) {
+    const d = shotDrops[i];
+    if (!d) return;
+    let claimUrl = d.is_account_tied ? '' : (d.claim_url || '');
+    if (claimUrl) {
+      try { claimUrl = cleanDropUrl(claimUrl); } catch (e) { /* keep as read */ }
+    }
+    editingId = null;
+    fillForm({
+      platform_name: d.catalog_match || d.platform_name,
+      bucket: d.bucket,
+      code: d.code || '',
+      claim_url: claimUrl,
+      root_domain: d.root_domain || '',
+      is_account_tied: !!d.is_account_tied,
+      terms: [d.reward, d.terms].filter(Boolean).join(' · '),
+      expires_at: d.expires_at,
+      source_note: `Discord screenshot, read ${new Date().toLocaleDateString()}`,
+      active: true
+    });
+    document.getElementById('notifyRow').style.display = '';
+    document.getElementById('fNotify').checked = true;
+    document.getElementById('formHeading').textContent = d.catalog_match
+      ? 'New Entry (from screenshot - check it)'
+      : 'New Entry (from screenshot - platform not in the catalog, check the name)';
+    document.getElementById('cancelEditBtn').style.display = 'none';
+    showStatus('Check every field against the screenshot, then SAVE.');
+    document.getElementById('formHeading').scrollIntoView({ behavior: 'smooth' });
   }
 
   // --- Paste & Classify ---
@@ -358,6 +571,7 @@
       expires_at: o.ttl && typeof o.ttl.expiresAt === 'number' ? new Date(o.ttl.expiresAt).toISOString() : null,
       source_note: o.snippet
     });
+    document.getElementById('notifyRow').style.display = '';
     document.getElementById('formHeading').textContent = 'New Entry (from paste - check platform name)';
     document.getElementById('cancelEditBtn').style.display = 'none';
     showStatus('Review the platform name and other fields, then SAVE.');
