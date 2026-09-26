@@ -23,6 +23,7 @@ const { spawn } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const TIMEOUT_MS = 15000;
+const CHROME_START_MS = 60000;
 const SMOKE_USER = 'smoke-user-1';
 const GOOGLEBOT = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
 
@@ -77,15 +78,37 @@ function launchChrome() {
     '--no-default-browser-check', '--disable-extensions', '--remote-debugging-port=0',
     `--user-data-dir=${profile}`, 'about:blank'
   ], { stdio: ['ignore', 'ignore', 'pipe'] });
+  // A cold start on a CI runner can take well over the per-step timeout.
+  // The address is read from stderr or, failing that, from the
+  // DevToolsActivePort file Chrome writes into the profile.
   return new Promise((resolve, reject) => {
     let stderr = '';
-    const timer = setTimeout(() => reject(new Error(`Chrome did not start:\n${stderr}`)), TIMEOUT_MS);
+    let settled = false;
+    const finish = (error, wsUrl) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      clearInterval(poll);
+      if (error) {
+        proc.kill();
+        reject(error);
+      } else {
+        resolve({ proc, profile, wsUrl });
+      }
+    };
+    const timer = setTimeout(() => finish(new Error(`Chrome did not start within ${CHROME_START_MS / 1000}s:\n${stderr}`)), CHROME_START_MS);
+    const poll = setInterval(() => {
+      try {
+        const [port, wsPath] = fs.readFileSync(path.join(profile, 'DevToolsActivePort'), 'utf8').split('\n');
+        if (/^\d+$/.test(port) && wsPath) finish(null, `ws://127.0.0.1:${port}${wsPath.trim()}`);
+      } catch (e) { /* not written yet */ }
+    }, 250);
     proc.stderr.on('data', chunk => {
       stderr += chunk;
       const match = /DevTools listening on (ws:\/\/\S+)/.exec(stderr);
-      if (match) { clearTimeout(timer); resolve({ proc, profile, wsUrl: match[1] }); }
+      if (match) finish(null, match[1]);
     });
-    proc.on('exit', code => { clearTimeout(timer); reject(new Error(`Chrome exited (${code}):\n${stderr}`)); });
+    proc.on('exit', code => finish(new Error(`Chrome exited (${code}):\n${stderr}`)));
   });
 }
 
