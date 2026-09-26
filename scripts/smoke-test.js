@@ -528,6 +528,10 @@ const TESTS = [
     const upserts = byType(await page.calls(), 'from', 'push_subscriptions').filter(c => op(c, 'upsert'));
     const row = op(upserts[upserts.length - 1], 'upsert')[0];
     expect([row.drop_alerts, row.drop_keys], [false, []], 'server not told to send drops');
+    expect(await page.evaluate(() => document.getElementById('toastMsg').textContent.startsWith("Drop alerts couldn't be set up")), true, 'says it is not set up yet');
+    await page.evaluate(() => flushAnalytics());
+    const events = byType(await page.calls(), 'from', 'app_events').flatMap(c => op(c, 'insert')[0]);
+    expect(events.some(e => e.name === 'drop_alerts_enabled'), false, 'not counted as turned on');
     // Once saving works again, the next ordinary sync opts in.
     await page.evaluate(() => {
       window.AlmanacDB.set = window.__realSet;

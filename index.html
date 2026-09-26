@@ -5265,8 +5265,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         }
         if (error) throw error;
         lastPushScheduleJson = payloadJson;
+        // Whether the server now holds this device's drop opt-in, for the
+        // caller that just turned drop alerts on.
+        return { uploaded: true, dropOptedIn: optedIn && !dropColumnsMissing };
       } catch (err) {
         console.warn('Background alert schedule sync failed:', err && err.message ? err.message : err);
+        return { uploaded: false, dropOptedIn: false };
       }
     }
 
@@ -5343,11 +5347,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     async function toggleDropAlerts(on) {
       if (on && !isPushEnabled()) { refreshNotifyUI(); return; }
       setDropAlertsEnabled(on);
-      await syncPushSchedule(true);
+      const result = await syncPushSchedule(true);
       if (on && dropColumnsMissing) {
         setDropAlertsEnabled(false);
         await syncPushSchedule(true);
         showToast("New-drop alerts aren't switched on for this server yet.", null, 8000);
+      } else if (on && !(result && result.dropOptedIn)) {
+        // Left on: the next sync (on open, or after a collection) tries the
+        // upload again, and only then are alerts really set up.
+        showToast("Drop alerts couldn't be set up just now. The app will keep trying; check your connection.", null, 8000);
       } else if (on) {
         trackEvent('drop_alerts_enabled', { tracked: trackedGames.length });
         showToast(trackedGames.length
