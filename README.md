@@ -92,7 +92,7 @@ deploying somewhere other than the default GitHub Pages URL.
 Phase 3 moderation is also kept behind the database boundary: the staff tab
 is hidden until `is_moderator()` succeeds, and its queue reads and
 approve/reject actions use the moderator-only RPCs in
-`supabase/migrations/20260925_phase3_moderation_rpc.sql`. Browser roles never
+`supabase/migrations/20260925000002_phase3_moderation_rpc.sql`. Browser roles never
 receive direct raw-table moderation access.
 
 **Why not ESLint?** This app has no build step: 130+ inline `onclick="..."`
