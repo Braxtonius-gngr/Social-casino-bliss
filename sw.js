@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v43';
+const CACHE_NAME = 'almanac-v44';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -107,6 +107,16 @@ const PUSH_SCHEDULE_KEY = 'push_schedule';
 
 const PUSH_TEST_KEY = 'push_test';
 
+// "Zula, Punt and 3 more" - a copy of readySummary() in index.html, for the
+// daily digest (its names come from this device's copy of the schedule).
+function readySummary(names, count) {
+  if (!names.length) return `${count} platform${count === 1 ? '' : 's'}`;
+  const shown = names.slice(0, 3);
+  const rest = count - shown.length;
+  if (rest > 0) return `${shown.join(', ')} and ${rest} more`;
+  return shown.length > 1 ? `${shown.slice(0, -1).join(', ')} and ${shown[shown.length - 1]}` : shown[0];
+}
+
 // Reads (and optionally deletes) one key from the app's IndexedDB state store.
 function readPushState(key, remove) {
   return new Promise((resolve) => {
@@ -155,9 +165,12 @@ self.addEventListener('push', (event) => {
       if (entry && Number(entry.at) <= now + 60000 && (!due || Number(entry.at) > Number(due.at))) due = entry;
     });
     const count = due ? Number(due.count) : 0;
-    const body = count > 0
-      ? `${count} platform${count === 1 ? '' : 's'} ready to collect`
-      : 'Your platforms are ready to collect.';
+    let body = 'Your platforms are ready to collect.';
+    if (count > 0 && due.digest) {
+      body = `Daily digest: ${readySummary(Array.isArray(due.names) ? due.names : [], count)} ready to collect`;
+    } else if (count > 0) {
+      body = `${count} platform${count === 1 ? '' : 's'} ready to collect`;
+    }
     // Same tag as the in-page alert, so an open tab and a push never stack.
     return self.registration.showNotification('Casino Almanac', {
       body,
