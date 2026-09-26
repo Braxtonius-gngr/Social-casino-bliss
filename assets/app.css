@@ -770,9 +770,13 @@
     /* The copy arrives last. Until the pop it is held hidden (the dark
        well behind it sits above the intro layer and would hide the
        dice); from the pop the wordmark flies in from large and blurred,
-       then the tagline and the rest rise in. Delays are from the pop. */
+       then the tagline and the rest rise in. Delays are from the pop.
+       The card box goes too: some themes paint it (Western's solid
+       poster paper, Prism's framed glass), and it would cover the roll. */
+    .landing-screen.intro-play .landing-inner,
     .landing-screen.intro-play .landing-inner > *,
     .landing-screen.intro-play .landing-inner::before { opacity: 0; }
+    .landing-screen.intro-play.roll-popped .landing-inner { animation: roll-fade 0.35s ease-out 0.2s both; }
     /* Hidden controls must not take a tap: a skip tap that lands where
        the button will be should only skip, never enter the app. */
     .landing-screen.intro-play .landing-btn,
