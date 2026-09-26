@@ -53,16 +53,53 @@ function loadCatalog() {
   return catalog.filter(entry => entry && typeof entry.name === 'string' && entry.name.trim() && entry.url);
 }
 
+// Mirrors BLOCKER_LABELS in index.html.
+const BLOCKER_LABELS = {
+  'purchase-gated-daily': 'Requires a purchase to unlock the daily claim',
+  'free-play-cannot-reach-floor': "Free play alone can't reach the redeem floor",
+  '20x-promo-playthrough-last-in-queue': 'Promo SC needs 20x playthrough before free SC clears',
+  'lifetime-cap-one-redemption': 'Lifetime cap - only one redemption, ever'
+};
+
 function formatDailyRate(entry) {
+  if (entry.noGuaranteedDaily) return 'No guaranteed daily bonus';
   return typeof entry.dailySC === 'number' && Number.isFinite(entry.dailySC)
-    ? `${entry.dailySC} Sweepstakes Coins per day`
+    ? `${entry.dailySC} Sweepstakes Coins per day${entry.scIsAveraged ? ' (average)' : ''}`
     : 'Daily rate not yet verified';
 }
+
+// The same plain-English read the app's Keen Info summary gives. The raw
+// research notes stay in the catalog for the record; they are working
+// notes, not visitor-facing copy.
+function summarize(entry, name) {
+  if (entry.blocker) {
+    return `Warning: ${BLOCKER_LABELS[entry.blocker] || entry.blocker.replace(/-/g, ' ')}.`;
+  }
+  if (entry.noGuaranteedDaily) {
+    return `${name} has no guaranteed daily Sweepstakes Coins bonus, so it is not ranked by days to first cash-out.`;
+  }
+  if (typeof entry.cashFloor === 'number' && typeof entry.daysToRedeem === 'number') {
+    return `Collecting only the free daily bonus reaches the $${entry.cashFloor} cash redemption minimum in about ${entry.daysToRedeem} days.`;
+  }
+  return `The daily rate or redemption minimum for ${name} has not been confirmed yet, so it is not ranked yet.`;
+}
+
+const PAGE_STYLE = `
+    body { margin: 0; background: #050507; color: #F8F9FA; font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    header, main, footer { max-width: 640px; margin: 0 auto; padding: 16px; }
+    a { color: #D4AF37; }
+    h1 { font-size: 1.6rem; line-height: 1.25; }
+    dl { display: grid; gap: 8px; margin: 20px 0; }
+    dl div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; }
+    dt { color: #8A8D93; }
+    dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+    .cta { display: inline-block; padding: 10px 16px; border: 1px solid #D4AF37; border-radius: 8px; text-decoration: none; }
+    .disclosure { color: #8A8D93; font-size: 0.85rem; }`;
 
 function pageMarkup(entry, slug, baseUrl) {
   const name = entry.name.trim();
   const title = `${name} Daily Bonus Guide | The Casino Almanac`;
-  const description = `${name}: daily bonus rate, redemption details, payout speed, and verification notes from The Casino Almanac.`;
+  const description = `${name}: daily bonus rate, redemption minimum, payout speed, and ranking from The Casino Almanac.`;
   const canonicalUrl = `${baseUrl}/platforms/${slug}.html`;
   const jsonLd = JSON.stringify({
     '@context': 'https://schema.org',
@@ -103,6 +140,8 @@ function pageMarkup(entry, slug, baseUrl) {
   <meta property="og:url" content="${escapeHtml(canonicalUrl)}">
   <meta property="og:site_name" content="The Casino Almanac">
   <script type="application/ld+json">${jsonLd}</script>
+  <style>${PAGE_STYLE}
+  </style>
 </head>
 <body>
   <header>
@@ -116,8 +155,9 @@ function pageMarkup(entry, slug, baseUrl) {
       <dl>
 ${facts.map(([label, value]) => `        <div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join('\n')}
       </dl>
-      ${entry.notes ? `<section><h2>Verification notes</h2><p>${escapeHtml(entry.notes)}</p></section>` : ''}
-      <p><a href="${escapeHtml(entry.url)}" rel="noopener noreferrer">Visit ${escapeHtml(name)}</a></p>
+      <p>${escapeHtml(summarize(entry, name))}</p>
+      <p><a class="cta" href="${escapeHtml(entry.url)}" rel="sponsored noopener noreferrer">Visit ${escapeHtml(name)}</a></p>
+      <p class="disclosure">This may be a referral link; The Casino Almanac can earn a bonus if you sign up through it.</p>
     </article>
   </main>
   <footer>
@@ -150,12 +190,31 @@ function main() {
     return { entry, slug };
   });
 
+  const expected = new Map(entries.map(({ entry, slug }) => [`${slug}.html`, pageMarkup(entry, slug, baseUrl)]));
+  expected.set('sitemap.xml', sitemapMarkup(entries, baseUrl));
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-  for (const { entry, slug } of entries) {
-    fs.writeFileSync(path.join(OUTPUT_DIR, `${slug}.html`), pageMarkup(entry, slug, baseUrl));
+  const onDisk = fs.readdirSync(OUTPUT_DIR).filter(file => file.endsWith('.html') || file === 'sitemap.xml');
+  const orphans = onDisk.filter(file => !expected.has(file));
+
+  if (process.argv.includes('--check')) {
+    const stale = [...expected].filter(([file, markup]) => {
+      const target = path.join(OUTPUT_DIR, file);
+      return !fs.existsSync(target) || fs.readFileSync(target, 'utf8') !== markup;
+    }).map(([file]) => file);
+    if (stale.length || orphans.length) {
+      console.error(`SEO pages are out of date with data/catalog.json (${stale.length} stale, ${orphans.length} orphaned):`);
+      [...stale, ...orphans].slice(0, 10).forEach(file => console.error(`  platforms/${file}`));
+      console.error('Run `npm run build:seo` and commit the result.');
+      process.exit(1);
+    }
+    console.log(`SEO pages up to date: ${entries.length} platforms.`);
+    return;
   }
-  fs.writeFileSync(path.join(OUTPUT_DIR, 'sitemap.xml'), sitemapMarkup(entries, baseUrl));
-  console.log(`Generated ${entries.length} SEO platform pages and sitemap in ${path.relative(ROOT, OUTPUT_DIR)}/`);
+
+  for (const [file, markup] of expected) fs.writeFileSync(path.join(OUTPUT_DIR, file), markup);
+  for (const file of orphans) fs.unlinkSync(path.join(OUTPUT_DIR, file));
+  console.log(`Generated ${entries.length} SEO platform pages and sitemap in ${path.relative(ROOT, OUTPUT_DIR)}/` +
+    (orphans.length ? `; removed ${orphans.length} orphaned page(s)` : ''));
 }
 
 main();
