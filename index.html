@@ -171,38 +171,46 @@
                 <path d="M39.9 6.1 L37.7 11.4 M20.1 53.9 L22.3 48.6 M6.1 20.1 L11.4 22.3 M53.9 39.9 L48.6 37.7 M20.1 6.1 L22.3 11.4 M39.9 53.9 L37.7 48.6 M6.1 39.9 L11.4 37.7 M53.9 20.1 L48.6 22.3"/>
               </g>
             </g>
+            <clipPath id="rollDieClip"><rect x="0.5" y="0.5" width="33" height="33" rx="3.2"/></clipPath>
+            <linearGradient id="rollGlintGrad" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+            </linearGradient>
           </defs>
         </svg>
-        <svg class="roll-cup" viewBox="0 0 90 100">
-          <ellipse class="roll-cup-shadow" cx="45" cy="93" rx="27" ry="4"/>
-          <path d="M11 11 L18.5 89 Q45 96 71.5 89 L79 11 Z" fill="url(#rollLeather)"/>
-          <path d="M11 11 L18.5 89 Q45 96 71.5 89 L79 11 Z" fill="url(#rollGrain)"/>
-          <path d="M30 17 L33 86" stroke="#fff" stroke-opacity="0.09" stroke-width="5" stroke-linecap="round"/>
-          <path d="M34 17 L36 86" stroke="#fff" stroke-opacity="0.07" stroke-width="1.4" stroke-linecap="round"/>
-          <path d="M14.6 47 Q45 53 75.4 47 L75 53 Q45 59 15.2 53 Z" fill="url(#rollBrass)"/>
-          <path d="M15.2 50 Q45 56 75 50" fill="none" stroke="#3a2708" stroke-width="0.5" stroke-dasharray="1 2.2"/>
-          <path d="M13.2 24 Q45 30 76.8 24" fill="none" stroke="#e8c860" stroke-opacity="0.75" stroke-width="0.8" stroke-dasharray="2.2 1.8"/>
-          <path d="M17.6 79 Q45 85 72.4 79" fill="none" stroke="#e8c860" stroke-opacity="0.75" stroke-width="0.8" stroke-dasharray="2.2 1.8"/>
-          <path d="M17.8 83 Q45 90 72.2 83 L71.5 89 Q45 96.5 18.5 89 Z" fill="url(#rollBrass)"/>
-          <path d="M18.6 88.4 Q45 95.4 71.4 88.4" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="0.6"/>
-          <path d="M10 11 Q45 23 80 11 L79.2 19 Q45 30 10.8 19 Z" fill="url(#rollBrass)"/>
-          <ellipse cx="45" cy="11" rx="35" ry="7.2" fill="url(#rollBrass)"/>
-          <ellipse cx="45" cy="11.3" rx="31.4" ry="5.4" fill="url(#rollMouth)"/>
-          <path d="M14.4 11.8 Q45 18.6 75.6 11.8" fill="none" stroke="#000" stroke-opacity="0.45" stroke-width="1.2"/>
-          <path d="M12 9.2 Q45 1.2 78 9.2" fill="none" stroke="#fff6cf" stroke-opacity="0.55" stroke-width="0.7"/>
-        </svg>
-        <div class="roll-die-x roll-die-1"><span class="roll-die-shadow"></span><div class="roll-die-y"><svg class="roll-die" viewBox="0 0 34 34"><use href="#rollDieBase"/><circle cx="9.5" cy="9.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="9.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="17" cy="17" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="9.5" cy="24.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="24.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/></svg></div></div>
-        <div class="roll-die-x roll-die-2"><span class="roll-die-shadow"></span><div class="roll-die-y"><svg class="roll-die" viewBox="0 0 34 34"><use href="#rollDieBase"/><circle cx="9.5" cy="9.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="24.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/></svg></div></div>
-        <span class="roll-flash" style="--x:150px"><svg viewBox="0 0 60 60"><use href="#rollBurst"/></svg></span>
-        <span class="roll-flash" style="--x:210px"><svg viewBox="0 0 60 60"><use href="#rollBurst"/></svg></span>
-        <span class="roll-cash roll-bill" style="--x:150px;--dx:-70px;--dy:-300px;--r:-24deg;--d:0s"><svg viewBox="0 0 60 28"><use href="#rollBill"/></svg></span>
-        <span class="roll-cash roll-coin" style="--x:150px;--dx:-20px;--dy:-380px;--r:40deg;--d:.06s"><svg viewBox="0 0 32 32"><use href="#rollCoinGold"/></svg></span>
-        <span class="roll-cash roll-crypto" style="--x:150px;--dx:-110px;--dy:-230px;--r:-50deg;--d:.12s"><svg viewBox="0 0 32 32"><use href="#rollCoinBtc"/></svg></span>
-        <span class="roll-cash roll-bill" style="--x:150px;--dx:30px;--dy:-440px;--r:18deg;--d:.18s"><svg viewBox="0 0 60 28"><use href="#rollBill"/></svg></span>
-        <span class="roll-cash roll-coin" style="--x:210px;--dx:60px;--dy:-340px;--r:-30deg;--d:.04s"><svg viewBox="0 0 32 32"><use href="#rollCoinGold"/></svg></span>
-        <span class="roll-cash roll-crypto roll-eth" style="--x:210px;--dx:100px;--dy:-260px;--r:36deg;--d:.1s"><svg viewBox="0 0 32 32"><use href="#rollCoinEth"/></svg></span>
-        <span class="roll-cash roll-bill" style="--x:210px;--dx:10px;--dy:-300px;--r:-10deg;--d:.16s"><svg viewBox="0 0 60 28"><use href="#rollBill"/></svg></span>
-        <span class="roll-cash roll-coin" style="--x:210px;--dx:120px;--dy:-420px;--r:60deg;--d:.22s"><svg viewBox="0 0 32 32"><use href="#rollCoinGold"/></svg></span>
+        <div class="roll-camera">
+          <svg class="roll-cup" viewBox="0 0 90 100">
+            <ellipse class="roll-cup-shadow" cx="45" cy="93" rx="27" ry="4"/>
+            <path d="M11 11 L18.5 89 Q45 96 71.5 89 L79 11 Z" fill="url(#rollLeather)"/>
+            <path d="M11 11 L18.5 89 Q45 96 71.5 89 L79 11 Z" fill="url(#rollGrain)"/>
+            <path d="M30 17 L33 86" stroke="#fff" stroke-opacity="0.09" stroke-width="5" stroke-linecap="round"/>
+            <path d="M34 17 L36 86" stroke="#fff" stroke-opacity="0.07" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M14.6 47 Q45 53 75.4 47 L75 53 Q45 59 15.2 53 Z" fill="url(#rollBrass)"/>
+            <path d="M15.2 50 Q45 56 75 50" fill="none" stroke="#3a2708" stroke-width="0.5" stroke-dasharray="1 2.2"/>
+            <path d="M13.2 24 Q45 30 76.8 24" fill="none" stroke="#e8c860" stroke-opacity="0.75" stroke-width="0.8" stroke-dasharray="2.2 1.8"/>
+            <path d="M17.6 79 Q45 85 72.4 79" fill="none" stroke="#e8c860" stroke-opacity="0.75" stroke-width="0.8" stroke-dasharray="2.2 1.8"/>
+            <path d="M17.8 83 Q45 90 72.2 83 L71.5 89 Q45 96.5 18.5 89 Z" fill="url(#rollBrass)"/>
+            <path d="M18.6 88.4 Q45 95.4 71.4 88.4" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="0.6"/>
+            <path d="M10 11 Q45 23 80 11 L79.2 19 Q45 30 10.8 19 Z" fill="url(#rollBrass)"/>
+            <ellipse cx="45" cy="11" rx="35" ry="7.2" fill="url(#rollBrass)"/>
+            <ellipse cx="45" cy="11.3" rx="31.4" ry="5.4" fill="url(#rollMouth)"/>
+            <path d="M14.4 11.8 Q45 18.6 75.6 11.8" fill="none" stroke="#000" stroke-opacity="0.45" stroke-width="1.2"/>
+            <path d="M12 9.2 Q45 1.2 78 9.2" fill="none" stroke="#fff6cf" stroke-opacity="0.55" stroke-width="0.7"/>
+          </svg>
+          <div class="roll-die-x roll-die-1"><span class="roll-die-shadow"></span><div class="roll-die-y"><svg class="roll-die" viewBox="0 0 34 34"><use href="#rollDieBase"/><g class="roll-face"><circle cx="9.5" cy="9.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="9.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="9.5" cy="24.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="24.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/></g><g class="roll-face" style="display:none"><circle cx="9.5" cy="9.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="9.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="17" cy="17" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="9.5" cy="24.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="24.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/></g><g class="roll-face" style="display:none"><circle cx="9.5" cy="8.6" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="8.6" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="9.5" cy="17" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="17" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="9.5" cy="25.4" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="25.4" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/></g><g clip-path="url(#rollDieClip)"><g transform="rotate(20 17 17)"><rect class="roll-die-glint" x="-18" y="-10" width="12" height="54" fill="url(#rollGlintGrad)"/></g></g></svg></div></div>
+          <div class="roll-die-x roll-die-2"><span class="roll-die-shadow"></span><div class="roll-die-y"><svg class="roll-die" viewBox="0 0 34 34"><use href="#rollDieBase"/><g class="roll-face"><circle cx="9.5" cy="9.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="17" cy="17" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="24.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/></g><g class="roll-face" style="display:none"><circle cx="9.5" cy="9.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="24.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/></g><g class="roll-face" style="display:none"><circle cx="17" cy="17" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/></g><g clip-path="url(#rollDieClip)"><g transform="rotate(20 17 17)"><rect class="roll-die-glint" x="-18" y="-10" width="12" height="54" fill="url(#rollGlintGrad)"/></g></g></svg></div></div>
+          <span class="roll-flash" style="--x:150px"><svg viewBox="0 0 60 60"><use href="#rollBurst"/></svg></span>
+          <span class="roll-flash" style="--x:210px"><svg viewBox="0 0 60 60"><use href="#rollBurst"/></svg></span>
+          <span class="roll-cash roll-bill" style="--x:150px;--dx:-70px;--dy:-300px;--r:-24deg;--d:0s"><svg viewBox="0 0 60 28"><use href="#rollBill"/></svg></span>
+          <span class="roll-cash roll-coin" style="--x:150px;--dx:-20px;--dy:-380px;--r:40deg;--d:.06s"><svg viewBox="0 0 32 32"><use href="#rollCoinGold"/></svg></span>
+          <span class="roll-cash roll-crypto" style="--x:150px;--dx:-110px;--dy:-230px;--r:-50deg;--d:.12s"><svg viewBox="0 0 32 32"><use href="#rollCoinBtc"/></svg></span>
+          <span class="roll-cash roll-bill" style="--x:150px;--dx:30px;--dy:-440px;--r:18deg;--d:.18s"><svg viewBox="0 0 60 28"><use href="#rollBill"/></svg></span>
+          <span class="roll-cash roll-coin" style="--x:210px;--dx:60px;--dy:-340px;--r:-30deg;--d:.04s"><svg viewBox="0 0 32 32"><use href="#rollCoinGold"/></svg></span>
+          <span class="roll-cash roll-crypto roll-eth" style="--x:210px;--dx:100px;--dy:-260px;--r:36deg;--d:.1s"><svg viewBox="0 0 32 32"><use href="#rollCoinEth"/></svg></span>
+          <span class="roll-cash roll-bill" style="--x:210px;--dx:10px;--dy:-300px;--r:-10deg;--d:.16s"><svg viewBox="0 0 60 28"><use href="#rollBill"/></svg></span>
+          <span class="roll-cash roll-coin" style="--x:210px;--dx:120px;--dy:-420px;--r:60deg;--d:.22s"><svg viewBox="0 0 32 32"><use href="#rollCoinGold"/></svg></span>
+        </div>
+        <span class="roll-bloom"></span>
+        <span class="roll-streak"></span>
       </div>
     </div>
     <div class="landing-inner">
@@ -3271,27 +3279,200 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       requestAnimationFrame(frame);
     }
 
-    // Plays the dice-to-money brand intro on the landing screen (see the
-    // .roll-intro markup and the ROLL INTRO block in app.css). The class
-    // is the whole mechanism: every intro element's base style is its end
-    // state, so removing .intro-play - when the timeline finishes, or on
-    // any tap - lands the screen on the finished wordmark with no jump.
-    // Skipped outright when motion is off; the global animation kill
-    // switch would flatten it to that same end state anyway.
-    const ROLL_INTRO_MS = 3800;
+    // ROLL INTRO - the Daily Roll Over brand intro on the landing screen
+    // (markup: .roll-intro; styles: the ROLL INTRO block in app.css).
+    //
+    // The cup, the dice and the camera run here, on a warped "world"
+    // clock, so the throw can drop into near-still slow motion mid-flight
+    // and speed back up for the landing. The shot list:
+    //   - the dice leave the cup showing 4 + 3 (a brief flash at speed),
+    //   - time ramps down to ROLL_SLOW.rate while the camera snaps in on
+    //     the pair at the top of the arc, now showing 5 + 2,
+    //   - a light behind the camera sweeps a glint across the dice and a
+    //     flare across the frame as time ramps back up,
+    //   - the camera pulls out and the dice land on 6 + 1, then pop into
+    //     money. Every face pair is a natural seven.
+    // Everything after the dice pop (money, burst, wordmark, copy) is
+    // plain CSS, started by the .roll-popped class. Base styles are the
+    // end state, so a tap, the timeline ending, or motion being off all
+    // land on the same finished frame.
+    const ROLL_SLOW = { start: 0.86, down: 0.3, hold: 0.85, up: 0.35, rate: 0.04 };
+    const ROLL_DIE_DUR = 1.1;
+    const ROLL_FLOOR = 66;           // px below each die's launch point
+    const ROLL_FLIPS = [0.93, 1.24]; // world seconds: 4+3 -> 5+2 -> 6+1
+    const ROLL_FLIP_LEN = 0.035;
+    const ROLL_ZOOM = 2.6;
+    const ROLL_PUSH = 0.25;          // slow push-in on top of ROLL_ZOOM during the hold
+    const ROLL_FOCUS = { x: 180, y: 250 }; // where the camera frames the dice, in stage px
+    const ROLL_AFTER_POP = 2.05;     // seconds from the pop to the end of the intro
+    const ROLL_DICE = [
+      { start: 0.78, x0: 76, dx: 57, ease: 2.2, apexU: 0.22, apexH: 70, spin: 720 },
+      { start: 0.80, x0: 80, dx: 113, ease: 3.2, apexU: 0.24, apexH: 95, spin: -1170 }
+    ];
+    // Cup keys over 1.3 world seconds: [progress, x, y, rotation, opacity].
+    const ROLL_CUP_KEYS = [[0, -150, 120, -20, 0], [0.25, 0, 0, 0, 1], [0.45, 0, 0, -10, 1], [0.62, 6, -4, 105, 1], [0.8, 0, 0, 95, 1], [1, -140, 40, 60, 0]];
+
+    function rollSmooth(k) { return k * k * (3 - 2 * k); }
+    // World seconds covered by a smoothstep rate ramp from -> to, per unit
+    // of ramp length, at ramp progress s: the integral of the rate curve.
+    function rollRampWorld(s, from, to) { return from * s + (to - from) * (s * s * s - s * s * s * s / 2); }
+    function rollWorldTime(t) {
+      const c = ROLL_SLOW;
+      if (t <= c.start) return t;
+      let w = c.start;
+      let x = t - c.start;
+      if (x <= c.down) return w + c.down * rollRampWorld(x / c.down, 1, c.rate);
+      w += c.down * rollRampWorld(1, 1, c.rate); x -= c.down;
+      if (x <= c.hold) return w + x * c.rate;
+      w += c.hold * c.rate; x -= c.hold;
+      if (x <= c.up) return w + c.up * rollRampWorld(x / c.up, c.rate, 1);
+      w += c.up * rollRampWorld(1, c.rate, 1); x -= c.up;
+      return w + x;
+    }
+
+    function rollDieState(d, w) {
+      const u = Math.min(Math.max((w - d.start) / ROLL_DIE_DUR, 0), 1);
+      const x = (d.x0 - 76) + d.dx * (1 - Math.pow(1 - u, d.ease));
+      let y;
+      if (u < d.apexU) { const k = (u - d.apexU) / d.apexU; y = -d.apexH + d.apexH * k * k; }
+      else if (u < 0.52) { const k = (u - d.apexU) / (0.52 - d.apexU); y = -d.apexH + (ROLL_FLOOR + d.apexH) * k * k; }
+      else if (u < 0.78) { const k = (u - 0.65) / 0.13; y = ROLL_FLOOR - 32 * (1 - k * k); }
+      else if (u < 0.91) { const k = (u - 0.845) / 0.065; y = ROLL_FLOOR - 10 * (1 - k * k); }
+      else y = ROLL_FLOOR;
+      const rot = d.spin * (1 - Math.pow(1 - Math.min(u / 0.8, 1), 2));
+      let scale = 1;
+      let fade = w < d.start ? 0 : 1;
+      if (w >= d.start && u < 0.06) { const k = u / 0.06; scale = 0.6 + 0.4 * k; fade = k; }
+      if (u > 0.88) { const k = (u - 0.88) / 0.12; scale = 1 + 0.8 * k; fade = 1 - k; }
+      let face = 0;
+      let squash = 1;
+      ROLL_FLIPS.forEach((ft, i) => {
+        if (w >= ft) face = i + 1;
+        const k = (w - (ft - ROLL_FLIP_LEN / 2)) / ROLL_FLIP_LEN;
+        if (k > 0 && k < 1) squash = Math.max(0.06, Math.abs(Math.cos(Math.PI * k)));
+      });
+      return { x, y, rot, scale, fade, face, squash };
+    }
+
+    function rollCupState(w) {
+      const p = Math.min(Math.max(w / 1.3, 0), 1);
+      let i = 0;
+      while (i < ROLL_CUP_KEYS.length - 2 && p > ROLL_CUP_KEYS[i + 1][0]) i++;
+      const a = ROLL_CUP_KEYS[i];
+      const b = ROLL_CUP_KEYS[i + 1];
+      const k = rollSmooth((p - a[0]) / (b[0] - a[0]));
+      const lerp = j => a[j] + (b[j] - a[j]) * k;
+      return { x: lerp(1), y: lerp(2), rot: lerp(3), opacity: lerp(4) };
+    }
+
+    // Camera zoom envelope in REAL time: a sharp snap in as time slows, a
+    // slow push through the hold, and an eased pull-out as time returns.
+    function rollCameraZoom(t) {
+      const c = ROLL_SLOW;
+      const inStart = c.start + 0.04;
+      const inEnd = c.start + c.down + 0.02;
+      const outStart = c.start + c.down + c.hold - 0.02;
+      const outEnd = outStart + 0.45;
+      let z = 0;
+      if (t > inStart && t < inEnd) z = 1 - Math.pow(1 - (t - inStart) / (inEnd - inStart), 3);
+      else if (t >= inEnd && t <= outStart) z = 1;
+      else if (t > outStart && t < outEnd) z = 1 - rollSmooth((t - outStart) / (outEnd - outStart));
+      const hold = Math.min(Math.max((t - inEnd) / (outStart - inEnd), 0), 1);
+      return { z, scale: 1 + (ROLL_ZOOM + ROLL_PUSH * hold - 1) * z };
+    }
+
     function playRollIntro() {
       const screen = document.getElementById('landingScreen');
       if (!screen || screen.classList.contains('hidden')) return;
       if (document.documentElement.getAttribute('data-motion') === 'off') return;
+      const camera = screen.querySelector('.roll-camera');
+      const cup = screen.querySelector('.roll-cup');
+      const dice = Array.from(screen.querySelectorAll('.roll-die-x')).map(el => ({
+        el,
+        y: el.querySelector('.roll-die-y'),
+        die: el.querySelector('.roll-die'),
+        shadow: el.querySelector('.roll-die-shadow'),
+        faces: Array.from(el.querySelectorAll('.roll-face')),
+        face: 0
+      }));
+      if (!camera || !cup || dice.length !== ROLL_DICE.length) return;
+
+      const windowEnd = ROLL_SLOW.start + ROLL_SLOW.down + ROLL_SLOW.hold + ROLL_SLOW.up;
+      const added = windowEnd - rollWorldTime(windowEnd);
+      const popWorld = ROLL_DICE[0].start + 0.88 * ROLL_DIE_DUR;
+      const totalMs = (popWorld + added + ROLL_AFTER_POP) * 1000;
+      const glintAt = ROLL_SLOW.start + ROLL_SLOW.down + ROLL_SLOW.hold - 0.08;
+      let raf = 0;
       let timer = null;
-      const end = () => {
-        clearTimeout(timer);
-        screen.classList.remove('intro-play');
-        screen.removeEventListener('pointerdown', end);
+      let t0 = 0;
+      let done = false;
+
+      const setFace = (d, idx) => {
+        if (d.face === idx) return;
+        d.faces.forEach((g, i) => { g.style.display = i === idx ? '' : 'none'; });
+        d.face = idx;
       };
+      const end = () => {
+        if (done) return;
+        done = true;
+        cancelAnimationFrame(raf);
+        clearTimeout(timer);
+        screen.removeEventListener('pointerdown', end);
+        screen.classList.remove('intro-play', 'roll-popped', 'roll-glint');
+        [camera, cup].forEach(el => el.removeAttribute('style'));
+        dice.forEach(d => {
+          [d.el, d.y, d.die, d.shadow].forEach(el => el.removeAttribute('style'));
+          setFace(d, 0);
+        });
+      };
+      const frame = now => {
+        if (done) return;
+        if (!t0) t0 = now;
+        const t = (now - t0) / 1000;
+        const w = rollWorldTime(t);
+
+        const c = rollCupState(w);
+        cup.style.opacity = c.opacity;
+        cup.style.transform = `translate(${c.x}px, ${c.y}px) rotate(${c.rot}deg)`;
+
+        let fx = 0;
+        let fy = 0;
+        ROLL_DICE.forEach((cfg, i) => {
+          const d = dice[i];
+          const s = rollDieState(cfg, w);
+          setFace(d, s.face);
+          d.el.style.transform = `translateX(${s.x}px)`;
+          d.y.style.transform = `translateY(${s.y}px)`;
+          d.die.style.opacity = s.fade;
+          d.die.style.transform = `rotate(${s.rot}deg) scale(${s.scale * s.squash}, ${s.scale * (1 + 0.08 * (1 - s.squash))})`;
+          const lift = Math.min(Math.max(ROLL_FLOOR - s.y, 0) / 140, 1);
+          d.shadow.style.opacity = 0.8 * (1 - 0.8 * lift) * s.fade;
+          d.shadow.style.transform = `scale(${1 - 0.6 * lift})`;
+          // Die centre in stage px: .roll-die-x sits at left 76 / top 244,
+          // and s.x already carries this die's own launch offset.
+          fx += 76 + s.x + 17;
+          fy += 244 + s.y + 17;
+        });
+        fx /= dice.length;
+        fy /= dice.length;
+        const cam = rollCameraZoom(t);
+        if (cam.z > 0) {
+          const px = fx + (ROLL_FOCUS.x - fx) * cam.z;
+          const py = fy + (ROLL_FOCUS.y - fy) * cam.z;
+          camera.style.transform = `translate(${px - cam.scale * fx}px, ${py - cam.scale * fy}px) scale(${cam.scale})`;
+        } else {
+          camera.style.transform = '';
+        }
+
+        if (t >= glintAt) screen.classList.add('roll-glint');
+        if (w >= popWorld) screen.classList.add('roll-popped');
+        raf = requestAnimationFrame(frame);
+      };
+
       screen.classList.add('intro-play');
       screen.addEventListener('pointerdown', end);
-      timer = setTimeout(end, ROLL_INTRO_MS);
+      timer = setTimeout(end, totalMs);
+      raf = requestAnimationFrame(frame);
     }
 
     function dismissLanding() {
