@@ -74,7 +74,7 @@
     "url": "https://playfame.com/",
     "tier": "F",
     "dailySC": 0.014,
-    "scSource": "ladder-partial",
+    "scSource": "ladder-full",
     "speedHours": 24,
     "reliability": 90,
     "cooldown": 24,
@@ -82,9 +82,9 @@
     "minRedeem": "10 Gift / 75 Cash",
     "cashFloor": 75,
     "daysToRedeem": 5357,
-    "confidence": "medium",
-    "lastVerified": "2026-09-20",
-    "notes": "VERIFIED 2026-09-20 (owner screenshots, playfame.com/lobby): redemption CONFIRMED at SC 10.00 for gift cards and SC 75.00 for a cash prize. Rolling 24h CONFIRMED and stated outright. THE DAILY WAS BADLY OVERSTATED: Days 2-6 pay GC 200 each and NO SC AT ALL; only Day 7 pays SC, at GC 2,500 + SC 0.10. Day 1 was hidden behind its checkmark. That is at most 0.10 SC per 7-day cycle, or 0.014/day, against the 0.25 recorded here - overstated by roughly 18x. This ladder is IDENTICAL to SpinBlitz’s, which independently confirms that SpinBlitz reading was not a misread. A term worth knowing before funding an account: \"Sweepstake Coins earned using crypto can only be redeemed with crypto\" - the redemption rail is locked to how the coins were acquired. FAMILY NOTE: HelloMillions, Jackpota, PlayFame, SpinBlitz and McLuck all share the same \"Daily Login Rewards\" engine (same 7/14/21/28 cadence, same \"rewards are available 24 hours after the last claimed reward\" wording) and the same SC 10 / SC 75 redeem pair. They were ALSO all carrying an identical dailySC of 0.25 in this catalog, which was a blanket family value rather than a measurement. FOUR of the five ladders have now been read and they differ by roughly 80x: HelloMillions pays 8.00 SC across Days 2-7 (1.14/day), McLuck 0.55 SC across Days 2-7 (0.09/day), PlayFame and SpinBlitz pay 0.10 SC across a whole cycle (0.014/day). Jackpota is the only sibling still unread. Shared engine does NOT mean shared generosity - do not infer one sibling's daily from another's. | INHERITED (unsourced): great welcome deals and expansive Pragmatic catalog; reliability 90 is still an unsourced placeholder. TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.014/day against a cash floor of 75 SC, a free player reaches the minimum CASH redemption in about 5357 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is D (changed from S). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is medium. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 5357 days to redeem this is now tier F (was D under the old five-band system)."
+    "confidence": "high",
+    "lastVerified": "2026-09-26",
+    "notes": "LADDER NOW FULL 2026-09-26 (owner screenshot, Daily Login Rewards): Day 1 is visible this time and pays GC 200 with no SC, the same as Days 2-6, so the whole 7-day cycle pays exactly one SC amount - GC 2,500 + SC 0.10 on Day 7. That settles the 0.10 SC per cycle (0.014/day) below as complete rather than a lower bound; scSource moves from ladder-partial to ladder-full and confidence to high. Rolling 24h reconfirmed in the same wording; milestone chests on the Day 7/14/21/28 track were visible but their contents were not captured. VERIFIED 2026-09-20 (owner screenshots, playfame.com/lobby): redemption CONFIRMED at SC 10.00 for gift cards and SC 75.00 for a cash prize. Rolling 24h CONFIRMED and stated outright. THE DAILY WAS BADLY OVERSTATED: Days 2-6 pay GC 200 each and NO SC AT ALL; only Day 7 pays SC, at GC 2,500 + SC 0.10. Day 1 was hidden behind its checkmark. That is at most 0.10 SC per 7-day cycle, or 0.014/day, against the 0.25 recorded here - overstated by roughly 18x. This ladder is IDENTICAL to SpinBlitz’s, which independently confirms that SpinBlitz reading was not a misread. A term worth knowing before funding an account: \"Sweepstake Coins earned using crypto can only be redeemed with crypto\" - the redemption rail is locked to how the coins were acquired. FAMILY NOTE: HelloMillions, Jackpota, PlayFame, SpinBlitz and McLuck all share the same \"Daily Login Rewards\" engine (same 7/14/21/28 cadence, same \"rewards are available 24 hours after the last claimed reward\" wording) and the same SC 10 / SC 75 redeem pair. They were ALSO all carrying an identical dailySC of 0.25 in this catalog, which was a blanket family value rather than a measurement. FOUR of the five ladders have now been read and they differ by roughly 80x: HelloMillions pays 8.00 SC across Days 2-7 (1.14/day), McLuck 0.55 SC across Days 2-7 (0.09/day), PlayFame and SpinBlitz pay 0.10 SC across a whole cycle (0.014/day). Jackpota is the only sibling still unread. Shared engine does NOT mean shared generosity - do not infer one sibling's daily from another's. | INHERITED (unsourced): great welcome deals and expansive Pragmatic catalog; reliability 90 is still an unsourced placeholder. TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.014/day against a cash floor of 75 SC, a free player reaches the minimum CASH redemption in about 5357 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is D (changed from S). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is medium. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 5357 days to redeem this is now tier F (was D under the old five-band system)."
   },
   {
     "name": "Jackpota",
@@ -186,8 +186,8 @@
     "cashFloor": 50,
     "daysToRedeem": 250,
     "confidence": "medium",
-    "lastVerified": "2026-09-20",
-    "notes": "VERIFIED 2026-09-20 (owner screenshot, lonestarcasino.com): the DAILY PRIZE panel was captured and reads 30 / 2K / 0.2 - three currencies side by side, of which the SC component is 0.2. dailySC corrected from an unsourced 0.5 to that stated 0.2. THE CORRECTION IS DELIBERATELY CONSERVATIVE AND MAY BE LOW: the same panel says \"COME BACK TOMORROW TO MULTIPLY PRIZES!\", so the daily prize escalates with an unbroken streak and a week's average will sit above the Day 1 figure - the inherited 0.5 may well have been describing a multiplied day rather than a base one. A second cycle runs alongside it on a 6D:22:34:42 timer with progress shown as 0 / 160, which reads as a weekly track against a 160 target; neither its reward nor the multiplier schedule was visible. scSource is \"stated\" rather than \"measured\" for exactly that reason: 0.2 is what the screen says a day pays right now, not what a full streak averages. ONE CAPTURE OF THE SAME PANEL ON DAY 3 OR 4 OF A STREAK WOULD SETTLE IT, and would be worth more than a redeem capture here. No countdown was visible on the primary claim in THIS capture, but the reset type is NOT unknown: it was settled on 2026-09-18 from the in-app Daily Prize modal, which pins the reset to a fixed 00:00 UTC rather than a rolling 24h window - the same reset its RealPrize parent uses. resetHour 0 / resetTZ UTC are retained from that pass and are not an assumption. | PRIOR (unsourced): dailySC 0.5; RealPrize clone; 1x rollover requirement on promotional SC; reliability 80 is still an unsourced placeholder. TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.2/day against a cash floor of 50 SC, a free player reaches the minimum CASH redemption in about 250 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is B (changed from S). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is medium. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 250 days to redeem this is now tier D (was B under the old five-band system)."
+    "lastVerified": "2026-09-26",
+    "notes": "STREAK DAY CAPTURED 2026-09-26 (owner screenshots, lonestarcasino.com): the multiplier the note below anticipated is real. Today's Daily Prize showed a 200% PRIZE with the base values struck through - 0.2 SC / 5K GC / 10 Points became 0.4 Free SC + 10K GC + 20 Points. A points track runs alongside it: it read 140/160 before this claim, today's 20 points completed it, and 160/160 unlocks a Grand Prize of 2 Free SC + 30K GC. The track countdown read \"Resets in: 0D:07:03:04\" and the panel says \"Come back TOMORROW to start collecting again!\", consistent with the fixed 00:00 UTC reset on record. dailySC STAYS 0.2, the guaranteed base, because the week still cannot be summed: if dailies were the only source of points, 140 points over six days would mean an average multiplier above the 200% seen on what is apparently the week's final day - so points most likely also come from gameplay, and neither the per-day multiplier schedule nor whether a free-only player reaches 160 is known. The true free rate is ABOVE 0.2 (every multiplied day pays more, and the Grand Prize adds up to 2 SC a week), so tier D is conservative. A capture of the multiplier on Days 1-3 of a fresh week, plus the points total at week's end with no gameplay, would pin it down. The referral link in the address bar reads lonestarcasino.com/refer/5510... (cut off), consistent with the /refer/551027 URL recorded here. | VERIFIED 2026-09-20 (owner screenshot, lonestarcasino.com): the DAILY PRIZE panel was captured and reads 30 / 2K / 0.2 - three currencies side by side, of which the SC component is 0.2. dailySC corrected from an unsourced 0.5 to that stated 0.2. THE CORRECTION IS DELIBERATELY CONSERVATIVE AND MAY BE LOW: the same panel says \"COME BACK TOMORROW TO MULTIPLY PRIZES!\", so the daily prize escalates with an unbroken streak and a week's average will sit above the Day 1 figure - the inherited 0.5 may well have been describing a multiplied day rather than a base one. A second cycle runs alongside it on a 6D:22:34:42 timer with progress shown as 0 / 160, which reads as a weekly track against a 160 target; neither its reward nor the multiplier schedule was visible. scSource is \"stated\" rather than \"measured\" for exactly that reason: 0.2 is what the screen says a day pays right now, not what a full streak averages. ONE CAPTURE OF THE SAME PANEL ON DAY 3 OR 4 OF A STREAK WOULD SETTLE IT, and would be worth more than a redeem capture here. No countdown was visible on the primary claim in THIS capture, but the reset type is NOT unknown: it was settled on 2026-09-18 from the in-app Daily Prize modal, which pins the reset to a fixed 00:00 UTC rather than a rolling 24h window - the same reset its RealPrize parent uses. resetHour 0 / resetTZ UTC are retained from that pass and are not an assumption. | PRIOR (unsourced): dailySC 0.5; RealPrize clone; 1x rollover requirement on promotional SC; reliability 80 is still an unsourced placeholder. TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.2/day against a cash floor of 50 SC, a free player reaches the minimum CASH redemption in about 250 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is B (changed from S). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is medium. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 250 days to redeem this is now tier D (was B under the old five-band system)."
   },
   {
     "name": "RealPrize",
@@ -299,32 +299,33 @@
     "resetTZ": "UTC",
     "cooldown": 24,
     "url": "https://www.legendz.com/",
-    "tier": "C",
-    "dailySC": 0.5,
+    "tier": "Not Rankable",
     "speedHours": 2,
     "reliability": 94,
     "hasLive": true,
     "minRedeem": "50 Gift / 100 Cash",
     "cashFloor": 100,
-    "daysToRedeem": 200,
-    "confidence": "low",
-    "lastVerified": "2026-09-20",
-    "notes": "VERIFIED 2026-09-20 (owner screenshots, legendz.com/redeem and its Sweeps Rules): the recorded 50 floor is the GIFT CARD tier - a cash prize requires SC 100.00. Corrected to 50 Gift / 100 Cash. The speedHours 2 recorded here is VALIDATED by a contractual term, not just reputation: Legendz publishes a 2-Hour Prize Redemption Guarantee, and pays 10 free spins in compensation if it misses (capped at 5 claims per player per calendar month). BUT THE EXCLUSIONS MATTER MORE THAN THE GUARANTEE: requests made on weekends, U.S. federal holidays, or after 6:00 p.m. ET on a business day are processed the NEXT BUSINESS DAY with no penalty - so the two-hour promise simply does not operate for most evening and weekend play, which is when most daily collection happens. The clock is also paused for security or gameplay-validation reviews, for redemptions of $5,000 or more needing a manual Game Play Check, and for third-party payment outages. Further limits: maximum $5,000 per calendar month, and up to three redemptions per player per day. A LEVELS shop converts loyalty points to SC at a bulk-discounted rate - 150,000 points for 1 SC, 550,000 for 5 SC, 1,050,000 for 10 SC, plus 50,000 for 10 free spins and 100,000 for 20; the account under test held 23,100 points. No daily-claim screen was captured, so dailySC 0.5 and the UTC reset remain INHERITED and NOT verified. | INHERITED (unsourced): dailySC 0.5; UTC midnight reset; crypto redemption; instant payouts; small coin package maintains daily streak. TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.5/day against a cash floor of 100 SC, a free player reaches the minimum CASH redemption in about 200 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is B (changed from S). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is low. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 200 days to redeem this is now tier C (was B under the old five-band system)."
+    "confidence": "medium",
+    "lastVerified": "2026-09-26",
+    "notes": "DAILY MECHANIC CAPTURED 2026-09-26 (owner screenshots, legendz.com Daily Drop and /redeem): the daily is not a fixed claim but a plinko-style \"Daily Drop\" - \"DROP THE BALL / Free\" - with prize buckets along the bottom. This capture landed 0.10 SC (\"Come back tomorrow for another try\"), but Braxtonius confirmed that one of the buckets is marked with a red X, i.e. a drop can pay nothing at all. Braxtonius adds that in practice the ball \"rarely if ever\" lands on the red X - so a typical drop does pay out - but a rare miss still means no SC is guaranteed on any given day, and the rule is about whether the daily CAN pay nothing, not how often. BUCKET ROW CONFIRMED by Braxtonius: apart from the red X, every bucket pays either SC or free spins. That keeps it chance rather than guaranteed - free spins only become SC if the spins happen to win, so a free-spin bucket is a day with no SC credited, the same as the red X. What the board does NOT have is Gold-Coin-only buckets, so it sits closer to guaranteed than the GC-wedge wheels (Jackpot Rabbit, Lucky Bunny). The SC amounts on the SC buckets and how often free-spin buckets hit were not captured. A daily that can land on nothing does not guarantee SC, so this is NOT RANKABLE under the same rule applied to FreeSpin's Ballanza plinko, Jackpot Rabbit, Lucky Bunny and the other chance mechanics. The inherited dailySC of 0.5 (never verified) is dropped rather than replaced with an average, since the bucket odds are not shown. Redeem floors reconfirmed: Gift Cards SC 50.00, Cash Prize SC 100.00 (bank transfer among approved methods), no fee or bonus stated; the 2-hour redemption guarantee, its weekend / holiday / after-6pm-ET exclusions and the three-redemptions-per-day limit read exactly as recorded below. | VERIFIED 2026-09-20 (owner screenshots, legendz.com/redeem and its Sweeps Rules): the recorded 50 floor is the GIFT CARD tier - a cash prize requires SC 100.00. Corrected to 50 Gift / 100 Cash. The speedHours 2 recorded here is VALIDATED by a contractual term, not just reputation: Legendz publishes a 2-Hour Prize Redemption Guarantee, and pays 10 free spins in compensation if it misses (capped at 5 claims per player per calendar month). BUT THE EXCLUSIONS MATTER MORE THAN THE GUARANTEE: requests made on weekends, U.S. federal holidays, or after 6:00 p.m. ET on a business day are processed the NEXT BUSINESS DAY with no penalty - so the two-hour promise simply does not operate for most evening and weekend play, which is when most daily collection happens. The clock is also paused for security or gameplay-validation reviews, for redemptions of $5,000 or more needing a manual Game Play Check, and for third-party payment outages. Further limits: maximum $5,000 per calendar month, and up to three redemptions per player per day. A LEVELS shop converts loyalty points to SC at a bulk-discounted rate - 150,000 points for 1 SC, 550,000 for 5 SC, 1,050,000 for 10 SC, plus 50,000 for 10 free spins and 100,000 for 20; the account under test held 23,100 points. No daily-claim screen was captured, so dailySC 0.5 and the UTC reset remain INHERITED and NOT verified. | INHERITED (unsourced): dailySC 0.5; UTC midnight reset; crypto redemption; instant payouts; small coin package maintains daily streak. TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.5/day against a cash floor of 100 SC, a free player reaches the minimum CASH redemption in about 200 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is B (changed from S). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is low. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 200 days to redeem this is now tier C (was B under the old five-band system).",
+    "noGuaranteedDaily": true
   },
   {
     "name": "LuckyHands",
     "url": "https://luckyhands.com/",
-    "tier": "A",
-    "dailySC": 0.5,
+    "tier": "F",
+    "dailySC": 0.1,
     "speedHours": 2,
     "reliability": 92,
     "cooldown": 24,
     "hasLive": false,
-    "minRedeem": "50 Cash",
+    "minRedeem": "50 SC (Debit Card / Online Banking / Skrill)",
     "cashFloor": 50,
-    "daysToRedeem": 100,
-    "confidence": "none",
-    "notes": "Very fast payout processing and accessible welcome tiers. TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.5/day against a cash floor of 50 SC, a free player reaches the minimum CASH redemption in about 100 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is A (changed from S). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is none."
+    "daysToRedeem": 500,
+    "confidence": "high",
+    "notes": "VERIFIED 2026-09-26 (owner screenshots, luckyhands.com/wallet/daily-bonus and /wallet/redeem) - first real capture for this entry. THE DAILY WAS OVERSTATED 5x: the Daily Bonus is a fixed claim of 10,000 GC + 0.1 SC, not the 0.5 SC inherited from the original sheets. Rolling 24h CONFIRMED - the countdown read 00 Day 23 Hours 59 Min 58 Sec immediately after claiming. Redeem floor CONFIRMED at SC 50 on every method: Debit Card, Online Banking and Skrill, each listed with a SC 50 minimum and no fee or bonus stated. Balance at capture: 0.57 SC. TIER 2026-09-26, DERIVED FROM DATA: at 0.1 SC/day against a 50 SC cash floor, a free player reaches the minimum cash redemption in about 500 days, which is tier F under the six-band rule (S<=60/A<=120/B<=182/C<=242/D<=304/F>304) - down from A, which rested entirely on the unverified 0.5. | INHERITED (unsourced): Very fast payout processing and accessible welcome tiers; speedHours 2 and reliability 92 are still unverified.",
+    "scSource": "stated",
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "MegaBonanza",
@@ -780,7 +781,7 @@
   {
     "name": "Jefe Bet",
     "cooldown": 6,
-    "url": "https://jefebet.com/",
+    "url": "https://www.jefebet.com/?affiliateCode=1382635&referralCode=yd1752",
     "tier": "Not Rankable",
     "noGuaranteedDaily": true,
     "speedHours": 24,
@@ -788,8 +789,8 @@
     "hasLive": false,
     "minRedeem": "100 SC",
     "confidence": "medium",
-    "lastVerified": "2026-09-24",
-    "notes": "Best: Blackjack RECLASSIFIED TO NOT RANKABLE 2026-09-24 (owner screenshots: jefebet.com/login and /promotions, plus the in-app redemption prompt) - no daily SC source of any kind was found. The Promotions page lists four items and none is a daily login claim or daily wheel: Welcome Bonus (first-purchase-only, up to 150% on a $9.99 or $24.99 pack), Jefe Rewards Club (a 10-tier VIP ladder gated by cumulative XP - Hatchling through Jefe Supreme - that grants a weekly SC Play Rewards % and a one-time Level Up Reward per tier, not a recurring daily grant), VIP Exclusive Promotions (three weekly package picks, tier-gated, one selection per week), and Weekly Coin Back (up to 8% of net SC losses back, calculated and claimable once per week). The Invite Friends panel is a referral program only - 1,000 GC + 25 SC per qualified referral plus milestone bonuses at 5/10/25/50/100 referrals - not a personal daily source. The redemption modal confirms a 100 SC minimum balance to redeem at all (\"You'll need at least SC 100 in your balance to make a redemption\"), which replaces the old \"Varies\" placeholder. Since every SC-granting mechanic found is either purchase-gated, weekly, or referral-based, there is nothing to base a guaranteed daily rate on - the previous dailySC 0.2 was an unsourced figure inherited from the original sheets and is dropped entirely rather than kept as a guess, consistent with how Jackpot Rabbit and the other chance/no-guarantee entries in this catalog are handled. If a genuine daily login claim or daily wheel is found on a future pass, this can move back to a ranked tier."
+    "lastVerified": "2026-09-26",
+    "notes": "REFERRAL LINK ADDED 2026-09-26 (owner capture): url now carries affiliateCode=1382635 / referralCode=yd1752, supplied as http:// and stored as https:// so the tracked link does not start on an insecure hop. The same capture reconfirms the Not Rankable finding below - the promotions page still lists only the Welcome Bonus, Jefe Rewards Club, Weekly Coin Back and Invite & Earn, with no daily claim. Figures differ slightly from the 2026-09-24 screenshots and are recorded rather than reconciled: the $24.99 first-purchase pack now reads 6,500,000 GC + 65 SC (was 6,300,000 GC + 63 SC), and the Emerald Legend VIP tier 12,000,000 XP (was 10,000,000) - the operator appears to be adjusting these. Login also shows a \"not_support_incognito\" tooltip, so private-browsing sessions are refused. | Best: Blackjack RECLASSIFIED TO NOT RANKABLE 2026-09-24 (owner screenshots: jefebet.com/login and /promotions, plus the in-app redemption prompt) - no daily SC source of any kind was found. The Promotions page lists four items and none is a daily login claim or daily wheel: Welcome Bonus (first-purchase-only, up to 150% on a $9.99 or $24.99 pack), Jefe Rewards Club (a 10-tier VIP ladder gated by cumulative XP - Hatchling through Jefe Supreme - that grants a weekly SC Play Rewards % and a one-time Level Up Reward per tier, not a recurring daily grant), VIP Exclusive Promotions (three weekly package picks, tier-gated, one selection per week), and Weekly Coin Back (up to 8% of net SC losses back, calculated and claimable once per week). The Invite Friends panel is a referral program only - 1,000 GC + 25 SC per qualified referral plus milestone bonuses at 5/10/25/50/100 referrals - not a personal daily source. The redemption modal confirms a 100 SC minimum balance to redeem at all (\"You'll need at least SC 100 in your balance to make a redemption\"), which replaces the old \"Varies\" placeholder. Since every SC-granting mechanic found is either purchase-gated, weekly, or referral-based, there is nothing to base a guaranteed daily rate on - the previous dailySC 0.2 was an unsourced figure inherited from the original sheets and is dropped entirely rather than kept as a guess, consistent with how Jackpot Rabbit and the other chance/no-guarantee entries in this catalog are handled. If a genuine daily login claim or daily wheel is found on a future pass, this can move back to a ranked tier."
   },
   {
     "name": "Lionsden Games",
@@ -797,13 +798,15 @@
     "cooldown": 24,
     "url": "https://lionsdengames.net/",
     "tier": "Unranked",
-    "dailySC": 1,
+    "dailySC": 0,
     "speedHours": 24,
     "reliability": 72,
     "hasLive": false,
-    "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "Daily only given once balance drops under 1 SC TIER 2026-09-21: UNRANKED, and deliberately so. It was B, inherited from the original sheets rather than derived. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here minRedeem reads \"Varies\", so no cash floor is known. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE REDEEM PAGE WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 1. confidence: none."
+    "minRedeem": "$15 min daily withdrawal (Debit Card 2% fee / Approvely)",
+    "confidence": "low",
+    "notes": "REDEEM SCREEN CAPTURED 2026-09-26 (owner screenshots, lionsdengames.net/settings): \"Min daily withdrawal: $15\" (the form rejects lower amounts with \"Enter a higher amount\"), at \"1 coins = $1\". Methods are Debit Card, with a 2% fee charged by the payment processor, and Approvely. The cash-out rule reads \"You can only cash out coins you have played with and won.\" Jackpot counters on the same screen: 20 Bronze / 500 Silver / 18,143.61 Gold. No daily-claim screen was captured. DELIBERATELY STILL UNRANKED: the inherited dailySC of 1 was never sourced, and the inherited note itself says the daily is \"only given once balance drops under 1 SC\". A top-up that only fires below 1 coin cannot build a balance to a $15 floor from free play alone, so dividing 15 by 1 (15 days, tier S) would badly overstate this platform. dailySC is dropped to 0 pending a capture of the actual daily mechanic: if it is a top-up below 1 coin, this entry takes the free-play-cannot-reach-floor blocker; if it is a regular daily, its amount gives the tier. | INHERITED: Daily only given once balance drops under 1 SC; resetHour 0 and reliability 72 unsourced.",
+    "cashFloor": 15,
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "Luck Party",
@@ -826,18 +829,17 @@
   {
     "name": "Lucky Rush",
     "url": "https://luckyrush.io/wallet",
-    "tier": "F",
-    "dailySC": 0.1,
+    "tier": "Unranked",
+    "dailySC": 0,
     "speedHours": 24,
     "reliability": 60,
     "cooldown": 24,
     "hasLive": false,
     "minRedeem": "100 SC / 5,000 SC max",
     "cashFloor": 100,
-    "daysToRedeem": 1000,
     "confidence": "low",
-    "lastVerified": "2026-09-20",
-    "notes": "VERIFIED 2026-09-20 (owner screenshots, luckyrush.io/redeem and /wallet): redemption floor 100 SC, ceiling 5,000 SC, at 1 SC = 1 USD. The Daily Bonus timer read 6h29m57s at a 5:30 AM capture, which does NOT fit a 24h cooldown recently claimed and does not land on a round hour either - so the recorded rolling-24h model is NOT confirmed by this capture and may be wrong; a shorter cycle would fit better. Left unchanged pending a decisive check. The account under test showed a 15-day current streak, so the streak system does persist and reward continuity. dailySC 0.1 remains INHERITED and NOT verified. | PRIOR: Good promos and welcome offer; not friendly to promo-washing TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.1/day against a cash floor of 100 SC, a free player reaches the minimum CASH redemption in about 1000 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is D (changed from C). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is low. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 1000 days to redeem this is now tier F (was D under the old five-band system)."
+    "lastVerified": "2026-09-26",
+    "notes": "DAILY LADDER PARTLY CAPTURED 2026-09-26 (owner screenshots, luckyrush.io/wallet \"Daily bonus!\"): Days 15 through 21 are visible and pay Gold Coins ONLY - Day 15 1,000 GC, Day 16 2,000, Day 17 3,000, Day 18 4,000, Day 19 5,000, Day 20 6,000, and \"The 21th Streak Day\" 7,717.5 GC - with no SC on any tile. That contradicts the inherited dailySC of 0.1, which was never verified, so it is dropped to 0 and the entry moves from F to UNRANKED rather than keep a tier built on a number the screen does not support. Days 1-14 were not visible. If they are GC-only too, Lucky Rush has no daily SC source at all and belongs in Not Rankable; if any of them pays SC, the documented rate is that total divided by the cycle length. ONE SCREENSHOT OF DAYS 1-14 SETTLES WHICH. Redeem floor 100 SC / ceiling 5,000 SC and 1 SC = 1 USD reconfirmed; the redeem-method dropdown was not expanded. Balance at capture 0.07 SC (all redeemable). | PREVIOUS: VERIFIED 2026-09-20 (owner screenshots, luckyrush.io/redeem and /wallet): redemption floor 100 SC, ceiling 5,000 SC, at 1 SC = 1 USD. The Daily Bonus timer read 6h29m57s at a 5:30 AM capture, which does NOT fit a 24h cooldown recently claimed and does not land on a round hour either - so the recorded rolling-24h model is NOT confirmed by this capture and may be wrong; a shorter cycle would fit better. Left unchanged pending a decisive check. The account under test showed a 15-day current streak, so the streak system does persist and reward continuity. dailySC 0.1 remains INHERITED and NOT verified. | PRIOR: Good promos and welcome offer; not friendly to promo-washing TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.1/day against a cash floor of 100 SC, a free player reaches the minimum CASH redemption in about 1000 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is D (changed from C). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is low. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 1000 days to redeem this is now tier F (was D under the old five-band system)."
   },
   {
     "name": "Luckybits Vegas",
@@ -845,16 +847,17 @@
     "cooldown": 24,
     "url": "https://luckybitsvegas.com/",
     "tier": "F",
-    "dailySC": 0.3,
+    "dailySC": 0.1,
     "speedHours": 24,
     "reliability": 72,
     "hasLive": false,
-    "minRedeem": "100 SC",
+    "minRedeem": "100 SC (Debit Card / Bank / Crypto)",
     "cashFloor": 100,
-    "daysToRedeem": 333,
-    "confidence": "low",
-    "lastVerified": "2026-09-20",
-    "notes": "VERIFIED 2026-09-20 (owner screenshot, fun.luckybitsvegas.com): minimum redemption is SC 100, stated outright. No daily-claim screen was captured, so the midnight reset and dailySC 0.3 both remain INHERITED and NOT verified. | PRIOR: High5 sister site TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.3/day against a cash floor of 100 SC, a free player reaches the minimum CASH redemption in about 333 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is C (changed from B). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is low. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 333 days to redeem this is now tier F (was C under the old five-band system)."
+    "daysToRedeem": 1000,
+    "confidence": "medium",
+    "lastVerified": "2026-09-26",
+    "notes": "DAILY CAPTURED 2026-09-26 (owner screenshots, fun.luckybitsvegas.com): the Daily Bonus pays +SC 0.10, a fixed claim, replacing the inherited and never-verified 0.3. A second card, Bonus Harvest, pays +GC 2,500 + 5 Diamonds and NO SC, so it adds nothing to the daily SC rate. Minimum redemption SC 100 reconfirmed (1 SC = US $1), with Debit Card, Bank and Crypto (Bitcoin, Ethereum) offered and no fee or bonus stated. The cooldown was not visible (both cards read \"Free bonus now available!\"), so the midnight resetHour stays inherited and confidence is medium, not high. Also seen: an XP \"Harvester\" rank track and a RAF (refer-a-friend) leaderboard with a SC 1,000 prize pool - neither is a daily source. TIER 2026-09-26: at 0.1 SC/day against 100 SC, about 1000 days to first cash redemption - still F, now on measured data rather than an inherited guess. | PREVIOUS: VERIFIED 2026-09-20 (owner screenshot, fun.luckybitsvegas.com): minimum redemption is SC 100, stated outright. No daily-claim screen was captured, so the midnight reset and dailySC 0.3 both remain INHERITED and NOT verified. | PRIOR: High5 sister site TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.3/day against a cash floor of 100 SC, a free player reaches the minimum CASH redemption in about 333 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is C (changed from B). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is low. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 333 days to redeem this is now tier F (was C under the old five-band system).",
+    "scSource": "stated"
   },
   {
     "name": "Lunaland Casino",
@@ -1483,14 +1486,15 @@
     "cooldown": 24,
     "url": "https://lavishluck.net/",
     "tier": "Unranked",
-    "dailySC": 0,
+    "dailySC": 0.24,
     "speedHours": 24,
     "reliability": 68,
     "hasLive": false,
     "minRedeem": "Varies",
-    "confidence": "low",
-    "lastVerified": "2026-09-20",
-    "notes": "VERIFIED 2026-09-20 (owner screenshot, Lavish Luck Slots redeem): REDEMPTION CARRIES A FEE, which is unusual in this catalog - 1% of redeemable SC with a $0.50 minimum charge, rising to 3% for PayPal. On a small redemption the $0.50 floor dominates: redeeming $10 costs 5%, not 1%. Balance and bonus figures were not on screen, so dailySC 0 and the 5 AM reset remain unverified. | PRIOR: Cooldown confirmed: resets at UTC-0, per site rules. Bonus value not yet confirmed (ToS-sourced info only). Eligibility: Players must be 18 years of age or older. | Note: Operator reserves the right to limit or exclude participants determined to have engaged in unethical behavior. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: low."
+    "confidence": "medium",
+    "lastVerified": "2026-09-26",
+    "notes": "FULL LADDER CAPTURED 2026-09-26 (owner screenshots, game.lavishluck.net DAILY BONUS): Days 1-3 sit under claimed checkmarks but their faint amounts are still readable - Day 1 2K GC + 0.20 SC, Day 2 4K GC + 0.20 SC, Day 3 6K GC + 0.20 SC - then Day 4 7K GC + 0.20 SC (active), Day 5 10K GC + 0.20 SC, Day 6 14K GC + 0.20 SC, Day 7 20K GC + 0.50 SC. Every day pays SC, so this is a guaranteed ladder; the week sums to 1.70 SC, or 0.24/day. Confidence is medium rather than high because Days 1-3 were read through the checkmarks. A separate DAILY MISSION list pays extra for gameplay (e.g. \"Spin 30 times\" for GC 3,000 + SC 0.10) alongside purchase missions and a \"Check In\" task; missions need play or purchases, so they are not counted in dailySC. The mission timer read 16:12:33, but that is the mission reset, not proof of the bonus cooldown, so resetHour 5 stays as recorded. The redeem fee terms were reconfirmed (1% with a $0.50 minimum, PayPal 3%), but the minimum redemption was still not visible - STILL UNRANKED. ONE SCREENSHOT SHOWING THE MINIMUM REDEEM AMOUNT WOULD RESTORE A TIER HERE. Redeemable balance at capture: SC 0.21. | VERIFIED 2026-09-20 (owner screenshot, Lavish Luck Slots redeem): REDEMPTION CARRIES A FEE, which is unusual in this catalog - 1% of redeemable SC with a $0.50 minimum charge, rising to 3% for PayPal. On a small redemption the $0.50 floor dominates: redeeming $10 costs 5%, not 1%. Balance and bonus figures were not on screen, so dailySC 0 and the 5 AM reset remain unverified. | PRIOR: Cooldown confirmed: resets at UTC-0, per site rules. Bonus value not yet confirmed (ToS-sourced info only). Eligibility: Players must be 18 years of age or older. | Note: Operator reserves the right to limit or exclude participants determined to have engaged in unethical behavior. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: low.",
+    "scSource": "ladder-full"
   },
   {
     "name": "Stackr Casino",
@@ -1692,10 +1696,11 @@
     "speedHours": 24,
     "reliability": 68,
     "hasLive": false,
-    "minRedeem": "Varies",
+    "minRedeem": "100 SC (cash)",
     "confidence": "low",
-    "lastVerified": "2026-09-16",
-    "notes": "Cooldown corrected 2026-09-16 via in-app screenshot: 'Available in 23:59:50' plus explicit copy ('Collect your reward within 1 day or miss out! Come back later for your next reward') confirms a rolling 24h-from-last-claim cycle, not the fixed-midnight reset previously modeled - resetHour removed. Confirmed a 7-day 'spin to win' streak ladder: Day 1 is GC-only (up to 10K GC, no SC), Day 2/4/6 up to 1 SC, Day 3 up to 3 SC, Day 5 up to 2 SC, Day 7 up to 5 SC - all variable spin outcomes (maximums, not guaranteed), so dailySC left at 0 pending real average payout data. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: low."
+    "lastVerified": "2026-09-26",
+    "notes": "RECAPTURED 2026-09-26 (owner screenshots, jumbo88.com/daily-rewards and /redeem): the Day 1 wheel shows eight segments and every one is Gold Coins only - 1k, 2k, 3k, 4k, 5k, 6k, 8k and 10k GC - matching the Day-1-is-GC-only reading below (\"Day 1 reward collected!\"). Redeem floor CONFIRMED: \"Minimum redeemable balance is 100.00\" on the Cash tab; payout processors not listed. Timeline: \"Redemptions are reviewed within 24 hours. Funds usually arrive within 1-3 business days depending on your bank. First-time redemptions may require additional verification.\" Redeemable balance at capture 0.30. STILL UNRANKED, NOT YET NOT RANKABLE: every day of this ladder is a spin, and only Day 1's wheel has been read. If any Day 2-7 wheel has a Gold-Coin-only segment, no day guarantees SC and this belongs in Not Rankable; if every Day 2-7 wheel pays SC on every segment, the smallest SC segment of each day gives a guaranteed lower bound. ONE CAPTURE OF A DAY 2-7 WHEEL SETTLES WHICH. | Cooldown corrected 2026-09-16 via in-app screenshot: 'Available in 23:59:50' plus explicit copy ('Collect your reward within 1 day or miss out! Come back later for your next reward') confirms a rolling 24h-from-last-claim cycle, not the fixed-midnight reset previously modeled - resetHour removed. Confirmed a 7-day 'spin to win' streak ladder: Day 1 is GC-only (up to 10K GC, no SC), Day 2/4/6 up to 1 SC, Day 3 up to 3 SC, Day 5 up to 2 SC, Day 7 up to 5 SC - all variable spin outcomes (maximums, not guaranteed), so dailySC left at 0 pending real average payout data. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: low.",
+    "cashFloor": 100
   },
   {
     "name": "FireSevens",
@@ -1854,15 +1859,20 @@
   {
     "name": "KingPrize",
     "url": "https://kingprize.com/",
-    "tier": "Unranked",
-    "dailySC": 0,
-    "speedHours": 24,
+    "tier": "F",
+    "dailySC": 0.2,
+    "speedHours": 96,
     "reliability": 68,
     "cooldown": 24,
     "hasLive": false,
-    "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Checked across three research passes with no public data found. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "minRedeem": "100 SC (via Breeze)",
+    "confidence": "medium",
+    "notes": "FIRST CAPTURE 2026-09-26 (owner screenshots, kingprize.com/rewards, /spin, /scratchcard and /redeem). THREE daily mechanics, and only one of them is guaranteed. (1) A \"Rewards\" streak ladder that pays SC on every visible day: Day 3 0.2 SC + 2,500 GC, Day 4 0.2 SC + 2,500 GC, Day 5 0.2 SC + 2,500 GC, Day 6 0.35 SC + 3,500 GC, Day 7 0.45 SC + 4,500 GC. Days 1-2 were not visible. (2) A Lucky Wheel with SC segments (1, 2, 5 SC) and Gold-Coin-only segments (15K, 25K, 50K, 100K, 250K GC). (3) A \"Find any 3 to win\" scratchcard with SC tiers (Crown 10, Cup 5, Coins 1) and GC tiers (500K, 250K, 100K, 50K). The wheel and scratchcard can land on Gold Coins only, so they are CHANCE EXTRAS and are not counted - but the ladder is a guaranteed daily in its own right, so the platform is ranked on the ladder rather than filed as Not Rankable. dailySC is the documented LOWER BOUND: Days 3-7 total 1.40 SC, and with Days 1-2 treated as zero, a 7-day cycle is at least 1.40/7 = 0.20/day. ONE CAPTURE OF DAYS 1-2 WOULD FIX THE RATE. Fixed reset CONFIRMED at 7:00 PM device-local (\"Next streak reward unlocks in 08:29:06 - 9/24/2026, 7:00:00 PM\"; the wheel reads \"07:00 PM Next Reset\"), recorded as resetHour 19. Redeem floor CONFIRMED at 100.00 SC, paid out through Breeze (\"You will be redirected to Breeze to select your payout method and complete verification\"), \"reviewed and processed within 3-5 business days\" - speedHours set to 96 as the midpoint of that window, replacing an unsourced 24. PLAYTHROUGH: the account showed \"2.00 SC locked / 1 active bonus - 20 SC to wager\", i.e. a 10x playthrough on a bonus, so promo SC is not immediately redeemable. TIER 2026-09-26: at 0.20 SC/day against a 100 SC floor, about 500 days to first cash redemption - tier F, and an upper bound on the days since the true rate can only be higher once Days 1-2 are read. | PREVIOUS: no data had been sourced across three research passes; reliability 68 remains an unsourced placeholder.",
+    "resetHour": 19,
+    "scSource": "ladder-partial",
+    "cashFloor": 100,
+    "daysToRedeem": 500,
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "SweepJungle",
@@ -1920,28 +1930,31 @@
   {
     "name": "Lucky Bunny",
     "url": "https://luckybunny.fun/",
-    "tier": "Unranked",
-    "dailySC": 0,
+    "tier": "Not Rankable",
     "speedHours": 24,
     "reliability": 68,
     "cooldown": 24,
     "hasLive": false,
-    "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Checked across three research passes with no public data found. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "minRedeem": "100 SC",
+    "confidence": "medium",
+    "notes": "FIRST CAPTURE 2026-09-26 (owner screenshots, luckybunny.fun and its sweepstakes rules page): the daily mechanic is a \"Spin the Wheel\" with eight visible segments - 1, 2, 3, 4 and 5 SC, plus three Gold-Coin-only segments (100K, 200K and 400K GC) that pay no SC at all. A wheel with any GC-only segment does not guarantee SC on a given day, so this is NOT RANKABLE under the same rule applied to Side Pot, Storm Rush, Winera, Coins Royale, Coinz and Jackpot Rabbit. No dailySC is recorded - averaging the wedges would present a chance outcome as a rate, and the segment weights are not shown. Redeem floor CONFIRMED from the rules: \"Once a Participant accumulates a minimum of hundred (100) redeemable Sweep Coins, they will be able to redeem for prizes or cash.\" The same rules add that Sweep Coins must be played through in Promotional Play per the applicable playthrough requirements before becoming redeemable. Cooldown not visible (\"1 Spin Left\"). | PREVIOUS: no data had been sourced across three research passes; reliability 68 remains an unsourced placeholder.",
+    "noGuaranteedDaily": true,
+    "cashFloor": 100,
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "Joya",
     "url": "https://joya.us/",
-    "tier": "Unranked",
-    "dailySC": 0,
+    "tier": "Not Rankable",
     "speedHours": 24,
     "reliability": 68,
     "cooldown": 24,
     "hasLive": false,
     "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Checked across three research passes with no public data found. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "confidence": "medium",
+    "notes": "FIRST CAPTURE 2026-09-26 (owner screenshots, the \"JOYA .US SCRATCHCARD\" served from is-us.games.xtremepush.com): the daily is a 9-tile scratchcard - \"Find any of the below icons 4 times in the grid to win\" - with prize tiers man-in-fedora 0.2 SC, woman-in-visor 0.4 SC, slot reel 1 SC and trophy 2 SC. This capture won 0.2 SC (\"You Won 0.2 SC!\", then \"Use Your Prize Now! / CLAIM\"). A match-4 card can come up without four of a kind, so it does not guarantee SC and is NOT RANKABLE, the same treatment as the Coinz scratchcard. Caveat: no losing card has actually been observed yet (Coinz was confirmed by a seen \"Missed\" day); if every Joya card turns out to win, this becomes a guaranteed daily of at least 0.2 SC and should be re-ranked. Cooldown, redeem floor and redeem methods were not visible. | PREVIOUS: no data had been sourced across three research passes; reliability 68 remains an unsourced placeholder.",
+    "noGuaranteedDaily": true,
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "LuckyOne",
@@ -2079,13 +2092,15 @@
     "cooldown": 24,
     "url": "https://reelzappy.com/",
     "tier": "Unranked",
-    "dailySC": 0,
+    "dailySC": 0.5,
     "speedHours": 24,
     "reliability": 68,
     "hasLive": false,
     "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Added from your own referral list. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "confidence": "medium",
+    "notes": "FULL LADDER CAPTURED 2026-09-26 (owner screenshots, reelzappy.com/lobby DAILY BONUS) - first real data on this entry. Day 1 5,000 GC + 0.50 SC (active), Day 2 2,500 GC + 0.25 SC, Day 3 5,000 GC + 0.50 SC, Day 4 3,500 GC + 0.35 SC, Day 5 5,000 GC + 0.50 SC, Day 6 4,000 GC + 0.40 SC, Day 7 \"Big Daily Bonus\" 10,000 GC + 1.00 SC. Every day pays SC, so it is a guaranteed ladder; the 7 days sum to 3.50 SC, a flat 0.50/day. The shape resembles the Luck Party / Fortune Wins family ladder (0.50/0.25 alternating before a 1.00 finale) but Days 4 and 6 differ (0.35 and 0.40 here vs 0.25 there), so this is recorded as its own reading rather than inferred from that family. The screen notes that \"Daily Bonus and rewards may differ and change from time to time\". STILL UNRANKED: no redeem screen has been captured, so there is no cash floor to divide by. ONE SCREENSHOT OF THE REDEEM PAGE WOULD RESTORE A TIER HERE. The cooldown was not visible, so resetHour 0 remains inherited and unverified.",
+    "scSource": "ladder-full",
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "Winera",

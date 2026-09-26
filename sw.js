@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v39';
+const CACHE_NAME = 'almanac-v41';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -58,17 +58,19 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET' || url.origin !== self.location.origin) return;
 
   event.respondWith(
-    // cache: 'no-store' forces this past the browser's own HTTP cache, not
-    // just this worker's CACHE_NAME - without it, "network first" could
-    // still resolve to a stale response the browser's HTTP cache served
-    // back to this very fetch() call (e.g. app.css, which has no
-    // cache-busting query string), even right after a fresh deploy.
-    fetch(req, { cache: 'no-store' })
+    // cache: 'no-cache' always revalidates with the server, so a fresh
+    // deploy is never masked by the browser's HTTP cache (e.g. app.css,
+    // which has no cache-busting query string) - but an unchanged file
+    // comes back as a small 304 instead of a full re-download.
+    fetch(req, { cache: 'no-cache' })
       .then((response) => {
-        // Only cache genuinely successful responses.
+        // Only cache genuinely successful responses. Keyed without the
+        // query string (matching the ignoreSearch lookups below) so
+        // ?v=... or ?billing=... URLs overwrite one entry instead of
+        // each adding a new one forever.
         if (response && response.status === 200 && response.type === 'basic') {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+          caches.open(CACHE_NAME).then((cache) => cache.put(url.origin + url.pathname, copy));
         }
         return response;
       })
@@ -91,5 +93,69 @@ self.addEventListener('fetch', (event) => {
           headers: { 'Content-Type': 'text/plain' }
         });
       })
+  );
+});
+
+// --- Background push alerts ---
+// Pushes arrive with no payload (the server never holds message text). The
+// app writes its upcoming alert schedule to IndexedDB, and the latest entry
+// that has come due says how many platforms are ready.
+const PUSH_DB_NAME = 'casino-almanac';
+const PUSH_DB_VERSION = 1;
+const PUSH_STORE = 'state';
+const PUSH_SCHEDULE_KEY = 'push_schedule';
+
+function readPushSchedule() {
+  return new Promise((resolve) => {
+    let request;
+    try {
+      request = indexedDB.open(PUSH_DB_NAME, PUSH_DB_VERSION);
+    } catch (e) {
+      resolve([]);
+      return;
+    }
+    // Same schema assets/storage.js creates, in case the worker opens first.
+    request.onupgradeneeded = () => request.result.createObjectStore(PUSH_STORE);
+    request.onerror = () => resolve([]);
+    request.onsuccess = () => {
+      try {
+        const get = request.result.transaction(PUSH_STORE, 'readonly').objectStore(PUSH_STORE).get(PUSH_SCHEDULE_KEY);
+        get.onsuccess = () => resolve(Array.isArray(get.result) ? get.result : []);
+        get.onerror = () => resolve([]);
+      } catch (e) {
+        resolve([]);
+      }
+    };
+  });
+}
+
+self.addEventListener('push', (event) => {
+  event.waitUntil(readPushSchedule().then((schedule) => {
+    const now = Date.now();
+    let due = null;
+    schedule.forEach((entry) => {
+      if (entry && Number(entry.at) <= now + 60000 && (!due || Number(entry.at) > Number(due.at))) due = entry;
+    });
+    const count = due ? Number(due.count) : 0;
+    const body = count > 0
+      ? `${count} platform${count === 1 ? '' : 's'} ready to collect`
+      : 'Your platforms are ready to collect.';
+    // Same tag as the in-page alert, so an open tab and a push never stack.
+    return self.registration.showNotification('Casino Almanac', {
+      body,
+      tag: 'almanac-ready',
+      renotify: false,
+      icon: 'apple-touch-icon.png'
+    });
+  }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+      const open = windows.find((client) => 'focus' in client);
+      return open ? open.focus() : self.clients.openWindow('./');
+    })
   );
 });

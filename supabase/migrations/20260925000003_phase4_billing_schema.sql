@@ -1,6 +1,6 @@
 -- Phase 4 billing schema, retry-safe webhook ledger, and entitlements.
 
--- pgcrypto is already enabled by 20260925_phase3_community_schema.sql
+-- pgcrypto is already enabled by 20260925000001_phase3_community_schema.sql
 -- (which runs before this migration); gen_random_uuid() below relies on it.
 
 DO $$ BEGIN

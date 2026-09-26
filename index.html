@@ -59,6 +59,7 @@
     <h1 class="landing-title">The Casino<br><span>Almanac</span></h1>
     <p class="landing-subtitle">DAILY DROPS &bull; TIMERS &bull; REDEMPTIONS</p>
     <button class="landing-btn" onclick="dismissLanding()" aria-label="Enter app">ENTER DECK &rarr;</button>
+    <p class="landing-legal">18+ (21+ where required). Not available where sweepstakes play is prohibited. <a href="terms.html">Terms</a> &middot; <a href="privacy.html">Privacy</a></p>
     </div>
   </div>
 
@@ -710,12 +711,16 @@
             <span style="color:#fff; font-size:0.85rem;">Alert me when platforms are ready</span>
             <input type="checkbox" id="notifyToggle" onchange="toggleNotifications(this.checked)" />
           </div>
+          <div class="toggle-row" id="pushRow" style="display:none;">
+            <span style="color:#fff; font-size:0.85rem;">Also alert me when the app is closed</span>
+            <input type="checkbox" id="pushToggle" onchange="toggleBackgroundPush(this.checked)" />
+          </div>
           <div class="time-inputs" id="notifyQuietHours" style="display:none;">
             <label>Quiet from <input type="time" id="notifyStart" onchange="saveNotifyPrefsFromInputs()" /></label>
             <label>Quiet until <input type="time" id="notifyEnd" onchange="saveNotifyPrefsFromInputs()" /></label>
           </div>
           <div class="notify-message" style="margin-top:12px; margin-bottom:0;">
-            Alerts are generated on this device &mdash; there's no server involved. They fire while the app is open or in the background, but if you fully close it from the app switcher, the timer stops until you reopen it.
+            Alerts are generated on this device. They fire while the app is open or in the background; if you fully close it, the timer stops until you reopen it &mdash; unless &ldquo;when the app is closed&rdquo; is on. That uploads only your upcoming alert times and counts (never your deck or history) so the server can wake this device.
           </div>
           <div id="notifyStatus" class="backup-helper" style="text-align:left; margin-top:8px;"></div>
           <button class="btn-dock" style="width:100%; max-width:none; margin-top:8px;" onclick="sendTestNotification()">SEND TEST ALERT</button>
@@ -731,6 +736,7 @@
         Everything is stored locally in this browser only. Backups are the only way to move your data to another device or recover it if browser data is cleared.
         <span id="lastSavedStatus"></span>
       </div>
+      <div class="backup-helper"><a href="privacy.html">Privacy</a> &middot; <a href="terms.html">Terms</a></div>
       <input type="file" id="importBackupInput" accept=".json,application/json" style="display:none;" onchange="importBackup(event)" />
       </div>
       <div class="modal-actions" style="flex-shrink:0; border-top:1px solid var(--glass-border); padding-top:14px;">
@@ -1444,7 +1450,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       'the_casino_almanac_runs_v1',
       'almanac_ledger_v1'
     ];
+    let indexedStateWrites = 0;
     function saveIndexedState(key, value) {
+      indexedStateWrites++;
       if (!window.AlmanacDB) return;
       window.AlmanacDB.set(key, value).catch(() => {
         // localStorage remains the synchronous fallback for older browsers.
@@ -3342,6 +3350,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         };
         normalizeTimerFields(g);
         trackedGames.push(g);
+        trackEvent('platform_tracked', { name: item.name, tier: item.tier || null });
       }
       persist();
       renderCatalogList();
@@ -3630,6 +3639,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     ];
     let catalogRefreshInFlight = false;
     let catalogRefreshErrorShown = false;
+    let lastCatalogText = typeof CATALOG_BOOTSTRAP_TEXT === 'string' ? CATALOG_BOOTSTRAP_TEXT : null;
     // When the live fetch last succeeded this session - shown in bug
     // reports so "is this dev on a stale catalogue?" isn't a guess.
     let catalogLastRefreshedAt = null;
@@ -3697,22 +3707,28 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (catalogRefreshInFlight) return;
       catalogRefreshInFlight = true;
       try {
-        const response = await fetch(`${EXTERNAL_CATALOG_URL}?v=${Date.now()}`, {
-          cache: 'no-store'
-        });
+        // No ?v= cache-buster: 'no-cache' already revalidates with the
+        // server, and a unique URL per poll defeated the 304 path.
+        const response = await fetch(EXTERNAL_CATALOG_URL, { cache: 'no-cache' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const nextCatalog = validateExternalCatalog(await response.json());
-        localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify(nextCatalog));
-        const changed = reconcileLiveCatalog(nextCatalog);
+        const text = await response.text();
+        // Unchanged text is the common case every poll: it skips the parse,
+        // the ~345 KB localStorage write, and the reconcile.
+        if (text !== lastCatalogText) {
+          const nextCatalog = validateExternalCatalog(JSON.parse(text));
+          lastCatalogText = text;
+          // A full localStorage must not block applying the new rules.
+          try { localStorage.setItem(CATALOG_CACHE_KEY, text); } catch (e) {}
+          if (reconcileLiveCatalog(nextCatalog)) {
+            renderGames();
+            renderCatalogList();
+            updateHeroStats();
+            updateDailyRunButton();
+            checkForCatalogUpdates();
+          }
+        }
         catalogRefreshErrorShown = false;
         catalogLastRefreshedAt = new Date();
-        if (changed) {
-          renderGames();
-          renderCatalogList();
-          updateHeroStats();
-          updateDailyRunButton();
-          checkForCatalogUpdates();
-        }
       } catch (error) {
         if (!catalogRefreshErrorShown) {
           catalogRefreshErrorShown = true;
@@ -3726,8 +3742,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     async function hydrateIndexedDBState() {
       if (!window.AlmanacDB) return;
       try {
+        const writesBefore = indexedStateWrites;
         await window.AlmanacDB.migrateLegacy(INDEXED_STATE_KEYS);
         const values = await Promise.all(INDEXED_STATE_KEYS.map(key => window.AlmanacDB.get(key)));
+        // A save that landed mid-read means memory is already newest;
+        // applying these older values would undo it.
+        if (indexedStateWrites !== writesBefore) return;
+        const inSync = INDEXED_STATE_KEYS.every((key, i) =>
+          values[i] === undefined || localStorage.getItem(key) === JSON.stringify(values[i]));
+        if (inSync) return;
         const [storedGames, storedHistory, storedRuns, storedLedger] = values;
         if (Array.isArray(storedGames)) {
           trackedGames = storedGames;
@@ -4476,6 +4499,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const on = prefs.enabled && !paused && Notification.permission === 'granted';
       if (toggle) toggle.checked = on;
       if (quiet) quiet.style.display = on ? 'flex' : 'none';
+      const pushRow = document.getElementById('pushRow');
+      const pushToggle = document.getElementById('pushToggle');
+      if (pushRow) pushRow.style.display = prefs.enabled && Notification.permission === 'granted' ? 'flex' : 'none';
+      if (pushToggle) pushToggle.checked = isPushEnabled();
       const pauseButton = document.getElementById('notifyPauseButton');
       if (pauseButton) {
         pauseButton.textContent = paused ? 'RESUME ALERTS' : 'PAUSE ALERTS FOR 24 HOURS';
@@ -4584,6 +4611,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function scheduleNextNotification() {
+      scheduleLocalNotification();
+      queuePushScheduleSync();
+    }
+
+    function scheduleLocalNotification() {
       if (notifyTimer) { clearTimeout(notifyTimer); notifyTimer = null; }
       if (!notificationsSupported()) return;
       const prefs = getNotifyPrefs();
@@ -4656,6 +4688,179 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } catch (e) { /* notification failed; don't break the app */ }
 
       saveNotifyPrefs({ last: serverNow() });   // this reschedules
+    }
+
+    // --- Background push alerts ---
+    // The local timer above only runs while this page is alive. With
+    // background alerts on, the upcoming alert times are uploaded and the
+    // web-push edge function wakes the device when one comes due. Pushes
+    // carry no payload; the service worker reads the matching count from
+    // the copy of the schedule kept in IndexedDB.
+    const PUSH_PREF_KEY = 'almanac_push_v1';
+    const PUSH_SCHEDULE_KEY = 'push_schedule';
+    let pushSyncTimer = null;
+    let lastPushScheduleJson = null;
+
+    function pushSupported() {
+      return notificationsSupported() && 'serviceWorker' in navigator && 'PushManager' in window;
+    }
+
+    function isPushEnabled() {
+      try { return localStorage.getItem(PUSH_PREF_KEY) === 'true'; } catch (e) { return false; }
+    }
+
+    function setPushEnabled(on) {
+      try { localStorage.setItem(PUSH_PREF_KEY, on ? 'true' : 'false'); } catch (e) {}
+    }
+
+    function base64UrlToBytes(value) {
+      const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = base64 + '==='.slice((base64.length + 3) % 4);
+      return Uint8Array.from(atob(padded), c => c.charCodeAt(0));
+    }
+
+    function sameBytes(a, b) {
+      if (a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+      return true;
+    }
+
+    // Every alert the local scheduler would fire from now on if nothing is
+    // collected in between: each platform's next ready time, moved out of
+    // quiet hours and batched no closer than an hour apart - the same rules
+    // as scheduleLocalNotification(). Collecting changes the answer, and the
+    // open app re-uploads it whenever it does.
+    function buildPushSchedule(now) {
+      const prefs = getNotifyPrefs();
+      if (!prefs.enabled || !notificationsSupported() || Notification.permission !== 'granted') return [];
+      const HOUR = 3600000;
+      const horizon = now + 14 * 24 * HOUR;
+      const startAt = Math.max(now, Number(prefs.pausedUntil) || 0);
+      const readyNow = countReadyNow();
+      const times = trackedGames.map(g => {
+        let readyAt = getCooldownState(g, now).nextReadyAt;
+        if (isSnoozed(g) && readyAt < g.snoozedUntil) readyAt = g.snoozedUntil;
+        return readyAt;
+      }).filter(t => t > now && t < horizon).sort((a, b) => a - b);
+      const schedule = [];
+      let lastFire = Number(prefs.last) || 0;
+      let i = 0;
+      while (i < times.length && schedule.length < 48) {
+        let fireAt = adjustForQuietHours(Math.max(times[i], startAt), prefs.start, prefs.end);
+        if (fireAt < lastFire + HOUR) fireAt = adjustForQuietHours(lastFire + HOUR, prefs.start, prefs.end);
+        while (i < times.length && times[i] <= fireAt) i++;
+        schedule.push({ at: fireAt, count: readyNow + i });
+        lastFire = fireAt;
+      }
+      return schedule;
+    }
+
+    function queuePushScheduleSync() {
+      if (!isPushEnabled()) return;
+      if (pushSyncTimer) clearTimeout(pushSyncTimer);
+      pushSyncTimer = setTimeout(() => {
+        pushSyncTimer = null;
+        syncPushSchedule(false);
+      }, 3000);
+    }
+
+    async function currentPushSubscription() {
+      if (!pushSupported()) return null;
+      const reg = await navigator.serviceWorker.ready;
+      return reg.pushManager.getSubscription();
+    }
+
+    async function syncPushSchedule(force) {
+      if (!isPushEnabled() || !pushSupported()) return;
+      const client = getSupabaseClient();
+      if (!client) return;
+      try {
+        const sub = await currentPushSubscription();
+        if (!sub) return;
+        const schedule = buildPushSchedule(serverNow());
+        if (window.AlmanacDB) window.AlmanacDB.set(PUSH_SCHEDULE_KEY, schedule).catch(() => {});
+        const payloadJson = JSON.stringify([sub.endpoint, schedule]);
+        if (!force && payloadJson === lastPushScheduleJson) return;
+        const session = await ensureSyncSignedIn(client);
+        const { error } = await client.from('push_subscriptions').upsert({
+          user_id: session.user.id,
+          endpoint: sub.endpoint,
+          schedule,
+          next_notify_at: schedule.length ? new Date(schedule[0].at).toISOString() : null
+        }, { onConflict: 'user_id,endpoint' });
+        if (error) throw error;
+        lastPushScheduleJson = payloadJson;
+      } catch (err) {
+        console.warn('Background alert schedule sync failed:', err && err.message ? err.message : err);
+      }
+    }
+
+    async function enableBackgroundPush() {
+      if (!pushSupported()) {
+        const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        showToast(ios
+          ? 'On iPhone and iPad, add the Almanac to your Home Screen first, then turn this on from the installed app.'
+          : "This browser can't receive background alerts.", null, 9000);
+        return false;
+      }
+      if (Notification.permission !== 'granted') {
+        await toggleNotifications(true);
+        if (Notification.permission !== 'granted') return false;
+      }
+      const client = getSupabaseClient();
+      if (!client) {
+        showToast('Background alerts need a connection. Try again when you are online.', null);
+        return false;
+      }
+      try {
+        await ensureSyncSignedIn(client);
+        const { data, error } = await client.functions.invoke('web-push', { method: 'GET' });
+        const publicKey = data && data.publicKey;
+        if (error || !publicKey) {
+          showToast("Background alerts aren't switched on for this server yet.", null, 8000);
+          return false;
+        }
+        const key = base64UrlToBytes(publicKey);
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        // A subscription made under an older server key never receives
+        // pushes signed with a new one.
+        const oldKey = sub && sub.options && sub.options.applicationServerKey;
+        if (sub && oldKey && !sameBytes(new Uint8Array(oldKey), key)) {
+          await sub.unsubscribe();
+          sub = null;
+        }
+        if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+        setPushEnabled(true);
+        await syncPushSchedule(true);
+        trackEvent('push_enabled');
+        showToast('Background alerts are on.', null);
+        return true;
+      } catch (err) {
+        console.warn('Turning on background alerts failed:', err);
+        showToast(`Could not turn on background alerts: ${(err && err.message) || 'unknown error'}`, null, 8000);
+        return false;
+      }
+    }
+
+    async function disableBackgroundPush() {
+      setPushEnabled(false);
+      lastPushScheduleJson = null;
+      try {
+        const sub = await currentPushSubscription();
+        if (!sub) return;
+        const client = getSupabaseClient();
+        if (client) await client.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+        await sub.unsubscribe();
+      } catch (err) {
+        console.warn('Turning off background alerts failed:', err);
+      }
+    }
+
+    async function toggleBackgroundPush(on) {
+      if (on) await enableBackgroundPush();
+      else await disableBackgroundPush();
+      refreshNotifyUI();
     }
 
     // --- Referral management ---
@@ -5195,6 +5400,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         renderSyncEmailUI();
         kickSync();
         syncUserEntitlements();
+        queuePushScheduleSync();
       });
       return supabaseClient;
     }
@@ -5220,7 +5426,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } catch (error) {
         session = null;
       }
-      if (!client || !session || session.user?.is_anonymous) return resetClientEntitlements();
+      // Anonymous sessions are queried too: checkout accepts them, so an
+      // anonymous user can own a paid subscription.
+      if (!client || !session) return resetClientEntitlements();
 
       try {
         const { data, error } = await client.rpc('get_my_entitlement');
@@ -5257,9 +5465,32 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (params.get('billing') !== 'success') return;
       window.history.replaceState({}, document.title, window.location.pathname);
       showToast('Thanks for upgrading! Your Pro access is being activated.');
+      trackEvent('pro_activated');
       // The Stripe webhook may land a moment after the redirect, so give
       // the entitlement row a second chance to come back as pro.
       setTimeout(syncUserEntitlements, 2500);
+      setTimeout(promptBuyerToLinkEmail, 7000);
+    }
+
+    // Pro belongs to the signed-in account. An anonymous account lives only
+    // in this browser, so clearing site data or switching phones would lose
+    // a paid subscription unless an email is linked to recover it.
+    async function promptBuyerToLinkEmail() {
+      const client = getSupabaseClient();
+      if (!client) return;
+      try {
+        const { data } = await client.auth.getSession();
+        const session = data && data.session;
+        if (!session || resolveLinkedEmail(session)) return;
+        showToast('Link an email so you keep Pro if you switch devices or clear this browser.', () => {
+          openSettingsModal();
+          const input = document.getElementById('syncLinkEmailInput');
+          if (input) {
+            input.scrollIntoView({ block: 'center' });
+            input.focus();
+          }
+        }, 15000, 'LINK EMAIL');
+      } catch (e) {}
     }
 
     // supabase-js throws a FunctionsHttpError (or FunctionsRelayError /
@@ -5307,6 +5538,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const body = { returnUrl: billingReturnUrl() };
         if (priceId) body.priceId = priceId;
         if (email) body.email = email;
+        trackEvent('checkout_started', { plan: priceId || 'monthly' });
         const { data, error } = await client.functions.invoke('create-checkout-session', { body });
         if (error || !data?.url) {
           const { status, body: errBody } = await extractFunctionsErrorDetail(error);
@@ -5315,9 +5547,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             || (error && error.message)
             || 'Unable to start checkout.';
           console.error('Checkout session failure:', status, errBody || error);
+          if (status === 409) {
+            showToast(detail);
+            syncUserEntitlements();
+            return;
+          }
           showToast(status ? `Checkout failed (${status}): ${detail}` : `Checkout failed: ${detail}`);
           return;
         }
+        await flushAnalytics();
         window.location.href = data.url;
       } catch (error) {
         console.error('Checkout session failure:', error);
@@ -6040,6 +6278,68 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return id;
     }
 
+    // --- Product analytics (first-party) ---
+    // A fixed set of funnel events so retention and conversion can be
+    // measured (docs/analytics-queries.sql). Sent only to this app's own
+    // Supabase, only while Cloud Sync is on - the switch that already governs
+    // anything leaving this device - and never deck contents, emails or notes.
+    const ANALYTICS_EVENTS = new Set([
+      'app_open', 'platform_tracked', 'daily_run_started', 'daily_run_finished',
+      'push_enabled', 'checkout_started', 'pro_activated'
+    ]);
+    let analyticsQueue = [];
+    let analyticsTimer = null;
+
+    function trackEvent(name, props) {
+      if (!ANALYTICS_EVENTS.has(name) || !isSyncEnabled()) return;
+      analyticsQueue.push({ name, props: props && typeof props === 'object' ? props : {} });
+      if (analyticsQueue.length > 50) analyticsQueue = analyticsQueue.slice(-50);
+      if (!analyticsTimer) analyticsTimer = setTimeout(flushAnalytics, 10000);
+    }
+
+    // Best-effort: a failed batch is dropped rather than retried, so a bad
+    // connection never builds a backlog or competes with real sync traffic.
+    async function flushAnalytics() {
+      if (analyticsTimer) { clearTimeout(analyticsTimer); analyticsTimer = null; }
+      if (!analyticsQueue.length || !isSyncEnabled()) return;
+      const client = getSupabaseClient();
+      if (!client) return;
+      try {
+        const { data } = await client.auth.getSession();
+        const session = data && data.session;
+        if (!session) {
+          analyticsTimer = setTimeout(flushAnalytics, 30000);
+          return;
+        }
+        const batch = analyticsQueue.splice(0);
+        const deviceId = getDeviceId();
+        const { error } = await client.from('app_events').insert(batch.map(e => ({
+          user_id: session.user.id,
+          device_id: deviceId,
+          name: e.name,
+          props: e.props
+        })));
+        if (error) console.warn('Analytics batch dropped:', error.message);
+      } catch (err) {
+        console.warn('Analytics batch dropped:', err && err.message ? err.message : err);
+      }
+    }
+
+    // Where this visit came from: links into the app (SEO pages, shares) carry
+    // ?src=...; it is read once and removed so reloads and bookmarks stay clean.
+    function consumeSourceParam() {
+      let src = null;
+      try {
+        const url = new URL(window.location.href);
+        src = url.searchParams.get('src');
+        if (src !== null) {
+          url.searchParams.delete('src');
+          window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+        }
+      } catch (e) {}
+      return src && /^[a-z0-9_-]{1,32}$/i.test(src) ? src.toLowerCase() : null;
+    }
+
     function getSyncMeta() {
       try { return JSON.parse(localStorage.getItem(SYNC_META_KEY)) || {}; } catch (e) { return {}; }
     }
@@ -6252,6 +6552,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         trackedGames = data.games;
         trackedGames.forEach(normalizeTimerFields);
         try { localStorage.setItem('the_casino_almanac_v7', JSON.stringify(trackedGames)); } catch (e) {}
+        saveIndexedState('the_casino_almanac_v7', trackedGames);
         renderGames();
         renderTagChips();
         updateHeroStats();
@@ -6462,6 +6763,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function syncAfterHistoryChange() {
       streakCache = null;
       try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
+      saveIndexedState('the_casino_almanac_history_v1', collectionHistory);
       if (document.getElementById('statsModal').classList.contains('open')) renderStats();
     }
 
@@ -6684,6 +6986,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     function recordDailyRunStart() {
       currentDailyRunStartTime = serverNow();
+      trackEvent('daily_run_started', { queue: dailyRunQueue.length });
     }
 
     function recordDailyRunEnd() {
@@ -6694,6 +6997,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           collected: dailyRunStats.collected,
           skipped: dailyRunStats.skipped
         });
+        trackEvent('daily_run_finished', { collected: dailyRunStats.collected, skipped: dailyRunStats.skipped });
         while (dailyRunsHistory.length > 200) dailyRunsHistory.shift();
         try {
           localStorage.setItem('the_casino_almanac_runs_v1', JSON.stringify(dailyRunsHistory));
@@ -8774,6 +9078,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     applyTheme(getActiveThemeId());
     initSync();
     syncUserEntitlements();
+    trackEvent('app_open', {
+      src: consumeSourceParam(),
+      standalone: window.matchMedia ? window.matchMedia('(display-mode: standalone)').matches : false,
+      tracked: trackedGames.length
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flushAnalytics();
+    });
     consumeBillingReturnParam();
     setTimeout(checkModeratorAccess, 1000);
     // Deliberately after the first paint, not before: this is a courtesy

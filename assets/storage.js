@@ -43,8 +43,9 @@
         reject(error);
         return;
       }
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error || new Error('IndexedDB request failed'));
+      // A request's success is not a commit; a write can still abort (quota).
+      tx.oncomplete = () => resolve(request.result);
+      tx.onerror = tx.onabort = () => reject(tx.error || request.error || new Error('IndexedDB transaction failed'));
     }));
   }
 

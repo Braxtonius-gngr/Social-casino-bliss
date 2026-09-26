@@ -37,6 +37,21 @@ function mapStatus(status: string): string {
   return supportedStatuses.has(status) ? status : "canceled";
 }
 
+// Stripe does not guarantee event order, so handlers re-read the live
+// subscription instead of trusting the event payload - an older
+// "incomplete" update landing after "active" can't downgrade a payer.
+function subscriptionFields(subscription: Stripe.Subscription) {
+  const status = mapStatus(subscription.status);
+  return {
+    stripe_subscription_id: subscription.id,
+    tier: status === "active" || status === "trialing" ? "pro" : "free",
+    status,
+    current_period_start: safeIsoDate(subscription.current_period_start),
+    current_period_end: safeIsoDate(subscription.current_period_end),
+    cancel_at_period_end: subscription.cancel_at_period_end,
+  };
+}
+
 // Stripe subscription period fields are occasionally absent/zero (e.g. some
 // incomplete/trialing edge cases, or fields that don't apply to a given
 // status), and `new Date(NaN * 1000)` or similar throws "Invalid time value"
@@ -151,26 +166,18 @@ serve(async (req) => {
         );
       }
       if (!customerId) throw new Error("Checkout session had no customer.");
-
-      let periodStart: string | null = null;
-      let periodEnd: string | null = null;
-      let cancelAtPeriodEnd = false;
-      if (subscriptionId) {
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-        periodStart = safeIsoDate(subscription.current_period_start);
-        periodEnd = safeIsoDate(subscription.current_period_end);
-        cancelAtPeriodEnd = subscription.cancel_at_period_end;
+      if (!subscriptionId) {
+        // Subscription-mode checkouts always carry one; without it there is
+        // nothing to entitle, and customer.subscription.created will follow.
+        console.warn("Checkout session completed without a subscription:", checkoutSession.id);
+        return jsonResponse({ received: true }, 200, cors);
       }
 
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
       const { error: upsertError } = await supabase.from("user_subscriptions").upsert({
         user_id: userId,
         stripe_customer_id: customerId,
-        stripe_subscription_id: subscriptionId ?? null,
-        tier: "pro",
-        status: "active",
-        current_period_start: periodStart,
-        current_period_end: periodEnd,
-        cancel_at_period_end: cancelAtPeriodEnd,
+        ...subscriptionFields(subscription),
         updated_at: new Date().toISOString(),
       });
       if (upsertError) {
@@ -184,7 +191,9 @@ serve(async (req) => {
       event.type === "customer.subscription.created" ||
       event.type === "customer.subscription.updated"
     ) {
-      const subscription = payload as unknown as Stripe.Subscription;
+      const subscription = await stripe.subscriptions.retrieve(
+        (payload as unknown as Stripe.Subscription).id,
+      );
       const customerId = typeof subscription.customer === "string"
         ? subscription.customer
         : subscription.customer.id;
@@ -203,16 +212,10 @@ serve(async (req) => {
           `Subscription owner could not be resolved (customer=${customerId}, subscription=${subscription.id}).`,
         );
       }
-      const status = mapStatus(subscription.status);
       const { error: upsertError } = await supabase.from("user_subscriptions").upsert({
         user_id: userId,
         stripe_customer_id: customerId,
-        stripe_subscription_id: subscription.id,
-        tier: status === "active" || status === "trialing" ? "pro" : "free",
-        status,
-        current_period_start: safeIsoDate(subscription.current_period_start),
-        current_period_end: safeIsoDate(subscription.current_period_end),
-        cancel_at_period_end: subscription.cancel_at_period_end,
+        ...subscriptionFields(subscription),
         updated_at: new Date().toISOString(),
       });
       if (upsertError) {

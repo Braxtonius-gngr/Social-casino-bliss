@@ -59,8 +59,10 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user || !user.email) {
-      throw new Error("Email linking required before managing Pro.");
+    // No email requirement: checkout accepts anonymous users, so they must
+    // be able to manage (and cancel) what they bought.
+    if (authError || !user) {
+      throw new Error("Not authenticated. Please reload and try again.");
     }
     const body = await req.json();
     const returnUrl = validReturnUrl(body?.returnUrl);

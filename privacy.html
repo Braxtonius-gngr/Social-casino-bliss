@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy | The Casino Almanac</title>
+  <meta name="description" content="What The Casino Almanac stores, where it goes, and how to turn it off.">
+  <style>
+    body { margin: 0; background: #050507; color: #F8F9FA; font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 680px; margin: 0 auto; padding: 16px; }
+    a { color: #D4AF37; }
+    h1 { font-size: 1.6rem; line-height: 1.25; }
+    h2 { font-size: 1.1rem; margin-top: 28px; }
+    .muted { color: #8A8D93; }
+  </style>
+</head>
+<body>
+  <main>
+    <p><a href="index.html">&larr; The Casino Almanac</a></p>
+    <h1>Privacy</h1>
+    <p class="muted">Last updated 2026-09-26</p>
+    <p>The Casino Almanac is a tracker for sweepstakes casino daily bonuses. It works without an account, keeps your data on your device first, and sends things off it only for the features below.</p>
+
+    <h2>Stored on your device</h2>
+    <p>Your tracked platforms, timers, tags, notes, collection history, Daily Run history, ledger and settings are kept in this browser (localStorage and IndexedDB). Clearing site data removes them unless Cloud Sync has a copy.</p>
+
+    <h2>Cloud Sync (on by default, can be turned off in Settings)</h2>
+    <p>Cloud Sync signs you in with an anonymous account and stores a copy of your tracked platforms and collection history so they survive a cleared browser and can move between devices. If you link an email, it is stored so you can recover the account; we use it only for sign-in and account recovery.</p>
+
+    <h2>Usage events (only while Cloud Sync is on)</h2>
+    <p>A short, fixed list of events is recorded against your anonymous account to measure whether the app is working: opening the app (and which link brought you, such as a platform guide page), adding a platform from the catalogue, starting and finishing a Daily Run, turning on background alerts, and starting or completing an upgrade. Events never include your notes, emails or deck contents. Turning off Cloud Sync stops them.</p>
+
+    <h2>Background alerts (off unless you turn them on)</h2>
+    <p>If you turn on alerts &ldquo;when the app is closed&rdquo;, your browser&rsquo;s push address and your upcoming alert times and counts (for example &ldquo;3 platforms ready at 7:00 PM&rdquo;) are stored so the server can wake your device. Turning the setting off deletes that record.</p>
+
+    <h2>Community features (only if you use them)</h2>
+    <p>Drops, votes, reports and redemption-speed reports you submit are stored with your account. Published drops and aggregated speed statistics are shown to everyone; who submitted them is visible only to moderators.</p>
+
+    <h2>Payments</h2>
+    <p>Pro subscriptions are processed by <a href="https://stripe.com/privacy" rel="noopener noreferrer">Stripe</a>. We never see your card details. We store your Stripe customer and subscription IDs and your subscription status, and pass your email to Stripe when we have one.</p>
+
+    <h2>Feedback</h2>
+    <p>Messages sent with the in-app Feedback button, including the technical details it attaches, are delivered to the operator&rsquo;s private Discord channel.</p>
+
+    <h2>Services involved</h2>
+    <p>Supabase (database, sign-in and server functions), Stripe (payments), your browser&rsquo;s push service (background alerts), jsDelivr (serves the Supabase client library), Google Fonts, Discord (feedback) and the web host serving these pages. Links to casino platforms may carry referral codes; what those sites collect is governed by their own policies.</p>
+
+    <h2>Your choices</h2>
+    <p>Turn off Cloud Sync or background alerts in Settings at any time, export or delete your local data from Settings, and send a deletion request for your cloud data through the Feedback button.</p>
+  </main>
+</body>
+</html>

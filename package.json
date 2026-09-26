@@ -3,10 +3,12 @@
   "private": true,
   "description": "Quality-check scripts for this build-free static site. No runtime dependencies - see scripts/.",
   "scripts": {
-    "check": "npm run check:syntax && npm run check:refs && npm run check:catalog",
+    "check": "npm run check:syntax && npm run check:refs && npm run check:catalog && npm run check:seo",
     "check:syntax": "node scripts/check-syntax.js",
     "check:refs": "node scripts/check-references.js",
     "check:catalog": "node scripts/validate-catalog.js",
-    "build:seo": "node scripts/generate-seo-pages.js"
+    "check:seo": "node scripts/generate-seo-pages.js --check",
+    "build:seo": "node scripts/generate-seo-pages.js",
+    "setup:push": "node scripts/setup-web-push.js"
   }
 }
