@@ -155,6 +155,17 @@ approve/reject actions use the moderator-only RPCs in
 `supabase/migrations/20260925000002_phase3_moderation_rpc.sql`. Browser roles never
 receive direct raw-table moderation access.
 
+Above moderators sits one **owner** (`community_profiles.is_owner`, set by
+migration to the site's admin account; the migration refuses to apply until
+that email is linked and confirmed in the app, rather than committing with
+no owner). The owner has every moderator power,
+is the only account that can make or unmake moderators (the Moderators panel
+at the bottom of the staff console, by the email the person linked and
+confirmed in Settings; an anonymous device can't be one), and is protected
+by a trigger: nothing but a migration can demote,
+mute or delete the owner's row, and no second owner can be set. Self-serve
+deletion refuses the owner and moderators.
+
 **Why not ESLint?** This app has no build step: 130+ inline `onclick="..."`
 handlers in `index.html` call plain global functions defined in a classic
 (non-module) `<script>` block. ESLint only gives meaningful coverage of that

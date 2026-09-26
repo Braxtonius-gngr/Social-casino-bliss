@@ -591,6 +591,17 @@
         <button class="btn-dock mod-pill" id="pillReports" onclick="switchModQueue('reports')">ABUSE REPORTS (<span id="countReports">0</span>)</button>
       </div>
       <div id="modQueueFeed"><div class="drops-note">Loading moderation items...</div></div>
+      <!-- Owner only: who moderates. Moderators are named by the email they
+           linked in Settings, so an anonymous device can't be one. -->
+      <div id="ownerPanel" class="glass-panel" style="display:none; padding:16px; margin-top:16px;">
+        <h3 style="margin:0 0 5px;">Moderators <span class="pro-tag">OWNER</span></h3>
+        <p class="drops-note" style="margin:0 0 10px;">Moderators see this console and can approve or reject community submissions. Only you can add or remove them. The owner account can't be removed.</p>
+        <div id="moderatorList"><div class="drops-note">Loading moderators...</div></div>
+        <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+          <input type="email" id="modEmailInput" class="catalog-search glass-panel" style="margin-bottom:0; flex:1; min-width:200px;" placeholder="Their linked email" aria-label="Email of the account to make a moderator" autocomplete="off" />
+          <button type="button" class="btn-primary" id="btnAddModerator" onclick="addModerator()">ADD MODERATOR</button>
+        </div>
+      </div>
     </section>
   </div>
 
@@ -6444,6 +6455,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         kickSync();
         syncUserEntitlements();
         queuePushScheduleSync();
+        // Staff access follows the account: a moderator or the owner who
+        // recovers their account after boot gets the tab without a reload,
+        // and signing out takes it away again.
+        setTimeout(checkModeratorAccess, 0);
       });
       return supabaseClient;
     }
@@ -7048,18 +7063,145 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (error) throw error;
     }
 
+    // Shows or hides the Staff tab for the current account. Runs at boot and
+    // again on every auth change, so it has to be able to take the tab away
+    // too (and leave the staff view if the account just lost it). Each run
+    // bumps a generation; a check still in flight when the next auth change
+    // starts a newer one drops its answer, so a slow reply about the previous
+    // account can't re-show staff tools to the one signed in now.
+    let accessCheckGen = 0;
+
     async function checkModeratorAccess() {
       const client = getSupabaseClient();
       const tab = document.getElementById('tabModDashboard');
       if (!client || !tab) return false;
+      const gen = ++accessCheckGen;
+      let allowed = false;
       try {
         const { data, error } = await client.rpc('is_moderator');
-        if (error || data !== true) return false;
-        tab.style.display = '';
+        allowed = !error && data === true;
+      } catch (error) {
+        allowed = false;
+      }
+      if (gen !== accessCheckGen) return false;
+      tab.style.display = allowed ? '' : 'none';
+      if (allowed) {
+        checkOwnerAccess(gen);
+      } else {
+        hideOwnerTools();
+        if (currentTab === 'moderation') switchMainTab('games', document.getElementById('tabPlatforms'));
+      }
+      return allowed;
+    }
+
+    function hideOwnerTools() {
+      isOwnerAccount = false;
+      renderedModerators = [];
+      const panel = document.getElementById('ownerPanel');
+      if (panel) panel.style.display = 'none';
+      const list = document.getElementById('moderatorList');
+      if (list) list.innerHTML = '';
+    }
+
+    // --- Owner tools: the moderator list ---
+    // The owner is the one account above moderators (community_profiles
+    // .is_owner, set by migration). Only it can make or unmake moderators,
+    // through owner-only RPCs; the panel simply stays hidden for everyone else.
+    let isOwnerAccount = false;
+
+    async function checkOwnerAccess(gen = accessCheckGen) {
+      const client = getSupabaseClient();
+      const panel = document.getElementById('ownerPanel');
+      if (!client || !panel) return false;
+      let owner = false;
+      try {
+        const { data, error } = await client.rpc('is_owner');
+        owner = !error && data === true;
+      } catch (error) {
+        owner = false;
+      }
+      if (gen !== accessCheckGen) return false;
+      isOwnerAccount = owner;
+      panel.style.display = owner ? '' : 'none';
+      if (owner) loadModerators(gen);
+      else hideOwnerTools();
+      return owner;
+    }
+
+    async function loadModerators(gen = accessCheckGen) {
+      const list = document.getElementById('moderatorList');
+      const client = getSupabaseClient();
+      if (!list || !client) return;
+      try {
+        const { data, error } = await client.rpc('list_moderators');
+        if (gen !== accessCheckGen) return;
+        if (error) throw error;
+        renderModerators(Array.isArray(data) ? data : []);
+      } catch (error) {
+        if (gen !== accessCheckGen) return;
+        list.innerHTML = `<div class="drops-note">${escHtml(friendlyOwnerError(error))}</div>`;
+      }
+    }
+
+    let renderedModerators = [];
+
+    function renderModerators(rows) {
+      const list = document.getElementById('moderatorList');
+      renderedModerators = rows;
+      if (!rows.length) {
+        list.innerHTML = '<div class="drops-note">No moderators yet.</div>';
+        return;
+      }
+      list.innerHTML = rows.map((row, i) => `<div class="ledger-row" style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
+        <div>
+          <strong>${escHtml(row.email || row.public_alias || 'Anonymous device')}</strong>
+          ${row.is_owner ? '<span class="pro-tag">OWNER</span>' : ''}
+          ${row.is_flagged ? '<span class="drop-tag unknown">MUTED</span>' : ''}
+          ${row.email ? `<div class="ledger-meta">${escHtml(row.public_alias || '')}</div>` : ''}
+        </div>
+        ${row.is_owner || !row.email ? '' : `<button type="button" class="btn-dock" onclick="removeModerator(${i})" aria-label="Remove ${escHtml(row.email)} as a moderator">REMOVE</button>`}
+      </div>`).join('');
+    }
+
+    function friendlyOwnerError(error) {
+      const message = (error && error.message) || '';
+      if (/NO_SUCH_EMAIL/.test(message)) return 'No account has linked and confirmed that email yet. Ask them to use Settings → Link Email and open the confirmation link first.';
+      if (/OWNER_ACCOUNT/.test(message)) return "That's the owner account; it is always a moderator.";
+      if (/OWNER_ONLY/.test(message)) return 'Only the owner can manage moderators.';
+      return message || 'Moderator change failed.';
+    }
+
+    async function setModerator(email, on) {
+      const client = getSupabaseClient();
+      if (!client) { showToast('Managing moderators needs a connection.', null); return false; }
+      const button = document.getElementById('btnAddModerator');
+      if (button) button.disabled = true;
+      try {
+        const { error } = await client.rpc('set_moderator', { p_email: email, p_on: on });
+        if (error) throw error;
+        showToast(on ? `${email} is now a moderator.` : `${email} is no longer a moderator.`, null);
+        await loadModerators();
         return true;
       } catch (error) {
+        showToast(friendlyOwnerError(error), null, 8000);
         return false;
+      } finally {
+        if (button) button.disabled = false;
       }
+    }
+
+    async function addModerator() {
+      const input = document.getElementById('modEmailInput');
+      const email = (input && input.value || '').trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Enter the email they linked in Settings.', null); return; }
+      if (await setModerator(email, true) && input) input.value = '';
+    }
+
+    async function removeModerator(i) {
+      const row = renderedModerators[i];
+      if (!row || !row.email || row.is_owner) return;
+      if (!confirm(`Remove ${row.email} as a moderator?`)) return;
+      await setModerator(row.email, false);
     }
 
     function switchModQueue(queue) {
@@ -7805,6 +7947,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const message = (err && err.message) || '';
         if (/ACTIVE_SUBSCRIPTION/.test(message)) {
           showToast('Cancel your Pro subscription in Manage Billing first. Once it has ended, you can delete everything here.', null, 9000);
+        } else if (/OWNER_ACCOUNT/.test(message)) {
+          showToast("The owner account can't be deleted from here.", null);
         } else if (/MODERATOR_ACCOUNT/.test(message)) {
           showToast("Moderator accounts can't be deleted from here.", null);
         } else {
