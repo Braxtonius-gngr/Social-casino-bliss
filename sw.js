@@ -110,6 +110,8 @@ const PUSH_TEST_KEY = 'push_test';
 // ids of drops already shown go under DROP_SEEN_KEY.
 const DROP_STATE_KEY = 'drop_alerts';
 const DROP_SEEN_KEY = 'drop_seen';
+// Mirrors MULTI_LABEL_SLDS in utils/classifyDropText.js.
+const MULTI_LABEL_SLDS = new Set(['co', 'com', 'net', 'org', 'gov', 'edu', 'ac', 'ltd', 'plc']);
 // Announced drops this recent count as new. Longer than the push's own
 // time-to-live (six hours), so a delayed delivery still finds its drop.
 const DROP_WINDOW_MS = 8 * 3600000;
@@ -200,7 +202,9 @@ function dropKeys(drop) {
   }
   host = host.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   const parts = host.split('.').filter(Boolean);
-  if (parts.length >= 2) keys.push(`site:${parts.slice(-2).join('.')}`);
+  // example.co.uk is its own site, not "co.uk" (same rule as rootOf()).
+  const take = parts.length >= 3 && parts[parts.length - 1].length === 2 && MULTI_LABEL_SLDS.has(parts[parts.length - 2]) ? 3 : 2;
+  if (parts.length >= 2) keys.push(`site:${parts.slice(-take).join('.')}`);
   return keys;
 }
 

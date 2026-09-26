@@ -175,6 +175,15 @@ const TESTS = [
     expect(sw.shown.map(n => n.body), ["Open the Almanac to see what's new."], 'neutral note');
   }],
 
+  ['sites under a two-part country suffix match only themselves', async () => {
+    const state = { ...STATE, keys: ['site:luckycasino.co.uk'] };
+    const mine = { ...DROP, id: 'uk1', platform_name: 'Lucky', root_domain: 'luckycasino.co.uk' };
+    const other = { ...DROP, id: 'uk2', platform_name: 'Other UK', root_domain: 'otherplace.co.uk' };
+    const sw = loadWorker({ idb: fakeIndexedDB({ drop_alerts: state }), rows: [other, mine] });
+    await sw.push();
+    expect(sw.shown.map(n => n.title), ['New drop: Lucky'], 'only the tracked .co.uk site');
+  }],
+
   ['drops announced before alerts were turned on are left out', async () => {
     const since = NOW - HOUR;
     const idb = fakeIndexedDB({ drop_alerts: { ...STATE, since } });

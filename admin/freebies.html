@@ -301,13 +301,14 @@
         showStatus('Saved.');
       } else {
         const notify = document.getElementById('fNotify').checked && row.active;
-        const { data, error } = await client.from('public_freebies').insert(row).select('id').single();
+        const { data, error } = await client.from('public_freebies').insert(row).select('*').single();
         if (error) throw error;
         showStatus('Added.');
         if (notify && data) {
+          // Announced from the inserted row itself, so a failed list
+          // refresh can't skip the alert that was ticked.
           resetForm();
-          await loadEntries();
-          await announceEntry(data.id, true);
+          await announceEntry(data.id, true, data);
           return;
         }
       }
@@ -361,8 +362,12 @@
   // The web-push function stamps announced_at when it sends. RESEND (for a
   // send that failed or timed out part-way) is safe to repeat: devices that
   // already showed the drop skip it.
-  async function announceEntry(id, skipConfirm) {
-    const r = entries.find((e) => e.id === id);
+  // Where a send that stopped at its limit got to, per entry, so RESEND
+  // carries on from there instead of starting over.
+  const announceResume = {};
+
+  async function announceEntry(id, skipConfirm, known) {
+    const r = known || entries.find((e) => e.id === id);
     if (!r) return;
     const resend = !!r.announced_at;
     const question = resend
@@ -370,12 +375,16 @@
       : `Alert every device that tracks ${r.platform_name} and turned on drop alerts?`;
     if (!skipConfirm && !confirm(question)) return;
     showStatus(`Sending alerts for ${r.platform_name}...`);
-    const { data, error } = await client.functions.invoke('web-push', { body: resend ? { announce: id, resend: true } : { announce: id } });
+    const body = resend ? { announce: id, resend: true } : { announce: id };
+    if (resend && announceResume[id]) body.after = announceResume[id];
+    const { data, error } = await client.functions.invoke('web-push', { body });
     if (error) {
       showStatus('Alert failed: ' + await functionErrorMessage(error), true);
     } else {
       const sent = data && typeof data.sent === 'number' ? data.sent : 0;
       const matched = data && typeof data.matched === 'number' ? data.matched : 0;
+      if (data && data.truncated && data.next_after) announceResume[id] = data.next_after;
+      else delete announceResume[id];
       const more = data && data.truncated ? ' It stopped at its limit: press RESEND in a minute to reach the rest.' : '';
       showStatus((matched
         ? `Alerted ${sent} of ${matched} device${matched === 1 ? '' : 's'} tracking ${r.platform_name}.`

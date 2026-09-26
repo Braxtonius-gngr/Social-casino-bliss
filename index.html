@@ -5225,13 +5225,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const schedule = buildPushSchedule(serverNow());
         const dropOn = isDropAlertsEnabled();
         const dropKeys = dropOn ? dropKeysFor(trackedGames) : [];
+        let dropStateSaved = !dropOn;
         if (window.AlmanacDB) {
           window.AlmanacDB.set(PUSH_SCHEDULE_KEY, schedule).catch(() => {});
           // What the service worker needs to fetch and match an announced
           // drop: the public feed's address and key (both already public).
-          window.AlmanacDB.set(DROP_ALERT_STATE_KEY, dropOn
+          // Saved before the opt-in is uploaded, so a drop push can never
+          // arrive before this device knows what to look for.
+          dropStateSaved = await window.AlmanacDB.set(DROP_ALERT_STATE_KEY, dropOn
             ? { on: true, keys: dropKeys, since: dropAlertsSince(), url: SUPABASE_URL, key: SUPABASE_ANON_KEY }
-            : { on: false }).catch(() => {});
+            : { on: false }).then(() => true, () => false);
         }
         // Platform names stay in this device's copy, where the service worker
         // reads them for a digest; the server only ever gets times and counts
@@ -5246,7 +5249,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           schedule: uploaded,
           next_notify_at: uploaded.length ? new Date(uploaded[0].at).toISOString() : null
         };
-        if (!dropColumnsMissing) Object.assign(row, { drop_alerts: dropOn, drop_keys: dropKeys });
+        // Without a saved copy the service worker couldn't show a drop, so
+        // the server isn't told to send any.
+        const optedIn = dropOn && dropStateSaved;
+        if (!dropColumnsMissing) Object.assign(row, { drop_alerts: optedIn, drop_keys: optedIn ? dropKeys : [] });
         const upsert = () => client.from('push_subscriptions').upsert(row, { onConflict: 'user_id,endpoint' });
         let { error } = await upsert();
         if (error && !dropColumnsMissing && isMissingDropColumns(error)) {

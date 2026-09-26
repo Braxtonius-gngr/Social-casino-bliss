@@ -119,3 +119,15 @@ Deno.test("an account-tied offer never carries its link", () => {
   assert(drops[0].claim_url === null, String(drops[0].claim_url));
   assert(drops[0].is_account_tied === true, "flag kept");
 });
+
+Deno.test("root domains keep two-part country suffixes whole", () => {
+  const { drops } = cleanDrops({
+    drops: [{
+      platform_name: "Lucky", catalog_match: null, bucket: "A_code", code: "UK5", claim_url: null,
+      root_domain: "https://www.luckycasino.co.uk/promo", reward: null, expires_at: null, terms: null,
+      is_account_tied: false, confidence: "high", evidence: "UK5",
+    }],
+    unreadable: null,
+  }, []);
+  assert(drops[0].root_domain === "luckycasino.co.uk", String(drops[0].root_domain));
+});

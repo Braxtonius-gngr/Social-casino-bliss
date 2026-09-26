@@ -157,7 +157,13 @@ function rootDomain(value: string | null): string | null {
   let host = value.toLowerCase().replace(/^https?:\/\//, "").replace(/[/?#].*$/, "");
   host = host.replace(/^(www|m|play|app)\./, "");
   if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(host)) return null;
-  return host.split(".").slice(-2).join(".");
+  // example.co.uk stays whole (same rule as web-push/drops.ts).
+  const parts = host.split(".");
+  const take = parts.length >= 3 && parts[parts.length - 1].length === 2 &&
+      ["co", "com", "net", "org", "gov", "edu", "ac", "ltd", "plc"].includes(parts[parts.length - 2])
+    ? 3
+    : 2;
+  return parts.slice(-take).join(".");
 }
 
 // The structured answer is schema-valid already; this makes it safe to drop

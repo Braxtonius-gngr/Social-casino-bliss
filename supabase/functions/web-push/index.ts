@@ -108,7 +108,7 @@ serve(async (req) => {
   // drop announced over a minute ago; devices that already showed it skip
   // it, so a repeat only reaches the ones it missed. A failed lookup hands
   // the claim back.
-  async function announceDrop(id: string, resend: boolean) {
+  async function announceDrop(id: string, resend: boolean, resumeAfter: string | null) {
     if (!UUID_RE.test(id)) return jsonResponse({ error: "Unknown drop." }, 400, cors);
     const nowIso = new Date().toISOString();
     const { data: before } = await supabase.from("public_freebies").select("announced_at").eq("id", id).maybeSingle();
@@ -145,12 +145,12 @@ serve(async (req) => {
     // Paged by id rather than offset: send() deletes dead subscriptions as
     // it goes, which would shift an offset and skip rows.
     // Bounded so one call finishes inside the function's time limit; when
-    // it stops at the bound it says so, and a RESEND picks up the rest
-    // (devices that already showed the drop skip it).
+    // it stops at the bound it says so and returns where it got to, and a
+    // RESEND passing that cursor carries on from there.
     const PAGE = 1000;
     const MAX_PAGES = 50;
     let truncated = false;
-    let after = "00000000-0000-0000-0000-000000000000";
+    let after = resend && resumeAfter && UUID_RE.test(resumeAfter) ? resumeAfter : "00000000-0000-0000-0000-000000000000";
     for (let page = 0; page < MAX_PAGES; page++) {
       const { data, error } = await supabase
         .from("push_subscriptions")
@@ -179,8 +179,8 @@ serve(async (req) => {
       after = rows[rows.length - 1].id;
       if (page === MAX_PAGES - 1) truncated = true;
     }
-    console.log("announce", drop.id, keys, tally, truncated ? "truncated" : "");
-    return jsonResponse({ keys, ...tally, truncated }, 200, cors);
+    console.log("announce", drop.id, keys, tally, truncated ? `truncated at ${after}` : "");
+    return jsonResponse({ keys, ...tally, truncated, next_after: truncated ? after : null }, 200, cors);
   }
 
   const cronSecret = Deno.env.get("PUSH_CRON_SECRET") ?? "";
@@ -197,7 +197,7 @@ serve(async (req) => {
       if (user.is_anonymous || (user.email ?? "").toLowerCase() !== ADMIN_EMAIL) {
         return jsonResponse({ error: "Only the admin can announce drops." }, 403, cors);
       }
-      return await announceDrop(String(body.announce), body.resend === true);
+      return await announceDrop(String(body.announce), body.resend === true, typeof body.after === "string" ? body.after : null);
     }
     const { data: own, error: ownError } = await supabase
       .from("push_subscriptions")
