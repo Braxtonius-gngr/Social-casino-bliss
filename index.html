@@ -6769,6 +6769,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (error) throw error;
         renderModerators(Array.isArray(data) ? data : []);
       } catch (error) {
+        if (gen !== accessCheckGen) return;
         list.innerHTML = `<div class="drops-note">${escHtml(friendlyOwnerError(error))}</div>`;
       }
     }
