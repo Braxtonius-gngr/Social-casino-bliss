@@ -684,6 +684,7 @@ const TESTS = [
     });
     await page.waitFor(() => document.getElementById('tabModDashboard').style.display === 'none');
     expect(await page.evaluate(() => currentTab), 'games', 'left the staff view');
+    expect(await page.evaluate(() => document.getElementById('moderatorList').innerHTML), '', 'moderator list cleared');
   }],
 
   ['deletes the cloud account and stops syncing', async page => {

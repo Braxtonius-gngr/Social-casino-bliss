@@ -6696,11 +6696,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     // Shows or hides the Staff tab for the current account. Runs at boot and
     // again on every auth change, so it has to be able to take the tab away
-    // too (and leave the staff view if the account just lost it).
+    // too (and leave the staff view if the account just lost it). Each run
+    // bumps a generation; a check still in flight when the next auth change
+    // starts a newer one drops its answer, so a slow reply about the previous
+    // account can't re-show staff tools to the one signed in now.
+    let accessCheckGen = 0;
+
     async function checkModeratorAccess() {
       const client = getSupabaseClient();
       const tab = document.getElementById('tabModDashboard');
       if (!client || !tab) return false;
+      const gen = ++accessCheckGen;
       let allowed = false;
       try {
         const { data, error } = await client.rpc('is_moderator');
@@ -6708,16 +6714,24 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } catch (error) {
         allowed = false;
       }
+      if (gen !== accessCheckGen) return false;
       tab.style.display = allowed ? '' : 'none';
       if (allowed) {
-        checkOwnerAccess();
+        checkOwnerAccess(gen);
       } else {
-        isOwnerAccount = false;
-        const panel = document.getElementById('ownerPanel');
-        if (panel) panel.style.display = 'none';
+        hideOwnerTools();
         if (currentTab === 'moderation') switchMainTab('games', document.getElementById('tabPlatforms'));
       }
       return allowed;
+    }
+
+    function hideOwnerTools() {
+      isOwnerAccount = false;
+      renderedModerators = [];
+      const panel = document.getElementById('ownerPanel');
+      if (panel) panel.style.display = 'none';
+      const list = document.getElementById('moderatorList');
+      if (list) list.innerHTML = '';
     }
 
     // --- Owner tools: the moderator list ---
@@ -6726,27 +6740,32 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // through owner-only RPCs; the panel simply stays hidden for everyone else.
     let isOwnerAccount = false;
 
-    async function checkOwnerAccess() {
+    async function checkOwnerAccess(gen = accessCheckGen) {
       const client = getSupabaseClient();
       const panel = document.getElementById('ownerPanel');
       if (!client || !panel) return false;
+      let owner = false;
       try {
         const { data, error } = await client.rpc('is_owner');
-        isOwnerAccount = !error && data === true;
+        owner = !error && data === true;
       } catch (error) {
-        isOwnerAccount = false;
+        owner = false;
       }
-      panel.style.display = isOwnerAccount ? '' : 'none';
-      if (isOwnerAccount) loadModerators();
-      return isOwnerAccount;
+      if (gen !== accessCheckGen) return false;
+      isOwnerAccount = owner;
+      panel.style.display = owner ? '' : 'none';
+      if (owner) loadModerators(gen);
+      else hideOwnerTools();
+      return owner;
     }
 
-    async function loadModerators() {
+    async function loadModerators(gen = accessCheckGen) {
       const list = document.getElementById('moderatorList');
       const client = getSupabaseClient();
       if (!list || !client) return;
       try {
         const { data, error } = await client.rpc('list_moderators');
+        if (gen !== accessCheckGen) return;
         if (error) throw error;
         renderModerators(Array.isArray(data) ? data : []);
       } catch (error) {
@@ -6770,7 +6789,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           ${row.is_flagged ? '<span class="drop-tag unknown">MUTED</span>' : ''}
           ${row.email ? `<div class="ledger-meta">${escHtml(row.public_alias || '')}</div>` : ''}
         </div>
-        ${row.is_owner || !row.email ? '' : `<button type="button" class="btn-dock" onclick="removeModerator(${i})">REMOVE</button>`}
+        ${row.is_owner || !row.email ? '' : `<button type="button" class="btn-dock" onclick="removeModerator(${i})" aria-label="Remove ${escHtml(row.email)} as a moderator">REMOVE</button>`}
       </div>`).join('');
     }
 
