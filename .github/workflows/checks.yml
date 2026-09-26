@@ -17,3 +17,6 @@ jobs:
         with:
           node-version: '22'
       - run: npm run check
+      # Headless Chrome (preinstalled on GitHub's Ubuntu runners) against a
+      # recording fake of Supabase: sign-in, sync, checkout, push, deletion.
+      - run: npm run test:smoke

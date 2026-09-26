@@ -639,6 +639,10 @@
         </div>
       </div>
       <div style="margin-top:14px;">
+        <button id="btnDeleteCloudData" class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-pink); color:var(--accent-pink); text-shadow:0 0 5px var(--accent-pink);" onclick="deleteMyCloudData()">Delete My Cloud Data</button>
+        <div class="backup-helper" style="margin-top:4px;">Permanently deletes this device's cloud account and everything stored with it: the cloud copy of your platforms and collection history, background alerts, usage events and community submissions. What's on this device stays, and Cloud Sync turns off. A running Pro subscription has to be cancelled first.</div>
+      </div>
+      <div style="margin-top:14px;">
         <button id="btnRestorePrevious" class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="restoreFromRecoverySnapshot()">Restore Previous State (Undo Last Import)</button>
         <div id="restorePreviousHint" class="backup-helper" style="margin-top:6px;"></div>
       </div>
@@ -6942,7 +6946,19 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // automatic background kick, and the manual Settings toggle) so
     // sign-in happens the first time ANY of them needs it, not only on an
     // explicit button click.
-    async function ensureSyncSignedIn(client) {
+    // kickSync() starts several syncs at once, and on a fresh device each
+    // used to find no session and sign in by itself - four or more anonymous
+    // accounts per first visit, all but one left empty. Calls now run one
+    // after another, so the second finds the session the first created.
+    let signInQueue = Promise.resolve();
+
+    function ensureSyncSignedIn(client) {
+      const run = signInQueue.then(() => signInIfNeeded(client));
+      signInQueue = run.catch(() => {});
+      return run;
+    }
+
+    async function signInIfNeeded(client) {
       const { data: sessionData } = await client.auth.getSession();
       let session = sessionData && sessionData.session;
       if (!session) {
@@ -7225,6 +7241,67 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function toggleCloudSync() {
       if (isSyncEnabled()) disableCloudSync();
       else enableCloudSync();
+    }
+
+    // Self-serve deletion of everything the cloud holds for this account
+    // (delete_my_account() in supabase/migrations): the account row goes and
+    // every table keyed to it cascades. What's on this device stays, and
+    // Cloud Sync switches off so the next launch doesn't upload it all again
+    // under a fresh anonymous account.
+    async function deleteMyCloudData() {
+      const client = getSupabaseClient();
+      let session = null;
+      try {
+        session = client ? (await client.auth.getSession()).data.session : null;
+      } catch (e) {
+        session = null;
+      }
+      if (!client || !session) {
+        showToast('There is no cloud account on this device to delete.', null);
+        return;
+      }
+      const email = session.user && session.user.email;
+      const confirmed = window.confirm(
+        'Permanently delete this cloud account and everything stored with it?\n\n' +
+        'That is the cloud copy of your platforms and collection history, background alerts, usage events and community submissions' +
+        (email ? `, and the link to ${email}` : '') + '. This cannot be undone.\n\n' +
+        "What's on this device stays, and Cloud Sync turns off."
+      );
+      if (!confirmed) return;
+      const btn = document.getElementById('btnDeleteCloudData');
+      if (btn) btn.disabled = true;
+      try {
+        const { error } = await client.rpc('delete_my_account');
+        if (error) throw error;
+        try { localStorage.setItem(SYNC_ENABLED_KEY, 'false'); } catch (e) {}
+        analyticsQueue = [];
+        [SYNC_OUTBOX_KEY, SYNC_CURSOR_KEY, SYNC_META_KEY, SYNC_SEEDED_KEY, EMAIL_GATE_PASSED_KEY,
+          DECK_SYNC_DIRTY_KEY, DECK_SYNC_CURSOR_KEY, PRO_CACHE_KEY].forEach(key => {
+          try { localStorage.removeItem(key); } catch (e) {}
+        });
+        // The server row went with the account; this drops the browser's side.
+        await disableBackgroundPush();
+        try { await client.auth.signOut({ scope: 'local' }); } catch (e) {}
+        // signOut() normally clears it, but the server no longer knows the
+        // user, so make sure supabase-js's stored session is gone too.
+        try { localStorage.removeItem(`sb-${new URL(SUPABASE_URL).hostname.split('.')[0]}-auth-token`); } catch (e) {}
+        resetClientEntitlements();
+        renderSyncStatusUI();
+        renderSyncEmailUI();
+        refreshNotifyUI();
+        showToast('Cloud account deleted. Your data on this device is untouched, and Cloud Sync is off.', null, 8000);
+      } catch (err) {
+        const message = (err && err.message) || '';
+        if (/ACTIVE_SUBSCRIPTION/.test(message)) {
+          showToast('Cancel your Pro subscription in Manage Billing first. Once it has ended, you can delete everything here.', null, 9000);
+        } else if (/MODERATOR_ACCOUNT/.test(message)) {
+          showToast("Moderator accounts can't be deleted from here.", null);
+        } else {
+          showToast('Could not delete cloud data: ' + (message || 'unknown error'), null);
+        }
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     }
 
     function renderSyncStatusUI(overrideText) {

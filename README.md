@@ -88,6 +88,14 @@ No `npm install` needed - both scripts use only Node's standard library.
 They also run automatically on every push and pull request via
 [`.github/workflows/checks.yml`](.github/workflows/checks.yml).
 
+`npm run test:smoke` runs browser smoke tests for the flows that talk to the
+server: anonymous sign-in (exactly one per device, and none for crawlers),
+Cloud Sync, Pro checkout and entitlements, background push, and account
+deletion. It drives an installed Chrome or Chromium over the DevTools
+protocol (set `CHROME_PATH` if it isn't found) against a recording fake of
+Supabase, so it needs no network and, like the checks, no `npm install`. CI
+runs it after `npm run check`.
+
 The optional `npm run build:seo` command uses the same catalog to generate
 semantic static landing pages under `platforms/` and a sitemap. It does not
 change the runtime PWA or introduce a bundler. Set `SEO_BASE_URL` when
