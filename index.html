@@ -27,11 +27,11 @@
     })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>The Casino Almanac</title>
+  <title>Daily Roll Over</title>
   <meta name="theme-color" content="#0a0b0a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Almanac" />
+  <meta name="apple-mobile-web-app-title" content="Roll Over" />
   <meta name="mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -55,8 +55,167 @@
     <div class="landing-smoke" aria-hidden="true">
       <span></span><span></span><span></span><span></span><span></span><span></span>
     </div>
+    <!-- Brand intro: a dice cup throws two craps dice, they bounce, then
+         pop into cash, coins and crypto that float up before the wordmark
+         flies in. Pure CSS, driven by .intro-play (added by playRollIntro()
+         and removed when it ends or the screen is tapped). Every element's
+         base style is its FINAL state, so with motion off - which kills
+         all animation globally - the screen simply shows the finished
+         wordmark and nothing of the intro. -->
+    <div class="roll-intro" aria-hidden="true">
+      <div class="roll-stage">
+        <svg class="roll-defs" width="0" height="0" aria-hidden="true">
+          <defs>
+            <linearGradient id="rollLeather" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0" stop-color="#1c100a"/><stop offset="0.22" stop-color="#4a2b1b"/><stop offset="0.42" stop-color="#6e4329"/><stop offset="0.55" stop-color="#5a351f"/><stop offset="0.82" stop-color="#2e1a10"/><stop offset="1" stop-color="#140a06"/>
+            </linearGradient>
+            <linearGradient id="rollBrass" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0" stop-color="#6b4d14"/><stop offset="0.3" stop-color="#d4af37"/><stop offset="0.45" stop-color="#f6e39a"/><stop offset="0.6" stop-color="#c99a2e"/><stop offset="1" stop-color="#5a3f10"/>
+            </linearGradient>
+            <radialGradient id="rollMouth" cx="0.5" cy="0.35" r="0.7">
+              <stop offset="0" stop-color="#050302"/><stop offset="0.7" stop-color="#140b06"/><stop offset="1" stop-color="#2c190f"/>
+            </radialGradient>
+            <pattern id="rollGrain" width="6" height="6" patternUnits="userSpaceOnUse">
+              <circle cx="1.5" cy="2" r="0.45" fill="#000" fill-opacity="0.22"/><circle cx="4.5" cy="4.6" r="0.35" fill="#fff" fill-opacity="0.05"/>
+            </pattern>
+            <linearGradient id="rollDieFace" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#f0304a"/><stop offset="0.45" stop-color="#c3142e"/><stop offset="1" stop-color="#6d0414"/>
+            </linearGradient>
+            <radialGradient id="rollDieGlow" cx="0.62" cy="0.66" r="0.55">
+              <stop offset="0" stop-color="#ff5a6e" stop-opacity="0.45"/><stop offset="1" stop-color="#ff5a6e" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="rollDieBevel" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#fff" stop-opacity="0.7"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.08"/><stop offset="1" stop-color="#000" stop-opacity="0.35"/>
+            </linearGradient>
+            <radialGradient id="rollPip" cx="0.4" cy="0.35" r="0.65">
+              <stop offset="0" stop-color="#ffffff"/><stop offset="0.65" stop-color="#eef0f2"/><stop offset="1" stop-color="#b9bec5"/>
+            </radialGradient>
+            <g id="rollDieBase">
+              <rect x="0.5" y="0.5" width="33" height="33" rx="3.2" fill="url(#rollDieFace)" stroke="#4a020c" stroke-width="0.8"/>
+              <rect x="0.5" y="0.5" width="33" height="33" rx="3.2" fill="url(#rollDieGlow)"/>
+              <rect x="2" y="2" width="30" height="30" rx="2.4" fill="none" stroke="url(#rollDieBevel)" stroke-width="1.1"/>
+              <path d="M3.2 2.6 H24 Q14 6 4.6 16 Q3 9 3.2 2.6 Z" fill="#fff" fill-opacity="0.2"/>
+            </g>
+            <linearGradient id="rollBillPaper" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#d7ead0"/><stop offset="0.5" stop-color="#a9cfa2"/><stop offset="1" stop-color="#7cad7e"/>
+            </linearGradient>
+            <radialGradient id="rollGoldFace" cx="0.38" cy="0.32" r="0.75">
+              <stop offset="0" stop-color="#fff1b8"/><stop offset="0.45" stop-color="#e2bf4c"/><stop offset="1" stop-color="#9b7420"/>
+            </radialGradient>
+            <radialGradient id="rollBtcFace" cx="0.38" cy="0.32" r="0.75">
+              <stop offset="0" stop-color="#ffc26b"/><stop offset="0.5" stop-color="#f7931a"/><stop offset="1" stop-color="#b85f06"/>
+            </radialGradient>
+            <radialGradient id="rollSilverFace" cx="0.38" cy="0.32" r="0.75">
+              <stop offset="0" stop-color="#ffffff"/><stop offset="0.5" stop-color="#cfd4da"/><stop offset="1" stop-color="#858c95"/>
+            </radialGradient>
+            <radialGradient id="rollFlashGlow" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0" stop-color="#fffbe6" stop-opacity="0.95"/><stop offset="0.35" stop-color="#f3da92" stop-opacity="0.7"/><stop offset="1" stop-color="#d4af37" stop-opacity="0"/>
+            </radialGradient>
+            <g id="rollBill">
+              <rect x="0.5" y="0.5" width="59" height="27" rx="1.6" fill="url(#rollBillPaper)" stroke="#3d6b43" stroke-width="0.6"/>
+              <rect x="2.6" y="2.6" width="54.8" height="22.8" rx="1" fill="none" stroke="#2f5a36" stroke-width="0.7"/>
+              <rect x="3.8" y="3.8" width="52.4" height="20.4" rx="0.6" fill="none" stroke="#2f5a36" stroke-width="0.3" stroke-dasharray="0.6 0.6"/>
+              <path d="M5 9 Q9 6 13 9 T21 9 M5 14 Q9 11 13 14 T21 14 M5 19 Q9 16 13 19 T21 19 M39 9 Q43 6 47 9 T55 9 M39 19 Q43 16 47 19 T55 19" fill="none" stroke="#2f5a36" stroke-opacity="0.35" stroke-width="0.35"/>
+              <ellipse cx="30" cy="14" rx="8.2" ry="9.4" fill="#e3efdc" stroke="#2f5a36" stroke-width="0.7"/>
+              <ellipse cx="30" cy="14" rx="6.6" ry="7.8" fill="none" stroke="#2f5a36" stroke-width="0.3" stroke-dasharray="0.5 0.7"/>
+              <text x="30" y="18" text-anchor="middle" font-family="Georgia, serif" font-size="11.5" font-weight="700" fill="#2f5a36">$</text>
+              <circle cx="47" cy="14" r="3.6" fill="none" stroke="#2f5a36" stroke-width="0.5"/>
+              <circle cx="47" cy="14" r="2.4" fill="none" stroke="#2f5a36" stroke-width="0.35" stroke-dasharray="0.4 0.5"/>
+              <text x="6" y="8" font-family="Georgia, serif" font-size="5" font-weight="700" fill="#2f5a36">100</text>
+              <text x="54" y="24.4" text-anchor="end" font-family="Georgia, serif" font-size="5" font-weight="700" fill="#2f5a36">100</text>
+            </g>
+            <g id="rollCoinRim">
+              <circle cx="16" cy="16" r="15.5" fill="#6e4f12"/>
+              <circle cx="16" cy="16" r="14.7" fill="none" stroke="#c9a23b" stroke-width="1.6" stroke-dasharray="0.7 0.9"/>
+            </g>
+            <g id="rollCoinGold">
+              <use href="#rollCoinRim"/>
+              <circle cx="16" cy="16" r="13" fill="url(#rollGoldFace)"/>
+              <circle cx="16" cy="16" r="10.6" fill="none" stroke="#8a6518" stroke-opacity="0.7" stroke-width="0.7"/>
+              <circle cx="16.4" cy="16.4" r="10.6" fill="none" stroke="#fff5cc" stroke-opacity="0.45" stroke-width="0.4"/>
+              <circle cx="12.15" cy="12.15" r="1.75" fill="#fff0b3" fill-opacity="0.55"/>
+              <circle cx="11.8" cy="11.8" r="1.75" fill="#8a6518"/>
+              <circle cx="20.55" cy="12.15" r="1.75" fill="#fff0b3" fill-opacity="0.55"/>
+              <circle cx="20.2" cy="11.8" r="1.75" fill="#8a6518"/>
+              <circle cx="16.35" cy="16.35" r="1.75" fill="#fff0b3" fill-opacity="0.55"/>
+              <circle cx="16" cy="16" r="1.75" fill="#8a6518"/>
+              <circle cx="12.15" cy="20.55" r="1.75" fill="#fff0b3" fill-opacity="0.55"/>
+              <circle cx="11.8" cy="20.2" r="1.75" fill="#8a6518"/>
+              <circle cx="20.55" cy="20.55" r="1.75" fill="#fff0b3" fill-opacity="0.55"/>
+              <circle cx="20.2" cy="20.2" r="1.75" fill="#8a6518"/>
+              <path d="M6.5 11 A10.5 10.5 0 0 1 14 5.6" fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="1.3" stroke-linecap="round"/>
+            </g>
+            <g id="rollCoinBtc">
+              <circle cx="16" cy="16" r="15.5" fill="#8a4604"/>
+              <circle cx="16" cy="16" r="14.7" fill="none" stroke="#e08a1e" stroke-width="1.6" stroke-dasharray="0.7 0.9"/>
+              <circle cx="16" cy="16" r="13" fill="url(#rollBtcFace)"/>
+              <text x="16.9" y="22.4" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#7a3d02" fill-opacity="0.55" transform="rotate(14 16 16)">&#8383;</text>
+              <text x="16.2" y="21.7" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#fff" transform="rotate(14 16 16)">&#8383;</text>
+              <path d="M6.5 11 A10.5 10.5 0 0 1 14 5.6" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="1.3" stroke-linecap="round"/>
+            </g>
+            <g id="rollCoinEth">
+              <circle cx="16" cy="16" r="15.5" fill="#4b5058"/>
+              <circle cx="16" cy="16" r="14.7" fill="none" stroke="#b9bfc7" stroke-width="1.6" stroke-dasharray="0.7 0.9"/>
+              <circle cx="16" cy="16" r="13" fill="url(#rollSilverFace)"/>
+              <circle cx="16" cy="16" r="10.6" fill="none" stroke="#6b727c" stroke-opacity="0.6" stroke-width="0.6"/>
+              <text x="16.6" y="22.1" text-anchor="middle" font-family="Georgia, serif" font-size="16" font-weight="700" fill="#fff" fill-opacity="0.7">&#926;</text>
+              <text x="16" y="21.5" text-anchor="middle" font-family="Georgia, serif" font-size="16" font-weight="700" fill="#343941">&#926;</text>
+              <path d="M6.5 11 A10.5 10.5 0 0 1 14 5.6" fill="none" stroke="#fff" stroke-opacity="0.7" stroke-width="1.3" stroke-linecap="round"/>
+            </g>
+            <g id="rollBurst">
+              <circle cx="30" cy="30" r="22" fill="url(#rollFlashGlow)"/>
+              <g stroke="#f3da92" stroke-width="1.6" stroke-linecap="round">
+                <path d="M30 4 V12 M30 48 V56 M4 30 H12 M48 30 H56 M11.6 11.6 L17.3 17.3 M42.7 42.7 L48.4 48.4 M48.4 11.6 L42.7 17.3 M17.3 42.7 L11.6 48.4"/>
+              </g>
+              <g stroke="#fff6cf" stroke-width="0.9" stroke-linecap="round" stroke-opacity="0.85">
+                <path d="M39.9 6.1 L37.7 11.4 M20.1 53.9 L22.3 48.6 M6.1 20.1 L11.4 22.3 M53.9 39.9 L48.6 37.7 M20.1 6.1 L22.3 11.4 M39.9 53.9 L37.7 48.6 M6.1 39.9 L11.4 37.7 M53.9 20.1 L48.6 22.3"/>
+              </g>
+            </g>
+            <clipPath id="rollDieClip"><rect x="0.5" y="0.5" width="33" height="33" rx="3.2"/></clipPath>
+            <linearGradient id="rollGlintGrad" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="roll-camera">
+          <svg class="roll-cup" viewBox="0 0 90 100">
+            <ellipse class="roll-cup-shadow" cx="45" cy="93" rx="27" ry="4"/>
+            <path d="M11 11 L18.5 89 Q45 96 71.5 89 L79 11 Z" fill="url(#rollLeather)"/>
+            <path d="M11 11 L18.5 89 Q45 96 71.5 89 L79 11 Z" fill="url(#rollGrain)"/>
+            <path d="M30 17 L33 86" stroke="#fff" stroke-opacity="0.09" stroke-width="5" stroke-linecap="round"/>
+            <path d="M34 17 L36 86" stroke="#fff" stroke-opacity="0.07" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M14.6 47 Q45 53 75.4 47 L75 53 Q45 59 15.2 53 Z" fill="url(#rollBrass)"/>
+            <path d="M15.2 50 Q45 56 75 50" fill="none" stroke="#3a2708" stroke-width="0.5" stroke-dasharray="1 2.2"/>
+            <path d="M13.2 24 Q45 30 76.8 24" fill="none" stroke="#e8c860" stroke-opacity="0.75" stroke-width="0.8" stroke-dasharray="2.2 1.8"/>
+            <path d="M17.6 79 Q45 85 72.4 79" fill="none" stroke="#e8c860" stroke-opacity="0.75" stroke-width="0.8" stroke-dasharray="2.2 1.8"/>
+            <path d="M17.8 83 Q45 90 72.2 83 L71.5 89 Q45 96.5 18.5 89 Z" fill="url(#rollBrass)"/>
+            <path d="M18.6 88.4 Q45 95.4 71.4 88.4" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="0.6"/>
+            <path d="M10 11 Q45 23 80 11 L79.2 19 Q45 30 10.8 19 Z" fill="url(#rollBrass)"/>
+            <ellipse cx="45" cy="11" rx="35" ry="7.2" fill="url(#rollBrass)"/>
+            <ellipse cx="45" cy="11.3" rx="31.4" ry="5.4" fill="url(#rollMouth)"/>
+            <path d="M14.4 11.8 Q45 18.6 75.6 11.8" fill="none" stroke="#000" stroke-opacity="0.45" stroke-width="1.2"/>
+            <path d="M12 9.2 Q45 1.2 78 9.2" fill="none" stroke="#fff6cf" stroke-opacity="0.55" stroke-width="0.7"/>
+          </svg>
+          <div class="roll-die-x roll-die-1"><span class="roll-die-shadow"></span><div class="roll-die-y"><svg class="roll-die" viewBox="0 0 34 34"><use href="#rollDieBase"/><g class="roll-face"><circle cx="9.5" cy="9.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="9.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="9.5" cy="24.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="24.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/></g><g class="roll-face" style="display:none"><circle cx="9.5" cy="9.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="9.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="17" cy="17" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="9.5" cy="24.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="24.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/></g><g class="roll-face" style="display:none"><circle cx="9.5" cy="8.6" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="8.6" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="9.5" cy="17" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="17" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="9.5" cy="25.4" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="25.4" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/></g><g clip-path="url(#rollDieClip)"><g transform="rotate(20 17 17)"><rect class="roll-die-glint" x="-18" y="-10" width="12" height="54" fill="url(#rollGlintGrad)"/></g></g></svg></div></div>
+          <div class="roll-die-x roll-die-2"><span class="roll-die-shadow"></span><div class="roll-die-y"><svg class="roll-die" viewBox="0 0 34 34"><use href="#rollDieBase"/><g class="roll-face"><circle cx="9.5" cy="9.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="17" cy="17" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="24.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/></g><g class="roll-face" style="display:none"><circle cx="9.5" cy="9.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/><circle cx="24.5" cy="24.5" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/></g><g class="roll-face" style="display:none"><circle cx="17" cy="17" r="3.1" fill="url(#rollPip)" stroke="#5a0a14" stroke-opacity="0.55" stroke-width="0.6"/></g><g clip-path="url(#rollDieClip)"><g transform="rotate(20 17 17)"><rect class="roll-die-glint" x="-18" y="-10" width="12" height="54" fill="url(#rollGlintGrad)"/></g></g></svg></div></div>
+          <span class="roll-flash" style="--x:150px"><svg viewBox="0 0 60 60"><use href="#rollBurst"/></svg></span>
+          <span class="roll-flash" style="--x:210px"><svg viewBox="0 0 60 60"><use href="#rollBurst"/></svg></span>
+          <span class="roll-cash roll-bill" style="--x:150px;--dx:-70px;--dy:-300px;--r:-24deg;--d:0s"><svg viewBox="0 0 60 28"><use href="#rollBill"/></svg></span>
+          <span class="roll-cash roll-coin" style="--x:150px;--dx:-20px;--dy:-380px;--r:40deg;--d:.06s"><svg viewBox="0 0 32 32"><use href="#rollCoinGold"/></svg></span>
+          <span class="roll-cash roll-crypto" style="--x:150px;--dx:-110px;--dy:-230px;--r:-50deg;--d:.12s"><svg viewBox="0 0 32 32"><use href="#rollCoinBtc"/></svg></span>
+          <span class="roll-cash roll-bill" style="--x:150px;--dx:30px;--dy:-440px;--r:18deg;--d:.18s"><svg viewBox="0 0 60 28"><use href="#rollBill"/></svg></span>
+          <span class="roll-cash roll-coin" style="--x:210px;--dx:60px;--dy:-340px;--r:-30deg;--d:.04s"><svg viewBox="0 0 32 32"><use href="#rollCoinGold"/></svg></span>
+          <span class="roll-cash roll-crypto roll-eth" style="--x:210px;--dx:100px;--dy:-260px;--r:36deg;--d:.1s"><svg viewBox="0 0 32 32"><use href="#rollCoinEth"/></svg></span>
+          <span class="roll-cash roll-bill" style="--x:210px;--dx:10px;--dy:-300px;--r:-10deg;--d:.16s"><svg viewBox="0 0 60 28"><use href="#rollBill"/></svg></span>
+          <span class="roll-cash roll-coin" style="--x:210px;--dx:120px;--dy:-420px;--r:60deg;--d:.22s"><svg viewBox="0 0 32 32"><use href="#rollCoinGold"/></svg></span>
+        </div>
+        <span class="roll-bloom"></span>
+        <span class="roll-streak"></span>
+      </div>
+    </div>
     <div class="landing-inner">
-    <h1 class="landing-title">The Casino<br><span>Almanac</span></h1>
+    <h1 class="landing-title">Daily<br><span>Roll Over</span></h1>
+    <p class="landing-tagline">Your Daily Roll&rsquo;s Over</p>
     <p class="landing-subtitle">DAILY DROPS &bull; TIMERS &bull; REDEMPTIONS</p>
     <button class="landing-btn" onclick="dismissLanding()" aria-label="Enter app">ENTER DECK &rarr;</button>
     <p class="landing-legal">18+ (21+ where required). Not available where sweepstakes play is prohibited. <a href="terms.html">Terms</a> &middot; <a href="privacy.html">Privacy</a></p>
@@ -158,7 +317,7 @@
       </div>
     </div>
     
-    <h1 class="app-title">The Casino <span>Almanac</span></h1>
+    <h1 class="app-title">Daily <span>Roll Over</span></h1>
 
     <div class="hero-stat-card glass-panel">
       <div class="hero-ring-wrapper">
@@ -3120,6 +3279,216 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       requestAnimationFrame(frame);
     }
 
+    // ROLL INTRO - the Daily Roll Over brand intro on the landing screen
+    // (markup: .roll-intro; styles: the ROLL INTRO block in app.css).
+    //
+    // The cup, the dice and the camera run here, on a warped "world"
+    // clock, so the throw can drop into near-still slow motion mid-flight
+    // and speed back up for the landing. The shot list:
+    //   - the dice leave the cup showing 4 + 3 (a brief flash at speed),
+    //   - time ramps down to ROLL_SLOW.rate while the camera snaps in on
+    //     the pair at the top of the arc, now showing 5 + 2,
+    //   - a light behind the camera sweeps a glint across the dice and a
+    //     flare across the frame as time ramps back up,
+    //   - the camera pulls out and the dice land on 6 + 1, then pop into
+    //     money. Every face pair is a natural seven.
+    // Everything after the dice pop (money, burst, wordmark, copy) is
+    // plain CSS, started by the .roll-popped class. Base styles are the
+    // end state, so a tap, the timeline ending, or motion being off all
+    // land on the same finished frame.
+    const ROLL_SLOW = { start: 0.86, down: 0.3, hold: 0.85, up: 0.35, rate: 0.04 };
+    const ROLL_DIE_DUR = 1.1;
+    const ROLL_FLOOR = 66;           // px below each die's launch point
+    const ROLL_FLIPS = [0.93, 1.24]; // world seconds: 4+3 -> 5+2 -> 6+1
+    const ROLL_FLIP_LEN = 0.035;
+    const ROLL_ZOOM = 2.6;
+    const ROLL_PUSH = 0.25;          // slow push-in on top of ROLL_ZOOM during the hold
+    const ROLL_FOCUS = { x: 180, y: 250 }; // where the camera frames the dice, in stage px
+    const ROLL_AFTER_POP = 2.05;     // seconds from the pop to the end of the intro
+    const ROLL_DICE = [
+      { start: 0.78, x0: 76, dx: 57, ease: 2.2, apexU: 0.22, apexH: 70, spin: 720 },
+      { start: 0.80, x0: 80, dx: 113, ease: 3.2, apexU: 0.24, apexH: 95, spin: -1170 }
+    ];
+    // Cup keys over 1.3 world seconds: [progress, x, y, rotation, opacity].
+    const ROLL_CUP_KEYS = [[0, -150, 120, -20, 0], [0.25, 0, 0, 0, 1], [0.45, 0, 0, -10, 1], [0.62, 6, -4, 105, 1], [0.8, 0, 0, 95, 1], [1, -140, 40, 60, 0]];
+
+    function rollSmooth(k) { return k * k * (3 - 2 * k); }
+    // World seconds covered by a smoothstep rate ramp from -> to, per unit
+    // of ramp length, at ramp progress s: the integral of the rate curve.
+    function rollRampWorld(s, from, to) { return from * s + (to - from) * (s * s * s - s * s * s * s / 2); }
+    function rollWorldTime(t) {
+      const c = ROLL_SLOW;
+      if (t <= c.start) return t;
+      let w = c.start;
+      let x = t - c.start;
+      if (x <= c.down) return w + c.down * rollRampWorld(x / c.down, 1, c.rate);
+      w += c.down * rollRampWorld(1, 1, c.rate); x -= c.down;
+      if (x <= c.hold) return w + x * c.rate;
+      w += c.hold * c.rate; x -= c.hold;
+      if (x <= c.up) return w + c.up * rollRampWorld(x / c.up, c.rate, 1);
+      w += c.up * rollRampWorld(1, c.rate, 1); x -= c.up;
+      return w + x;
+    }
+
+    function rollDieState(d, w) {
+      const u = Math.min(Math.max((w - d.start) / ROLL_DIE_DUR, 0), 1);
+      const x = (d.x0 - 76) + d.dx * (1 - Math.pow(1 - u, d.ease));
+      let y;
+      if (u < d.apexU) { const k = (u - d.apexU) / d.apexU; y = -d.apexH + d.apexH * k * k; }
+      else if (u < 0.52) { const k = (u - d.apexU) / (0.52 - d.apexU); y = -d.apexH + (ROLL_FLOOR + d.apexH) * k * k; }
+      else if (u < 0.78) { const k = (u - 0.65) / 0.13; y = ROLL_FLOOR - 32 * (1 - k * k); }
+      else if (u < 0.91) { const k = (u - 0.845) / 0.065; y = ROLL_FLOOR - 10 * (1 - k * k); }
+      else y = ROLL_FLOOR;
+      const rot = d.spin * (1 - Math.pow(1 - Math.min(u / 0.8, 1), 2));
+      let scale = 1;
+      let fade = w < d.start ? 0 : 1;
+      if (w >= d.start && u < 0.06) { const k = u / 0.06; scale = 0.6 + 0.4 * k; fade = k; }
+      if (u > 0.88) { const k = (u - 0.88) / 0.12; scale = 1 + 0.8 * k; fade = 1 - k; }
+      let face = 0;
+      let squash = 1;
+      ROLL_FLIPS.forEach((ft, i) => {
+        if (w >= ft) face = i + 1;
+        const k = (w - (ft - ROLL_FLIP_LEN / 2)) / ROLL_FLIP_LEN;
+        if (k > 0 && k < 1) squash = Math.max(0.06, Math.abs(Math.cos(Math.PI * k)));
+      });
+      return { x, y, rot, scale, fade, face, squash };
+    }
+
+    function rollCupState(w) {
+      const p = Math.min(Math.max(w / 1.3, 0), 1);
+      let i = 0;
+      while (i < ROLL_CUP_KEYS.length - 2 && p > ROLL_CUP_KEYS[i + 1][0]) i++;
+      const a = ROLL_CUP_KEYS[i];
+      const b = ROLL_CUP_KEYS[i + 1];
+      const k = rollSmooth((p - a[0]) / (b[0] - a[0]));
+      const lerp = j => a[j] + (b[j] - a[j]) * k;
+      return { x: lerp(1), y: lerp(2), rot: lerp(3), opacity: lerp(4) };
+    }
+
+    // Camera zoom envelope in REAL time: a sharp snap in as time slows, a
+    // slow push through the hold, and an eased pull-out as time returns.
+    function rollCameraZoom(t) {
+      const c = ROLL_SLOW;
+      const inStart = c.start + 0.04;
+      const inEnd = c.start + c.down + 0.02;
+      const outStart = c.start + c.down + c.hold - 0.02;
+      const outEnd = outStart + 0.45;
+      let z = 0;
+      if (t > inStart && t < inEnd) z = 1 - Math.pow(1 - (t - inStart) / (inEnd - inStart), 3);
+      else if (t >= inEnd && t <= outStart) z = 1;
+      else if (t > outStart && t < outEnd) z = 1 - rollSmooth((t - outStart) / (outEnd - outStart));
+      const hold = Math.min(Math.max((t - inEnd) / (outStart - inEnd), 0), 1);
+      return { z, scale: 1 + (ROLL_ZOOM + ROLL_PUSH * hold - 1) * z };
+    }
+
+    function playRollIntro() {
+      const screen = document.getElementById('landingScreen');
+      if (!screen || screen.classList.contains('hidden')) return;
+      if (document.documentElement.getAttribute('data-motion') === 'off') return;
+      const camera = screen.querySelector('.roll-camera');
+      const cup = screen.querySelector('.roll-cup');
+      const dice = Array.from(screen.querySelectorAll('.roll-die-x')).map(el => ({
+        el,
+        y: el.querySelector('.roll-die-y'),
+        die: el.querySelector('.roll-die'),
+        shadow: el.querySelector('.roll-die-shadow'),
+        faces: Array.from(el.querySelectorAll('.roll-face')),
+        face: 0
+      }));
+      if (!camera || !cup || dice.length !== ROLL_DICE.length) return;
+
+      const windowEnd = ROLL_SLOW.start + ROLL_SLOW.down + ROLL_SLOW.hold + ROLL_SLOW.up;
+      const added = windowEnd - rollWorldTime(windowEnd);
+      const popWorld = ROLL_DICE[0].start + 0.88 * ROLL_DIE_DUR;
+      const totalMs = (popWorld + added + ROLL_AFTER_POP) * 1000;
+      const glintAt = ROLL_SLOW.start + ROLL_SLOW.down + ROLL_SLOW.hold - 0.08;
+      let raf = 0;
+      let timer = null;
+      let t0 = 0;
+      let done = false;
+
+      const setFace = (d, idx) => {
+        if (d.face === idx) return;
+        d.faces.forEach((g, i) => { g.style.display = i === idx ? '' : 'none'; });
+        d.face = idx;
+      };
+      const end = () => {
+        if (done) return;
+        done = true;
+        cancelAnimationFrame(raf);
+        clearTimeout(timer);
+        screen.removeEventListener('pointerdown', end);
+        screen.removeEventListener('focusin', end);
+        document.removeEventListener('keydown', end);
+        screen.classList.remove('intro-play', 'roll-popped', 'roll-glint');
+        [camera, cup].forEach(el => el.removeAttribute('style'));
+        dice.forEach(d => {
+          [d.el, d.y, d.die, d.shadow].forEach(el => el.removeAttribute('style'));
+          setFace(d, 0);
+        });
+      };
+      const frame = now => {
+        if (done) return;
+        // The end timer starts on the first painted frame, not when this
+        // function runs: startup work after the call can hold that frame
+        // back, and a timer started earlier would then cut the shot short.
+        // Both clocks share this origin, so the full sequence always plays.
+        if (!t0) {
+          t0 = now;
+          timer = setTimeout(end, totalMs);
+        }
+        const t = (now - t0) / 1000;
+        const w = rollWorldTime(t);
+
+        const c = rollCupState(w);
+        cup.style.opacity = c.opacity;
+        cup.style.transform = `translate(${c.x}px, ${c.y}px) rotate(${c.rot}deg)`;
+
+        let fx = 0;
+        let fy = 0;
+        ROLL_DICE.forEach((cfg, i) => {
+          const d = dice[i];
+          const s = rollDieState(cfg, w);
+          setFace(d, s.face);
+          d.el.style.transform = `translateX(${s.x}px)`;
+          d.y.style.transform = `translateY(${s.y}px)`;
+          d.die.style.opacity = s.fade;
+          d.die.style.transform = `rotate(${s.rot}deg) scale(${s.scale * s.squash}, ${s.scale * (1 + 0.08 * (1 - s.squash))})`;
+          const lift = Math.min(Math.max(ROLL_FLOOR - s.y, 0) / 140, 1);
+          d.shadow.style.opacity = 0.8 * (1 - 0.8 * lift) * s.fade;
+          d.shadow.style.transform = `scale(${1 - 0.6 * lift})`;
+          // Die centre in stage px: .roll-die-x sits at left 76 / top 244,
+          // and s.x already carries this die's own launch offset.
+          fx += 76 + s.x + 17;
+          fy += 244 + s.y + 17;
+        });
+        fx /= dice.length;
+        fy /= dice.length;
+        const cam = rollCameraZoom(t);
+        if (cam.z > 0) {
+          const px = fx + (ROLL_FOCUS.x - fx) * cam.z;
+          const py = fy + (ROLL_FOCUS.y - fy) * cam.z;
+          camera.style.transform = `translate(${px - cam.scale * fx}px, ${py - cam.scale * fy}px) scale(${cam.scale})`;
+        } else {
+          camera.style.transform = '';
+        }
+
+        if (t >= glintAt) screen.classList.add('roll-glint');
+        if (w >= popWorld) screen.classList.add('roll-popped');
+        raf = requestAnimationFrame(frame);
+      };
+
+      screen.classList.add('intro-play');
+      // Any tap, key press, or focus arriving on the screen (Tab onto the
+      // still-hidden Enter button) skips straight to the finished frame.
+      // Keys listen on document: at launch focus sits on <body>, outside
+      // the landing screen, so a keydown there never reaches it.
+      screen.addEventListener('pointerdown', end);
+      screen.addEventListener('focusin', end);
+      document.addEventListener('keydown', end);
+      raf = requestAnimationFrame(frame);
+    }
+
     function dismissLanding() {
       const screen = document.getElementById('landingScreen');
       const burnEligible = isWesternTheme() && document.documentElement.getAttribute('data-motion') !== 'off';
@@ -4644,9 +5013,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try {
         const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
         if (reg) {
-          await reg.showNotification('Casino Almanac', { body, tag: 'almanac-test' });
+          await reg.showNotification('Daily Roll Over', { body, tag: 'almanac-test' });
         } else {
-          const n = new Notification('Casino Almanac', { body });
+          const n = new Notification('Daily Roll Over', { body });
           n.onclick = () => window.focus();
         }
         showToast('Test alert sent.', null);
@@ -5048,10 +5417,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         try {
           if (navigator.serviceWorker && navigator.serviceWorker.ready) {
             navigator.serviceWorker.ready
-              .then(reg => reg.showNotification('Casino Almanac', { body, tag: 'almanac-ready', renotify: false }))
-              .catch(() => { try { new Notification('Casino Almanac', { body }); } catch (e) {} });
+              .then(reg => reg.showNotification('Daily Roll Over', { body, tag: 'almanac-ready', renotify: false }))
+              .catch(() => { try { new Notification('Daily Roll Over', { body }); } catch (e) {} });
           } else {
-            const n = new Notification('Casino Almanac', { body });
+            const n = new Notification('Daily Roll Over', { body });
             n.onclick = () => window.focus();
           }
         } catch (e) { /* notification failed; don't break the app */ }
@@ -5278,7 +5647,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (!pushSupported()) {
         const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
         showToast(ios
-          ? 'On iPhone and iPad, add the Almanac to your Home Screen first, then turn this on from the installed app.'
+          ? 'On iPhone and iPad, add Daily Roll Over to your Home Screen first, then turn this on from the installed app.'
           : "This browser can't receive background alerts.", null, 9000);
         return false;
       }
@@ -5431,7 +5800,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const el = document.getElementById('launchContextNote');
       if (!el) return;
       if (isEmbeddedWebView()) {
-        el.innerHTML = '&#9888; This page is running inside an in-app browser, not your real browser. Platform links can&rsquo;t hand off properly from here, and Google sign-in will refuse to load at all &mdash; Google blocks it in embedded browsers, which looks like the sign-in page closing itself. Open the almanac in Chrome, or install it from Chrome, and platform links will behave normally.';
+        el.innerHTML = '&#9888; This page is running inside an in-app browser, not your real browser. Platform links can&rsquo;t hand off properly from here, and Google sign-in will refuse to load at all &mdash; Google blocks it in embedded browsers, which looks like the sign-in page closing itself. Open Daily Roll Over in Chrome, or install it from Chrome, and platform links will behave normally.';
         el.style.color = 'var(--accent-orange)';
         return;
       }
@@ -5703,9 +6072,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try { localStorage.setItem(INSTALL_NUDGE_KEY, JSON.stringify(nudge)); } catch (e) {}
       trackEvent('install_prompt_shown', { platform: ios ? 'ios' : 'native', days });
       if (ios) {
-        showToast('Add the Almanac to your Home Screen: tap Share, then "Add to Home Screen". On iPhone that is also what lets alerts reach you while it is closed.', null, 15000);
+        showToast('Add Daily Roll Over to your Home Screen: tap Share, then "Add to Home Screen". On iPhone that is also what lets alerts reach you while it is closed.', null, 15000);
       } else {
-        showToast('Install the Almanac: it opens like an app, and alerts can reach you while it is closed.', installPWA, 15000, 'INSTALL');
+        showToast('Install Daily Roll Over: it opens like an app, and alerts can reach you while it is closed.', installPWA, 15000, 'INSTALL');
       }
     }
 
@@ -5897,7 +6266,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         fields.push({ name: 'Recent app errors', value: recentAppErrors.join('\n').slice(0, 1024) });
       }
       const payload = {
-        username: 'Casino Almanac Feedback',
+        username: 'Daily Roll Over Feedback',
         embeds: [{
           title: `[${category}]`,
           description: text.slice(0, 4000),
@@ -6286,7 +6655,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const isPro = clientEntitlements.isPro;
       badge.className = isPro ? 'badge badge-pro' : 'badge';
       badge.textContent = isPro ? 'PRO' : 'FREE';
-      label.textContent = isPro ? 'Casino Almanac Pro' : 'Free Plan';
+      label.textContent = isPro ? 'Daily Roll Over Pro' : 'Free Plan';
       desc.textContent = isPro
         ? 'Active subscription: unlimited tags, smart alert rules and granular payout turnaround analytics.'
         : 'Standard catalog, local collection tracking, and community drops feed.';
@@ -8657,7 +9026,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `almanac-ledger-${new Date().toISOString().split('T')[0]}.csv`;
+      a.href = url; a.download = `daily-roll-over-ledger-${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
       showToast('Ledger exported as CSV');
@@ -8736,7 +9105,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const blob = new Blob([JSON.stringify(deck, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `almanac-deck-${new Date().toISOString().split('T')[0]}.json`;
+      a.href = url; a.download = `daily-roll-over-deck-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
       showToast(`Deck exported \u2014 ${deck.platforms.length} platforms, no personal data or referral links`);
@@ -9148,7 +9517,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `casino-almanac-backup-${dateStr}.json`;
+      a.download = `daily-roll-over-backup-${dateStr}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -9845,6 +10214,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const showLanding = localStorage.getItem('almanac_show_landing') !== 'false';
     if (!showLanding) {
       document.getElementById('landingScreen').classList.add('hidden');
+    } else {
+      playRollIntro();
     }
 
     // trackedGames is loaded near the top of this script and every element

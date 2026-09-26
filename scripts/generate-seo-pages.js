@@ -326,7 +326,7 @@ function headMarkup(title, description, canonicalUrl, jsonLd) {
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:url" content="${escapeHtml(canonicalUrl)}">
-  <meta property="og:site_name" content="The Casino Almanac">
+  <meta property="og:site_name" content="Daily Roll Over">
   ${jsonLdScript(jsonLd)}
   <style>${PAGE_STYLE}
   </style>
@@ -337,9 +337,9 @@ function pageMarkup(entry, slug, baseUrl, related, history) {
   const name = entry.name.trim();
   const ranked = RANKED.has(entry.tier) && typeof entry.dailySC === 'number' && typeof entry.daysToRedeem === 'number';
   const title = ranked
-    ? `${name} Daily Bonus: ${entry.dailySC} SC/day, ~${entry.daysToRedeem} days to cash out | The Casino Almanac`
-    : `${name} Daily Bonus Guide | The Casino Almanac`;
-  const description = `${name}: daily bonus rate, redemption minimum, payout speed, and ranking from The Casino Almanac.`;
+    ? `${name} Daily Bonus: ${entry.dailySC} SC/day, ~${entry.daysToRedeem} days to cash out | Daily Roll Over`
+    : `${name} Daily Bonus Guide | Daily Roll Over`;
+  const description = `${name}: daily bonus rate, redemption minimum, payout speed, and ranking from Daily Roll Over.`;
   const canonicalUrl = `${baseUrl}/platforms/${slug}.html`;
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -381,7 +381,7 @@ ${related.map(r => `          <li><a href="${escapeHtml(r.slug)}.html">${escapeH
 ${headMarkup(title, description, canonicalUrl, jsonLd)}
 <body>
   <header>
-    <p><a href="../index.html?src=seo">The Casino Almanac</a></p>
+    <p><a href="../index.html?src=seo">Daily Roll Over</a></p>
     <nav aria-label="Primary"><a href="index.html">Tier list</a> &middot; <a href="../index.html?src=seo">Open the daily tracker</a></nav>
   </header>
   <main>
@@ -393,11 +393,11 @@ ${facts.map(([label, value]) => `        <div><dt>${escapeHtml(label)}</dt><dd>$
       </dl>
       <p>${escapeHtml(summarize(entry, name))}</p>
       <p><a class="cta" href="${escapeHtml(entry.url)}" rel="sponsored noopener noreferrer">Visit ${escapeHtml(name)}</a></p>
-      <p class="disclosure">This may be a referral link; The Casino Almanac can earn a bonus if you sign up through it.</p>${ladderMarkup(entry)}${redeemMarkup(entry, name)}${historyMarkup(history)}${relatedMarkup}
+      <p class="disclosure">This may be a referral link; Daily Roll Over can earn a bonus if you sign up through it.</p>${ladderMarkup(entry)}${redeemMarkup(entry, name)}${historyMarkup(history)}${relatedMarkup}
     </article>
   </main>
   <footer>
-    <p><a href="index.html">Full tier list</a> &middot; <a href="../index.html?src=seo">Back to The Casino Almanac tracker</a></p>
+    <p><a href="index.html">Full tier list</a> &middot; <a href="../index.html?src=seo">Back to Daily Roll Over tracker</a></p>
     <p><a href="../privacy.html">Privacy</a> &middot; <a href="../terms.html">Terms</a></p>
   </footer>
   ${FORWARD_SRC_SCRIPT}
@@ -409,7 +409,7 @@ ${facts.map(([label, value]) => `        <div><dt>${escapeHtml(label)}</dt><dd>$
 function hubMarkup(entries, baseUrl, updated) {
   const canonicalUrl = `${baseUrl}/platforms/index.html`;
   const ranked = entries.filter(({ entry }) => RANKED.has(entry.tier));
-  const title = 'Sweepstakes Casino Daily Bonus Tier List | The Casino Almanac';
+  const title = 'Sweepstakes Casino Daily Bonus Tier List | Daily Roll Over';
   const description = `${entries.length} sweepstakes casinos ranked by how many days of free daily bonuses it takes to reach the minimum cash redemption.`;
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -449,7 +449,7 @@ ${rows.map(({ entry, slug }) => `          <tr><td><a href="${escapeHtml(slug)}.
 ${headMarkup(title, description, canonicalUrl, jsonLd)}
 <body>
   <header>
-    <p><a href="../index.html?src=seo-hub">The Casino Almanac</a></p>
+    <p><a href="../index.html?src=seo-hub">Daily Roll Over</a></p>
   </header>
   <main>
     <h1>Sweepstakes casino daily bonus tier list</h1>
@@ -458,7 +458,7 @@ ${headMarkup(title, description, canonicalUrl, jsonLd)}
 ${sections}
   </main>
   <footer>
-    <p><a href="../index.html?src=seo-hub">The Casino Almanac tracker</a></p>
+    <p><a href="../index.html?src=seo-hub">Daily Roll Over tracker</a></p>
     <p><a href="../privacy.html">Privacy</a> &middot; <a href="../terms.html">Terms</a></p>
   </footer>
   ${FORWARD_SRC_SCRIPT}

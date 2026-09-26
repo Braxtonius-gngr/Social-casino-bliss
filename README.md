@@ -1,4 +1,4 @@
-# The Casino Almanac
+# Daily Roll Over
 
 Daily bonus tracker for sweepstakes and social casino platforms. A single
 static `index.html` (plus a handful of small `assets/`/`utils/` scripts and
@@ -173,7 +173,7 @@ backups remain disabled until a durable external runner is provisioned.
 
 ### Stripe configuration
 
-1. Create a Stripe product named **Casino Almanac Pro**.
+1. Create a Stripe product named **Daily Roll Over Pro**.
 2. Create a recurring monthly price of **$4.99 USD** and store its ID as
    `STRIPE_PRICE_ID_PRO_MONTHLY`.
 3. Optionally create a **$45.00 USD/year** price and store its ID as

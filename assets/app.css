@@ -238,7 +238,7 @@
        serif, the brand word in gold. Neon's hollow monospace stroke is an
        override now, not the default. */
     .app-title { font-family: Georgia, "Times New Roman", serif; font-size: 2rem; font-weight: 700; color: var(--text-main); margin-bottom: 24px; letter-spacing: 0.01em; text-transform: none; text-align: center; }
-    .app-title span { color: var(--accent-gold); }
+    .app-title span { color: var(--accent-gold); font-family: inherit; }
 
     .hero-stat-card { border-radius: 20px; padding: 20px; display: flex; align-items: center; gap: 18px; margin-bottom: 20px; }
     .btn-start-run.hero-run-btn { width: auto; margin: 0; padding: 6px 2px; font-size: 0.85rem; text-align: left; }
@@ -626,11 +626,130 @@
       }
 
     .landing-title { font-family: Georgia, "Times New Roman", serif; font-size: 2.6rem; font-weight: 700; color: var(--text-main); letter-spacing: 0.01em; margin-bottom: 12px; text-transform: none; }
-    .landing-title span { color: var(--accent-gold); }
+    .landing-title span { color: var(--accent-gold); font-family: inherit; }
     .landing-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 40px; font-family: monospace; letter-spacing: 0.15em; font-weight: 700; }
     .landing-btn { padding: 14px 36px; background: var(--accent-gold); color: #0a0a0a; border: 1px solid var(--accent-gold); border-radius: 30px; font-size: 1rem; font-weight: 900; cursor: pointer; transition: all 0.2s; }
     .landing-legal { margin-top: 22px; max-width: 320px; font-size: 0.72rem; line-height: 1.5; color: var(--text-dim); text-align: center; }
     .landing-legal a { color: var(--text-muted); }
+    .landing-tagline { font-family: Georgia, "Times New Roman", serif; font-style: italic; font-size: 1.05rem; color: var(--text-muted); margin: 2px 0 14px; letter-spacing: 0.02em; }
+
+    /* ==========================================================================
+       ROLL INTRO - the Daily Roll Over brand intro on the landing screen.
+       Shot list: a leather cup throws two craps dice (4 + 3), time drops
+       into near-still slow motion as the camera snaps in on the pair at
+       the top of the arc (5 + 2), a light behind the camera sweeps a glint
+       and a flare across them as time speeds back up, and they land on
+       6 + 1, then pop into cash, coins and crypto before the wordmark
+       flies in.
+       Split of work: playRollIntro() in index.html drives the cup, dice,
+       floor shadows, face flips and .roll-camera on a warped clock (inline
+       transforms, one rAF loop). CSS owns everything after the pop, keyed
+       off .roll-popped, plus the glint/flare keyed off .roll-glint.
+       Base styles ARE the end state: .roll-intro is not displayed and the
+       landing copy is fully visible, so a tap, the timeline ending, or
+       motion being off (the global html[data-motion="off"] kill switch)
+       all land on the same frame.
+       Stage is a fixed 360x560 box centred on the screen; the dice land
+       at x=150/210, y=327 inside it, and the money starts from there.
+       ========================================================================== */
+    .roll-intro { display: none; position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+    .landing-screen.intro-play .roll-intro { display: block; }
+    .roll-stage { position: absolute; left: 50%; top: 50%; width: 360px; height: 560px; margin: -280px 0 0 -180px; }
+    @media (max-width: 360px) { .roll-stage { transform: scale(0.88); } }
+    .roll-camera { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
+    .roll-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+    /* Leather, brass, dice and money are drawn with the gradients in
+       .roll-defs, not theme tokens: they are physical objects under one
+       warm key light, and should read the same whatever the skin. */
+    .roll-cup { position: absolute; left: -30px; top: 150px; width: 90px; height: 100px; transform-origin: 50% 90%; opacity: 0; overflow: visible; filter: drop-shadow(0 10px 14px rgba(0,0,0,0.55)); will-change: transform; }
+    .roll-cup-shadow { fill: #000; opacity: 0; }
+
+    .roll-die-x { position: absolute; left: 76px; top: 244px; width: 34px; height: 34px; will-change: transform; }
+    .roll-die-y, .roll-die { width: 34px; height: 34px; display: block; }
+    .roll-die-y { will-change: transform; }
+    .roll-die { opacity: 0; overflow: visible; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5)); }
+    /* Contact shadow on the floor under each die: it rides the die's x
+       track but not its bounce; JS tightens and darkens it as the die
+       comes down, the cue that sells the height of each hop. */
+    .roll-die-shadow { position: absolute; left: 2px; top: 96px; width: 30px; height: 8px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,0.75), rgba(0,0,0,0)); opacity: 0; }
+
+    /* The light behind the camera: a glint sweeps each die face, a
+       horizontal flare crosses the frame where the dice are held, and a
+       soft bloom lifts the shot for a beat. */
+    .roll-die-glint { opacity: 0; }
+    .roll-glint .roll-die-glint { animation: roll-die-glint 0.45s ease-out both; }
+    @keyframes roll-die-glint {
+      0% { transform: translateX(0); opacity: 0; }
+      30% { opacity: 1; }
+      100% { transform: translateX(58px); opacity: 0; }
+    }
+    .roll-streak { position: absolute; left: -60px; top: 249px; width: 480px; height: 3px; border-radius: 2px; opacity: 0; background: linear-gradient(90deg, rgba(255,246,207,0) 0%, rgba(255,246,207,0.9) 42%, #ffffff 50%, rgba(255,246,207,0.9) 58%, rgba(255,246,207,0) 100%); box-shadow: 0 0 14px 3px rgba(243,218,146,0.55), 0 0 40px 8px rgba(212,175,55,0.25); }
+    .roll-glint .roll-streak { animation: roll-streak 0.55s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+    @keyframes roll-streak {
+      0% { transform: translateX(-160px) scaleX(0.15); opacity: 0; }
+      25% { opacity: 1; }
+      100% { transform: translateX(160px) scaleX(1); opacity: 0; }
+    }
+    .roll-bloom { position: absolute; left: 30px; top: 100px; width: 300px; height: 300px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, rgba(255,250,230,0.55), rgba(243,218,146,0.18) 55%, rgba(243,218,146,0) 100%); }
+    .roll-glint .roll-bloom { animation: roll-bloom 0.5s ease-out both; }
+    @keyframes roll-bloom {
+      0% { opacity: 0; transform: scale(0.7); }
+      30% { opacity: 1; }
+      100% { opacity: 0; transform: scale(1.15); }
+    }
+
+    .roll-flash { position: absolute; left: calc(var(--x) - 30px); top: 297px; width: 60px; height: 60px; opacity: 0; }
+    .roll-flash svg, .roll-cash svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .roll-popped .roll-flash { animation: roll-flash 0.5s ease-out forwards; }
+    .roll-popped .roll-flash + .roll-flash { animation-delay: 0.06s; }
+    @keyframes roll-flash {
+      0% { transform: scale(0.2) rotate(0deg); opacity: 1; }
+      35% { opacity: 1; }
+      100% { transform: scale(1.9) rotate(20deg); opacity: 0; }
+    }
+
+    /* Banknotes, gold coins and the two crypto coins are drawn from
+       #rollBill / #rollCoin* in .roll-defs: engraved frame and guilloche
+       on the notes, reeded edges and a struck face on every coin. */
+    .roll-cash { position: absolute; left: var(--x); top: 327px; opacity: 0; transform: translate(-50%, -50%) scale(0); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+    .roll-bill { width: 60px; height: 28px; }
+    .roll-coin { width: 28px; height: 28px; }
+    .roll-crypto { width: 32px; height: 32px; }
+    .roll-popped .roll-cash { animation: roll-cash-float 1.7s cubic-bezier(0.15, 0.6, 0.3, 1) calc(0.03s + var(--d)) both; }
+    @keyframes roll-cash-float {
+      0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 1; }
+      12% { transform: translate(calc(-50% + var(--dx) * 0.12), calc(-50% + var(--dy) * 0.12)) scale(1.15) rotate(calc(var(--r) * 0.2)); opacity: 1; }
+      70% { opacity: 0.9; }
+      100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.9) rotate(var(--r)); opacity: 0; }
+    }
+
+    /* The copy arrives last. Until the pop it is held hidden (the dark
+       well behind it sits above the intro layer and would hide the
+       dice); from the pop the wordmark flies in from large and blurred,
+       then the tagline and the rest rise in. Delays are from the pop. */
+    .landing-screen.intro-play .landing-inner > *,
+    .landing-screen.intro-play .landing-inner::before { opacity: 0; }
+    /* Hidden controls must not take a tap: a skip tap that lands where
+       the button will be should only skip, never enter the app. */
+    .landing-screen.intro-play .landing-btn,
+    .landing-screen.intro-play .landing-legal { pointer-events: none; }
+    .landing-screen.intro-play.roll-popped .landing-inner::before { animation: roll-fade 0.6s ease-out 0.35s both; }
+    .landing-screen.intro-play.roll-popped .landing-title { animation: roll-title-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s both; }
+    .landing-screen.intro-play.roll-popped .landing-tagline { animation: roll-rise 0.6s ease-out 0.95s both; }
+    .landing-screen.intro-play.roll-popped .landing-subtitle { animation: roll-rise 0.6s ease-out 1.15s both; }
+    .landing-screen.intro-play.roll-popped .landing-btn { animation: roll-rise 0.6s ease-out 1.3s both; }
+    .landing-screen.intro-play.roll-popped .landing-legal { animation: roll-rise 0.6s ease-out 1.4s both; }
+    @keyframes roll-fade { 0% { opacity: 0; } 100% { opacity: 1; } }
+    @keyframes roll-title-in {
+      0% { opacity: 0; transform: translateY(-40px) scale(1.9); filter: blur(10px); }
+      70% { opacity: 1; transform: translateY(0) scale(0.97); filter: blur(0); }
+      100% { opacity: 1; transform: none; filter: none; }
+    }
+    @keyframes roll-rise {
+      0% { opacity: 0; transform: translateY(12px); }
+      100% { opacity: 1; transform: none; }
+    }
     .landing-btn:hover { background: var(--accent-gold-hover); border-color: var(--accent-gold-hover); }
 
     .sheet-backdrop { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
@@ -1702,6 +1821,8 @@
   color: #2E2E2E; font-family: 'Oswald', sans-serif; font-weight: 700;
   letter-spacing: 0.2em; text-shadow: none;
 }
+/* The base tagline's muted grey washes out on the poster's cream paper. */
+[data-theme="western"] .landing-tagline { color: #5C4B51; text-shadow: none; }
 
 /* Buttons: neo-brutalist, flat, thick black border, hard offset shadow,
    CSS-only spring overshoot on release via a back-out easing curve.
