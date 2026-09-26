@@ -6423,6 +6423,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       flushSyncOutbox();
     }
 
+    // Search engines and link previewers render the page like a first-time
+    // visitor, and sync is on by default - without this, every crawl would
+    // mint an empty anonymous account. "[a-z]bot/" and a standalone "bot"
+    // catch "Googlebot/2.1" and friends without matching phone models like
+    // "CUBOT X30".
+    function isCrawler() {
+      return /googlebot|googleother|google-inspectiontool|adsbot-google|mediapartners-google|bingbot|yandex|duckduckbot|baiduspider|applebot|facebookexternalhit|twitterbot|slackbot|^whatsapp\/|skypeuripreview|embedly|iframely|slurp|petalbot|semrushbot|ahrefsbot|chrome-lighthouse|[a-z]bot\/|\bbot\b|crawler|spider/i
+        .test(navigator.userAgent || '');
+    }
+
     // Returns an active session, signing the device in anonymously first
     // if it doesn't have one yet. Shared by every sync entry point (the
     // automatic background kick, and the manual Settings toggle) so
@@ -6432,6 +6442,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const { data: sessionData } = await client.auth.getSession();
       let session = sessionData && sessionData.session;
       if (!session) {
+        if (isCrawler()) throw new Error('Sign-in is skipped for crawlers.');
         const { data: signInData, error } = await client.auth.signInAnonymously();
         if (error) throw error;
         session = signInData.session;
@@ -6661,7 +6672,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // interrupts the user for a background attempt the way enableCloudSync
     // below does for an explicit one).
     function kickSync() {
-      if (!isSyncEnabled()) return;
+      if (!isSyncEnabled() || isCrawler()) return;
       ensureHistorySeeded();
       flushSyncOutbox();
       pullAndReplay();
