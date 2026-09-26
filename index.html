@@ -3418,6 +3418,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         cancelAnimationFrame(raf);
         clearTimeout(timer);
         screen.removeEventListener('pointerdown', end);
+        screen.removeEventListener('focusin', end);
+        screen.removeEventListener('keydown', end);
         screen.classList.remove('intro-play', 'roll-popped', 'roll-glint');
         [camera, cup].forEach(el => el.removeAttribute('style'));
         dice.forEach(d => {
@@ -3470,7 +3472,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       };
 
       screen.classList.add('intro-play');
+      // Any tap, key press, or focus arriving on the screen (Tab onto the
+      // still-hidden Enter button) skips straight to the finished frame.
       screen.addEventListener('pointerdown', end);
+      screen.addEventListener('focusin', end);
+      screen.addEventListener('keydown', end);
       timer = setTimeout(end, totalMs);
       raf = requestAnimationFrame(frame);
     }

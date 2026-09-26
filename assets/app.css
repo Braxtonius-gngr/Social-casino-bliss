@@ -730,6 +730,10 @@
        then the tagline and the rest rise in. Delays are from the pop. */
     .landing-screen.intro-play .landing-inner > *,
     .landing-screen.intro-play .landing-inner::before { opacity: 0; }
+    /* Hidden controls must not take a tap: a skip tap that lands where
+       the button will be should only skip, never enter the app. */
+    .landing-screen.intro-play .landing-btn,
+    .landing-screen.intro-play .landing-legal { pointer-events: none; }
     .landing-screen.intro-play.roll-popped .landing-inner::before { animation: roll-fade 0.6s ease-out 0.35s both; }
     .landing-screen.intro-play.roll-popped .landing-title { animation: roll-title-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s both; }
     .landing-screen.intro-play.roll-popped .landing-tagline { animation: roll-rise 0.6s ease-out 0.95s both; }
