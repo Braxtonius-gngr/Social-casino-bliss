@@ -3632,6 +3632,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     ];
     let catalogRefreshInFlight = false;
     let catalogRefreshErrorShown = false;
+    let lastCatalogText = typeof CATALOG_BOOTSTRAP_TEXT === 'string' ? CATALOG_BOOTSTRAP_TEXT : null;
     // When the live fetch last succeeded this session - shown in bug
     // reports so "is this dev on a stale catalogue?" isn't a guess.
     let catalogLastRefreshedAt = null;
@@ -3699,22 +3700,28 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (catalogRefreshInFlight) return;
       catalogRefreshInFlight = true;
       try {
-        const response = await fetch(`${EXTERNAL_CATALOG_URL}?v=${Date.now()}`, {
-          cache: 'no-store'
-        });
+        // No ?v= cache-buster: 'no-cache' already revalidates with the
+        // server, and a unique URL per poll defeated the 304 path.
+        const response = await fetch(EXTERNAL_CATALOG_URL, { cache: 'no-cache' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const nextCatalog = validateExternalCatalog(await response.json());
-        localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify(nextCatalog));
-        const changed = reconcileLiveCatalog(nextCatalog);
+        const text = await response.text();
+        // Unchanged text is the common case every poll: it skips the parse,
+        // the ~345 KB localStorage write, and the reconcile.
+        if (text !== lastCatalogText) {
+          const nextCatalog = validateExternalCatalog(JSON.parse(text));
+          lastCatalogText = text;
+          // A full localStorage must not block applying the new rules.
+          try { localStorage.setItem(CATALOG_CACHE_KEY, text); } catch (e) {}
+          if (reconcileLiveCatalog(nextCatalog)) {
+            renderGames();
+            renderCatalogList();
+            updateHeroStats();
+            updateDailyRunButton();
+            checkForCatalogUpdates();
+          }
+        }
         catalogRefreshErrorShown = false;
         catalogLastRefreshedAt = new Date();
-        if (changed) {
-          renderGames();
-          renderCatalogList();
-          updateHeroStats();
-          updateDailyRunButton();
-          checkForCatalogUpdates();
-        }
       } catch (error) {
         if (!catalogRefreshErrorShown) {
           catalogRefreshErrorShown = true;
