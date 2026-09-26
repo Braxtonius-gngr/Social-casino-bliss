@@ -3413,7 +3413,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (t > inStart && t < inEnd) z = rollSmoother((t - inStart) / (inEnd - inStart));
       else if (t >= inEnd && t <= outStart) z = 1;
       else if (t > outStart && t < outEnd) z = 1 - rollSmoother((t - outStart) / (outEnd - outStart));
-      const travel = rollSmoother(rollClamp01((t - inStart) / (outEnd - inStart)));
+      // Travel spans the fully-zoomed window so the roll and dolly land on their
+      // configured endpoints; z alone eases the move in and out around it.
+      const travel = rollSmoother(rollClamp01((t - inEnd) / (outStart - inEnd)));
       return {
         z,
         scale: 1 + (ROLL_CAM.zoom + ROLL_CAM.push * travel - 1) * z,
