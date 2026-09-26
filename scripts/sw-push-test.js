@@ -172,7 +172,7 @@ const TESTS = [
   ['with nothing new and nothing due, it makes no ready claim', async () => {
     const sw = loadWorker({ idb: fakeIndexedDB({ drop_alerts: STATE, push_schedule: [{ at: NOW - 5 * HOUR, count: 4 }] }), rows: [] });
     await sw.push();
-    expect(sw.shown.map(n => n.body), ["Open the Almanac to see what's new."], 'neutral note');
+    expect(sw.shown.map(n => n.body), ["Open Daily Roll Over to see what's new."], 'neutral note');
   }],
 
   ['sites under a two-part country suffix match only themselves', async () => {

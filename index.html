@@ -5326,7 +5326,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (!pushSupported()) {
         const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
         showToast(ios
-          ? 'On iPhone and iPad, add the Almanac to your Home Screen first, then turn this on from the installed app.'
+          ? 'On iPhone and iPad, add Daily Roll Over to your Home Screen first, then turn this on from the installed app.'
           : "This browser can't receive background alerts.", null, 9000);
         return false;
       }
@@ -5479,7 +5479,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const el = document.getElementById('launchContextNote');
       if (!el) return;
       if (isEmbeddedWebView()) {
-        el.innerHTML = '&#9888; This page is running inside an in-app browser, not your real browser. Platform links can&rsquo;t hand off properly from here, and Google sign-in will refuse to load at all &mdash; Google blocks it in embedded browsers, which looks like the sign-in page closing itself. Open the almanac in Chrome, or install it from Chrome, and platform links will behave normally.';
+        el.innerHTML = '&#9888; This page is running inside an in-app browser, not your real browser. Platform links can&rsquo;t hand off properly from here, and Google sign-in will refuse to load at all &mdash; Google blocks it in embedded browsers, which looks like the sign-in page closing itself. Open Daily Roll Over in Chrome, or install it from Chrome, and platform links will behave normally.';
         el.style.color = 'var(--accent-orange)';
         return;
       }
@@ -5751,9 +5751,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try { localStorage.setItem(INSTALL_NUDGE_KEY, JSON.stringify(nudge)); } catch (e) {}
       trackEvent('install_prompt_shown', { platform: ios ? 'ios' : 'native', days });
       if (ios) {
-        showToast('Add the Almanac to your Home Screen: tap Share, then "Add to Home Screen". On iPhone that is also what lets alerts reach you while it is closed.', null, 15000);
+        showToast('Add Daily Roll Over to your Home Screen: tap Share, then "Add to Home Screen". On iPhone that is also what lets alerts reach you while it is closed.', null, 15000);
       } else {
-        showToast('Install the Almanac: it opens like an app, and alerts can reach you while it is closed.', installPWA, 15000, 'INSTALL');
+        showToast('Install Daily Roll Over: it opens like an app, and alerts can reach you while it is closed.', installPWA, 15000, 'INSTALL');
       }
     }
 
@@ -8702,7 +8702,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `almanac-ledger-${new Date().toISOString().split('T')[0]}.csv`;
+      a.href = url; a.download = `daily-roll-over-ledger-${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
       showToast('Ledger exported as CSV');
@@ -8781,7 +8781,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const blob = new Blob([JSON.stringify(deck, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `almanac-deck-${new Date().toISOString().split('T')[0]}.json`;
+      a.href = url; a.download = `daily-roll-over-deck-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
       showToast(`Deck exported \u2014 ${deck.platforms.length} platforms, no personal data or referral links`);

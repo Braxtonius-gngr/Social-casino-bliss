@@ -316,7 +316,7 @@ self.addEventListener('push', (event) => {
       // since expired, or a lookup that failed): a push must still show
       // something, so it makes no claim about what is ready.
       return self.registration.showNotification('Daily Roll Over', {
-        body: 'Open the Almanac to see what\'s new.',
+        body: 'Open Daily Roll Over to see what\'s new.',
         tag: 'almanac-ready',
         renotify: false,
         icon: 'apple-touch-icon.png'
