@@ -1,6 +1,11 @@
 -- Saved queries over public.app_events. Run in the Supabase SQL editor.
 -- One "user" is one auth user (anonymous sign-ins included); events are only
 -- recorded while that device has Cloud Sync on.
+-- Until the sign-in fix in PR #51 a first visit created about four anonymous
+-- accounts at once (a race between the syncs kickSync() starts), and only the
+-- one the device kept ever records anything. So counting auth.users overstates
+-- visitors roughly fourfold for that period; these app_events counts are not
+-- affected.
 
 -- Daily active users, last 30 days.
 select date_trunc('day', created_at) as day, count(distinct user_id) as dau

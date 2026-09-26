@@ -217,6 +217,9 @@ function validateEntry(entry, index, failures) {
     failures.push(`${label}: has ${shown} but no cashFloor/dailySC behind it - an entry missing either input must say "Unranked" (or "Not Rankable" with noGuaranteedDaily: true, if it structurally has no guaranteed daily SC)`);
   }
 
+  validateLadder(entry, label, failures);
+  validateRedeemMethods(entry, label, failures);
+
   if (entry.lastVerified !== undefined) {
     if (typeof entry.lastVerified !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(entry.lastVerified)) {
       failures.push(`${label}: field "lastVerified" must be a "YYYY-MM-DD" string, got ${JSON.stringify(entry.lastVerified)}`);
@@ -229,6 +232,85 @@ function validateEntry(entry, index, failures) {
       }
     }
   }
+}
+
+function isShortText(value, max) {
+  return typeof value === 'string' && value.trim() !== '' && value.length <= max;
+}
+
+// "ladder" is the daily streak as read off the site, Day 1 first: each rung
+// is { sc?, gc?, extra? } (extra names a non-coin reward, e.g. "wheel spin"),
+// or null for a day that wasn't readable. The platform pages print it as a
+// table. A ladder marked ladder-full must average out to its own dailySC,
+// which catches a mistyped rung the moment it is entered.
+function validateLadder(entry, label, failures) {
+  if (entry.ladderNote !== undefined && !isShortText(entry.ladderNote, 160)) {
+    failures.push(`${label}: field "ladderNote" must be a non-empty string of at most 160 characters`);
+  }
+  if (entry.ladder === undefined) {
+    if (entry.ladderNote !== undefined) failures.push(`${label}: has a ladderNote but no ladder`);
+    return;
+  }
+  if (!Array.isArray(entry.ladder) || entry.ladder.length < 1 || entry.ladder.length > 60) {
+    failures.push(`${label}: field "ladder" must be an array of 1 to 60 days`);
+    return;
+  }
+  let complete = true;
+  let total = 0;
+  entry.ladder.forEach((rung, i) => {
+    const day = `${label}: ladder Day ${i + 1}`;
+    if (rung === null) { complete = false; return; }
+    if (!rung || typeof rung !== 'object' || Array.isArray(rung)) {
+      failures.push(`${day} must be an object or null`);
+      return;
+    }
+    const keys = Object.keys(rung);
+    const unknown = keys.filter(k => !['sc', 'gc', 'extra'].includes(k));
+    if (unknown.length) failures.push(`${day} has unknown field(s) ${unknown.join(', ')} - use sc, gc and extra`);
+    if (!keys.length) failures.push(`${day} is empty - use null for a day that wasn't readable`);
+    for (const k of ['sc', 'gc']) {
+      if (rung[k] !== undefined && (!isFiniteNumber(rung[k]) || rung[k] <= 0)) {
+        failures.push(`${day}: "${k}" must be a positive number (leave it out for none), got ${JSON.stringify(rung[k])}`);
+      }
+    }
+    if (rung.extra !== undefined && !isShortText(rung.extra, 60)) {
+      failures.push(`${day}: "extra" must be a non-empty string of at most 60 characters`);
+    }
+    if (isFiniteNumber(rung.sc)) total += rung.sc;
+  });
+  if (entry.scSource === 'ladder-full') {
+    if (!complete) {
+      failures.push(`${label}: scSource is ladder-full but its ladder has unread days (null)`);
+    } else if (isFiniteNumber(entry.dailySC) && Math.abs(total / entry.ladder.length - entry.dailySC) > 0.006) {
+      failures.push(`${label}: its ${entry.ladder.length}-day ladder averages ${(total / entry.ladder.length).toFixed(3)} SC a day, not the recorded dailySC ${entry.dailySC}`);
+    }
+  }
+}
+
+// "redeemMethods" lists the cash-out options read off the redeem screen or
+// the site's rules: { method, min?, note? }, min in the site's redeemable
+// coin. Only what was actually seen - a method with no stated minimum
+// leaves min out rather than guessing it from the others.
+function validateRedeemMethods(entry, label, failures) {
+  if (entry.redeemMethods === undefined) return;
+  if (!Array.isArray(entry.redeemMethods) || entry.redeemMethods.length < 1 || entry.redeemMethods.length > 20) {
+    failures.push(`${label}: field "redeemMethods" must be an array of 1 to 20 methods`);
+    return;
+  }
+  entry.redeemMethods.forEach((m, i) => {
+    const where = `${label}: redeemMethods[${i}]`;
+    if (!m || typeof m !== 'object' || Array.isArray(m)) {
+      failures.push(`${where} must be an object`);
+      return;
+    }
+    const unknown = Object.keys(m).filter(k => !['method', 'min', 'note'].includes(k));
+    if (unknown.length) failures.push(`${where} has unknown field(s) ${unknown.join(', ')} - use method, min and note`);
+    if (!isShortText(m.method, 60)) failures.push(`${where}: "method" must be a non-empty string of at most 60 characters`);
+    if (m.min !== undefined && (!isFiniteNumber(m.min) || m.min <= 0)) {
+      failures.push(`${where}: "min" must be a positive number, got ${JSON.stringify(m.min)}`);
+    }
+    if (m.note !== undefined && !isShortText(m.note, 80)) failures.push(`${where}: "note" must be a non-empty string of at most 80 characters`);
+  });
 }
 
 // How many whole days old a "YYYY-MM-DD" verification date is. A missing

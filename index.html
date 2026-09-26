@@ -639,6 +639,10 @@
         </div>
       </div>
       <div style="margin-top:14px;">
+        <button id="btnDeleteCloudData" class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-pink); color:var(--accent-pink); text-shadow:0 0 5px var(--accent-pink);" onclick="deleteMyCloudData()">Delete My Cloud Data</button>
+        <div class="backup-helper" style="margin-top:4px;">Permanently deletes this device's cloud account and everything stored with it: the cloud copy of your platforms and collection history, background alerts, usage events and community submissions. What's on this device stays, and Cloud Sync turns off. A running Pro subscription has to be cancelled first.</div>
+      </div>
+      <div style="margin-top:14px;">
         <button id="btnRestorePrevious" class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="restoreFromRecoverySnapshot()">Restore Previous State (Undo Last Import)</button>
         <div id="restorePreviousHint" class="backup-helper" style="margin-top:6px;"></div>
       </div>
@@ -2777,8 +2781,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           normalizeTimerFields(game); // e.g. a typed "0" or "-5" hours recovers to the 24h default
           const alertsBox = document.getElementById('modalAlertsOn');
           if (alertsBox && !alertsBox.disabled) {
+            const wasMuted = !!game.alertsMuted;
             if (alertsBox.checked) delete game.alertsMuted;
             else game.alertsMuted = true;
+            if (wasMuted !== !!game.alertsMuted) trackAlertRulesSaved();
           }
         }
       } else {
@@ -4728,27 +4734,75 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // going quiet.
     const ALERT_TIER_RANK = { 'S': 6, 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'F': 1 };
     const PRO_CACHE_KEY = 'almanac_pro_cache_v1';
+    // How long after a paid period ends to look again: long enough for a
+    // renewal's webhook to have moved the period on. The floor keeps a
+    // device clock that runs ahead of the server's from re-asking in a loop.
+    const PRO_RECHECK_GRACE_MS = 10 * 60 * 1000;
+    const PRO_RECHECK_MIN_MS = 5 * 60 * 1000;
     // The rule state the current alert schedule was built with, so an
     // entitlement answer only reschedules when it actually changes things.
     let alertRulesScheduledWith = null;
+    // The signed-in account, once an entitlement lookup has seen a session.
+    let entitlementUid = null;
+    let proRecheckTimer = null;
 
     // The last entitlement the server confirmed, so the rules hold at boot
     // and offline instead of switching off until the lookup answers. Only a
-    // real answer rewrites it; a failed lookup leaves it as it was.
-    function saveProCache(isPro, until) {
-      try { localStorage.setItem(PRO_CACHE_KEY, JSON.stringify({ isPro: !!isPro, until: until || null })); } catch (e) {}
+    // real answer rewrites it; a failed lookup leaves it as it was. It names
+    // its account, so switching to another one on this device never
+    // inherits the last one's Pro.
+    function saveProCache(isPro, until, uid, cancelAtPeriodEnd) {
+      try {
+        localStorage.setItem(PRO_CACHE_KEY, JSON.stringify({
+          isPro: !!isPro, until: until || null, uid: uid || null, cancelAtPeriodEnd: !!cancelAtPeriodEnd
+        }));
+      } catch (e) {}
+    }
+
+    function readProCache() {
+      try {
+        const cached = JSON.parse(localStorage.getItem(PRO_CACHE_KEY));
+        if (!cached || cached.isPro !== true) return null;
+        if (entitlementUid && cached.uid !== entitlementUid) return null;
+        return cached;
+      } catch (e) { return null; }
     }
 
     function cachedProActive() {
-      try {
-        const cached = JSON.parse(localStorage.getItem(PRO_CACHE_KEY));
-        if (!cached || cached.isPro !== true) return false;
-        return !cached.until || new Date(cached.until).getTime() > serverNow();
-      } catch (e) { return false; }
+      const cached = readProCache();
+      return !!cached && (!cached.until || new Date(cached.until).getTime() > serverNow());
     }
 
     function alertRulesActive() {
       return clientEntitlements.isPro || cachedProActive();
+    }
+
+    // When the Pro the rules rest on runs out: { at, final } where final
+    // means it is set to cancel then rather than renew. null if there's no
+    // end in sight or no Pro at all.
+    function proRulesEnd() {
+      if (clientEntitlements.isPro) {
+        const at = clientEntitlements.currentPeriodEnd ? new Date(clientEntitlements.currentPeriodEnd).getTime() : NaN;
+        return Number.isFinite(at) ? { at, final: !!clientEntitlements.cancelAtPeriodEnd } : null;
+      }
+      const cached = cachedProActive() ? readProCache() : null;
+      const at = cached && cached.until ? new Date(cached.until).getTime() : NaN;
+      return Number.isFinite(at) ? { at, final: !!cached.cancelAtPeriodEnd } : null;
+    }
+
+    // Pro can run out while the app stays open, or offline: look again just
+    // after the period ends, so the rules switch off - or carry on, once a
+    // renewal has landed - without waiting for the next launch. Long waits
+    // are chunked, since a timer can't span more than about 24 days.
+    function armProRecheck() {
+      if (proRecheckTimer) { clearTimeout(proRecheckTimer); proRecheckTimer = null; }
+      const end = proRulesEnd();
+      if (!end) return;
+      const delay = Math.min(Math.max(end.at + PRO_RECHECK_GRACE_MS - serverNow(), PRO_RECHECK_MIN_MS), 0x7fffffff);
+      proRecheckTimer = setTimeout(() => {
+        proRecheckTimer = null;
+        syncUserEntitlements();
+      }, delay);
     }
 
     // Whether a platform counts toward an alert under the rules. Unranked
@@ -4764,13 +4818,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return game.tier === 'Not Rankable' ? false : !!prefs.includeUnranked;
     }
 
-    function alertGames(prefs) {
-      const rulesOn = alertRulesActive();
+    function alertGames(prefs, rulesOn = alertRulesActive()) {
       return trackedGames.filter(g => alertEligible(g, prefs, rulesOn));
     }
 
-    function digestActive(prefs) {
-      return !!prefs.digest && isValidNotifyTime(prefs.digestTime) && alertRulesActive();
+    function digestActive(prefs, rulesOn = alertRulesActive()) {
+      return !!prefs.digest && isValidNotifyTime(prefs.digestTime) && rulesOn;
     }
 
     // When a platform next counts as ready for an alert. getCooldownState()'s
@@ -4839,7 +4892,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // Unmuting stays open without Pro, so a lapsed mute can always be cleared.
         const muted = trackedGames.filter(g => g.alertsMuted);
         mutedList.innerHTML = muted.length
-          ? 'Muted: ' + muted.map(g => `<button type="button" class="tag-pill alert-unmute" aria-label="Unmute ${escHtml(g.name)}" onclick="setAlertsMuted('${g.id}', false)">${escHtml(g.name)} &times;</button>`).join(' ')
+          ? 'Muted: ' + muted.map(g => `<button type="button" class="tag-pill alert-unmute" data-id="${escHtml(g.id)}" aria-label="Unmute ${escHtml(g.name)}" onclick="setAlertsMuted(this.dataset.id, false)">${escHtml(g.name)} &times;</button>`).join(' ')
           : (active ? 'To mute a single platform, open its &hellip; menu.' : '');
       }
     }
@@ -4855,8 +4908,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (unranked) patch.includeUnranked = unranked.checked;
       if (digest) patch.digest = digest.checked;
       if (digestTime && isValidNotifyTime(digestTime.value)) patch.digestTime = digestTime.value;
-      const prefs = saveNotifyPrefs(patch);   // this reschedules
+      saveNotifyPrefs(patch);   // this reschedules
       refreshAlertRulesUI();
+      trackAlertRulesSaved();
+    }
+
+    function trackAlertRulesSaved() {
+      const prefs = getNotifyPrefs();
       trackEvent('alert_rules_saved', {
         minTier: prefs.minTier,
         digest: prefs.digest,
@@ -4866,11 +4924,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     function setAlertsMuted(id, muted) {
       const game = trackedGames.find(g => g.id === id);
-      if (!game || (muted && !alertRulesActive())) return;
+      if (!game || (muted && !alertRulesActive()) || !!game.alertsMuted === !!muted) return;
       if (muted) game.alertsMuted = true;
       else delete game.alertsMuted;
       persist();   // saves, re-renders the deck and reschedules alerts
       refreshAlertRulesUI();
+      trackAlertRulesSaved();
     }
 
     // Called whenever an entitlement answer comes back: Pro switching on or
@@ -4881,6 +4940,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         renderGames();
       }
       refreshAlertRulesUI();
+      armProRecheck();
     }
 
     // Reuses getCooldownState() - the same canonical calculation every
@@ -4889,12 +4949,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // wrong for any fixed-reset platform. Snoozed platforms are excluded:
     // the user asked not to be bothered about them right now. So is
     // anything the alert rules leave out.
-    function readyAlertGames(prefs) {
-      return alertGames(prefs).filter(g => getCooldownState(g).isReady && !isSnoozed(g));
+    function readyAlertGames(prefs, rulesOn) {
+      return alertGames(prefs, rulesOn).filter(g => getCooldownState(g).isReady && !isSnoozed(g));
     }
 
-    function countReadyNow(prefs = getNotifyPrefs()) {
-      return readyAlertGames(prefs).length;
+    function countReadyNow(prefs = getNotifyPrefs(), rulesOn) {
+      return readyAlertGames(prefs, rulesOn).length;
     }
 
     function scheduleNextNotification() {
@@ -5000,6 +5060,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // the copy of the schedule kept in IndexedDB.
     const PUSH_PREF_KEY = 'almanac_push_v1';
     const PUSH_SCHEDULE_KEY = 'push_schedule';
+    // How far ahead the uploaded schedule reaches.
+    const PUSH_HORIZON_MS = 14 * 24 * 3600000;
     let pushSyncTimer = null;
     let lastPushScheduleJson = null;
 
@@ -5036,11 +5098,25 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function buildPushSchedule(now) {
       const prefs = getNotifyPrefs();
       if (!prefs.enabled || !notificationsSupported() || Notification.permission !== 'granted') return [];
+      const rulesOn = alertRulesActive();
+      const end = rulesOn ? proRulesEnd() : null;
+      // A subscription set to cancel stops shaping alerts when it ends, even
+      // if this device isn't opened again before then. One that renews
+      // keeps them: the next launch confirms it.
+      if (end && end.final && end.at < now + PUSH_HORIZON_MS) {
+        return pushEntries(now, prefs, true).filter(e => e.at < end.at)
+          .concat(pushEntries(now, prefs, false).filter(e => e.at >= end.at))
+          .slice(0, 48);
+      }
+      return pushEntries(now, prefs, rulesOn);
+    }
+
+    function pushEntries(now, prefs, rulesOn) {
       const HOUR = 3600000;
-      const horizon = now + 14 * 24 * HOUR;
+      const horizon = now + PUSH_HORIZON_MS;
       const startAt = Math.max(now, Number(prefs.pausedUntil) || 0);
-      const games = alertGames(prefs);
-      if (digestActive(prefs)) {
+      const games = alertGames(prefs, rulesOn);
+      if (digestActive(prefs, rulesOn)) {
         // One entry a day at the digest time, counting what will be ready by
         // then if nothing is collected first; a day with nothing ready is
         // left out. The names stay in this device's copy (syncPushSchedule()).
@@ -5054,7 +5130,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         }
         return digests;
       }
-      const readyNow = countReadyNow(prefs);
+      const readyNow = countReadyNow(prefs, rulesOn);
       const times = games.map(g => alertReadyAt(g, now))
         .filter(t => t > now && t < horizon).sort((a, b) => a - b);
       const schedule = [];
@@ -5099,7 +5175,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const uploaded = schedule.map(entry => ({ at: entry.at, count: entry.count }));
         const payloadJson = JSON.stringify([sub.endpoint, uploaded]);
         if (!force && payloadJson === lastPushScheduleJson) return;
-        const session = await ensureSyncSignedIn(client);
+        const session = await ensureSyncSignedIn(client, isPushEnabled);
         const { error } = await client.from('push_subscriptions').upsert({
           user_id: session.user.id,
           endpoint: sub.endpoint,
@@ -5895,13 +5971,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // Anonymous sessions are queried too: checkout accepts them, so an
       // anonymous user can own a paid subscription.
       if (!client || !session) return resetClientEntitlements();
+      entitlementUid = session.user && session.user.id || null;
 
       try {
         const { data, error } = await client.rpc('get_my_entitlement');
         if (error || !Array.isArray(data)) return resetClientEntitlements();
         // An empty answer is still an answer: this account has no Pro.
         if (!data.length) {
-          saveProCache(false, null);
+          saveProCache(false, null, entitlementUid);
           return resetClientEntitlements();
         }
         const entitlement = data[0];
@@ -5910,7 +5987,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         clientEntitlements.status = entitlement.status || 'active';
         clientEntitlements.currentPeriodEnd = entitlement.current_period_end || null;
         clientEntitlements.cancelAtPeriodEnd = Boolean(entitlement.cancel_at_period_end);
-        saveProCache(clientEntitlements.isPro, clientEntitlements.currentPeriodEnd);
+        saveProCache(clientEntitlements.isPro, clientEntitlements.currentPeriodEnd, entitlementUid, clientEntitlements.cancelAtPeriodEnd);
       } catch (error) {
         resetClientEntitlements();
       } finally {
@@ -6869,11 +6946,29 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // automatic background kick, and the manual Settings toggle) so
     // sign-in happens the first time ANY of them needs it, not only on an
     // explicit button click.
-    async function ensureSyncSignedIn(client) {
+    // kickSync() starts several syncs at once, and on a fresh device each
+    // used to find no session and sign in by itself - four or more anonymous
+    // accounts per first visit, all but one left empty. Calls now run one
+    // after another, so the second finds the session the first created.
+    //
+    // Background work passes stillWanted (is sync, or are alerts, still on?),
+    // asked again when its turn comes: a sync queued before the user turned
+    // sync off or deleted the account must not sign in to a new one. What
+    // the user just asked for (checkout, linking an email) passes nothing.
+    let signInQueue = Promise.resolve();
+
+    function ensureSyncSignedIn(client, stillWanted) {
+      const run = signInQueue.then(() => signInIfNeeded(client, stillWanted));
+      signInQueue = run.catch(() => {});
+      return run;
+    }
+
+    async function signInIfNeeded(client, stillWanted) {
       const { data: sessionData } = await client.auth.getSession();
       let session = sessionData && sessionData.session;
       if (!session) {
         if (isCrawler()) throw new Error('Sign-in is skipped for crawlers.');
+        if (stillWanted && !stillWanted()) throw new Error('Sign-in skipped: this sync was switched off.');
         const { data: signInData, error } = await client.auth.signInAnonymously();
         if (error) throw error;
         session = signInData.session;
@@ -6893,7 +6988,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (!outbox.length) return;
       syncInFlight = true;
       try {
-        const session = await ensureSyncSignedIn(client);
+        const session = await ensureSyncSignedIn(client, isSyncEnabled);
         const deviceId = getDeviceId();
         const rows = outbox.map((op) => ({
           id: op.id,
@@ -6925,7 +7020,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const client = getSupabaseClient();
       if (!client || !isSyncEnabled()) return;
       try {
-        await ensureSyncSignedIn(client);
+        await ensureSyncSignedIn(client, isSyncEnabled);
         const cursor = localStorage.getItem(SYNC_CURSOR_KEY) || '1970-01-01T00:00:00.000Z';
         const { data, error } = await client
           .from('collection_events')
@@ -7048,6 +7143,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         renderTagChips();
         updateHeroStats();
         updateDailyRunButton();
+        // Its timers, and mutes, decide which alerts should exist here too.
+        scheduleNextNotification();
+        refreshAlertRulesUI();
       }
       try { localStorage.setItem(DECK_SYNC_CURSOR_KEY, data.updated_at); } catch (e) {}
       return true;
@@ -7070,7 +7168,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const client = getSupabaseClient();
       if (!client) return;
       try {
-        const session = await ensureSyncSignedIn(client);
+        const session = await ensureSyncSignedIn(client, isSyncEnabled);
         const uid = session.user.id;
         // First time THIS DEVICE has synced the deck under this account
         // identity (fresh install signing in, or a "Recover a Linked
@@ -7149,6 +7247,67 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function toggleCloudSync() {
       if (isSyncEnabled()) disableCloudSync();
       else enableCloudSync();
+    }
+
+    // Self-serve deletion of everything the cloud holds for this account
+    // (delete_my_account() in supabase/migrations): the account row goes and
+    // every table keyed to it cascades. What's on this device stays, and
+    // Cloud Sync switches off so the next launch doesn't upload it all again
+    // under a fresh anonymous account.
+    async function deleteMyCloudData() {
+      const client = getSupabaseClient();
+      let session = null;
+      try {
+        session = client ? (await client.auth.getSession()).data.session : null;
+      } catch (e) {
+        session = null;
+      }
+      if (!client || !session) {
+        showToast('There is no cloud account on this device to delete.', null);
+        return;
+      }
+      const email = session.user && session.user.email;
+      const confirmed = window.confirm(
+        'Permanently delete this cloud account and everything stored with it?\n\n' +
+        'That is the cloud copy of your platforms and collection history, background alerts, usage events and community submissions' +
+        (email ? `, and the link to ${email}` : '') + '. This cannot be undone.\n\n' +
+        "What's on this device stays, and Cloud Sync turns off."
+      );
+      if (!confirmed) return;
+      const btn = document.getElementById('btnDeleteCloudData');
+      if (btn) btn.disabled = true;
+      try {
+        const { error } = await client.rpc('delete_my_account');
+        if (error) throw error;
+        try { localStorage.setItem(SYNC_ENABLED_KEY, 'false'); } catch (e) {}
+        analyticsQueue = [];
+        [SYNC_OUTBOX_KEY, SYNC_CURSOR_KEY, SYNC_META_KEY, SYNC_SEEDED_KEY, EMAIL_GATE_PASSED_KEY,
+          DECK_SYNC_DIRTY_KEY, DECK_SYNC_CURSOR_KEY, PRO_CACHE_KEY].forEach(key => {
+          try { localStorage.removeItem(key); } catch (e) {}
+        });
+        // The server row went with the account; this drops the browser's side.
+        await disableBackgroundPush();
+        try { await client.auth.signOut({ scope: 'local' }); } catch (e) {}
+        // signOut() normally clears it, but the server no longer knows the
+        // user, so make sure supabase-js's stored session is gone too.
+        try { localStorage.removeItem(`sb-${new URL(SUPABASE_URL).hostname.split('.')[0]}-auth-token`); } catch (e) {}
+        resetClientEntitlements();
+        renderSyncStatusUI();
+        renderSyncEmailUI();
+        refreshNotifyUI();
+        showToast('Cloud account deleted. Your data on this device is untouched, and Cloud Sync is off.', null, 8000);
+      } catch (err) {
+        const message = (err && err.message) || '';
+        if (/ACTIVE_SUBSCRIPTION/.test(message)) {
+          showToast('Cancel your Pro subscription in Manage Billing first. Once it has ended, you can delete everything here.', null, 9000);
+        } else if (/MODERATOR_ACCOUNT/.test(message)) {
+          showToast("Moderator accounts can't be deleted from here.", null);
+        } else {
+          showToast('Could not delete cloud data: ' + (message || 'unknown error'), null);
+        }
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     }
 
     function renderSyncStatusUI(overrideText) {
@@ -8636,8 +8795,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (typeof g.name !== 'string' || g.name.trim() === '') return { ok: false, error: `entry ${index + 1}: missing a valid name` };
       if (typeof g.url !== 'string' || g.url.trim() === '') return { ok: false, error: `entry ${index + 1} ("${g.name}"): missing a valid URL` };
 
+      // Ids end up inside inline onclick handlers, so an imported one that
+      // could break out of its quotes is replaced (history is keyed by name).
+      const importedId = String(g.id || '');
       const n = {
-        id: String(g.id || uid()),
+        id: /^[A-Za-z0-9_-]{1,64}$/.test(importedId) ? importedId : uid(),
         name: g.name.trim(),
         url: g.url.trim(),
         tier: typeof g.tier === 'string' && g.tier ? g.tier : 'Unranked',
