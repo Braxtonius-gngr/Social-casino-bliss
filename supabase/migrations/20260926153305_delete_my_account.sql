@@ -1,3 +1,5 @@
+-- Applied to production on 2026-09-26 as version 20260926153305.
+--
 -- Self-serve deletion (Settings -> Delete My Cloud Data). Deleting the
 -- caller's auth.users row removes everything stored with the account: every
 -- user table here references auth.users ON DELETE CASCADE (collection_events,
