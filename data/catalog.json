@@ -655,18 +655,19 @@
   {
     "name": "Dara Casino",
     "resetHour": 0,
-    "resetTZ": "UTC",
+    "resetTZ": "America/New_York",
     "cooldown": 24,
     "url": "https://daracasino.com/",
     "tier": "Unranked",
-    "dailySC": 0.45,
+    "dailySC": 0.07,
     "speedHours": 24,
     "reliability": 72,
     "hasLive": false,
     "minRedeem": "Varies",
     "confidence": "low",
-    "notes": "REDEEM PANEL CAPTURED 2026-09-26 (owner screenshot, daracasino.com): \"Sweepstakes Coins are subject to a five (5) times playthrough requirement prior to redemption eligibility\", with a Redemption Progress bar (97.8% at capture, 0.09 SC available). No minimum redemption amount is shown on the panel, so the entry stays Unranked; the dailySC 0.45 is still unverified. | Collect via + then Daily bonus; Best: Mines TIER 2026-09-21: UNRANKED, and deliberately so. It was B, inherited from the original sheets rather than derived. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here minRedeem reads \"Varies\", so no cash floor is known. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE REDEEM PAGE WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0.45. confidence: none.",
-    "lastVerified": "2026-09-26"
+    "notes": "DAILY SOURCES CAPTURED 2026-09-26 (owner screenshots, daracasino.com/lobby). LOGIN STREAK BONUS, read in full: Day 1 500 GC, Day 2 600, Day 3 1,000, Day 4 1,200, Day 5 1,500, Day 6 1,800 GC + 0.20 SC, Day 7 2,000 GC + 0.3 SC - 0.5 SC a week, 0.07/day (replacing the unsourced 0.45). It is billed \"For a limited time: Sep. 21, 2026 - Sep. 27, 2026\", so it may not repeat, and confidence stays low. RESET: \"NEXT IN 16:34:18\" at 06:25 local (UTC-5) lands on 04:00 UTC, midnight Eastern (was recorded as midnight UTC). EXCLUDED as chance: the daily SILVER Wheel mixes SC segments (0.1, 0.2, 0.3, 0.4, 0.5 and 1 SC, each with 7K-11K GC) with two GC-only 20K segments. A one-time 500 GC welcome bonus is not a daily. Still Unranked: no redemption minimum is shown. | REDEEM PANEL CAPTURED 2026-09-26 (owner screenshot, daracasino.com): \"Sweepstakes Coins are subject to a five (5) times playthrough requirement prior to redemption eligibility\", with a Redemption Progress bar (97.8% at capture, 0.09 SC available). No minimum redemption amount is shown on the panel, so the entry stays Unranked; the dailySC 0.45 is still unverified. | Collect via + then Daily bonus; Best: Mines TIER 2026-09-21: UNRANKED, and deliberately so. It was B, inherited from the original sheets rather than derived. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here minRedeem reads \"Varies\", so no cash floor is known. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE REDEEM PAGE WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0.45. confidence: none.",
+    "lastVerified": "2026-09-26",
+    "scSource": "ladder-full"
   },
   {
     "name": "Dime Sweeps",
