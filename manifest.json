@@ -1,6 +1,6 @@
 {
-  "name": "The Casino Almanac",
-  "short_name": "Almanac",
+  "name": "Daily Roll Over",
+  "short_name": "Roll Over",
   "description": "Daily bonus tracker for sweepstakes and social casino platforms.",
   "display": "standalone",
   "orientation": "portrait",

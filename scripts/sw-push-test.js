@@ -135,7 +135,7 @@ const TESTS = [
     expect(idb.data.get('drop_seen'), ['d1'], 'remembered as shown');
     expect(/announced_at=gte\./.test(sw.fetched[0]) && /active=eq\.true/.test(sw.fetched[0]), true, 'asks for recently announced, active drops');
     await sw.push();
-    expect(sw.shown.map(n => n.title), ['New drop: Smoke Casino', 'Casino Almanac'], 'not shown twice');
+    expect(sw.shown.map(n => n.title), ['New drop: Smoke Casino', 'Daily Roll Over'], 'not shown twice');
   }],
 
   ['past three drops, the rest are summed up and all count as seen', async () => {
@@ -212,7 +212,7 @@ const TESTS = [
     const idb = fakeIndexedDB({ drop_alerts: STATE, push_schedule: [{ at: NOW - 1000, count: 3 }] });
     const sw = loadWorker({ idb, rows: [DROP] });
     await sw.push();
-    expect(sw.shown.map(n => n.title), ['New drop: Smoke Casino', 'Casino Almanac'], 'both');
+    expect(sw.shown.map(n => n.title), ['New drop: Smoke Casino', 'Daily Roll Over'], 'both');
   }],
 
   ['a stale schedule entry does not ride along with a drop', async () => {
@@ -226,7 +226,7 @@ const TESTS = [
     const idb = fakeIndexedDB({ drop_alerts: STATE });
     const sw = loadWorker({ idb, rows: [{ ...DROP, expires_at: new Date(NOW - 60000).toISOString() }] });
     await sw.push();
-    expect(sw.shown.map(n => n.title), ['Casino Almanac'], 'no drop alert');
+    expect(sw.shown.map(n => n.title), ['Daily Roll Over'], 'no drop alert');
   }],
 
   ['clicking a drop alert opens Freebies', async () => {

@@ -27,11 +27,11 @@
     })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>The Casino Almanac</title>
+  <title>Daily Roll Over</title>
   <meta name="theme-color" content="#0a0b0a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Almanac" />
+  <meta name="apple-mobile-web-app-title" content="Roll Over" />
   <meta name="mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -55,8 +55,33 @@
     <div class="landing-smoke" aria-hidden="true">
       <span></span><span></span><span></span><span></span><span></span><span></span>
     </div>
+    <!-- Brand intro: a dice cup throws two craps dice, they bounce, then
+         pop into cash, coins and crypto that float up before the wordmark
+         flies in. Pure CSS, driven by .intro-play (added by playRollIntro()
+         and removed when it ends or the screen is tapped). Every element's
+         base style is its FINAL state, so with motion off - which kills
+         all animation globally - the screen simply shows the finished
+         wordmark and nothing of the intro. -->
+    <div class="roll-intro" aria-hidden="true">
+      <div class="roll-stage">
+        <svg class="roll-cup" viewBox="0 0 90 100"><path class="roll-cup-body" d="M14 10 L76 10 L68 94 L22 94 Z"/><rect class="roll-cup-rim" x="10" y="4" width="70" height="10" rx="3"/><rect class="roll-cup-band" x="18" y="46" width="54" height="6"/><rect class="roll-cup-rim" x="18" y="88" width="54" height="8" rx="2"/></svg>
+        <div class="roll-die-x roll-die-1"><div class="roll-die-y"><svg class="roll-die" viewBox="0 0 34 34"><rect x="1" y="1" width="32" height="32" rx="6"/><circle cx="10" cy="10" r="3.2"/><circle cx="24" cy="10" r="3.2"/><circle cx="17" cy="17" r="3.2"/><circle cx="10" cy="24" r="3.2"/><circle cx="24" cy="24" r="3.2"/></svg></div></div>
+        <div class="roll-die-x roll-die-2"><div class="roll-die-y"><svg class="roll-die" viewBox="0 0 34 34"><rect x="1" y="1" width="32" height="32" rx="6"/><circle cx="10" cy="10" r="3.2"/><circle cx="24" cy="24" r="3.2"/></svg></div></div>
+        <span class="roll-flash" style="--x:150px"></span>
+        <span class="roll-flash" style="--x:210px"></span>
+        <span class="roll-cash roll-bill" style="--x:150px;--dx:-70px;--dy:-300px;--r:-24deg;--d:0s">$</span>
+        <span class="roll-cash roll-coin" style="--x:150px;--dx:-20px;--dy:-380px;--r:40deg;--d:.06s"></span>
+        <span class="roll-cash roll-crypto" style="--x:150px;--dx:-110px;--dy:-230px;--r:-50deg;--d:.12s">&#8383;</span>
+        <span class="roll-cash roll-bill" style="--x:150px;--dx:30px;--dy:-440px;--r:18deg;--d:.18s">$</span>
+        <span class="roll-cash roll-coin" style="--x:210px;--dx:60px;--dy:-340px;--r:-30deg;--d:.04s"></span>
+        <span class="roll-cash roll-crypto roll-eth" style="--x:210px;--dx:100px;--dy:-260px;--r:36deg;--d:.1s">&#926;</span>
+        <span class="roll-cash roll-bill" style="--x:210px;--dx:10px;--dy:-300px;--r:-10deg;--d:.16s">$</span>
+        <span class="roll-cash roll-coin" style="--x:210px;--dx:120px;--dy:-420px;--r:60deg;--d:.22s"></span>
+      </div>
+    </div>
     <div class="landing-inner">
-    <h1 class="landing-title">The Casino<br><span>Almanac</span></h1>
+    <h1 class="landing-title">Daily<br><span>Roll Over</span></h1>
+    <p class="landing-tagline">Your Daily Roll&rsquo;s Over</p>
     <p class="landing-subtitle">DAILY DROPS &bull; TIMERS &bull; REDEMPTIONS</p>
     <button class="landing-btn" onclick="dismissLanding()" aria-label="Enter app">ENTER DECK &rarr;</button>
     <p class="landing-legal">18+ (21+ where required). Not available where sweepstakes play is prohibited. <a href="terms.html">Terms</a> &middot; <a href="privacy.html">Privacy</a></p>
@@ -158,7 +183,7 @@
       </div>
     </div>
     
-    <h1 class="app-title">The Casino <span>Almanac</span></h1>
+    <h1 class="app-title">Daily <span>Roll Over</span></h1>
 
     <div class="hero-stat-card glass-panel">
       <div class="hero-ring-wrapper">
@@ -3120,6 +3145,29 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       requestAnimationFrame(frame);
     }
 
+    // Plays the dice-to-money brand intro on the landing screen (see the
+    // .roll-intro markup and the ROLL INTRO block in app.css). The class
+    // is the whole mechanism: every intro element's base style is its end
+    // state, so removing .intro-play - when the timeline finishes, or on
+    // any tap - lands the screen on the finished wordmark with no jump.
+    // Skipped outright when motion is off; the global animation kill
+    // switch would flatten it to that same end state anyway.
+    const ROLL_INTRO_MS = 3800;
+    function playRollIntro() {
+      const screen = document.getElementById('landingScreen');
+      if (!screen || screen.classList.contains('hidden')) return;
+      if (document.documentElement.getAttribute('data-motion') === 'off') return;
+      let timer = null;
+      const end = () => {
+        clearTimeout(timer);
+        screen.classList.remove('intro-play');
+        screen.removeEventListener('pointerdown', end);
+      };
+      screen.classList.add('intro-play');
+      screen.addEventListener('pointerdown', end);
+      timer = setTimeout(end, ROLL_INTRO_MS);
+    }
+
     function dismissLanding() {
       const screen = document.getElementById('landingScreen');
       const burnEligible = isWesternTheme() && document.documentElement.getAttribute('data-motion') !== 'off';
@@ -4644,9 +4692,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try {
         const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
         if (reg) {
-          await reg.showNotification('Casino Almanac', { body, tag: 'almanac-test' });
+          await reg.showNotification('Daily Roll Over', { body, tag: 'almanac-test' });
         } else {
-          const n = new Notification('Casino Almanac', { body });
+          const n = new Notification('Daily Roll Over', { body });
           n.onclick = () => window.focus();
         }
         showToast('Test alert sent.', null);
@@ -5048,10 +5096,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         try {
           if (navigator.serviceWorker && navigator.serviceWorker.ready) {
             navigator.serviceWorker.ready
-              .then(reg => reg.showNotification('Casino Almanac', { body, tag: 'almanac-ready', renotify: false }))
-              .catch(() => { try { new Notification('Casino Almanac', { body }); } catch (e) {} });
+              .then(reg => reg.showNotification('Daily Roll Over', { body, tag: 'almanac-ready', renotify: false }))
+              .catch(() => { try { new Notification('Daily Roll Over', { body }); } catch (e) {} });
           } else {
-            const n = new Notification('Casino Almanac', { body });
+            const n = new Notification('Daily Roll Over', { body });
             n.onclick = () => window.focus();
           }
         } catch (e) { /* notification failed; don't break the app */ }
@@ -5897,7 +5945,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         fields.push({ name: 'Recent app errors', value: recentAppErrors.join('\n').slice(0, 1024) });
       }
       const payload = {
-        username: 'Casino Almanac Feedback',
+        username: 'Daily Roll Over Feedback',
         embeds: [{
           title: `[${category}]`,
           description: text.slice(0, 4000),
@@ -6286,7 +6334,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const isPro = clientEntitlements.isPro;
       badge.className = isPro ? 'badge badge-pro' : 'badge';
       badge.textContent = isPro ? 'PRO' : 'FREE';
-      label.textContent = isPro ? 'Casino Almanac Pro' : 'Free Plan';
+      label.textContent = isPro ? 'Daily Roll Over Pro' : 'Free Plan';
       desc.textContent = isPro
         ? 'Active subscription: unlimited tags, smart alert rules and granular payout turnaround analytics.'
         : 'Standard catalog, local collection tracking, and community drops feed.';
@@ -9145,7 +9193,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `casino-almanac-backup-${dateStr}.json`;
+      a.download = `daily-roll-over-backup-${dateStr}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -9842,6 +9890,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const showLanding = localStorage.getItem('almanac_show_landing') !== 'false';
     if (!showLanding) {
       document.getElementById('landingScreen').classList.add('hidden');
+    } else {
+      playRollIntro();
     }
 
     // trackedGames is loaded near the top of this script and every element

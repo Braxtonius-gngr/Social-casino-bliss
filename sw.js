@@ -1,4 +1,4 @@
-/* The Casino Almanac - service worker
+/* Daily Roll Over - service worker
  *
  * Strategy: NETWORK FIRST for same-origin requests, cache only as an offline
  * fallback. This matters because the app is updated by pasting a new
@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v45';
+const CACHE_NAME = 'almanac-v46';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -291,7 +291,7 @@ self.addEventListener('push', (event) => {
     const now = Date.now();
     // The app stamps this just before asking the server for a test push.
     if (Number(testAt) > now - 120000) {
-      return self.registration.showNotification('Casino Almanac', {
+      return self.registration.showNotification('Daily Roll Over', {
         body: 'Test from the server: background alerts reach this device.',
         tag: 'almanac-server-test',
         icon: 'apple-touch-icon.png'
@@ -315,7 +315,7 @@ self.addEventListener('push', (event) => {
       // Nothing new and nothing due (a repeated drop push, a drop that has
       // since expired, or a lookup that failed): a push must still show
       // something, so it makes no claim about what is ready.
-      return self.registration.showNotification('Casino Almanac', {
+      return self.registration.showNotification('Daily Roll Over', {
         body: 'Open the Almanac to see what\'s new.',
         tag: 'almanac-ready',
         renotify: false,
@@ -330,7 +330,7 @@ self.addEventListener('push', (event) => {
       body = `${count} platform${count === 1 ? '' : 's'} ready to collect`;
     }
     // Same tag as the in-page alert, so an open tab and a push never stack.
-    return self.registration.showNotification('Casino Almanac', {
+    return self.registration.showNotification('Daily Roll Over', {
       body,
       tag: 'almanac-ready',
       renotify: false,
