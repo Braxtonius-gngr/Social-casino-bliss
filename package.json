@@ -8,6 +8,7 @@
     "check:refs": "node scripts/check-references.js",
     "check:catalog": "node scripts/validate-catalog.js",
     "check:seo": "node scripts/generate-seo-pages.js --check",
-    "build:seo": "node scripts/generate-seo-pages.js"
+    "build:seo": "node scripts/generate-seo-pages.js",
+    "setup:push": "node scripts/setup-web-push.js"
   }
 }

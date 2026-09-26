@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v40';
+const CACHE_NAME = 'almanac-v41';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -93,5 +93,69 @@ self.addEventListener('fetch', (event) => {
           headers: { 'Content-Type': 'text/plain' }
         });
       })
+  );
+});
+
+// --- Background push alerts ---
+// Pushes arrive with no payload (the server never holds message text). The
+// app writes its upcoming alert schedule to IndexedDB, and the latest entry
+// that has come due says how many platforms are ready.
+const PUSH_DB_NAME = 'casino-almanac';
+const PUSH_DB_VERSION = 1;
+const PUSH_STORE = 'state';
+const PUSH_SCHEDULE_KEY = 'push_schedule';
+
+function readPushSchedule() {
+  return new Promise((resolve) => {
+    let request;
+    try {
+      request = indexedDB.open(PUSH_DB_NAME, PUSH_DB_VERSION);
+    } catch (e) {
+      resolve([]);
+      return;
+    }
+    // Same schema assets/storage.js creates, in case the worker opens first.
+    request.onupgradeneeded = () => request.result.createObjectStore(PUSH_STORE);
+    request.onerror = () => resolve([]);
+    request.onsuccess = () => {
+      try {
+        const get = request.result.transaction(PUSH_STORE, 'readonly').objectStore(PUSH_STORE).get(PUSH_SCHEDULE_KEY);
+        get.onsuccess = () => resolve(Array.isArray(get.result) ? get.result : []);
+        get.onerror = () => resolve([]);
+      } catch (e) {
+        resolve([]);
+      }
+    };
+  });
+}
+
+self.addEventListener('push', (event) => {
+  event.waitUntil(readPushSchedule().then((schedule) => {
+    const now = Date.now();
+    let due = null;
+    schedule.forEach((entry) => {
+      if (entry && Number(entry.at) <= now + 60000 && (!due || Number(entry.at) > Number(due.at))) due = entry;
+    });
+    const count = due ? Number(due.count) : 0;
+    const body = count > 0
+      ? `${count} platform${count === 1 ? '' : 's'} ready to collect`
+      : 'Your platforms are ready to collect.';
+    // Same tag as the in-page alert, so an open tab and a push never stack.
+    return self.registration.showNotification('Casino Almanac', {
+      body,
+      tag: 'almanac-ready',
+      renotify: false,
+      icon: 'apple-touch-icon.png'
+    });
+  }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+      const open = windows.find((client) => 'focus' in client);
+      return open ? open.focus() : self.clients.openWindow('./');
+    })
   );
 });
