@@ -4,6 +4,7 @@ import { ALLOWED_PUSH_HOST, importVapidKey, nextScheduleAt, timingSafeEqual, vap
 
 // GET  -> { publicKey }: what the browser subscribes with (public by design).
 // POST -> dispatch due alerts; called by pg_cron with the x-cron-secret header.
+// POST without that header -> a signed-in user's test push to their own devices.
 const allowedOrigins = new Set([
   "https://casino-almanac.app",
   "https://dailyrollover.com",
@@ -32,6 +33,7 @@ function jsonResponse(body: Record<string, unknown>, status: number, cors: Recor
 }
 
 type DueRow = { id: string; endpoint: string; schedule: unknown; updated_at: string };
+type SendResult = { status: number; removed: boolean };
 
 serve(async (req) => {
   const cors = corsHeaders(req);
@@ -41,10 +43,6 @@ serve(async (req) => {
   if (req.method === "GET") return jsonResponse({ publicKey: publicKey || null }, 200, cors);
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, cors);
 
-  const cronSecret = Deno.env.get("PUSH_CRON_SECRET") ?? "";
-  if (!cronSecret || !timingSafeEqual(req.headers.get("x-cron-secret") ?? "", cronSecret)) {
-    return jsonResponse({ error: "Forbidden." }, 403, cors);
-  }
   const privateKey = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
   const subject = Deno.env.get("VAPID_SUBJECT") ?? "";
   if (!publicKey || !privateKey || !subject) {
@@ -55,6 +53,78 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   );
+  const key = await importVapidKey(publicKey, privateKey);
+
+  // One payload-free push. 404/410 mean the browser dropped this
+  // subscription for good, so the row goes; the push service's reason is
+  // logged because that is the only record of why an alert stopped.
+  async function send(row: { id: string; endpoint: string }): Promise<SendResult> {
+    let url: URL | null = null;
+    try { url = new URL(row.endpoint); } catch { url = null; }
+    if (!url || url.protocol !== "https:" || !ALLOWED_PUSH_HOST.test(url.hostname)) {
+      await supabase.from("push_subscriptions").delete().eq("id", row.id);
+      return { status: 0, removed: true };
+    }
+    let status = 0;
+    let detail = "";
+    try {
+      const response = await fetch(row.endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: await vapidAuthHeader(key, publicKey, row.endpoint, subject),
+          TTL: "3600",
+          Urgency: "normal",
+        },
+        body: new Uint8Array(0),
+      });
+      status = response.status;
+      if (status >= 300) detail = (await response.text()).slice(0, 300);
+      else await response.body?.cancel();
+    } catch (err) {
+      console.warn("push: network error", row.id, (err as Error).message);
+    }
+    if (status === 404 || status === 410) {
+      console.warn("push: subscription gone, removing", row.id, url.hostname, status, detail);
+      await supabase.from("push_subscriptions").delete().eq("id", row.id);
+      return { status, removed: true };
+    }
+    if (status < 200 || status >= 300) console.warn("push: push service refused", row.id, url.hostname, status, detail);
+    return { status, removed: false };
+  }
+
+  const cronSecret = Deno.env.get("PUSH_CRON_SECRET") ?? "";
+  const cronHeader = req.headers.get("x-cron-secret");
+  if (cronHeader === null) {
+    // A signed-in user testing their own devices: pushes only to the
+    // caller's subscriptions and reports what each push service answered.
+    const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+    const { data: { user } } = token ? await supabase.auth.getUser(token) : { data: { user: null } };
+    if (!user) return jsonResponse({ error: "Not authenticated." }, 401, cors);
+    const { data: own, error: ownError } = await supabase
+      .from("push_subscriptions")
+      .select("id, endpoint, last_sent_at")
+      .eq("user_id", user.id)
+      .limit(10);
+    if (ownError) return jsonResponse({ error: "Lookup failed." }, 500, cors);
+    const results = [];
+    for (const row of own ?? []) {
+      // At most one test per device every 20 seconds.
+      if (row.last_sent_at && Date.now() - Date.parse(row.last_sent_at) < 20000) {
+        results.push({ endpointHost: new URL(row.endpoint).hostname, status: 429, removed: false });
+        continue;
+      }
+      const result = await send(row);
+      if (!result.removed) {
+        await supabase.from("push_subscriptions").update({ last_sent_at: new Date().toISOString() }).eq("id", row.id);
+      }
+      results.push({ endpointHost: new URL(row.endpoint).hostname, ...result });
+    }
+    return jsonResponse({ results }, 200, cors);
+  }
+  if (!cronSecret || !timingSafeEqual(cronHeader, cronSecret)) {
+    return jsonResponse({ error: "Forbidden." }, 403, cors);
+  }
+
   const now = Date.now();
   const { data, error } = await supabase
     .from("push_subscriptions")
@@ -67,45 +137,17 @@ serve(async (req) => {
     return jsonResponse({ error: "Due query failed." }, 500, cors);
   }
 
-  const key = await importVapidKey(publicKey, privateKey);
   const rows = (data ?? []) as DueRow[];
   const tally = { due: rows.length, sent: 0, removed: 0, failed: 0 };
 
   async function dispatch(row: DueRow) {
-    let url: URL | null = null;
-    try { url = new URL(row.endpoint); } catch { url = null; }
-    if (!url || url.protocol !== "https:" || !ALLOWED_PUSH_HOST.test(url.hostname)) {
-      await supabase.from("push_subscriptions").delete().eq("id", row.id);
-      tally.removed++;
-      return;
-    }
-    let status = 0;
-    try {
-      const response = await fetch(row.endpoint, {
-        method: "POST",
-        headers: {
-          Authorization: await vapidAuthHeader(key, publicKey, row.endpoint, subject),
-          TTL: "3600",
-          Urgency: "normal",
-        },
-        body: new Uint8Array(0),
-      });
-      status = response.status;
-      await response.body?.cancel();
-    } catch (err) {
-      console.warn("push dispatch: network error", row.id, (err as Error).message);
-    }
-    // 404/410: the browser dropped this subscription for good.
-    if (status === 404 || status === 410) {
-      await supabase.from("push_subscriptions").delete().eq("id", row.id);
+    const { status, removed } = await send(row);
+    if (removed) {
       tally.removed++;
       return;
     }
     if (status >= 200 && status < 300) tally.sent++;
-    else {
-      tally.failed++;
-      console.warn("push dispatch: push service refused", row.id, status);
-    }
+    else tally.failed++;
     // Alerts are best-effort: advance past this entry either way. Matching on
     // updated_at leaves a schedule the app rewrote mid-run untouched.
     const next = nextScheduleAt(row.schedule, now);
