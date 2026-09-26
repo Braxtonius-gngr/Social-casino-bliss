@@ -80,9 +80,16 @@ function domainOf(u) {
   try { return new URL(u).hostname.toLowerCase().replace(/^(www\.|m\.|wap\.|play\.|fun\.|game\.|app\.)/, ''); }
   catch (e) { return null; }
 }
+// Second-level labels that sit under a two-letter country code as part of
+// the public suffix (example.co.uk, example.com.au): there the site is the
+// last three labels, not two. Mirrored in sw.js (dropKeys),
+// supabase/functions/web-push/drops.ts and read-drop/extract.ts.
+const MULTI_LABEL_SLDS = new Set(['co', 'com', 'net', 'org', 'gov', 'edu', 'ac', 'ltd', 'plc']);
+
 function rootOf(host) {
   if (!host) return null;
   const p = host.split('.');
+  if (p.length >= 3 && p[p.length - 1].length === 2 && MULTI_LABEL_SLDS.has(p[p.length - 2])) return p.slice(-3).join('.');
   return p.length >= 2 ? p.slice(-2).join('.') : host;
 }
 

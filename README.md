@@ -114,6 +114,41 @@ or `-- --since 2026-09-20 --until 2026-09-26` for another week (both days
 included; the default is the last seven days, uncommitted catalog edits
 included). It only prints the draft; posting is a manual step.
 
+`npm run test:sw` runs `sw.js`'s push handler against fakes (no browser):
+which push becomes a new-drop alert, a "ready to collect" alert, or both.
+CI also runs the edge functions' Deno tests.
+
+## Drops from screenshots
+
+`admin/freebies.html` has a **Read Screenshots** panel. Paste up to four
+Discord image links (cdn.discordapp.com / media.discordapp.net; they expire
+after about a day) or choose the screenshots, and the `read-drop` edge
+function has Claude read each offer into a draft: platform (matched to the
+catalogue when it can be), code, claim link, reward, expiry, terms. Nothing
+is published until you load a draft into the form, check it and SAVE. The
+function is admin-only, fetches images only from Discord's hosts, and costs
+roughly a cent or two per read.
+
+Saving with **On save, alert the users who track this platform** ticked (or
+pressing **NOTIFY** on an entry later) asks the `web-push` function to
+announce it, once per entry. Only devices that turned on Settings →
+**Alert me to new drops for platforms I track** and track that platform
+(matched by name or root domain) get a push; the service worker then reads
+the drop from the public feed and opens Freebies when tapped.
+
+Setup, once:
+
+```bash
+supabase db push                                  # 20260926174321_drop_alerts.sql
+supabase secrets set ANTHROPIC_API_KEY="sk-ant-..."
+supabase functions deploy read-drop
+supabase functions deploy web-push
+```
+
+Apply the migration before the app update reaches people. The app copes
+with a server without it (drop alerts say they aren't available yet), but
+the admin's NOTIFY needs it.
+
 Phase 3 moderation is also kept behind the database boundary: the staff tab
 is hidden until `is_moderator()` succeeds, and its queue reads and
 approve/reject actions use the moderator-only RPCs in

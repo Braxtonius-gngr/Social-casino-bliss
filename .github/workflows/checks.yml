@@ -20,3 +20,10 @@ jobs:
       # Headless Chrome (preinstalled on GitHub's Ubuntu runners) against a
       # recording fake of Supabase: sign-in, sync, checkout, push, deletion.
       - run: npm run test:smoke
+      # sw.js's push handler against fakes: drop alerts and ready alerts.
+      - run: npm run test:sw
+      # The edge functions' pure parts: drop matching, image and answer checks.
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test supabase/functions/web-push/ supabase/functions/read-drop/extract_test.ts

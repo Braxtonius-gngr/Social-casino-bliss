@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v44';
+const CACHE_NAME = 'almanac-v45';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -106,6 +106,26 @@ const PUSH_STORE = 'state';
 const PUSH_SCHEDULE_KEY = 'push_schedule';
 
 const PUSH_TEST_KEY = 'push_test';
+// New-drop alerts: the app keeps { on, keys, since, url, key } here, and the
+// ids of drops already shown go under DROP_SEEN_KEY.
+const DROP_STATE_KEY = 'drop_alerts';
+const DROP_SEEN_KEY = 'drop_seen';
+// Mirrors MULTI_LABEL_SLDS in utils/classifyDropText.js.
+const MULTI_LABEL_SLDS = new Set(['co', 'com', 'net', 'org', 'gov', 'edu', 'ac', 'ltd', 'plc']);
+// Announced drops this recent count as new. Longer than the push's own
+// time-to-live (six hours), so a delayed delivery still finds its drop.
+const DROP_WINDOW_MS = 8 * 3600000;
+// Pages of the announced-drops feed read per push. Filtering (tracked,
+// already shown, expired) happens here, after the fetch, so the feed is
+// paged until the window is exhausted rather than cut at one page.
+const DROP_PAGE = 50;
+const DROP_MAX_PAGES = 4;
+// A schedule entry counts as the reason for a push only while it is fresh:
+// alongside a drop, when it came due in the last five minutes; alone, within
+// the push's own time-to-live plus the dispatcher's cadence.
+const DUE_WITH_DROP_MS = 5 * 60000;
+const DUE_ALONE_MS = 2 * 3600000;
+const DROP_BUCKET_TEXT = { A_code: 'Promo code', B_claim: 'Free claim', C_purchase: 'Purchase offer' };
 
 // "Zula, Punt and 3 more" - a copy of readySummary() in index.html, for the
 // daily digest (its names come from this device's copy of the schedule).
@@ -146,11 +166,128 @@ function readPushState(key, remove) {
   });
 }
 
+function writePushState(key, value) {
+  return new Promise((resolve) => {
+    let request;
+    try {
+      request = indexedDB.open(PUSH_DB_NAME, PUSH_DB_VERSION);
+    } catch (e) {
+      resolve();
+      return;
+    }
+    request.onupgradeneeded = () => request.result.createObjectStore(PUSH_STORE);
+    request.onerror = () => resolve();
+    request.onsuccess = () => {
+      try {
+        const tx = request.result.transaction(PUSH_STORE, 'readwrite');
+        tx.objectStore(PUSH_STORE).put(value, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+      } catch (e) {
+        resolve();
+      }
+    };
+  });
+}
+
+// The same keys the app uploads for what it tracks (dropKeysFor() in
+// index.html) and the server derives from a drop.
+function dropKeys(drop) {
+  const keys = [];
+  const name = String(drop.platform_name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (name) keys.push(`name:${name}`);
+  let host = String(drop.root_domain || '').trim().toLowerCase();
+  if (!host && drop.claim_url) {
+    try { host = new URL(drop.claim_url).hostname.toLowerCase(); } catch (e) { host = ''; }
+  }
+  host = host.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+  const parts = host.split('.').filter(Boolean);
+  // example.co.uk is its own site, not "co.uk" (same rule as rootOf()).
+  const take = parts.length >= 3 && parts[parts.length - 1].length === 2 && MULTI_LABEL_SLDS.has(parts[parts.length - 2]) ? 3 : 2;
+  if (parts.length >= 2) keys.push(`site:${parts.slice(-take).join('.')}`);
+  return keys;
+}
+
+// Announced drops for tracked platforms this device hasn't shown yet, read
+// from the public feed. A push carries no payload, so this is how a drop
+// push is told apart from a schedule push. Resolves to [] on any failure.
+async function unseenDrops(state, now) {
+  if (!state || !state.on || !state.url || !state.key || !Array.isArray(state.keys) || !state.keys.length) return [];
+  const since = new Date(Math.max(now - DROP_WINDOW_MS, Number(state.since) || 0)).toISOString();
+  const base = 'select=id,platform_name,bucket,code,claim_url,root_domain,terms,expires_at,announced_at'
+    + `&active=eq.true&announced_at=gte.${encodeURIComponent(since)}&order=announced_at.desc,id.asc&limit=${DROP_PAGE}`;
+  const rows = [];
+  for (let page = 0; page < DROP_MAX_PAGES; page++) {
+    let batch;
+    try {
+      const response = await fetch(`${state.url}/rest/v1/public_freebies?${base}&offset=${page * DROP_PAGE}`, {
+        headers: { apikey: state.key, Authorization: `Bearer ${state.key}` },
+        cache: 'no-store'
+      });
+      if (!response.ok) return [];
+      batch = await response.json();
+    } catch (e) {
+      return [];
+    }
+    if (!Array.isArray(batch)) return [];
+    rows.push(...batch);
+    if (batch.length < DROP_PAGE) break;
+  }
+  const seen = await readPushState(DROP_SEEN_KEY, false);
+  const seenIds = new Set(Array.isArray(seen) ? seen : []);
+  const tracked = new Set(state.keys);
+  return rows.filter(row => row && row.id && !seenIds.has(row.id)
+    && !(row.expires_at && Date.parse(row.expires_at) < now)
+    && dropKeys(row).some(k => tracked.has(k)));
+}
+
+function dropNotificationBody(drop) {
+  const parts = [DROP_BUCKET_TEXT[drop.bucket] || 'New offer'];
+  if (drop.code) parts[0] += `: ${drop.code}`;
+  if (drop.terms) parts.push(String(drop.terms).slice(0, 80));
+  if (drop.expires_at) {
+    parts.push(`ends ${new Date(drop.expires_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`);
+  }
+  return parts.join(' · ');
+}
+
+// At most three notifications per push: past that, the last one sums up
+// the rest, so every drop recorded as seen was actually put in front of the
+// user (the rest are listed in Freebies, where the summary opens).
+async function showDrops(drops) {
+  const individual = drops.length > 3 ? drops.slice(0, 2) : drops;
+  const notes = individual.map(drop => self.registration.showNotification(`New drop: ${drop.platform_name}`, {
+    body: dropNotificationBody(drop),
+    tag: `almanac-drop-${drop.id}`,
+    icon: 'apple-touch-icon.png',
+    data: { open: 'freebies' }
+  }));
+  const rest = drops.slice(individual.length);
+  if (rest.length) {
+    const names = rest.slice(0, 3).map(drop => drop.platform_name);
+    notes.push(self.registration.showNotification(`${rest.length} more new drops`, {
+      body: `${names.join(', ')}${rest.length > names.length ? ' and more' : ''}. Tap to see them in Freebies.`,
+      tag: 'almanac-drops-more',
+      icon: 'apple-touch-icon.png',
+      data: { open: 'freebies' }
+    }));
+  }
+  await Promise.all(notes);
+  const seen = await readPushState(DROP_SEEN_KEY, false);
+  const ids = (Array.isArray(seen) ? seen : []).concat(drops.map(drop => drop.id));
+  // Room for more than one push's worth of drops, so a full batch never
+  // falls out of the list while still inside the look-back window.
+  await writePushState(DROP_SEEN_KEY, ids.slice(-(DROP_PAGE * DROP_MAX_PAGES + 100)));
+}
+
+let dropQueue = Promise.resolve();
+
 self.addEventListener('push', (event) => {
   event.waitUntil(Promise.all([
     readPushState(PUSH_SCHEDULE_KEY, false),
-    readPushState(PUSH_TEST_KEY, true)
-  ]).then(([schedule, testAt]) => {
+    readPushState(PUSH_TEST_KEY, true),
+    readPushState(DROP_STATE_KEY, false)
+  ]).then(async ([schedule, testAt, dropState]) => {
     const now = Date.now();
     // The app stamps this just before asking the server for a test push.
     if (Number(testAt) > now - 120000) {
@@ -160,11 +297,32 @@ self.addEventListener('push', (event) => {
         icon: 'apple-touch-icon.png'
       });
     }
+    // One push at a time from here: reading the seen list, showing and
+    // recording must not interleave, or two pushes close together would
+    // both show the same drop.
+    const drops = await (dropQueue = dropQueue.then(async () => {
+      const found = await unseenDrops(dropState, now);
+      if (found.length) await showDrops(found);
+      return found;
+    }).catch(() => []));
     let due = null;
     (Array.isArray(schedule) ? schedule : []).forEach((entry) => {
       if (entry && Number(entry.at) <= now + 60000 && (!due || Number(entry.at) > Number(due.at))) due = entry;
     });
-    const count = due ? Number(due.count) : 0;
+    const fresh = due && Number(due.at) > now - (drops.length ? DUE_WITH_DROP_MS : DUE_ALONE_MS);
+    if (drops.length && !fresh) return undefined;
+    if (!fresh) {
+      // Nothing new and nothing due (a repeated drop push, a drop that has
+      // since expired, or a lookup that failed): a push must still show
+      // something, so it makes no claim about what is ready.
+      return self.registration.showNotification('Casino Almanac', {
+        body: 'Open the Almanac to see what\'s new.',
+        tag: 'almanac-ready',
+        renotify: false,
+        icon: 'apple-touch-icon.png'
+      });
+    }
+    const count = Number(due.count) || 0;
     let body = 'Your platforms are ready to collect.';
     if (count > 0 && due.digest) {
       body = `Daily digest: ${readySummary(Array.isArray(due.names) ? due.names : [], count)} ready to collect`;
@@ -183,10 +341,27 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  const toFreebies = !!(event.notification.data && event.notification.data.open === 'freebies');
+  // Only the app itself (the scope's root or index.html) handles the
+  // open-freebies message; other pages here, such as the admin page or a
+  // platform guide, don't, so a new app window opens instead.
+  const scope = new URL(self.registration.scope);
+  const isApp = (client) => {
+    try {
+      const url = new URL(client.url);
+      return url.origin === scope.origin && (url.pathname === scope.pathname || url.pathname === `${scope.pathname}index.html`);
+    } catch (e) {
+      return false;
+    }
+  };
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
-      const open = windows.find((client) => 'focus' in client);
-      return open ? open.focus() : self.clients.openWindow('./');
+      const open = windows.find((client) => 'focus' in client && isApp(client));
+      if (open) {
+        if (toFreebies) open.postMessage({ type: 'open-freebies' });
+        return open.focus();
+      }
+      return self.clients.openWindow(toFreebies ? './?open=freebies' : './');
     })
   );
 });
