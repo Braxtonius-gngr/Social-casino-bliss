@@ -629,6 +629,8 @@
     .landing-title span { color: var(--accent-gold); }
     .landing-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 40px; font-family: monospace; letter-spacing: 0.15em; font-weight: 700; }
     .landing-btn { padding: 14px 36px; background: var(--accent-gold); color: #0a0a0a; border: 1px solid var(--accent-gold); border-radius: 30px; font-size: 1rem; font-weight: 900; cursor: pointer; transition: all 0.2s; }
+    .landing-legal { margin-top: 22px; max-width: 320px; font-size: 0.72rem; line-height: 1.5; color: var(--text-dim); text-align: center; }
+    .landing-legal a { color: var(--text-muted); }
     .landing-btn:hover { background: var(--accent-gold-hover); border-color: var(--accent-gold-hover); }
 
     .sheet-backdrop { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
