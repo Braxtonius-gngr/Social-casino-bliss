@@ -78,8 +78,8 @@ serve(async (req) => {
         body: new Uint8Array(0),
       });
       status = response.status;
-      detail = status >= 300 ? (await response.text()).slice(0, 300) : "";
-      if (!detail) await response.body?.cancel();
+      if (status >= 300) detail = (await response.text()).slice(0, 300);
+      else await response.body?.cancel();
     } catch (err) {
       console.warn("push: network error", row.id, (err as Error).message);
     }
