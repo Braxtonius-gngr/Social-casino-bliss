@@ -3429,7 +3429,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       };
       const frame = now => {
         if (done) return;
-        if (!t0) t0 = now;
+        // The end timer starts on the first painted frame, not when this
+        // function runs: startup work after the call can hold that frame
+        // back, and a timer started earlier would then cut the shot short.
+        // Both clocks share this origin, so the full sequence always plays.
+        if (!t0) {
+          t0 = now;
+          timer = setTimeout(end, totalMs);
+        }
         const t = (now - t0) / 1000;
         const w = rollWorldTime(t);
 
@@ -3479,7 +3486,6 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       screen.addEventListener('pointerdown', end);
       screen.addEventListener('focusin', end);
       document.addEventListener('keydown', end);
-      timer = setTimeout(end, totalMs);
       raf = requestAnimationFrame(frame);
     }
 
