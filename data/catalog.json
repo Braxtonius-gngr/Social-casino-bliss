@@ -1667,7 +1667,7 @@
   },
   {
     "name": "Sweepstakes Casino",
-    "url": "https://sweepstakescasino.com/",
+    "url": "https://sweepstakescasino.com/?ref=r_braxtonius",
     "tier": "Unranked",
     "dailySC": 0,
     "speedHours": 24,
@@ -1676,7 +1676,7 @@
     "hasLive": false,
     "minRedeem": "Varies",
     "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "notes": "OWNER REPORT 2026-09-26: the account has to be verified before the redeem page can be used, so the floor is not captured yet. The ?ref=r_braxtonius link format is the same one the SpeedSweeps family (Speed, Rich, Dime, SweepsRoyal) uses, which may point to the same operator - unconfirmed. Referral link updated 2026-09-26 to the owner's ?ref= code. | UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
   },
   {
     "name": "Coin Wizard Games",
@@ -1700,15 +1700,19 @@
     "name": "New Luck",
     "resetHour": 10,
     "cooldown": 24,
-    "url": "https://newluck.net/",
-    "tier": "Unranked",
-    "dailySC": 0,
+    "url": "https://newluck.net/?invitecode=9_kQit09ECercGeuNdEUCMbY7kpgnA32jwlYqf3hsmHByOe3svtyxp-2NBl7CHEN",
+    "tier": "F",
+    "dailySC": 0.2,
     "speedHours": 24,
     "reliability": 68,
     "hasLive": false,
-    "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "minRedeem": "75 SC",
+    "confidence": "low",
+    "notes": "VERIFIED 2026-09-26 (owner screenshots, newluck.net): first real data on this entry. DAILY LOGIN STREAK: a 30-day grid; the Day 3 claim paid GC 100K + SC 0.2 + 5 stars. Days 1-2 were already claimed and their amounts are not visible, so 0.2 is a single-rung read - ladder-partial, confidence low. Streak rules: missed days cannot be recovered; the first 30-day cycle does not reset on the 1st, but after the 7-day check-in and the first full cycle, progress resets on the 1st of each month (UTC-5). REDEEM: \"Win a minimum of 75 SC to redeem\", SC 1.00 = $1, SC must be played once, and the account must pass an identity check first. TIER, DERIVED: 75 / 0.2 SC per day = 375 days to the first cash redemption, tier F. EXCLUDED: the Daily Wheel (2 free spins a day at 08:00 and 20:00 UTC-5, top prize 5 SC) mixes SC segments (0.1, 0.2, 0.5, 1, 2, 5) with GC-only segments (5K-50K), so it is chance; a VIP 3 Daily Reward of 30K GC + 0.02 SC at 7:00 PM depends on VIP level, so it is not a base-player daily. Referral: up to 1.68M GC + 107 SC per friend. | Referral link updated 2026-09-26 to the owner's ?invitecode= code. | UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
+    "scSource": "ladder-partial",
+    "lastVerified": "2026-09-26",
+    "cashFloor": 75,
+    "daysToRedeem": 375
   },
   {
     "name": "Jumbo88",
@@ -1760,7 +1764,7 @@
   },
   {
     "name": "PlayTana",
-    "url": "https://playtana.com/lobby",
+    "url": "https://playtana.com/?invited_by=2JVV4R",
     "tier": "Unranked",
     "dailySC": 0,
     "speedHours": 24,
@@ -1769,7 +1773,7 @@
     "hasLive": false,
     "minRedeem": "Varies",
     "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "notes": "Referral link updated 2026-09-26 to the owner's ?invited_by= code. | UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
   },
   {
     "name": "Vegas Bonanza",
@@ -1780,22 +1784,26 @@
     "reliability": 68,
     "cooldown": 24,
     "hasLive": false,
-    "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "minRedeem": "100 SC",
+    "confidence": "low",
+    "notes": "REDEEM PAGE CAPTURED 2026-09-26 (owner screenshot, vegasbonanza.com/lobby/redeem): Cash Prize to a bank account, \"Win minimum of SC 100 to redeem\", SC 1.00 for $1 USD, and SC must be played at least once (Unplayed 0 / Redeemable 0.12 at capture). The daily bonus is still uncaptured, so the entry stays Unranked - ONE SCREENSHOT OF THE DAILY CLAIM WOULD RANK IT. | UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
+    "cashFloor": 100,
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "Tao Sweeps",
-    "url": "https://taosweeps.com/wallet",
+    "url": "https://taosweeps.com/register?referral=kiiiq",
     "tier": "Unranked",
     "dailySC": 0,
     "speedHours": 24,
     "reliability": 68,
     "cooldown": 24,
     "hasLive": false,
-    "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "minRedeem": "100 SC / 5,000 SC max",
+    "confidence": "low",
+    "notes": "REDEEM PAGE AND PART OF THE LADDER CAPTURED 2026-09-26 (owner screenshots, taosweeps.com): \"1 SC = 1 USD, min 100 SC - max 5000 SC\", with Available and Redeemable balances shown separately. The Daily bonus grid for Days 15-21 pays GC only - 1,000, 2,000, 3,000, 4,000, 5,000, 6,000 GC, and 7,717.5 GC on \"the 21th Streak Day\". Days 1-14 are unread, so whether the ladder pays any SC at all is still unknown and the entry stays Unranked. If Days 1-14 are GC-only too, the site has no SC daily and becomes Not Rankable. | Referral link updated 2026-09-26 to the owner's ?referral= code. | UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
+    "cashFloor": 100,
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "Acorn Fun",
@@ -1807,9 +1815,11 @@
     "speedHours": 24,
     "reliability": 68,
     "hasLive": false,
-    "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "minRedeem": "25 Gift / 100 Cash",
+    "confidence": "low",
+    "notes": "REDEEM PAGE CAPTURED 2026-09-26 (owner screenshot, wap.acornfun.com): coin rate 1.00 \"winning\" = $1.00; Gift Cards minimum redeemable win 25.00, Real Prize minimum 100.00 (winning balance 0.07 at capture). The daily bonus is still unconfirmed, so the entry stays Unranked. | UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
+    "cashFloor": 100,
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "Cider Casino",
@@ -1846,15 +1856,19 @@
     "name": "Sixty6",
     "resetHour": 0,
     "cooldown": 24,
-    "url": "https://sixty6.com/",
-    "tier": "Unranked",
-    "dailySC": 0,
+    "url": "https://sixty6.com/?ref=FEB6298DC4C6C173&modal=register",
+    "tier": "F",
+    "dailySC": 0.043,
     "speedHours": 24,
     "reliability": 68,
     "hasLive": false,
-    "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Checked across three research passes with no public data found. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "minRedeem": "100 SC",
+    "confidence": "low",
+    "notes": "VERIFIED 2026-09-26 (owner screenshots, sixty6.com): first real data on this entry. DAILY REFILL LADDER: Day 1 5K GC, Day 2 10K GC + 0.1 SC, Day 3 10K GC, Day 4 15K GC + 0.1 SC, Day 5 20K GC, Day 6 25K GC + 0.1 SC, Day 7 5 free plays - 0.3 SC a week, 0.043/day. The GC-only days are fixed rungs, not chance, so the ladder still ranks. The progress bar carries milestone gifts at days 7, 14, 21 and 28 whose contents are unread, so scSource is ladder-partial. REDEEM: \"Min: 100 SC\" (Cash), SC 1.00 = $1.00. TIER, DERIVED: 100 / 0.043 SC per day = 2326 days to the first cash redemption, tier F. Not counted: a piggy-bank claim and a timed bonus on the home screen (contents not shown), the \"Daily Races\" leaderboard (200 SC pool, 66 SC top prize) and a day-specific \"Thursday's Rewards\" promo (\"up to 1,000,000 GC + 100 SC\"). | Referral link updated 2026-09-26 to the owner's ?ref= code. | UNVERIFIED - no real tier/SC data sourced yet. Checked across three research passes with no public data found. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
+    "scSource": "ladder-partial",
+    "lastVerified": "2026-09-26",
+    "cashFloor": 100,
+    "daysToRedeem": 2326
   },
   {
     "name": "Coinsback Casino",
@@ -1921,42 +1935,50 @@
   },
   {
     "name": "Play1Up",
-    "url": "https://play1up.co/",
+    "url": "https://play1up.co/?ref=8253_Braxtonius",
     "tier": "Unranked",
-    "dailySC": 0,
+    "dailySC": 0.24,
     "speedHours": 24,
     "reliability": 68,
     "cooldown": 24,
     "hasLive": false,
     "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Checked across three research passes with no public data found. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "confidence": "medium",
+    "notes": "VERIFIED 2026-09-26 (owner screenshots, play1up.co): first real data on this entry. DAILY STREAK: Day 1 5K GC + 0.1 SC, Day 2 7.5K + 0.1, Day 3 10K + 0.15, Day 4 15K + 0.15, Day 5 20K + 0.2, Day 6 30K + 0.2, Day 7 \"Mega Bonus\" 100K GC + 0.75 SC - 1.65 SC a week, 0.24/day. The streak banner reads \"29 more days to the mega mega bonus\", so the track runs 30 days and Days 8-30 are unread: ladder-partial. EXCLUDED as chance: the \"Take the Shot\" Daily Rewards Wheel (one spin per 24h) mixes 0.25 SC, 0.5 SC and a 3 SC jackpot with GC-only segments (2.5K-25K). Live-chat \"hidden drops\" (a typed code, e.g. 0.50 SC for the first 1,000 claimers) are irregular, not a daily. No redeem floor captured yet, so the entry stays Unranked. Referral link updated 2026-09-26 to the owner's ?ref= code. | UNVERIFIED - no real tier/SC data sourced yet. Checked across three research passes with no public data found. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
+    "scSource": "ladder-partial",
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "Sweepolis",
-    "url": "https://sweepolis.com/",
+    "url": "https://sweepolis.com/?earn=q7rZH2LO",
     "tier": "Unranked",
     "dailySC": 0,
     "speedHours": 24,
     "reliability": 68,
     "cooldown": 24,
     "hasLive": false,
-    "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Checked across three research passes with no public data found. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "minRedeem": "40 Gift / 100 Cash",
+    "confidence": "low",
+    "notes": "REDEEM PAGE CAPTURED 2026-09-26 (owner screenshot, sweepolis.com wallet): Gift Card minimum 40.00 (\"up to 20% extra\"), Debit Card (Visa/Mastercard) minimum 100.00 with 0% fee, rate 1.00 = $1.00; 0.15 SC redeemable at capture. The daily bonus is still uncaptured, so the entry stays Unranked - ONE SCREENSHOT OF THE DAILY CLAIM WOULD RANK IT. Referral link updated 2026-09-26 to the owner's ?earn= code. | UNVERIFIED - no real tier/SC data sourced yet. Checked across three research passes with no public data found. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
+    "cashFloor": 100,
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "Spin4America",
-    "url": "https://spin4america.com/",
-    "tier": "Unranked",
-    "dailySC": 0,
+    "url": "https://spin4america.com/games/home?referral=f4wWW6MDHtuzVh6k9KPDWhib0BZJJOamRcT6/VSdFZQ=",
+    "tier": "F",
+    "dailySC": 0.1,
     "speedHours": 24,
     "reliability": 68,
     "cooldown": 24,
     "hasLive": false,
-    "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Checked across three research passes with no public data found. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "minRedeem": "100 SC",
+    "confidence": "medium",
+    "notes": "VERIFIED 2026-09-26 (owner screenshots, spin4america.com): first real data on this entry. DAILY: a \"Daily Reward - Get for free\" card pays 1,000 GC + 0.1 SC per claim. REDEEM: \"Minimum request amount: SC 100.00\", coin rate SC 1.00 = $1.00, and a \"Playthrough progress needed to redeem\" bar (0.00% at capture, total 0.10 SC, redeemable 0.00). A share-link referral promo advertises 250,000 GC + 150 SC. TIER, DERIVED: 100 / 0.1 SC per day = 1000 days to the first cash redemption, tier F. Referral link updated 2026-09-26 to the owner's referral code. | UNVERIFIED - no real tier/SC data sourced yet. Checked across three research passes with no public data found. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
+    "scSource": "stated",
+    "lastVerified": "2026-09-26",
+    "cashFloor": 100,
+    "daysToRedeem": 1000
   },
   {
     "name": "Lucky Bunny",
@@ -2091,16 +2113,22 @@
   },
   {
     "name": "SweetSweeps",
-    "url": "https://sweetsweeps.com/",
-    "tier": "Unranked",
-    "dailySC": 0,
+    "url": "https://sweetsweeps.com/?referralCode=REFOTkzNQ==",
+    "tier": "B",
+    "dailySC": 0.43,
     "speedHours": 24,
     "reliability": 68,
     "cooldown": 24,
     "hasLive": false,
-    "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Added from your own referral list. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "minRedeem": "75 SC",
+    "confidence": "medium",
+    "notes": "VERIFIED 2026-09-26 (owner screenshots, sweetsweeps.com): first real data on this entry. REDEEM: \"Min redeem amount is 75 SC\", SC 1 = $1, with redeemable and bonus balances shown separately. DAILY: a 30-tier monthly Daily Login Bonus (\"Coney's sweet trail\" for September) that the page totals as \"13 SC + 49,070 GC\" across all 30 tiers, with bigger drops later in the month; missing a day drops the streak back to Tier 1. 13 / 30 = 0.43 SC/day, which is the stated monthly total rather than a per-day read, so scSource is \"stated\". The promotion is monthly (\"Ends in 5D\") and may change in October. RESET: \"CLAIM IN 15:16:57\" at 07:43 local (UTC-5) lands on 04:00 UTC, midnight Eastern. TIER, DERIVED: 75 / 0.43 SC per day = 174 days to the first cash redemption, tier B. REFERRAL TERMS (Bring a Buddy): the referrer earns 75,000 GC + 75 SC when a friend verifies and buys $50+ of GC within 30 days, plus 50 SC per 3 qualified referrals; the friend gets 7,500 GC + 1 SC on verification (10,000 GC + 2.75 SC with a $5 purchase). Referral link updated 2026-09-26 to the owner's referralCode code. | UNVERIFIED - no real tier/SC data sourced yet. Added from your own referral list. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
+    "scSource": "stated",
+    "resetHour": 0,
+    "resetTZ": "America/New_York",
+    "lastVerified": "2026-09-26",
+    "cashFloor": 75,
+    "daysToRedeem": 174
   },
   {
     "name": "SweepStars",
