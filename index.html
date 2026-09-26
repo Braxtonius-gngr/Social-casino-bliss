@@ -3720,6 +3720,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       };
       const frame = now => {
         if (done) return;
+        // Motion switched off mid-shot (a system setting can flip while the
+        // intro plays): settle on the finished frame right away.
+        if (document.documentElement.getAttribute('data-motion') === 'off') { end(); return; }
         // The end timer starts on the first painted frame, not when this
         // function runs: startup work after the call can hold that frame
         // back, and a timer started earlier would then cut the shot short.
