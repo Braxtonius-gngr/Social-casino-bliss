@@ -3344,6 +3344,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         };
         normalizeTimerFields(g);
         trackedGames.push(g);
+        trackEvent('platform_tracked', { name: item.name, tier: item.tier || null });
       }
       persist();
       renderCatalogList();
@@ -5275,9 +5276,32 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (params.get('billing') !== 'success') return;
       window.history.replaceState({}, document.title, window.location.pathname);
       showToast('Thanks for upgrading! Your Pro access is being activated.');
+      trackEvent('pro_activated');
       // The Stripe webhook may land a moment after the redirect, so give
       // the entitlement row a second chance to come back as pro.
       setTimeout(syncUserEntitlements, 2500);
+      setTimeout(promptBuyerToLinkEmail, 7000);
+    }
+
+    // Pro belongs to the signed-in account. An anonymous account lives only
+    // in this browser, so clearing site data or switching phones would lose
+    // a paid subscription unless an email is linked to recover it.
+    async function promptBuyerToLinkEmail() {
+      const client = getSupabaseClient();
+      if (!client) return;
+      try {
+        const { data } = await client.auth.getSession();
+        const session = data && data.session;
+        if (!session || resolveLinkedEmail(session)) return;
+        showToast('Link an email so you keep Pro if you switch devices or clear this browser.', () => {
+          openSettingsModal();
+          const input = document.getElementById('syncLinkEmailInput');
+          if (input) {
+            input.scrollIntoView({ block: 'center' });
+            input.focus();
+          }
+        }, 15000, 'LINK EMAIL');
+      } catch (e) {}
     }
 
     // supabase-js throws a FunctionsHttpError (or FunctionsRelayError /
@@ -5325,6 +5349,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const body = { returnUrl: billingReturnUrl() };
         if (priceId) body.priceId = priceId;
         if (email) body.email = email;
+        trackEvent('checkout_started', { plan: priceId || 'monthly' });
         const { data, error } = await client.functions.invoke('create-checkout-session', { body });
         if (error || !data?.url) {
           const { status, body: errBody } = await extractFunctionsErrorDetail(error);
@@ -5341,6 +5366,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           showToast(status ? `Checkout failed (${status}): ${detail}` : `Checkout failed: ${detail}`);
           return;
         }
+        await flushAnalytics();
         window.location.href = data.url;
       } catch (error) {
         console.error('Checkout session failure:', error);
@@ -6063,6 +6089,68 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return id;
     }
 
+    // --- Product analytics (first-party) ---
+    // A fixed set of funnel events so retention and conversion can be
+    // measured (docs/analytics-queries.sql). Sent only to this app's own
+    // Supabase, only while Cloud Sync is on - the switch that already governs
+    // anything leaving this device - and never deck contents, emails or notes.
+    const ANALYTICS_EVENTS = new Set([
+      'app_open', 'platform_tracked', 'daily_run_started', 'daily_run_finished',
+      'push_enabled', 'checkout_started', 'pro_activated'
+    ]);
+    let analyticsQueue = [];
+    let analyticsTimer = null;
+
+    function trackEvent(name, props) {
+      if (!ANALYTICS_EVENTS.has(name) || !isSyncEnabled()) return;
+      analyticsQueue.push({ name, props: props && typeof props === 'object' ? props : {} });
+      if (analyticsQueue.length > 50) analyticsQueue = analyticsQueue.slice(-50);
+      if (!analyticsTimer) analyticsTimer = setTimeout(flushAnalytics, 10000);
+    }
+
+    // Best-effort: a failed batch is dropped rather than retried, so a bad
+    // connection never builds a backlog or competes with real sync traffic.
+    async function flushAnalytics() {
+      if (analyticsTimer) { clearTimeout(analyticsTimer); analyticsTimer = null; }
+      if (!analyticsQueue.length || !isSyncEnabled()) return;
+      const client = getSupabaseClient();
+      if (!client) return;
+      try {
+        const { data } = await client.auth.getSession();
+        const session = data && data.session;
+        if (!session) {
+          analyticsTimer = setTimeout(flushAnalytics, 30000);
+          return;
+        }
+        const batch = analyticsQueue.splice(0);
+        const deviceId = getDeviceId();
+        const { error } = await client.from('app_events').insert(batch.map(e => ({
+          user_id: session.user.id,
+          device_id: deviceId,
+          name: e.name,
+          props: e.props
+        })));
+        if (error) console.warn('Analytics batch dropped:', error.message);
+      } catch (err) {
+        console.warn('Analytics batch dropped:', err && err.message ? err.message : err);
+      }
+    }
+
+    // Where this visit came from: links into the app (SEO pages, shares) carry
+    // ?src=...; it is read once and removed so reloads and bookmarks stay clean.
+    function consumeSourceParam() {
+      let src = null;
+      try {
+        const url = new URL(window.location.href);
+        src = url.searchParams.get('src');
+        if (src !== null) {
+          url.searchParams.delete('src');
+          window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+        }
+      } catch (e) {}
+      return src && /^[a-z0-9_-]{1,32}$/i.test(src) ? src.toLowerCase() : null;
+    }
+
     function getSyncMeta() {
       try { return JSON.parse(localStorage.getItem(SYNC_META_KEY)) || {}; } catch (e) { return {}; }
     }
@@ -6709,6 +6797,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     function recordDailyRunStart() {
       currentDailyRunStartTime = serverNow();
+      trackEvent('daily_run_started', { queue: dailyRunQueue.length });
     }
 
     function recordDailyRunEnd() {
@@ -6719,6 +6808,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           collected: dailyRunStats.collected,
           skipped: dailyRunStats.skipped
         });
+        trackEvent('daily_run_finished', { collected: dailyRunStats.collected, skipped: dailyRunStats.skipped });
         while (dailyRunsHistory.length > 200) dailyRunsHistory.shift();
         try {
           localStorage.setItem('the_casino_almanac_runs_v1', JSON.stringify(dailyRunsHistory));
@@ -8799,6 +8889,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     applyTheme(getActiveThemeId());
     initSync();
     syncUserEntitlements();
+    trackEvent('app_open', {
+      src: consumeSourceParam(),
+      standalone: window.matchMedia ? window.matchMedia('(display-mode: standalone)').matches : false,
+      tracked: trackedGames.length
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flushAnalytics();
+    });
     consumeBillingReturnParam();
     setTimeout(checkModeratorAccess, 1000);
     // Deliberately after the first paint, not before: this is a courtesy
