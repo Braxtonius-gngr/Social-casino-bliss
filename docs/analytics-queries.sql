@@ -50,3 +50,28 @@ select props ->> 'name' as platform, count(*) as adds
 from public.app_events
 where name = 'platform_tracked' and created_at > now() - interval '30 days'
 group by 1 order by 2 desc limit 25;
+
+-- Sharing, last 30 days: what gets shared and how, next to the visits shares
+-- bring in (app_open with src = 'share').
+select props ->> 'kind' as kind, props ->> 'method' as method, count(*) as shares,
+       count(distinct user_id) as sharers
+from public.app_events
+where name = 'shared' and created_at > now() - interval '30 days'
+group by 1, 2 order by 3 desc;
+
+-- Home Screen installs: nudges shown, installs reported by the browser, and
+-- opens from an installed app (iPhone reports no install event, so its opens
+-- are the only signal there).
+select
+  count(*) filter (where name = 'install_prompt_shown') as nudges_shown,
+  count(*) filter (where name = 'app_installed') as installs,
+  count(distinct user_id) filter (where name = 'app_open' and (props ->> 'standalone')::boolean) as installed_openers
+from public.app_events
+where created_at > now() - interval '30 days';
+
+-- Pro alert rules: which settings Pro users actually pick (latest save per user).
+select distinct on (user_id) user_id, props ->> 'minTier' as min_tier,
+       (props ->> 'digest')::boolean as digest, (props ->> 'muted')::int as muted
+from public.app_events
+where name = 'alert_rules_saved'
+order by user_id, created_at desc;

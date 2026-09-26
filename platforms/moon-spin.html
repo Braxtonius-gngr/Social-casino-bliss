@@ -63,5 +63,15 @@
     <p><a href="index.html">Full tier list</a> &middot; <a href="../index.html?src=seo">Back to The Casino Almanac tracker</a></p>
     <p><a href="../privacy.html">Privacy</a> &middot; <a href="../terms.html">Terms</a></p>
   </footer>
+  <script>
+    (function () {
+      var match = /[?&]src=([a-z0-9_-]{1,32})(?:&|$)/i.exec(location.search);
+      if (!match) return;
+      var links = document.querySelectorAll('a[href*="index.html?src="]');
+      for (var i = 0; i < links.length; i++) {
+        links[i].setAttribute('href', links[i].getAttribute('href').replace(/src=[^&#]*/, 'src=' + match[1]));
+      }
+    })();
+  </script>
 </body>
 </html>

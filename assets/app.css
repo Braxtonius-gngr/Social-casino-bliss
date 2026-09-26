@@ -1088,6 +1088,18 @@
       text-decoration: none;
     }
     .tactic-full-guide:active { opacity: 0.7; }
+    .res-share-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--glass-border);
+    }
+    .res-share-row .tactic-full-guide { margin: 0; padding: 0; border: none; }
+    .res-share-btn, .keen-share {
+      background: transparent; border: 1px solid var(--accent-gold); color: var(--accent-gold);
+      border-radius: 8px; padding: 6px 12px; font-family: inherit; font-size: 0.72rem;
+      font-weight: 800; letter-spacing: 0.06em; cursor: pointer;
+    }
+    .keen-share { display: block; width: 100%; margin-top: 10px; }
+    .res-share-btn:active, .keen-share:active { opacity: 0.7; }
     .res-legend-card { margin-bottom: 22px; }
     .res-legend-intro { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin: 0 0 12px; }
     .res-legend-intro b { color: var(--accent-gold); font-weight: 700; }

@@ -352,6 +352,10 @@
           <dt><span class="tier-badge tier-Not-Rankable">Not Rankable</span></dt>
           <dd>Permanent, not a gap: the only daily here is chance-based, so there's no guaranteed rate to rank.</dd>
         </dl>
+        <div class="res-share-row">
+          <a class="tactic-full-guide" href="platforms/index.html">The full tier list &#8599;</a>
+          <button type="button" class="res-share-btn" onclick="shareTierList()">SHARE IT</button>
+        </div>
       </div>
 
       <div class="res-links-label">External</div>
@@ -656,7 +660,7 @@
         <div class="backup-helper" style="margin-top:0;">
           <strong style="color:var(--text-main);">Install for offline use:</strong><br>
           Android &mdash; browser menu &rarr; "Add to Home screen".<br>
-          iPad &mdash; Share button &rarr; "Add to Home Screen".
+          iPhone / iPad &mdash; Share button &rarr; "Add to Home Screen". On iPhone this is also what lets alerts reach you while the app is closed.
         </div>
       </div>
 
@@ -2357,6 +2361,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
 
       const alertRulesOn = alertRulesActive();
+      const pagePaths = platformPageMap();
       list.forEach((game, cardIndex) => {
         const { isReady, remainingMs } = getCooldownState(game);
         const cardWrapper = document.createElement('div');
@@ -2414,6 +2419,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               <div class="keen-notes-body">${game.notes || 'No specific warning flags. 24h standard reset cycle.'}</div>
             </details>
             ${goToGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">RECOMMENDED MODULES:</strong>${goToGames}</div>` : ''}
+            ${pagePaths.has(game.name.trim().toLowerCase()) ? `<button type="button" class="keen-share" data-share-name="${escHtml(game.name)}" onclick="sharePlatformFrom(this, event)">Share this platform</button>` : ''}
           </div>
         `;
         container.appendChild(cardWrapper);
@@ -2536,6 +2542,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       });
 
       filtered.sort((a, b) => compareByStack(a, b, sortStackCatalog));
+      const pagePaths = platformPageMap();
 
       filtered.forEach((item, index) => {
         const isTracked = trackedGames.some(g => g.name.toLowerCase() === item.name.toLowerCase());
@@ -2571,6 +2578,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               <div class="keen-notes-body">${item.notes || 'No critical flags. Normal 1x playthrough.'}</div>
             </details>
             ${item.bestGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">RECOMMENDED MODULES:</strong>${item.bestGames}</div>` : ''}
+            ${pagePaths.has(item.name.trim().toLowerCase()) ? `<button type="button" class="keen-share" data-share-name="${escHtml(item.name)}" onclick="sharePlatformFrom(this, event)">Share this platform</button>` : ''}
           </div>
         `;
         container.appendChild(cardWrapper);
@@ -5333,6 +5341,94 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
     }
 
+    // --- Sharing platforms and the tier list ---
+    // Shared links point at the static pages scripts/generate-seo-pages.js
+    // builds from the same catalog, tagged ?src=share; those pages hand the
+    // tag on to their links into the app, so a visit that starts from a
+    // share is credited to it in app_open.
+    function seoSlug(name) {
+      return String(name || '')
+        .normalize('NFKD')
+        .replace(/[̀-ͯ]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
+    // Lower-cased catalog name -> its page path. Same rule as the generator:
+    // the same entries, in catalog order, a "-2" suffix on a clash.
+    function platformPageMap() {
+      const used = new Set(['index']);
+      const paths = new Map();
+      CATALOG_DATA.forEach(entry => {
+        if (!entry || typeof entry.name !== 'string' || !entry.name.trim() || !entry.url) return;
+        const base = seoSlug(entry.name);
+        if (!base) return;
+        let slug = base;
+        let n = 2;
+        while (used.has(slug)) slug = `${base}-${n++}`;
+        used.add(slug);
+        const key = entry.name.trim().toLowerCase();
+        if (!paths.has(key)) paths.set(key, `platforms/${slug}.html`);
+      });
+      return paths;
+    }
+
+    function shareTextFor(entry) {
+      const name = entry.name.trim();
+      if (entry.noGuaranteedDaily) return `${name} has no guaranteed daily bonus. Here's what it does have.`;
+      if (/^[SABCDF]$/.test(entry.tier || '') && typeof entry.dailySC === 'number' && typeof entry.daysToRedeem === 'number') {
+        return `${name} is tier ${entry.tier}: ${entry.dailySC} SC a day, about ${entry.daysToRedeem} days of free daily bonuses to the first cash-out.`;
+      }
+      return `${name}: daily bonus, redemption minimum and payout speed.`;
+    }
+
+    // Native share sheet where there is one, otherwise the clipboard.
+    async function shareLink({ title, text, path, kind, name }) {
+      const url = new URL(path, window.location.href);
+      url.searchParams.set('src', 'share');
+      const href = url.href;
+      let method = 'native';
+      if (navigator.share) {
+        try {
+          await navigator.share({ title, text, url: href });
+        } catch (err) {
+          if (err && err.name === 'AbortError') return;   // the user closed the sheet
+          method = 'clipboard';
+        }
+      } else {
+        method = 'clipboard';
+      }
+      if (method === 'clipboard') {
+        try {
+          await navigator.clipboard.writeText(href);
+          showToast('Link copied.', null);
+        } catch (err) {
+          method = 'prompt';
+          window.prompt('Copy this link:', href);
+        }
+      }
+      trackEvent('shared', { kind, name: name || null, method });
+    }
+
+    function sharePlatformFrom(btn, event) {
+      if (event) event.stopPropagation();
+      const entry = findCatalogEntry(btn.dataset.shareName || '');
+      const path = entry && platformPageMap().get(entry.name.trim().toLowerCase());
+      if (!path) return;
+      shareLink({ title: `${entry.name.trim()} daily bonus guide`, text: shareTextFor(entry), path, kind: 'platform', name: entry.name.trim() });
+    }
+
+    function shareTierList() {
+      const ranked = CATALOG_DATA.filter(e => e && /^[SABCDF]$/.test(e.tier || '')).length;
+      shareLink({
+        title: 'Sweepstakes casino daily bonus tier list',
+        text: `${ranked} sweepstakes casinos ranked by how many days of free daily bonuses it takes to reach the first cash-out.`,
+        path: 'platforms/index.html',
+        kind: 'tier_list'
+      });
+    }
+
     // --- PWA install & offline ---
     let deferredPrompt = null;
 
@@ -5347,7 +5443,66 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       deferredPrompt = null;
       const btn = document.getElementById('btnInstallPwa');
       if (btn) btn.style.display = 'none';
+      trackEvent('app_installed');
     });
+
+    // Installed, the Almanac opens like an app, and on iPhone the Home Screen
+    // app is the only way alerts reach a closed app. So from the third day
+    // it's used, it offers to install - at most three times, two weeks
+    // apart, and only where installing is actually possible.
+    const VISIT_DAYS_KEY = 'almanac_visit_days_v1';
+    const INSTALL_NUDGE_KEY = 'almanac_install_nudge_v1';
+
+    function isStandaloneApp() {
+      return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+        || window.navigator.standalone === true;
+    }
+
+    function isIOSDevice() {
+      return /iphone|ipad|ipod/i.test(navigator.userAgent || '')
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    // Distinct days the app was opened on, not page loads.
+    function noteVisitDay() {
+      let visits = { days: 0, last: '' };
+      try { visits = Object.assign(visits, JSON.parse(localStorage.getItem(VISIT_DAYS_KEY)) || {}); } catch (e) {}
+      const d = new Date();
+      const today = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+      if (visits.last !== today) {
+        visits.days = (Number(visits.days) || 0) + 1;
+        visits.last = today;
+        try { localStorage.setItem(VISIT_DAYS_KEY, JSON.stringify(visits)); } catch (e) {}
+      }
+      return visits.days;
+    }
+
+    function maybeOfferInstall(attempt = 0) {
+      if (isStandaloneApp() || isCrawler()) return;
+      let days = 0;
+      try { days = Number((JSON.parse(localStorage.getItem(VISIT_DAYS_KEY)) || {}).days) || 0; } catch (e) {}
+      if (days < 3) return;
+      let nudge = { shown: 0, at: 0 };
+      try { nudge = Object.assign(nudge, JSON.parse(localStorage.getItem(INSTALL_NUDGE_KEY)) || {}); } catch (e) {}
+      if (nudge.shown >= 3 || Date.now() - (Number(nudge.at) || 0) < 14 * 86400000) return;
+      const ios = isIOSDevice();
+      if (!ios && !deferredPrompt) return;   // this browser can't install from here
+      // Don't talk over another message (an undo, a sync notice); try again shortly.
+      const toast = document.getElementById('toast');
+      if (toast && toast.classList.contains('show')) {
+        if (attempt < 5) setTimeout(() => maybeOfferInstall(attempt + 1), 8000);
+        return;
+      }
+      nudge.shown = (Number(nudge.shown) || 0) + 1;
+      nudge.at = Date.now();
+      try { localStorage.setItem(INSTALL_NUDGE_KEY, JSON.stringify(nudge)); } catch (e) {}
+      trackEvent('install_prompt_shown', { platform: ios ? 'ios' : 'native', days });
+      if (ios) {
+        showToast('Add the Almanac to your Home Screen: tap Share, then "Add to Home Screen". On iPhone that is also what lets alerts reach you while it is closed.', null, 15000);
+      } else {
+        showToast('Install the Almanac: it opens like an app, and alerts can reach you while it is closed.', installPWA, 15000, 'INSTALL');
+      }
+    }
 
     function installPWA() {
       if (!deferredPrompt) return;
@@ -6609,7 +6764,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // anything leaving this device - and never deck contents, emails or notes.
     const ANALYTICS_EVENTS = new Set([
       'app_open', 'platform_tracked', 'daily_run_started', 'daily_run_finished',
-      'push_enabled', 'checkout_started', 'pro_activated', 'alert_rules_saved'
+      'push_enabled', 'checkout_started', 'pro_activated', 'alert_rules_saved',
+      'shared', 'install_prompt_shown', 'app_installed'
     ]);
     let analyticsQueue = [];
     let analyticsTimer = null;
@@ -9428,6 +9584,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (document.visibilityState === 'hidden') flushAnalytics();
     });
     consumeBillingReturnParam();
+    noteVisitDay();
+    // Late enough for the browser to have offered its install event, and
+    // clear of the first-paint nudges below.
+    setTimeout(maybeOfferInstall, 10000);
     setTimeout(checkModeratorAccess, 1000);
     // Deliberately after the first paint, not before: this is a courtesy
     // nudge toward Settings, not something that should compete with the
