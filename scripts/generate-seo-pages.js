@@ -11,7 +11,7 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const CATALOG_PATH = path.join(ROOT, 'data', 'catalog.json');
 const OUTPUT_DIR = path.join(ROOT, 'platforms');
-const DEFAULT_BASE_URL = 'https://braxtonius-gngr.github.io/Social-casino-bliss';
+const DEFAULT_BASE_URL = 'https://dailyrollover.com';
 
 function escapeHtml(value) {
   return String(value == null ? '' : value)

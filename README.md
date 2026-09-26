@@ -87,7 +87,7 @@ They also run automatically on every push and pull request via
 The optional `npm run build:seo` command uses the same catalog to generate
 semantic static landing pages under `platforms/` and a sitemap. It does not
 change the runtime PWA or introduce a bundler. Set `SEO_BASE_URL` when
-deploying somewhere other than the default GitHub Pages URL.
+deploying somewhere other than the canonical https://dailyrollover.com.
 
 Phase 3 moderation is also kept behind the database boundary: the staff tab
 is hidden until `is_moderator()` succeeds, and its queue reads and
