@@ -1670,17 +1670,19 @@
   {
     "name": "Sweepstakes Casino",
     "url": "https://sweepstakescasino.com/?ref=r_braxtonius",
-    "tier": "Unranked",
+    "tier": "F",
     "dailySC": 0.05,
     "speedHours": 24,
     "reliability": 68,
     "cooldown": 24,
     "hasLive": false,
-    "minRedeem": "Varies",
+    "minRedeem": "100 SC (borrowed from the SpeedSweeps family)",
     "confidence": "low",
-    "notes": "DAILY LADDER CAPTURED 2026-09-26 (owner screenshots, sweepstakescasino.com): Basic Rewards Day 1 5,000 GC + 0.05 SC (claimed), Day 2 7,500 GC + 0.05 SC; later days not shown. A locked Premium Rewards row (Day 1 5,000 GC + 0.15 SC) is not a free-player reward. The post-claim timer read 23:59:39, so the cooldown is a rolling 24h. These two rungs match Speed Sweeps' Days 1-2 exactly (5,000/0.05 then 7,500/0.05), which with the shared ?ref=r_ link format makes SpeedSweeps-family membership likely - the family's redeem floor is 100 SC, which would put this at F (2,000 days), but the floor is not borrowed until confirmed because redemption here needs account verification first. | OWNER REPORT 2026-09-26: the account has to be verified before the redeem page can be used, so the floor is not captured yet. The ?ref=r_braxtonius link format is the same one the SpeedSweeps family (Speed, Rich, Dime, SweepsRoyal) uses, which may point to the same operator - unconfirmed. Referral link updated 2026-09-26 to the owner's ?ref= code. | UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
+    "notes": "FLOOR BORROWED 2026-09-26 AT THE OWNER'S DIRECTION: the redeem page is still behind account verification, so this entry takes the SpeedSweeps family's 100 SC minimum (Speed Sweeps, Rich Sweeps, Dime Sweeps and SweepsRoyal all show \"Amount To Redeem (Min 100 SC)\", paid by debit card or crypto transfer). INFERRED, NOT CONFIRMED: family membership, and with it the operator, payment processor and redemption methods, rests only on the identical Day 1-2 ladder (5,000 GC + 0.05 SC, then 7,500 GC + 0.05 SC) and the shared ?ref=r_ referral format. TIER, DERIVED FROM THE BORROWED FLOOR: 100 / 0.05 SC per day = 2000 days to the first cash redemption, tier F. Confidence stays low until this site's own redeem page is captured. | DAILY LADDER CAPTURED 2026-09-26 (owner screenshots, sweepstakescasino.com): Basic Rewards Day 1 5,000 GC + 0.05 SC (claimed), Day 2 7,500 GC + 0.05 SC; later days not shown. A locked Premium Rewards row (Day 1 5,000 GC + 0.15 SC) is not a free-player reward. The post-claim timer read 23:59:39, so the cooldown is a rolling 24h. These two rungs match Speed Sweeps' Days 1-2 exactly (5,000/0.05 then 7,500/0.05), which with the shared ?ref=r_ link format makes SpeedSweeps-family membership likely - the family's redeem floor is 100 SC, which would put this at F (2,000 days), but the floor is not borrowed until confirmed because redemption here needs account verification first. | OWNER REPORT 2026-09-26: the account has to be verified before the redeem page can be used, so the floor is not captured yet. The ?ref=r_braxtonius link format is the same one the SpeedSweeps family (Speed, Rich, Dime, SweepsRoyal) uses, which may point to the same operator - unconfirmed. Referral link updated 2026-09-26 to the owner's ?ref= code. | UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
     "scSource": "ladder-partial",
-    "lastVerified": "2026-09-26"
+    "lastVerified": "2026-09-26",
+    "cashFloor": 100,
+    "daysToRedeem": 2000
   },
   {
     "name": "Coin Wizard Games",
