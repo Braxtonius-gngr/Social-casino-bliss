@@ -579,6 +579,7 @@
           </div>
           <div class="billing-actions">
             <button id="btnUpgradePro" class="btn-primary" onclick="initiateProCheckout()">Upgrade to Pro ($4.99/mo)</button>
+            <button id="btnUpgradeProAnnual" class="btn-dock" onclick="initiateProCheckout(PRO_ANNUAL_PRICE_ID)">$49.90/yr &middot; 2 months free</button>
             <button id="btnManageBilling" class="btn-dock hidden" onclick="openCustomerPortal()">Manage Subscription</button>
           </div>
         </div>
@@ -4542,14 +4543,22 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       refreshNotifyUI();
     }
 
-    function sendTestNotification() {
+    async function sendTestNotification() {
       if (!notificationsSupported() || Notification.permission !== 'granted') {
         showToast('Enable notifications first.', null);
         return;
       }
+      const body = 'Test alert: your ready queue will appear here.';
+      // Android Chrome rejects new Notification() outright; only the
+      // service worker may show one there, so try it first.
       try {
-        const n = new Notification('Casino Almanac', { body: 'Test alert: your ready queue will appear here.' });
-        n.onclick = () => window.focus();
+        const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+        if (reg) {
+          await reg.showNotification('Casino Almanac', { body, tag: 'almanac-test' });
+        } else {
+          const n = new Notification('Casino Almanac', { body });
+          n.onclick = () => window.focus();
+        }
         showToast('Test alert sent.', null);
       } catch (err) {
         showToast('The browser blocked the test alert.', null);
@@ -5508,6 +5517,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
     }
 
+    // Stripe price ids are public; the checkout function only accepts the
+    // ones configured in its STRIPE_PRICE_ID_PRO_* secrets.
+    const PRO_ANNUAL_PRICE_ID = 'price_1UJrurG0mgdscx2FurYFqmxo';
+
     async function initiateProCheckout(priceId) {
       const client = getSupabaseClient();
       if (!client) {
@@ -5538,7 +5551,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const body = { returnUrl: billingReturnUrl() };
         if (priceId) body.priceId = priceId;
         if (email) body.email = email;
-        trackEvent('checkout_started', { plan: priceId || 'monthly' });
+        trackEvent('checkout_started', { plan: priceId === PRO_ANNUAL_PRICE_ID ? 'annual' : 'monthly' });
         const { data, error } = await client.functions.invoke('create-checkout-session', { body });
         if (error || !data?.url) {
           const { status, body: errBody } = await extractFunctionsErrorDetail(error);
@@ -5612,9 +5625,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // `.landing-screen.hidden`), so the class alone never actually hid
       // these buttons - the inline display is what does the work. The
       // class is still kept in sync so the markup's state stays readable.
+      const upgradeAnnual = document.getElementById('btnUpgradeProAnnual');
       upgrade.classList.toggle('hidden', isPro);
       manage.classList.toggle('hidden', !isPro);
       upgrade.style.display = isPro ? 'none' : 'inline-block';
+      if (upgradeAnnual) upgradeAnnual.style.display = isPro ? 'none' : 'inline-block';
       manage.style.display = isPro ? 'inline-block' : 'none';
       if (isPro && clientEntitlements.currentPeriodEnd) {
         datesRow.style.display = 'block';
