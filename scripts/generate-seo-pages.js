@@ -329,18 +329,24 @@ Sitemap: ${baseUrl}/platforms/sitemap.xml
 `;
 }
 
-function main() {
-  const baseUrl = normalizeBaseUrl(process.env.SEO_BASE_URL);
-  const catalog = loadCatalog();
+// Each entry's page slug, in catalog order with a "-2" suffix on a clash.
+// platformPageMap() in index.html and scripts/weekly-post.js follow the same rule.
+function withSlugs(catalog) {
   const usedSlugs = new Set(['index']);
-  const entries = catalog.map(entry => {
+  return catalog.map(entry => {
     const baseSlug = slugify(entry.name);
     let slug = baseSlug;
     let suffix = 2;
     while (usedSlugs.has(slug)) slug = `${baseSlug}-${suffix++}`;
     usedSlugs.add(slug);
     return { entry, slug };
-  }).sort(compareEntries);
+  });
+}
+
+function main() {
+  const baseUrl = normalizeBaseUrl(process.env.SEO_BASE_URL);
+  const catalog = loadCatalog();
+  const entries = withSlugs(catalog).sort(compareEntries);
   const updated = entries.map(({ entry }) => entry.lastVerified).filter(isIsoDate).sort().pop() || null;
 
   // Keys are paths relative to the repo root.
@@ -382,4 +388,6 @@ function main() {
     (orphans.length ? `; removed ${orphans.length} orphaned page(s)` : ''));
 }
 
-main();
+module.exports = { loadCatalog, withSlugs, normalizeBaseUrl, RANKED };
+
+if (require.main === module) main();

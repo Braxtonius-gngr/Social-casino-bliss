@@ -88,6 +88,19 @@ The optional `npm run build:seo` command uses the same catalog to generate
 semantic static landing pages under `platforms/` and a sitemap. It does not
 change the runtime PWA or introduce a bundler. Set `SEO_BASE_URL` when
 deploying somewhere other than the canonical https://dailyrollover.com.
+It first rebuilds `data/catalog-history.json`, each platform's tier and
+rate changes read from the catalog's git history (`npm run build:history`
+alone). That needs a full clone; in a shallow one it warns and keeps the
+committed file (`git fetch --unshallow` fixes it).
+
+`npm run post:weekly` drafts the weekly "what changed" post from that
+history: newly ranked platforms, tier moves, platforms found to have no
+guaranteed daily, and additions, each linked to its page with
+`?src=reddit` so the visits it brings are counted by source. Add
+`-- --format discord` for Discord (split into 2,000-character messages),
+or `-- --since 2026-09-20 --until 2026-09-26` for another week (both days
+included; the default is the last seven days, uncommitted catalog edits
+included). It only prints the draft; posting is a manual step.
 
 Phase 3 moderation is also kept behind the database boundary: the staff tab
 is hidden until `is_moderator()` succeeds, and its queue reads and

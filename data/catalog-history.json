@@ -1,0 +1,3787 @@
+{
+  "Ace": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.28,
+        "cashFloor": 100,
+        "daysToRedeem": 357
+      }
+    }
+  ],
+  "Ace Bet": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.57,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 0.57,
+        "cashFloor": 50,
+        "daysToRedeem": 88
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.57,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Acorn Fun": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": 100,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "American Luck": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.65,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 0.61,
+        "cashFloor": 50,
+        "daysToRedeem": 82
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "A",
+        "dailySC": 0.65,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.65,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Baba Casino": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.6,
+        "cashFloor": 100,
+        "daysToRedeem": 167
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.61,
+        "cashFloor": 100,
+        "daysToRedeem": 164
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "A",
+        "dailySC": 0.6,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.6,
+        "cashFloor": 100,
+        "daysToRedeem": 167
+      }
+    }
+  ],
+  "Bang Coins": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": 100,
+        "daysToRedeem": 500
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.2,
+        "cashFloor": 100,
+        "daysToRedeem": 500
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": 100,
+        "daysToRedeem": 500
+      }
+    }
+  ],
+  "Card Crush": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.5,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 0.5,
+        "cashFloor": 50,
+        "daysToRedeem": 100
+      }
+    }
+  ],
+  "Cashoomo": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.62,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.62,
+        "cashFloor": 100,
+        "daysToRedeem": 161
+      }
+    }
+  ],
+  "Casino Click": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.8,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.8,
+        "cashFloor": 100,
+        "daysToRedeem": 125
+      }
+    }
+  ],
+  "Chanced": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "D",
+        "dailySC": 0.19,
+        "cashFloor": 100,
+        "daysToRedeem": 526
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.19,
+        "cashFloor": 100,
+        "daysToRedeem": 526
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.19,
+        "cashFloor": 100,
+        "daysToRedeem": 526
+      }
+    }
+  ],
+  "Chip N Win": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": 100,
+        "daysToRedeem": 500
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.2,
+        "cashFloor": 100,
+        "daysToRedeem": 500
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": 100,
+        "daysToRedeem": 500
+      }
+    }
+  ],
+  "Chumba": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "A",
+        "dailySC": 1,
+        "cashFloor": 100,
+        "daysToRedeem": 100
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.41,
+        "cashFloor": 100,
+        "daysToRedeem": 244
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 1,
+        "cashFloor": 100,
+        "daysToRedeem": 100
+      }
+    }
+  ],
+  "Cider Casino": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.24,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 0.24,
+        "cashFloor": 1,
+        "daysToRedeem": 4
+      }
+    },
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.24,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Clubs Poker": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": 100,
+        "daysToRedeem": 500
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.2,
+        "cashFloor": 100,
+        "daysToRedeem": 500
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": 100,
+        "daysToRedeem": 500
+      }
+    }
+  ],
+  "Coin Wizard Games": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.2,
+        "cashFloor": 50,
+        "daysToRedeem": 250
+      }
+    },
+    {
+      "date": "2026-09-16",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Coins Royale": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "A",
+        "dailySC": 1,
+        "cashFloor": 100,
+        "daysToRedeem": 100
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "A",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 1,
+        "cashFloor": 100,
+        "daysToRedeem": 100
+      }
+    }
+  ],
+  "Coinz": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.15,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.15,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Crown Coins": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1.5,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 1.07,
+        "cashFloor": 100,
+        "daysToRedeem": 93
+      }
+    }
+  ],
+  "Dara Casino": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.45,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.07,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.45,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.45,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Dime Sweeps": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.05,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.05,
+        "cashFloor": 100,
+        "daysToRedeem": 2000
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.05,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Dogg House": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": 50,
+        "daysToRedeem": 50
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": 20,
+        "daysToRedeem": 20
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": 50,
+        "daysToRedeem": 50
+      }
+    }
+  ],
+  "DoubleSpin": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 0.26,
+        "cashFloor": 30,
+        "daysToRedeem": 115
+      }
+    }
+  ],
+  "Ember Fund": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.85,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.024,
+        "cashFloor": 50,
+        "daysToRedeem": 2083
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.85,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.85,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Fliff": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": 50,
+        "daysToRedeem": 50
+      }
+    }
+  ],
+  "Fortune Coins": [
+    {
+      "date": "2026-09-16",
+      "removed": true,
+      "from": {
+        "tier": "A",
+        "dailySC": 0.5,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Fortune Purple": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.21,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "C",
+        "dailySC": 0.21,
+        "cashFloor": 50,
+        "daysToRedeem": 238
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.21,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Fortune Wins": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.39,
+        "cashFloor": 50,
+        "daysToRedeem": 128
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 0.56,
+        "cashFloor": 50,
+        "daysToRedeem": 89
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.39,
+        "cashFloor": 50,
+        "daysToRedeem": 128
+      }
+    }
+  ],
+  "Funrize": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.24,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.24,
+        "cashFloor": 100,
+        "daysToRedeem": 417
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.25,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.24,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Funz Casino": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 1,
+        "cashFloor": 100,
+        "daysToRedeem": 100
+      }
+    }
+  ],
+  "Funz City": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "D",
+        "dailySC": 0.15,
+        "cashFloor": 100,
+        "daysToRedeem": 667
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.15,
+        "cashFloor": 100,
+        "daysToRedeem": 667
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.15,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.15,
+        "cashFloor": 100,
+        "daysToRedeem": 667
+      }
+    }
+  ],
+  "Gains": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.1,
+        "cashFloor": 100,
+        "daysToRedeem": 1000
+      }
+    }
+  ],
+  "Get Fliff": [
+    {
+      "date": "2026-09-17",
+      "removed": true,
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Global Poker": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "A",
+        "dailySC": 0.4,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.4,
+        "cashFloor": 50,
+        "daysToRedeem": 125
+      }
+    }
+  ],
+  "Golden Hearts Games": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "D",
+        "dailySC": 0.36,
+        "cashFloor": 100,
+        "daysToRedeem": 278
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.39,
+        "cashFloor": 100,
+        "daysToRedeem": 256
+      }
+    },
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.36,
+        "cashFloor": 100,
+        "daysToRedeem": 278
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.36,
+        "cashFloor": 100,
+        "daysToRedeem": 278
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "renamedFrom": "Goldenhearts Games",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.4,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "C",
+        "dailySC": 0.36,
+        "cashFloor": 100,
+        "daysToRedeem": 278
+      }
+    }
+  ],
+  "GoMining": [
+    {
+      "date": "2026-09-23",
+      "added": true,
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "HelloMillions": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.25,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 1.14,
+        "cashFloor": 75,
+        "daysToRedeem": 66
+      }
+    }
+  ],
+  "High5": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.5,
+        "cashFloor": 100,
+        "daysToRedeem": 200
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.3,
+        "cashFloor": 100,
+        "daysToRedeem": 333
+      }
+    },
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.5,
+        "cashFloor": 100,
+        "daysToRedeem": 200
+      },
+      "to": {
+        "tier": "C",
+        "dailySC": 0.5,
+        "cashFloor": 100,
+        "daysToRedeem": 200
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.5,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.5,
+        "cashFloor": 100,
+        "daysToRedeem": 200
+      }
+    }
+  ],
+  "Hush Casino": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 0.75,
+        "cashFloor": 50,
+        "daysToRedeem": 67
+      }
+    }
+  ],
+  "Jackpot Go": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.24,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 0.24,
+        "cashFloor": 1,
+        "daysToRedeem": 4
+      }
+    },
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.8,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.24,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "A",
+        "dailySC": 0.8,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.8,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Jackpot Rabbit": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.45,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.45,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.45,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Jackpota": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "D",
+        "dailySC": 0.25,
+        "cashFloor": 75,
+        "daysToRedeem": 300
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.2,
+        "cashFloor": 75,
+        "daysToRedeem": 375
+      }
+    },
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.25,
+        "cashFloor": 75,
+        "daysToRedeem": 300
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.25,
+        "cashFloor": 75,
+        "daysToRedeem": 300
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.25,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "C",
+        "dailySC": 0.25,
+        "cashFloor": 75,
+        "daysToRedeem": 300
+      }
+    }
+  ],
+  "Jefe Bet": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Joya": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Jumbo88": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": 100,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "KingPrize": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.2,
+        "cashFloor": 100,
+        "daysToRedeem": 500
+      }
+    }
+  ],
+  "Lavish Luck": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 0.24,
+        "cashFloor": 1,
+        "daysToRedeem": 4
+      }
+    }
+  ],
+  "Legendz": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.5,
+        "cashFloor": 100,
+        "daysToRedeem": 200
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": 100,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.5,
+        "cashFloor": 100,
+        "daysToRedeem": 200
+      },
+      "to": {
+        "tier": "C",
+        "dailySC": 0.5,
+        "cashFloor": 100,
+        "daysToRedeem": 200
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.5,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.5,
+        "cashFloor": 100,
+        "daysToRedeem": 200
+      }
+    }
+  ],
+  "Lionsden Games": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": 15,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Lonestar": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.2,
+        "cashFloor": 50,
+        "daysToRedeem": 250
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.2,
+        "cashFloor": 50,
+        "daysToRedeem": 250
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.5,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.2,
+        "cashFloor": 50,
+        "daysToRedeem": 250
+      }
+    }
+  ],
+  "Luck Party": [
+    {
+      "date": "2026-09-23",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "A",
+        "dailySC": 0.7,
+        "cashFloor": 50,
+        "daysToRedeem": 71
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 0.46,
+        "cashFloor": 50,
+        "daysToRedeem": 108
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "A",
+        "dailySC": 0.7,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 0.7,
+        "cashFloor": 50,
+        "daysToRedeem": 71
+      }
+    }
+  ],
+  "Lucky Bunny": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": 100,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Lucky Rush": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "F",
+        "dailySC": 0.1,
+        "cashFloor": 100,
+        "daysToRedeem": 1000
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": 100,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "D",
+        "dailySC": 0.1,
+        "cashFloor": 100,
+        "daysToRedeem": 1000
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.1,
+        "cashFloor": 100,
+        "daysToRedeem": 1000
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.1,
+        "cashFloor": 100,
+        "daysToRedeem": 1000
+      }
+    }
+  ],
+  "Luckybits Vegas": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "F",
+        "dailySC": 0.3,
+        "cashFloor": 100,
+        "daysToRedeem": 333
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.1,
+        "cashFloor": 100,
+        "daysToRedeem": 1000
+      }
+    },
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.3,
+        "cashFloor": 100,
+        "daysToRedeem": 333
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.3,
+        "cashFloor": 100,
+        "daysToRedeem": 333
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.3,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "C",
+        "dailySC": 0.3,
+        "cashFloor": 100,
+        "daysToRedeem": 333
+      }
+    }
+  ],
+  "LuckyHands": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "A",
+        "dailySC": 0.5,
+        "cashFloor": 50,
+        "daysToRedeem": 100
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.1,
+        "cashFloor": 50,
+        "daysToRedeem": 500
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.5,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 0.5,
+        "cashFloor": 50,
+        "daysToRedeem": 100
+      }
+    }
+  ],
+  "LuckyLand Casino": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.5,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 0.57,
+        "cashFloor": 50,
+        "daysToRedeem": 88
+      }
+    }
+  ],
+  "Lunaland Casino": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.16,
+        "cashFloor": 80,
+        "daysToRedeem": 500
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.16,
+        "cashFloor": 80,
+        "daysToRedeem": 500
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.3,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "C",
+        "dailySC": 0.16,
+        "cashFloor": 80,
+        "daysToRedeem": 500
+      }
+    }
+  ],
+  "McLuck": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "D",
+        "dailySC": 0.09,
+        "cashFloor": 75,
+        "daysToRedeem": 833
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.09,
+        "cashFloor": 75,
+        "daysToRedeem": 833
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.09,
+        "cashFloor": 75,
+        "daysToRedeem": 833
+      }
+    }
+  ],
+  "MegaBonanza": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.2,
+        "cashFloor": 50,
+        "daysToRedeem": 250
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.2,
+        "cashFloor": 50,
+        "daysToRedeem": 250
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.2,
+        "cashFloor": 50,
+        "daysToRedeem": 250
+      }
+    }
+  ],
+  "Modo": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.5,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.3,
+        "cashFloor": 50,
+        "daysToRedeem": 167
+      }
+    }
+  ],
+  "Moon Spin": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.5,
+        "cashFloor": 100,
+        "daysToRedeem": 200
+      },
+      "to": {
+        "tier": "C",
+        "dailySC": 0.5,
+        "cashFloor": 100,
+        "daysToRedeem": 200
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "A",
+        "dailySC": 0.5,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.5,
+        "cashFloor": 100,
+        "daysToRedeem": 200
+      }
+    }
+  ],
+  "Moozi": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.55,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 0.55,
+        "cashFloor": 50,
+        "daysToRedeem": 91
+      }
+    }
+  ],
+  "Mr Goodwin": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "MyPrize": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 1,
+        "cashFloor": 100,
+        "daysToRedeem": 100
+      }
+    }
+  ],
+  "New Luck": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.2,
+        "cashFloor": 75,
+        "daysToRedeem": 375
+      }
+    }
+  ],
+  "No Vig": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.6,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.6,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.6,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Nolimit Coins": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.45,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.45,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Play1Up": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.24,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "PlayFame": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "D",
+        "dailySC": 0.014,
+        "cashFloor": 75,
+        "daysToRedeem": 5357
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.014,
+        "cashFloor": 75,
+        "daysToRedeem": 5357
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.25,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.014,
+        "cashFloor": 75,
+        "daysToRedeem": 5357
+      }
+    }
+  ],
+  "Pulsz": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.37,
+        "cashFloor": 100,
+        "daysToRedeem": 270
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.37,
+        "cashFloor": 100,
+        "daysToRedeem": 270
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.3,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "C",
+        "dailySC": 0.37,
+        "cashFloor": 100,
+        "daysToRedeem": 270
+      }
+    }
+  ],
+  "Pulsz Bingo": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.3,
+        "cashFloor": 100,
+        "daysToRedeem": 333
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.3,
+        "cashFloor": 100,
+        "daysToRedeem": 333
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.3,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "C",
+        "dailySC": 0.3,
+        "cashFloor": 100,
+        "daysToRedeem": 333
+      }
+    }
+  ],
+  "Punt": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.19,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.19,
+        "cashFloor": 100,
+        "daysToRedeem": 526
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.19,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "RealPrize": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 1,
+        "cashFloor": 100,
+        "daysToRedeem": 100
+      }
+    }
+  ],
+  "ReBet": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": 20,
+        "daysToRedeem": 20
+      }
+    }
+  ],
+  "Reel Zappy": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 0.5,
+        "cashFloor": 50,
+        "daysToRedeem": 100
+      }
+    }
+  ],
+  "Rich Sweeps": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.05,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.05,
+        "cashFloor": 100,
+        "daysToRedeem": 2000
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.05,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Rolla": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "D",
+        "dailySC": 0.1,
+        "cashFloor": 100,
+        "daysToRedeem": 1000
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.1,
+        "cashFloor": 100,
+        "daysToRedeem": 1000
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.1,
+        "cashFloor": 100,
+        "daysToRedeem": 1000
+      }
+    }
+  ],
+  "Roxy Moxy": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.3,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.3,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Ruby Sweeps": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Scarlet Sands": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.17,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.17,
+        "cashFloor": 100,
+        "daysToRedeem": 588
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.25,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.17,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Scrooge Casino": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.15,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.15,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Sheesh Casino": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.4,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": 50,
+        "daysToRedeem": 50
+      }
+    }
+  ],
+  "Shuffle": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": 53.85,
+        "daysToRedeem": 54
+      }
+    }
+  ],
+  "Side Pot": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "A",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Sixty6": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.043,
+        "cashFloor": 100,
+        "daysToRedeem": 2326
+      }
+    }
+  ],
+  "Speed Sweeps": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.05,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.05,
+        "cashFloor": 100,
+        "daysToRedeem": 2000
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.05,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Spin Pals": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "A",
+        "dailySC": 0.7,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.7,
+        "cashFloor": 100,
+        "daysToRedeem": 143
+      }
+    }
+  ],
+  "Spin Quest": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Spin4America": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.1,
+        "cashFloor": 100,
+        "daysToRedeem": 1000
+      }
+    }
+  ],
+  "SpinBlitz": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "D",
+        "dailySC": 0.014,
+        "cashFloor": 75,
+        "daysToRedeem": 5357
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.014,
+        "cashFloor": 75,
+        "daysToRedeem": 5357
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.25,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.014,
+        "cashFloor": 75,
+        "daysToRedeem": 5357
+      }
+    }
+  ],
+  "Spindoo": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.3,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.3,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Spindoo US": [
+    {
+      "date": "2026-09-17",
+      "removed": true,
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Spinfinite": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.4,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.4,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Sportzino": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": 50,
+        "daysToRedeem": 50
+      }
+    }
+  ],
+  "Spree": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.4,
+        "cashFloor": 100,
+        "daysToRedeem": 250
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.4,
+        "cashFloor": 100,
+        "daysToRedeem": 250
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.4,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.4,
+        "cashFloor": 100,
+        "daysToRedeem": 250
+      }
+    }
+  ],
+  "Stackr Casino": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.2,
+        "cashFloor": 100,
+        "daysToRedeem": 500
+      }
+    }
+  ],
+  "Stake": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": 50,
+        "daysToRedeem": 50
+      }
+    }
+  ],
+  "Storm Rush": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.25,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Sweep Shark": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.3,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.3,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.3,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Sweepico": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": 100,
+        "daysToRedeem": 500
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.2,
+        "cashFloor": 100,
+        "daysToRedeem": 500
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "added": true,
+      "to": {
+        "tier": "C",
+        "dailySC": 0.2,
+        "cashFloor": 100,
+        "daysToRedeem": 500
+      }
+    }
+  ],
+  "Sweeplas Vegas": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "D",
+        "dailySC": 0.1,
+        "cashFloor": 100,
+        "daysToRedeem": 1000
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.1,
+        "cashFloor": 100,
+        "daysToRedeem": 1000
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.1,
+        "cashFloor": 100,
+        "daysToRedeem": 1000
+      }
+    }
+  ],
+  "Sweepolis": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": 100,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "SweepsRoyal": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.05,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.05,
+        "cashFloor": 100,
+        "daysToRedeem": 2000
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.05,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Sweepstakes Casino": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.05,
+        "cashFloor": 100,
+        "daysToRedeem": 2000
+      }
+    }
+  ],
+  "SweetSweeps": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.43,
+        "cashFloor": 75,
+        "daysToRedeem": 174
+      }
+    }
+  ],
+  "Tang Luck": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.25,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 0.22,
+        "cashFloor": 1,
+        "daysToRedeem": 5
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.25,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Tao Fortune": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.15,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.15,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Tao Sweeps": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": 100,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "The Boss Casino": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.15,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.4,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.15,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.15,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "ThrillCoins": [
+    {
+      "date": "2026-09-16",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.05,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Thrillzz": [
+    {
+      "date": "2026-09-16",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Vega Win": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "D",
+        "dailySC": 0.1,
+        "cashFloor": 2000,
+        "daysToRedeem": 20000
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.1,
+        "cashFloor": 2000,
+        "daysToRedeem": 20000
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.1,
+        "cashFloor": 2000,
+        "daysToRedeem": 20000
+      }
+    }
+  ],
+  "Vegas Bonanza": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": 100,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Vegas Way": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.3,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.3,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Wildhorse Bucks": [
+    {
+      "date": "2026-09-26",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Wildworld Casino": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.4,
+        "cashFloor": 100,
+        "daysToRedeem": 250
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.4,
+        "cashFloor": 100,
+        "daysToRedeem": 250
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.4,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.4,
+        "cashFloor": 100,
+        "daysToRedeem": 250
+      }
+    }
+  ],
+  "Win Bonanza": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "A",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": 50,
+        "daysToRedeem": 50
+      }
+    }
+  ],
+  "Winera": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.5,
+        "cashFloor": 100,
+        "daysToRedeem": 200
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": 100,
+        "daysToRedeem": null
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "B",
+        "dailySC": 0.5,
+        "cashFloor": 100,
+        "daysToRedeem": 200
+      }
+    }
+  ],
+  "With Yotta": [
+    {
+      "date": "2026-09-22",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "D",
+        "dailySC": 0.09,
+        "cashFloor": 100,
+        "daysToRedeem": 1111
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.09,
+        "cashFloor": 100,
+        "daysToRedeem": 1111
+      }
+    },
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.09,
+        "cashFloor": 100,
+        "daysToRedeem": 1111
+      }
+    }
+  ],
+  "WOW Vegas": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.5,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 0.5,
+        "cashFloor": 50,
+        "daysToRedeem": 100
+      }
+    }
+  ],
+  "Yay Casino": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 0.8,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "A",
+        "dailySC": 0.5,
+        "cashFloor": 50,
+        "daysToRedeem": 100
+      }
+    }
+  ],
+  "Zoot": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.4,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0.4,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Zula": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": 50,
+        "daysToRedeem": 50
+      }
+    }
+  ],
+  "Zunado": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "B",
+        "dailySC": 0.3,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ]
+}
