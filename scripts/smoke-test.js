@@ -26,6 +26,11 @@ const TIMEOUT_MS = 15000;
 const CHROME_START_MS = 60000;
 const SMOKE_USER = 'smoke-user-1';
 const GOOGLEBOT = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
+const HEADLESS = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36';
+// Headless Chrome's own user agent says HeadlessChrome, which the app now
+// treats as a scanner; every test runs as an ordinary browser unless it asks
+// for a particular one.
+const PERSON = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36';
 
 // --- A static server for the repo --------------------------------------
 
@@ -76,6 +81,10 @@ function launchChrome() {
   const proc = spawn(findChrome(), [
     '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--no-first-run',
     '--no-default-browser-check', '--disable-extensions', '--remote-debugging-port=0',
+    // The app refuses to sign automation in (navigator.webdriver), which is
+    // right for scanners and wrong for these tests: they stand in for a
+    // person's browser. The tests that want a bot set one up themselves.
+    '--disable-blink-features=AutomationControlled',
     `--user-data-dir=${profile}`, 'about:blank'
   ], { stdio: ['ignore', 'ignore', 'pipe'] });
   // A cold start on a CI runner can take well over the per-step timeout.
@@ -264,6 +273,9 @@ function pageSetup(config) {
       }
     }
   } catch (e) { return; }   // about:blank has no storage
+  if (config.webdriver) {
+    try { Object.defineProperty(navigator, 'webdriver', { get: () => true, configurable: true }); } catch (e) { /* read-only here */ }
+  }
   const log = entry => {
     const calls = JSON.parse(sessionStorage.getItem('__smokeCalls') || '[]');
     calls.push(entry);
@@ -326,7 +338,7 @@ class Page {
     await send('Runtime.enable');
     await send('Page.enable');
     await this.conn.send('Browser.grantPermissions', { permissions: ['notifications'], origin: this.origin, browserContextId });
-    if (userAgent) await send('Emulation.setUserAgentOverride', { userAgent });
+    await send('Emulation.setUserAgentOverride', { userAgent: userAgent || PERSON });
     await send('Fetch.enable', { patterns: [{ urlPattern: '*', requestStage: 'Request' }] });
     await send('Page.addScriptToEvaluateOnNewDocument', { source: `(${pageSetup})(${JSON.stringify(config)});` });
     return this;
@@ -442,6 +454,23 @@ const TESTS = [
     await new Promise(r => setTimeout(r, 500));
     expect(byType(await page.calls(), 'auth', 'signInAnonymously').length, 0, 'no anonymous sign-in');
   }, { userAgent: GOOGLEBOT }],
+
+  ['never signs a headless browser in', async page => {
+    await page.goto('/');
+    await page.waitFor(() => document.querySelectorAll('.ledger-card').length === 1);
+    await page.evaluate(() => Promise.all([kickSync(), flushSyncOutbox(), syncUserEntitlements()]));
+    await new Promise(r => setTimeout(r, 500));
+    expect(byType(await page.calls(), 'auth', 'signInAnonymously').length, 0, 'no anonymous sign-in');
+  }, { userAgent: HEADLESS }],
+
+  ['never signs automation in, whatever it calls itself', async page => {
+    await page.goto('/');
+    await page.waitFor(() => document.querySelectorAll('.ledger-card').length === 1);
+    await page.evaluate(() => Promise.all([kickSync(), flushSyncOutbox(), syncUserEntitlements()]));
+    await new Promise(r => setTimeout(r, 500));
+    expect(await page.evaluate(() => navigator.webdriver), true, 'test set navigator.webdriver');
+    expect(byType(await page.calls(), 'auth', 'signInAnonymously').length, 0, 'no anonymous sign-in');
+  }, { webdriver: true }],
 
   ['syncs a collection and the deck', async page => {
     await page.goto('/');
@@ -661,7 +690,7 @@ async function main() {
     for (const [name, run, options = {}] of TESTS) {
       const page = await new Page(conn, origin).open({
         userAgent: options.userAgent,
-        config: { localStorage: options.localStorage || SEED, answers: options.answers || {} }
+        config: { localStorage: options.localStorage || SEED, answers: options.answers || {}, webdriver: !!options.webdriver }
       });
       try {
         await run(page);
