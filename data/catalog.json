@@ -828,18 +828,17 @@
   {
     "name": "Lucky Rush",
     "url": "https://luckyrush.io/wallet",
-    "tier": "F",
-    "dailySC": 0.1,
+    "tier": "Unranked",
+    "dailySC": 0,
     "speedHours": 24,
     "reliability": 60,
     "cooldown": 24,
     "hasLive": false,
     "minRedeem": "100 SC / 5,000 SC max",
     "cashFloor": 100,
-    "daysToRedeem": 1000,
     "confidence": "low",
-    "lastVerified": "2026-09-20",
-    "notes": "VERIFIED 2026-09-20 (owner screenshots, luckyrush.io/redeem and /wallet): redemption floor 100 SC, ceiling 5,000 SC, at 1 SC = 1 USD. The Daily Bonus timer read 6h29m57s at a 5:30 AM capture, which does NOT fit a 24h cooldown recently claimed and does not land on a round hour either - so the recorded rolling-24h model is NOT confirmed by this capture and may be wrong; a shorter cycle would fit better. Left unchanged pending a decisive check. The account under test showed a 15-day current streak, so the streak system does persist and reward continuity. dailySC 0.1 remains INHERITED and NOT verified. | PRIOR: Good promos and welcome offer; not friendly to promo-washing TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.1/day against a cash floor of 100 SC, a free player reaches the minimum CASH redemption in about 1000 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is D (changed from C). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is low. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 1000 days to redeem this is now tier F (was D under the old five-band system)."
+    "lastVerified": "2026-09-26",
+    "notes": "DAILY LADDER PARTLY CAPTURED 2026-09-26 (owner screenshots, luckyrush.io/wallet \"Daily bonus!\"): Days 15 through 21 are visible and pay Gold Coins ONLY - Day 15 1,000 GC, Day 16 2,000, Day 17 3,000, Day 18 4,000, Day 19 5,000, Day 20 6,000, and \"The 21th Streak Day\" 7,717.5 GC - with no SC on any tile. That contradicts the inherited dailySC of 0.1, which was never verified, so it is dropped to 0 and the entry moves from F to UNRANKED rather than keep a tier built on a number the screen does not support. Days 1-14 were not visible. If they are GC-only too, Lucky Rush has no daily SC source at all and belongs in Not Rankable; if any of them pays SC, the documented rate is that total divided by the cycle length. ONE SCREENSHOT OF DAYS 1-14 SETTLES WHICH. Redeem floor 100 SC / ceiling 5,000 SC and 1 SC = 1 USD reconfirmed; the redeem-method dropdown was not expanded. Balance at capture 0.07 SC (all redeemable). | PREVIOUS: VERIFIED 2026-09-20 (owner screenshots, luckyrush.io/redeem and /wallet): redemption floor 100 SC, ceiling 5,000 SC, at 1 SC = 1 USD. The Daily Bonus timer read 6h29m57s at a 5:30 AM capture, which does NOT fit a 24h cooldown recently claimed and does not land on a round hour either - so the recorded rolling-24h model is NOT confirmed by this capture and may be wrong; a shorter cycle would fit better. Left unchanged pending a decisive check. The account under test showed a 15-day current streak, so the streak system does persist and reward continuity. dailySC 0.1 remains INHERITED and NOT verified. | PRIOR: Good promos and welcome offer; not friendly to promo-washing TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 0.1/day against a cash floor of 100 SC, a free player reaches the minimum CASH redemption in about 1000 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is D (changed from C). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is low. TIER BANDS REVISED 2026-09-23 (six bands, tightened at the slow end - S≤60/A≤120/B≤182/C≤242/D≤304/F>304): at 1000 days to redeem this is now tier F (was D under the old five-band system)."
   },
   {
     "name": "Luckybits Vegas",
@@ -1923,15 +1922,17 @@
   {
     "name": "Lucky Bunny",
     "url": "https://luckybunny.fun/",
-    "tier": "Unranked",
-    "dailySC": 0,
+    "tier": "Not Rankable",
     "speedHours": 24,
     "reliability": 68,
     "cooldown": 24,
     "hasLive": false,
-    "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Checked across three research passes with no public data found. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "minRedeem": "100 SC",
+    "confidence": "medium",
+    "notes": "FIRST CAPTURE 2026-09-26 (owner screenshots, luckybunny.fun and its sweepstakes rules page): the daily mechanic is a \"Spin the Wheel\" with eight visible segments - 1, 2, 3, 4 and 5 SC, plus three Gold-Coin-only segments (100K, 200K and 400K GC) that pay no SC at all. A wheel with any GC-only segment does not guarantee SC on a given day, so this is NOT RANKABLE under the same rule applied to Side Pot, Storm Rush, Winera, Coins Royale, Coinz and Jackpot Rabbit. No dailySC is recorded - averaging the wedges would present a chance outcome as a rate, and the segment weights are not shown. Redeem floor CONFIRMED from the rules: \"Once a Participant accumulates a minimum of hundred (100) redeemable Sweep Coins, they will be able to redeem for prizes or cash.\" The same rules add that Sweep Coins must be played through in Promotional Play per the applicable playthrough requirements before becoming redeemable. Cooldown not visible (\"1 Spin Left\"). | PREVIOUS: no data had been sourced across three research passes; reliability 68 remains an unsourced placeholder.",
+    "noGuaranteedDaily": true,
+    "cashFloor": 100,
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "Joya",
@@ -2082,13 +2083,15 @@
     "cooldown": 24,
     "url": "https://reelzappy.com/",
     "tier": "Unranked",
-    "dailySC": 0,
+    "dailySC": 0.5,
     "speedHours": 24,
     "reliability": 68,
     "hasLive": false,
     "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "UNVERIFIED - no real tier/SC data sourced yet. Added from your own referral list. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "confidence": "medium",
+    "notes": "FULL LADDER CAPTURED 2026-09-26 (owner screenshots, reelzappy.com/lobby DAILY BONUS) - first real data on this entry. Day 1 5,000 GC + 0.50 SC (active), Day 2 2,500 GC + 0.25 SC, Day 3 5,000 GC + 0.50 SC, Day 4 3,500 GC + 0.35 SC, Day 5 5,000 GC + 0.50 SC, Day 6 4,000 GC + 0.40 SC, Day 7 \"Big Daily Bonus\" 10,000 GC + 1.00 SC. Every day pays SC, so it is a guaranteed ladder; the 7 days sum to 3.50 SC, a flat 0.50/day. The shape resembles the Luck Party / Fortune Wins family ladder (0.50/0.25 alternating before a 1.00 finale) but Days 4 and 6 differ (0.35 and 0.40 here vs 0.25 there), so this is recorded as its own reading rather than inferred from that family. The screen notes that \"Daily Bonus and rewards may differ and change from time to time\". STILL UNRANKED: no redeem screen has been captured, so there is no cash floor to divide by. ONE SCREENSHOT OF THE REDEEM PAGE WOULD RESTORE A TIER HERE. The cooldown was not visible, so resetHour 0 remains inherited and unverified.",
+    "scSource": "ladder-full",
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "Winera",
