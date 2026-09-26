@@ -1696,7 +1696,7 @@
   },
   {
     "name": "New Luck",
-    "resetHour": 10,
+    "resetHour": 5,
     "cooldown": 24,
     "url": "https://newluck.net/?invitecode=9_kQit09ECercGeuNdEUCMbY7kpgnA32jwlYqf3hsmHByOe3svtyxp-2NBl7CHEN",
     "tier": "F",
@@ -1706,11 +1706,12 @@
     "hasLive": false,
     "minRedeem": "75 SC",
     "confidence": "low",
-    "notes": "VERIFIED 2026-09-26 (owner screenshots, newluck.net): first real data on this entry. DAILY LOGIN STREAK: a 30-day grid; the Day 3 claim paid GC 100K + SC 0.2 + 5 stars. Days 1-2 were already claimed and their amounts are not visible, so 0.2 is a single-rung read - ladder-partial, confidence low. Streak rules: missed days cannot be recovered; the first 30-day cycle does not reset on the 1st, but after the 7-day check-in and the first full cycle, progress resets on the 1st of each month (UTC-5). REDEEM: \"Win a minimum of 75 SC to redeem\", SC 1.00 = $1, SC must be played once, and the account must pass an identity check first. TIER, DERIVED: 75 / 0.2 SC per day = 375 days to the first cash redemption, tier F. EXCLUDED: the Daily Wheel (2 free spins a day at 08:00 and 20:00 UTC-5, top prize 5 SC) mixes SC segments (0.1, 0.2, 0.5, 1, 2, 5) with GC-only segments (5K-50K), so it is chance; a VIP 3 Daily Reward of 30K GC + 0.02 SC at 7:00 PM depends on VIP level, so it is not a base-player daily. Referral: up to 1.68M GC + 107 SC per friend. | Referral link updated 2026-09-26 to the owner's ?invitecode= code. | UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
+    "notes": "RESET SET 2026-09-26 from the site's own streak rules (owner screenshot): \"Check-in resets daily at 00:00 (UTC-5)\". UTC-5 is a fixed offset, not Eastern or Central time, so it is recorded as 05:00 UTC year-round (the old resetHour 10 had no source). | VERIFIED 2026-09-26 (owner screenshots, newluck.net): first real data on this entry. DAILY LOGIN STREAK: a 30-day grid; the Day 3 claim paid GC 100K + SC 0.2 + 5 stars. Days 1-2 were already claimed and their amounts are not visible, so 0.2 is a single-rung read - ladder-partial, confidence low. Streak rules: missing a day does not reset progress - the streak resumes at the missed day, with no catch-up claim for it; Days 1-7 form a 7-day check-in, then the 30-day check-in runs Days 8-30 in order; the first 30-day cycle does not reset on the 1st, but after the 7-day check-in and the first full cycle, progress resets on the 1st of each month (UTC-5). REDEEM: \"Win a minimum of 75 SC to redeem\", SC 1.00 = $1, SC must be played once, and the account must pass an identity check first. TIER, DERIVED: 75 / 0.2 SC per day = 375 days to the first cash redemption, tier F. EXCLUDED: the Daily Wheel (2 free spins a day at 08:00 and 20:00 UTC-5, top prize 5 SC) mixes SC segments (0.1, 0.2, 0.5, 1, 2, 5) with GC-only segments (5K-50K), so it is chance; a VIP 3 Daily Reward of 30K GC + 0.02 SC at 7:00 PM depends on VIP level, so it is not a base-player daily. Referral: up to 1.68M GC + 107 SC per friend. | Referral link updated 2026-09-26 to the owner's ?invitecode= code. | UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
     "scSource": "ladder-partial",
     "lastVerified": "2026-09-26",
     "cashFloor": 75,
-    "daysToRedeem": 375
+    "daysToRedeem": 375,
+    "resetTZ": "UTC"
   },
   {
     "name": "Jumbo88",
