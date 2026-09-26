@@ -7068,9 +7068,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // visitor, and sync is on by default - without this, every crawl would
     // mint an empty anonymous account. "[a-z]bot/" and a standalone "bot"
     // catch "Googlebot/2.1" and friends without matching phone models like
-    // "CUBOT X30".
+    // "CUBOT X30". Scanners that drive a real browser announce themselves
+    // as HeadlessChrome or through navigator.webdriver; they never come
+    // back to the account they made either.
     function isCrawler() {
-      return /googlebot|googleother|google-inspectiontool|adsbot-google|mediapartners-google|bingbot|yandex|duckduckbot|baiduspider|applebot|facebookexternalhit|twitterbot|slackbot|^whatsapp\/|skypeuripreview|embedly|iframely|slurp|petalbot|semrushbot|ahrefsbot|chrome-lighthouse|[a-z]bot\/|\bbot\b|crawler|spider/i
+      if (navigator.webdriver === true) return true;
+      return /googlebot|googleother|google-inspectiontool|adsbot-google|mediapartners-google|bingbot|yandex|duckduckbot|baiduspider|applebot|facebookexternalhit|twitterbot|slackbot|^whatsapp\/|skypeuripreview|embedly|iframely|slurp|petalbot|semrushbot|ahrefsbot|chrome-lighthouse|headlesschrome|[a-z]bot\/|\bbot\b|crawler|spider/i
         .test(navigator.userAgent || '');
     }
 
