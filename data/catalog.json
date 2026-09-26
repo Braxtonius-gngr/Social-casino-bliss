@@ -1242,14 +1242,16 @@
     "name": "The Boss Casino",
     "url": "https://theboss.us/?referralcode=dcaec5ff-2fee-4919-8f09-8f71ec9791e8",
     "tier": "Unranked",
-    "dailySC": 0.15,
+    "dailySC": 0.4,
     "speedHours": 24,
     "reliability": 60,
     "cooldown": 24,
     "hasLive": false,
     "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "Referral link updated 2026-09-26 to the owner's code, on the theboss.us domain the owner uses (was theboss.casino). | Crypto cashout only currently TIER 2026-09-21: UNRANKED, and deliberately so. It was C, inherited from the original sheets rather than derived. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here minRedeem reads \"Varies\", so no cash floor is known. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE REDEEM PAGE WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0.15. confidence: none."
+    "confidence": "low",
+    "notes": "DAILY SPIN CAPTURED 2026-09-26 (owner screenshot, theboss.us): the daily spin paid \"250 GC & 0.4 SC\", with \"Spin again in 23:59:45\" (a rolling 24h). The spinner coin shows only those two values (250 and 0.4) on its faces, so it looks like a fixed prize rather than a chance wheel - dailySC corrected from an unsourced 0.15 to the measured 0.4, confidence low until a second spin confirms the same result. Still Unranked: no redeem floor is captured (crypto cashout only). | Referral link updated 2026-09-26 to the owner's code, on the theboss.us domain the owner uses (was theboss.casino). | Crypto cashout only currently TIER 2026-09-21: UNRANKED, and deliberately so. It was C, inherited from the original sheets rather than derived. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here minRedeem reads \"Varies\", so no cash floor is known. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE REDEEM PAGE WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0.15. confidence: none.",
+    "scSource": "measured",
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "Vegas Way",
@@ -1267,15 +1269,16 @@
   {
     "name": "Wildhorse Bucks",
     "url": "https://wildhorsebucks.com/?source=pwa",
-    "tier": "Unranked",
-    "dailySC": 0.1,
+    "tier": "Not Rankable",
     "speedHours": 24,
     "reliability": 60,
     "cooldown": 24,
     "hasLive": false,
-    "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "1x playthrough normally, 3x on bonus packages TIER 2026-09-21: UNRANKED, and deliberately so. It was C, inherited from the original sheets rather than derived. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here minRedeem reads \"Varies\", so no cash floor is known. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE REDEEM PAGE WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0.1. confidence: none."
+    "minRedeem": "100 SC",
+    "confidence": "medium",
+    "notes": "NOT RANKABLE 2026-09-26 (owner screenshots, wildhorsebucks.com): the only daily is \"Once per 24hrs, claim 1,000 free WildhorseBucks\" - Wildhorse Bucks are the site's Gold Coin-style play currency (the horseshoe balance, sold under \"Buy Bucks\"), not Sweeps Coins, so no daily pays SC. The post-claim timer read 23:59:57, a rolling 24h. REDEEM: \"Minimum redemption is 100.00\" Redeemable Sweeps Coins, converted to US dollars. The old dailySC 0.1 had no source and is removed. | 1x playthrough normally, 3x on bonus packages TIER 2026-09-21: UNRANKED, and deliberately so. It was C, inherited from the original sheets rather than derived. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here minRedeem reads \"Varies\", so no cash floor is known. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE REDEEM PAGE WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0.1. confidence: none.",
+    "noGuaranteedDaily": true,
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "Wildworld Casino",
@@ -1608,9 +1611,10 @@
     "reliability": 68,
     "cooldown": 24,
     "hasLive": false,
-    "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "Cooldown not publicly stated (login-gated). Bonus value not yet confirmed (ToS-sourced info only). Eligibility: Must be a natural person at least 18 years old. | KYC: Must pass identification, credit, and other verification checks run by third-party service providers. | Note: Virtual Coins purchases are final/nonrefundable, and all out-of-site transfers of Loyalty Points/Rewards are strictly prohibited. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "minRedeem": "500 Zito Points (gift cards)",
+    "confidence": "low",
+    "notes": "REWARDS MODEL CAPTURED 2026-09-26 (owner screenshots, m.zitobox.com): there are no Sweeps Coins. Prizes come from \"Zito Points\" (loyalty points) exchanged for gift cards in a Redeem Rewards catalog - a Visa Reward Card, Domino's, World Market, Pinkberry and Wayfair at 500 points; Cold Stone 1,000; Topgolf 2,500 (card dollar values not shown). The terms say points carry no real-world value, are earned by actions such as posting achievements to Facebook, \"liking\" the site, playing for a set time or in-game offers, and can only be exchanged after registering a valid U.S. credit card (no purchase required) and giving a name that matches government ID. A 250-coin credit was seen, but coins are the play currency, not points. With no points-per-day rate known, the entry stays Unranked. | Cooldown not publicly stated (login-gated). Bonus value not yet confirmed (ToS-sourced info only). Eligibility: Must be a natural person at least 18 years old. | KYC: Must pass identification, credit, and other verification checks run by third-party service providers. | Note: Virtual Coins purchases are final/nonrefundable, and all out-of-site transfers of Loyalty Points/Rewards are strictly prohibited. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "With Yotta",
@@ -1667,14 +1671,16 @@
     "name": "Sweepstakes Casino",
     "url": "https://sweepstakescasino.com/?ref=r_braxtonius",
     "tier": "Unranked",
-    "dailySC": 0,
+    "dailySC": 0.05,
     "speedHours": 24,
     "reliability": 68,
     "cooldown": 24,
     "hasLive": false,
     "minRedeem": "Varies",
-    "confidence": "none",
-    "notes": "OWNER REPORT 2026-09-26: the account has to be verified before the redeem page can be used, so the floor is not captured yet. The ?ref=r_braxtonius link format is the same one the SpeedSweeps family (Speed, Rich, Dime, SweepsRoyal) uses, which may point to the same operator - unconfirmed. Referral link updated 2026-09-26 to the owner's ?ref= code. | UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none."
+    "confidence": "low",
+    "notes": "DAILY LADDER CAPTURED 2026-09-26 (owner screenshots, sweepstakescasino.com): Basic Rewards Day 1 5,000 GC + 0.05 SC (claimed), Day 2 7,500 GC + 0.05 SC; later days not shown. A locked Premium Rewards row (Day 1 5,000 GC + 0.15 SC) is not a free-player reward. The post-claim timer read 23:59:39, so the cooldown is a rolling 24h. These two rungs match Speed Sweeps' Days 1-2 exactly (5,000/0.05 then 7,500/0.05), which with the shared ?ref=r_ link format makes SpeedSweeps-family membership likely - the family's redeem floor is 100 SC, which would put this at F (2,000 days), but the floor is not borrowed until confirmed because redemption here needs account verification first. | OWNER REPORT 2026-09-26: the account has to be verified before the redeem page can be used, so the floor is not captured yet. The ?ref=r_braxtonius link format is the same one the SpeedSweeps family (Speed, Rich, Dime, SweepsRoyal) uses, which may point to the same operator - unconfirmed. Referral link updated 2026-09-26 to the owner's ?ref= code. | UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
+    "scSource": "ladder-partial",
+    "lastVerified": "2026-09-26"
   },
   {
     "name": "Coin Wizard Games",
@@ -1706,7 +1712,7 @@
     "hasLive": false,
     "minRedeem": "75 SC",
     "confidence": "low",
-    "notes": "RESET SET 2026-09-26 from the site's own streak rules (owner screenshot): \"Check-in resets daily at 00:00 (UTC-5)\". UTC-5 is a fixed offset, not Eastern or Central time, so it is recorded as 05:00 UTC year-round (the old resetHour 10 had no source). | VERIFIED 2026-09-26 (owner screenshots, newluck.net): first real data on this entry. DAILY LOGIN STREAK: a 30-day grid; the Day 3 claim paid GC 100K + SC 0.2 + 5 stars. Days 1-2 were already claimed and their amounts are not visible, so 0.2 is a single-rung read - ladder-partial, confidence low. Streak rules: missing a day does not reset progress - the streak resumes at the missed day, with no catch-up claim for it; Days 1-7 form a 7-day check-in, then the 30-day check-in runs Days 8-30 in order; the first 30-day cycle does not reset on the 1st, but after the 7-day check-in and the first full cycle, progress resets on the 1st of each month (UTC-5). REDEEM: \"Win a minimum of 75 SC to redeem\", SC 1.00 = $1, SC must be played once, and the account must pass an identity check first. TIER, DERIVED: 75 / 0.2 SC per day = 375 days to the first cash redemption, tier F. EXCLUDED: the Daily Wheel (2 free spins a day at 08:00 and 20:00 UTC-5, top prize 5 SC) mixes SC segments (0.1, 0.2, 0.5, 1, 2, 5) with GC-only segments (5K-50K), so it is chance; a VIP 3 Daily Reward of 30K GC + 0.02 SC at 7:00 PM depends on VIP level, so it is not a base-player daily. Referral: up to 1.68M GC + 107 SC per friend. | Referral link updated 2026-09-26 to the owner's ?invitecode= code. | UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
+    "notes": "RESET SET 2026-09-26 from the site's own streak rules (owner screenshot): \"Check-in resets daily at 00:00 (UTC-5)\". UTC-5 is a fixed offset, not Eastern or Central time, so it is recorded as 05:00 UTC year-round (the old resetHour 10 had no source). | VERIFIED 2026-09-26 (owner screenshots, newluck.net): first real data on this entry. DAILY LOGIN STREAK: a 30-day grid; the Day 3 claim paid GC 100K + SC 0.2 + 5 stars. Days 1-2 were already claimed and their amounts are not visible, so 0.2 is a single-rung read - ladder-partial, confidence low. Streak rules: missing a day does not reset progress - the streak resumes at the missed day; Days 1-7 are a time-limited \"7-Day New Player Check-In\" whose missed days can be caught up (any purchase unlocks one Catch-Up, at most one per day) and which pays an extra Full Completion Reward for all 7 days; the 30-day check-in then runs Days 8-30 in order with no catch-up; the first 30-day cycle does not reset on the 1st, but after the 7-day check-in and the first full cycle, progress resets on the 1st of each month (UTC-5). REDEEM: \"Win a minimum of 75 SC to redeem\", SC 1.00 = $1, SC must be played once, and the account must pass an identity check first. TIER, DERIVED: 75 / 0.2 SC per day = 375 days to the first cash redemption, tier F. EXCLUDED: the Daily Wheel (2 free spins a day at 08:00 and 20:00 UTC-5, top prize 5 SC) mixes SC segments (0.1, 0.2, 0.5, 1, 2, 5) with GC-only segments (5K-50K), so it is chance; a VIP 3 Daily Reward of 30K GC + 0.02 SC at 7:00 PM depends on VIP level, so it is not a base-player daily. Referral: up to 1.68M GC + 107 SC per friend. | Referral link updated 2026-09-26 to the owner's ?invitecode= code. | UNVERIFIED - no real tier/SC data sourced yet. Confirmed by user as a real, actively-used site. TIER 2026-09-21: UNRANKED, and deliberately so. The catalog's tier rule is now days-to-first-cash-redemption (S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown), and here dailySC is 0, so there is no rate to divide by. Rather than keep a letter that nothing supports, this entry carries none until the missing piece is captured. ONE SCREENSHOT OF THE DAILY CLAIM WOULD RESTORE A TIER HERE. Nothing else about the entry changed - dailySC stays at 0. confidence: none.",
     "scSource": "ladder-partial",
     "lastVerified": "2026-09-26",
     "cashFloor": 75,
