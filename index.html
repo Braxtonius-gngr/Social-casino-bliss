@@ -1444,7 +1444,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       'the_casino_almanac_runs_v1',
       'almanac_ledger_v1'
     ];
+    let indexedStateWrites = 0;
     function saveIndexedState(key, value) {
+      indexedStateWrites++;
       if (!window.AlmanacDB) return;
       window.AlmanacDB.set(key, value).catch(() => {
         // localStorage remains the synchronous fallback for older browsers.
@@ -3726,8 +3728,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     async function hydrateIndexedDBState() {
       if (!window.AlmanacDB) return;
       try {
+        const writesBefore = indexedStateWrites;
         await window.AlmanacDB.migrateLegacy(INDEXED_STATE_KEYS);
         const values = await Promise.all(INDEXED_STATE_KEYS.map(key => window.AlmanacDB.get(key)));
+        // A save that landed mid-read means memory is already newest;
+        // applying these older values would undo it.
+        if (indexedStateWrites !== writesBefore) return;
+        const inSync = INDEXED_STATE_KEYS.every((key, i) =>
+          values[i] === undefined || localStorage.getItem(key) === JSON.stringify(values[i]));
+        if (inSync) return;
         const [storedGames, storedHistory, storedRuns, storedLedger] = values;
         if (Array.isArray(storedGames)) {
           trackedGames = storedGames;
@@ -6259,6 +6268,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         trackedGames = data.games;
         trackedGames.forEach(normalizeTimerFields);
         try { localStorage.setItem('the_casino_almanac_v7', JSON.stringify(trackedGames)); } catch (e) {}
+        saveIndexedState('the_casino_almanac_v7', trackedGames);
         renderGames();
         renderTagChips();
         updateHeroStats();
@@ -6469,6 +6479,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function syncAfterHistoryChange() {
       streakCache = null;
       try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
+      saveIndexedState('the_casino_almanac_history_v1', collectionHistory);
       if (document.getElementById('statsModal').classList.contains('open')) renderStats();
     }
 
