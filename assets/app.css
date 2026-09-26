@@ -635,53 +635,70 @@
 
     /* ==========================================================================
        ROLL INTRO - the Daily Roll Over brand intro on the landing screen.
-       Shot list: a leather cup throws two craps dice (4 + 3), time drops
-       into near-still slow motion as the camera snaps in on the pair at
-       the top of the arc (5 + 2), a light behind the camera sweeps a glint
-       and a flare across them as time speeds back up, and they land on
+       Shot list: deep in the scene a leather cup shakes and throws two
+       craps dice toward the camera (4 + 3 as they leave), time eases into
+       slow motion as the camera pushes in and orbits the pair at the top
+       of the arc (5 + 2), a light behind the camera sweeps a glint and a
+       flare across them as time comes back, they bounce and settle on
        6 + 1, then pop into cash, coins and crypto before the wordmark
        flies in.
-       Split of work: playRollIntro() in index.html drives the cup, dice,
-       floor shadows, face flips and .roll-camera on a warped clock (inline
-       transforms, one rAF loop). CSS owns everything after the pop, keyed
-       off .roll-popped, plus the glint/flare keyed off .roll-glint.
-       Base styles ARE the end state: .roll-intro is not displayed and the
-       landing copy is fully visible, so a tap, the timeline ending, or
-       motion being off (the global html[data-motion="off"] kill switch)
-       all land on the same frame.
-       Stage is a fixed 360x560 box centred on the screen; the dice land
-       at x=150/210, y=327 inside it, and the money starts from there.
+       Split of work: playRollIntro() in index.html builds the cup and dice
+       into .roll-world (real CSS 3D under one perspective), then drives
+       the cup, dice, shadows, per-face lighting and the camera (the
+       world's matrix3d) in one rAF loop. CSS owns everything after the
+       pop, keyed off .roll-popped, plus the glint/flare keyed off
+       .roll-glint. Base styles ARE the end state: .roll-intro is not
+       displayed and the landing copy is fully visible, so a tap, the
+       timeline ending, or motion being off (the global
+       html[data-motion="off"] kill switch) all land on the same frame.
+       Stage is a fixed 360x560 box centred on the screen; the world's
+       origin is its centre, the floor is y = 0, z runs toward the viewer.
        ========================================================================== */
     .roll-intro { display: none; position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
     .landing-screen.intro-play .roll-intro { display: block; }
-    .roll-stage { position: absolute; left: 50%; top: 50%; width: 360px; height: 560px; margin: -280px 0 0 -180px; }
+    .roll-stage { position: absolute; left: 50%; top: 50%; width: 360px; height: 560px; margin: -280px 0 0 -180px; perspective: 760px; perspective-origin: 50% 50%; }
     @media (max-width: 360px) { .roll-stage { transform: scale(0.88); } }
-    .roll-camera { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
     .roll-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+    .roll-world { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform-style: preserve-3d; will-change: transform; }
+    .roll-world > * { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
 
-    /* Leather, brass, dice and money are drawn with the gradients in
-       .roll-defs, not theme tokens: they are physical objects under one
-       warm key light, and should read the same whatever the skin. */
-    .roll-cup { position: absolute; left: -30px; top: 150px; width: 90px; height: 100px; transform-origin: 50% 90%; opacity: 0; overflow: visible; filter: drop-shadow(0 10px 14px rgba(0,0,0,0.55)); will-change: transform; }
-    .roll-cup-shadow { fill: #000; opacity: 0; }
+    /* The table: dark felt under one warm pool of light, fading out at
+       its edges so each theme's own backdrop takes over past the scene. */
+    .roll-floor { width: 1400px; height: 1400px; margin: -700px 0 0 -700px; transform: translate3d(0, 0, -260px) rotateX(90deg); background: radial-gradient(closest-side, #27231f 0%, #1a1613 40%, rgba(12, 10, 8, 0) 100%); }
+    .roll-floor-pool { width: 760px; height: 760px; margin: -380px 0 0 -380px; transform: translate3d(10px, -0.3px, -80px) rotateX(90deg); background: radial-gradient(closest-side, rgba(212, 175, 55, 0.18) 0%, rgba(212, 175, 55, 0.06) 45%, rgba(212, 175, 55, 0) 100%); }
+    .roll-cup-shadow, .roll-die-shadow { border-radius: 50%; opacity: 0; will-change: transform; }
+    .roll-cup-shadow { width: 150px; height: 150px; margin: -75px 0 0 -75px; background: radial-gradient(closest-side, rgba(0,0,0,0.55), rgba(0,0,0,0.2) 55%, rgba(0,0,0,0)); }
+    .roll-die-shadow { width: 64px; height: 64px; margin: -32px 0 0 -32px; background: radial-gradient(closest-side, rgba(0,0,0,0.72), rgba(0,0,0,0.3) 50%, rgba(0,0,0,0)); }
 
-    .roll-die-x { position: absolute; left: 76px; top: 244px; width: 34px; height: 34px; will-change: transform; }
-    .roll-die-y, .roll-die { width: 34px; height: 34px; display: block; }
-    .roll-die-y { will-change: transform; }
-    .roll-die { opacity: 0; overflow: visible; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5)); }
-    /* Contact shadow on the floor under each die: it rides the die's x
-       track but not its bounce; JS tightens and darkens it as the die
-       comes down, the cue that sells the height of each hop. */
-    .roll-die-shadow { position: absolute; left: 2px; top: 96px; width: 30px; height: 8px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,0.75), rgba(0,0,0,0)); opacity: 0; }
+    /* Leather, brass and the dice are drawn in their own materials, not
+       theme tokens: they are physical objects under one key light and
+       should read the same whatever the skin. */
+    .roll-cup3 { opacity: 0; will-change: transform; }
+    .roll-cup3 > * { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
+    .roll-slat { backface-visibility: hidden; background: linear-gradient(180deg, #3a2215 0%, #4e2e1c 16%, #5c3721 48%, #4b2c1a 80%, #2c190f 100%); }
+    .roll-slat::before, .roll-slat::after { content: ''; position: absolute; left: 0; right: 0; background: linear-gradient(180deg, #7d5f1f 0%, #e6cc78 32%, #f6e5a6 42%, #b8932e 64%, #6b4d14 100%); }
+    .roll-slat::before { top: 0; height: 22px; border-bottom: 1px solid rgba(0,0,0,0.55); box-shadow: 0 3px 4px rgba(0,0,0,0.35); }
+    .roll-slat::after { bottom: 0; height: 18px; border-top: 1px solid rgba(0,0,0,0.55); }
+    .roll-slat-in { backface-visibility: visible; background: linear-gradient(180deg, #100905 0%, #1d110a 30%, #0d0704 100%); }
+    .roll-sh, .roll-sp { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+    .roll-sh { background: #000; }
+    .roll-sp { background: radial-gradient(circle at 36% 30%, #ffffff 0%, rgba(255,246,220,0.75) 28%, rgba(255,240,205,0.22) 62%, rgba(255,240,205,0) 100%); mix-blend-mode: screen; }
+    .roll-cup-rim { border-radius: 50%; border: 6px solid #d9b542; background: none; box-shadow: inset 0 0 0 2px #6e5012, 0 0 0 1.5px #3f2a06; backface-visibility: visible; }
+    .roll-cup-mouth { border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,0.85), rgba(0,0,0,0.6)); backface-visibility: visible; }
+    .roll-cup-base { border-radius: 50%; border: 5px solid #b8932e; background: radial-gradient(circle at 40% 40%, #5c3721, #2a170d 70%, #1b0f08); backface-visibility: visible; }
+    .roll-cup-base .roll-sh { border-radius: 50%; }
 
-    /* Motion-blur ghosts: copies of each die body a moment behind it.
-       playRollIntro() spaces and fades them by playback speed, so they
-       streak at full speed and vanish as the shot drops into slow mo. */
-    .roll-ghost { position: absolute; left: 76px; top: 244px; width: 34px; height: 34px; opacity: 0; overflow: visible; filter: blur(0.8px); will-change: transform, opacity; }
+    .roll-die3, .roll-ghost3 { width: 34px; height: 34px; margin: -17px 0 0 -17px; opacity: 0; will-change: transform; }
+    .roll-face3 { position: absolute; inset: 0; backface-visibility: hidden; }
+    .roll-face3 svg { display: block; width: 34px; height: 34px; overflow: visible; }
+    .roll-face3 .roll-sh, .roll-face3 .roll-sp { border-radius: 1.6px; }
+    /* A solid core just inside the faces, so the bevelled corners never
+       show daylight through the cube. */
+    .roll-core { position: absolute; inset: 1px; background: #7e0a1a; backface-visibility: hidden; }
 
     /* Photographers' flashes on the red carpet: a hot core and a cross of
        light, popped by playRollIntro() during the slow motion. They sit
-       outside the camera, like flashes firing from the crowd. */
+       outside the world, like flashes firing from the crowd. */
     .roll-pap { position: absolute; width: 96px; height: 96px; margin: -48px 0 0 -48px; border-radius: 50%; opacity: 0; mix-blend-mode: screen; background: radial-gradient(closest-side, #ffffff 0%, rgba(235,245,255,0.85) 18%, rgba(200,225,255,0.25) 45%, rgba(200,225,255,0) 100%); }
     .roll-pap::before, .roll-pap::after { content: ''; position: absolute; left: 50%; top: 50%; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, #ffffff 50%, rgba(255,255,255,0) 100%); }
     .roll-pap::before { width: 170px; height: 2px; margin: -1px 0 0 -85px; }
@@ -693,7 +710,7 @@
        anamorphic flare (ice-blue core, gold wings) and a few lens ghosts
        cross where the dice are held; a bloom lifts the shot for a beat. */
     .roll-die-glint { opacity: 0; mix-blend-mode: screen; }
-    .roll-glint .roll-die-glint { animation: roll-die-glint 0.55s cubic-bezier(0.45, 0, 0.35, 1) both; }
+    .roll-glint .roll-die-glint { animation: roll-die-glint 0.7s cubic-bezier(0.45, 0, 0.35, 1) both; }
     @keyframes roll-die-glint {
       0% { transform: translateX(0); opacity: 0; }
       30% { opacity: 1; }
@@ -701,15 +718,15 @@
       100% { transform: translateX(76px); opacity: 0; }
     }
     .roll-die-star { opacity: 0; transform-box: fill-box; transform-origin: center; filter: drop-shadow(0 0 1.5px #ffffff) drop-shadow(0 0 4px rgba(255,225,160,0.9)); }
-    .roll-glint .roll-die-star { animation: roll-die-star 0.55s ease-out 0.16s both; }
-    .roll-glint .roll-die-2 .roll-die-star { animation-delay: 0.24s; }
+    .roll-glint .roll-die-star { animation: roll-die-star 0.7s ease-out 0.2s both; }
+    .roll-glint .roll-die3[data-die="1"] .roll-die-star { animation-delay: 0.3s; }
     @keyframes roll-die-star {
       0% { opacity: 0; transform: scale(0) rotate(0deg); }
       30% { opacity: 1; transform: scale(1.7) rotate(28deg); }
       100% { opacity: 0; transform: scale(0.2) rotate(70deg); }
     }
     .roll-sweep { position: absolute; left: -260px; top: -120px; width: 200px; height: 800px; opacity: 0; mix-blend-mode: screen; background: linear-gradient(90deg, rgba(255,240,210,0) 0%, rgba(255,240,210,0.16) 40%, rgba(255,255,255,0.32) 50%, rgba(255,240,210,0.16) 60%, rgba(255,240,210,0) 100%); transform: rotate(18deg); }
-    .roll-glint .roll-sweep { animation: roll-sweep 0.65s cubic-bezier(0.35, 0.05, 0.25, 1) both; }
+    .roll-glint .roll-sweep { animation: roll-sweep 0.85s cubic-bezier(0.35, 0.05, 0.25, 1) both; }
     @keyframes roll-sweep {
       0% { opacity: 0; transform: rotate(18deg) translateX(0); }
       25% { opacity: 1; }
@@ -717,8 +734,8 @@
     }
     .roll-streak { position: absolute; left: -130px; top: 249px; width: 620px; height: 2px; border-radius: 2px; opacity: 0; mix-blend-mode: screen; background: linear-gradient(90deg, rgba(150,210,255,0) 0%, rgba(150,210,255,0.55) 30%, rgba(210,240,255,0.95) 46%, #ffffff 50%, rgba(210,240,255,0.95) 54%, rgba(150,210,255,0.55) 70%, rgba(150,210,255,0) 100%); box-shadow: 0 0 8px 1px rgba(120,195,255,0.75), 0 0 26px 5px rgba(90,160,255,0.35), 0 0 60px 12px rgba(212,175,55,0.22); }
     .roll-streak-gold { top: 256px; height: 1px; left: -60px; width: 480px; background: linear-gradient(90deg, rgba(243,218,146,0) 0%, rgba(243,218,146,0.8) 45%, #fff6d6 50%, rgba(243,218,146,0.8) 55%, rgba(243,218,146,0) 100%); box-shadow: 0 0 12px 2px rgba(212,175,55,0.45); }
-    .roll-glint .roll-streak { animation: roll-streak 0.62s cubic-bezier(0.2, 0.7, 0.3, 1) 0.04s both; }
-    .roll-glint .roll-streak-gold { animation-delay: 0.1s; }
+    .roll-glint .roll-streak { animation: roll-streak 0.8s cubic-bezier(0.2, 0.7, 0.3, 1) 0.05s both; }
+    .roll-glint .roll-streak-gold { animation-delay: 0.13s; }
     @keyframes roll-streak {
       0% { transform: translateX(-150px) scaleX(0.12); opacity: 0; }
       22% { opacity: 1; }
@@ -728,21 +745,23 @@
     .roll-orb-1 { left: 88px; top: 184px; width: 26px; height: 26px; background: radial-gradient(closest-side, rgba(243,218,146,0) 55%, rgba(243,218,146,0.55) 78%, rgba(243,218,146,0) 100%); }
     .roll-orb-2 { left: 226px; top: 268px; width: 46px; height: 46px; background: radial-gradient(closest-side, rgba(140,210,255,0.08) 40%, rgba(140,210,255,0.5) 76%, rgba(140,210,255,0) 100%); }
     .roll-orb-3 { left: 284px; top: 312px; width: 16px; height: 16px; background: radial-gradient(closest-side, rgba(255,255,255,0.7) 0%, rgba(243,218,146,0.35) 60%, rgba(243,218,146,0) 100%); }
-    .roll-glint .roll-orb { animation: roll-orb 0.62s ease-out 0.06s both; }
+    .roll-glint .roll-orb { animation: roll-orb 0.8s ease-out 0.08s both; }
     @keyframes roll-orb {
       0% { opacity: 0; transform: translate(14px, 9px) scale(0.8); }
       35% { opacity: 1; }
       100% { opacity: 0; transform: translate(-16px, -10px) scale(1.1); }
     }
     .roll-bloom { position: absolute; left: 70px; top: 140px; width: 220px; height: 220px; border-radius: 50%; opacity: 0; mix-blend-mode: screen; background: radial-gradient(closest-side, rgba(255,255,255,0.85) 0%, rgba(200,232,255,0.35) 28%, rgba(212,175,55,0.14) 60%, rgba(212,175,55,0) 100%); }
-    .roll-glint .roll-bloom { animation: roll-bloom 0.55s ease-out both; }
+    .roll-glint .roll-bloom { animation: roll-bloom 0.7s ease-out both; }
     @keyframes roll-bloom {
       0% { opacity: 0; transform: scale(0.6); }
       25% { opacity: 1; }
       100% { opacity: 0; transform: scale(1.2); }
     }
 
-    .roll-flash { position: absolute; left: calc(var(--x) - 30px); top: 297px; width: 60px; height: 60px; opacity: 0; }
+    /* The burst and the money start from where each die came to rest on
+       screen; playRollIntro() sets --x/--y from the projected cubes. */
+    .roll-flash { position: absolute; left: calc(var(--x, 180px) - 30px); top: calc(var(--y, 330px) - 30px); width: 60px; height: 60px; opacity: 0; }
     .roll-flash svg, .roll-cash svg { display: block; width: 100%; height: 100%; overflow: visible; }
     .roll-popped .roll-flash { animation: roll-flash 0.5s ease-out forwards; }
     .roll-popped .roll-flash + .roll-flash { animation-delay: 0.06s; }
@@ -755,7 +774,7 @@
     /* Banknotes, gold coins and the two crypto coins are drawn from
        #rollBill / #rollCoin* in .roll-defs: engraved frame and guilloche
        on the notes, reeded edges and a struck face on every coin. */
-    .roll-cash { position: absolute; left: var(--x); top: 327px; opacity: 0; transform: translate(-50%, -50%) scale(0); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+    .roll-cash { position: absolute; left: var(--x, 180px); top: var(--y, 330px); opacity: 0; transform: translate(-50%, -50%) scale(0); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
     .roll-bill { width: 60px; height: 28px; }
     .roll-coin { width: 28px; height: 28px; }
     .roll-crypto { width: 32px; height: 32px; }
