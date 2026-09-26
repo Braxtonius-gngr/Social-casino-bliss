@@ -173,7 +173,10 @@ export function cleanDrops(raw: unknown, platforms: string[]): { drops: Drop[]; 
     const d = item as Record<string, unknown>;
     const platform = freeText(d.platform_name, 80);
     if (!platform) continue;
-    let claimUrl = text(d.claim_url, 500);
+    const accountTied = d.is_account_tied === true;
+    // A link that only works for the account it was sent to is personal:
+    // it never leaves this function.
+    let claimUrl = accountTied ? null : text(d.claim_url, 500);
     if (claimUrl) {
       try {
         const url = new URL(claimUrl);
@@ -195,7 +198,7 @@ export function cleanDrops(raw: unknown, platforms: string[]): { drops: Drop[]; 
       reward: freeText(d.reward, 120),
       expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
       terms: freeText(d.terms, 240),
-      is_account_tied: d.is_account_tied === true,
+      is_account_tied: accountTied,
       confidence: d.confidence === "high" || d.confidence === "medium" ? d.confidence : "low",
       evidence: freeText(d.evidence, 200) ?? "",
     });

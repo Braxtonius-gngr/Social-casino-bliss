@@ -46,9 +46,9 @@
       <h2 style="font-size:0.85rem; color:var(--accent-cyan); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">Read Screenshots</h2>
       <p class="backup-helper" style="margin-bottom:10px;">Paste Discord image links (in Discord: open the image, then Copy Link / Copy Media Link) or choose the screenshots, up to 4 at a time. Claude reads each offer into a draft; load one into the form, check it, and SAVE. Discord links expire after about a day. Each read costs roughly a cent or two.</p>
       <div class="shot-inputs">
-        <textarea id="shotLinks" rows="3" style="width:100%; resize:vertical;" placeholder="https://cdn.discordapp.com/attachments/..."></textarea>
-        <input type="file" id="shotFiles" accept="image/png,image/jpeg,image/webp,image/gif" multiple />
-        <textarea id="shotText" rows="2" style="width:100%; resize:vertical;" placeholder="Optional: the message text posted with the screenshots"></textarea>
+        <textarea id="shotLinks" aria-label="Discord image links" rows="3" style="width:100%; resize:vertical;" placeholder="https://cdn.discordapp.com/attachments/..."></textarea>
+        <input type="file" id="shotFiles" aria-label="Screenshots to read" accept="image/png,image/jpeg,image/webp,image/gif" multiple />
+        <textarea id="shotText" aria-label="Message text posted with the screenshots" rows="2" style="width:100%; resize:vertical;" placeholder="Optional: the message text posted with the screenshots"></textarea>
       </div>
       <div class="modal-actions">
         <button id="shotReadBtn" class="btn-primary" onclick="readScreenshots()">Read with Claude</button>
@@ -440,6 +440,9 @@
     const btn = document.getElementById('shotReadBtn');
     btn.disabled = true;
     btn.textContent = 'Reading...';
+    // Drafts from an earlier read never linger beside a new attempt's error.
+    shotDrops = [];
+    renderShotResults();
     setShotStatus('Reading the screenshots. This takes a few seconds.');
     try {
       const images = links.map((url) => ({ url }));

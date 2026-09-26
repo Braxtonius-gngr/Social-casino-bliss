@@ -51,13 +51,18 @@ function loadWorker({ idb, rows, fetchFails, windows }) {
   const fetched = [];
   const opened = [];
   const messages = [];
-  const openWindows = (windows || []).map(() => ({
-    focus: async () => {},
-    postMessage: msg => messages.push(msg)
+  const focused = [];
+  const openWindows = (windows || []).map(url => ({
+    url,
+    focus: async () => { focused.push(url); },
+    postMessage: msg => messages.push({ url, ...msg })
   }));
   const self = {
     addEventListener: (type, fn) => { handlers[type] = fn; },
-    registration: { showNotification: async (title, options) => { shown.push({ title, ...options }); } },
+    registration: {
+      scope: 'https://app.test/',
+      showNotification: async (title, options) => { shown.push({ title, ...options }); }
+    },
     clients: {
       matchAll: async () => openWindows,
       openWindow: async url => { opened.push(url); }
@@ -71,7 +76,12 @@ function loadWorker({ idb, rows, fetchFails, windows }) {
     fetch: async url => {
       fetched.push(String(url));
       if (fetchFails) throw new TypeError('offline');
-      return { ok: true, json: async () => JSON.parse(JSON.stringify(rows || [])) };
+      // Serves the requested page, as the REST feed does.
+      const params = new URL(String(url)).searchParams;
+      const offset = Number(params.get('offset')) || 0;
+      const limit = Number(params.get('limit')) || 1000;
+      const page = (rows || []).slice(offset, offset + limit);
+      return { ok: true, json: async () => JSON.parse(JSON.stringify(page)) };
     },
     URL,
     console,
@@ -81,7 +91,12 @@ function loadWorker({ idb, rows, fetchFails, windows }) {
   });
   vm.runInContext(SOURCE, context, { filename: 'sw.js' });
   return {
-    shown, fetched, opened, messages,
+    shown, fetched, opened, messages, focused,
+    async pushTogether(n) {
+      const waits = [];
+      for (let i = 0; i < n; i++) handlers.push({ waitUntil: p => waits.push(p) });
+      await Promise.all(waits);
+    },
     async push() {
       const waits = [];
       handlers.push({ waitUntil: p => waits.push(p) });
@@ -140,6 +155,26 @@ const TESTS = [
     expect(sw.shown.length, 3, 'three alerts, no summary');
   }],
 
+  ['an older tracked drop behind a page of other drops is still found', async () => {
+    const others = Array.from({ length: 60 }, (_, n) => ({ ...OTHER, id: `o${n}` }));
+    const sw = loadWorker({ idb: fakeIndexedDB({ drop_alerts: STATE }), rows: others.concat([DROP]) });
+    await sw.push();
+    expect(sw.shown.map(n => n.title), ['New drop: Smoke Casino'], 'found on the second page');
+    expect(sw.fetched.length, 2, 'read two pages');
+  }],
+
+  ['two pushes at once show a drop only once', async () => {
+    const sw = loadWorker({ idb: fakeIndexedDB({ drop_alerts: STATE }), rows: [DROP] });
+    await sw.pushTogether(2);
+    expect(sw.shown.filter(n => n.title === 'New drop: Smoke Casino').length, 1, 'one drop alert');
+  }],
+
+  ['with nothing new and nothing due, it makes no ready claim', async () => {
+    const sw = loadWorker({ idb: fakeIndexedDB({ drop_alerts: STATE, push_schedule: [{ at: NOW - 5 * HOUR, count: 4 }] }), rows: [] });
+    await sw.push();
+    expect(sw.shown.map(n => n.body), ["Open the Almanac to see what's new."], 'neutral note');
+  }],
+
   ['drops announced before alerts were turned on are left out', async () => {
     const since = NOW - HOUR;
     const idb = fakeIndexedDB({ drop_alerts: { ...STATE, since } });
@@ -189,9 +224,14 @@ const TESTS = [
     const closed = loadWorker({ idb: fakeIndexedDB() });
     await closed.click({ open: 'freebies' });
     expect(closed.opened, ['./?open=freebies'], 'opens the app on Freebies');
-    const open = loadWorker({ idb: fakeIndexedDB(), windows: [{}] });
+    const open = loadWorker({ idb: fakeIndexedDB(), windows: ['https://app.test/admin/freebies.html', 'https://app.test/?src=x'] });
     await open.click({ open: 'freebies' });
-    expect(open.messages, [{ type: 'open-freebies' }], 'tells the open app');
+    expect(open.messages, [{ url: 'https://app.test/?src=x', type: 'open-freebies' }], 'tells the app window, not the admin page');
+    expect(open.focused, ['https://app.test/?src=x'], 'focuses the app window');
+    const onlyAdmin = loadWorker({ idb: fakeIndexedDB(), windows: ['https://app.test/admin/freebies.html'] });
+    await onlyAdmin.click({ open: 'freebies' });
+    expect(onlyAdmin.opened, ['./?open=freebies'], 'opens the app when only another page is open');
+    expect(onlyAdmin.messages, [], 'no message to a page that cannot handle it');
     const ready = loadWorker({ idb: fakeIndexedDB() });
     await ready.click(undefined);
     expect(ready.opened, ['./'], 'a ready alert opens the app as before');

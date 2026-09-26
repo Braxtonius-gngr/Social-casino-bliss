@@ -106,3 +106,16 @@ Deno.test("personal details are cut from free text, amounts and codes are kept",
   assert(drops[0].terms === "[removed] only", String(drops[0].terms));
   assert(drops[0].evidence === "[removed] posted WIN20", drops[0].evidence);
 });
+
+Deno.test("an account-tied offer never carries its link", () => {
+  const { drops } = cleanDrops({
+    drops: [{
+      platform_name: "Pulsz", catalog_match: null, bucket: "B_claim", code: null,
+      claim_url: "https://www.pulsz.com/claim?token=abc123", root_domain: null, reward: "3 SC",
+      expires_at: null, terms: null, is_account_tied: true, confidence: "high", evidence: "Your bonus is ready",
+    }],
+    unreadable: null,
+  }, []);
+  assert(drops[0].claim_url === null, String(drops[0].claim_url));
+  assert(drops[0].is_account_tied === true, "flag kept");
+});

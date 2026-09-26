@@ -113,6 +113,16 @@ const DROP_SEEN_KEY = 'drop_seen';
 // Announced drops this recent count as new. Longer than the push's own
 // time-to-live (six hours), so a delayed delivery still finds its drop.
 const DROP_WINDOW_MS = 8 * 3600000;
+// Pages of the announced-drops feed read per push. Filtering (tracked,
+// already shown, expired) happens here, after the fetch, so the feed is
+// paged until the window is exhausted rather than cut at one page.
+const DROP_PAGE = 50;
+const DROP_MAX_PAGES = 4;
+// A schedule entry counts as the reason for a push only while it is fresh:
+// alongside a drop, when it came due in the last five minutes; alone, within
+// the push's own time-to-live plus the dispatcher's cadence.
+const DUE_WITH_DROP_MS = 5 * 60000;
+const DUE_ALONE_MS = 2 * 3600000;
 const DROP_BUCKET_TEXT = { A_code: 'Promo code', B_claim: 'Free claim', C_purchase: 'Purchase offer' };
 
 // "Zula, Punt and 3 more" - a copy of readySummary() in index.html, for the
@@ -200,23 +210,29 @@ function dropKeys(drop) {
 async function unseenDrops(state, now) {
   if (!state || !state.on || !state.url || !state.key || !Array.isArray(state.keys) || !state.keys.length) return [];
   const since = new Date(Math.max(now - DROP_WINDOW_MS, Number(state.since) || 0)).toISOString();
-  const query = 'select=id,platform_name,bucket,code,claim_url,root_domain,terms,expires_at,announced_at'
-    + `&active=eq.true&announced_at=gte.${encodeURIComponent(since)}&order=announced_at.desc&limit=10`;
-  let rows;
-  try {
-    const response = await fetch(`${state.url}/rest/v1/public_freebies?${query}`, {
-      headers: { apikey: state.key, Authorization: `Bearer ${state.key}` },
-      cache: 'no-store'
-    });
-    if (!response.ok) return [];
-    rows = await response.json();
-  } catch (e) {
-    return [];
+  const base = 'select=id,platform_name,bucket,code,claim_url,root_domain,terms,expires_at,announced_at'
+    + `&active=eq.true&announced_at=gte.${encodeURIComponent(since)}&order=announced_at.desc,id.asc&limit=${DROP_PAGE}`;
+  const rows = [];
+  for (let page = 0; page < DROP_MAX_PAGES; page++) {
+    let batch;
+    try {
+      const response = await fetch(`${state.url}/rest/v1/public_freebies?${base}&offset=${page * DROP_PAGE}`, {
+        headers: { apikey: state.key, Authorization: `Bearer ${state.key}` },
+        cache: 'no-store'
+      });
+      if (!response.ok) return [];
+      batch = await response.json();
+    } catch (e) {
+      return [];
+    }
+    if (!Array.isArray(batch)) return [];
+    rows.push(...batch);
+    if (batch.length < DROP_PAGE) break;
   }
   const seen = await readPushState(DROP_SEEN_KEY, false);
   const seenIds = new Set(Array.isArray(seen) ? seen : []);
   const tracked = new Set(state.keys);
-  return (Array.isArray(rows) ? rows : []).filter(row => row && row.id && !seenIds.has(row.id)
+  return rows.filter(row => row && row.id && !seenIds.has(row.id)
     && !(row.expires_at && Date.parse(row.expires_at) < now)
     && dropKeys(row).some(k => tracked.has(k)));
 }
@@ -258,6 +274,8 @@ async function showDrops(drops) {
   await writePushState(DROP_SEEN_KEY, ids.slice(-100));
 }
 
+let dropQueue = Promise.resolve();
+
 self.addEventListener('push', (event) => {
   event.waitUntil(Promise.all([
     readPushState(PUSH_SCHEDULE_KEY, false),
@@ -273,16 +291,32 @@ self.addEventListener('push', (event) => {
         icon: 'apple-touch-icon.png'
       });
     }
-    const drops = await unseenDrops(dropState, now);
-    if (drops.length) await showDrops(drops);
+    // One push at a time from here: reading the seen list, showing and
+    // recording must not interleave, or two pushes close together would
+    // both show the same drop.
+    const drops = await (dropQueue = dropQueue.then(async () => {
+      const found = await unseenDrops(dropState, now);
+      if (found.length) await showDrops(found);
+      return found;
+    }).catch(() => []));
     let due = null;
     (Array.isArray(schedule) ? schedule : []).forEach((entry) => {
       if (entry && Number(entry.at) <= now + 60000 && (!due || Number(entry.at) > Number(due.at))) due = entry;
     });
-    // A drop push isn't a schedule push: only add the ready alert when an
-    // entry has genuinely just come due.
-    if (drops.length && !(due && Number(due.at) > now - 300000)) return undefined;
-    const count = due ? Number(due.count) : 0;
+    const fresh = due && Number(due.at) > now - (drops.length ? DUE_WITH_DROP_MS : DUE_ALONE_MS);
+    if (drops.length && !fresh) return undefined;
+    if (!fresh) {
+      // Nothing new and nothing due (a repeated drop push, a drop that has
+      // since expired, or a lookup that failed): a push must still show
+      // something, so it makes no claim about what is ready.
+      return self.registration.showNotification('Casino Almanac', {
+        body: 'Open the Almanac to see what\'s new.',
+        tag: 'almanac-ready',
+        renotify: false,
+        icon: 'apple-touch-icon.png'
+      });
+    }
+    const count = Number(due.count) || 0;
     let body = 'Your platforms are ready to collect.';
     if (count > 0 && due.digest) {
       body = `Daily digest: ${readySummary(Array.isArray(due.names) ? due.names : [], count)} ready to collect`;
@@ -302,9 +336,21 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const toFreebies = !!(event.notification.data && event.notification.data.open === 'freebies');
+  // Only the app itself (the scope's root or index.html) handles the
+  // open-freebies message; other pages here, such as the admin page or a
+  // platform guide, don't, so a new app window opens instead.
+  const scope = new URL(self.registration.scope);
+  const isApp = (client) => {
+    try {
+      const url = new URL(client.url);
+      return url.origin === scope.origin && (url.pathname === scope.pathname || url.pathname === `${scope.pathname}index.html`);
+    } catch (e) {
+      return false;
+    }
+  };
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
-      const open = windows.find((client) => 'focus' in client);
+      const open = windows.find((client) => 'focus' in client && isApp(client));
       if (open) {
         if (toFreebies) open.postMessage({ type: 'open-freebies' });
         return open.focus();
