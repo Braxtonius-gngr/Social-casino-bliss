@@ -131,3 +131,17 @@ Deno.test("root domains keep two-part country suffixes whole", () => {
   }, []);
   assert(drops[0].root_domain === "luckycasino.co.uk", String(drops[0].root_domain));
 });
+
+Deno.test("a link with account parameters is account-tied whatever the model said", () => {
+  const { drops } = cleanDrops({
+    drops: [{
+      platform_name: "Pulsz", catalog_match: null, bucket: "B_claim", code: null,
+      claim_url: "https://www.pulsz.com/bonus?fuid=8812&utm_source=mail", root_domain: null, reward: "3 SC",
+      expires_at: null, terms: null, is_account_tied: false, confidence: "high", evidence: "Claim your bonus",
+    }],
+    unreadable: null,
+  }, []);
+  assert(drops[0].claim_url === null, String(drops[0].claim_url));
+  assert(drops[0].is_account_tied === true, "flagged");
+  assert(drops[0].root_domain === "pulsz.com", String(drops[0].root_domain));
+});

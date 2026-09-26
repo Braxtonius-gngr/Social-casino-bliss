@@ -5240,7 +5240,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // reads them for a digest; the server only ever gets times and counts
         // (and, with drop alerts on, the keys of the platforms tracked).
         const uploaded = schedule.map(entry => ({ at: entry.at, count: entry.count }));
-        const payloadJson = JSON.stringify([sub.endpoint, uploaded, dropOn, dropKeys]);
+        // The effective opt-in (on AND saved on this device) is part of the
+        // key, so a save that failed once is retried on the next sync.
+        const payloadJson = JSON.stringify([sub.endpoint, uploaded, dropOn && dropStateSaved, dropKeys]);
         if (!force && payloadJson === lastPushScheduleJson) return;
         const session = await ensureSyncSignedIn(client, isPushEnabled);
         const row = {

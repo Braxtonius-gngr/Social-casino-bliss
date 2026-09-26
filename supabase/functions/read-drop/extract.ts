@@ -152,6 +152,20 @@ function freeText(value: unknown, max: number): string | null {
   return redactPersonal(text(value, max));
 }
 
+// Query parameters that make a link work only for the account it was sent
+// to (the same list utils/classifyDropText.js uses for the Drop Inbox). A
+// link carrying one is account-tied whatever Claude said.
+const ACCOUNT_PARAMS = new Set([
+  "fuid", "uid", "token", "pid", "player_message", "aa", "hash", "xnpe_tifc", "xnpe_cmp", "mcp_token",
+]);
+
+export function hasAccountParams(url: URL): boolean {
+  for (const key of url.searchParams.keys()) {
+    if (ACCOUNT_PARAMS.has(key.toLowerCase())) return true;
+  }
+  return false;
+}
+
 function rootDomain(value: string | null): string | null {
   if (!value) return null;
   let host = value.toLowerCase().replace(/^https?:\/\//, "").replace(/[/?#].*$/, "");
@@ -179,18 +193,25 @@ export function cleanDrops(raw: unknown, platforms: string[]): { drops: Drop[]; 
     const d = item as Record<string, unknown>;
     const platform = freeText(d.platform_name, 80);
     if (!platform) continue;
-    const accountTied = d.is_account_tied === true;
+    let accountTied = d.is_account_tied === true;
     // A link that only works for the account it was sent to is personal:
-    // it never leaves this function.
-    let claimUrl = accountTied ? null : text(d.claim_url, 500);
+    // it never leaves this function, whether Claude flagged it or its own
+    // parameters give it away.
+    let claimUrl = text(d.claim_url, 500);
+    let claimRoot: string | null = null;
     if (claimUrl) {
       try {
         const url = new URL(claimUrl);
         if (url.protocol !== "https:" && url.protocol !== "http:") claimUrl = null;
+        else {
+          claimRoot = rootDomain(url.hostname);
+          if (hasAccountParams(url)) accountTied = true;
+        }
       } catch {
         claimUrl = null;
       }
     }
+    if (accountTied) claimUrl = null;
     let expiresAt = text(d.expires_at, 40);
     if (expiresAt && Number.isNaN(Date.parse(expiresAt))) expiresAt = null;
     const match = text(d.catalog_match, 80);
@@ -200,7 +221,7 @@ export function cleanDrops(raw: unknown, platforms: string[]): { drops: Drop[]; 
       bucket: d.bucket === "A_code" || d.bucket === "C_purchase" ? d.bucket : "B_claim",
       code: text(d.code, 40),
       claim_url: claimUrl,
-      root_domain: rootDomain(text(d.root_domain, 120)) ?? (claimUrl ? rootDomain(claimUrl) : null),
+      root_domain: rootDomain(text(d.root_domain, 120)) ?? claimRoot,
       reward: freeText(d.reward, 120),
       expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
       terms: freeText(d.terms, 240),

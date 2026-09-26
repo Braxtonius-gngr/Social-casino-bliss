@@ -521,13 +521,21 @@ const TESTS = [
     await signedIn(page);
     await page.evaluate(() => toggleBackgroundPush(true));
     await page.evaluate(() => {
-      const realSet = window.AlmanacDB.set;
+      const realSet = window.__realSet = window.AlmanacDB.set;
       window.AlmanacDB.set = (key, value) => (key === 'drop_alerts' ? Promise.reject(new Error('quota')) : realSet(key, value));
       return toggleDropAlerts(true);
     });
     const upserts = byType(await page.calls(), 'from', 'push_subscriptions').filter(c => op(c, 'upsert'));
     const row = op(upserts[upserts.length - 1], 'upsert')[0];
     expect([row.drop_alerts, row.drop_keys], [false, []], 'server not told to send drops');
+    // Once saving works again, the next ordinary sync opts in.
+    await page.evaluate(() => {
+      window.AlmanacDB.set = window.__realSet;
+      return syncPushSchedule(false);
+    });
+    const later = byType(await page.calls(), 'from', 'push_subscriptions').filter(c => op(c, 'upsert'));
+    const retried = op(later[later.length - 1], 'upsert')[0];
+    expect(later.length > upserts.length && retried.drop_alerts, true, 'retried and opted in');
   }, { answers: { 'invoke:web-push': { data: { publicKey: 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U' }, error: null } } }],
 
   ['keeps alert uploads working on a server without drop alerts', async page => {

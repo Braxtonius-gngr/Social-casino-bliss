@@ -275,7 +275,9 @@ async function showDrops(drops) {
   await Promise.all(notes);
   const seen = await readPushState(DROP_SEEN_KEY, false);
   const ids = (Array.isArray(seen) ? seen : []).concat(drops.map(drop => drop.id));
-  await writePushState(DROP_SEEN_KEY, ids.slice(-100));
+  // Room for more than one push's worth of drops, so a full batch never
+  // falls out of the list while still inside the look-back window.
+  await writePushState(DROP_SEEN_KEY, ids.slice(-(DROP_PAGE * DROP_MAX_PAGES + 100)));
 }
 
 let dropQueue = Promise.resolve();
