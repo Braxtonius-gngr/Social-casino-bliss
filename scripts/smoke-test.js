@@ -492,6 +492,23 @@ const TESTS = [
     expect(byType(await page.calls(), 'auth', 'signInAnonymously').length, 1, 'no new account made afterwards');
   }],
 
+  ['sync work queued before a deletion does not make a new account', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    // Hold the sign-in queue with a background pull waiting in it, then
+    // delete: the pull must not sign in again once it gets its turn.
+    await page.evaluate(() => {
+      window.__queued = null;
+      signInQueue = signInQueue.then(() => new Promise(release => { window.__release = release; }));
+      window.__queued = pullAndReplay();
+    });
+    await page.waitFor(() => typeof window.__release === 'function');
+    await page.evaluate(() => deleteMyCloudData());
+    await page.evaluate(() => { window.__release(); return window.__queued; });
+    await page.evaluate(() => signInQueue);
+    expect(byType(await page.calls(), 'auth', 'signInAnonymously').length, 1, 'no replacement account');
+  }],
+
   ['refuses deletion while Pro is running, and keeps syncing', async page => {
     await page.goto('/');
     await signedIn(page);

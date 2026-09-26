@@ -40,6 +40,15 @@ function isoDate(date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+// A real calendar day in YYYY-MM-DD, so 2026-02-31 is refused rather than
+// quietly read as March 3.
+function isRealDate(iso) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+  const [y, m, d] = iso.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
+}
+
 function shortDate(iso) {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -224,7 +233,7 @@ function main() {
   const until = args.until || isoDate(today);
   // Seven days, both ends included.
   const since = args.since || isoDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6));
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(since) || !/^\d{4}-\d{2}-\d{2}$/.test(until) || since > until) {
+  if (!isRealDate(since) || !isRealDate(until) || since > until) {
     console.error('--since and --until take dates like 2026-09-20, the first no later than the second (both included).');
     process.exit(1);
   }

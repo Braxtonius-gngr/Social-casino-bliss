@@ -5175,7 +5175,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const uploaded = schedule.map(entry => ({ at: entry.at, count: entry.count }));
         const payloadJson = JSON.stringify([sub.endpoint, uploaded]);
         if (!force && payloadJson === lastPushScheduleJson) return;
-        const session = await ensureSyncSignedIn(client);
+        const session = await ensureSyncSignedIn(client, isPushEnabled);
         const { error } = await client.from('push_subscriptions').upsert({
           user_id: session.user.id,
           endpoint: sub.endpoint,
@@ -6950,19 +6950,25 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // used to find no session and sign in by itself - four or more anonymous
     // accounts per first visit, all but one left empty. Calls now run one
     // after another, so the second finds the session the first created.
+    //
+    // Background work passes stillWanted (is sync, or are alerts, still on?),
+    // asked again when its turn comes: a sync queued before the user turned
+    // sync off or deleted the account must not sign in to a new one. What
+    // the user just asked for (checkout, linking an email) passes nothing.
     let signInQueue = Promise.resolve();
 
-    function ensureSyncSignedIn(client) {
-      const run = signInQueue.then(() => signInIfNeeded(client));
+    function ensureSyncSignedIn(client, stillWanted) {
+      const run = signInQueue.then(() => signInIfNeeded(client, stillWanted));
       signInQueue = run.catch(() => {});
       return run;
     }
 
-    async function signInIfNeeded(client) {
+    async function signInIfNeeded(client, stillWanted) {
       const { data: sessionData } = await client.auth.getSession();
       let session = sessionData && sessionData.session;
       if (!session) {
         if (isCrawler()) throw new Error('Sign-in is skipped for crawlers.');
+        if (stillWanted && !stillWanted()) throw new Error('Sign-in skipped: this sync was switched off.');
         const { data: signInData, error } = await client.auth.signInAnonymously();
         if (error) throw error;
         session = signInData.session;
@@ -6982,7 +6988,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (!outbox.length) return;
       syncInFlight = true;
       try {
-        const session = await ensureSyncSignedIn(client);
+        const session = await ensureSyncSignedIn(client, isSyncEnabled);
         const deviceId = getDeviceId();
         const rows = outbox.map((op) => ({
           id: op.id,
@@ -7014,7 +7020,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const client = getSupabaseClient();
       if (!client || !isSyncEnabled()) return;
       try {
-        await ensureSyncSignedIn(client);
+        await ensureSyncSignedIn(client, isSyncEnabled);
         const cursor = localStorage.getItem(SYNC_CURSOR_KEY) || '1970-01-01T00:00:00.000Z';
         const { data, error } = await client
           .from('collection_events')
@@ -7162,7 +7168,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const client = getSupabaseClient();
       if (!client) return;
       try {
-        const session = await ensureSyncSignedIn(client);
+        const session = await ensureSyncSignedIn(client, isSyncEnabled);
         const uid = session.user.id;
         // First time THIS DEVICE has synced the deck under this account
         // identity (fresh install signing in, or a "Recover a Linked
