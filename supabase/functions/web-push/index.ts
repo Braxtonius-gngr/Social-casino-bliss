@@ -24,7 +24,6 @@ const ADMIN_EMAIL = "johndopamine210@gmail.com";
 const DROP_TTL_SECONDS = 6 * 3600;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-
 function corsHeaders(req: Request) {
   const origin = req.headers.get("Origin") ?? "";
   return {
