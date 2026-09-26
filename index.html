@@ -6429,7 +6429,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // catch "Googlebot/2.1" and friends without matching phone models like
     // "CUBOT X30".
     function isCrawler() {
-      return /googlebot|googleother|google-inspectiontool|adsbot-google|mediapartners-google|bingbot|yandex|duckduckbot|baiduspider|applebot|facebookexternalhit|twitterbot|slackbot|whatsapp|skypeuripreview|embedly|iframely|slurp|petalbot|semrushbot|ahrefsbot|chrome-lighthouse|[a-z]bot\/|\bbot\b|crawler|spider/i
+      return /googlebot|googleother|google-inspectiontool|adsbot-google|mediapartners-google|bingbot|yandex|duckduckbot|baiduspider|applebot|facebookexternalhit|twitterbot|slackbot|^whatsapp\/|skypeuripreview|embedly|iframely|slurp|petalbot|semrushbot|ahrefsbot|chrome-lighthouse|[a-z]bot\/|\bbot\b|crawler|spider/i
         .test(navigator.userAgent || '');
     }
 
