@@ -3419,7 +3419,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         clearTimeout(timer);
         screen.removeEventListener('pointerdown', end);
         screen.removeEventListener('focusin', end);
-        screen.removeEventListener('keydown', end);
+        document.removeEventListener('keydown', end);
         screen.classList.remove('intro-play', 'roll-popped', 'roll-glint');
         [camera, cup].forEach(el => el.removeAttribute('style'));
         dice.forEach(d => {
@@ -3474,9 +3474,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       screen.classList.add('intro-play');
       // Any tap, key press, or focus arriving on the screen (Tab onto the
       // still-hidden Enter button) skips straight to the finished frame.
+      // Keys listen on document: at launch focus sits on <body>, outside
+      // the landing screen, so a keydown there never reaches it.
       screen.addEventListener('pointerdown', end);
       screen.addEventListener('focusin', end);
-      screen.addEventListener('keydown', end);
+      document.addEventListener('keydown', end);
       timer = setTimeout(end, totalMs);
       raf = requestAnimationFrame(frame);
     }
