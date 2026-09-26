@@ -6086,6 +6086,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         kickSync();
         syncUserEntitlements();
         queuePushScheduleSync();
+        // Staff access follows the account: a moderator or the owner who
+        // recovers their account after boot gets the tab without a reload,
+        // and signing out takes it away again.
+        setTimeout(checkModeratorAccess, 0);
       });
       return supabaseClient;
     }
@@ -6690,19 +6694,30 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (error) throw error;
     }
 
+    // Shows or hides the Staff tab for the current account. Runs at boot and
+    // again on every auth change, so it has to be able to take the tab away
+    // too (and leave the staff view if the account just lost it).
     async function checkModeratorAccess() {
       const client = getSupabaseClient();
       const tab = document.getElementById('tabModDashboard');
       if (!client || !tab) return false;
+      let allowed = false;
       try {
         const { data, error } = await client.rpc('is_moderator');
-        if (error || data !== true) return false;
-        tab.style.display = '';
-        checkOwnerAccess();
-        return true;
+        allowed = !error && data === true;
       } catch (error) {
-        return false;
+        allowed = false;
       }
+      tab.style.display = allowed ? '' : 'none';
+      if (allowed) {
+        checkOwnerAccess();
+      } else {
+        isOwnerAccount = false;
+        const panel = document.getElementById('ownerPanel');
+        if (panel) panel.style.display = 'none';
+        if (currentTab === 'moderation') switchMainTab('games', document.getElementById('tabPlatforms'));
+      }
+      return allowed;
     }
 
     // --- Owner tools: the moderator list ---
@@ -6761,7 +6776,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     function friendlyOwnerError(error) {
       const message = (error && error.message) || '';
-      if (/NO_SUCH_EMAIL/.test(message)) return 'No account has linked that email yet. Ask them to use Settings → Link Email first.';
+      if (/NO_SUCH_EMAIL/.test(message)) return 'No account has linked and confirmed that email yet. Ask them to use Settings → Link Email and open the confirmation link first.';
       if (/OWNER_ACCOUNT/.test(message)) return "That's the owner account; it is always a moderator.";
       if (/OWNER_ONLY/.test(message)) return 'Only the owner can manage moderators.';
       return message || 'Moderator change failed.';

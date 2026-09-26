@@ -158,8 +158,9 @@ receive direct raw-table moderation access.
 Above moderators sits one **owner** (`community_profiles.is_owner`, set by
 migration to the site's admin account). The owner has every moderator power,
 is the only account that can make or unmake moderators (the Moderators panel
-at the bottom of the staff console, by the email the person linked in
-Settings), and is protected by a trigger: nothing but a migration can demote,
+at the bottom of the staff console, by the email the person linked and
+confirmed in Settings; an anonymous device can't be one), and is protected
+by a trigger: nothing but a migration can demote,
 mute or delete the owner's row, and no second owner can be set. Self-serve
 deletion refuses the owner and moderators.
 

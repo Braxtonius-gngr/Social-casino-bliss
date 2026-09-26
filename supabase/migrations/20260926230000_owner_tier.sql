@@ -125,8 +125,11 @@ END;
 $$;
 
 -- Owner only: make (or unmake) the account behind an email a moderator.
--- The account must exist and have that email linked; the owner's own
--- account is refused (the guard trigger would refuse it anyway).
+-- The account must exist, be a real (non-anonymous) account and have that
+-- email confirmed: an anonymous device that has only asked to link an
+-- email is still anonymous until the link is confirmed, so it is refused
+-- like any other unknown email. The owner's own account is refused too
+-- (the guard trigger would refuse it anyway).
 CREATE OR REPLACE FUNCTION public.set_moderator(p_email TEXT, p_on BOOLEAN)
 RETURNS TABLE (user_id UUID, email TEXT, public_alias TEXT, is_moderator BOOLEAN)
 LANGUAGE plpgsql
@@ -140,9 +143,12 @@ BEGIN
     RAISE EXCEPTION 'OWNER_ONLY: only the owner manages moderators';
   END IF;
   SELECT u.id INTO target FROM auth.users AS u
-  WHERE lower(u.email) = lower(trim(p_email)) LIMIT 1;
+  WHERE lower(u.email) = lower(trim(p_email))
+    AND u.is_anonymous = FALSE
+    AND u.email_confirmed_at IS NOT NULL
+  LIMIT 1;
   IF target IS NULL THEN
-    RAISE EXCEPTION 'NO_SUCH_EMAIL: no account has linked that email';
+    RAISE EXCEPTION 'NO_SUCH_EMAIL: no account has linked and confirmed that email';
   END IF;
   IF EXISTS (SELECT 1 FROM public.community_profiles AS p WHERE p.id = target AND p.is_owner) THEN
     RAISE EXCEPTION 'OWNER_ACCOUNT: the owner is always a moderator';
@@ -181,16 +187,6 @@ BEGIN
   END IF;
 
   IF EXISTS (
-    SELECT 1
-    FROM public.user_subscriptions AS s
-    WHERE s.user_id = caller
-      AND s.stripe_subscription_id IS NOT NULL
-      AND s.status::TEXT NOT IN ('canceled', 'incomplete_expired')
-  ) THEN
-    RAISE EXCEPTION 'ACTIVE_SUBSCRIPTION: cancel the Pro subscription first; once it has ended the account can be deleted';
-  END IF;
-
-  IF EXISTS (
     SELECT 1 FROM public.community_profiles AS p
     WHERE p.id = caller AND p.is_owner
   ) THEN
@@ -202,6 +198,16 @@ BEGIN
     WHERE p.id = caller AND p.is_moderator
   ) THEN
     RAISE EXCEPTION 'MODERATOR_ACCOUNT: moderator accounts are not deleted here';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM public.user_subscriptions AS s
+    WHERE s.user_id = caller
+      AND s.stripe_subscription_id IS NOT NULL
+      AND s.status::TEXT NOT IN ('canceled', 'incomplete_expired')
+  ) THEN
+    RAISE EXCEPTION 'ACTIVE_SUBSCRIPTION: cancel the Pro subscription first; once it has ended the account can be deleted';
   END IF;
 
   DELETE FROM auth.users WHERE id = caller;

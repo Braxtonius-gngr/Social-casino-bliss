@@ -661,6 +661,31 @@ const TESTS = [
     expect(byType(await page.calls(), 'rpc', 'list_moderators').length, 0, 'list never requested');
   }, { answers: { 'rpc:is_moderator': { data: true, error: null } } }],
 
+  ['staff access follows the account through sign-in and sign-out', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    await new Promise(r => setTimeout(r, 1300));
+    expect(await page.evaluate(() => document.getElementById('tabModDashboard').style.display), 'none', 'anonymous device has no staff tab');
+    // The account becomes a moderator's (a recovery sign-in after boot).
+    await page.evaluate(() => {
+      const config = JSON.parse(sessionStorage.getItem('__smokeConfig'));
+      config.answers = { ...(config.answers || {}), 'rpc:is_moderator': { data: true, error: null } };
+      sessionStorage.setItem('__smokeConfig', JSON.stringify(config));
+      return getSupabaseClient().auth.signInAnonymously();
+    });
+    await page.waitFor(() => document.getElementById('tabModDashboard').style.display === '');
+    await page.evaluate(() => switchMainTab('moderation', document.getElementById('tabModDashboard')));
+    // Signing out takes the tab away and leaves the staff view.
+    await page.evaluate(() => {
+      const config = JSON.parse(sessionStorage.getItem('__smokeConfig'));
+      config.answers['rpc:is_moderator'] = { data: false, error: null };
+      sessionStorage.setItem('__smokeConfig', JSON.stringify(config));
+      return getSupabaseClient().auth.signOut({ scope: 'local' });
+    });
+    await page.waitFor(() => document.getElementById('tabModDashboard').style.display === 'none');
+    expect(await page.evaluate(() => currentTab), 'games', 'left the staff view');
+  }],
+
   ['deletes the cloud account and stops syncing', async page => {
     await page.goto('/');
     await signedIn(page);
