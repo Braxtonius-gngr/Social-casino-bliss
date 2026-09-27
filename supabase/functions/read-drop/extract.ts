@@ -130,8 +130,16 @@ export function claudeErrorReply(
     return { status: 500, error: "The model this function asks for isn't available to the account." };
   }
   if (status === 400 || kind === "invalid_request_error") {
-    const detail = message.replace(/^\d{3}\s+/, "").replace(/\s+/g, " ").trim().slice(0, 200);
-    return { status: 502, error: `Claude rejected the request: ${detail || "no detail given"}. Try fewer or smaller screenshots.` };
+    const detail = message.replace(/^\d{3}\s+/, "").replace(/\s+/g, " ").trim().slice(0, 300).replace(/[.\s]+$/, "") ||
+      "no detail given";
+    // Some key set-ups are refused as a bad request rather than a 401 (a key
+    // linked to a person and not to a workspace, for one): that is setup,
+    // not the screenshots.
+    if (/api[ -]?key|workspace/i.test(detail)) {
+      return { status: 500, error: `Anthropic won't accept the ANTHROPIC_API_KEY as it is set up: ${detail}. Fix the key in the Anthropic Console, then update the Supabase secret; no redeploy is needed.` };
+    }
+    const hint = /image/i.test(detail) ? " Try fewer or smaller screenshots." : "";
+    return { status: 502, error: `Claude rejected the request: ${detail}.${hint}` };
   }
   if (status === 429 || kind === "rate_limit_error") {
     return { status: 503, error: "Anthropic's rate limit was hit. Try again in a minute." };
@@ -143,6 +151,15 @@ export function claudeErrorReply(
     return { status: 503, error: "Claude is overloaded right now. Try again in a minute." };
   }
   return { status: 502, error: `Claude couldn't read the screenshots right now (${status}). Try again in a minute.` };
+}
+
+// The API's own sentence from an error body ({ error: { message } }). The
+// SDK's err.message is the whole body as JSON when the body has no
+// top-level message, which is how every API error arrives.
+export function apiErrorMessage(body: unknown, fallback: string): string {
+  const inner = body && typeof body === "object" ? (body as { error?: unknown }).error : null;
+  const message = inner && typeof inner === "object" ? (inner as { message?: unknown }).message : null;
+  return typeof message === "string" && message.trim() ? message : fallback;
 }
 
 export type Drop = {
