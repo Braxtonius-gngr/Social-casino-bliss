@@ -49,6 +49,10 @@ function isMissing(error: unknown): boolean {
 // stale view. The page shows this and refreshes the account's status.
 const BILLING_CHANGED = "Your billing details just changed. Please try again.";
 
+// Another checkout for the account started in the same second, and its
+// page is the one left to pay.
+const CHECKOUT_ELSEWHERE = "A checkout for this account just started in another tab or window. Finish it there, or try again.";
+
 // A customer this request made that the account's row turned down (another
 // request saved its own first) is never used: delete it rather than leave
 // it unattached in Stripe. Not after a save error: the write may still have
@@ -73,22 +77,31 @@ async function discardCustomer(customerId: string) {
 // A subscription starts when a checkout session is paid, which can be long
 // after it was made: an earlier tab left open could still be paid after a
 // newer checkout, and the checks a checkout starts with only see
-// subscriptions that already exist. So once a new session exists, every
-// other open session for this customer that isn't newer is expired, and
-// the newest checkout page is the only one left to pay. Two made in the
-// same second may expire each other, leaving nothing to pay rather than
-// two (the page sends one checkout at a time, so that takes two tabs).
-// Stripe's "limit customers to one subscription" setting guards the payment
-// itself (see README). Best-effort and bounded: it gets a few seconds, each
-// Stripe call gives up when they run out, and a failure never blocks this
-// checkout. Normally there is at most one older session, since each
-// checkout expires the ones before it.
+// subscriptions that already exist. So once a new session exists, the
+// customer's open sessions up to it are ranked, newest first, and all but
+// the first are expired: the newest checkout page is the only one left to
+// pay. Two made in the same second rank by id, so every request ranks them
+// the same way and they agree on which one stays. If another session
+// outranks this request's own, its own is expired too and its URL isn't
+// handed out (the caller answers 409). Stripe's "limit customers to one
+// subscription" setting guards the payment itself (see README).
+// Best-effort and bounded: it gets a few seconds, each Stripe call gives up
+// when they run out, and if listing fails this request's session stays.
+// Normally there is at most one other open session, since each checkout
+// expires the ones before it.
 const SESSION_CLEANUP_BUDGET_MS = 3000;
 
-async function expireOlderOpenSessions(customerId: string, current: Stripe.Checkout.Session) {
+type OpenSession = { id: string; created: number };
+
+function outranks(a: OpenSession, b: OpenSession) {
+  return a.created !== b.created ? a.created > b.created : a.id > b.id;
+}
+
+// Returns whether this request's own session is the one left to pay.
+async function keepNewestOpenSession(customerId: string, current: Stripe.Checkout.Session): Promise<boolean> {
   const deadline = Date.now() + SESSION_CLEANUP_BUDGET_MS;
   const remaining = () => deadline - Date.now();
-  const older: string[] = [];
+  const open: OpenSession[] = [{ id: current.id, created: current.created }];
   try {
     // Every page is read before anything is expired, so expiring doesn't
     // move the list under the cursor.
@@ -102,24 +115,27 @@ async function expireOlderOpenSessions(customerId: string, current: Stripe.Check
         ...(startingAfter ? { starting_after: startingAfter } : {}),
       }, bestEffort(remaining()));
       for (const session of page.data) {
-        if (session.id !== current.id) older.push(session.id);
+        if (session.id !== current.id) open.push({ id: session.id, created: session.created });
       }
       startingAfter = page.has_more ? page.data[page.data.length - 1]?.id : undefined;
     } while (startingAfter && remaining() > 0);
   } catch (error) {
     console.warn("Couldn't list older checkout sessions.", { customerId, error: errorMessage(error) });
   }
-  for (const [index, sessionId] of older.entries()) {
+  const newest = open.reduce((best, session) => outranks(session, best) ? session : best);
+  const stale = open.filter((session) => session.id !== newest.id);
+  for (const [index, session] of stale.entries()) {
     if (remaining() <= 0) {
-      console.warn("Out of time expiring older checkout sessions.", { customerId, leftOpen: older.length - index });
-      return;
+      console.warn("Out of time expiring older checkout sessions.", { customerId, leftOpen: stale.length - index });
+      break;
     }
     try {
-      await stripe.checkout.sessions.expire(sessionId, {}, bestEffort(remaining()));
+      await stripe.checkout.sessions.expire(session.id, {}, bestEffort(remaining()));
     } catch (error) {
-      console.warn("Couldn't expire an older checkout session.", { sessionId, error: errorMessage(error) });
+      console.warn("Couldn't expire an older checkout session.", { sessionId: session.id, error: errorMessage(error) });
     }
   }
+  return newest.id === current.id;
 }
 
 function jsonResponse(body: Record<string, unknown>, status: number, cors: Record<string, string>) {
@@ -340,7 +356,9 @@ serve(async (req) => {
       metadata: { supabase_uid: user.id },
       subscription_data: { metadata: { supabase_uid: user.id } },
     });
-    await expireOlderOpenSessions(customerId, session);
+    if (!(await keepNewestOpenSession(customerId, session))) {
+      return jsonResponse({ error: CHECKOUT_ELSEWHERE }, 409, cors);
+    }
 
     console.log("Checkout session created:", { userId: user.id, hasEmail: !!email, priceId: targetPriceId });
     return new Response(JSON.stringify({ url: session.url }), {
