@@ -1044,6 +1044,9 @@
     .drop-url { font-size:0.66rem; color:var(--text-dim); font-family:monospace; overflow:hidden; text-overflow:ellipsis; }
     .drop-tag { font-size:0.58rem; font-weight:700; padding:1px 6px; border-radius:3px; background:rgba(255,255,255,0.06); border:1px solid var(--glass-border); color:var(--text-muted); letter-spacing:0.04em; }
     .drop-tag.unknown { color:var(--accent-pink); border-color:var(--accent-pink); }
+    .shot-meta { font-size:0.7rem; color:var(--text-muted); margin-top:4px; }
+    .shot-conf { font-size:0.62rem; padding:1px 6px; border-radius:6px; border:1px solid var(--text-muted); margin-left:6px; text-transform:uppercase; }
+    .shot-conf.low { border-color:var(--accent-pink); color:var(--accent-pink); }
     .drops-hidden { font-size:0.72rem; color:var(--text-dim); text-align:center; padding:14px 8px 4px; line-height:1.5; }
     .ledger-note { font-size:0.72rem; line-height:1.5; color:var(--text-muted); background:rgba(61,135,103,0.07); border:1px solid rgba(61,135,103,0.3); border-left:3px solid var(--accent-green); padding:11px 12px; border-radius:4px; margin-bottom:16px; }
     .ledger-ytd { font-size:0.72rem; color:var(--text-muted); text-align:center; font-family:"Courier New",monospace; margin-bottom:16px; }

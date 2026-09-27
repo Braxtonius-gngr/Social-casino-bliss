@@ -627,6 +627,17 @@
         <div id="catalogAccessList"><div class="drops-note">Loading...</div></div>
         <h3 style="margin:18px 0 5px;">Platform links followed <span class="ledger-meta">last 7 days</span></h3>
         <div id="linkHitsList"><div class="drops-note">Loading...</div></div>
+        <h3 style="margin:18px 0 5px;">Read drop screenshots <span class="ledger-meta">up to 4 at a time</span></h3>
+        <p class="drops-note" style="margin:0 0 10px;">Choose screenshots from this device or paste Discord image links. Claude reads each offer into a draft; a draft opens in the admin page for checking and saving. Nothing is published from here.</p>
+        <input type="file" id="ownerShotFiles" aria-label="Screenshots to read" accept="image/png,image/jpeg,image/webp,image/gif" multiple style="width:100%; color:var(--text-muted); font-size:0.8rem; margin-bottom:8px;" />
+        <textarea id="ownerShotLinks" aria-label="Discord image links" rows="2" placeholder="Optional: Discord image links (open the image in Discord, Copy Link)" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid var(--glass-border); color:var(--text-main); padding:10px; border-radius:10px; font-family:inherit; font-size:0.8rem; resize:vertical; margin-bottom:8px;"></textarea>
+        <textarea id="ownerShotText" aria-label="Message text posted with the screenshots" rows="2" placeholder="Optional: the message text posted with the screenshots" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid var(--glass-border); color:var(--text-main); padding:10px; border-radius:10px; font-family:inherit; font-size:0.8rem; resize:vertical; margin-bottom:8px;"></textarea>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <button type="button" class="btn-primary" id="ownerShotReadBtn" onclick="readOwnerScreenshots()">READ WITH CLAUDE</button>
+          <button type="button" class="btn-dock" id="ownerShotOpenAllBtn" style="display:none; max-width:none;" onclick="openDraftInAdmin()">OPEN DRAFTS IN ADMIN</button>
+        </div>
+        <div id="ownerShotStatus" class="drops-note" style="margin-top:8px;"></div>
+        <div id="ownerShotResults"></div>
       </div>
     </section>
   </div>
@@ -8228,10 +8239,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderedModerators = [];
       const panel = document.getElementById('ownerPanel');
       if (panel) panel.style.display = 'none';
-      ['moderatorList', 'catalogAccessList', 'linkHitsList'].forEach(id => {
+      ['moderatorList', 'catalogAccessList', 'linkHitsList', 'ownerShotResults', 'ownerShotStatus'].forEach(id => {
         const list = document.getElementById(id);
         if (list) list.innerHTML = '';
       });
+      ownerShotDrops = [];
     }
 
     // --- Owner tools: the moderator list ---
@@ -8281,6 +8293,140 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       hitsList.innerHTML = hits.error
         ? `<div class="drops-note">${escHtml(friendlyOwnerError(hits.error))}</div>`
         : renderLinkHits(Array.isArray(hits.data) ? hits.data : []);
+    }
+
+    // --- Owner tools: read drop screenshots ---
+    // The same read the admin page does, from the Staff tab, so a batch of
+    // screenshots can be read without leaving the app. The read-drop
+    // function is admin-only server-side; the drafts it returns are handed
+    // to the admin page through localStorage (same origin) for checking
+    // and saving, so nothing is published from here.
+    const SHOT_HANDOFF_KEY = 'almanac_shot_drafts_v1';
+    const OWNER_SHOT_MAX_EDGE = 2048;
+    const OWNER_BUCKET_LABEL = { A_code: 'CODE', B_claim: 'IN-APP CLAIM', C_purchase: 'PURCHASE REQUIRED' };
+    let ownerShotDrops = [];
+
+    // A chosen photo shrunk to a JPEG no larger than OWNER_SHOT_MAX_EDGE on
+    // its long side, as base64, the shape read-drop takes.
+    async function shrinkScreenshot(file) {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, OWNER_SHOT_MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+      canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      if (bitmap.close) bitmap.close();
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+      if (!blob) throw new Error('could not convert ' + file.name);
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+      return String(dataUrl).split(',')[1];
+    }
+
+    function setOwnerShotStatus(msg, isError) {
+      const el = document.getElementById('ownerShotStatus');
+      if (!el) return;
+      el.textContent = msg || '';
+      el.style.color = isError ? 'var(--accent-pink)' : '';
+    }
+
+    async function edgeFunctionErrorText(error) {
+      try {
+        const body = error && error.context && typeof error.context.json === 'function' ? await error.context.json() : null;
+        if (body && body.error) return body.error;
+      } catch (e) {}
+      return (error && error.message) || 'unknown error';
+    }
+
+    async function readOwnerScreenshots() {
+      if (!isOwnerAccount) return;
+      const client = getSupabaseClient();
+      if (!client) return setOwnerShotStatus('Cloud Sync is off or unavailable.', true);
+      const links = (document.getElementById('ownerShotLinks').value.match(/https?:\/\/[^\s<>"')\]]+/gi) || [])
+        .map(u => u.replace(/[.,;]+$/, ''));
+      const files = Array.from(document.getElementById('ownerShotFiles').files || []);
+      const text = document.getElementById('ownerShotText').value.trim();
+      if (!links.length && !files.length) return setOwnerShotStatus('Choose a screenshot or paste a Discord image link.', true);
+      if (links.length + files.length > 4) return setOwnerShotStatus('Up to 4 screenshots at a time.', true);
+      const btn = document.getElementById('ownerShotReadBtn');
+      btn.disabled = true;
+      btn.textContent = 'READING...';
+      ownerShotDrops = [];
+      renderOwnerShotResults();
+      setOwnerShotStatus('Reading the screenshots. This takes a few seconds.');
+      try {
+        const images = links.map(url => ({ url }));
+        for (const file of files) images.push({ data: await shrinkScreenshot(file) });
+        const { data, error } = await client.functions.invoke('read-drop', {
+          body: {
+            images,
+            text,
+            platforms: CATALOG_DATA.map(c => c.name),
+            now: new Date().toISOString(),
+            tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+          }
+        });
+        if (error) return setOwnerShotStatus('Read failed: ' + await edgeFunctionErrorText(error), true);
+        ownerShotDrops = data && Array.isArray(data.drops) ? data.drops : [];
+        const usage = data && data.usage;
+        // Opus 5 list prices: $5 per million input tokens, $25 per million output.
+        const cents = usage ? ((usage.input_tokens * 5 + usage.output_tokens * 25) / 1e6) * 100 : null;
+        const found = ownerShotDrops.length ? `Found ${ownerShotDrops.length} offer${ownerShotDrops.length === 1 ? '' : 's'}.` : 'No offers found.';
+        setOwnerShotStatus(`${found}${data && data.unreadable ? ' ' + data.unreadable : ''}${cents !== null ? ` (about ${cents.toFixed(1)}¢)` : ''}`);
+        if (ownerShotDrops.length) saveShotHandoff();
+        renderOwnerShotResults();
+      } catch (err) {
+        setOwnerShotStatus('Read failed: ' + ((err && err.message) || 'unknown error'), true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'READ WITH CLAUDE';
+      }
+    }
+
+    function renderOwnerShotResults() {
+      const box = document.getElementById('ownerShotResults');
+      const openAll = document.getElementById('ownerShotOpenAllBtn');
+      if (!box) return;
+      if (openAll) openAll.style.display = ownerShotDrops.length ? '' : 'none';
+      if (!ownerShotDrops.length) { box.innerHTML = ''; return; }
+      box.innerHTML = ownerShotDrops.map((d, i) => {
+        const name = d.catalog_match || d.platform_name;
+        const bits = [OWNER_BUCKET_LABEL[d.bucket] || escHtml(d.bucket)];
+        if (d.code) bits.push(escHtml(d.code));
+        if (d.reward) bits.push(escHtml(d.reward));
+        if (d.expires_at) bits.push('ends ' + escHtml(new Date(d.expires_at).toLocaleString()));
+        if (d.is_account_tied) bits.push('account-tied');
+        const unmatched = d.catalog_match ? '' : ' <span class="drop-tag unknown">NOT IN CATALOG</span>';
+        return `
+        <div class="drop-row" style="flex-direction:column; align-items:stretch; gap:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+            <div style="min-width:0;">
+              <div class="drop-name">${escHtml(name)}${unmatched}<span class="shot-conf ${d.confidence === 'low' ? 'low' : ''}">${escHtml(d.confidence)}</span></div>
+              <div class="drop-url">${bits.join(' &bull; ')}</div>
+              ${d.terms ? `<div class="shot-meta">${escHtml(d.terms)}</div>` : ''}
+              ${d.evidence ? `<div class="shot-meta">&ldquo;${escHtml(d.evidence)}&rdquo;</div>` : ''}
+            </div>
+            <button type="button" class="btn-open" style="padding:5px 10px; font-size:0.68rem; flex-shrink:0;" onclick="openDraftInAdmin(${i})">CHECK &amp; SAVE</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function saveShotHandoff() {
+      try { localStorage.setItem(SHOT_HANDOFF_KEY, JSON.stringify({ at: Date.now(), drops: ownerShotDrops })); } catch (e) {}
+    }
+
+    // The admin page picks the drafts up on load and, given ?draft=N,
+    // puts that one straight into its form.
+    function openDraftInAdmin(i) {
+      if (!ownerShotDrops.length) return;
+      saveShotHandoff();
+      const url = 'admin/freebies.html' + (typeof i === 'number' ? `?draft=${i}` : '');
+      window.open(url, '_blank', 'noopener');
     }
 
     function renderAccessReport(rows) {

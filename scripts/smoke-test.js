@@ -679,6 +679,72 @@ const TESTS = [
     'rpc:set_moderator': { data: [{ user_id: 'n', email: 'new.mod@example.com', public_alias: 'Player-3', is_moderator: true }], error: null }
   } }],
 
+  ['the owner reads drop screenshots from the Staff tab and hands the drafts to the admin page', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    await page.waitFor(() => document.getElementById('ownerPanel').style.display === '');
+    await page.waitFor(() => CATALOG_DATA.length > 0);
+    await page.evaluate(() => {
+      document.getElementById('ownerShotLinks').value = 'See https://cdn.discordapp.com/attachments/1/2/shot.png?ex=1&hm=2.';
+      return readOwnerScreenshots();
+    });
+    const read = byType(await page.calls(), 'invoke', 'read-drop')[0];
+    expect(read && read.body.images, [{ url: 'https://cdn.discordapp.com/attachments/1/2/shot.png?ex=1&hm=2' }], 'image link sent, trailing punctuation dropped');
+    expect(read && read.body.platforms.includes('McLuck') && typeof read.body.tz === 'string', true, 'catalogue names and time zone sent');
+    const state = await page.evaluate(() => {
+      const opened = [];
+      window.open = url => { opened.push(url); return null; };
+      openDraftInAdmin(0);
+      return {
+        status: document.getElementById('ownerShotStatus').textContent,
+        rows: document.querySelectorAll('#ownerShotResults .drop-row').length,
+        opened,
+        handoff: JSON.parse(localStorage.getItem('almanac_shot_drafts_v1')).drops.map(d => d.code)
+      };
+    });
+    expect(state.status, 'Found 1 offer. (about 1.8¢)', 'result and cost shown');
+    expect(state.rows, 1, 'draft listed');
+    expect(state.opened, ['admin/freebies.html?draft=0'], 'admin page opened on that draft');
+    expect(state.handoff, ['LUCKY5'], 'draft handed over');
+  }, { answers: {
+    'rpc:is_moderator': { data: true, error: null },
+    'rpc:is_owner': { data: true, error: null },
+    'rpc:list_moderators': { data: [], error: null },
+    'invoke:read-drop': { data: { drops: [{
+      platform_name: 'McLuck Casino', catalog_match: 'McLuck', bucket: 'A_code', code: 'LUCKY5',
+      claim_url: 'https://www.mcluck.com/promo?utm_source=discord', root_domain: 'mcluck.com', reward: '5 SC',
+      expires_at: null, terms: 'New players only', is_account_tied: false, confidence: 'high', evidence: 'Use LUCKY5 for 5 SC'
+    }], unreadable: null, usage: { input_tokens: 2100, output_tokens: 300 } }, error: null }
+  } }],
+
+  ['admin: picks up drafts read in the app and loads the asked-for one', async page => {
+    await page.goto('/admin/freebies.html?draft=0');
+    await page.waitFor(() => document.getElementById('adminApp').style.display === '');
+    await page.waitFor(() => document.getElementById('fPlatform').value === 'McLuck');
+    const state = await page.evaluate(() => ({
+      status: document.getElementById('shotStatus').textContent,
+      rows: document.querySelectorAll('#shotResults .drop-row').length,
+      code: document.getElementById('fCode').value,
+      url: document.getElementById('fClaimUrl').value,
+      heading: document.getElementById('formHeading').textContent,
+      handoff: localStorage.getItem('almanac_shot_drafts_v1')
+    }));
+    expect(state.status, '1 draft read in the app. Load one into the form, check it against the screenshot, then SAVE.', 'handoff announced');
+    expect(state.rows, 1, 'draft listed');
+    expect([state.code, state.url], ['LUCKY5', 'https://www.mcluck.com/promo'], 'draft in the form, tracking stripped');
+    expect(state.heading, 'New Entry (from screenshot - check it)', 'form headed as a screenshot draft');
+    expect(state.handoff, null, 'handoff taken once');
+  }, {
+    localStorage: {
+      __smokeSession: { access_token: 'admin-token', user: { id: 'admin-1', email: 'johndopamine210@gmail.com' } },
+      almanac_shot_drafts_v1: { at: Date.now(), drops: [{
+        platform_name: 'McLuck Casino', catalog_match: 'McLuck', bucket: 'A_code', code: 'LUCKY5',
+        claim_url: 'https://www.mcluck.com/promo?utm_source=discord', root_domain: 'mcluck.com', reward: '5 SC',
+        expires_at: null, terms: 'New players only', is_account_tied: false, confidence: 'high', evidence: 'Use LUCKY5 for 5 SC'
+      }] }
+    }
+  }],
+
   ['a moderator who is not the owner never sees the moderator list', async page => {
     await page.goto('/');
     await signedIn(page);

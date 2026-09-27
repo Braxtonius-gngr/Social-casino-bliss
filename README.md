@@ -206,6 +206,14 @@ is published until you load a draft into the form, check it and SAVE. The
 function is admin-only, fetches images only from Discord's hosts, and costs
 roughly a cent or two per read.
 
+The same read is available inside the app: the owner's Staff tab has a
+**Read drop screenshots** panel that takes screenshots from the device
+(handy on a phone) or Discord links, calls the same function, and lists the
+drafts. **Check & Save** on a draft opens the admin page with that draft in
+its form; the drafts travel through the browser's own storage (same
+origin) and the admin page takes them once. Nothing is published from the
+app itself.
+
 Saving with **On save, alert the users who track this platform** ticked (or
 pressing **NOTIFY** on an entry later) asks the `web-push` function to
 announce it, once per entry. Only devices that turned on Settings →
