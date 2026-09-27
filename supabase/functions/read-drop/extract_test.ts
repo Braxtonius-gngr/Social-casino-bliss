@@ -1,4 +1,4 @@
-import { claudeErrorReply, cleanDrops, discordImageUrl, isDiscordMessageLink, redactPersonal, sniffImageType } from "./extract.ts";
+import { apiErrorMessage, claudeErrorReply, cleanDrops, discordImageUrl, isDiscordMessageLink, redactPersonal, sniffImageType } from "./extract.ts";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -155,7 +155,7 @@ Deno.test("a failed Claude call is explained, not just retried", () => {
   assert(/model/.test(claudeErrorReply(404, "not_found_error", "").error), "model not named");
   const bad = claudeErrorReply(400, "invalid_request_error", "400 image exceeds 5 MB maximum: 6000000 bytes");
   assert(bad.status === 502 && /rejected the request: image exceeds 5 MB maximum/.test(bad.error), "400 detail dropped");
-  assert(claudeErrorReply(400, "invalid_request_error", "x".repeat(400)).error.length < 300, "400 detail not trimmed");
+  assert(claudeErrorReply(400, "invalid_request_error", "x".repeat(400)).error.length < 350, "400 detail not trimmed");
   assert(claudeErrorReply(429, "rate_limit_error", "").status === 503, "429 not retryable");
   assert(claudeErrorReply(529, "overloaded_error", "").status === 503, "529 not retryable");
   assert(claudeErrorReply(500, "api_error", "").status === 503, "500 not retryable");
@@ -163,4 +163,25 @@ Deno.test("a failed Claude call is explained, not just retried", () => {
   assert(claudeErrorReply(undefined, undefined, "Request was aborted.").status === 503, "deadline abort not retryable");
   const other = claudeErrorReply(418, null, "");
   assert(other.status === 502 && /\(418\)/.test(other.error), "unknown status not passed through");
+});
+
+Deno.test("a key or workspace problem reads as setup, with the API's own sentence", () => {
+  // The body Anthropic sent for a key linked to a person rather than a workspace.
+  const body = {
+    type: "error",
+    error: {
+      type: "invalid_request_error",
+      message: "This API key is not scoped to a workspace, so this request must include the anthropic-workspace-id header with the ID of the workspace to use.",
+    },
+  };
+  const sentence = apiErrorMessage(body, JSON.stringify(body));
+  assert(sentence.startsWith("This API key is not scoped"), "inner message not extracted");
+  assert(apiErrorMessage(null, "fallback") === "fallback", "missing body not handled");
+  assert(apiErrorMessage({ error: { message: "  " } }, "fallback") === "fallback", "blank message not handled");
+  const reply = claudeErrorReply(400, "invalid_request_error", sentence);
+  assert(reply.status === 500 && /ANTHROPIC_API_KEY as it is set up/.test(reply.error), "workspace error not treated as setup");
+  assert(/workspace to use\. Fix the key/.test(reply.error), "API sentence not kept whole");
+  assert(!/screenshots/.test(reply.error) && !/\{/.test(reply.error), "screenshot hint or raw JSON shown");
+  const plain = claudeErrorReply(400, "invalid_request_error", "max_tokens: must be at most 128000.");
+  assert(plain.status === 502 && !/screenshots/.test(plain.error) && !/\.\./.test(plain.error), "non-image 400 misworded");
 });

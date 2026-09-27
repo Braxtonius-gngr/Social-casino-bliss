@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import Anthropic from "npm:@anthropic-ai/sdk@0.128.0";
 import {
+  apiErrorMessage,
   claudeErrorReply,
   cleanDrops,
   discordImageUrl,
@@ -206,9 +207,6 @@ serve(async (req) => {
   // The deadline signal bounds every attempt and every wait between them.
   const anthropic = new Anthropic({ apiKey, maxRetries: 1 });
   const budget = Math.max(1_000, REPLY_DEADLINE_MS - (Date.now() - started));
-  // The SDK's defaults (ten minutes, two retries) outlast the edge runtime's
-  // own limit, which would end a stalled read as a bare gateway timeout.
-  const anthropic = new Anthropic({ apiKey, timeout: 90_000, maxRetries: 0 });
   let response: Anthropic.Beta.BetaMessage;
   try {
     // fallbacks: "default" re-runs a request a safety classifier declines on
@@ -230,7 +228,7 @@ serve(async (req) => {
     // sorts every case, from a rejected key to an overload.
     if (err instanceof Anthropic.APIError) {
       console.error("read-drop: Claude API error", err.status, err.type, err.message);
-      const reply = claudeErrorReply(err.status, err.type, err.message);
+      const reply = claudeErrorReply(err.status, err.type, apiErrorMessage(err.error, err.message));
       return jsonResponse({ error: reply.error }, reply.status, cors);
     }
     throw err;
