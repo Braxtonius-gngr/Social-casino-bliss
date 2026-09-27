@@ -4,13 +4,15 @@ import {
   RateLimiter,
   addressKey,
   clientAddress,
+  launchTokenFrom,
   plainResponse,
   platformNameFrom,
   redirectResponse,
   safeDestination,
 } from "./redirect.ts";
 
-// GET /go?p=<platform name> -> 302 to that platform's launch link.
+// GET /go?p=<platform name>[&via=<launch token>] -> 302 to that
+// platform's launch link.
 //
 // The catalogue the browser holds carries each platform's plain address;
 // the referral links live in platform_links and only ever leave the
@@ -18,6 +20,11 @@ import {
 // the point of a referral link), so the protection is rate: a person
 // opens a handful of platforms a day, a harvester wants all of them at
 // once. Every follow is counted per platform for the owner's report.
+//
+// `via` is a launch token a Pro viewer holds for a shared list. The
+// database decides whether the sharer's own link applies to this click
+// (both Pro, not the sharer's own account, under the monthly cap); when
+// it does not, the house link is used as for anyone else.
 //
 // The limit is kept in the database (allow_link_request), shared by every
 // isolate serving this function. The in-memory limiter below is only the
@@ -65,8 +72,20 @@ serve(async (req) => {
     console.error("platform_links lookup failed:", error.message);
     return plainResponse(503, "The link service is unavailable right now.");
   }
-  const destination = safeDestination(data?.launch_url);
-  if (!data || !destination) return plainResponse(404, "No such platform in the catalogue.");
+  const houseDestination = safeDestination(data?.launch_url);
+  if (!data || !houseDestination) return plainResponse(404, "No such platform in the catalogue.");
+
+  let destination = houseDestination;
+  const via = launchTokenFrom(new URL(req.url));
+  if (via) {
+    try {
+      const { data: shared, error: sharedError } = await supabase.rpc("resolve_shared_link", { p_token: via, p_name_key: name });
+      if (sharedError) throw sharedError;
+      destination = safeDestination(typeof shared === "string" ? shared : null) ?? houseDestination;
+    } catch (err) {
+      console.warn("resolve_shared_link failed, using the house link:", err);
+    }
+  }
 
   // Counted after the lookup so unknown names never create rows. A failed
   // count must not cost the player their redirect, but it is logged: the
