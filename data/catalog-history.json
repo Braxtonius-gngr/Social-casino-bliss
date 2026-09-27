@@ -202,6 +202,7 @@
       "date": "2026-09-27",
       "changed": [
         "tier",
+        "dailySC",
         "cashFloor"
       ],
       "from": {
@@ -211,10 +212,10 @@
         "daysToRedeem": 100
       },
       "to": {
-        "tier": "B",
-        "dailySC": 0.5,
+        "tier": "Not Rankable",
+        "dailySC": null,
         "cashFloor": 75,
-        "daysToRedeem": 150
+        "daysToRedeem": null
       }
     },
     {
@@ -647,6 +648,27 @@
       "to": {
         "tier": "Unranked",
         "dailySC": 0.45,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Daruma Casino": [
+    {
+      "date": "2026-09-27",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
         "cashFloor": null,
         "daysToRedeem": null
       }
