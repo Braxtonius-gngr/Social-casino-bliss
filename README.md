@@ -232,12 +232,16 @@ backups remain disabled until a durable external runner is provisioned.
 
 ### Stripe configuration
 
-1. Create a Stripe product named **Daily Roll Over Pro**.
-2. Create a recurring monthly price of **$4.99 USD** and store its ID as
-   `STRIPE_PRICE_ID_PRO_MONTHLY`.
-3. Optionally create a **$45.00 USD/year** price and store its ID as
-   `STRIPE_PRICE_ID_PRO_ANNUAL`.
-4. Enable Stripe Customer Portal with cancellation and payment-method updates.
+1. Create two products (type: service), each with the statement descriptor
+   **DAILYROLLOVER PRO** and a plain description of what Pro is:
+   - **Daily Roll Over Pro (Monthly)**: a recurring price of **$4.99 USD/month**;
+     store its ID as `STRIPE_PRICE_ID_PRO_MONTHLY`.
+   - **Daily Roll Over Pro (Annual)**: a recurring price of **$49.90 USD/year**
+     (two months free); store its ID as `STRIPE_PRICE_ID_PRO_ANNUAL`.
+   Keep product names and descriptions literal: no nicknames or slang. Stripe
+   reviews them when the account goes live.
+2. Enable the Stripe Customer Portal: cancel at period end, payment-method
+   updates, invoice history, and links to `/terms.html` and `/privacy.html`.
 
 ### Supabase deployment
 
@@ -262,9 +266,55 @@ supabase functions deploy stripe-webhook
 Register the webhook at
 `https://<project-ref>.supabase.co/functions/v1/stripe-webhook` for:
 
+- `checkout.session.completed` (unlocks Pro the moment checkout finishes)
 - `customer.subscription.created`
 - `customer.subscription.updated`
 - `customer.subscription.deleted`
+
+### Going live (test keys to live keys)
+
+One Supabase project serves both modes, so changing the four Stripe secrets
+moves every account at once. Do these in order:
+
+1. **Before activating:** the Terms page states the refund policy, and
+   `support@dailyrollover.com` receives mail (for example, Cloudflare Email
+   Routing forwarding it to a personal inbox).
+2. **Activate the Stripe account** in the dashboard (business details, bank
+   account, identity). Describe the business as it is: subscription software.
+   Daily Roll Over is a daily-bonus tracker and reminder app for people who
+   use sweepstakes casinos. It does not run games, take entries, hold deposits
+   or pay prizes; Pro is a monthly or annual software subscription.
+3. **Products:** on each product in test mode, use *Copy to live mode*. Check
+   the names, the prices ($4.99/month, $49.90/year) and the statement
+   descriptor, then note the two live price IDs.
+4. **Customer Portal:** configure it again in live mode (test and live settings
+   are separate) as in *Stripe configuration* above.
+5. **Webhook:** add a live endpoint at the same URL with the four events above,
+   and copy its signing secret.
+6. **Secrets:** set `STRIPE_SECRET_KEY` (`sk_live_...`),
+   `STRIPE_WEBHOOK_SECRET` (the live endpoint's), and both
+   `STRIPE_PRICE_ID_PRO_*` to the live price IDs, then redeploy the three
+   billing functions.
+7. **Test-mode endpoint:** disable it. Its events now fail the live signature
+   check.
+8. **Leftovers from testing:** the checkout and portal functions treat
+   customer and subscription IDs saved in test mode as absent, so an account
+   that tested checkout can still buy for real. A test Pro period keeps its
+   entitlement until its `current_period_end`. To end those at once instead,
+   run this right after the switch, with the switch time filled in:
+
+   ```sql
+   update public.user_subscriptions
+   set tier = 'free', status = 'canceled', stripe_customer_id = null,
+       stripe_subscription_id = null, current_period_end = null,
+       cancel_at_period_end = false
+   where stripe_customer_id is not null
+     and updated_at < '<switch time, UTC>';
+   ```
+
+9. **A real purchase:** buy the monthly plan with a real card, confirm Pro
+   unlocks, open Manage Billing and cancel, then refund the charge from the
+   dashboard.
 
 The client reads entitlements through `get_my_entitlement()` and fails closed
 to Free when the account is anonymous, expired, offline, or unavailable. Stripe

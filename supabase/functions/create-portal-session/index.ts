@@ -74,10 +74,21 @@ serve(async (req) => {
     if (lookupError) throw lookupError;
     if (!subscription?.stripe_customer_id) throw new Error("No billing customer profile found.");
 
-    const session = await stripe.billingPortal.sessions.create({
-      customer: subscription.stripe_customer_id,
-      return_url: returnUrl,
-    });
+    let session: Stripe.BillingPortal.Session;
+    try {
+      session = await stripe.billingPortal.sessions.create({
+        customer: subscription.stripe_customer_id,
+        return_url: returnUrl,
+      });
+    } catch (error) {
+      // A customer saved while the app ran on Stripe test keys doesn't
+      // exist under live keys: there is no real billing to manage.
+      const e = error as { code?: string; raw?: { code?: string } } | null;
+      if (e?.code === "resource_missing" || e?.raw?.code === "resource_missing") {
+        return jsonResponse({ error: "There's no billing to manage on this account yet. Upgrade to start a subscription." }, 404, cors);
+      }
+      throw error;
+    }
     return new Response(JSON.stringify({ url: session.url }), {
       status: 200,
       headers: { ...cors, "Content-Type": "application/json" },

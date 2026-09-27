@@ -35,6 +35,15 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Checkout creation failed.";
 }
 
+// A stored Stripe id can belong to the other Stripe mode: once the app
+// moves from test to live keys, the customer and subscription ids saved
+// while testing don't exist any more. Such an id counts as absent - never
+// as an error the account can't get past.
+function isMissing(error: unknown): boolean {
+  const e = error as { code?: string; statusCode?: number; raw?: { code?: string } } | null;
+  return e?.code === "resource_missing" || e?.raw?.code === "resource_missing" || e?.statusCode === 404;
+}
+
 function jsonResponse(body: Record<string, unknown>, status: number, cors: Record<string, string>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -151,27 +160,49 @@ serve(async (req) => {
     // so a stale client that still shows "Upgrade" must not double-bill.
     // Asks Stripe rather than trusting our row, which lags a missed webhook.
     if (existing?.stripe_subscription_id) {
-      const current = await stripe.subscriptions.retrieve(existing.stripe_subscription_id);
-      if (["active", "trialing", "past_due", "unpaid"].includes(current.status)) {
+      let current: Stripe.Subscription | null = null;
+      try {
+        current = await stripe.subscriptions.retrieve(existing.stripe_subscription_id);
+      } catch (error) {
+        if (!isMissing(error)) throw error;
+      }
+      if (current && ["active", "trialing", "past_due", "unpaid"].includes(current.status)) {
         return jsonResponse({
           error: "This account already has a Pro subscription. Use Manage Billing to update or cancel it.",
         }, 409, cors);
       }
     }
 
-    let customerId = existing?.stripe_customer_id;
+    let customerId: string | undefined = existing?.stripe_customer_id ?? undefined;
+    if (customerId) {
+      try {
+        const found = await stripe.customers.retrieve(customerId);
+        if ((found as Stripe.DeletedCustomer).deleted) customerId = undefined;
+      } catch (error) {
+        if (!isMissing(error)) throw error;
+        customerId = undefined;
+      }
+      if (!customerId) console.warn("Stored Stripe customer is gone or from the other mode; making a new one.", { userId: user.id });
+    }
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: email,
         metadata: { supabase_uid: user.id },
       });
       customerId = customer.id;
-      const { error: saveError } = await supabase.from("user_subscriptions").upsert({
-        user_id: user.id,
-        stripe_customer_id: customerId,
-        tier: "free",
-        status: "active",
-      });
+      // A new account gets a free row; an existing row only has its Stripe
+      // ids replaced, so its tier (owner, or a Pro period still running)
+      // is left for the webhook to change.
+      const { error: saveError } = existing
+        ? await supabase.from("user_subscriptions")
+          .update({ stripe_customer_id: customerId, stripe_subscription_id: null, updated_at: new Date().toISOString() })
+          .eq("user_id", user.id)
+        : await supabase.from("user_subscriptions").upsert({
+          user_id: user.id,
+          stripe_customer_id: customerId,
+          tier: "free",
+          status: "active",
+        });
       if (saveError) throw saveError;
     }
 
