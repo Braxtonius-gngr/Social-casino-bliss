@@ -137,7 +137,7 @@ export function claudeErrorReply(
     return { status: 503, error: "Anthropic's rate limit was hit. Try again in a minute." };
   }
   if (status === undefined) {
-    return { status: 503, error: "Claude didn't answer in time. Try again." };
+    return { status: 503, error: "Claude didn't answer in time, or couldn't be reached. Try again." };
   }
   if (status >= 500 || kind === "overloaded_error") {
     return { status: 503, error: "Claude is overloaded right now. Try again in a minute." };
