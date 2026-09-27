@@ -49,6 +49,48 @@ function isMissing(error: unknown): boolean {
 // stale view. The page shows this and refreshes the account's status.
 const BILLING_CHANGED = "Your billing details just changed. Please try again.";
 
+// A customer this request made but couldn't save to the account is never
+// used: delete it rather than leave it unattached in Stripe.
+async function discardCustomer(customerId: string) {
+  try {
+    await stripe.customers.del(customerId);
+  } catch (error) {
+    console.warn("Couldn't delete an unused Stripe customer.", { customerId, error: errorMessage(error) });
+  }
+}
+
+// A subscription starts when a checkout session is paid, which can be long
+// after it was made: an earlier tab left open could still be paid after a
+// newer checkout, and the checks a checkout starts with only see
+// subscriptions that already exist. So once a new session exists, this
+// customer's older open ones are expired. Sessions from the last minute
+// are kept, so a double tap can't expire the page the first tap is already
+// opening. Stripe's "limit customers to one subscription" setting guards
+// the payment itself (see README). Best-effort: a failure here never
+// blocks this checkout.
+const KEEP_RECENT_SESSIONS_SECONDS = 60;
+
+async function expireOlderOpenSessions(customerId: string, current: Stripe.Checkout.Session) {
+  try {
+    const older = await stripe.checkout.sessions.list({
+      customer: customerId,
+      status: "open",
+      created: { lt: current.created - KEEP_RECENT_SESSIONS_SECONDS },
+      limit: 100,
+    });
+    for (const session of older.data) {
+      if (session.id === current.id) continue;
+      try {
+        await stripe.checkout.sessions.expire(session.id);
+      } catch (error) {
+        console.warn("Couldn't expire an older checkout session.", { sessionId: session.id, error: errorMessage(error) });
+      }
+    }
+  } catch (error) {
+    console.warn("Couldn't list older checkout sessions.", { customerId, error: errorMessage(error) });
+  }
+}
+
 function jsonResponse(body: Record<string, unknown>, status: number, cors: Record<string, string>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -220,8 +262,11 @@ serve(async (req) => {
           ? replace.eq("stripe_customer_id", existing.stripe_customer_id)
           : replace.is("stripe_customer_id", null);
         const { data: replaced, error: saveError } = await replace.select("user_id");
-        if (saveError) throw saveError;
-        if (!replaced?.length) return jsonResponse({ error: BILLING_CHANGED }, 409, cors);
+        if (saveError || !replaced?.length) {
+          await discardCustomer(customerId);
+          if (saveError) throw saveError;
+          return jsonResponse({ error: BILLING_CHANGED }, 409, cors);
+        }
       } else {
         const { error: saveError } = await supabase.from("user_subscriptions").upsert({
           user_id: user.id,
@@ -229,7 +274,10 @@ serve(async (req) => {
           tier: "free",
           status: "active",
         });
-        if (saveError) throw saveError;
+        if (saveError) {
+          await discardCustomer(customerId);
+          throw saveError;
+        }
       }
     }
 
@@ -248,6 +296,7 @@ serve(async (req) => {
       metadata: { supabase_uid: user.id },
       subscription_data: { metadata: { supabase_uid: user.id } },
     });
+    await expireOlderOpenSessions(customerId, session);
 
     console.log("Checkout session created:", { userId: user.id, hasEmail: !!email, priceId: targetPriceId });
     return new Response(JSON.stringify({ url: session.url }), {
