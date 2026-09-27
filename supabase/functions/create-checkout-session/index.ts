@@ -49,8 +49,8 @@ function isMissing(error: unknown): boolean {
 // stale view. The page shows this and refreshes the account's status.
 const BILLING_CHANGED = "Your billing details just changed. Please try again.";
 
-// Another checkout for the account started in the same second, and its
-// page is the one left to pay.
+// Another checkout for the account started while this one was being made,
+// and its page is the one left to pay.
 const CHECKOUT_ELSEWHERE = "A checkout for this account just started in another tab or window. Finish it there, or try again.";
 
 // A customer this request made that the account's row turned down (another
@@ -77,13 +77,14 @@ async function discardCustomer(customerId: string) {
 // A subscription starts when a checkout session is paid, which can be long
 // after it was made: an earlier tab left open could still be paid after a
 // newer checkout, and the checks a checkout starts with only see
-// subscriptions that already exist. So once a new session exists, the
-// customer's open sessions up to it are ranked, newest first, and all but
-// the first are expired: the newest checkout page is the only one left to
-// pay. Two made in the same second rank by id, so every request ranks them
-// the same way and they agree on which one stays. If another session
-// outranks this request's own, its own is expired too and its URL isn't
-// handed out (the caller answers 409). Stripe's "limit customers to one
+// subscriptions that already exist. So once a new session exists, all of
+// the customer's open sessions are ranked, newest first, and all but the
+// first are expired: the newest checkout page is the only one left to pay.
+// Two made in the same second rank by id, so every request ranks them the
+// same way and they agree on which one stays. If another session outranks
+// this request's own (a newer one, or a same-second one with a higher id),
+// its own is expired too and its URL isn't handed out (the caller answers
+// 409). That holds even when the other request's cleanup failed. Stripe's "limit customers to one
 // subscription" setting guards the payment itself (see README).
 // Best-effort and bounded: it gets a few seconds, each Stripe call gives up
 // when they run out, and if listing fails this request's session stays.
@@ -110,7 +111,6 @@ async function keepNewestOpenSession(customerId: string, current: Stripe.Checkou
       const page = await stripe.checkout.sessions.list({
         customer: customerId,
         status: "open",
-        created: { lte: current.created },
         limit: 100,
         ...(startingAfter ? { starting_after: startingAfter } : {}),
       }, bestEffort(remaining()));
