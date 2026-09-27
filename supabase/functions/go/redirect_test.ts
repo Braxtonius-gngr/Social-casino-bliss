@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
-import { RateLimiter, clientAddress, platformNameFrom, redirectResponse, safeDestination } from "./redirect.ts";
+import { RateLimiter, addressKey, clientAddress, platformNameFrom, redirectResponse, safeDestination } from "./redirect.ts";
 
 Deno.test("platformNameFrom reads, trims and lowercases the name", () => {
   assertEquals(platformNameFrom(new URL("https://x/go?p=McLuck")), "mcluck");
@@ -21,10 +21,19 @@ Deno.test("RateLimiter allows the limit per window, then refuses, then resets", 
   assertEquals(limiter.allow("a", 1000), true, "a new window starts");
 });
 
-Deno.test("clientAddress prefers the first forwarded address", () => {
-  const req = new Request("https://x/go", { headers: { "x-forwarded-for": "203.0.113.9, 10.0.0.1" } });
-  assertEquals(clientAddress(req), "203.0.113.9");
+Deno.test("clientAddress trusts Cloudflare's header, then the proxy-appended forwarded entry", () => {
+  const both = new Request("https://x/go", { headers: { "cf-connecting-ip": "198.51.100.7", "x-forwarded-for": "1.2.3.4, 203.0.113.9" } });
+  assertEquals(clientAddress(both), "198.51.100.7");
+  const forwarded = new Request("https://x/go", { headers: { "x-forwarded-for": "1.2.3.4, 203.0.113.9" } });
+  assertEquals(clientAddress(forwarded), "203.0.113.9", "the client-supplied first entry is ignored");
   assertEquals(clientAddress(new Request("https://x/go")), "unknown");
+});
+
+Deno.test("addressKey is a stable hash, not the address", async () => {
+  const key = await addressKey("203.0.113.9");
+  assertEquals(key.length, 64);
+  assertEquals(key.includes("203"), false);
+  assertEquals(await addressKey("203.0.113.9"), key);
 });
 
 Deno.test("safeDestination follows only http(s)", () => {

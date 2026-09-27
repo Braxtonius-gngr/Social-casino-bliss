@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import {
   RateLimiter,
+  addressKey,
   clientAddress,
   plainResponse,
   platformNameFrom,
@@ -17,8 +18,27 @@ import {
 // the point of a referral link), so the protection is rate: a person
 // opens a handful of platforms a day, a harvester wants all of them at
 // once. Every follow is counted per platform for the owner's report.
+//
+// The limit is kept in the database (allow_link_request), shared by every
+// isolate serving this function. The in-memory limiter below is only the
+// fallback if that call fails, so a database hiccup degrades to
+// per-isolate limiting rather than to none.
 const LIMIT_PER_MINUTE = 30;
-const limiter = new RateLimiter(LIMIT_PER_MINUTE, 60_000);
+const localLimiter = new RateLimiter(LIMIT_PER_MINUTE, 60_000);
+
+async function allowed(address: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc("allow_link_request", {
+      p_key_hash: await addressKey(address),
+      p_limit: LIMIT_PER_MINUTE,
+    });
+    if (error) throw error;
+    if (typeof data === "boolean") return data;
+  } catch (err) {
+    console.warn("allow_link_request unavailable, limiting per isolate:", err);
+  }
+  return localLimiter.allow(address);
+}
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -32,7 +52,7 @@ serve(async (req) => {
   }
   const name = platformNameFrom(new URL(req.url));
   if (!name) return plainResponse(400, "Which platform? Add ?p=<platform name>.");
-  if (!limiter.allow(clientAddress(req))) {
+  if (!(await allowed(clientAddress(req)))) {
     return plainResponse(429, "Too many link requests from this address. Try again in a minute.");
   }
 

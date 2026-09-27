@@ -38,10 +38,22 @@ export class RateLimiter {
   }
 }
 
+// The client's address as the platform saw it. Cloudflare sets
+// cf-connecting-ip itself and overwrites anything the client sent; failing
+// that, the LAST x-forwarded-for entry is the one the nearest proxy
+// appended, while the first is whatever the client claimed.
 export function clientAddress(req: Request): string {
-  const forwarded = req.headers.get("x-forwarded-for") ?? "";
-  const first = forwarded.split(",")[0].trim();
-  return first || req.headers.get("cf-connecting-ip") || "unknown";
+  const cf = (req.headers.get("cf-connecting-ip") ?? "").trim();
+  if (cf) return cf;
+  const forwarded = (req.headers.get("x-forwarded-for") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  return forwarded[forwarded.length - 1] || "unknown";
+}
+
+// What the shared limiter stores: a hash, never the address.
+export async function addressKey(address: string): Promise<string> {
+  const bytes = new TextEncoder().encode(`go:${address}`);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 // Only http(s) destinations are ever followed, whatever the table holds.

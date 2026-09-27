@@ -35,10 +35,6 @@ const SKIP_FILES = new Set([
 // the bootstrap script.
 const isSkippedDataFile = rel => rel.startsWith('data' + path.sep) && rel.endsWith('.json');
 
-// Pages whose inline scripts get minified. Other HTML (the generated
-// platform pages) carries no inline JavaScript worth touching.
-const INLINE_SCRIPT_PAGES = new Set(['index.html', path.join('admin', 'freebies.html')]);
-
 const TERSER_OPTIONS = {
   ecma: 2020,
   compress: { passes: 2 },
@@ -113,7 +109,7 @@ async function main() {
       scripts++;
       before += code.length;
       after += minified.length;
-    } else if (INLINE_SCRIPT_PAGES.has(rel)) {
+    } else if (rel.endsWith('.html')) {
       const html = fs.readFileSync(src, 'utf8');
       const result = await minifyInlineScripts(html, rel);
       fs.writeFileSync(dest, result.html);

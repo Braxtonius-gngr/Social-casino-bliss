@@ -181,7 +181,7 @@ the drop from the public feed and opens Freebies when tapped.
 Setup, once:
 
 ```bash
-supabase db push                                  # drop_alerts, owner_tier, least_privilege, catalog_service
+supabase db push                                  # drop_alerts, owner_tier, least_privilege, catalog_service, rollup_view_and_link_rate
 supabase secrets set ANTHROPIC_API_KEY="sk-ant-..."
 supabase functions deploy read-drop
 supabase functions deploy web-push

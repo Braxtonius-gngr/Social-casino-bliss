@@ -25,7 +25,10 @@ let CATALOG_BOOTSTRAP_VERSION = null;
   } catch (error) {
     console.warn('Could not read the cached catalogue:', error.message);
   }
-  if (!raw) return;
+  // A saved copy with no version predates the served catalogue: it still
+  // carries the platforms' referral links. It is not put back on screen;
+  // the first refresh replaces it.
+  if (!raw || !version) return;
   let parsed = null;
   try {
     parsed = JSON.parse(raw);
