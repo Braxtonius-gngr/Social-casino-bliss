@@ -31,6 +31,10 @@ const allowedOrigins = new Set([
 ]);
 const ADMIN_EMAIL = "johndopamine210@gmail.com";
 const MODEL = "claude-opus-5";
+// Supabase answers 504 on its own when a function sends nothing for 150 s.
+// The Claude call, retries and retry waits included, ends this long after
+// the request arrived, so the admin gets a real message instead.
+const REPLY_DEADLINE_MS = 135_000;
 
 function corsHeaders(req: Request) {
   const origin = req.headers.get("Origin") ?? "";
@@ -137,6 +141,7 @@ async function loadImage(item: unknown, index: number): Promise<{ media_type: Im
 }
 
 serve(async (req) => {
+  const started = Date.now();
   const cors = corsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, cors);
@@ -197,6 +202,10 @@ serve(async (req) => {
     },
   ];
 
+  // A quick failure (an overload, a dropped connection) is retried once.
+  // The deadline signal bounds every attempt and every wait between them.
+  const anthropic = new Anthropic({ apiKey, maxRetries: 1 });
+  const budget = Math.max(1_000, REPLY_DEADLINE_MS - (Date.now() - started));
   // The SDK's defaults (ten minutes, two retries) outlast the edge runtime's
   // own limit, which would end a stalled read as a bare gateway timeout.
   const anthropic = new Anthropic({ apiKey, timeout: 90_000, maxRetries: 0 });
@@ -215,7 +224,7 @@ serve(async (req) => {
       system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
       output_config: { effort: "low", format: { type: "json_schema", schema: DROP_SCHEMA } },
       messages: [{ role: "user", content }],
-    });
+    }, { signal: AbortSignal.timeout(budget) });
   } catch (err) {
     // A connection failure is an APIError with no status; claudeErrorReply
     // sorts every case, from a rejected key to an overload.

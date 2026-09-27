@@ -160,6 +160,7 @@ Deno.test("a failed Claude call is explained, not just retried", () => {
   assert(claudeErrorReply(529, "overloaded_error", "").status === 503, "529 not retryable");
   assert(claudeErrorReply(500, "api_error", "").status === 503, "500 not retryable");
   assert(/didn't answer/.test(claudeErrorReply(undefined, null, "Connection error.").error), "network not named");
+  assert(claudeErrorReply(undefined, undefined, "Request was aborted.").status === 503, "deadline abort not retryable");
   const other = claudeErrorReply(418, null, "");
   assert(other.status === 502 && /\(418\)/.test(other.error), "unknown status not passed through");
 });
