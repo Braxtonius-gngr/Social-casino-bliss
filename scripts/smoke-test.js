@@ -513,6 +513,142 @@ const TESTS = [
     expect(await page.evaluate(() => loadSyncOutbox().length), 0, 'outbox emptied');
   }],
 
+  ['daily run opens first and ignores accidental double confirm', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    await page.evaluate(() => startDailyRun());
+    expect(await page.evaluate(() => Array.from(document.querySelectorAll('#runActions button')).map(btn => btn.textContent.trim())), ['OPEN SITE', 'CONFIRM COLLECTED', 'Skip this one'], 'daily run labels separate open from confirm');
+    const opened = await page.evaluate(() => {
+      openCurrentDailyRun();
+      return {
+        index: dailyRunIndex,
+        collected: dailyRunStats.collected,
+        history: collectionHistory.length,
+        lastCollected: trackedGames.map(g => g.lastCollected || 0)
+      };
+    });
+    expect(opened.index, 0, 'opening alone keeps the current run step');
+    expect(opened.collected, 0, 'opening alone does not increment collected');
+    expect(opened.history, 0, 'opening alone does not log collection history');
+    expect(opened.lastCollected, [0, 0], 'opening alone leaves both timers untouched');
+    const after = await page.evaluate(() => {
+      collectCurrentDailyRun();
+      collectCurrentDailyRun();
+      return {
+        index: dailyRunIndex,
+        collected: dailyRunStats.collected,
+        history: collectionHistory.length,
+        lastCollected: trackedGames.map(g => g.lastCollected > 0),
+        undo: document.getElementById('runUndoText').textContent
+      };
+    });
+    expect(after.index, 1, 'double confirm advances at most once');
+    expect(after.collected, 1, 'double confirm records at most once');
+    expect(after.history, 1, 'double confirm adds one history entry');
+    expect(after.lastCollected, [true, false], 'only the first platform is confirmed');
+    expect(after.undo, 'Alpha Casino confirmed collected', 'undo bar names the confirmed platform');
+  }, {
+    localStorage: {
+      almanac_show_landing: 'false',
+      almanac_tour_completed: 'true',
+      almanac_email_gate_passed_v1: 'true',
+      the_casino_almanac_v7: [
+        {
+          id: 'alpha', name: 'Alpha Casino', url: 'https://alpha.example', tier: 'A', dailySC: 0.5,
+          speedHours: 24, reliability: 90, hasLive: false, minRedeem: '50 SC', notes: '', referralUrl: '',
+          cooldownHours: 24, lastCollected: 0
+        },
+        {
+          id: 'bravo', name: 'Bravo Casino', url: 'https://bravo.example', tier: 'A', dailySC: 0.25,
+          speedHours: 24, reliability: 90, hasLive: false, minRedeem: '50 SC', notes: '', referralUrl: '',
+          cooldownHours: 24, lastCollected: 0
+        }
+      ]
+    }
+  }],
+
+  ['daily run gate cancel leaves no record and a successful retry confirms once', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    await page.evaluate(() => startDailyRun());
+    await page.evaluate(() => collectCurrentDailyRun());
+    await page.waitFor(() => document.getElementById('emailGateModal').classList.contains('open'));
+    let state = await page.evaluate(() => ({
+      index: dailyRunIndex,
+      collected: dailyRunStats.collected,
+      history: collectionHistory.length,
+      lastCollected: trackedGames[0].lastCollected || 0
+    }));
+    expect(state, { index: 0, collected: 0, history: 0, lastCollected: 0 }, 'gate intercept leaves the run untouched');
+    await page.evaluate(() => cancelEmailGate());
+    state = await page.evaluate(() => ({
+      open: document.getElementById('emailGateModal').classList.contains('open'),
+      index: dailyRunIndex,
+      collected: dailyRunStats.collected,
+      history: collectionHistory.length,
+      lastCollected: trackedGames[0].lastCollected || 0
+    }));
+    expect(state, { open: false, index: 0, collected: 0, history: 0, lastCollected: 0 }, 'cancel leaves no collection, cooldown, or advancement behind');
+    await page.evaluate(() => collectCurrentDailyRun());
+    await page.waitFor(() => document.getElementById('emailGateModal').classList.contains('open'));
+    state = await page.evaluate(async () => {
+      document.getElementById('emailGateInput').value = 'runner@example.com';
+      await submitEmailGate();
+      return {
+        index: dailyRunIndex,
+        collected: dailyRunStats.collected,
+        history: collectionHistory.length,
+        gatePassed: localStorage.getItem('almanac_email_gate_passed_v1'),
+        lastCollected: trackedGames[0].lastCollected > 0
+      };
+    });
+    expect(state, { index: 1, collected: 1, history: 1, gatePassed: 'true', lastCollected: true }, 'successful retry confirms once and advances once');
+    expect(byType(await page.calls(), 'auth', 'updateUser').length, 1, 'email link submitted once');
+  }, {
+    localStorage: (() => {
+      const seed = JSON.parse(JSON.stringify(SEED));
+      delete seed.almanac_email_gate_passed_v1;
+      return seed;
+    })()
+  }],
+
+  ['recomputes readiness on focus and keeps cooldown boundaries deterministic', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    const before = await page.evaluate(() => {
+      const rollingNow = Date.parse('2026-03-08T08:59:00Z');
+      Date.now = () => rollingNow;
+      serverTimeOffsetMs = 0;
+      serverTimeMeasuredAt = rollingNow;
+      trackedGames[0].lastCollected = rollingNow - (24 * 3600000) + 60000;
+      renderGames();
+      updateDailyRunButton();
+      return {
+        button: document.getElementById('btnStartDailyRun').textContent,
+        rolling: getCooldownState({ cooldownHours: 24, lastCollected: rollingNow - (24 * 3600000) + 60000 }, rollingNow),
+        fixedUtc: getCooldownState({ resetHour: 5, resetTZ: 'UTC', lastCollected: Date.parse('2026-03-07T06:00:00Z') }, Date.parse('2026-03-08T04:59:00Z')),
+        fixedDst: getCooldownState({ resetHour: 5, resetTZ: 'America/New_York', lastCollected: Date.parse('2026-03-07T12:00:00Z') }, rollingNow)
+      };
+    });
+    expect(before.button, 'NO CARDS READY', 'button reflects a not-yet-ready platform');
+    expect(before.rolling.isReady, false, 'rolling cooldown stays locked one minute early');
+    expect(before.rolling.remainingMs, 60000, 'rolling cooldown reports one minute remaining');
+    expect(before.fixedUtc.remainingMs, 60000, 'fixed UTC reset reports one minute remaining');
+    expect(before.fixedDst.remainingMs, 60000, 'fixed ET reset stays aligned through DST');
+    await page.evaluate(() => {
+      const readyNow = Date.parse('2026-03-08T09:00:00Z');
+      Date.now = () => readyNow;
+      serverTimeMeasuredAt = readyNow;
+      window.dispatchEvent(new Event('focus'));
+    });
+    await page.waitFor(() => document.getElementById('btnStartDailyRun').textContent === 'DEAL YOUR HAND (1 READY)');
+    const after = await page.evaluate(() => ({
+      rollingReady: getCooldownState({ cooldownHours: 24, lastCollected: Date.parse('2026-03-07T09:00:00Z') }, Date.parse('2026-03-08T09:00:00Z')).isReady,
+      fixedDstReady: getCooldownState({ resetHour: 5, resetTZ: 'America/New_York', lastCollected: Date.parse('2026-03-07T12:00:00Z') }, Date.parse('2026-03-08T09:00:00Z')).isReady
+    }));
+    expect(after, { rollingReady: true, fixedDstReady: true }, 'focus refresh shows ready platforms at the boundary');
+  }],
+
   ['starts annual checkout with the price and lands on the returned URL', async page => {
     await page.goto('/');
     await signedIn(page);

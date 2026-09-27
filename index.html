@@ -584,7 +584,7 @@
 
   <div id="dailyRunOverlay">
     <div class="run-header">
-      <div class="run-progress-text" id="runProgressText"></div>
+      <div class="run-progress-text" id="runProgressText" role="status" aria-live="polite"></div>
       <button class="btn-exit-run" onclick="exitDailyRun()">&#10005; EXIT RUN</button>
     </div>
     <div class="run-progress-bar"><div class="run-progress-fill" id="runProgressFill"></div></div>
@@ -599,8 +599,8 @@
       <span id="runUndoText"></span>
       <button type="button" class="run-undo-btn" onclick="triggerRunUndo()">UNDO</button>
     </div>
-    <!-- Bound to the platform you JUST collected, not the one on screen.
-         After OPEN & COLLECT the card has already advanced to the next
+    <!-- Bound to the platform you JUST confirmed, not the one on screen.
+         After CONFIRM COLLECTED the card has already advanced to the next
          platform, so by the time you're back from the site and can see
          your SC, the visible card is the wrong one to attach this to.
          Sibling of the undo bar rather than part of it so the undo bar's
@@ -618,7 +618,8 @@
       </div>
     </div>
     <div class="run-actions" id="runActions">
-      <button class="btn-run-collect" onclick="collectCurrentDailyRun()">OPEN &amp; COLLECT</button>
+      <button class="btn-open run-open-btn" type="button" onclick="openCurrentDailyRun()">OPEN SITE</button>
+      <button class="btn-run-collect" type="button" onclick="collectCurrentDailyRun()">CONFIRM COLLECTED</button>
       <button class="btn-skip" onclick="skipCurrentDailyRun()">Skip this one</button>
     </div>
   </div>
@@ -8256,6 +8257,24 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       measureServerTime();
     }
 
+    function refreshTimeSensitiveUI() {
+      renderGames();
+      updateHeroStats();
+      updateDailyRunButton();
+      scheduleNextNotification();
+      if (document.getElementById('statsModal').classList.contains('open')) renderStats();
+      if (document.getElementById('dailyRunOverlay').classList.contains('open')) {
+        renderDailyRunStep();
+        refreshRunCardBalance();
+        refreshRunBalanceBar();
+      }
+    }
+
+    async function refreshTimeSensitiveUIOnResume() {
+      if (Date.now() - serverTimeMeasuredAt >= SERVER_TIME_REMEASURE_MS) await measureServerTime();
+      refreshTimeSensitiveUI();
+    }
+
     // Opt-OUT, not opt-in: an unset key (never touched by this device) is
     // enabled. Only an explicit 'false' - the user actually turning it off
     // in Settings - disables it.
@@ -12468,6 +12487,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     let dailyRunIndex = 0;
     let dailyRunStats = { collected: 0, skipped: 0, scEarned: 0 };
     let dailyRunLaunchFallback = null;
+    let dailyRunActionLockUntil = 0;
     // Ids already given one "moved to the back of the queue" reprieve by
     // skipCurrentDailyRun() - a second skip on the same platform (i.e. it
     // cycled all the way back around) counts as a real skip instead of
@@ -12525,6 +12545,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       dailyRunRequeued = new Set();
       dailyRunCollectedIds = [];
       dailyRunLaunchFallback = null;
+      dailyRunActionLockUntil = 0;
       recordDailyRunStart();
       hideRunUndoBar();
       document.getElementById('dailyRunOverlay').classList.add('open');
@@ -12537,7 +12558,37 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // value called out on its own rather than parsed out of prose.
     function runCardValueHtml(game) {
       if (typeof game.dailySC !== 'number' || game.dailySC <= 0) return '';
-      return `<div class="run-expected-value">Expected value: <strong>~$${game.dailySC.toFixed(2)}</strong>${game.scIsAveraged ? ' (avg)' : ''}</div>`;
+      return `<div class="run-expected-value">Estimated daily bonus: <strong>~$${game.dailySC.toFixed(2)} SC/GC</strong>${game.scIsAveraged ? ' (avg)' : ''}</div>`;
+    }
+
+    function dailyRunActionLocked() {
+      return Date.now() < dailyRunActionLockUntil;
+    }
+
+    function holdDailyRunActionLock(ms) {
+      dailyRunActionLockUntil = Date.now() + ms;
+    }
+
+    function clearDailyRunActionLock() {
+      dailyRunActionLockUntil = 0;
+    }
+
+    function currentDailyRunState(game) {
+      if (!game) return { isReady: false, remainingMs: 0, nextReadyAt: serverNow() };
+      if (isSnoozed(game)) {
+        const remainingMs = Math.max(0, game.snoozedUntil - serverNow());
+        return { isReady: false, remainingMs, nextReadyAt: serverNow() + remainingMs, snoozed: true };
+      }
+      return getCooldownState(game);
+    }
+
+    function currentDailyRunGuidance(game) {
+      const state = currentDailyRunState(game);
+      if (state.isReady) {
+        return '<div class="run-guidance">OPEN SITE does not record a collection. After the bonus lands, come back and tap <strong>CONFIRM COLLECTED</strong>.</div>';
+      }
+      const why = state.snoozed ? 'This platform is snoozed on this device.' : `This platform is on cooldown until ${readyAtLabel(game, state.remainingMs)} (${formatTime(state.remainingMs)} left).`;
+      return `<div class="run-guidance run-guidance-warn">${why} OPEN SITE still will not record anything.</div>`;
     }
 
     // Soonest reset among whatever THIS run actually collected - each
@@ -12573,13 +12624,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         progressFill.style.width = '100%';
         actions.style.display = 'none';
         const scLine = dailyRunStats.scEarned > 0
-          ? `<div style="font-size:1.05rem; margin-bottom:8px;">Added to ledger: <strong style="color:var(--accent-gold);">~$${dailyRunStats.scEarned.toFixed(2)} SC/GC</strong></div>`
+          ? `<div style="font-size:1.05rem; margin-bottom:8px;">Estimated bonus value tracked: <strong style="color:var(--accent-gold);">~$${dailyRunStats.scEarned.toFixed(2)} SC/GC</strong></div>`
           : '';
         card.innerHTML = `
           <div class="run-name" style="color:var(--accent-green); text-shadow:0 0 15px var(--accent-green);">RUN COMPLETE</div>
           <div style="font-size:1.05rem; margin-bottom:8px;">Collected: <strong style="color:var(--accent-green);">${dailyRunStats.collected}</strong></div>
           <div style="font-size:1.05rem; margin-bottom:8px;">Skipped: <strong style="color:var(--text-muted);">${dailyRunStats.skipped}</strong></div>
           ${scLine}
+          <div class="run-guidance" style="margin-bottom:8px;">This is an estimated SC/GC total from confirmed collections, not redeemed cash.</div>
           <div style="font-size:0.95rem; margin-bottom:24px; color:var(--text-muted);">${nextRunResetLabel()}</div>
           <button class="btn-primary" style="flex:0 0 auto; max-width:220px; width:100%; padding:14px;" onclick="exitDailyRun()">DONE</button>
         `;
@@ -12591,6 +12643,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       progressFill.style.width = `${(dailyRunIndex / total) * 100}%`;
 
       const game = dailyRunQueue[dailyRunIndex];
+      const readyState = currentDailyRunState(game);
       // getBestGames takes a NAME, not the game object.
       const goToGames = getBestGames(game.name) || game.bestGames;
 
@@ -12603,6 +12656,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         </div>
         <div class="run-redeem">Min Redeem: ${game.minRedeem || 'Varies'}</div>
         ${runCardValueHtml(game)}
+        ${currentDailyRunGuidance(game)}
         <div class="run-balance" id="runCardBalance">
           <div id="runCardBalanceChart">${cashBarHtml(game)}</div>
           <div class="run-balance-row">
@@ -12624,6 +12678,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           : ''}
         ${goToGames ? `<div class="run-bestgames"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0,229,255,0.4);">PLAY PLAN:</strong>${goToGames}</div>` : ''}
       `;
+      const confirmBtn = document.querySelector('#runActions .btn-run-collect');
+      if (confirmBtn) confirmBtn.disabled = !readyState.isReady;
     }
 
     // A persistent bar, not a timed toast - "sometimes you spend time on
@@ -12639,7 +12695,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const bar = document.getElementById('runUndoBar');
       const text = document.getElementById('runUndoText');
       if (!bar || !text) return;
-      text.textContent = `${game.name} marked collected`;
+      text.textContent = `${game.name} confirmed collected`;
       bar.hidden = false;
       showRunBalanceBar(game);
     }
@@ -12722,18 +12778,41 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       chart.innerHTML = game ? cashBarHtml(game) : '';
     }
 
+    function openCurrentDailyRun() {
+      const game = dailyRunQueue[dailyRunIndex];
+      if (!game) return;
+      const launchUrl = launchUrlFor(game);
+      const launch = openExternal(launchUrl);
+      if (!launch.ok) {
+        showLaunchFailure(launchUrl, openCurrentDailyRun, launch.reason);
+        return;
+      }
+    }
+
     function collectCurrentDailyRun() {
-      // Gated here too, not just inside the collect() it calls below -
-      // collect() bailing out on its own wouldn't stop this function from
+      // Gated here too, not just on the lower-level collection helper -
+      // that helper bailing out on its own wouldn't stop this function from
       // still advancing dailyRunIndex/stats as if the collection had
       // happened.
-      if (interceptForEmailGate(collectCurrentDailyRun)) return;
+      if (dailyRunActionLocked()) return;
+      if (interceptForEmailGate(collectCurrentDailyRun)) {
+        clearDailyRunActionLock();
+        return;
+      }
       const game = dailyRunQueue[dailyRunIndex];
+      const state = currentDailyRunState(game);
+      if (!game || !state.isReady) {
+        clearDailyRunActionLock();
+        renderDailyRunStep();
+        showToast(game ? `${game.name} is not ready to confirm on this device yet.` : 'That Daily Run step is no longer available.', null);
+        return;
+      }
+      holdDailyRunActionLock(700);
       if (game) {
         const collectedAtIndex = dailyRunIndex;
         // toast:false - the persistent bar above is this context's undo,
         // not a toast that can expire while you're still on the site.
-        const result = collect(game.id, {
+        const result = collectWithUndo(game.id, false, {
           toast: false,
           onUndo: () => {
             dailyRunStats.collected--;
@@ -12764,6 +12843,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // platform - i.e. it cycled all the way back around and got skipped
     // again - is a real skip and drops it for good, same as before.
     function skipCurrentDailyRun() {
+      if (dailyRunActionLocked()) return;
+      holdDailyRunActionLock(500);
       const game = dailyRunQueue[dailyRunIndex];
       if (game && !dailyRunRequeued.has(game.id) && dailyRunIndex < dailyRunQueue.length - 1) {
         dailyRunRequeued.add(game.id);
@@ -12781,6 +12862,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       recordDailyRunEnd();
       hideRunUndoBar();
       dailyRunLaunchFallback = null;
+      dailyRunActionLockUntil = 0;
       document.getElementById('dailyRunOverlay').classList.remove('open');
       renderGames();
       updateHeroStats();
@@ -12852,9 +12934,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     refreshExternalCatalog();
     setInterval(refreshExternalCatalog, EXTERNAL_CATALOG_REFRESH_MS);
     setInterval(refreshLaunchTokens, LAUNCH_TOKEN_REFRESH_MS);
-    window.addEventListener('focus', refreshExternalCatalog);
+    window.addEventListener('focus', () => {
+      refreshExternalCatalog();
+      refreshTimeSensitiveUIOnResume();
+    });
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') refreshExternalCatalog();
+      if (document.visibilityState === 'visible') {
+        refreshExternalCatalog();
+        refreshTimeSensitiveUIOnResume();
+      }
     });
     hydrateIndexedDBState();
   </script>
