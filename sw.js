@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v55';
+const CACHE_NAME = 'almanac-v56';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -21,7 +21,10 @@ const PRECACHE_URLS = ['./', './index.html', './manifest.json', './assets/app.cs
   // whose background only appears once the network is back is not the theme.
   // NOTE: no apostrophes in comments inside this array - check-references.js
   // regex-scans it for quoted strings and would read one as a broken path.
-  './assets/background.webp'];
+  './assets/background.webp',
+  // The intro set as it plays by default (green felt, lamp-lit room), so a
+  // first offline launch still opens on the table.
+  './assets/intro/felt.png', './assets/intro/room-lamp.jpg'];
 
 self.addEventListener('install', (event) => {
   // Precache the shell so the very first offline load works, even if the
