@@ -53,9 +53,18 @@ const BILLING_CHANGED = "Your billing details just changed. Please try again.";
 // request saved its own first) is never used: delete it rather than leave
 // it unattached in Stripe. Not after a save error: the write may still have
 // landed, and then the row names this customer.
+// Best-effort Stripe calls answer within their time or give up: no retries,
+// which would start the timeout over.
+function bestEffort(timeout: number) {
+  return { timeout, maxNetworkRetries: 0 };
+}
+
+// Short, so the 409 it runs before comes back promptly.
+const DISCARD_CUSTOMER_TIMEOUT_MS = 2000;
+
 async function discardCustomer(customerId: string) {
   try {
-    await stripe.customers.del(customerId);
+    await stripe.customers.del(customerId, {}, bestEffort(DISCARD_CUSTOMER_TIMEOUT_MS));
   } catch (error) {
     console.warn("Couldn't delete an unused Stripe customer.", { customerId, error: errorMessage(error) });
   }
@@ -91,7 +100,7 @@ async function expireOlderOpenSessions(customerId: string, current: Stripe.Check
         created: { lte: current.created },
         limit: 100,
         ...(startingAfter ? { starting_after: startingAfter } : {}),
-      }, { timeout: remaining() });
+      }, bestEffort(remaining()));
       for (const session of page.data) {
         if (session.id !== current.id) older.push(session.id);
       }
@@ -106,7 +115,7 @@ async function expireOlderOpenSessions(customerId: string, current: Stripe.Check
       return;
     }
     try {
-      await stripe.checkout.sessions.expire(sessionId, {}, { timeout: remaining() });
+      await stripe.checkout.sessions.expire(sessionId, {}, bestEffort(remaining()));
     } catch (error) {
       console.warn("Couldn't expire an older checkout session.", { sessionId, error: errorMessage(error) });
     }
