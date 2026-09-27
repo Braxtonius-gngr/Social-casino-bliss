@@ -660,6 +660,14 @@
     .landing-screen.intro-play .roll-intro { display: block; }
     /* A soft cinematic vignette over the whole shot. */
     .roll-intro::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(120% 90% at 50% 45%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.5) 100%); }
+    /* The set: a matte charcoal surface under one soft light, with a fine
+       grain, whatever the theme. It and the table give way to the theme's
+       own landing screen after the pop, as the wordmark arrives. */
+    .roll-backdrop { position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E"), radial-gradient(95% 70% at 38% 28%, #26262a 0%, #17171a 55%, #0c0c0e 100%); }
+    .landing-screen.roll-popped .roll-backdrop,
+    .landing-screen.roll-popped .roll-stage,
+    .landing-screen.roll-popped .roll-intro::after { animation: roll-fade-out 1s ease-in-out 0.95s forwards; }
+    @keyframes roll-fade-out { 0% { opacity: 1; } 100% { opacity: 0; } }
     .roll-stage { position: absolute; left: 50%; top: 50%; width: 360px; height: 560px; margin: -280px 0 0 -180px; perspective: 760px; perspective-origin: 50% 50%; }
     @media (max-width: 360px) { .roll-stage { transform: scale(0.88); } }
     .roll-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
@@ -668,8 +676,21 @@
 
     /* The table: dark felt under one warm pool of light, fading out at
        its edges so each theme's own backdrop takes over past the scene. */
-    .roll-floor { width: 1400px; height: 1400px; margin: -700px 0 0 -700px; transform: translate3d(0, 0, -260px) rotateX(90deg); background: radial-gradient(closest-side, #27231f 0%, #1a1613 40%, rgba(12, 10, 8, 0) 100%); }
-    .roll-floor-pool { width: 760px; height: 760px; margin: -380px 0 0 -380px; transform: translate3d(10px, -0.3px, -80px) rotateX(90deg); background: radial-gradient(closest-side, rgba(212, 175, 55, 0.18) 0%, rgba(212, 175, 55, 0.06) 45%, rgba(212, 175, 55, 0) 100%); }
+    .roll-floor { width: 1400px; height: 1400px; margin: -700px 0 0 -700px; transform: translate3d(0, 0, -260px) rotateX(90deg); background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E"), radial-gradient(closest-side, #242427 0%, #1a1a1d 42%, rgba(14, 14, 16, 0) 100%); background-size: 70px 70px, auto; -webkit-mask-image: radial-gradient(closest-side, #000 55%, rgba(0,0,0,0) 100%); mask-image: radial-gradient(closest-side, #000 55%, rgba(0,0,0,0) 100%); }
+    .roll-floor-pool { width: 760px; height: 760px; margin: -380px 0 0 -380px; transform: translate3d(-40px, -0.3px, -40px) rotateX(90deg); background: radial-gradient(closest-side, rgba(255, 248, 236, 0.1) 0%, rgba(255, 248, 236, 0.035) 45%, rgba(255, 248, 236, 0) 100%); }
+    /* Playing cards, linen finish: built at 3x and scaled down (sharp
+       under the zoom), each lifted a hair above the one below so the
+       browser never has to sort two cards in one plane. The linen weave
+       sits over the print too, as it does on real stock. */
+    .roll-card { width: 240px; height: 336px; margin: -168px 0 0 -120px; border-radius: 15px; overflow: hidden; backface-visibility: hidden; }
+    .roll-card svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .roll-card::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.07) 0 1.2px, rgba(0,0,0,0) 1.2px 3.6px), repeating-linear-gradient(90deg, rgba(0,0,0,0.07) 0 1.2px, rgba(0,0,0,0) 1.2px 3.6px); }
+    .roll-card-cream { background: linear-gradient(155deg, #efede7 0%, #e2dfd8 60%, #d4d0c7 100%); box-shadow: inset 0 0 0 1.5px rgba(0,0,0,0.18); }
+    .roll-card-black { background: linear-gradient(155deg, #222226 0%, #161618 60%, #0f0f11 100%); box-shadow: inset 0 0 0 2px #cbc6bc, inset 0 0 0 4px #141416; }
+    .roll-card-black::after { background: repeating-linear-gradient(0deg, rgba(255,255,255,0.055) 0 1.2px, rgba(255,255,255,0) 1.2px 3.6px), repeating-linear-gradient(90deg, rgba(255,255,255,0.055) 0 1.2px, rgba(255,255,255,0) 1.2px 3.6px); }
+    .roll-card-1 { transform: translate3d(-62px, -0.5px, 2px) rotateX(90deg) rotateZ(-18deg) scale(0.3333); }
+    .roll-card-2 { transform: translate3d(-20px, -1.1px, -10px) rotateX(90deg) rotateZ(-6deg) scale(0.3333); }
+    .roll-card-3 { transform: translate3d(46px, -1.7px, 30px) rotateX(90deg) rotateZ(11deg) scale(0.3333); }
     .roll-cup-shadow, .roll-die-shadow { border-radius: 50%; opacity: 0; will-change: transform; }
     .roll-cup-shadow { width: 150px; height: 150px; margin: -75px 0 0 -75px; background: radial-gradient(closest-side, rgba(0,0,0,0.55), rgba(0,0,0,0.2) 55%, rgba(0,0,0,0)); }
     .roll-die-shadow { width: 64px; height: 64px; margin: -32px 0 0 -32px; background: radial-gradient(closest-side, rgba(0,0,0,0.72), rgba(0,0,0,0.3) 50%, rgba(0,0,0,0)); }
@@ -700,8 +721,8 @@
 
     /* Precision dice, built at ROLL_SS (3x) and scaled down by their
        matrix so they rasterise sharp under the zoom: six faces inset by the
-       chamfer (ROLL_BEVEL 2.6px, so a 28.8px flat on a 34px cube - here
-       86.4 on 102), twelve edge strips and eight corner
+       chamfer (ROLL_BEVEL 3.4px, so a 27.2px flat on a 34px cube - here
+       81.6 on 102), twelve edge strips and eight corner
        facets, and a core that fills the cube. Each face stacks five light
        layers over the printed acrylic, all driven by playRollIntro(): shade,
        the red glow of light passing through (ss), the key softbox's
@@ -710,20 +731,25 @@
     /* No will-change here: it would pin the dice's raster scale at their
        34px layout size, and the lens zoom would then enlarge a bitmap. */
     .roll-die3, .roll-ghost3 { width: 102px; height: 102px; margin: -51px 0 0 -51px; opacity: 0; }
-    .roll-face3 { position: absolute; left: 7.8px; top: 7.8px; width: 86.4px; height: 86.4px; overflow: hidden; backface-visibility: hidden; opacity: var(--o, 1); }
+    .roll-face3 { position: absolute; left: 10.2px; top: 10.2px; width: 81.6px; height: 81.6px; overflow: hidden; backface-visibility: hidden; opacity: var(--o, 1); }
     .roll-ghost3 .roll-face3 { left: 0; top: 0; width: 102px; height: 102px; }
     .roll-face3 svg { display: block; width: 100%; height: 100%; }
-    .roll-face3 .roll-ss { background: radial-gradient(circle at 50% 56%, rgba(255,96,110,0.8), rgba(255,60,80,0.28) 55%, rgba(255,60,80,0) 82%); mix-blend-mode: screen; }
+    /* Light travelling through the oxblood acrylic: it glows red at the
+       face's edges and pools in a caustic toward the far corner. */
+    .roll-face3 .roll-ss { background: radial-gradient(circle at 74% 78%, rgba(255,34,56,0.42), rgba(255,34,56,0) 38%), radial-gradient(closest-side, rgba(200,16,40,0) 66%, rgba(190,14,36,0.35) 90%, rgba(255,42,62,0.7) 100%); mix-blend-mode: screen; }
     .roll-face3 .roll-sp, .roll-face3 .roll-sp2 { inset: auto; left: 50%; top: 50%; width: 100px; height: 100px; margin: -50px 0 0 -50px; mix-blend-mode: screen; }
-    .roll-face3 .roll-sp { border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,0.92) 0%, rgba(255,250,240,0.7) 46%, rgba(255,244,228,0.18) 78%, rgba(255,244,228,0) 100%); }
+    /* The key softbox's reflection: a crisp, glassy window of light. */
+    .roll-face3 .roll-sp { height: 72px; margin-top: -36px; border-radius: 34%; background: radial-gradient(closest-side, #ffffff 0%, rgba(255,255,255,0.9) 60%, rgba(255,255,255,0.18) 86%, rgba(255,255,255,0) 100%); }
     .roll-face3 .roll-sp2 { height: 320px; margin-top: -160px; background: linear-gradient(90deg, rgba(255,232,190,0) 0%, rgba(255,238,205,0.45) 28%, rgba(255,255,255,0.96) 46%, #ffffff 50%, rgba(255,255,255,0.96) 54%, rgba(255,238,205,0.45) 72%, rgba(255,232,190,0) 100%); }
-    .roll-fr { position: absolute; inset: 0; opacity: 0; pointer-events: none; box-shadow: inset 0 0 7.5px 2.4px rgba(255,228,228,0.95), inset 0 0 24px 6px rgba(255,150,165,0.35); }
+    .roll-fr { position: absolute; inset: 0; opacity: 0; pointer-events: none; box-shadow: inset 0 0 5px 1.5px rgba(255,205,212,0.55), inset 0 0 20px 4px rgba(255,60,80,0.16); }
     .roll-ss { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
-    .roll-bev { position: absolute; left: 51px; top: 51px; transform-origin: 0 0; backface-visibility: hidden; opacity: var(--o, 1); background: linear-gradient(180deg, #6a0514 0%, #c21a31 50%, #6a0514 100%); }
-    .roll-bev-c { background: #a00e24; }
+    /* The rounded edges: light caught inside the acrylic runs along
+       them as a hot red line between two dark shoulders. */
+    .roll-bev { position: absolute; left: 51px; top: 51px; transform-origin: 0 0; backface-visibility: hidden; opacity: var(--o, 1); background: linear-gradient(180deg, #120102 0%, #3e050d 32%, #d8223b 50%, #3e050d 68%, #120102 100%); }
+    .roll-bev-c { background: radial-gradient(closest-side, #a5162c, #2a0307); }
     .roll-bev .roll-sp { background: #ffffff; mix-blend-mode: screen; }
     /* The core just inside the chamfers, so no corner ever shows through. */
-    .roll-core { position: absolute; inset: 6.6px; background: #7e0a1a; backface-visibility: hidden; opacity: var(--o, 1); }
+    .roll-core { position: absolute; inset: 8.67px; background: #1a0205; backface-visibility: hidden; opacity: var(--o, 1); }
 
     /* Photographers' flashes on the red carpet: a hot core and a cross of
        light, popped by playRollIntro() during the slow motion. They sit
