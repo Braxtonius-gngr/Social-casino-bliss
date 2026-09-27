@@ -66,27 +66,43 @@
          globally - the screen simply shows the finished wordmark and
          nothing of the intro. -->
     <div class="roll-intro" aria-hidden="true">
+      <div class="roll-backdrop"></div>
       <div class="roll-stage">
         <svg class="roll-defs" width="0" height="0" aria-hidden="true">
           <defs>
-            <!-- Precision craps die face: translucent red acrylic (a lit
-                 centre, deeper at the edges), a hairline rim where the
-                 chamfer starts, pips drilled and filled flush in white. -->
-            <radialGradient id="rollDieFace" cx="0.5" cy="0.5" r="0.72">
-              <stop offset="0" stop-color="#e3263f"/><stop offset="0.6" stop-color="#c8152f"/><stop offset="1" stop-color="#8f0a1f"/>
+            <!-- Precision die face: deep oxblood translucent acrylic, near
+                 black at the heart and glowing red toward the edges where
+                 light travels through; a hairline of lit red where the face
+                 rolls into its rounded edge; large pips cupped into the face
+                 and filled white (lit on their lower inner wall, shadowed on
+                 the upper, ringed by the dark drilled edge). -->
+            <radialGradient id="rollDieFace" cx="0.5" cy="0.5" r="0.74">
+              <stop offset="0" stop-color="#2a0409"/><stop offset="0.55" stop-color="#1c0205"/><stop offset="0.88" stop-color="#3d0610"/><stop offset="1" stop-color="#6a0a18"/>
             </radialGradient>
-            <radialGradient id="rollPip" cx="0.64" cy="0.68" r="0.7">
-              <stop offset="0" stop-color="#ffffff"/><stop offset="0.55" stop-color="#f2f3f5"/><stop offset="1" stop-color="#c3c7ce"/>
+            <radialGradient id="rollPip" cx="0.64" cy="0.68" r="0.72">
+              <stop offset="0" stop-color="#fbfbf8"/><stop offset="0.5" stop-color="#e7e7e3"/><stop offset="1" stop-color="#b4b5b0"/>
             </radialGradient>
-            <radialGradient id="rollPipShade" cx="0.28" cy="0.26" r="0.62">
-              <stop offset="0" stop-color="#1a0005" stop-opacity="0.34"/><stop offset="1" stop-color="#1a0005" stop-opacity="0"/>
+            <radialGradient id="rollPipShade" cx="0.3" cy="0.27" r="0.66">
+              <stop offset="0" stop-color="#140204" stop-opacity="0.5"/><stop offset="0.55" stop-color="#140204" stop-opacity="0.16"/><stop offset="1" stop-color="#140204" stop-opacity="0"/>
             </radialGradient>
             <g id="rollDieBase">
-              <rect x="0" y="0" width="34" height="34" fill="url(#rollDieFace)"/>
-              <rect x="0.7" y="0.7" width="32.6" height="32.6" fill="none" stroke="#ff8a98" stroke-opacity="0.22" stroke-width="0.6"/>
+              <rect x="0" y="0" width="34" height="34" fill="url(#rollDieFace)" fill-opacity="0.56"/>
+              <rect x="0.5" y="0.5" width="33" height="33" fill="none" stroke="#ff3a50" stroke-opacity="0.2" stroke-width="0.7"/>
             </g>
-            <g id="rollPipDot"><circle r="3.5" fill="#3d0309" fill-opacity="0.6"/><circle r="3.15" fill="url(#rollPip)"/><circle r="3.15" fill="url(#rollPipShade)"/></g>
-            <g id="rollPips1"><use href="#rollPipDot" x="17" y="17"/><text x="17" y="27.3" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="3.4" font-weight="700" letter-spacing="0.9" fill="#e8c860" fill-opacity="0.92">DRO</text></g>
+            <g id="rollPipDot"><circle r="4.25" fill="#0b0102" fill-opacity="0.8"/><circle r="3.9" fill="url(#rollPip)"/><circle r="3.9" fill="url(#rollPipShade)"/></g>
+            <g id="rollPips1"><use href="#rollPipDot" x="17" y="17"/><text x="17" y="28.4" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="3.2" font-weight="700" letter-spacing="0.9" fill="#d9b85a" fill-opacity="0.85">DRO</text></g>
+            <!-- Looking into the die: its far walls, seen through the red
+                 body - darker with depth, lit where light pools inside,
+                 carrying the far faces' pips, softened by the acrylic. -->
+            <radialGradient id="rollInnerWall" cx="0.42" cy="0.4" r="0.78">
+              <stop offset="0" stop-color="#c8142f" stop-opacity="0.74"/><stop offset="0.5" stop-color="#620714" stop-opacity="0.86"/><stop offset="1" stop-color="#1c0104" stop-opacity="0.95"/>
+            </radialGradient>
+            <filter id="rollInnerBlur" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="0.85"/></filter>
+            <radialGradient id="rollMedal" cx="0.36" cy="0.3" r="0.8">
+              <stop offset="0" stop-color="#fbeab0"/><stop offset="0.35" stop-color="#d7b451"/><stop offset="0.75" stop-color="#8e6a1f"/><stop offset="1" stop-color="#4f3a0e"/>
+            </radialGradient>
+            <symbol id="rollHeart" viewBox="0 0 100 100"><path d="M50 90 C22 68 5 52 5 33 C5 18 17 7 31 7 C41 7 47 13 50 21 C53 13 59 7 69 7 C83 7 95 18 95 33 C95 52 78 68 50 90 Z"/></symbol>
+            <symbol id="rollDiamond" viewBox="0 0 100 100"><path d="M50 3 Q66 30 87 50 Q66 70 50 97 Q34 70 13 50 Q34 30 50 3 Z"/></symbol>
             <g id="rollPips2"><use href="#rollPipDot" x="9.5" y="9.5"/><use href="#rollPipDot" x="24.5" y="24.5"/></g>
             <g id="rollPips3"><use href="#rollPipDot" x="9.5" y="9.5"/><use href="#rollPipDot" x="17" y="17"/><use href="#rollPipDot" x="24.5" y="24.5"/></g>
             <g id="rollPips4"><use href="#rollPipDot" x="9.5" y="9.5"/><use href="#rollPipDot" x="24.5" y="9.5"/><use href="#rollPipDot" x="9.5" y="24.5"/><use href="#rollPipDot" x="24.5" y="24.5"/></g>
@@ -176,6 +192,10 @@
         <div class="roll-world">
           <div class="roll-floor"></div>
           <div class="roll-floor-pool"></div>
+          <!-- A fan of aces on the table, linen-finish stock, where the dice land. -->
+          <div class="roll-card roll-card-1 roll-card-cream"><svg viewBox="0 0 80 112"><g fill="#c8202b"><text x="7" y="17" font-family="Georgia, 'Times New Roman', serif" font-size="15" font-weight="700">A</text><use href="#rollDiamond" x="6.5" y="19.5" width="11" height="11"/><g transform="rotate(180 40 56)"><text x="7" y="17" font-family="Georgia, 'Times New Roman', serif" font-size="15" font-weight="700">A</text><use href="#rollDiamond" x="6.5" y="19.5" width="11" height="11"/></g><use href="#rollDiamond" x="28" y="44" width="24" height="24"/></g></svg></div>
+          <div class="roll-card roll-card-2 roll-card-cream"><svg viewBox="0 0 80 112"><g fill="#c8202b"><text x="7" y="17" font-family="Georgia, 'Times New Roman', serif" font-size="15" font-weight="700">A</text><use href="#rollHeart" x="6.5" y="19.5" width="11" height="11"/><g transform="rotate(180 40 56)"><text x="7" y="17" font-family="Georgia, 'Times New Roman', serif" font-size="15" font-weight="700">A</text><use href="#rollHeart" x="6.5" y="19.5" width="11" height="11"/></g><use href="#rollHeart" x="27" y="43" width="26" height="26"/></g></svg></div>
+          <div class="roll-card roll-card-3 roll-card-black"><svg viewBox="0 0 80 112"><g fill="#c8202b"><text x="7" y="17" font-family="Georgia, 'Times New Roman', serif" font-size="15" font-weight="700">A</text><use href="#rollHeart" x="6.5" y="19.5" width="11" height="11"/><g transform="rotate(180 40 56)"><text x="7" y="17" font-family="Georgia, 'Times New Roman', serif" font-size="15" font-weight="700">A</text><use href="#rollHeart" x="6.5" y="19.5" width="11" height="11"/></g><use href="#rollHeart" x="24" y="40" width="32" height="32"/></g></svg></div>
           <div class="roll-cup-shadow"></div>
           <div class="roll-cup3"></div>
           <div class="roll-die-shadow" data-die="0"></div>
@@ -184,6 +204,8 @@
           <div class="roll-die-ao" data-die="1"></div>
           <div class="roll-puff" data-die="0"></div>
           <div class="roll-puff" data-die="1"></div>
+          <div class="roll-caustic" data-die="0"></div>
+          <div class="roll-caustic" data-die="1"></div>
           <div class="roll-ghost3" data-die="0"></div><div class="roll-ghost3" data-die="0"></div>
           <div class="roll-ghost3" data-die="1"></div><div class="roll-ghost3" data-die="1"></div>
           <div class="roll-die3" data-die="0"></div>
@@ -3330,12 +3352,18 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // same finished frame.
     const ROLL_G = 1500;               // gravity, px/s^2 (a loose, floaty throw at this scale)
     const ROLL_HALF = 17;              // half a die edge, px
-    const ROLL_BEVEL = 2.6;            // chamfer on every die edge, px (app.css sizes the faces to match)
+    const ROLL_BEVEL = 3.4;            // rounded-edge chamfer on every die edge, px (app.css sizes the faces to match)
+    // The cards lie a hair apart above the felt (app.css .roll-card-1..3 at
+    // 0.5, 1.1 and 1.7px); each die lands at the height of the card it
+    // comes to rest on (its `table` in ROLL_DICE), so it sits on it exactly.
+    // Its shadow, contact shadow, red glow and felt puff are flat planes, so
+    // they are drawn just above the highest card that shadow crosses (its
+    // `shade`): the lower die's shadow runs onto the middle card's edge.
     // The dice are built at ROLL_SS times their size and scaled back down
     // in their matrix, so the browser rasterises them at 3x: they stay
     // sharp when the lens zooms in, instead of an enlarged bitmap.
     const ROLL_SS = 3;
-    const ROLL_CUP = { h: 170, rTop: 62, rBot: 54, slats: 28 };
+    const ROLL_CUP = { h: 170, rTop: 62, rBot: 54, slats: 40, medal: 262 };
     const ROLL_SLOW = { start: 1.55, down: 1.0, hold: 1.6, up: 0.9, rate: 0.07 };
     const ROLL_RELEASE = 1.6;          // world seconds: dice leave the cup
     const ROLL_KEY_43 = 1.72;          // world seconds: the 4 + 3 flash
@@ -3347,6 +3375,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const ROLL_FLASHES = [0.12, 0.42, 0.74, 1.08, 1.4]; // photographer pops, real seconds into the hold
     const ROLL_LIGHT = [-0.42, -0.78, 0.47];            // key light direction (toward the light)
     const ROLL_FILL = [0.62, -0.3, 0.72];               // cool fill from the other side
+    const ROLL_SHAFT = [-60, -200, -160];  // a point on the key light's shaft; dust shows only inside it
     const ROLL_SOFTBOX = 0.16;         // key softbox angular radius (rad): the size of its reflection
     // The bar lights swept behind the camera at the end of the freeze, one
     // per die (a two-light rig): each starts `lead` real seconds before the
@@ -3355,17 +3384,25 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // hero face; `bar` is the bar's angular half-width.
     const ROLL_SWEEP = { lead: 0.62, len: 1.1, swing: 0.075, bar: 0.016, stagger: 0.14 };
     const ROLL_DICE = [
-      { x: 24, vx: 34, vy: -600, vz: 300, e: 0.42, mu: 0.5, faces: [4, 5, 6], restYaw: 24, turns: [1, 1, 1], axis: [0.3, 0.8, 0.5], lean: -0.22 },
-      { x: -22, vx: -26, vy: -640, vz: 268, e: 0.4, mu: 0.48, faces: [3, 2, 1], restYaw: -35, turns: [1, 2, 1], axis: [-0.6, 0.4, 0.7], lean: 0.22 }
+      { x: 24, vx: 34, vy: -600, vz: 300, e: 0.42, mu: 0.5, faces: [4, 5, 6], restYaw: 24, turns: [1, 1, 1], axis: [0.3, 0.8, 0.5], lean: -0.22, table: 1.7, shade: 1.7 },
+      { x: -22, vx: -26, vy: -640, vz: 268, e: 0.4, mu: 0.48, faces: [3, 2, 1], restYaw: -35, turns: [1, 2, 1], axis: [-0.6, 0.4, 0.7], lean: 0.22, table: 0.5, shade: 1.1 }
     ];
     // Cup keys, world seconds: [t, x, y, z, tip (deg, mouth toward the throw), yaw (deg), opacity].
+    // Moved like a cup in a hand: lifted off the table into the light,
+    // shaken (rollCupState lays the wrist shake over these keys), drawn
+    // down and back in a wind-up, then lunged up and forward while the
+    // wrist flicks the mouth over, so the dice fly on with the lunge as
+    // the cup turns away beneath them; a follow-through, then a recoil.
     const ROLL_CUP_KEYS = [
-      [0.0, -290, -235, -730, 0, 34, 0],
-      [0.45, -205, -220, -645, -6, 24, 1],
-      [1.05, -125, -228, -565, -20, 12, 1],
-      [1.36, -70, -208, -505, -10, 5, 1],
-      [1.62, -8, -166, -430, 96, 0, 1],
-      [1.86, 8, -150, -425, 110, -4, 1],
+      [0.0, -330, -120, -780, -2, 34, 0],
+      [0.42, -236, -226, -672, -4, 26, 1],
+      [0.62, -214, -238, -650, -5, 22, 1],
+      [1.12, -172, -236, -612, -6, 14, 1],
+      [1.36, -118, -150, -606, -30, 8, 1],
+      [1.5, -58, -176, -506, 18, 3, 1],
+      [1.6, -8, -166, -430, 96, 0, 1],
+      [1.75, 18, -176, -404, 124, -3, 1],
+      [1.88, 6, -160, -430, 116, -4, 1],
       [2.08, -70, -104, -640, 72, 6, 1],
       [2.5, -170, -118, -780, 40, 14, 1],
       [3.0, -300, -150, -880, 20, 24, 1],
@@ -3386,9 +3423,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       [3.7, -27, 7, 600, -2, 1380],
       [4.3, -22, 8, 600, 0, 1360],
       [5.1, -27, 18, 590, 1.5, 1080],
-      [5.9, -33, 30, 580, 1, 940],
-      [6.9, -35, 34, 575, 0, 910],
-      [10, -36, 35, 575, 0, 910]
+      [5.9, -33, 36, 590, 1, 930],
+      [6.9, -34, 50, 590, 0, 900],
+      [10, -35, 53, 590, 0, 900]
     ];
     // Die faces: [pips, css transform from the cube centre, outward normal,
     // the face's own x and y axes (for sliding reflections across it)].
@@ -3503,17 +3540,43 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     // The cup at world time w: position, orientation, mouth centre. The
     // shake before the throw is a decaying wobble laid over the spline.
+    const ROLL_SHAKE_HZ = 4.4;          // strokes per second of the wrist shake
+    // Shake envelope over world time: builds, holds, dies into the wind-up.
+    function rollCupShake(w) { return rollSmoother(rollClamp01((w - 0.5) / 0.14)) * (1 - rollSmoother(rollClamp01((w - 1.06) / 0.16))); }
+    // A die inside the cup at world time w: resting on the felt, thrown
+    // up the walls on each stroke of the shake, then carried out through
+    // the mouth by the throw to exactly where its flight begins.
+    function rollInCup(d, i, w, cup) {
+      const h = ROLL_CUP.h;
+      const sh = rollCupShake(w), ph = w * 2 * Math.PI * ROLL_SHAKE_HZ;
+      const base = [d.cfg.x * 0.6, h / 2 - 24, i ? 11 : -11];
+      const hop = sh * (0.5 + 0.5 * Math.sin(ph + Math.PI + i * 1.3));
+      const rattle = [base[0] + sh * 6 * Math.sin(ph * 1.5 + i), base[1] - 46 * hop, base[2] + sh * 5 * Math.sin(ph + 2 * i)];
+      const e = rollSmoother(rollClamp01((w - 1.36) / (ROLL_RELEASE - 1.36)));
+      const out = [d.cfg.x, -h / 2 + 4, 0];
+      const loc = rollMix(rattle, out, e);
+      const wv = rollQRot(cup.q, loc);
+      return [cup.pos[0] + wv[0], cup.pos[1] + wv[1], cup.pos[2] + wv[2]];
+    }
     function rollCupState(w) {
       const k = rollSpline(ROLL_CUP_KEYS, w);
       let tip = k[3], yaw = k[4], y = k[1];
-      const sh = rollClamp01((w - 0.5) / 0.15) * (1 - rollClamp01((w - 1.05) / 0.3));
+      let x = k[0], z = k[2];
+      const sh = rollCupShake(w);
       if (sh > 0) {
-        yaw += 7 * sh * Math.sin(w * 2 * Math.PI * 5.5);
-        tip += 5 * sh * Math.sin(w * 2 * Math.PI * 5.5 + 1.3);
-        y += 6 * sh * Math.sin(w * 2 * Math.PI * 11);
+        // A wrist shake: the cup rocks on an arc (lift and tip together),
+        // with a slower sway; each stroke ends in a small jolt as the dice
+        // hit the wall, ringing out over a few hundredths of a second.
+        const ph = w * 2 * Math.PI * ROLL_SHAKE_HZ;
+        const jolt = Math.exp(-(((w * ROLL_SHAKE_HZ * 2) % 1) / 0.08)) * Math.sin(w * 2 * Math.PI * 31);
+        y += sh * (-11 * Math.sin(ph) + 2.2 * jolt);
+        z += sh * 6 * Math.sin(ph - 0.6);
+        tip += sh * (9 * Math.sin(ph + 0.5) + 1.6 * jolt);
+        yaw += sh * 5 * Math.sin(ph * 0.5 + 0.8);
+        x += sh * 3 * Math.sin(ph * 0.5);
       }
       const q = rollQMul(rollQuat([0, 1, 0], yaw * Math.PI / 180), rollQuat([1, 0, 0], -tip * Math.PI / 180));
-      const pos = [k[0], y, k[2]];
+      const pos = [x, y, z];
       const mouthOff = rollQRot(q, [0, -ROLL_CUP.h / 2, 0]);
       return { pos, q, opacity: rollClamp01(k[5]), mouth: [pos[0] + mouthOff[0], pos[1] + mouthOff[1], pos[2] + mouthOff[2]] };
     }
@@ -3524,11 +3587,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const segs = [];
       let pos = p0.slice(), vel = v0.slice(), t = t0;
       for (let i = 0; i < 7; i++) {
-        const a = 0.5 * ROLL_G, b = vel[1], c = pos[1] + ROLL_HALF;
+        const a = 0.5 * ROLL_G, b = vel[1], c = pos[1] + ROLL_HALF + d.cfg.table;
         const th = (-b + Math.sqrt(Math.max(b * b - 4 * a * c, 0))) / (2 * a);
         segs.push({ t0: t, t1: t + th, pos, vel });
         const vyc = vel[1] + ROLL_G * th;
-        pos = [pos[0] + vel[0] * th, -ROLL_HALF, pos[2] + vel[2] * th];
+        pos = [pos[0] + vel[0] * th, -ROLL_HALF - d.cfg.table, pos[2] + vel[2] * th];
         vel = [vel[0] * d.cfg.mu, -vyc * d.cfg.e, vel[2] * d.cfg.mu];
         t += th;
         if (-vel[1] < 80) break;
@@ -3539,7 +3602,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       d.segs = segs;
       d.contact = segs[0].t1;
       d.rest = t + slide;
-      d.restPos = [pos[0] + vel[0] * slide * 0.5, -ROLL_HALF, pos[2] + vel[2] * slide * 0.5];
+      d.restPos = [pos[0] + vel[0] * slide * 0.5, -ROLL_HALF - d.cfg.table, pos[2] + vel[2] * slide * 0.5];
     }
     function rollPosAt(d, w) {
       const segs = d.segs;
@@ -3611,7 +3674,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // shade, the glow of light passing through the red acrylic, the key
     // softbox's reflection, the swept bar light's reflection, a fresnel rim.
     function rollFaceMarkup(n, lit) {
-      return `<div class="roll-face3" style="transform:${ROLL_FACES.find(f => f[0] === n)[1].replace('17px', `${ROLL_HALF * ROLL_SS}px`)}"><svg viewBox="0 0 34 34"><use href="#rollDieBase"/><use href="#rollPips${n}"/></svg>${lit ? '<i class="roll-sh"></i><i class="roll-ss"></i><i class="roll-sp"></i><i class="roll-sp2"></i><i class="roll-fr"></i>' : ''}</div>`;
+      return `<div class="roll-face3" style="transform:${ROLL_FACES.find(f => f[0] === n)[1].replace('17px', `${ROLL_HALF * ROLL_SS}px`)}"><svg viewBox="0 0 34 34"><use href="#rollDieBase"/><use href="#rollPips${n}"/></svg>${lit ? '<i class="roll-sh"></i><i class="roll-ss"></i><i class="roll-env"></i><i class="roll-sp"></i><i class="roll-sp2"></i><i class="roll-fr"></i>' : ''}</div>`;
+    }
+    // A far wall of the die as seen from inside: one per face, just
+    // inside it and turned inward, so only the walls across the body
+    // show - through the front faces - with their pips in place.
+    function rollInnerMarkup(n) {
+      const t = ROLL_FACES.find(f => f[0] === n)[1].replace('17px', `${(ROLL_HALF - 1) * ROLL_SS}px`);
+      return `<div class="roll-inner" style="transform:${t} rotateY(180deg)"><svg viewBox="0 0 34 34"><rect width="34" height="34" fill="url(#rollInnerWall)"/><g transform="translate(34 0) scale(-1 1)" opacity="0.78" filter="url(#rollInnerBlur)"><use href="#rollPips${n}"/></g></svg></div>`;
     }
     // The chamfers: a strip along each of the 12 edges and a triangle at
     // each of the 8 corners, so the cube's silhouette and its highlights
@@ -3655,10 +3725,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const ROLL_MOTES = (() => {
       let seed = 7;
       const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-      return Array.from({ length: 30 }, () => ({
-        p: [-340 + 680 * rnd(), -380 + 350 * rnd(), -560 + 800 * rnd()],
-        v: [-6 + 12 * rnd(), -10 + 6 * rnd(), -6 + 12 * rnd()],
-        a: 0.25 + 0.5 * rnd(),
+      return Array.from({ length: 26 }, () => ({
+        p: [-300 + 560 * rnd(), -360 + 330 * rnd(), -520 + 700 * rnd()],
+        v: [-4 + 8 * rnd(), -7 + 4 * rnd(), -4 + 8 * rnd()],
+        a: 0.35 + 0.55 * rnd(),
         ph: 6.28 * rnd()
       }));
     })();
@@ -3672,19 +3742,20 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       let cup = '';
       for (let i = 0; i < N; i++) {
         const th = 360 * i / N;
-        cup += `<div class="roll-slat" style="width:${wTop.toFixed(2)}px;height:${C.h}px;margin:${-C.h / 2}px 0 0 ${(-wTop / 2).toFixed(2)}px;clip-path:polygon(0 0,100% 0,${(100 - inset).toFixed(2)}% 100%,${inset.toFixed(2)}% 100%);transform:rotateY(${th}deg) translateZ(${rMid}px) rotateX(${-tilt.toFixed(2)}deg)"><i class="roll-sh"></i><i class="roll-sp"></i></div>`;
-        cup += `<div class="roll-slat roll-slat-in" style="width:${wTop.toFixed(2)}px;height:${C.h - 4}px;margin:${-C.h / 2 + 2}px 0 0 ${(-wTop / 2).toFixed(2)}px;clip-path:polygon(0 0,100% 0,${(100 - inset).toFixed(2)}% 100%,${inset.toFixed(2)}% 100%);transform:rotateY(${th}deg) translateZ(${rMid - 2.5}px) rotateX(${-tilt.toFixed(2)}deg)"></div>`;
+        cup += `<div class="roll-slat${i % 5 === 2 ? ' roll-slat-riv' : ''}" style="width:${wTop.toFixed(2)}px;height:${C.h}px;margin:${-C.h / 2}px 0 0 ${(-wTop / 2).toFixed(2)}px;clip-path:polygon(0 0,100% 0,${(100 - inset).toFixed(2)}% 100%,${inset.toFixed(2)}% 100%);transform:rotateY(${th}deg) translateZ(${rMid}px) rotateX(${-tilt.toFixed(2)}deg)"><i class="roll-sh"></i><i class="roll-sp"></i></div>`;
+        cup += `<div class="roll-slat roll-slat-in" style="width:${wTop.toFixed(2)}px;height:${C.h - 4}px;margin:${-C.h / 2 + 2}px 0 0 ${(-wTop / 2).toFixed(2)}px;clip-path:polygon(0 0,100% 0,${(100 - inset).toFixed(2)}% 100%,${inset.toFixed(2)}% 100%);transform:rotateY(${th}deg) translateZ(${rMid - 2.5}px) rotateY(180deg) rotateX(${tilt.toFixed(2)}deg)"></div>`;
       }
-      cup += `<div class="roll-cup-rim" style="width:${2 * C.rTop}px;height:${2 * C.rTop}px;margin:${-C.rTop}px 0 0 ${-C.rTop}px;transform:translateY(${-C.h / 2}px) rotateX(90deg)"></div>`;
+      cup += `<div class="roll-cup-rim" style="width:${2 * C.rTop + 4}px;height:${2 * C.rTop + 4}px;margin:${-C.rTop - 2}px 0 0 ${-C.rTop - 2}px;transform:translateY(${-C.h / 2}px) rotateX(90deg)"></div>`;
+      // A struck brass medallion on the side the camera sees during the shake.
+      cup += `<div class="roll-medal" style="transform:rotateY(${C.medal}deg) translateZ(${rMid + 1.4}px) rotateX(${-tilt.toFixed(2)}deg)"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="url(#rollMedal)"/><circle cx="20" cy="20" r="16.4" fill="none" stroke="#5a4210" stroke-width="0.8"/><circle cx="20" cy="20" r="15.4" fill="none" stroke="#f4e3a6" stroke-opacity="0.6" stroke-width="0.5" stroke-dasharray="1 1.2"/><text x="20" y="24.2" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="11" font-weight="700" letter-spacing="0.6" fill="#4a340a">DRO</text><text x="20.4" y="23.8" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="11" font-weight="700" letter-spacing="0.6" fill="#fff1bf" fill-opacity="0.35">DRO</text></svg></div>`;
       cup += `<div class="roll-cup-mouth" style="width:${2 * C.rTop - 8}px;height:${2 * C.rTop - 8}px;margin:${-C.rTop + 4}px 0 0 ${-C.rTop + 4}px;transform:translateY(${-C.h / 2 + 5}px) rotateX(90deg)"></div>`;
       cup += `<div class="roll-cup-base" style="width:${2 * C.rBot}px;height:${2 * C.rBot}px;margin:${-C.rBot}px 0 0 ${-C.rBot}px;transform:translateY(${C.h / 2}px) rotateX(90deg)"><i class="roll-sh"></i></div>`;
       world.querySelector('.roll-cup3').innerHTML = cup;
       const bev = rollBevelGeometry();
-      const core = ((ROLL_HALF - ROLL_BEVEL * 0.85) * ROLL_SS).toFixed(2);
       world.querySelectorAll('.roll-die3').forEach(el => {
         el.innerHTML = ROLL_FACES.map(f => rollFaceMarkup(f[0], true)).join('') +
           bev.map(b => `<div class="roll-bev${b.corner ? ' roll-bev-c' : ''}" style="${b.style}"><i class="roll-sh"></i><i class="roll-sp"></i></div>`).join('') +
-          ROLL_FACES.map(f => `<div class="roll-core" style="transform:${f[1].replace('17px', `${core}px`)}"></div>`).join('');
+          ROLL_FACES.map(f => rollInnerMarkup(f[0])).join('');
         el._bevN = bev.map(b => b.n);
       });
       world.querySelectorAll('.roll-ghost3').forEach(el => { el.innerHTML = ROLL_FACES.map(f => rollFaceMarkup(f[0], false)).join(''); });
@@ -3725,6 +3796,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         shadow: world.querySelector(`.roll-die-shadow[data-die="${i}"]`),
         ao: world.querySelector(`.roll-die-ao[data-die="${i}"]`),
         puff: world.querySelector(`.roll-puff[data-die="${i}"]`),
+        caustic: world.querySelector(`.roll-caustic[data-die="${i}"]`),
         ghosts: Array.from(world.querySelectorAll(`.roll-ghost3[data-die="${i}"]`)),
         faces: [],
         bevels: [],
@@ -3734,7 +3806,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (!d.el) return;
         d.faces = Array.from(d.el.querySelectorAll('.roll-face3')).map((el, j) => ({
           pips: ROLL_FACES[j][0], n: ROLL_FACES[j][2], u: ROLL_FACES[j][3], v: ROLL_FACES[j][4],
-          sh: el.children[1], ss: el.children[2], sp: el.children[3], sp2: el.children[4], fr: el.children[5]
+          sh: el.children[1], ss: el.children[2], env: el.children[3], sp: el.children[4], sp2: el.children[5], fr: el.children[6]
         }));
         d.bevels = Array.from(d.el.querySelectorAll('.roll-bev')).map((el, j) => ({ n: d.el._bevN[j], sh: el.children[0], sp: el.children[1] }));
       });
@@ -3789,8 +3861,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const qRest = rollFaceToward(c.faces[2], [0, -1, 0], c.restYaw * Math.PI / 180);
         const q52b = rollQMul(rollQuat(c.axis, 0.35), q52);
         const qContact = rollQMul(rollQuat(c.axis, 2.2), q52b);
+        const di = ROLL_DICE.indexOf(c);
         d.okeys = [
-          { t: ROLL_RELEASE, q: rollQMul(rollQuat(c.axis, -0.7), q43), turns: 0 },
+          { t: 0.3, q: rollQMul(rollQuat([0.7, 0.2, -0.5], 2.1 + di), q43), turns: 0 },
+          { t: 0.95, q: rollQMul(rollQuat([-0.3, 0.9, 0.4], 1.3 - di), q43), turns: 1 },
+          { t: ROLL_RELEASE, q: rollQMul(rollQuat(c.axis, -0.7), q43), turns: 1 },
           { t: ROLL_KEY_43, q: q43, turns: 0 },
           { t: ROLL_KEY_52, q: q52, turns: c.turns[0] },
           { t: ROLL_KEY_52_END, q: q52b, turns: 0 },
@@ -3805,10 +3880,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const sweepAt = holdStart + ROLL_SLOW.hold - ROLL_SWEEP.lead;
       // The flashes keep their inline positions, so they are cleared by hand.
       const dyn = [world, stage, cupEl, cupShadow, fx.sweep, fx.bloom, ...fx.streaks, ...fx.orbs, ...fx.stars, ...motes];
-      dice.forEach(d => dyn.push(d.el, d.shadow, d.ao, d.puff, ...d.ghosts));
+      dice.forEach(d => dyn.push(d.el, d.shadow, d.ao, d.puff, d.caustic, ...d.ghosts));
       const overlays = [...slats.map(s => s.sh), ...slats.map(s => s.sp), base.children[0]];
       dice.forEach(d => {
-        d.faces.forEach(f => overlays.push(f.sh, f.ss, f.sp, f.sp2, f.fr));
+        d.faces.forEach(f => overlays.push(f.sh, f.ss, f.env, f.sp, f.sp2, f.fr));
         d.bevels.forEach(b => overlays.push(b.sh, b.sp));
       });
       let raf = 0;
@@ -3834,6 +3909,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         dyn.forEach(el => { if (el) el.removeAttribute('style'); });
         pops.forEach(el => { el.style.opacity = ''; el.style.transform = ''; });
         overlays.forEach(el => { el.style.opacity = ''; el.style.transform = ''; el._o = undefined; });
+        motes.forEach(el => { el._o = undefined; });
         stage.querySelectorAll('.roll-cash, .roll-flash').forEach(el => { el.style.removeProperty('--x'); el.style.removeProperty('--y'); });
       };
       // The money and the burst start where each die came to rest on screen.
@@ -3921,11 +3997,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         let flare = null;
         const S = 2 * (ROLL_HALF - ROLL_BEVEL);
         dice.forEach((d, di) => {
-          const p = rollPosAt(d, w);
           const q = rollOrientAt(d, w);
           const R = rollQRows(q);
+          const inCup = w < ROLL_RELEASE;
+          const p = inCup ? rollInCup(d, di, w, cup) : rollPosAt(d, w);
           const rot = v => [R[0][0] * v[0] + R[0][1] * v[1] + R[0][2] * v[2], R[1][0] * v[0] + R[1][1] * v[1] + R[1][2] * v[2], R[2][0] * v[0] + R[2][1] * v[1] + R[2][2] * v[2]];
-          const vis = w < ROLL_RELEASE ? 0 : rollClamp01((w - ROLL_RELEASE) / 0.05);
+          // In the cup they rattle with the shake and ride out on the throw;
+          // they are seen only past the rim, as the cup walls hide them.
+          const vis = inCup ? (cup.opacity > 0.99 ? 1 : 0) : 1;
+          const shown = inCup ? 0 : 1;
           d.el.style.opacity = vis > 0 ? '1' : '0';
           d.el.style.setProperty('--o', vis.toFixed(3));
           d.el.style.transform = rollMatrix3d(R.map(row => row.map(x => x / ROLL_SS)), p);
@@ -3940,19 +4020,29 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             if (nv < -0.05) return;
             const lam = Math.max(0, rollDot(n, light));
             const diff = 0.8 * lam + 0.2 * Math.max(0, rollDot(n, fill)) + 0.45 * flash;
-            setO(f.sh, 0.66 * (1 - Math.min(1, diff)));
-            setO(f.ss, 0.1 + 0.5 * Math.max(0, -rollDot(n, light)));
-            setO(f.fr, 0.6 * Math.pow(1 - Math.max(0, nv), 3));
+            setO(f.sh, 0.46 * (1 - Math.min(1, diff)));
+            setO(f.ss, 0.18 + 0.7 * Math.max(0, -rollDot(n, light)) + 0.25 * flash);
+            setO(f.fr, 0.45 * Math.pow(1 - Math.max(0, nv), 3));
             // Mirror direction of the eye in this face; a light's
             // reflection sits where the light departs from it, scaled by
             // the eye distance (a flat mirror moves the image D px per rad).
             const Rm = [2 * nv * n[0] - V[0], 2 * nv * n[1] - V[1], 2 * nv * n[2] - V[2]];
             const u = rot(f.u), v = rot(f.v);
+            // The room in the gloss: the face mirrors a dim ceiling above a
+            // bright horizon and the dark table below. The horizon's image
+            // is the line on the face where the mirrored ray runs level.
+            const ea = -u[1], eb = -v[1], eab = Math.hypot(ea, eb), ru = -Rm[1];
+            // (Clamped to +/-100 layer px: past that the whole face is on
+            // one side of the horizon, and the 320px layer still covers it.)
+            let eang = 0, edist = ru > 0 ? -100 : 100;
+            if (eab > 0.06) { eang = Math.atan2(eb, ea); edist = Math.max(-100, Math.min(100, -D * ru / eab * ROLL_SS)); }
+            setO(f.env, 0.55 + 0.45 * (1 - Math.max(0, nv)));
+            f.env.style.transform = `translate(${(Math.cos(eang) * edist).toFixed(1)}px,${(Math.sin(eang) * edist).toFixed(1)}px) rotate(${eang.toFixed(3)}rad)`;
             const dK = [light[0] - Rm[0], light[1] - Rm[1], light[2] - Rm[2]];
             const kx = Math.max(-400, Math.min(400, D * rollDot(dK, u))), ky = Math.max(-400, Math.min(400, D * rollDot(dK, v)));
             const kr = D * ROLL_SOFTBOX;
             if (Math.abs(kx) < kr + S && Math.abs(ky) < kr + S) {
-              setO(f.sp, 0.7 + 0.3 * flash);
+              setO(f.sp, 0.85 + 0.15 * flash);
               f.sp.style.transform = `translate(${(kx * ROLL_SS).toFixed(1)}px,${(ky * ROLL_SS).toFixed(1)}px) scale(${(kr * ROLL_SS / 50).toFixed(3)})`;
             } else setO(f.sp, 0);
             if (L2) {
@@ -4004,18 +4094,22 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
           // Shadows fall along the key light, lengthening with height; a
           // tight contact shadow darkens as the die settles.
-          const h = Math.max(0, -p[1] - ROLL_HALF);
+          const h = Math.max(0, -p[1] - ROLL_HALF - d.cfg.table);
           const lift = rollClamp01(h / 260);
           const sk = -p[1] / -light[1];
-          d.shadow.style.opacity = (vis * 0.72 * (1 - 0.75 * lift)).toFixed(3);
-          d.shadow.style.transform = `translate3d(${(p[0] - light[0] * sk).toFixed(1)}px,-0.6px,${(p[2] - light[2] * sk).toFixed(1)}px) rotateX(90deg) scale(${(0.85 + 1.1 * lift).toFixed(3)})`;
-          d.ao.style.opacity = (vis * 0.85 * (1 - rollClamp01(h / 24))).toFixed(3);
-          d.ao.style.transform = `translate3d(${p[0].toFixed(1)}px,-0.8px,${p[2].toFixed(1)}px) rotateX(90deg)`;
+          d.shadow.style.opacity = (shown * 0.72 * (1 - 0.75 * lift)).toFixed(3);
+          d.shadow.style.transform = `translate3d(${(p[0] - light[0] * sk).toFixed(1)}px,${(-d.cfg.shade - 0.3).toFixed(2)}px,${(p[2] - light[2] * sk).toFixed(1)}px) rotateX(90deg) scale(${(0.85 + 1.1 * lift).toFixed(3)})`;
+          d.ao.style.opacity = (shown * 0.85 * (1 - rollClamp01(h / 24))).toFixed(3);
+          d.ao.style.transform = `translate3d(${p[0].toFixed(1)}px,${(-d.cfg.shade - 0.45).toFixed(2)}px,${p[2].toFixed(1)}px) rotateX(90deg)`;
+          // Light passing through the red body lands in its shadow as a
+          // red glow, tightening as the die comes down to the table.
+          d.caustic.style.opacity = (shown * 0.7 * (1 - rollClamp01(h / 60))).toFixed(3);
+          d.caustic.style.transform = `translate3d(${(p[0] - light[0] * sk * 1.08).toFixed(1)}px,${(-d.cfg.shade - 0.6).toFixed(2)}px,${(p[2] - light[2] * sk * 1.08).toFixed(1)}px) rotateX(90deg) scale(${(0.7 + 1.2 * lift).toFixed(3)})`;
           // Felt dust kicked up where each die first hits the table.
           const pk = (w - d.contact) / 0.5;
           if (pk > 0 && pk < 1) {
             d.puff.style.opacity = (0.55 * Math.pow(1 - pk, 1.6)).toFixed(3);
-            d.puff.style.transform = `translate3d(${d.contactPos[0].toFixed(1)}px,-1px,${d.contactPos[2].toFixed(1)}px) rotateX(90deg) scale(${(0.35 + 1.5 * (1 - Math.pow(1 - pk, 2))).toFixed(3)})`;
+            d.puff.style.transform = `translate3d(${d.contactPos[0].toFixed(1)}px,${(-d.cfg.shade - 0.55).toFixed(2)}px,${d.contactPos[2].toFixed(1)}px) rotateX(90deg) scale(${(0.35 + 1.5 * (1 - Math.pow(1 - pk, 2))).toFixed(3)})`;
           } else d.puff.style.opacity = '0';
           // Motion-blur ghosts: the die a moment ago, spaced by how fast
           // the clock is running, so they streak at full speed and melt
@@ -4052,18 +4146,26 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         fx.sweep.style.opacity = (0.85 * env).toFixed(3);
         fx.sweep.style.transform = `rotate(18deg) translateX(${(rollClamp01(sw) * 820).toFixed(1)}px)`;
 
-        // Dust: billboarded to the lens, drifting, twinkling, and opening
-        // into soft discs the further it sits from the plane of focus.
+        // Dust in the key light's shaft: only motes inside the beam show.
+        // In focus they are fine specks that glint as they turn; away from
+        // the plane of focus they open into faint, crisp-edged discs whose
+        // light spreads thinner the larger they grow.
         const focus = rollDot(B.f, [c.aim[0] - E[0], c.aim[1] - E[1], c.aim[2] - E[2]]);
         const fade = rollClamp01(t / 0.8) * (1 - rollClamp01((w - popWorld) / 0.5));
         motes.forEach((el, i) => {
           const m = ROLL_MOTES[i];
-          const mp = [m.p[0] + m.v[0] * t + 6 * Math.sin(t * 0.7 + m.ph), m.p[1] + m.v[1] * t, m.p[2] + m.v[2] * t];
+          const mp = [m.p[0] + m.v[0] * t + 5 * Math.sin(t * 0.6 + m.ph), m.p[1] + m.v[1] * t, m.p[2] + m.v[2] * t];
           const z = rollDot(B.f, [mp[0] - E[0], mp[1] - E[1], mp[2] - E[2]]);
-          if (z < 40) { el.style.opacity = '0'; return; }
-          const blur = Math.min(Math.abs(z - focus) / focus * 3.2, 4);
-          const k = 1 + blur * 2.2;
-          el.style.opacity = (fade * m.a * (0.6 + 0.4 * Math.sin(t * 2.1 + m.ph)) / (1 + blur * blur * 0.9)).toFixed(3);
+          const q = [mp[0] - ROLL_SHAFT[0], mp[1] - ROLL_SHAFT[1], mp[2] - ROLL_SHAFT[2]];
+          const along = rollDot(q, light);
+          const off = Math.hypot(q[0] - light[0] * along, q[1] - light[1] * along, q[2] - light[2] * along);
+          const beam = Math.exp(-(off * off) / (2 * 130 * 130));
+          if (z < 60 || beam < 0.03 || !fade) { if (el._o !== '0') { el._o = '0'; el.style.opacity = '0'; } return; }
+          const blur = Math.min(Math.abs(z - focus) / focus * 3, 2.2);
+          const k = 0.42 + blur * 1.9;
+          const glint = Math.pow(0.5 + 0.5 * Math.sin(t * 3.1 + m.ph * 3), 8);
+          const tw = 0.25 + 0.75 * (blur > 0.6 ? 0.5 : glint);
+          setO(el, fade * beam * m.a * tw / (1 + (k - 0.42) * (k - 0.42) * 0.55));
           el.style.transform = rollMatrix3d([[B.r[0] * k, B.dn[0] * k, -B.f[0] * k], [B.r[1] * k, B.dn[1] * k, -B.f[1] * k], [B.r[2] * k, B.dn[2] * k, -B.f[2] * k]], mp);
         });
 
