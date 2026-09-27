@@ -62,20 +62,20 @@ async function discardCustomer(customerId: string) {
 // A subscription starts when a checkout session is paid, which can be long
 // after it was made: an earlier tab left open could still be paid after a
 // newer checkout, and the checks a checkout starts with only see
-// subscriptions that already exist. So once a new session exists, this
-// customer's older open ones are expired. Sessions from the last minute
-// are kept, so a double tap can't expire the page the first tap is already
-// opening. Stripe's "limit customers to one subscription" setting guards
-// the payment itself (see README). Best-effort: a failure here never
-// blocks this checkout.
-const KEEP_RECENT_SESSIONS_SECONDS = 60;
-
+// subscriptions that already exist. So once a new session exists, every
+// other open session for this customer that isn't newer is expired, and
+// the newest checkout page is the only one left to pay. Two made in the
+// same second may expire each other, leaving nothing to pay rather than
+// two (the page sends one checkout at a time, so that takes two tabs).
+// Stripe's "limit customers to one subscription" setting guards the payment
+// itself (see README). Best-effort: a failure here never blocks this
+// checkout.
 async function expireOlderOpenSessions(customerId: string, current: Stripe.Checkout.Session) {
   try {
     const older = await stripe.checkout.sessions.list({
       customer: customerId,
       status: "open",
-      created: { lt: current.created - KEEP_RECENT_SESSIONS_SECONDS },
+      created: { lte: current.created },
       limit: 100,
     });
     for (const session of older.data) {
@@ -206,6 +206,9 @@ serve(async (req) => {
     // Stripe happily attaches a second subscription to the same customer,
     // so a stale client that still shows "Upgrade" must not double-bill.
     // Asks Stripe rather than trusting our row, which lags a missed webhook.
+    // The subscription id this request last saw in the account's row: the
+    // customer replacement below only lands while the row still holds it.
+    let expectedSubscriptionId: string | null = existing?.stripe_subscription_id ?? null;
     if (existing?.stripe_subscription_id) {
       let current: Stripe.Subscription | null = null;
       try {
@@ -223,6 +226,7 @@ serve(async (req) => {
           .select("user_id");
         if (clearError) throw clearError;
         if (!cleared?.length) return jsonResponse({ error: BILLING_CHANGED }, 409, cors);
+        expectedSubscriptionId = null;
       }
       if (current && ["active", "trialing", "past_due", "unpaid"].includes(current.status)) {
         return jsonResponse({
@@ -253,14 +257,18 @@ serve(async (req) => {
       // is left for the webhook to change.
       if (existing) {
         // Replaces the ids only if the row still names the customer this
-        // request found missing: one saved since by another checkout (with
-        // a subscription the webhook may already have recorded) must stand.
+        // request found missing and the subscription it last saw: a customer
+        // saved since by another checkout, or a subscription the webhook
+        // recorded since, must stand.
         let replace = supabase.from("user_subscriptions")
           .update({ stripe_customer_id: customerId, stripe_subscription_id: null, updated_at: new Date().toISOString() })
           .eq("user_id", user.id);
         replace = existing.stripe_customer_id
           ? replace.eq("stripe_customer_id", existing.stripe_customer_id)
           : replace.is("stripe_customer_id", null);
+        replace = expectedSubscriptionId
+          ? replace.eq("stripe_subscription_id", expectedSubscriptionId)
+          : replace.is("stripe_subscription_id", null);
         const { data: replaced, error: saveError } = await replace.select("user_id");
         if (saveError || !replaced?.length) {
           await discardCustomer(customerId);
