@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import Anthropic from "npm:@anthropic-ai/sdk@0.128.0";
 import {
+  claudeErrorReply,
   cleanDrops,
   discordImageUrl,
   DROP_SCHEMA,
@@ -196,31 +197,39 @@ serve(async (req) => {
     },
   ];
 
-  const anthropic = new Anthropic({ apiKey });
+  // The SDK's defaults (ten minutes, two retries) outlast the edge runtime's
+  // own limit, which would end a stalled read as a bare gateway timeout.
+  const anthropic = new Anthropic({ apiKey, timeout: 90_000, maxRetries: 1 });
   let response: Anthropic.Beta.BetaMessage;
   try {
     // fallbacks: "default" re-runs a request a safety classifier declines on
-    // Anthropic's recommended fallback model, inside the same call.
+    // Anthropic's recommended fallback model, inside the same call. The
+    // system prompt never changes, so it is a cache breakpoint: a batch of
+    // reads within a few minutes pays for it once. max_tokens caps thinking
+    // and the answer together; the cap costs nothing unless used.
     response = await anthropic.beta.messages.create({
       model: MODEL,
-      max_tokens: 8000,
+      max_tokens: 16000,
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
-      system: SYSTEM_PROMPT,
+      system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
       output_config: { effort: "low", format: { type: "json_schema", schema: DROP_SCHEMA } },
       messages: [{ role: "user", content }],
     });
   } catch (err) {
+    // A connection failure is an APIError with no status; claudeErrorReply
+    // sorts every case, from a rejected key to an overload.
     if (err instanceof Anthropic.APIError) {
-      console.error("read-drop: Claude API error", err.status, err.message);
-      const status = err.status === 429 || err.status === 529 ? 503 : 502;
-      return jsonResponse({ error: `Claude couldn't read the screenshots right now (${err.status ?? "network"}). Try again in a minute.` }, status, cors);
+      console.error("read-drop: Claude API error", err.status, err.type, err.message);
+      const reply = claudeErrorReply(err.status, err.type, err.message);
+      return jsonResponse({ error: reply.error }, reply.status, cors);
     }
     throw err;
   }
 
   const usage = { input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens };
   if (response.stop_reason === "refusal") {
+    console.warn("read-drop: refusal", response.stop_details?.category, response.stop_details?.explanation);
     return jsonResponse({ error: "Claude declined to read these screenshots.", usage }, 422, cors);
   }
   if (response.stop_reason === "max_tokens") {

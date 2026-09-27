@@ -105,6 +105,46 @@ Never include personal information in any field: no usernames, display names, em
 
 List each offer once, even if several screenshots show it. If an image shows no offer, or can't be read, return no drop for it and say why in unreadable (null when everything was read).`;
 
+// What the function answers when the call to Claude itself fails, from the
+// SDK error's HTTP status, error type and message. A configuration problem
+// (key, billing, model access) is a 500 that names it, so the admin isn't
+// told to "try again in a minute" for something a retry can't fix. Only
+// the 400 branch echoes the API's own words: the admin is the sole caller
+// and needs them to fix the input. Kept SDK-free so it can be tested.
+export function claudeErrorReply(
+  status: number | undefined,
+  type: string | null | undefined,
+  message: string,
+): { status: number; error: string } {
+  const kind = type ?? "";
+  if (status === 401 || kind === "authentication_error") {
+    return { status: 500, error: "Anthropic rejected the project's ANTHROPIC_API_KEY (invalid or revoked). Set a valid key in the Supabase secrets; no redeploy is needed." };
+  }
+  if (status === 403 || kind === "permission_error") {
+    return { status: 500, error: "The ANTHROPIC_API_KEY doesn't have access to this model. Check the key's workspace and the account's model access." };
+  }
+  if (status === 402 || kind === "billing_error") {
+    return { status: 500, error: "The Anthropic account has a billing problem (no credit, or the spend limit was reached). Add credit in the Console." };
+  }
+  if (status === 404 || kind === "not_found_error") {
+    return { status: 500, error: "The model this function asks for isn't available to the account." };
+  }
+  if (status === 400 || kind === "invalid_request_error") {
+    const detail = message.replace(/^\d{3}\s+/, "").replace(/\s+/g, " ").trim().slice(0, 200);
+    return { status: 502, error: `Claude rejected the request: ${detail || "no detail given"}. Try fewer or smaller screenshots.` };
+  }
+  if (status === 429 || kind === "rate_limit_error") {
+    return { status: 503, error: "Anthropic's rate limit was hit. Try again in a minute." };
+  }
+  if (status === undefined) {
+    return { status: 503, error: "Claude didn't answer in time. Try again." };
+  }
+  if (status >= 500 || kind === "overloaded_error") {
+    return { status: 503, error: "Claude is overloaded right now. Try again in a minute." };
+  }
+  return { status: 502, error: `Claude couldn't read the screenshots right now (${status}). Try again in a minute.` };
+}
+
 export type Drop = {
   platform_name: string;
   catalog_match: string | null;
