@@ -44,6 +44,11 @@ function isMissing(error: unknown): boolean {
   return e?.code === "resource_missing" || e?.raw?.code === "resource_missing" || e?.statusCode === 404;
 }
 
+// Another checkout or a webhook changed this account's billing row while
+// this request was working from an older copy: nothing is decided on the
+// stale view. The page shows this and refreshes the account's status.
+const BILLING_CHANGED = "Your billing details just changed. Please try again.";
+
 function jsonResponse(body: Record<string, unknown>, status: number, cors: Record<string, string>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -167,10 +172,15 @@ serve(async (req) => {
         if (!isMissing(error)) throw error;
         // Forget the id that no longer resolves, so it stops standing in
         // for the account's subscription; the webhook records the new one.
-        const { error: clearError } = await supabase.from("user_subscriptions")
+        // Only if the row still holds that id: a newer one written since
+        // must stand.
+        const { data: cleared, error: clearError } = await supabase.from("user_subscriptions")
           .update({ stripe_subscription_id: null, updated_at: new Date().toISOString() })
-          .eq("user_id", user.id);
+          .eq("user_id", user.id)
+          .eq("stripe_subscription_id", existing.stripe_subscription_id)
+          .select("user_id");
         if (clearError) throw clearError;
+        if (!cleared?.length) return jsonResponse({ error: BILLING_CHANGED }, 409, cors);
       }
       if (current && ["active", "trialing", "past_due", "unpaid"].includes(current.status)) {
         return jsonResponse({
@@ -199,17 +209,28 @@ serve(async (req) => {
       // A new account gets a free row; an existing row only has its Stripe
       // ids replaced, so its tier (owner, or a Pro period still running)
       // is left for the webhook to change.
-      const { error: saveError } = existing
-        ? await supabase.from("user_subscriptions")
+      if (existing) {
+        // Replaces the ids only if the row still names the customer this
+        // request found missing: one saved since by another checkout (with
+        // a subscription the webhook may already have recorded) must stand.
+        let replace = supabase.from("user_subscriptions")
           .update({ stripe_customer_id: customerId, stripe_subscription_id: null, updated_at: new Date().toISOString() })
-          .eq("user_id", user.id)
-        : await supabase.from("user_subscriptions").upsert({
+          .eq("user_id", user.id);
+        replace = existing.stripe_customer_id
+          ? replace.eq("stripe_customer_id", existing.stripe_customer_id)
+          : replace.is("stripe_customer_id", null);
+        const { data: replaced, error: saveError } = await replace.select("user_id");
+        if (saveError) throw saveError;
+        if (!replaced?.length) return jsonResponse({ error: BILLING_CHANGED }, 409, cors);
+      } else {
+        const { error: saveError } = await supabase.from("user_subscriptions").upsert({
           user_id: user.id,
           stripe_customer_id: customerId,
           tier: "free",
           status: "active",
         });
-      if (saveError) throw saveError;
+        if (saveError) throw saveError;
+      }
     }
 
     const success = new URL(returnUrl);
