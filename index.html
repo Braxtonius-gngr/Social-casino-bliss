@@ -19,7 +19,12 @@
     (function () {
       try {
         var id = localStorage.getItem('almanac_theme_v1');
-        var valid = ['western', 'prism', 'neon', 'obsidian', 'glitch', 'executive', 'amped'];
+        // 'amped' (Executive Lounge: Amped) was retired 2026-09-27 - its two
+        // keepable effects now live in executive itself. Anyone who had it
+        // stored lands on executive here, and getActiveThemeId() does the
+        // same for the rest of the app, so the stale key never needs an
+        // explicit migration step.
+        var valid = ['western', 'prism', 'neon', 'obsidian', 'glitch', 'executive'];
         document.documentElement.setAttribute('data-theme', valid.indexOf(id) !== -1 ? id : 'executive');
       } catch (e) {
         document.documentElement.setAttribute('data-theme', 'executive');
@@ -2620,7 +2625,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         cardWrapper.className = 'ledger-card-wrapper';
         const pct = isReady ? 100 : Math.round(cooldownProgress(game, remainingMs) * 100);
         cardWrapper.innerHTML = `
-          <div class="ledger-card glass-panel ${isReady ? 'is-ready' : ''}" data-gid="${game.id}">
+          <div class="ledger-card glass-panel ${isReady ? 'is-ready' : ''}" data-gid="${game.id}" style="--i:${cardIndex}">
             <div class="cd-fill" style="width:${pct}%"></div>
             <div class="card-left">
               <div class="avatar-wrap">
@@ -5553,51 +5558,6 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // frosted glass over a flat color can only ever look like a dark
         // grey box, no matter how much blur it carries.
         bodyBg: "radial-gradient(130% 90% at 12% -8%, rgba(212,175,55,0.20) 0%, transparent 52%) center/cover fixed, radial-gradient(110% 80% at 92% 20%, rgba(63,191,143,0.14) 0%, transparent 55%) center/cover fixed, linear-gradient(180deg, rgba(5,5,7,0.30) 0%, rgba(5,5,7,0.48) 45%, rgba(5,5,7,0.66) 100%) center/cover fixed, url('assets/background.webp') center/cover fixed #050507",
-        metaColor: '#050507'
-      },
-      // Executive Lounge: Amped - the same brief, same palette, same tier
-      // meaning (vars below are byte-identical to executive's), turned all
-      // the way up. Where Executive Lounge is restraint as the argument for
-      // "expensive", this is spectacle as the argument for it instead -
-      // animated gold light, a shimmering wordmark, a rotating halo on the
-      // ready ring, glass that visibly sweeps. Kept as its own theme rather
-      // than folded into Executive Lounge itself, since the two are
-      // deliberately different answers to the same brief, not one theme
-      // with a setting - see the amped-only rules in app.css.
-      amped: {
-        name: 'Executive Lounge: Amped',
-        description: 'Same gold, same glass, all the way up. Animated light, shimmer, and motion everywhere restraint used to be.',
-        vars: {
-          '--bg-base': '#050507',
-          '--accent-gold': '#D4AF37',
-          '--accent-gold-hover': '#E8C860',
-          '--accent-gold-dim': 'rgba(212, 175, 55, 0.16)',
-          '--accent-gold-glow': 'rgba(212, 175, 55, 0.15)',
-          '--accent-silver': '#E3E4E5',
-          '--accent-bronze': '#CD7F32',
-          '--accent-green': '#3FBF8F',
-          '--accent-green-dim': 'rgba(63, 191, 143, 0.16)',
-          '--accent-pink': '#C8455E',
-          '--accent-pink-dim': 'rgba(200, 69, 94, 0.16)',
-          '--accent-orange': '#D98A3C',
-          '--accent-orange-dim': 'rgba(217, 138, 60, 0.16)',
-          '--accent-cyan': '#4FD8E8',
-          '--accent-cyan-dim': 'rgba(79, 216, 232, 0.14)',
-          '--glass-border': 'rgba(255, 255, 255, 0.08)',
-          '--glass-highlight': 'rgba(232, 205, 140, 0.09)',
-          '--text-main': '#F8F9FA',
-          '--text-muted': '#8A8D93',
-          '--text-dim': '#5A5D63',
-          '--tier-s': '#D4AF37',
-          '--tier-a': '#E3E4E5',
-          '--tier-b': '#CD7F32',
-          '--tier-c': '#8A8D93'
-        },
-        // Brighter glow stops than Executive's own bodyBg - the motion (see
-        // the ::before mesh in app.css) is what actually sells "amped", this
-        // is just the static layer underneath it, so it only needs to be a
-        // little hotter, not a different design.
-        bodyBg: "radial-gradient(130% 90% at 12% -8%, rgba(212,175,55,0.30) 0%, transparent 52%) center/cover fixed, radial-gradient(110% 80% at 92% 20%, rgba(63,191,143,0.22) 0%, transparent 55%) center/cover fixed, linear-gradient(180deg, rgba(5,5,7,0.26) 0%, rgba(5,5,7,0.42) 45%, rgba(5,5,7,0.60) 100%) center/cover fixed, url('assets/background.webp') center/cover fixed #050507",
         metaColor: '#050507'
       },
       prism: {

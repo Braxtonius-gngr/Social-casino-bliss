@@ -3507,6 +3507,74 @@
     0 0 24px rgba(212,175,55,0.06);
 }
 
+/* One light crossing the whole deck. Inherited from the retired "Amped"
+   variant, which gave every card its own soft white highlight drifting
+   side-to-side on a 10s loop - the one piece of that theme worth keeping,
+   slowed down and made into a single movement instead of 137 independent
+   ones.
+
+   The mechanism: each .ledger-card carries a ::before the size of the card
+   holding a soft, off-centre white ellipse. It translates from fully above
+   the card to fully below over --deck-light-cross, then parks out of sight
+   for the rest of --deck-light-period. renderGames() stamps every card's
+   position in the list into --i, and the animation-delay below offsets
+   card i by i * --deck-light-step. With --deck-light-cross set to exactly
+   twice --deck-light-step, card i+1's highlight enters its top edge at the
+   moment card i's highlight passes its own centre - so at any instant the
+   lit region is about two cards tall and its centre descends the list at
+   a constant one card per --deck-light-step. Every card is just a window
+   onto the same virtual light moving down the deck. The mod() wraps the
+   delay so a 137-card deck doesn't wait three minutes for its last card:
+   one band exists every --deck-light-cards cards, and on a phone that
+   shows five or six at once only one is ever on screen.
+
+   Timing is deliberately slow. A band takes ~11s to cross a phone's worth
+   of cards and returns every 45s - present enough to register as light
+   moving through the room, rare enough never to compete with the content.
+   Intensity is under Amped's 0.13 too: this is meant to be noticed
+   on the third glance, not the first.
+
+   position:relative + overflow:hidden on the card itself: relative so the
+   pseudo (and .cd-fill, which was already position:absolute) resolve
+   against the card, hidden so the sweep clips to the rounded corners.
+   The keen-info popover is a sibling of the card, not a child, and the
+   streak badge sits inside the card's own padding, so neither is clipped.
+
+   mod() has shipped in every engine since 2024; where it hasn't, the
+   animation-delay declaration is dropped and every card sweeps in unison
+   once per period - degraded, not broken. */
+[data-theme="executive"] {
+  --deck-light-period: 45s;
+  --deck-light-step: 1.8s;
+  --deck-light-cross: 3.6s;
+  --deck-light-cards: 25;
+}
+[data-theme="executive"] .ledger-card {
+  position: relative;
+  overflow: hidden;
+}
+[data-theme="executive"] .ledger-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(ellipse 95% 62% at 38% 50%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.045) 42%, transparent 74%);
+  transform: translateY(-100%);
+  animation: exec-deck-light var(--deck-light-period) linear infinite;
+  animation-delay: calc(mod(var(--i, 0), var(--deck-light-cards)) * var(--deck-light-step) - var(--deck-light-period));
+}
+/* 8% of 45s = 3.6s = --deck-light-cross. Keep these three in step if the
+   period ever changes. The hold from 8% to 100% is the highlight parked
+   below the card's bottom edge, where overflow:hidden means it paints
+   nothing - not a visible pause. */
+@keyframes exec-deck-light {
+  0% { transform: translateY(-100%); }
+  8%, 100% { transform: translateY(100%); }
+}
+[data-motion="off"] [data-theme="executive"] .ledger-card::before { animation: none; opacity: 0; }
+
 [data-theme="executive"] .hero-ring-circle {
   border: 2px solid var(--accent-gold);
   background: rgba(0,0,0,0.38);
@@ -3693,342 +3761,144 @@
    cyan flare - restraint extends to motion, not just colour. */
 [data-theme="executive"] .tour-target-active { animation: none !important; box-shadow: 0 0 0 2px var(--accent-gold) !important; }
 
-/* ====================================================================
-   EXECUTIVE LOUNGE: AMPED
+/* Ambient mesh: three soft colour glows behind everything that drift and
+   slowly shift hue. The second thing worth keeping from the retired "Amped"
+   variant - there it completed a drift pass in 14s and a full hue cycle in
+   19s, which read as a lava lamp; here the same three glows take 52s to
+   drift and nearly two minutes to turn through the spectrum, so the room's
+   colour is always changing and never seen to change. Stops are dimmer
+   than Amped's too (0.26/0.20/0.14 vs 0.42/0.34/0.26) because this sits
+   on top of THEMES.executive.bodyBg, which already carries a static gold
+   and emerald glow of its own.
 
-   Same brief, same tokens (THEMES.amped.vars in index.html is
-   byte-identical to executive's - tier colour still means the same thing
-   in both), turned all the way up. Executive Lounge's argument for
-   "expensive" is restraint; this is the other argument for it - motion
-   and light everywhere the quiet version holds back. Every selector here
-   is its own full rule rather than a delta on top of [data-theme=
-   "executive"], because [data-theme="X"] and [data-theme="Y"] never
-   cascade into each other - same reason every other theme block in this
-   file is self-contained.
+   Why a pseudo-element and not part of bodyBg: applyTheme() writes
+   body.style.background as an inline SHORTHAND (documented on
+   THEMES.executive.bodyBg in index.html), so any animation on a body
+   background property would be inline-overridden the instant the theme
+   applies. A pseudo-element has no inline style for JS to touch.
+   z-index:-1 paints above the canvas background and below the layer's
+   own content.
 
-   html[data-motion="off"] * already kills every animation added here
-   (see assets/app.css's global kill switch) - no per-rule guard needed,
-   verified the same way the Chainsaw gore pass was.
-   ==================================================================== */
-
-/* Wordmark: same poured-metal gradient-clip as Executive, but the gradient
-   itself now sweeps across the letters instead of sitting still. */
-[data-theme="amped"] .app-title,
-[data-theme="amped"] .landing-title {
-  position: relative;
-  padding-bottom: 16px;
-}
-[data-theme="amped"] .app-title span,
-[data-theme="amped"] .landing-title span {
-  background: linear-gradient(110deg, #A87A22 0%, #F3DA92 25%, #D4AF37 50%, #F3DA92 75%, #A87A22 100%);
-  background-size: 250% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  animation: amped-wordmark-shimmer 5s linear infinite;
-}
-@keyframes amped-wordmark-shimmer {
-  0% { background-position: 0% 50%; }
-  100% { background-position: -250% 50%; }
-}
-[data-theme="amped"] .app-title::after,
-[data-theme="amped"] .landing-title::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  transform: translateX(-50%);
-  height: 2px;
-  background: var(--gold-metal);
-  box-shadow: 0 0 12px rgba(212,175,55,0.6);
-}
-[data-theme="amped"] .app-title::after { width: 52px; }
-[data-theme="amped"] .landing-title::after { width: 72px; }
-
-/* Glass panels: blur/saturate pushed further than Executive's own, plus a
-   specular sweep that actually crosses the surface on a loop rather than
-   sitting there as a static highlight - the "glass catches light" idea
-   Executive only implies, made literal and continuous. */
-[data-theme="amped"] .glass-panel {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(160deg, rgba(42,38,52,0.62) 0%, rgba(18,20,25,0.40) 100%);
-  backdrop-filter: blur(28px) saturate(185%);
-  -webkit-backdrop-filter: blur(28px) saturate(185%);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-top: 1px solid rgba(255,255,255,0.28);
-  border-left: 1px solid rgba(255,255,255,0.18);
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.10) inset,
-    0 -12px 20px -14px rgba(0,0,0,0.5) inset,
-    0 16px 40px rgba(0,0,0,0.55),
-    0 0 32px rgba(212,175,55,0.14);
-}
-/* Deliberately NOT the buttons' gold-sheen - a card is glass, a button is
-   polished metal, and giving both the same tight bright streak made every
-   translucent surface in the app read as the same material. Buttons keep
-   the hard, fast, bright metallic glint (it's supposed to look like
-   something you'd press). Cards get something a glass surface would
-   actually do: a soft, blurred, low-contrast highlight that drifts slowly
-   rather than sweeps - less "a light passed over this" and more "light is
-   coming through this". Ping-pong (0%/100% share a value, 50% doesn't) is
-   genuine continuous back-and-forth motion, not the held-still bug fixed
-   above on gold-sheen - there's a distinct value at every point except the
-   shared loop seam. */
-[data-theme="amped"] .glass-panel::before {
-  content: '';
-  position: absolute;
-  top: 5%; left: -20%;
-  width: 55%; height: 90%;
-  background: radial-gradient(ellipse at center, rgba(255,255,255,0.13) 0%, transparent 70%);
-  filter: blur(10px);
-  animation: amped-panel-drift 10s ease-in-out infinite;
-  pointer-events: none;
-}
-/* A little stagger on the deck's own cards, so 137 of them don't drift in
-   lockstep - reads as ambient light shifting across the room, not a wave. */
-[data-theme="amped"] .ledger-card:nth-child(2n)::before { animation-delay: 3.3s; }
-[data-theme="amped"] .ledger-card:nth-child(3n)::before { animation-delay: 6.6s; }
-@keyframes amped-panel-drift {
-  0%, 100% { transform: translate(0%, 0%); }
-  50% { transform: translate(220%, 15%); }
-}
-[data-theme="amped"] .hero-stat-card { background: linear-gradient(160deg, rgba(42,38,52,0.54) 0%, rgba(18,20,25,0.34) 100%); }
-
-/* Hero ring: a rotating gold halo behind it, a breathing pulse that quickens
-   as more of the deck comes ready (same --ready-ratio Executive's glow
-   scales off), and a one-shot burst (.ring-pulse, toggled from JS in
-   updateHeroStats() whenever the ready count ticks up) for the moment
-   something actually becomes collectible. */
-[data-theme="amped"] .hero-ring-wrapper::before {
-  content: '';
-  position: absolute;
-  inset: -5px;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg, var(--accent-gold), transparent 30%, var(--accent-gold) 60%, transparent 90%, var(--accent-gold));
-  filter: blur(3px);
-  animation: amped-ring-spin 4s linear infinite;
-  z-index: 0;
-}
-@keyframes amped-ring-spin { to { transform: rotate(360deg); } }
-[data-theme="amped"] .hero-ring-circle {
-  position: relative;
-  z-index: 1;
-  border: 2px solid var(--accent-gold);
-  background: rgba(0,0,0,0.42);
-  color: var(--text-main);
-  box-shadow:
-    0 0 calc(14px + 34px * var(--ready-ratio, 0)) rgba(212, 175, 55, calc(0.22 + 0.45 * var(--ready-ratio, 0))),
-    inset 0 0 14px rgba(212,175,55,0.16);
-  animation: amped-ring-breathe calc(3.2s - 1.4s * var(--ready-ratio, 0)) ease-in-out infinite;
-}
-@keyframes amped-ring-breathe {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.035); }
-}
-[data-theme="amped"] .hero-ring-circle.ring-pulse { animation: amped-ring-burst 0.8s ease-out; }
-@keyframes amped-ring-burst {
-  0% { box-shadow: 0 0 0 0 rgba(212,175,55,0.55), inset 0 0 14px rgba(212,175,55,0.16); }
-  60% { box-shadow: 0 0 0 22px rgba(212,175,55,0), inset 0 0 14px rgba(212,175,55,0.16); }
-  100% { box-shadow: 0 0 0 0 rgba(212,175,55,0), inset 0 0 14px rgba(212,175,55,0.16); }
-}
-
-/* Avatars: the hue border becomes a hue glow - same per-name colour as
-   Executive, just lit rather than merely outlined. */
-[data-theme="amped"] .casino-avatar {
-  border: 1px solid hsl(var(--avatar-hue, 45) 70% 62% / 0.55);
-  background: radial-gradient(circle at 32% 28%, hsl(var(--avatar-hue, 45) 55% 30% / 0.75) 0%, rgba(0,0,0,0.5) 72%);
-  box-shadow: 0 0 14px hsl(var(--avatar-hue, 45) 70% 55% / 0.35), inset 0 1px 2px rgba(0,0,0,0.5);
-  color: var(--text-main);
-}
-
-/* Tier: S keeps Executive's whisper-of-halo idea but lets it breathe -
-   still the only tier that glows, still never a neon pill. */
-[data-theme="amped"] .tier-badge {
-  box-shadow: none;
-  border-radius: 3px;
-  background: transparent;
-  border: 1px solid currentColor;
-  font-weight: 700;
-}
-[data-theme="amped"] .tier-S {
-  color: var(--tier-s);
-  background: rgba(212,175,55,0.16);
-  animation: amped-tier-s-pulse 2.4s ease-in-out infinite;
-}
-@keyframes amped-tier-s-pulse {
-  0%, 100% { box-shadow: 0 0 10px rgba(212,175,55,0.4); }
-  50% { box-shadow: 0 0 18px rgba(212,175,55,0.65); }
-}
-[data-theme="amped"] .tier-A { color: var(--tier-a); background: rgba(227,228,229,0.14); box-shadow: 0 0 8px rgba(227,228,229,0.25); }
-[data-theme="amped"] .tier-B { color: var(--tier-b); background: rgba(205,127,50,0.16); box-shadow: 0 0 8px rgba(205,127,50,0.25); }
-[data-theme="amped"] .tier-C { color: var(--tier-c); background: rgba(138,141,147,0.12); }
-[data-theme="amped"] .tier-D { color: var(--tier-d); background: transparent; border-style: dashed; }
-
-/* Primary buttons: the gold-sheen sweep runs more than twice as often as
-   Executive's, plus a glow that breathes at rest instead of only lighting
-   up on hover - the button never fully stops casting light. */
-[data-theme="amped"] .btn-open,
-[data-theme="amped"] .btn-primary,
-[data-theme="amped"] .btn-run-collect {
-  position: relative;
-  overflow: hidden;
-  background: var(--gold-metal);
-  color: #14151A;
-  animation: amped-btn-glow-pulse 2.6s ease-in-out infinite;
-}
-@keyframes amped-btn-glow-pulse {
-  0%, 100% { box-shadow: 0 1px 0 rgba(255,255,255,0.32) inset, 0 3px 12px rgba(0,0,0,0.55), 0 8px 32px rgba(212,175,55,0.42); }
-  50% { box-shadow: 0 1px 0 rgba(255,255,255,0.32) inset, 0 3px 12px rgba(0,0,0,0.55), 0 10px 40px rgba(212,175,55,0.68); }
-}
-[data-theme="amped"] .btn-open { border: 1px solid rgba(255,255,255,0.22); font-weight: 800; }
-[data-theme="amped"] .btn-open:hover,
-[data-theme="amped"] .btn-primary:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 5px 18px rgba(0,0,0,0.6), 0 10px 40px rgba(212,175,55,0.55); }
-[data-theme="amped"] .btn-open::after,
-[data-theme="amped"] .btn-primary::after,
-[data-theme="amped"] .btn-run-collect::after {
-  content: '';
-  position: absolute;
-  top: 0; left: -60%;
-  width: 34%; height: 100%;
-  background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.75) 50%, transparent 100%);
-  transform: skewX(-20deg);
-  animation: gold-sheen 2s linear infinite;
-  pointer-events: none;
-}
-[data-theme="amped"] .btn-primary::after { animation-delay: 0.67s; }
-[data-theme="amped"] .btn-run-collect::after { animation-delay: 1.33s; }
-[data-motion="off"] [data-theme="amped"] .btn-open::after,
-[data-motion="off"] [data-theme="amped"] .btn-primary::after,
-[data-motion="off"] [data-theme="amped"] .btn-run-collect::after { animation: none; opacity: 0; }
-
-[data-theme="amped"] .btn-open.cooldown {
-  background: rgba(0,0,0,0.42);
-  border: 1px solid rgba(0,0,0,0.6);
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.75), 0 1px 0 rgba(255,255,255,0.04);
-  color: var(--text-muted);
-}
-[data-theme="amped"] .btn-open.cooldown::after { display: none; }
-
-[data-theme="amped"] .btn-check {
-  background: rgba(0,0,0,0.42);
-  border: 1px solid rgba(0,0,0,0.6);
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.75), 0 1px 0 rgba(255,255,255,0.06);
-  color: var(--text-main);
-}
-[data-theme="amped"] .btn-check:hover {
-  border-color: var(--accent-gold);
-  color: var(--accent-gold);
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.75), 0 0 10px rgba(212,175,55,0.35);
-}
-
-[data-theme="amped"] .cd-fill { background: var(--gold-metal); opacity: 0.9; }
-
-[data-theme="amped"] .filter-btn {
-  background: rgba(0,0,0,0.35);
-  border-radius: 8px;
-  border-color: var(--glass-border);
-}
-[data-theme="amped"] .cooldown-chip { border-radius: 4px; }
-
-[data-theme="amped"] .docked-footer {
-  background: rgba(11,12,16,0.92);
-  border-top-color: var(--glass-border);
-  box-shadow: 0 -6px 24px rgba(212,175,55,0.15), 0 -6px 20px rgba(0,0,0,0.6);
-}
-
-/* Landing, and the daily-run overlay: both position:fixed;inset:0, both
-   fully occlude body - same lesson from Executive's own landing-screen fix
-   (see assets/app.css history), so each gets its own copy of the ambient
-   mesh below rather than relying on whatever body is doing underneath. */
-/* Same fix as Executive's own landing-screen (see its comment above): two
-   glows straight into --bg-base, vmin/px-capped sizing instead of
-   %-of-box, no separate vignette shape fighting them for an edge. Amped
-   still gets the extra animated mesh on ::before on top of this. */
-[data-theme="amped"] .landing-screen {
-  background:
-    radial-gradient(min(72vmin, 640px) min(52vmin, 480px) at 12% 0%, rgba(212,175,55,0.34) 0%, transparent 74%),
-    radial-gradient(min(68vmin, 580px) min(50vmin, 440px) at 100% 100%, rgba(63,191,143,0.27) 0%, transparent 76%),
-    var(--bg-base);
-}
-[data-theme="amped"] .landing-btn { background: transparent; box-shadow: 0 0 0 1px rgba(212,175,55,0.15); border-color: var(--accent-gold); color: var(--accent-gold); }
-[data-theme="amped"] .landing-btn:hover { background: var(--accent-gold-dim); box-shadow: 0 0 16px rgba(212,175,55,0.35); }
-
-[data-theme="amped"] .keen-info-popover {
-  border-style: solid;
-  border-color: var(--glass-border);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.55);
-}
-
-/* Tour stays still even here - a pulsing highlight fighting a pulsing S-tier
-   badge for attention would defeat the tour's own job of pointing at one
-   thing, so restraint applies to this one surface regardless of theme. */
-[data-theme="amped"] .tour-target-active { animation: none !important; box-shadow: 0 0 0 2px var(--accent-gold) !important; }
-
-/* Ambient mesh: a three-colour glow behind everything that actually drifts
-   and shifts hue, on its own ::before rather than folded into body's
-   background, because applyTheme() writes body.style.background as an
-   inline SHORTHAND (documented on THEMES.executive.bodyBg above) - any
-   animation on a CSS background property there would be inline-overridden
-   the instant the theme applies, silently. A pseudo-element has no inline
-   style for JS to ever touch, so it's the only surface here JS can't stomp
-   on. z-index:-1 keeps it under each layer's own real content while still
-   painting above that layer's own background (negative z-index paints
-   above a stacking context's own background, below its normal-flow
-   content - not "the very bottom of the page"). Same three inset:0 layers
-   Executive's own landing-screen fix had to account for: body, the landing
-   screen, and the daily-run overlay each occlude whatever is under them,
-   so each needs its own copy.
-
-   position differs by layer on purpose. body itself is the outermost
-   element on the page, so body::before as position:fixed has no ancestor
-   that's also fixed - no ambiguity there. .landing-screen and
-   #dailyRunOverlay are ALREADY position:fixed;inset:0 themselves, so their
-   ::before uses position:absolute instead: it resolves against that
-   already-fixed parent and covers it exactly the same, but sidesteps a
-   real class of mobile WebKit bug where a fixed-position element nested
-   inside another fixed-position element can fail to paint at all - which
-   is the likely reason this mesh was invisible on a real phone even though
-   headless Chromium (used for this file's own verification) rendered it
-   fine; headless Chromium doesn't reproduce that bug. */
-[data-theme="amped"] body::before,
-[data-theme="amped"] .landing-screen::before,
-[data-theme="amped"] #dailyRunOverlay::before {
+   Three copies because three layers each fully occlude whatever is under
+   them: body, .landing-screen (position:fixed;inset:0) and
+   #dailyRunOverlay (same). body::before is position:fixed; the other two
+   are position:absolute inside an already-fixed parent, which covers the
+   parent identically but sidesteps a mobile WebKit bug where fixed inside
+   fixed can fail to paint at all - headless Chromium never reproduces it,
+   a real phone did. */
+[data-theme="executive"] body::before,
+[data-theme="executive"] .landing-screen::before,
+[data-theme="executive"] #dailyRunOverlay::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(55% 48% at 18% 18%, rgba(212,175,55,0.42) 0%, transparent 65%),
-    radial-gradient(52% 45% at 85% 78%, rgba(63,191,143,0.34) 0%, transparent 66%),
-    radial-gradient(48% 40% at 88% 12%, rgba(79,216,232,0.26) 0%, transparent 64%);
+    radial-gradient(55% 48% at 18% 18%, rgba(212,175,55,0.26) 0%, transparent 65%),
+    radial-gradient(52% 45% at 85% 78%, rgba(63,191,143,0.20) 0%, transparent 66%),
+    radial-gradient(48% 40% at 88% 12%, rgba(79,216,232,0.14) 0%, transparent 64%);
   background-size: 220% 220%;
-  animation: amped-mesh-drift 14s ease-in-out infinite, amped-mesh-hue 19s linear infinite;
+  animation: exec-mesh-drift 52s ease-in-out infinite, exec-mesh-hue 110s linear infinite;
 }
-[data-theme="amped"] .landing-screen::before,
-[data-theme="amped"] #dailyRunOverlay::before {
+[data-theme="executive"] .landing-screen::before,
+[data-theme="executive"] #dailyRunOverlay::before {
   position: absolute;
 }
-/* A real sweep across a much wider range than before (the previous version
-   moved each blob by ~15-20 percentage points over 22s, which is well
-   below what a glance can register as motion rather than a static image) -
-   this one visibly relocates each glow across a third of the screen and
-   completes a pass in 14s. Distinct start/mid/end values throughout, so
-   there's no flat hold anywhere in the loop either. */
-@keyframes amped-mesh-drift {
+/* Each glow relocates across about a third of the screen and back. The
+   amplitude is Amped's; only the clock changed - at this speed the motion
+   is well under what a glance registers, and is only ever caught by
+   looking away and back. Distinct values at 0/50/100 so nothing holds. */
+@keyframes exec-mesh-drift {
   0% { background-position: 5% 10%, 95% 90%, 92% 8%; }
   50% { background-position: 45% 55%, 55% 40%, 40% 60%; }
   100% { background-position: 5% 10%, 95% 90%, 92% 8%; }
 }
-/* Layered on top of the position drift - the three glows also slowly cycle
-   hue, which reads as actual colour "swirl" rather than just three fixed
-   colours sliding around. Cheap (one filter on one fullscreen layer). */
-@keyframes amped-mesh-hue {
+@keyframes exec-mesh-hue {
   0% { filter: hue-rotate(0deg); }
   100% { filter: hue-rotate(360deg); }
 }
+
+/* Gold dust. A sparse field of tiny warm points sitting in front of the
+   mesh, drifting on the mesh's own 52s clock and along the same general
+   vector so it reads as motes suspended in that light rather than a
+   separate effect layered on. The shimmer - individual flecks brightening
+   and fading rather than the whole field pulsing - comes from a mask:
+   two tiled fields of soft blobs slide across the dots at their own
+   speeds, and a dot is only visible while a blob is over it. Two mask
+   layers at unrelated tile sizes (300 vs 470px) is what stops the fades
+   from ever falling into a visible rhythm.
+
+   The dots are on the mesh's ::after, not folded into its ::before, so
+   the hue-rotate never touches them - the point is that the flecks stay
+   gold while the light behind them wanders. Not applied to the landing
+   screen: .landing-screen::after already carries the base grain texture,
+   and stacking a second effect there would need a real element, not a
+   pseudo. The landing keeps the mesh only.
+
+   Cost: one full-screen layer repainting on animation frames (background-
+   and mask-position are paint properties, not compositor ones) - the same
+   class of cost as the mesh itself, and the two together are still less
+   than Amped's total, which also spun a ring, pulsed every badge and
+   button, and shimmered the wordmark. If it ever has to be clawed back on
+   low-end hardware, drop this layer before touching the mesh. */
+[data-theme="executive"] body::after,
+[data-theme="executive"] #dailyRunOverlay::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 14% 22%, rgba(248,226,160,0.95) 0, rgba(248,226,160,0.55) 0.7px, transparent 1.7px),
+    radial-gradient(circle at 71% 9%, rgba(243,218,146,0.9) 0, rgba(243,218,146,0.45) 0.6px, transparent 1.5px),
+    radial-gradient(circle at 43% 58%, rgba(248,226,160,0.9) 0, rgba(248,226,160,0.5) 0.9px, transparent 2.1px),
+    radial-gradient(circle at 88% 47%, rgba(243,218,146,0.85) 0, rgba(243,218,146,0.4) 0.6px, transparent 1.4px),
+    radial-gradient(circle at 27% 83%, rgba(248,226,160,0.9) 0, rgba(248,226,160,0.5) 0.7px, transparent 1.7px),
+    radial-gradient(circle at 62% 91%, rgba(243,218,146,0.85) 0, rgba(243,218,146,0.4) 0.5px, transparent 1.3px),
+    radial-gradient(circle at 93% 76%, rgba(248,226,160,0.9) 0, rgba(248,226,160,0.5) 0.8px, transparent 1.9px),
+    radial-gradient(circle at 36% 31%, rgba(212,175,55,0.75) 0, rgba(212,175,55,0.3) 1.4px, transparent 3px),
+    radial-gradient(circle at 77% 64%, rgba(212,175,55,0.7) 0, rgba(212,175,55,0.28) 1.2px, transparent 2.8px);
+  background-size:
+    340px 340px, 340px 340px, 340px 340px, 340px 340px, 340px 340px, 340px 340px, 340px 340px,
+    560px 560px, 560px 560px;
+  -webkit-mask-image:
+    radial-gradient(circle at 50% 50%, #000 0%, #000 14%, transparent 44%),
+    radial-gradient(circle at 50% 50%, #000 0%, #000 10%, transparent 40%);
+  -webkit-mask-size: 300px 300px, 470px 470px;
+  -webkit-mask-repeat: repeat;
+  mask-image:
+    radial-gradient(circle at 50% 50%, #000 0%, #000 14%, transparent 44%),
+    radial-gradient(circle at 50% 50%, #000 0%, #000 10%, transparent 40%);
+  mask-size: 300px 300px, 470px 470px;
+  mask-repeat: repeat;
+  animation: exec-fleck-drift 52s ease-in-out infinite, exec-fleck-shimmer 20s linear infinite;
+}
+[data-theme="executive"] #dailyRunOverlay::after {
+  position: absolute;
+}
+/* Same clock and the same lower-right heading as the mesh's dominant gold
+   glow, at a fraction of the distance - the dust moves with the light,
+   the light doesn't move with the dust. Large tiles move a little further
+   than small ones, which reads as depth. */
+@keyframes exec-fleck-drift {
+  0% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  50% { background-position: 44px 36px, 44px 36px, 44px 36px, 44px 36px, 44px 36px, 44px 36px, 44px 36px, 70px 58px, 70px 58px; }
+  100% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+}
+/* The mask tiles travel one full tile per loop on different diagonals, so
+   the loop seam is invisible (a tile shifted by exactly one tile is the
+   same tile) and the two layers never re-align. linear keeps the fades
+   even across the seam. */
+@keyframes exec-fleck-shimmer {
+  0% { -webkit-mask-position: 0 0, 0 0; mask-position: 0 0, 0 0; }
+  100% { -webkit-mask-position: 300px 300px, -470px 470px; mask-position: 300px 300px, -470px 470px; }
+}
+[data-motion="off"] [data-theme="executive"] body::before,
+[data-motion="off"] [data-theme="executive"] .landing-screen::before,
+[data-motion="off"] [data-theme="executive"] #dailyRunOverlay::before,
+[data-motion="off"] [data-theme="executive"] body::after,
+[data-motion="off"] [data-theme="executive"] #dailyRunOverlay::after { animation: none; }
 
 /* Nav-tab glyphs. Stacked above the label rather than beside it: an inline
    icon adds ~20px per tab, which four tabs cannot afford at 320px, while a
