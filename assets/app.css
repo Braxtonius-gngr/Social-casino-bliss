@@ -1107,9 +1107,15 @@
     .run-balance-input:focus { outline: none; border-color: var(--accent-gold); }
     .run-balance-btn { flex-shrink: 0; background: transparent; border: 1px solid var(--accent-green); color: var(--accent-green); border-radius: 8px; padding: 8px 14px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.05em; cursor: pointer; }
     .run-balance-btn:active { transform: scale(0.95); }
+    .run-guidance { margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.8rem; line-height: 1.45; }
+    .run-guidance strong { color: var(--accent-gold); }
+    .run-guidance-warn strong,
+    .run-guidance-warn { color: var(--text-main); border-color: color-mix(in srgb, var(--accent-cyan) 35%, var(--glass-border)); }
     .run-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 460px; align-self: center; flex-shrink: 0; }
+    .run-open-btn { width: 100%; padding: 14px 18px; border-radius: 14px; font-size: 0.92rem; letter-spacing: 0.06em; text-transform: uppercase; }
     .btn-run-collect { padding: 18px; font-size: 1.15rem; font-weight: 900; border: none; border-radius: 14px; cursor: pointer; background: var(--accent-gold); color: #0a0a0a; box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
     .btn-run-collect:active { transform: scale(0.98); }
+    .btn-run-collect:disabled { opacity: 0.6; cursor: default; box-shadow: none; }
     .btn-skip { background: transparent; color: var(--text-muted); border: none; padding: 12px; font-size: 0.9rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.08em; }
     .btn-skip:hover { color: var(--text-main); }
     .btn-start-run { width: 100%; padding: 14px; margin-bottom: 14px; border-radius: 12px; font-size: 0.95rem; font-weight: 900; cursor: pointer; background: rgba(0,0,0,0.5); border: 1px solid var(--accent-green); color: var(--accent-green); letter-spacing: 0.05em; }
