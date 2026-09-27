@@ -5140,6 +5140,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     ];
     let catalogRefreshInFlight = false;
     let catalogRefreshAgain = false;
+    // Settles when the refresh in flight finishes, so a caller that needs
+    // the catalogue (the owner's screenshot read) can wait for it.
+    let catalogRefreshSettled = Promise.resolve();
     let catalogRefreshErrorShown = false;
     // The account the catalogue was last fetched for. The auth listener
     // refreshes only when a different account appears, not on every
@@ -5231,7 +5234,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // changed) a one-line reply.
     async function refreshExternalCatalog() {
       if (isCrawler()) return;
-      if (catalogRefreshInFlight) { catalogRefreshAgain = true; return; }
+      if (catalogRefreshInFlight) { catalogRefreshAgain = true; return catalogRefreshSettled; }
       const client = getSupabaseClient();
       if (!client) {
         catalogLastError = 'the sync service did not load';
@@ -5239,6 +5242,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         return;
       }
       catalogRefreshInFlight = true;
+      let settle;
+      catalogRefreshSettled = new Promise(resolve => { settle = resolve; });
       try {
         // The device's account, created here if this is the first thing to
         // need one. Cloud Sync being off never creates an account, but an
@@ -5278,6 +5283,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         }
       } finally {
         catalogRefreshInFlight = false;
+        settle();
         if (catalogRefreshAgain) {
           catalogRefreshAgain = false;
           refreshExternalCatalog();
@@ -8358,6 +8364,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       btn.textContent = 'READING...';
       ownerShotDrops = [];
       renderOwnerShotResults();
+      // An earlier read's handoff never outlives a new attempt: the admin
+      // page must only ever pick up what the latest read produced.
+      try { localStorage.removeItem(SHOT_HANDOFF_KEY); } catch (e) {}
       setOwnerShotStatus('Reading the screenshots. This takes a few seconds.');
       // The read belongs to this signed-in owner: if the account changes
       // while it is in flight (accessCheckGen moves on), the answer is
