@@ -728,7 +728,7 @@
       linear-gradient(180deg, rgba(0,0,0,0) 0 46%, #6b4f16 46%, #f0d78e 48.5%, #b58f38 51%, #4b360d 53.5%, rgba(0,0,0,0) 53.5%),
       linear-gradient(180deg, #050505 0%, #1b1b1d 16%, #0c0c0d 34%, #121214 66%, #262629 84%, #070707 100%); }
     .roll-rail-side { position: absolute; }
-    /* Playing cards, linen finish    /* Playing cards, linen finish: built at 3x and scaled down (sharp
+    /* Playing cards, linen finish: built at 3x and scaled down (sharp
        under the zoom), each lifted a hair above the one below so the
        browser never has to sort two cards in one plane. The linen weave
        sits over the print too, as it does on real stock. */
