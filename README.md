@@ -283,8 +283,9 @@ backups remain disabled until a durable external runner is provisioned.
    Billing is). Stripe then stops a second subscription when a checkout page
    is opened. The checkout function can't do that alone: it only sees
    subscriptions that exist when a checkout starts, and a checkout page left
-   open can be paid later. (It also expires the account's older open checkout
-   pages each time a new one starts.)
+   open can be paid later. (Each new checkout also tries to expire the
+   account's older open checkout pages, within a few seconds. That is
+   best-effort, and it doesn't replace this setting.)
 
 ### Supabase deployment
 

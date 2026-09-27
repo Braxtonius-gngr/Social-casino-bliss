@@ -49,8 +49,10 @@ function isMissing(error: unknown): boolean {
 // stale view. The page shows this and refreshes the account's status.
 const BILLING_CHANGED = "Your billing details just changed. Please try again.";
 
-// A customer this request made but couldn't save to the account is never
-// used: delete it rather than leave it unattached in Stripe.
+// A customer this request made that the account's row turned down (another
+// request saved its own first) is never used: delete it rather than leave
+// it unattached in Stripe. Not after a save error: the write may still have
+// landed, and then the row names this customer.
 async function discardCustomer(customerId: string) {
   try {
     await stripe.customers.del(customerId);
@@ -68,26 +70,46 @@ async function discardCustomer(customerId: string) {
 // same second may expire each other, leaving nothing to pay rather than
 // two (the page sends one checkout at a time, so that takes two tabs).
 // Stripe's "limit customers to one subscription" setting guards the payment
-// itself (see README). Best-effort: a failure here never blocks this
-// checkout.
+// itself (see README). Best-effort and bounded: it gets a few seconds, each
+// Stripe call gives up when they run out, and a failure never blocks this
+// checkout. Normally there is at most one older session, since each
+// checkout expires the ones before it.
+const SESSION_CLEANUP_BUDGET_MS = 3000;
+
 async function expireOlderOpenSessions(customerId: string, current: Stripe.Checkout.Session) {
+  const deadline = Date.now() + SESSION_CLEANUP_BUDGET_MS;
+  const remaining = () => deadline - Date.now();
+  const older: string[] = [];
   try {
-    const older = await stripe.checkout.sessions.list({
-      customer: customerId,
-      status: "open",
-      created: { lte: current.created },
-      limit: 100,
-    });
-    for (const session of older.data) {
-      if (session.id === current.id) continue;
-      try {
-        await stripe.checkout.sessions.expire(session.id);
-      } catch (error) {
-        console.warn("Couldn't expire an older checkout session.", { sessionId: session.id, error: errorMessage(error) });
+    // Every page is read before anything is expired, so expiring doesn't
+    // move the list under the cursor.
+    let startingAfter: string | undefined;
+    do {
+      const page = await stripe.checkout.sessions.list({
+        customer: customerId,
+        status: "open",
+        created: { lte: current.created },
+        limit: 100,
+        ...(startingAfter ? { starting_after: startingAfter } : {}),
+      }, { timeout: remaining() });
+      for (const session of page.data) {
+        if (session.id !== current.id) older.push(session.id);
       }
-    }
+      startingAfter = page.has_more ? page.data[page.data.length - 1]?.id : undefined;
+    } while (startingAfter && remaining() > 0);
   } catch (error) {
     console.warn("Couldn't list older checkout sessions.", { customerId, error: errorMessage(error) });
+  }
+  for (const [index, sessionId] of older.entries()) {
+    if (remaining() <= 0) {
+      console.warn("Out of time expiring older checkout sessions.", { customerId, leftOpen: older.length - index });
+      return;
+    }
+    try {
+      await stripe.checkout.sessions.expire(sessionId, {}, { timeout: remaining() });
+    } catch (error) {
+      console.warn("Couldn't expire an older checkout session.", { sessionId, error: errorMessage(error) });
+    }
   }
 }
 
@@ -270,21 +292,26 @@ serve(async (req) => {
           ? replace.eq("stripe_subscription_id", expectedSubscriptionId)
           : replace.is("stripe_subscription_id", null);
         const { data: replaced, error: saveError } = await replace.select("user_id");
-        if (saveError || !replaced?.length) {
+        if (saveError) throw saveError;
+        if (!replaced?.length) {
           await discardCustomer(customerId);
-          if (saveError) throw saveError;
           return jsonResponse({ error: BILLING_CHANGED }, 409, cors);
         }
       } else {
-        const { error: saveError } = await supabase.from("user_subscriptions").upsert({
+        // Only if the account still has no row: two first checkouts at once
+        // each make a customer, and the one saved first must stand, or the
+        // two sessions would belong to different customers and could both
+        // be paid.
+        const { data: inserted, error: saveError } = await supabase.from("user_subscriptions").upsert({
           user_id: user.id,
           stripe_customer_id: customerId,
           tier: "free",
           status: "active",
-        });
-        if (saveError) {
+        }, { onConflict: "user_id", ignoreDuplicates: true }).select("user_id");
+        if (saveError) throw saveError;
+        if (!inserted?.length) {
           await discardCustomer(customerId);
-          throw saveError;
+          return jsonResponse({ error: BILLING_CHANGED }, 409, cors);
         }
       }
     }
