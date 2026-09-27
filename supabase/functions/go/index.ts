@@ -69,9 +69,11 @@ serve(async (req) => {
   if (!data || !destination) return plainResponse(404, "No such platform in the catalogue.");
 
   // Counted after the lookup so unknown names never create rows. A failed
-  // count must not cost the player their redirect.
+  // count must not cost the player their redirect, but it is logged: the
+  // client reports failures in the result, not by throwing.
   try {
-    await supabase.rpc("record_link_hit", { p_name: data.name });
+    const { error: hitError } = await supabase.rpc("record_link_hit", { p_name: data.name });
+    if (hitError) console.warn("record_link_hit failed:", hitError.message);
   } catch (err) {
     console.warn("record_link_hit failed:", err);
   }
