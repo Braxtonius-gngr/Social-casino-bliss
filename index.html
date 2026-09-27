@@ -4011,7 +4011,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // behind the table. The page plays the first of each; ?lab adds a
     // switcher (and ?end=, ?felt=, ?room= pick directly), so they can be
     // compared side by side on a phone.
-    const ROLL_OPTIONS = { end: ['scoop', 'burst'], felt: ['green', 'blue', 'black'], room: ['lamp', 'metal', 'both'] };
+    const ROLL_OPTIONS = { end: ['scoop', 'burst'], felt: ['black', 'green', 'blue'], room: ['metal', 'lamp', 'both'] };
     function rollOptions() {
       let q = null;
       try { q = new URLSearchParams(window.location.search); } catch (e) { q = null; }
@@ -4480,7 +4480,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       };
     }
 
-    function playRollIntro() {
+    // The CSS 3D intro: the fallback when the device has no WebGL 2 (or the
+    // WebGL intro fails or is slow to load), and ?intro=css. `still` poses
+    // the finished frame at once (a tap while the WebGL intro was loading).
+    function playRollIntroCss(still) {
       const screen = document.getElementById('landingScreen');
       if (!screen || screen.classList.contains('hidden')) return;
       const stage = screen.querySelector('.roll-stage');
@@ -5087,7 +5090,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (done) render(lastT, false);
       });
       // Motion off (the global html[data-motion="off"] switch): the still.
-      if (document.documentElement.getAttribute('data-motion') === 'off') { done = true; pose(); return; }
+      if (still || document.documentElement.getAttribute('data-motion') === 'off') { done = true; pose(); return; }
 
       const frame = now => {
         if (done) return;
@@ -5146,6 +5149,135 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       nav.addEventListener('pointerdown', e => e.stopPropagation());
     }
 
+    // THE ROLL INTRO. On any device with WebGL 2 it is the three.js shot
+    // (assets/intro3d/intro.mjs, loaded on demand): a real throw off the
+    // back wall, and a rarity tier drawn for every launch (Standard Drop,
+    // The Hardways, The Vault Pull, The Defiant Edge). Without WebGL 2, or
+    // if it fails or takes too long to load, the CSS intro plays instead.
+    // ?intro=css forces the CSS one; ?tier= and ?seed= pick a tier and a
+    // throw; ?lab adds a switcher and window.rollIntroSeek(t).
+    const ROLL_SOUND_KEY = 'almanac_intro_sound';   // 'on' | 'off'
+    function rollHasWebGL2() {
+      try {
+        const c = document.createElement('canvas');
+        return !!(window.WebGL2RenderingContext && c.getContext('webgl2'));
+      } catch (e) { return false; }
+    }
+    function playRollIntro() {
+      const screen = document.getElementById('landingScreen');
+      if (!screen || screen.classList.contains('hidden')) return;
+      let q = null;
+      try { q = new URLSearchParams(window.location.search); } catch (e) { q = null; }
+      if ((q && q.get('intro') === 'css') || !rollHasWebGL2()) { playRollIntroCss(); return; }
+      rollIntro3d(screen, q || new URLSearchParams());
+    }
+    async function rollIntro3d(screen, q) {
+      const host = screen.querySelector('.roll-intro');
+      const motionOff = () => document.documentElement.getAttribute('data-motion') === 'off';
+      let api = null, fellBack = false, done = false, timer = null;
+      // Aborting stops a shot that is still being built: it gives back
+      // everything it has made so far and rejects (see createIntro).
+      const building = typeof AbortController === 'function' ? new AbortController() : null;
+      screen.classList.remove('roll-rest', 'roll-popped');
+      screen.classList.add('intro-play', 'roll-webgl');
+      const fallBack = still => {
+        if (fellBack || api) return;
+        fellBack = true;
+        clearTimeout(timer);
+        if (building) building.abort();
+        screen.removeEventListener('pointerdown', skipWhileLoading);
+        // (without roll-webgl, CSS hides any of the shot's pieces that are
+        // already on the page until the abort removes them)
+        screen.classList.remove('roll-webgl');
+        playRollIntroCss(still);
+      };
+      // A tap before the shot has loaded: straight to the finished frame.
+      const skipWhileLoading = () => fallBack(true);
+      screen.addEventListener('pointerdown', skipWhileLoading);
+      timer = setTimeout(() => fallBack(false), 6000);
+      let mod;
+      try {
+        mod = await import('./assets/intro3d/intro.mjs');
+      } catch (e) { fallBack(false); return; }
+      if (fellBack) return;
+      const tierQ = q.get('tier');
+      const tier = mod.TIERS.includes(tierQ) ? tierQ : mod.pickTier(Math.random());
+      const seedQ = parseInt(q.get('seed'), 10);
+      const seed = Number.isFinite(seedQ) ? seedQ >>> 0 : Math.floor(Math.random() * 4294967296);
+      let soundPref = null;
+      try { soundPref = localStorage.getItem(ROLL_SOUND_KEY); } catch (e) { soundPref = null; }
+      const end = () => {
+        if (done || !api) return;
+        done = true;
+        screen.removeEventListener('pointerdown', end);
+        screen.removeEventListener('focusin', end);
+        document.removeEventListener('keydown', end);
+        api.finish();
+        screen.classList.remove('intro-play', 'roll-popped');
+        screen.classList.add('roll-rest');
+      };
+      try {
+        api = await mod.createIntro({
+          host, tier, seed,
+          controlsHost: screen,
+          signal: building ? building.signal : null,
+          motionOff,
+          quality: q.get('quality') || 'auto',
+          sound: soundPref !== 'off',
+          onReveal: () => screen.classList.add('roll-popped'),
+          onEnd: end,
+          onSoundChange: on => { try { localStorage.setItem(ROLL_SOUND_KEY, on ? 'on' : 'off'); } catch (e) { /* private mode */ } }
+        });
+      } catch (e) {
+        api = null;
+        fallBack(false);
+        return;
+      }
+      if (fellBack) { api.dispose(); return; }
+      clearTimeout(timer);
+      screen.removeEventListener('pointerdown', skipWhileLoading);
+      window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; };
+      if (q.has('lab')) {
+        window.rollIntroPlan = api.plan;
+        window.rollIntroSeek = t => {
+          done = true;
+          api.seek(t);
+          screen.classList.add('intro-play');
+          screen.classList.remove('roll-rest');
+          if (t >= api.plan.totalReal) { screen.classList.remove('intro-play', 'roll-popped'); screen.classList.add('roll-rest'); return; }
+          screen.classList.toggle('roll-popped', t >= api.plan.revealReal);
+          const ms = Math.max(0, (t - api.plan.revealReal) * 1000);
+          (screen.getAnimations ? screen.getAnimations({ subtree: true }) : []).forEach(a => { a.pause(); a.currentTime = ms; });
+        };
+        rollLab3dPanel(screen, tier, mod.TIERS);
+      }
+      if (motionOff()) { end(); return; }
+      // Any tap, key press, or focus arriving on the screen skips straight
+      // to the finished frame (as in the CSS intro).
+      screen.addEventListener('pointerdown', end);
+      screen.addEventListener('focusin', end);
+      document.addEventListener('keydown', end);
+      api.play();
+    }
+    // The WebGL intro's lab switcher (?lab): force a tier, or throw again.
+    function rollLab3dPanel(screen, tier, tiers) {
+      if (screen.querySelector('.roll-lab')) return;
+      const names = { standard: 'Standard', hardways: 'Hardways', vault: 'Vault Pull', edge: 'Defiant Edge' };
+      const link = (k, v) => {
+        const p = new URLSearchParams(window.location.search);
+        p.set('lab', '');
+        if (v == null) p.delete(k); else p.set(k, v);
+        if (k === 'tier') p.delete('seed');
+        return `?${p.toString().replace('lab=&', 'lab&').replace(/lab=$/, 'lab')}`;
+      };
+      screen.insertAdjacentHTML('beforeend', `<nav class="roll-lab" aria-label="Intro options"><div class="roll-lab-row"><span>Tier</span>${tiers.map(t => `<a data-v="${t}"${t === tier ? ' aria-current="true"' : ''}>${names[t]}</a>`).join('')}</div><div class="roll-lab-row"><a class="roll-lab-replay" data-new="1">&#8635; New throw</a><a class="roll-lab-replay" data-css="1">CSS intro</a></div></nav>`);
+      const nav = screen.querySelector('.roll-lab');
+      nav.querySelectorAll('a[data-v]').forEach(a => { a.href = link('tier', a.dataset.v); });
+      nav.querySelector('[data-new]').href = link('seed', String(Math.floor(Math.random() * 1e9)));
+      nav.querySelector('[data-css]').href = link('intro', 'css');
+      nav.addEventListener('pointerdown', e => e.stopPropagation());
+    }
+
     function dismissLanding() {
       const screen = document.getElementById('landingScreen');
       const burnEligible = isWesternTheme() && document.documentElement.getAttribute('data-motion') !== 'off';
@@ -5176,6 +5308,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } else {
         screen.classList.add('hidden');
       }
+      // The WebGL intro gives its GPU memory back once the screen is gone.
+      setTimeout(() => { if (window.rollIntroDispose) window.rollIntroDispose(); }, burnEligible ? 2600 : 600);
       // Cloud sync already started at boot (see initSync()) regardless of
       // whether the landing screen is showing, but "Enter Deck" is the
       // one deliberate action every first-time visitor takes - kicking a
