@@ -751,6 +751,31 @@ const TESTS = [
     answers: { 'rpc:get_catalog': { data: null, error: { message: 'RATE_LIMITED: this account has downloaded the catalogue too many times today' } } }
   }],
 
+  ['a tracked platform saved with its referral link is scrubbed and routed through go', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    await new Promise(r => setTimeout(r, 800));
+    const state = await page.evaluate(() => {
+      const game = trackedGames.find(g => g.name === 'Legacy Casino');
+      return { url: game.url, hasReferral: game.hasReferral, launch: launchUrlFor(game), catalogue: CATALOG_DATA.length,
+        saved: JSON.parse(localStorage.getItem('the_casino_almanac_v7')).find(g => g.name === 'Legacy Casino').url };
+    });
+    expect(state.catalogue, 0, 'no live catalogue in this run');
+    expect(state.url, 'https://legacy.example', 'stored link reduced to the origin');
+    expect(state.hasReferral, true, 'platform flagged');
+    expect(state.launch, 'https://ewfvyrhlsanzkmozrmhs.supabase.co/functions/v1/go?p=Legacy%20Casino', 'OPEN goes through go without the catalogue');
+    expect(state.saved, 'https://legacy.example', 'the scrubbed address is what gets saved');
+  }, {
+    localStorage: {
+      ...SEED,
+      the_casino_almanac_v7: [{
+        id: 'legacy1', name: 'Legacy Casino', url: 'https://legacy.example/lp/raf?r=owner-code', tier: 'A', dailySC: 0.5,
+        speedHours: 24, reliability: 90, hasLive: false, minRedeem: '50 SC', notes: '', referralUrl: '', cooldownHours: 24, lastCollected: 0
+      }]
+    },
+    answers: { 'rpc:get_catalog': { data: null, error: { message: 'NO_CATALOG: nothing has been published yet' } } }
+  }],
+
   ['a crawler gets no catalogue and no account', async page => {
     await page.goto('/');
     await new Promise(r => setTimeout(r, 800));

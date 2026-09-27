@@ -1687,6 +1687,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return found ? found.bestGames : null;
     }
 
+    // Set when a load scrubbed a stored referral link (normalizeLaunchUrl),
+    // so the cleaned deck is saved once boot is complete.
+    let legacyLinksScrubbed = false;
     let trackedGames = JSON.parse(localStorage.getItem('the_casino_almanac_v7') || '[]');
     const INDEXED_STATE_KEYS = [
       'the_casino_almanac_v7',
@@ -2053,7 +2056,33 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // existing values (including a resetTZ this function itself can't
     // fully re-derive, like an intentional non-default zone) are left
     // untouched.
+    // The same rule the database applies when it publishes the catalogue:
+    // a plain address is an origin plus, at most, a few lowercase page
+    // words. Anything else (a query string, a code-shaped path, a signup or
+    // redirect path, the owner's handle) is a referral link.
+    function isReferralLikeUrl(url) {
+      if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) return false;
+      return /\?/.test(url)
+        || !/^https?:\/\/[^/?#]+(\/[a-z][a-z-]{0,24}){0,3}\/?$/.test(url)
+        || /^https?:\/\/[^/?#]+\/(r|c|i|go|ref|refer|referral|invite|join|raf|a|aff|af|partner|promo|invited|lp|signup|register)(\/|$)/i.test(url)
+        || /braxtonius/i.test(url);
+    }
+
+    // Tracked platforms saved before the catalogue moved server-side carry
+    // the referral link they were copied with. It is reduced to the
+    // platform's origin and the platform flagged, so OPEN goes through `go`
+    // even before (or without) the live catalogue naming it.
+    function normalizeLaunchUrl(game) {
+      if (isReferralLikeUrl(game.url)) {
+        game.url = game.url.replace(/^(https?:\/\/[^/?#]+).*$/i, '$1');
+        game.hasReferral = true;
+        legacyLinksScrubbed = true;
+      }
+      return game;
+    }
+
     function normalizeTimerFields(game) {
+      normalizeLaunchUrl(game);
       if (typeof game.cooldownHours !== 'number' || !Number.isFinite(game.cooldownHours) || game.cooldownHours <= 0) {
         game.cooldownHours = 24;
       }
@@ -4787,7 +4816,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const CATALOG_LIVE_FIELDS = [
       'tier', 'dailySC', 'scSource', 'scIsAveraged', 'scRange', 'speedHours',
       'reliability', 'hasLive', 'minRedeem', 'cashFloor', 'daysToRedeem',
-      'confidence', 'blocker', 'noGuaranteedDaily', 'notes', 'lastVerified'
+      'confidence', 'blocker', 'noGuaranteedDaily', 'notes', 'lastVerified', 'hasReferral'
     ];
     let catalogRefreshInFlight = false;
     let catalogRefreshAgain = false;
@@ -4951,7 +4980,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function launchUrlFor(game) {
       if (!game) return '';
       const entry = catalogEntryFor(game.name);
-      if (entry && entry.hasReferral) return goUrlFor(entry.name);
+      const viaGo = entry ? entry.hasReferral === true : game.hasReferral === true;
+      if (viaGo) return goUrlFor(entry ? entry.name : game.name);
       return game.url || (entry && entry.url) || '';
     }
 
@@ -4975,6 +5005,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (Array.isArray(storedGames)) {
           trackedGames = storedGames;
           trackedGames.forEach(g => { normalizeTimerFields(g); delete g._prevCollected; });
+          if (legacyLinksScrubbed) { legacyLinksScrubbed = false; persist(); }
         }
         if (Array.isArray(storedHistory)) collectionHistory = storedHistory;
         if (Array.isArray(storedRuns)) dailyRunsHistory = storedRuns;
@@ -11228,6 +11259,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // nudge toward Settings, not something that should compete with the
     // deck itself for the first thing the user sees.
     setTimeout(checkForCatalogUpdates, 1500);
+    // A deck loaded with stored referral links was cleaned on the way in;
+    // save it so the cleaning happens once.
+    if (legacyLinksScrubbed) { legacyLinksScrubbed = false; persist(); }
     refreshExternalCatalog();
     setInterval(refreshExternalCatalog, EXTERNAL_CATALOG_REFRESH_MS);
     window.addEventListener('focus', refreshExternalCatalog);
