@@ -7704,9 +7704,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
     }
 
-    // Stripe price ids are public; the checkout function only accepts the
-    // ones configured in its STRIPE_PRICE_ID_PRO_* secrets.
-    const PRO_ANNUAL_PRICE_ID = 'price_1UJrurG0mgdscx2FurYFqmxo';
+    // The plan, by name: the checkout function maps it to this deployment's
+    // STRIPE_PRICE_ID_PRO_ANNUAL, so the page is the same in test and live
+    // mode (real price ids differ between the two).
+    const PRO_ANNUAL_PRICE_ID = 'price_pro_annual';
 
     async function initiateProCheckout(priceId) {
       const client = getSupabaseClient();
@@ -7774,7 +7775,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const { data, error } = await client.functions.invoke('create-portal-session', {
           body: { returnUrl: billingReturnUrl() }
         });
-        if (error || !data?.url) throw new Error(error?.message || data?.error || 'Unable to open billing portal.');
+        if (error || !data?.url) {
+          // A non-2xx answer carries its reason in the body (for example,
+          // no billing to manage yet), not in the generic error message.
+          const { body: errBody } = await extractFunctionsErrorDetail(error);
+          throw new Error((errBody && (errBody.error || errBody.message))
+            || (data && data.error)
+            || (error && error.message)
+            || 'Unable to open billing portal.');
+        }
         window.location.href = data.url;
       } catch (error) {
         showToast(error.message || 'Portal redirect failed.');
