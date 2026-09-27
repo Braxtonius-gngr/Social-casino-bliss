@@ -206,9 +206,6 @@ serve(async (req) => {
   // The deadline signal bounds every attempt and every wait between them.
   const anthropic = new Anthropic({ apiKey, maxRetries: 1 });
   const budget = Math.max(1_000, REPLY_DEADLINE_MS - (Date.now() - started));
-  // The SDK's defaults (ten minutes, two retries) outlast the edge runtime's
-  // own limit, which would end a stalled read as a bare gateway timeout.
-  const anthropic = new Anthropic({ apiKey, timeout: 90_000, maxRetries: 0 });
   let response: Anthropic.Beta.BetaMessage;
   try {
     // fallbacks: "default" re-runs a request a safety classifier declines on
