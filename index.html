@@ -5207,15 +5207,81 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const seed = Number.isFinite(seedQ) ? seedQ >>> 0 : Math.floor(Math.random() * 4294967296);
       let soundPref = null;
       try { soundPref = localStorage.getItem(ROLL_SOUND_KEY); } catch (e) { soundPref = null; }
+      // The table the landing flies into after the shot (table.mjs): for
+      // now only while the two destinations are being compared, ?dest=card
+      // or ?dest=craps; without one, the landing behaves as it always has.
+      const destQ = q.get('dest');
+      const tableDest = destQ === 'card' || destQ === 'craps' ? destQ : null;
+      let tablePrep = null, flying = false;
+      const prepTable = () => {
+        if (!tableDest || tablePrep || !api) return tablePrep;
+        tablePrep = import('./assets/intro3d/table.mjs')
+          .then(m => m.prepareTable({ scene: api.peek().scene, dest: tableDest, hooks: rollTableHooks() }))
+          .catch(e => { console.warn('table', e); return null; });
+        return tablePrep;
+      };
+      // One continuous shot from the float into the seat; on arrival the
+      // scene moves out of the landing into its own stage and the landing
+      // goes. Returns false when there is no table to fly to.
+      const flyIn = async (flyOpts = {}) => {
+        if (!tableDest || !api) return false;
+        if (flying) return true;
+        flying = true;
+        const prep = await prepTable();
+        if (!prep || !api) { flying = false; return false; }
+        screen.removeEventListener('pointerdown', onTap);
+        window.rollIntroEnter = () => true;
+        // (the table owns the renderer from here: the landing must not
+        // dispose it when it goes)
+        window.rollIntroDispose = null;
+        const world = api.release();
+        screen.classList.add('r3-flying');
+        const seatcam = (q.get('seatcam') || '').split(',').map(Number);
+        const table = await prep.fly(world, Object.assign({
+          host: world.host,
+          reduced: motionOff(),
+          seatView: seatcam.length === 4 && seatcam.every(Number.isFinite) ? seatcam : null,
+          onArrive: layer => {
+            const stage = document.createElement('div');
+            stage.className = 'r3-stage';
+            document.body.appendChild(stage);
+            stage.append(world.canvas, layer);
+            document.body.classList.add('r3-table-mode');
+            screen.classList.add('hidden');
+            kickSync();
+          }
+        }, flyOpts));
+        window.rollTable = table;
+        return true;
+      };
+      const onTap = e => {
+        if (e.target.closest && e.target.closest('a, .roll-lab, .r3-sound')) return;
+        flyIn();
+      };
+      const armTable = () => {
+        if (!tableDest) return;
+        prepTable();
+        screen.addEventListener('pointerdown', onTap);
+        window.rollIntroEnter = () => { flyIn(); return true; };
+      };
+      // The shot is over - played through, skipped, or held still: the copy
+      // settles in, and (with a table to go to) the next tap flies in.
       const end = () => {
         if (done || !api) return;
         done = true;
-        screen.removeEventListener('pointerdown', end);
-        screen.removeEventListener('focusin', end);
-        document.removeEventListener('keydown', end);
-        api.finish();
+        screen.removeEventListener('pointerdown', skip);
+        screen.removeEventListener('focusin', skip);
+        document.removeEventListener('keydown', skip);
         screen.classList.remove('intro-play', 'roll-popped');
         screen.classList.add('roll-rest');
+        armTable();
+      };
+      // A tap, a key or focus arriving mid-shot: straight to the end of it -
+      // held still with motion off, floating on otherwise.
+      const skip = () => {
+        if (!api || done) return;
+        if (motionOff()) api.finish(); else api.skip();
+        end();
       };
       try {
         api = await mod.createIntro({
@@ -5252,14 +5318,67 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         };
         rollLab3dPanel(screen, tier, mod.TIERS);
       }
-      if (motionOff()) { end(); return; }
+      if (q.has('lab') && tableDest) {
+        // (lab: fly in by hand - rollTableFly({ manual: true }) then
+        // rollTable.seek(t) - for frame-exact captures)
+        window.rollTableFly = o => { done = true; return flyIn(o); };
+        window.rollIntroPeek = () => api && api.peek();
+      }
+      if (motionOff()) { api.finish(); end(); return; }
       // Any tap, key press, or focus arriving on the screen skips straight
-      // to the finished frame (as in the CSS intro).
-      screen.addEventListener('pointerdown', end);
-      screen.addEventListener('focusin', end);
-      document.addEventListener('keydown', end);
+      // to the end of the shot (as in the CSS intro).
+      screen.addEventListener('pointerdown', skip);
+      screen.addEventListener('focusin', skip);
+      document.addEventListener('keydown', skip);
       api.play();
     }
+    // What the table deals and shows (assets/intro3d/table.mjs): the ready
+    // platforms in the deck - best tier first, then the richest - or, with
+    // nothing ready (a fresh install, a preview), one catalogue platform of
+    // each tier to show the cards. The optimised route replaces this order.
+    function rollTableHooks() {
+      const TIER_RANK = { S: 0, A: 1, B: 2, C: 3, D: 4, F: 5 };
+      const ready = () => trackedGames.filter(g => getCooldownState(g).isReady && !isSnoozed(g));
+      return {
+        deck() {
+          const r = ready().sort((a, b) => ((TIER_RANK[a.tier] ?? 9) - (TIER_RANK[b.tier] ?? 9)) || ((b.dailySC || 0) - (a.dailySC || 0)));
+          if (r.length) return r.map(g => ({ id: g.id, name: g.name, tier: g.tier, ev: g.dailySC, remaining: 0 }));
+          const demo = [];
+          ['S', 'A', 'B', 'C', 'D', 'F'].forEach(t => { const p = CATALOG_DATA.find(c => c.tier === t); if (p) demo.push({ id: 'demo_' + t, name: p.name, tier: p.tier, ev: p.dailySC, remaining: 0 }); });
+          return demo;
+        },
+        status() {
+          const r = ready();
+          let next = null;
+          trackedGames.forEach(g => { const st = getCooldownState(g); if (!st.isReady && (next === null || st.remainingMs < next)) next = st.remainingMs; });
+          // (done today: the platforms collected since midnight)
+          const today = new Date().toDateString();
+          const done = new Set(collectionHistory.filter(h => new Date(h.collectedAt).toDateString() === today).map(h => h.platformName)).size;
+          return { ready: r.length, value: r.reduce((s, g) => s + (g.dailySC || 0), 0), next, done };
+        },
+        run() { if (ready().length) startDailyRun(); else showToast('Nothing ready yet', null); },
+        openView(view) { rollTableSheet(view); }
+      };
+    }
+    // A view from the phone (Freebies, Community) over the table, with a
+    // way back to it.
+    function rollTableSheet(view) {
+      const tab = { freebies: 'tabFreebies', community: 'tabCommunity' }[view];
+      if (!tab) return;
+      switchMainTab(view, document.getElementById(tab));
+      document.body.classList.add('r3-sheet-open');
+      let back = document.getElementById('r3SheetBack');
+      if (!back) {
+        back = document.createElement('button');
+        back.id = 'r3SheetBack';
+        back.type = 'button';
+        back.className = 'r3-sheet-back';
+        back.textContent = '\u2190 Back to the table';
+        back.onclick = () => document.body.classList.remove('r3-sheet-open');
+        document.body.appendChild(back);
+      }
+    }
+
     // The WebGL intro's lab switcher (?lab): force a tier, or throw again.
     function rollLab3dPanel(screen, tier, tiers) {
       if (screen.querySelector('.roll-lab')) return;
@@ -5280,6 +5399,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function dismissLanding() {
+      // (with a table to fly to, Enter Deck is the cue for the fly-in)
+      if (window.rollIntroEnter && window.rollIntroEnter()) return;
       const screen = document.getElementById('landingScreen');
       const burnEligible = isWesternTheme() && document.documentElement.getAttribute('data-motion') !== 'off';
       if (burnEligible) {
