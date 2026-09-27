@@ -16,7 +16,7 @@
 - Use two-space indentation, semicolons, and existing naming patterns.
 - Keep local URLs relative; the app may run under a GitHub Pages subpath.
 - Treat localStorage keys and persisted state as public contracts. Add migration logic before changing a key.
-- Do not add frameworks, bundlers, or unrelated refactors. The one runtime exception already in place is `supabase-js`, loaded via CDN `<script src>` (see Cloud Sync below) the same way Google Fonts already is - no bundler, nothing to `npm install` to run the app. The only dev dependency is `terser`, used by the deploy step alone. Don't add further dependencies beyond that without deliberate discussion.
+- Do not add frameworks, bundlers, or unrelated refactors. The one runtime exception already in place is `supabase-js`, loaded via CDN `<script src>` (see Cloud Sync below) the same way Google Fonts already is - no bundler, nothing to `npm install` to run the app. The only dev dependency is `terser`, used by the deploy step alone. The second, agreed for the landing intro: three.js, vendored (minified, unmodified) in `assets/vendor/three/` and loaded only by the WebGL intro (`assets/intro3d/intro.mjs`) through a dynamic `import()` - see `assets/vendor/three/README.md` for the version and how to update it. Don't add further dependencies beyond that without deliberate discussion.
 - Catalog edits must preserve required fields and optional metadata; tracked user copies are persisted separately from the catalog.
 - Dynamic interactive rows must retain the existing accessibility behavior.
 

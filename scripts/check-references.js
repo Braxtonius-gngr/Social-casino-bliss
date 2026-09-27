@@ -64,6 +64,13 @@ function checkIndexHtml() {
   if (swMatch) {
     checkLocalRef(file, swMatch[2], `${swMatch[2]} (serviceWorker.register call)`);
   }
+
+  // import('./assets/...') - modules the page loads on demand (the WebGL
+  // intro), which a missing file would break only at runtime.
+  const importRe = /\bimport\(\s*(["'])(.*?)\1\s*\)/g;
+  while ((m = importRe.exec(html))) {
+    checkLocalRef(file, m[2], `${m[2]} (dynamic import)`);
+  }
 }
 
 function checkManifest() {
