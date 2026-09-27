@@ -199,7 +199,7 @@ serve(async (req) => {
 
   // The SDK's defaults (ten minutes, two retries) outlast the edge runtime's
   // own limit, which would end a stalled read as a bare gateway timeout.
-  const anthropic = new Anthropic({ apiKey, timeout: 90_000, maxRetries: 1 });
+  const anthropic = new Anthropic({ apiKey, timeout: 90_000, maxRetries: 0 });
   let response: Anthropic.Beta.BetaMessage;
   try {
     // fallbacks: "default" re-runs a request a safety classifier declines on
