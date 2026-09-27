@@ -660,7 +660,28 @@
     document.getElementById('formHeading').scrollIntoView({ behavior: 'smooth' });
   }
 
+  // --- Drafts read in the app ---
+  // The app's Staff tab runs the same read and leaves the drafts here
+  // (same origin) for checking and saving. Taken once, so a later visit
+  // does not show them again; ?draft=N puts that one into the form.
+  const SHOT_HANDOFF_KEY = 'almanac_shot_drafts_v1';
+  function takeShotHandoff() {
+    let handoff = null;
+    try { handoff = JSON.parse(localStorage.getItem(SHOT_HANDOFF_KEY) || 'null'); } catch (e) {}
+    try { localStorage.removeItem(SHOT_HANDOFF_KEY); } catch (e) {}
+    if (!handoff || !Array.isArray(handoff.drops) || !handoff.drops.length) return;
+    if (Date.now() - (Number(handoff.at) || 0) > 24 * 60 * 60 * 1000) return;
+    shotDrops = handoff.drops;
+    renderShotResults();
+    setShotStatus(`${shotDrops.length} draft${shotDrops.length === 1 ? '' : 's'} read in the app. Load one into the form, check it against the screenshot, then SAVE.`);
+    const asked = new URL(location.href).searchParams.get('draft');
+    const wanted = asked === null || asked === '' ? NaN : Number(asked);
+    if (Number.isInteger(wanted) && shotDrops[wanted]) loadShotIntoForm(wanted);
+    else document.getElementById('shotResults').scrollIntoView({ behavior: 'smooth' });
+  }
+
   // --- Auth gate ---
+  let adminReady = false;
   async function render() {
     const { data } = await client.auth.getSession();
     const session = data && data.session;
@@ -668,8 +689,19 @@
     document.getElementById('authGate').style.display = authed ? 'none' : '';
     document.getElementById('adminApp').style.display = authed ? '' : 'none';
     if (authed) {
-      resetForm();
+      // The form is reset once per signed-in stretch, not on every auth
+      // event, so a draft handed over from the app survives the second
+      // render; signing out ends the stretch, so the next sign-in starts
+      // from a clean form.
+      if (!adminReady) {
+        adminReady = true;
+        resetForm();
+        takeShotHandoff();
+      }
       loadEntries();
+    } else if (adminReady) {
+      adminReady = false;
+      resetForm();
     } else if (session && session.user && session.user.email !== ADMIN_EMAIL) {
       showStatus(`Signed in as ${session.user.email}, which isn't the admin account. Sign out and use the link sent to ${ADMIN_EMAIL}.`, true);
     }
