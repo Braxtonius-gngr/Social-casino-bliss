@@ -695,9 +695,15 @@
     .roll-cup-shadow { width: 150px; height: 150px; margin: -75px 0 0 -75px; background: radial-gradient(closest-side, rgba(0,0,0,0.55), rgba(0,0,0,0.2) 55%, rgba(0,0,0,0)); }
     .roll-die-shadow { width: 64px; height: 64px; margin: -32px 0 0 -32px; background: radial-gradient(closest-side, rgba(0,0,0,0.72), rgba(0,0,0,0.3) 50%, rgba(0,0,0,0)); }
     .roll-die-ao { width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 4px; opacity: 0; background: radial-gradient(closest-side, rgba(0,0,0,0.9), rgba(0,0,0,0.55) 62%, rgba(0,0,0,0)); }
+    /* No blend mode here: a blend mode on anything directly in the 3D
+       scene makes the browser drop the whole scene. */
+    .roll-caustic { width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, rgba(255,46,66,0.62) 0%, rgba(214,14,38,0.3) 46%, rgba(160,6,24,0.1) 72%, rgba(160,6,24,0) 100%); }
     .roll-puff { width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, rgba(214,196,160,0.1) 20%, rgba(214,196,160,0.3) 58%, rgba(214,196,160,0.1) 82%, rgba(214,196,160,0) 100%); filter: blur(2px); }
     /* Dust in the light, billboarded to the lens by playRollIntro(). */
-    .roll-mote { width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, rgba(255,243,214,0.95), rgba(255,226,170,0.4) 58%, rgba(255,226,170,0) 100%); }
+    /* Dust in the light shaft: a fine speck in focus that glints as it
+       turns; out of focus, a faint disc with a crisp, slightly brighter
+       rim, the way a real lens draws a point of light. */
+    .roll-mote { width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, rgba(255,247,232,0.9) 0%, rgba(255,244,226,0.72) 72%, rgba(255,248,236,0.95) 88%, rgba(255,248,236,0) 100%); }
 
     /* Leather, brass and the dice are drawn in their own materials, not
        theme tokens: they are physical objects under one key light and
@@ -706,16 +712,30 @@
     /* Fades ride --o on the leaves: opacity below 1 on a preserve-3d box
        would flatten its 3D children. */
     .roll-cup3 > * { position: absolute; left: 0; top: 0; transform-style: preserve-3d; opacity: var(--o, 1); }
-    .roll-slat { backface-visibility: hidden; background: linear-gradient(180deg, #3a2215 0%, #4e2e1c 16%, #5c3721 48%, #4b2c1a 80%, #2c190f 100%); }
-    .roll-slat::before, .roll-slat::after { content: ''; position: absolute; left: 0; right: 0; background: linear-gradient(180deg, #7d5f1f 0%, #e6cc78 32%, #f6e5a6 42%, #b8932e 64%, #6b4d14 100%); }
-    .roll-slat::before { top: 0; height: 22px; border-bottom: 1px solid rgba(0,0,0,0.55); box-shadow: 0 3px 4px rgba(0,0,0,0.35); }
-    .roll-slat::after { bottom: 0; height: 18px; border-top: 1px solid rgba(0,0,0,0.55); }
-    .roll-slat-in { backface-visibility: visible; background: linear-gradient(180deg, #100905 0%, #1d110a 30%, #0d0704 100%); }
+    /* Hand-stitched leather over a cone: pebbled grain, a darker burnish
+       toward the rims, a stitch of waxed thread under each brass band. */
+    .roll-slat { backface-visibility: hidden; background:
+      linear-gradient(#d9c49a, #b89f73) 50% 27px / 46% 1.5px no-repeat,
+      linear-gradient(#d9c49a, #b89f73) 50% calc(100% - 22px) / 46% 1.5px no-repeat,
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cfilter id='l'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.3' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.08 0 0 0 0 0.04 0 0 0 0 0.02 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='60' height='60' filter='url(%23l)'/%3E%3C/svg%3E") 0 0 / 60px 60px,
+      linear-gradient(180deg, #2a170d 0%, #45281a 12%, #5a3522 34%, #62392a 52%, #50301f 76%, #331d11 92%, #22130a 100%); }
+    /* Aged brass bands: warm, not yellow, with a bright bevel and a
+       dark worn edge; every fifth slat carries a domed rivet. */
+    .roll-slat::before, .roll-slat::after { content: ''; position: absolute; left: 0; right: 0; background: linear-gradient(180deg, #3e2d0b 0%, #7e5f1e 18%, #c9a64c 38%, #ecd896 46%, #a8822e 62%, #5f4513 84%, #33250a 100%); }
+    .roll-slat-riv::before { background: radial-gradient(circle at 50% 50%, #fff4c8 0 0.9px, #c9a44a 1.8px, #6a4e14 2.8px, rgba(0,0,0,0) 3.2px), linear-gradient(180deg, #3e2d0b 0%, #7e5f1e 18%, #c9a64c 38%, #ecd896 46%, #a8822e 62%, #5f4513 84%, #33250a 100%); }
+    .roll-slat::before { top: 0; height: 18px; border-bottom: 1px solid rgba(0,0,0,0.55); box-shadow: 0 3px 4px rgba(0,0,0,0.35); }
+    .roll-slat::after { bottom: 0; height: 13px; border-top: 1px solid rgba(0,0,0,0.55); }
+    /* Inside: casino-green felt, dark with depth. */
+    /* Turned to face inward, so the lining shows only from inside the cup. */
+    .roll-slat-in { backface-visibility: hidden; background: radial-gradient(circle, rgba(255,255,255,0.05) 0 0.5px, rgba(0,0,0,0) 0.8px) 0 0 / 3px 3px, linear-gradient(180deg, #0f2b1e 0%, #0b2117 40%, #06140d 100%); }
     .roll-sh, .roll-sp { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
     .roll-sh { background: #000; }
     .roll-sp { background: radial-gradient(circle at 36% 30%, #ffffff 0%, rgba(255,246,220,0.75) 28%, rgba(255,240,205,0.22) 62%, rgba(255,240,205,0) 100%); mix-blend-mode: screen; }
-    .roll-cup-rim { border-radius: 50%; border: 6px solid #d9b542; background: none; box-shadow: inset 0 0 0 2px #6e5012, 0 0 0 1.5px #3f2a06; backface-visibility: visible; }
-    .roll-cup-mouth { border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,0.85), rgba(0,0,0,0.6)); backface-visibility: visible; }
+    /* The lip: leather rolled over a brass inlay. */
+    .roll-cup-rim { border-radius: 50%; border: 7px solid #3c2316; background: none; box-shadow: inset 0 0 0 1.5px #1a0e07, inset 0 0 0 3px #b8923a, inset 0 0 0 4px #3e2c0b, 0 0 0 1px #120a05; backface-visibility: visible; }
+    .roll-medal { width: 34px; height: 34px; margin: -17px 0 0 -17px; backface-visibility: hidden; }
+    .roll-medal svg { display: block; width: 100%; height: 100%; }
+    .roll-cup-mouth { border-radius: 50%; background: radial-gradient(closest-side, rgba(2,10,6,0.9), rgba(6,22,14,0.7)); backface-visibility: visible; }
     .roll-cup-base { border-radius: 50%; border: 5px solid #b8932e; background: radial-gradient(circle at 40% 40%, #5c3721, #2a170d 70%, #1b0f08); backface-visibility: visible; }
     .roll-cup-base .roll-sh { border-radius: 50%; }
 
@@ -741,12 +761,19 @@
     /* The key softbox's reflection: a crisp, glassy window of light. */
     .roll-face3 .roll-sp { height: 72px; margin-top: -36px; border-radius: 34%; background: radial-gradient(closest-side, #ffffff 0%, rgba(255,255,255,0.9) 60%, rgba(255,255,255,0.18) 86%, rgba(255,255,255,0) 100%); }
     .roll-face3 .roll-sp2 { height: 320px; margin-top: -160px; background: linear-gradient(90deg, rgba(255,232,190,0) 0%, rgba(255,238,205,0.45) 28%, rgba(255,255,255,0.96) 46%, #ffffff 50%, rgba(255,255,255,0.96) 54%, rgba(255,238,205,0.45) 72%, rgba(255,232,190,0) 100%); }
+    /* The room reflected in the gloss: dim ceiling, a bright horizon line,
+       the dark table below. playRollIntro() turns and slides it so the
+       horizon's image sits where the mirrored ray runs level. */
+    .roll-env { position: absolute; left: 50%; top: 50%; width: 320px; height: 320px; margin: -160px 0 0 -160px; opacity: 0; pointer-events: none; background: linear-gradient(90deg, rgba(0,0,0,0.26) 0%, rgba(0,0,0,0.06) 44%, rgba(0,0,0,0) 48.6%, rgba(255,238,228,0.34) 49.7%, rgba(255,250,244,0.16) 50.8%, rgba(255,255,255,0.07) 56%, rgba(255,255,255,0.035) 100%); }
+    /* The far walls seen through the body (built by rollInnerMarkup). */
+    .roll-inner { position: absolute; left: 3px; top: 3px; width: 96px; height: 96px; backface-visibility: hidden; opacity: var(--o, 1); }
+    .roll-inner svg { display: block; width: 100%; height: 100%; }
     .roll-fr { position: absolute; inset: 0; opacity: 0; pointer-events: none; box-shadow: inset 0 0 5px 1.5px rgba(255,205,212,0.55), inset 0 0 20px 4px rgba(255,60,80,0.16); }
     .roll-ss { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
     /* The rounded edges: light caught inside the acrylic runs along
        them as a hot red line between two dark shoulders. */
-    .roll-bev { position: absolute; left: 51px; top: 51px; transform-origin: 0 0; backface-visibility: hidden; opacity: var(--o, 1); background: linear-gradient(180deg, #120102 0%, #3e050d 32%, #d8223b 50%, #3e050d 68%, #120102 100%); }
-    .roll-bev-c { background: radial-gradient(closest-side, #a5162c, #2a0307); }
+    .roll-bev { position: absolute; left: 51px; top: 51px; transform-origin: 0 0; backface-visibility: hidden; opacity: var(--o, 1); background: linear-gradient(180deg, rgba(18,1,2,0.9) 0%, rgba(62,5,13,0.84) 32%, rgba(222,36,60,0.92) 50%, rgba(62,5,13,0.84) 68%, rgba(18,1,2,0.9) 100%); }
+    .roll-bev-c { background: radial-gradient(closest-side, rgba(170,22,44,0.9), rgba(42,3,7,0.9)); }
     .roll-bev .roll-sp { background: #ffffff; mix-blend-mode: screen; }
     /* The core just inside the chamfers, so no corner ever shows through. */
     .roll-core { position: absolute; inset: 8.67px; background: #1a0205; backface-visibility: hidden; opacity: var(--o, 1); }
