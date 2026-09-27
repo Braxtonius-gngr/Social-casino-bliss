@@ -5213,6 +5213,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try {
         api = await mod.createIntro({
           host, tier, seed,
+          controlsHost: screen,
           quality: q.get('quality') || 'auto',
           sound: soundPref !== 'off',
           onReveal: () => screen.classList.add('roll-popped'),
