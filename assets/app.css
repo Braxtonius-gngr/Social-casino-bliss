@@ -659,8 +659,10 @@
        ========================================================================== */
     .roll-intro { display: none; position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
     .landing-screen.intro-play .roll-intro { display: block; }
-    /* Performance: no blend modes or filters anywhere in the intro (each
-       forces an extra full off-screen pass per frame), soft gradients are
+    /* Performance: no blend modes anywhere in the intro and no filters in
+       the shot itself (each forces an extra full off-screen pass per frame;
+       the only filters are on the few small 2D pieces after the pop - the
+       wordmark's blur-in and the money's drop shadow), soft gradients are
        rasterised small and scaled up, no SVG text in the 3D scene, and the
        landing's own animated decorations are taken out while the set
        covers them (display, not visibility: hidden animations still run). */
@@ -709,7 +711,7 @@
     /* No blend mode here: a blend mode on anything directly in the 3D
        scene makes the browser drop the whole scene. */
     .roll-caustic { width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, rgba(255,46,66,0.62) 0%, rgba(214,14,38,0.3) 46%, rgba(160,6,24,0.1) 72%, rgba(160,6,24,0) 100%); }
-    .roll-puff { width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, rgba(214,196,160,0.1) 20%, rgba(214,196,160,0.3) 58%, rgba(214,196,160,0.1) 82%, rgba(214,196,160,0) 100%); filter: blur(2px); }
+    .roll-puff { width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, rgba(214,196,160,0.1) 20%, rgba(214,196,160,0.3) 58%, rgba(214,196,160,0.1) 82%, rgba(214,196,160,0) 100%); }
     /* Dust in the light, billboarded to the lens by playRollIntro(). */
     /* Dust in the light shaft: a fine speck in focus that glints as it
        turns; out of focus, a faint disc with a crisp, slightly brighter
