@@ -183,10 +183,15 @@ Setup, once:
 ```bash
 supabase db push                                  # drop_alerts, owner_tier, least_privilege, catalog_service, rollup_view_and_link_rate
 supabase secrets set ANTHROPIC_API_KEY="sk-ant-..."
-supabase functions deploy read-drop
-supabase functions deploy web-push
-supabase functions deploy go                      # referral redirects
+supabase functions deploy read-drop --no-verify-jwt
+supabase functions deploy web-push --no-verify-jwt
+supabase functions deploy go --no-verify-jwt      # referral redirects
 ```
+
+Every function checks its own caller (the admin email, the cron secret,
+the signed-in user), and `go` is public by design: browsers follow it
+without a token. Deploy them with `--no-verify-jwt`, or the gateway
+answers 401 before the function runs.
 
 Apply the migration before the app update reaches people. The app copes
 with a server without it (drop alerts say they aren't available yet), but

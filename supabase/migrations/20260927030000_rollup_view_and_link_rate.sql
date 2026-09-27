@@ -15,7 +15,9 @@
 --    callable through the API until their migration said otherwise.
 -- 4. publish_catalog() keeps only the catalogue's known public fields, so
 --    a field added to data/catalog.json later cannot carry a link to the
---    browser by accident. Anything else is dropped and reported.
+--    browser by accident. Anything else is dropped and reported. The
+--    origin is also cut case-insensitively, matching the classifier, so an
+--    upper-case scheme cannot slip a referral link through.
 
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON FUNCTIONS FROM PUBLIC;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC;
@@ -148,7 +150,7 @@ BEGIN
     e->>'url' AS launch_url,
     public.catalog_url_is_referral(e->>'url') AS has_referral,
     CASE WHEN public.catalog_url_is_referral(e->>'url')
-         THEN regexp_replace(e->>'url', '^(https?://[^/?#]+).*$', '\1')
+         THEN regexp_replace(e->>'url', '^(https?://[^/?#]+).*$', '\1', 'i')
          ELSE e->>'url' END AS public_url
   FROM jsonb_array_elements(p_catalog) WITH ORDINALITY AS t(e, ord);
 
