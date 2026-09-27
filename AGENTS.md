@@ -7,7 +7,7 @@
 - [assets/app.css](assets/app.css) owns layout, base styles, and theme overrides.
 - [assets/accessibility.css](assets/accessibility.css) owns focus, skip-link, reduced-motion, and mobile performance styles.
 - [assets/accessibility.js](assets/accessibility.js) owns keyboard and ARIA behavior for dynamic strategy rows.
-- [data/catalog.json](data/catalog.json) is the catalogue's source of truth, published to the database from the admin page (`publish_catalog`); the app reads it through `get_catalog()` and the file is never deployed. [data/catalog.js](data/catalog.js) only restores the browser's saved copy into `CATALOG_DATA` before the first refresh. Referral links never reach the browser: `launchUrlFor()` sends OPEN through the `go` edge function for platforms flagged `hasReferral`.
+- [data/catalog.json](data/catalog.json) is the catalogue's source of truth, published to the database from the admin page (`publish_catalog`); the app reads it through `get_catalog()` and the file is never deployed. [data/catalog.js](data/catalog.js) only restores the browser's saved copy into `CATALOG_DATA` before the first refresh. Referral links never reach the browser: `launchUrlFor()` sends OPEN through the `go` edge function for platforms flagged `hasReferral`. A Pro account's own link (the edit sheet's referral field, mirrored to `member_links`) comes first; a platform imported from a friend's shared list carries its `shareCode` and adds `&via=<launch token>` so the database can serve the sharer's link when both hold Pro (see README, *Pro referrals and shared lists*).
 - [sw.js](sw.js) owns offline caching and same-origin network behavior.
 
 ## Working Rules

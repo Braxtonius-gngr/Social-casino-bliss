@@ -848,6 +848,11 @@
       </div>
       <div class="backup-helper" style="margin-top:8px;">A deck is your platform list and tags &mdash; without your timers, balances, history or referral links. Safe to send to someone else.</div>
       <input type="file" id="importDeckInput" accept=".json,application/json" style="display:none;" onchange="importDeck(event)" />
+      <div class="backup-controls" style="margin-top:10px;">
+        <button class="btn-dock" onclick="shareMyList()">&#9733; SHARE MY LIST</button>
+        <button class="btn-dock" onclick="importSharedListPrompt()">&#8679; IMPORT A LIST</button>
+      </div>
+      <div id="shareListStatus" class="backup-helper" style="margin-top:8px;"></div>
       <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="openStatsModal()">&#9673; VIEW STATS</button>
         <button id="btnDropInbox" class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-gold); color:var(--accent-gold); display:none;" onclick="openDropsModal()">&#9670; DROP INBOX</button>
@@ -1209,7 +1214,7 @@
       <input type="hidden" id="modalGameId" />
       <div class="form-group"><label>Platform Name</label><input type="text" id="modalGameName" /></div>
       <div class="form-group"><label>Collect URL</label><input type="url" id="modalGameUrl" /></div>
-      <div class="form-group"><label>Referral / Signup Link</label><input type="url" id="modalReferralUrl" placeholder="Optional" /></div>
+      <div class="form-group"><label>Referral / Signup Link <span class="pro-tag">PRO</span></label><input type="url" id="modalReferralUrl" placeholder="Optional" onclick="referralFieldTapped()" /><div id="modalReferralHint" class="hint" style="font-size:0.68rem; color:var(--text-muted); margin-top:5px;"></div></div>
       <div class="form-group"><label>Cooldown (Hours)</label><input type="number" id="modalCooldown" value="24" /></div>
       <div class="form-group"><label>Current SC balance</label><input type="number" step="0.01" id="modalBalance" placeholder="0" /><div class="hint" style="font-size:0.68rem; color:var(--text-muted); margin-top:5px;">Optional. Shows a progress bar toward this platform's cashout minimum.</div></div>
       <div class="form-group"><label>Runs / tags</label><input type="text" id="modalTags" placeholder="morning, crypto, high value" /><div class="hint" style="font-size:0.68rem; color:var(--text-muted); margin-top:5px;">Comma separated. Tags become filter chips you can run on their own.</div></div>
@@ -2450,22 +2455,6 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // Returns { game, undo } so a caller that suppressed the toast still
     // has a way to trigger (and know about) the same undo logic - or null
     // if the email gate intercepted and this collection didn't happen.
-    // Owner lock on OPEN's destination. game.referralUrl exists for the
-    // Share feature - a player storing THEIR OWN link to send to THEIR OWN
-    // friends - and that stays fully functional either way. What's locked
-    // is whether OPEN itself will navigate through that stored link
-    // instead of the catalog's own url. Locked (the default for every
-    // distributed copy) means OPEN always uses the catalog's url - for the
-    // platforms Braxtonius has a referral program with, that goes through
-    // the `go` endpoint to his referral link (launchUrlFor()), so it can't
-    // be quietly redirected to someone else's code by typing into a field. There is
-    // deliberately no UI for this: to release the lock on a given device,
-    // set localStorage.almanac_referral_unlocked to '1' from the browser
-    // console - a decision Braxtonius makes for his own install, not
-    // something exposed to anyone who receives the app.
-    function referralOverrideUnlocked() {
-      try { return localStorage.getItem('almanac_referral_unlocked') === '1'; } catch (e) { return false; }
-    }
 
     function collectWithUndo(id, opensLink, opts) {
       opts = opts || {};
@@ -2478,9 +2467,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // localStorage/exports actually persist.
       const prevCollected = game.lastCollected;
       const prevSnooze = game.snoozedUntil;
-      const useReferralOverride = referralOverrideUnlocked() && game.referralUrl && game.referralUrl.trim();
       if (opensLink) {
-        const launchUrl = useReferralOverride ? game.referralUrl : launchUrlFor(game);
+        const launchUrl = launchUrlFor(game);
         const launch = openExternal(launchUrl);
         if (!launch.ok) {
           showLaunchFailure(launchUrl, () => collectWithUndo(id, opensLink, opts), launch.reason);
@@ -2659,7 +2647,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
                 ${isReady ? '' : `<span class="ready-at">&rarr; ${readyAtLabel(game, remainingMs)}</span>`}
               </div>
               <div class="card-actions">
-                ${game.referralUrl ? `<button class="btn-share" onclick="shareReferral(this, '${game.id}')">Share</button>` : ''}
+                <button class="btn-share" onclick="shareReferral(this, '${game.id}')">Share</button>
                 ${isReady ? `<button class="btn-check btn-snooze" title="Snooze 3 hours" aria-label="Snooze ${escHtml(game.name)} for 3 hours" onclick="snoozePlatform('${game.id}', 3, event)">Zz</button>` : ''}
                 <button class="btn-check" title="Mark collected without opening" onclick="markCollected('${game.id}', event)">&#10003;</button>
                 <button ${cardIndex === 0 ? 'id="tourOpenTarget"' : ''} class="btn-open ${isReady ? '' : 'cooldown'}" onclick="collect('${game.id}')">
@@ -2937,6 +2925,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('modalGameName').value = '';
       document.getElementById('modalGameUrl').value = '';
       document.getElementById('modalReferralUrl').value = '';
+      refreshReferralField();
       document.getElementById('modalCooldown').value = '24';
       document.getElementById('modalBalance').value = '';
       document.getElementById('modalTags').value = '';
@@ -2956,6 +2945,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('modalGameName').value = game.name;
       document.getElementById('modalGameUrl').value = game.url;
       document.getElementById('modalReferralUrl').value = game.referralUrl || '';
+      refreshReferralField();
       document.getElementById('modalCooldown').value = game.cooldownHours || 24;
       document.getElementById('modalBalance').value = (typeof game.balance === 'number' ? game.balance : '');
       document.getElementById('modalTags').value = (game.tags || []).join(', ');
@@ -2982,6 +2972,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const name = game ? game.name : 'this platform';
 
       if (confirm(`Remove ${name} from your tracked platforms?`)) {
+        if (game && game.referralUrl) syncMemberLink(game.name, '');
         trackedGames = trackedGames.filter(g => g.id !== id);
         persist();
         closeModals();
@@ -2995,7 +2986,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const id = document.getElementById('modalGameId').value;
       const name = document.getElementById('modalGameName').value.trim();
       const url = document.getElementById('modalGameUrl').value.trim();
-      const referralUrl = document.getElementById('modalReferralUrl').value.trim();
+      const editing = id ? trackedGames.find(g => g.id === id) : null;
+      const previousName = editing ? editing.name : '';
+      const previousReferral = editing && typeof editing.referralUrl === 'string' ? editing.referralUrl : '';
+      // Only Pro changes the referral link; a free account keeps whatever
+      // the platform already held (the field is read-only for it).
+      const referralUrl = proReferralsAllowed() ? document.getElementById('modalReferralUrl').value.trim() : previousReferral;
       const cooldownHours = parseInt(document.getElementById('modalCooldown').value) || 24;
       // These three were being read into the form on open and then
       // thrown away on save - the inputs existed, populated correctly,
@@ -3076,6 +3072,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
 
       persist();
+      if (proReferralsAllowed()) {
+        // The account's copy follows the device's: a renamed platform frees
+        // its old key, a changed or new link is saved, a cleared one removed.
+        if (editing && previousReferral && previousName.toLowerCase() !== name.toLowerCase()) syncMemberLink(previousName, '');
+        if (referralUrl !== previousReferral || (editing && previousName !== name && referralUrl)) syncMemberLink(name, referralUrl);
+      }
       renderTagChips(); // tags are editable here now, so the chip row can go stale
       closeModals();
     }
@@ -5272,11 +5274,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
     }
 
-    // Where OPEN goes for a tracked platform. A platform with a referral
-    // link is opened through the `go` endpoint, which holds that link
-    // server-side; the browser never sees it. Everything else opens the
-    // platform's plain address. A player's own saved link is used only on
-    // an unlocked install (referralOverrideUnlocked()).
+    // Where OPEN goes for a tracked platform, in order: the player's own
+    // referral link (Pro only); for a platform imported from a friend's
+    // shared list, the `go` endpoint with the launch token, and the
+    // database decides per click whether the friend's link or the house's
+    // is followed; otherwise the house link through `go` for a platform
+    // flagged hasReferral, which holds that link server-side so the
+    // browser never sees it; and the platform's plain address for the rest.
     function catalogEntryFor(name) {
       const key = String(name || '').toLowerCase();
       return CATALOG_DATA.find(c => c.name.toLowerCase() === key) || null;
@@ -5286,12 +5290,21 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return `${SUPABASE_URL}/functions/v1/go?p=${encodeURIComponent(String(name || '').trim())}`;
     }
 
-    function launchUrlFor(game) {
-      if (!game) return '';
+    function houseLaunchUrl(game) {
       const entry = catalogEntryFor(game.name);
       const viaGo = entry ? entry.hasReferral === true : game.hasReferral === true;
       if (viaGo) return goUrlFor(entry ? entry.name : game.name);
       return game.url || (entry && entry.url) || '';
+    }
+
+    function launchUrlFor(game) {
+      if (!game) return '';
+      const own = ownReferralLink(game);
+      if (own) return own;
+      const entry = catalogEntryFor(game.name);
+      const token = entry && game.shareCode ? launchTokenFor(game.shareCode) : null;
+      if (token) return `${goUrlFor(entry.name)}&via=${token}`;
+      return houseLaunchUrl(game);
     }
 
     function sameUrl(a, b) {
@@ -7014,11 +7027,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // inline handler, which would break on URLs containing quotes.
     async function shareReferral(btn, id) {
       const game = trackedGames.find(g => g.id === id);
-      if (!game || !game.referralUrl) return;
+      const link = game ? shareLinkFor(game) : '';
+      if (!link) return;
 
       if (navigator.share) {
         try {
-          await navigator.share({ title: `Join me on ${game.name}`, url: game.referralUrl });
+          await navigator.share({ title: `Join me on ${game.name}`, url: link });
         } catch (err) {
           if (err && err.name !== 'AbortError') console.warn('Share failed:', err);
         }
@@ -7026,12 +7040,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
 
       try {
-        await navigator.clipboard.writeText(game.referralUrl);
+        await navigator.clipboard.writeText(link);
         const original = btn.textContent;
         btn.textContent = 'COPIED';
         setTimeout(() => { btn.textContent = original; }, 1800);
       } catch (err) {
-        alert('Referral link:\n\n' + game.referralUrl);
+        alert('Link:\n\n' + link);
       }
     }
 
@@ -7585,6 +7599,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       clientEntitlements.loaded = true;
       updateBillingUI();
       noteAlertRulesAccess();
+      noteProReferralsAccess();
       return clientEntitlements;
     }
 
@@ -7624,6 +7639,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         clientEntitlements.loaded = true;
         updateBillingUI();
         noteAlertRulesAccess();
+        noteProReferralsAccess();
       }
       return clientEntitlements;
     }
@@ -10345,7 +10361,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         { t: 'Organising a big list', items: [{ h: 'Runs and tags', b: 'Edit any platform (⋯) and add tags like <i>morning</i> or <i>crypto</i>. Tags become chips above your list. Tap one and Daily Run scopes to just that group — the button changes to <b>START CRYPTO RUN</b>. This is how you avoid a 139-platform sitting.' }, { h: 'Search and compact view', b: 'Search filters your tracked list. The <b>&#9776;</b> button switches to a compact layout that roughly halves the height of every row.' }, { h: 'Sorting', b: 'Sorts <i>stack</i>. Tap Tier then Reliability and it sorts by Tier first, using Reliability to break ties. <b>Closest to Ready</b> floats whatever unlocks soonest to the top — clear the stack first if you want that on its own.' }, { h: 'Hide platforms on cooldown', b: "Settings toggle. Cuts your list down to just what's collectable. The Cooldown filter still shows everything when you want it." }] },
         { t: "Knowing what's working", items: [{ h: 'Stats', b: 'Total collections, last 7 and 30 days, your current daily streak, most-collected platforms, and a 12-week activity heatmap.' }, { h: 'Missed Resets', b: "Fixed-reset platforms whose drop came and went uncollected. That one's genuinely gone — unlike a rolling timer, which just waits. Rolling platforms are excluded because they can't miss." }, { h: 'Going Stale', b: "Tracked platforms you haven't touched in 21+ days. The prune list." }, { h: 'Review &amp; Prune', b: "Walks you through prunable platforms one at a time with the reason each was flagged. Keep, remove, or skip. Nothing is ever removed automatically, and it warns you if a platform has a referral link you'd lose." }, { h: 'A note on numbers', b: 'The app counts <i>collections</i>, never estimated money. 37 catalogue entries have no verified daily value, and several others are averaged ranges — a dollar figure built on that would look authoritative while being mostly invented.' }] },
         { t: 'Balances and cashouts', items: [{ h: 'Balance tracking', b: "Edit a platform and enter your current SC balance. You get a progress bar toward that platform's cashout minimum, which turns green at <b>CASHOUT READY</b>." }, { h: 'Where the target comes from', b: 'It\'s read from the platform\'s stated minimum redemption. Where a platform lists both ("50 GC / 100 Cash") it uses the larger, since that\'s the one gating a real cash redemption.' }] },
-        { t: 'Referrals and sharing', items: [{ h: 'Manage Referrals', b: "Settings → Manage Referrals. Paste your own referral links per platform, or use <b>BULK</b> to paste many at once as <code>PlatformName | https://link</code>. Names must match exactly — anything that doesn't match is reported back rather than guessed at." }, { h: 'Share button', b: 'Platforms with a referral link get a Share button on their card — native share sheet, or copies to clipboard.' }, { h: 'Share Deck', b: 'Exports your platform list, tags and referral links as a file to send someone. It deliberately leaves out your timers, balances, history and private notes. On import it merges rather than overwrites.' }] },
+        { t: 'Referrals and sharing', items: [{ h: 'Whose link opens a platform', b: 'Every platform opens through the house referral link. With <b>Pro</b>, the Referral / Signup Link field on each platform (⋯) unlocks: your own link is used when you open that platform, and it is saved to your account so it follows you across devices.' }, { h: 'Share button', b: 'Every card has one. On Pro it hands out your own link; otherwise the same link OPEN uses. Native share sheet, or copies to clipboard.' }, { h: 'Share My List', b: 'Settings → Share My List (Pro) turns your platforms and tags into an 8-character code and a link. A friend imports it with <b>Import a List</b> or by opening the link. While you both hold Pro, the platforms they imported open through <i>your</i> referral links (never back to yourself), up to 20 times a calendar month on platforms where the house has a link of its own, without limit on the rest. The list is a snapshot: press <b>Update</b> after changing your deck.' }, { h: 'Share Deck', b: 'Exports your platform list and tags as a file to send someone. It deliberately leaves out your timers, balances, history, notes and referral links. On import it merges rather than overwrites.' }] },
         { t: 'Keeping your data', items: [{ h: 'Local, plus a cloud mirror', b: 'Your tracked platforms, timers, and collection history (streaks/stats) all live in this browser first, and all mirror to the cloud automatically — see Cloud Sync below.' }, { h: 'Backups', b: "Settings → Export Backup gives you a dated JSON file with your tracked platforms and their timers, independent of the cloud — good for an offline copy or moving data by hand. It does NOT include collection history/streaks." }, { h: 'Cloud Sync (beta)', b: "On by default, no signup: this device gets an anonymous account automatically, and both your platform list (timers, tags, notes) and your collection history mirror to it. Turn it off in Settings if you'd rather stay fully local-only." }, { h: 'Making it recoverable, and synced across devices', b: "The anonymous account alone has no password to sign back in with, so clearing THIS device's storage still loses local access to that copy. That's why your very first collection prompts for an email right there — a confirmation link, never a password — before it's logged, so there's always at least one way back to it. You can also do this anytime from Settings → Link Email. On a new or wiped device, Settings → Recover a Linked Account sends a sign-in link that pulls both your deck and your history back down — and from then on, every device signed into that email stays in sync automatically. Editing the deck on two devices before either syncs means whichever save lands last wins for the whole deck, not a smart merge." }, { h: 'Install it', b: 'Add to Home Screen from your browser menu. It then opens like an app and works offline.' }] },
         { t: 'Look and feel', items: [{ h: 'Themes', b: 'Three: <b>Prism Noir</b> (black-card luxury with circuit threading), <b>Neon Grid</b> (high-contrast cyberpunk), <b>Obsidian Ledger</b> (warm matte neutrals). Settings → Theme.' }, { h: 'Motion', b: 'If your device has Reduce Motion or Battery Saver on, animations switch off automatically. Settings → Motion → <b>Always on</b> overrides that if you want them regardless.' }] }
     ];
@@ -10464,6 +10480,354 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       reader.readAsText(file);
     }
 
+
+    // --- Pro referrals and shared lists ---
+    // A free account opens every platform through the house link and the
+    // referral field is read-only for it. A Pro account keeps its own
+    // links, on this device and in member_links, and can hand its list out
+    // as a code. The database decides per click whether a friend's link is
+    // served (both Pro, never back to the sharer, twenty a month on
+    // platforms where the house has a link); the app only carries the code
+    // and a 24-hour launch token for it.
+    const SHARE_CODE_RE = /^[A-Z2-9]{8}$/;
+    const LAUNCH_TOKENS_KEY = 'almanac_launch_tokens_v1';
+    const MEMBER_LINKS_SYNCED_KEY = 'almanac_member_links_synced_v1';
+    const LAUNCH_TOKEN_REFRESH_MS = 12 * 60 * 60 * 1000;
+
+    function proReferralsAllowed() {
+      return clientEntitlements.isPro || cachedProActive() || isOwnerAccount;
+    }
+
+    function ownReferralLink(game) {
+      if (!game || !proReferralsAllowed()) return '';
+      const link = typeof game.referralUrl === 'string' ? game.referralUrl.trim() : '';
+      return /^https?:\/\//i.test(link) ? link : '';
+    }
+
+    // What the Share button hands out: your own link on Pro, otherwise the
+    // address OPEN uses (the house link through go, or the plain one).
+    function shareLinkFor(game) {
+      return ownReferralLink(game) || houseLaunchUrl(game);
+    }
+
+    function referralUpgradePitch() {
+      showToast('Upgrade to Pro to save and share your own referral links.', () => initiateProCheckout(), 8000, 'UPGRADE');
+    }
+
+    function refreshReferralField() {
+      const field = document.getElementById('modalReferralUrl');
+      const hint = document.getElementById('modalReferralHint');
+      if (!field || !hint) return;
+      const allowed = proReferralsAllowed();
+      field.readOnly = !allowed;
+      field.classList.toggle('locked', !allowed);
+      field.placeholder = allowed ? 'Optional' : 'Pro: your own referral link';
+      hint.innerHTML = allowed
+        ? 'Used when you open this platform, and by friends with Pro who import your shared list.'
+        : 'Everyone opens through the house link. <a href="#" onclick="event.preventDefault(); initiateProCheckout()">Upgrade to Pro</a> to save and share your own referral links.';
+    }
+
+    function referralFieldTapped() {
+      if (!proReferralsAllowed()) referralUpgradePitch();
+    }
+
+    async function signedInClient() {
+      const client = getSupabaseClient();
+      if (!client || !client.auth || !client.auth.getSession) return null;
+      try {
+        const { data } = await client.auth.getSession();
+        return data && data.session ? client : null;
+      } catch (e) { return null; }
+    }
+
+    function proOnlyError(err) {
+      return /PRO_ONLY/.test((err && err.message) || '');
+    }
+
+    // Saves one of this account's links, or with an empty url removes it.
+    async function syncMemberLink(name, url) {
+      if (!proReferralsAllowed()) return false;
+      const client = await signedInClient();
+      if (!client) return false;
+      try {
+        const { error } = await client.rpc('set_my_referral_link', { p_name: name, p_url: url || '' });
+        if (error) throw error;
+        return true;
+      } catch (err) {
+        if (proOnlyError(err)) referralUpgradePitch();
+        else console.warn('set_my_referral_link failed:', err);
+        return false;
+      }
+    }
+
+    // On a Pro account: links saved on another device come down onto
+    // platforms here that have none, and links this device holds that the
+    // account lacks go up, the upload once per account so a link removed
+    // elsewhere is not put back.
+    let memberLinksPulledFor = null;
+    async function pullMemberLinks() {
+      if (!proReferralsAllowed() || !entitlementUid || memberLinksPulledFor === entitlementUid) return;
+      const client = await signedInClient();
+      if (!client) return;
+      memberLinksPulledFor = entitlementUid;
+      let rows = [];
+      try {
+        const { data, error } = await client.rpc('list_my_referral_links');
+        if (error) throw error;
+        rows = Array.isArray(data) ? data : [];
+      } catch (err) {
+        memberLinksPulledFor = null;
+        console.warn('list_my_referral_links failed:', err);
+        return;
+      }
+      const held = new Map(rows.map(r => [String(r.name || '').toLowerCase(), r.referral_url]));
+      const missing = [];
+      let changed = false;
+      trackedGames.forEach(g => {
+        const key = g.name.toLowerCase();
+        const own = typeof g.referralUrl === 'string' ? g.referralUrl.trim() : '';
+        if (!own && held.has(key)) { g.referralUrl = held.get(key); changed = true; }
+        else if (own && !held.has(key)) missing.push(g);
+      });
+      if (changed) persist();
+      let synced = null;
+      try { synced = localStorage.getItem(MEMBER_LINKS_SYNCED_KEY); } catch (e) {}
+      if (missing.length && synced !== entitlementUid) {
+        for (const g of missing) await syncMemberLink(g.name, g.referralUrl.trim());
+      }
+      try { localStorage.setItem(MEMBER_LINKS_SYNCED_KEY, entitlementUid); } catch (e) {}
+    }
+
+    // Launch tokens, held per account and code.
+    function readLaunchTokens() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(LAUNCH_TOKENS_KEY) || 'null');
+        return saved && saved.uid === entitlementUid && saved.codes ? saved.codes : {};
+      } catch (e) { return {}; }
+    }
+
+    function launchTokenFor(code) {
+      if (!proReferralsAllowed()) return null;
+      const entry = readLaunchTokens()[code];
+      if (!entry || !/^[0-9a-f]{48}$/.test(String(entry.token))) return null;
+      return new Date(entry.expiresAt).getTime() - serverNow() > 60 * 1000 ? entry.token : null;
+    }
+
+    function sharedCodesInDeck() {
+      return [...new Set(trackedGames.map(g => g.shareCode).filter(c => typeof c === 'string' && SHARE_CODE_RE.test(c)))];
+    }
+
+    // Tokens last 24 hours; they are renewed when one is within an hour of
+    // running out, and straight away after an import. The database mints
+    // none for a free account, so that call is skipped.
+    let launchTokenRefresh = null;
+    function refreshLaunchTokens(force) {
+      const codes = sharedCodesInDeck();
+      if (!codes.length || !proReferralsAllowed() || !entitlementUid) return Promise.resolve();
+      if (!force) {
+        const held = readLaunchTokens();
+        const fresh = codes.every(code => held[code] && new Date(held[code].expiresAt).getTime() - serverNow() > 60 * 60 * 1000);
+        if (fresh) return Promise.resolve();
+      }
+      if (launchTokenRefresh) return launchTokenRefresh;
+      launchTokenRefresh = (async () => {
+        const client = await signedInClient();
+        if (!client) return;
+        try {
+          const { data, error } = await client.rpc('mint_launch_tokens', { p_codes: codes });
+          if (error) throw error;
+          const minted = {};
+          (Array.isArray(data) ? data : []).forEach(row => { minted[row.code] = { token: row.token, expiresAt: row.expires_at }; });
+          localStorage.setItem(LAUNCH_TOKENS_KEY, JSON.stringify({ uid: entitlementUid, codes: minted }));
+        } catch (err) {
+          console.warn('mint_launch_tokens failed:', err);
+        }
+      })().finally(() => { launchTokenRefresh = null; });
+      return launchTokenRefresh;
+    }
+
+    // Sharing this deck as a code.
+    let shareStatusRow = null;
+
+    async function shareMyList() {
+      if (!proReferralsAllowed()) return referralUpgradePitch();
+      if (!trackedGames.length) return showToast('Track a platform first, then share the list.', null);
+      const client = await signedInClient();
+      if (!client) return showToast('Turn Cloud Sync on in Settings to share your list.', null);
+      const platforms = trackedGames.map(g => ({ name: g.name, tags: g.tags || [] }));
+      try {
+        const { data, error } = await client.rpc('share_my_list', { p_title: 'My list', p_platforms: platforms });
+        if (error) throw error;
+        await refreshShareStatus();
+        if (typeof data === 'string' && data) shareListCode(data);
+      } catch (err) {
+        if (proOnlyError(err)) referralUpgradePitch();
+        else showToast('Could not share the list right now.', null);
+      }
+    }
+
+    function shareListUrl(code) {
+      const url = new URL(location.href);
+      url.search = '';
+      url.hash = '';
+      url.searchParams.set('list', code);
+      return url.href;
+    }
+
+    async function shareListCode(code) {
+      const url = shareListUrl(code);
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: 'My platform list', text: `My Daily Roll Over list, code ${code}`, url });
+          return;
+        } catch (err) {
+          if (err && err.name === 'AbortError') return;
+        }
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast(`Link copied. Your list code is ${code}.`, null);
+      } catch (err) {
+        alert(`Share this code: ${code}\n\n${url}`);
+      }
+    }
+
+    async function stopSharingList() {
+      const client = await signedInClient();
+      if (!client) return;
+      try {
+        const { error } = await client.rpc('unshare_my_list');
+        if (error) throw error;
+      } catch (err) {
+        return showToast('Could not stop sharing right now.', null);
+      }
+      await refreshShareStatus();
+      showToast('Your list is no longer shared.', null);
+    }
+
+    async function refreshShareStatus() {
+      if (!document.getElementById('shareListStatus')) return;
+      if (!proReferralsAllowed() || !entitlementUid) {
+        shareStatusRow = null;
+        renderShareStatus();
+        return;
+      }
+      const client = await signedInClient();
+      if (!client) return;
+      try {
+        const { data, error } = await client.rpc('my_share_status');
+        if (error) throw error;
+        shareStatusRow = Array.isArray(data) && data.length ? data[0] : null;
+      } catch (err) {
+        console.warn('my_share_status failed:', err);
+      }
+      renderShareStatus();
+    }
+
+    function renderShareStatus() {
+      const box = document.getElementById('shareListStatus');
+      if (!box) return;
+      const row = shareStatusRow;
+      const cap = row && typeof row.cap === 'number' ? row.cap : 20;
+      if (!proReferralsAllowed()) {
+        box.innerHTML = `A shared list is your platforms and tags under a code a friend can import. With Pro, friends who also hold Pro open those platforms through your referral links, up to ${cap} times a month.`;
+        return;
+      }
+      if (!row || !row.code) {
+        box.innerHTML = `Share your list to get a code. Friends with Pro who import it open those platforms through your referral links, up to ${cap} times a month.`;
+        return;
+      }
+      box.innerHTML = `Your list code: <b>${escHtml(row.code)}</b> &middot; ${Number(row.platform_count) || 0} platforms &middot; your links used ${Number(row.uses_this_month) || 0} of ${cap} times this month. `
+        + `<a href="#" onclick="event.preventDefault(); shareListCode('${escHtml(row.code)}')">Share the link</a> &middot; `
+        + `<a href="#" onclick="event.preventDefault(); shareMyList()">Update</a> &middot; `
+        + `<a href="#" onclick="event.preventDefault(); stopSharingList()">Stop sharing</a>`;
+    }
+
+    // Importing a friend's list.
+    function importSharedListPrompt() {
+      const code = prompt('Enter the 8-character list code');
+      if (code === null) return;
+      importSharedList(code);
+    }
+
+    async function importSharedList(rawCode) {
+      const code = String(rawCode || '').trim().toUpperCase();
+      if (!SHARE_CODE_RE.test(code)) return showToast('A list code is 8 letters and digits.', null);
+      const client = await signedInClient();
+      if (!client) return showToast('Turn Cloud Sync on in Settings to import a list.', null);
+      let row = null;
+      try {
+        const { data, error } = await client.rpc('get_shared_list', { p_code: code });
+        if (error) throw error;
+        row = Array.isArray(data) && data.length ? data[0] : null;
+      } catch (err) {
+        return showToast('Could not look that list up right now.', null);
+      }
+      if (!row) return showToast('No shared list has that code.', null);
+
+      let added = 0, updated = 0;
+      (Array.isArray(row.platforms) ? row.platforms : []).forEach(pl => {
+        if (!pl || typeof pl.name !== 'string' || !pl.name.trim()) return;
+        const tags = Array.isArray(pl.tags) ? pl.tags.filter(t => typeof t === 'string' && t.trim()) : [];
+        const existing = trackedGames.find(g => g.name.toLowerCase() === pl.name.trim().toLowerCase());
+        if (existing) {
+          if (tags.length) existing.tags = [...new Set([...(existing.tags || []), ...tags])];
+          existing.shareCode = code;
+          updated++;
+          return;
+        }
+        const cat = catalogEntryFor(pl.name.trim()) || {};
+        const g = {
+          id: uid(), name: cat.name || pl.name.trim(), url: cat.url || '',
+          tier: cat.tier || 'Unranked', dailySC: cat.dailySC || 0,
+          speedHours: cat.speedHours || 24, reliability: cat.reliability || 68,
+          hasLive: !!cat.hasLive, minRedeem: cat.minRedeem || 'Varies',
+          notes: cat.notes || '', bestGames: cat.bestGames,
+          scIsAveraged: cat.scIsAveraged, scRange: cat.scRange,
+          referralUrl: '', tags, shareCode: code,
+          cooldownHours: cat.cooldown || 24,
+          resetHour: cat.resetHour, resetTZ: cat.resetTZ,
+          lastCollected: 0
+        };
+        if (cat.hasReferral === true) g.hasReferral = true;
+        normalizeTimerFields(g);
+        trackedGames.push(g);
+        added++;
+      });
+      persist();
+      renderTagChips();
+      await refreshLaunchTokens(true);
+      const links = row.links_active
+        ? 'Their referral links are live on these platforms.'
+        : 'Their referral links switch on once you both hold Pro; until then these open through the house link.';
+      alert(`Imported "${row.title}" from ${row.sharer}.\n\nAdded: ${added}\nAlready tracked (tags merged): ${updated}\n\n${links}`);
+    }
+
+    // ?list=CODE on the app's address: offered, not applied, since a link
+    // can be sent to anyone. Runs after the boot sign-in the import needs.
+    function consumeListParam() {
+      try {
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get('list');
+        if (code === null) return;
+        url.searchParams.delete('list');
+        window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+        const clean = String(code).trim().toUpperCase();
+        if (!SHARE_CODE_RE.test(clean)) return;
+        setTimeout(() => { if (confirm(`Import the shared platform list ${clean}?`)) importSharedList(clean); }, 1500);
+      } catch (e) {}
+    }
+
+    // Called with every entitlement answer, like noteAlertRulesAccess().
+    function noteProReferralsAccess() {
+      refreshReferralField();
+      renderShareStatus();
+      if (!entitlementUid) return;
+      pullMemberLinks();
+      refreshLaunchTokens();
+      refreshShareStatus();
+    }
+
     // --- Backup & restore ---
     // Explicit whitelist rather than trackedGames as-is, so an internal-
     // only field (_prevCollected - see markCollected()/collect(), never
@@ -10486,6 +10850,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if ('scIsAveraged' in g) out.scIsAveraged = g.scIsAveraged;
       if ('scRange' in g) out.scRange = g.scRange;
       if ('bestGames' in g) out.bestGames = g.bestGames;
+      if (typeof g.shareCode === 'string') out.shareCode = g.shareCode;
       return out;
     }
 
@@ -10633,6 +10998,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (typeof g.scIsAveraged === 'boolean') n.scIsAveraged = g.scIsAveraged;
       if (typeof g.scRange === 'string') n.scRange = g.scRange;
       if (typeof g.bestGames === 'string') n.bestGames = g.bestGames;
+      if (typeof g.shareCode === 'string' && SHARE_CODE_RE.test(g.shareCode)) n.shareCode = g.shareCode;
       // _prevCollected is deliberately never whitelisted above, so an
       // older backup that happens to carry one drops it here.
       // The same gate every other write path uses, rather than a second,
@@ -11559,6 +11925,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     });
     consumeBillingReturnParam();
     consumeOpenParam();
+    consumeListParam();
     noteVisitDay();
     // Late enough for the browser to have offered its install event, and
     // clear of the first-paint nudges below.
@@ -11573,6 +11940,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     if (legacyLinksScrubbed) { legacyLinksScrubbed = false; persist(); }
     refreshExternalCatalog();
     setInterval(refreshExternalCatalog, EXTERNAL_CATALOG_REFRESH_MS);
+    setInterval(refreshLaunchTokens, LAUNCH_TOKEN_REFRESH_MS);
     window.addEventListener('focus', refreshExternalCatalog);
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') refreshExternalCatalog();

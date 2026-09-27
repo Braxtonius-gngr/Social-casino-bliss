@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
-import { RateLimiter, addressKey, clientAddress, platformNameFrom, redirectResponse, safeDestination } from "./redirect.ts";
+import { RateLimiter, addressKey, clientAddress, launchTokenFrom, platformNameFrom, redirectResponse, safeDestination } from "./redirect.ts";
 
 Deno.test("platformNameFrom reads, trims and lowercases the name", () => {
   assertEquals(platformNameFrom(new URL("https://x/go?p=McLuck")), "mcluck");
@@ -49,4 +49,12 @@ Deno.test("redirectResponse is an uncached 302 with no referrer", () => {
   assertEquals(res.headers.get("Location"), "https://example.com/");
   assertEquals(res.headers.get("Cache-Control"), "no-store");
   assertEquals(res.headers.get("Referrer-Policy"), "no-referrer");
+});
+
+Deno.test("launchTokenFrom accepts only a 48-hex token", () => {
+  const good = "a".repeat(48);
+  assertEquals(launchTokenFrom(new URL(`https://x/go?p=McLuck&via=${good}`)), good);
+  assertEquals(launchTokenFrom(new URL("https://x/go?p=McLuck")), null);
+  assertEquals(launchTokenFrom(new URL("https://x/go?p=McLuck&via=short")), null);
+  assertEquals(launchTokenFrom(new URL("https://x/go?p=McLuck&via=" + "Z".repeat(48))), null);
 });
