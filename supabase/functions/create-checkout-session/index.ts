@@ -79,11 +79,11 @@ function defaultReturnUrl(req: Request) {
 
 function resolveTargetPriceId(rawPriceId: unknown): string | undefined {
   const monthlyEnvPrice = Deno.env.get("STRIPE_PRICE_ID_PRO_MONTHLY");
-  // The client may send the literal alias "price_pro_monthly" (a stand-in
-  // for "whichever price this deployment's monthly plan uses"), or omit
-  // priceId entirely - both cases mean "use the configured monthly price",
-  // not an actual Stripe price id, so map them to the env var instead of
-  // passing them straight through to allowedPrices/Stripe.
+  // The client names a plan, not a Stripe price: "price_pro_annual" means
+  // this deployment's annual price, and "price_pro_monthly" (or no
+  // priceId) its monthly one. Real price ids differ between test and live
+  // mode, so the page never carries them; they live in the secrets.
+  if (rawPriceId === "price_pro_annual") return Deno.env.get("STRIPE_PRICE_ID_PRO_ANNUAL");
   if (typeof rawPriceId !== "string" || !rawPriceId || rawPriceId === "price_pro_monthly" || !rawPriceId.startsWith("price_")) {
     return monthlyEnvPrice;
   }
@@ -165,6 +165,12 @@ serve(async (req) => {
         current = await stripe.subscriptions.retrieve(existing.stripe_subscription_id);
       } catch (error) {
         if (!isMissing(error)) throw error;
+        // Forget the id that no longer resolves, so it stops standing in
+        // for the account's subscription; the webhook records the new one.
+        const { error: clearError } = await supabase.from("user_subscriptions")
+          .update({ stripe_subscription_id: null, updated_at: new Date().toISOString() })
+          .eq("user_id", user.id);
+        if (clearError) throw clearError;
       }
       if (current && ["active", "trialing", "past_due", "unpaid"].includes(current.status)) {
         return jsonResponse({
