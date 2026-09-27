@@ -742,12 +742,14 @@
     /* Precision dice, built at ROLL_SS (3x) and scaled down by their
        matrix so they rasterise sharp under the zoom: six faces inset by the
        chamfer (ROLL_BEVEL 3.4px, so a 27.2px flat on a 34px cube - here
-       81.6 on 102), twelve edge strips and eight corner
-       facets, and a core that fills the cube. Each face stacks five light
-       layers over the printed acrylic, all driven by playRollIntro(): shade,
-       the red glow of light passing through (ss), the key softbox's
-       reflection (sp, a soft disc sized by distance), the swept bar
-       light's reflection (sp2) and a fresnel rim (fr). */
+       81.6 on 102), twelve edge strips and eight corner facets - all
+       translucent - and six inner walls (.roll-inner) seen through them,
+       carrying the far faces' pips. Each face stacks six light layers over
+       the printed acrylic, all driven by playRollIntro(): shade (sh), the
+       red glow of light passing through (ss), the room's reflection with
+       its horizon line (env), the key softbox's reflection (sp, a window
+       sized by distance), the swept bar light's reflection (sp2) and a
+       fresnel rim (fr). */
     /* No will-change here: it would pin the dice's raster scale at their
        34px layout size, and the lens zoom would then enlarge a bitmap. */
     .roll-die3, .roll-ghost3 { width: 102px; height: 102px; margin: -51px 0 0 -51px; opacity: 0; }
