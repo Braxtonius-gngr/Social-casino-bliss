@@ -1,5 +1,17 @@
 {
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 300,
+            "statusMessage": "Installing dependencies",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
@@ -8,7 +20,7 @@
             "type": "command",
             "timeout": 60,
             "statusMessage": "Syntax check",
-            "command": "jq -r '.tool_input.file_path // .tool_response.filePath // empty' | { read -r f; case \"$f\" in *.html|*.js) cd \"${CLAUDE_PROJECT_DIR:-.}\" && npm run --silent check:syntax >/tmp/claude-syntax-check.log 2>&1 || { echo \"npm run check:syntax failed after editing $f:\" >&2; tail -n 40 /tmp/claude-syntax-check.log >&2; exit 2; } ;; esac; }"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/syntax-check.sh"
           }
         ]
       }

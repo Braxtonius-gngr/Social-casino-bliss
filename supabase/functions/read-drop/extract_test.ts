@@ -1,4 +1,4 @@
-import { cleanDrops, discordImageUrl, isDiscordMessageLink, redactPersonal, sniffImageType } from "./extract.ts";
+import { claudeErrorReply, cleanDrops, discordImageUrl, isDiscordMessageLink, redactPersonal, sniffImageType } from "./extract.ts";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -144,4 +144,22 @@ Deno.test("a link with account parameters is account-tied whatever the model sai
   assert(drops[0].claim_url === null, String(drops[0].claim_url));
   assert(drops[0].is_account_tied === true, "flagged");
   assert(drops[0].root_domain === "pulsz.com", String(drops[0].root_domain));
+});
+
+Deno.test("a failed Claude call is explained, not just retried", () => {
+  const key = claudeErrorReply(401, "authentication_error", "401 invalid x-api-key");
+  assert(key.status === 500 && /ANTHROPIC_API_KEY/.test(key.error) && !/try again/i.test(key.error), "bad key not named");
+  assert(claudeErrorReply(undefined, "authentication_error", "").status === 500, "type alone not enough");
+  assert(/billing/.test(claudeErrorReply(402, "billing_error", "").error), "billing not named");
+  assert(/access/.test(claudeErrorReply(403, "permission_error", "").error), "access not named");
+  assert(/model/.test(claudeErrorReply(404, "not_found_error", "").error), "model not named");
+  const bad = claudeErrorReply(400, "invalid_request_error", "400 image exceeds 5 MB maximum: 6000000 bytes");
+  assert(bad.status === 502 && /rejected the request: image exceeds 5 MB maximum/.test(bad.error), "400 detail dropped");
+  assert(claudeErrorReply(400, "invalid_request_error", "x".repeat(400)).error.length < 300, "400 detail not trimmed");
+  assert(claudeErrorReply(429, "rate_limit_error", "").status === 503, "429 not retryable");
+  assert(claudeErrorReply(529, "overloaded_error", "").status === 503, "529 not retryable");
+  assert(claudeErrorReply(500, "api_error", "").status === 503, "500 not retryable");
+  assert(/didn't answer/.test(claudeErrorReply(undefined, null, "Connection error.").error), "network not named");
+  const other = claudeErrorReply(418, null, "");
+  assert(other.status === 502 && /\(418\)/.test(other.error), "unknown status not passed through");
 });

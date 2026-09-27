@@ -56,7 +56,7 @@ catalog.
 
 ```bash
 npm run check           # all three checks below
-npm run check:syntax    # syntax-checks every .js file (assets/, utils/, scripts/, data/) plus index.html's inline <script>
+npm run check:syntax    # syntax-checks every .js file (assets/, utils/, scripts/, data/) plus the inline <script> in index.html, admin/, platforms/ and docs/
 npm run check:refs      # confirms every local href/src/precache reference resolves to a real file
 npm run check:catalog   # validates data/catalog.json's records (see below)
 ```
@@ -230,6 +230,15 @@ supabase functions deploy read-drop --no-verify-jwt
 supabase functions deploy web-push --no-verify-jwt
 supabase functions deploy go --no-verify-jwt      # referral redirects
 ```
+
+The key comes from the Claude Developer Console (console.anthropic.com),
+not from a Claude.ai subscription, which doesn't cover API calls: add
+prepaid credit under Billing (a read costs a cent or two, so a small
+top-up lasts months; set a monthly spend limit there too), then create a
+key under API Keys with no expiry, or note the date if one is forced.
+Changing the secret takes effect on the next call, without a redeploy.
+When the key is missing, rejected, out of credit or lacks model access,
+the read fails with a message that says which, rather than "try again".
 
 Every function checks its own caller (the admin email, the cron secret,
 the signed-in user), and `go` is public by design: browsers follow it
