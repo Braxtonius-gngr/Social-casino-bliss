@@ -5175,13 +5175,19 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const host = screen.querySelector('.roll-intro');
       const motionOff = () => document.documentElement.getAttribute('data-motion') === 'off';
       let api = null, fellBack = false, done = false, timer = null;
+      // Aborting stops a shot that is still being built: it gives back
+      // everything it has made so far and rejects (see createIntro).
+      const building = typeof AbortController === 'function' ? new AbortController() : null;
       screen.classList.remove('roll-rest', 'roll-popped');
       screen.classList.add('intro-play', 'roll-webgl');
       const fallBack = still => {
         if (fellBack || api) return;
         fellBack = true;
         clearTimeout(timer);
+        if (building) building.abort();
         screen.removeEventListener('pointerdown', skipWhileLoading);
+        // (without roll-webgl, CSS hides any of the shot's pieces that are
+        // already on the page until the abort removes them)
         screen.classList.remove('roll-webgl');
         playRollIntroCss(still);
       };
@@ -5214,6 +5220,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         api = await mod.createIntro({
           host, tier, seed,
           controlsHost: screen,
+          signal: building ? building.signal : null,
+          motionOff,
           quality: q.get('quality') || 'auto',
           sound: soundPref !== 'off',
           onReveal: () => screen.classList.add('roll-popped'),
