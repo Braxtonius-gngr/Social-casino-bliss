@@ -12795,6 +12795,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // still advancing dailyRunIndex/stats as if the collection had
       // happened.
       if (dailyRunActionLocked()) return;
+      holdDailyRunActionLock(700);
       if (interceptForEmailGate(collectCurrentDailyRun)) {
         clearDailyRunActionLock();
         return;
@@ -12807,7 +12808,6 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         showToast(game ? `${game.name} is not ready to confirm on this device yet.` : 'That Daily Run step is no longer available.', null);
         return;
       }
-      holdDailyRunActionLock(700);
       if (game) {
         const collectedAtIndex = dailyRunIndex;
         // toast:false - the persistent bar above is this context's undo,
@@ -12831,7 +12831,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           hapticBuzz([18, 24, 42]);
           screenShake();
           showRunUndoBar(result.game, result.undo);
-        } else return;
+        } else {
+          clearDailyRunActionLock();
+          return;
+        }
       }
       dailyRunIndex++;
       renderDailyRunStep();
