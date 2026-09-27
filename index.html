@@ -3353,7 +3353,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const ROLL_G = 1500;               // gravity, px/s^2 (a loose, floaty throw at this scale)
     const ROLL_HALF = 17;              // half a die edge, px
     const ROLL_BEVEL = 3.4;            // rounded-edge chamfer on every die edge, px (app.css sizes the faces to match)
-    const ROLL_TABLE = 1.7;            // the top card lies this far above the felt; the dice land on it
+    // The cards lie a hair apart above the felt (app.css .roll-card-1..3 at
+    // 0.5, 1.1 and 1.7px); each die lands at the height of the card it
+    // comes to rest on (its `table` in ROLL_DICE), so it sits on it exactly.
     // The dice are built at ROLL_SS times their size and scaled back down
     // in their matrix, so the browser rasterises them at 3x: they stay
     // sharp when the lens zooms in, instead of an enlarged bitmap.
@@ -3379,8 +3381,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // hero face; `bar` is the bar's angular half-width.
     const ROLL_SWEEP = { lead: 0.62, len: 1.1, swing: 0.075, bar: 0.016, stagger: 0.14 };
     const ROLL_DICE = [
-      { x: 24, vx: 34, vy: -600, vz: 300, e: 0.42, mu: 0.5, faces: [4, 5, 6], restYaw: 24, turns: [1, 1, 1], axis: [0.3, 0.8, 0.5], lean: -0.22 },
-      { x: -22, vx: -26, vy: -640, vz: 268, e: 0.4, mu: 0.48, faces: [3, 2, 1], restYaw: -35, turns: [1, 2, 1], axis: [-0.6, 0.4, 0.7], lean: 0.22 }
+      { x: 24, vx: 34, vy: -600, vz: 300, e: 0.42, mu: 0.5, faces: [4, 5, 6], restYaw: 24, turns: [1, 1, 1], axis: [0.3, 0.8, 0.5], lean: -0.22, table: 1.7 },
+      { x: -22, vx: -26, vy: -640, vz: 268, e: 0.4, mu: 0.48, faces: [3, 2, 1], restYaw: -35, turns: [1, 2, 1], axis: [-0.6, 0.4, 0.7], lean: 0.22, table: 0.5 }
     ];
     // Cup keys, world seconds: [t, x, y, z, tip (deg, mouth toward the throw), yaw (deg), opacity].
     // Moved like a cup in a hand: lifted off the table into the light,
@@ -3582,11 +3584,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const segs = [];
       let pos = p0.slice(), vel = v0.slice(), t = t0;
       for (let i = 0; i < 7; i++) {
-        const a = 0.5 * ROLL_G, b = vel[1], c = pos[1] + ROLL_HALF + ROLL_TABLE;
+        const a = 0.5 * ROLL_G, b = vel[1], c = pos[1] + ROLL_HALF + d.cfg.table;
         const th = (-b + Math.sqrt(Math.max(b * b - 4 * a * c, 0))) / (2 * a);
         segs.push({ t0: t, t1: t + th, pos, vel });
         const vyc = vel[1] + ROLL_G * th;
-        pos = [pos[0] + vel[0] * th, -ROLL_HALF - ROLL_TABLE, pos[2] + vel[2] * th];
+        pos = [pos[0] + vel[0] * th, -ROLL_HALF - d.cfg.table, pos[2] + vel[2] * th];
         vel = [vel[0] * d.cfg.mu, -vyc * d.cfg.e, vel[2] * d.cfg.mu];
         t += th;
         if (-vel[1] < 80) break;
@@ -3597,7 +3599,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       d.segs = segs;
       d.contact = segs[0].t1;
       d.rest = t + slide;
-      d.restPos = [pos[0] + vel[0] * slide * 0.5, -ROLL_HALF - ROLL_TABLE, pos[2] + vel[2] * slide * 0.5];
+      d.restPos = [pos[0] + vel[0] * slide * 0.5, -ROLL_HALF - d.cfg.table, pos[2] + vel[2] * slide * 0.5];
     }
     function rollPosAt(d, w) {
       const segs = d.segs;
@@ -4089,7 +4091,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
           // Shadows fall along the key light, lengthening with height; a
           // tight contact shadow darkens as the die settles.
-          const h = Math.max(0, -p[1] - ROLL_HALF - ROLL_TABLE);
+          const h = Math.max(0, -p[1] - ROLL_HALF - d.cfg.table);
           const lift = rollClamp01(h / 260);
           const sk = -p[1] / -light[1];
           d.shadow.style.opacity = (shown * 0.72 * (1 - 0.75 * lift)).toFixed(3);
