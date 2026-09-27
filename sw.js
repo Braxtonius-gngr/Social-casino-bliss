@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v56';
+const CACHE_NAME = 'almanac-v57';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -24,7 +24,13 @@ const PRECACHE_URLS = ['./', './index.html', './manifest.json', './assets/app.cs
   './assets/background.webp',
   // The intro set as it plays by default (green felt, lamp-lit room), so a
   // first offline launch still opens on the table.
-  './assets/intro/felt.png', './assets/intro/room-lamp.jpg'];
+  './assets/intro/felt.png', './assets/intro/room-lamp.jpg',
+  // The WebGL intro (three.js and its base set). The extras for the rare
+  // tiers are left to cache on first use: most launches never fetch them.
+  './assets/vendor/three/three.core.js', './assets/vendor/three/three.module.js', './assets/vendor/three/three.addons.js',
+  './assets/intro3d/intro.mjs', './assets/intro3d/physics.mjs',
+  './assets/intro3d/felt-normal.jpg', './assets/intro3d/rubber-normal.jpg', './assets/intro3d/leather-normal.jpg',
+  './assets/intro3d/walnut.jpg', './assets/intro3d/gunmetal.jpg', './assets/intro3d/badge.png'];
 
 self.addEventListener('install', (event) => {
   // Precache the shell so the very first offline load works, even if the

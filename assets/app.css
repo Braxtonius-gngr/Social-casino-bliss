@@ -920,6 +920,29 @@
     .roll-winner { position: absolute; left: 0; top: 0; width: 320px; height: 64px; margin: -32px 0 0 -160px; opacity: 0; text-align: center; font: 700 44px/64px Georgia, "Times New Roman", serif; letter-spacing: 0.2em; text-indent: 0.2em; text-transform: uppercase; color: rgba(0,0,0,0); text-shadow: 0 1px 0 #7a5412, 0 2px 0 #4a3108, 0 4px 6px rgba(0,0,0,0.8), 0 0 16px rgba(255,200,90,0.65), 0 0 42px rgba(255,170,50,0.42), 0 0 90px rgba(255,150,40,0.28); background: linear-gradient(90deg, rgba(243,213,126,0) 0%, #f3d57e 50%, rgba(243,213,126,0) 100%) 50% 100% / 76% 1px no-repeat; }
     .roll-winner::after { content: 'Winner'; position: absolute; inset: 0; text-indent: inherit; background: linear-gradient(180deg, rgba(255,255,255,0) 0 44%, rgba(150,90,10,0.3) 54%, rgba(255,255,255,0) 66%), linear-gradient(100deg, #e8bb52 0%, #ffe7a2 28%, #fff8de calc(var(--shine, -60%) - 7%), #ffffff var(--shine, -60%), #fff8de calc(var(--shine, -60%) + 7%), #ffdc7c 72%, #e0ae46 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; text-shadow: none; }
 
+    /* THE WEBGL INTRO (assets/intro3d/intro.mjs). While it plays, the CSS
+       stage stands down; the canvas fills the landing screen. Over it: the
+       stickman's call (gold; platinum lettering for the Hardways), the
+       burst's flash, the tier's name for the rare ones, and a speaker that
+       turns sound on without skipping the shot. */
+    .landing-screen.roll-webgl .roll-stage { display: none; }
+    .r3-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .r3-flash { position: absolute; inset: 0; opacity: 0; pointer-events: none; background: radial-gradient(60% 45% at 50% 62%, rgba(255,246,226,0.95) 0%, rgba(255,200,130,0.5) 45%, rgba(255,160,90,0.12) 100%); }
+    .r3-call { position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; white-space: nowrap; display: flex; flex-direction: column; align-items: center; font: 700 36px/1.05 Georgia, "Times New Roman", serif; letter-spacing: 0.16em; text-indent: 0.16em; text-transform: uppercase; color: transparent; background: linear-gradient(180deg, rgba(255,255,255,0) 0 44%, rgba(150,90,10,0.3) 54%, rgba(255,255,255,0) 66%), linear-gradient(100deg, #e8bb52 0%, #ffe7a2 28%, #fff8de calc(var(--shine, -60%) - 7%), #ffffff var(--shine, -60%), #fff8de calc(var(--shine, -60%) + 7%), #ffdc7c 72%, #e0ae46 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.85)) drop-shadow(0 0 14px rgba(255,190,80,0.45)); }
+    .r3-call small { font-size: 0.42em; letter-spacing: 0.42em; text-indent: 0.42em; margin-top: 4px; }
+    .r3-call-hardways { background: none; -webkit-text-fill-color: initial; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7)) drop-shadow(0 0 18px rgba(200,220,255,0.35)); }
+    .r3-call-hardways img { display: block; width: min(80vw, 440px); height: auto; }
+    .r3-call-hardways.r3-call-text { color: #e8edf4; -webkit-text-fill-color: #e8edf4; }
+    .r3-tier { position: absolute; left: 50%; top: max(22px, env(safe-area-inset-top)); transform: translateX(-50%); opacity: 0; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 2px; font: 600 12px/1.2 system-ui, sans-serif; letter-spacing: 0.28em; text-transform: uppercase; color: #f0dca0; text-shadow: 0 1px 3px rgba(0,0,0,0.9); white-space: nowrap; }
+    .r3-tier small { font-size: 10px; letter-spacing: 0.2em; color: #b9ad8c; }
+    .r3-tier-hardways { color: #e4e9f2; }
+    .r3-tier-edge { color: #fff4d6; }
+    .landing-screen.roll-popped .r3-tier, .landing-screen.roll-rest .r3-tier { top: max(10px, env(safe-area-inset-top)); }
+    .r3-sound { position: absolute; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: 3; width: 42px; height: 42px; padding: 10px; border-radius: 50%; border: 1px solid rgba(232,200,106,0.35); background: rgba(10,10,12,0.55); color: #e8dfc4; pointer-events: auto; cursor: pointer; }
+    .r3-sound svg { display: block; width: 100%; height: 100%; }
+    .r3-sound[aria-pressed="false"] { color: #9d967f; }
+    .landing-screen.roll-rest .r3-sound { display: none; }
+
     /* The intro lab (?lab): pick an ending, a felt and a room, and replay.
        Shown once the shot is over. */
     .roll-lab { position: absolute; top: max(10px, env(safe-area-inset-top)); left: 50%; z-index: 6; transform: translateX(-50%); width: min(94vw, 420px); padding: 8px 10px; border-radius: 12px; background: rgba(12,12,14,0.82); border: 1px solid rgba(232,200,106,0.35); font: 600 11px/1.2 system-ui, sans-serif; color: #d8d2c2; display: flex; flex-direction: column; gap: 6px; }

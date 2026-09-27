@@ -30,7 +30,7 @@ function findJsFiles(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) results.push(...findJsFiles(full));
-    else if (entry.isFile() && entry.name.endsWith('.js')) results.push(full);
+    else if (entry.isFile() && (entry.name.endsWith('.js') || entry.name.endsWith('.mjs'))) results.push(full);
   }
   return results;
 }
@@ -55,14 +55,16 @@ function extractInlineScript(htmlPath) {
   while ((match = scriptTagRe.exec(html))) {
     const attrs = match[1] || '';
     if (/\bsrc\s*=/.test(attrs)) continue;
-    if (/\btype\s*=\s*["']application\/json["']/i.test(attrs)) continue;
+    if (/\btype\s*=\s*["'](application\/json|importmap)["']/i.test(attrs)) continue;
     blocks.push(match[2]);
   }
   return blocks;
 }
 
-function checkFile(label, source) {
-  const tmpFile = path.join(os.tmpdir(), `syntax-check-${Date.now()}-${Math.random().toString(36).slice(2)}.js`);
+// ES modules (.mjs: the WebGL intro, loaded with a dynamic import()) are
+// checked as modules; everything else as the classic scripts they are.
+function checkFile(label, source, isModule) {
+  const tmpFile = path.join(os.tmpdir(), `syntax-check-${Date.now()}-${Math.random().toString(36).slice(2)}.${isModule ? 'mjs' : 'js'}`);
   fs.writeFileSync(tmpFile, source);
   try {
     execFileSync(process.execPath, ['--check', tmpFile], { stdio: 'pipe' });
@@ -87,8 +89,11 @@ function main() {
   ];
   for (const file of jsFiles) {
     const rel = path.relative(ROOT, file);
+    // Vendored third-party builds (assets/vendor/) are minified upstream
+    // code, not ours to check.
+    if (rel.split(path.sep)[1] === 'vendor') continue;
     const source = fs.readFileSync(file, 'utf8');
-    results.push(checkFile(rel, source));
+    results.push(checkFile(rel, source, file.endsWith('.mjs')));
   }
 
   // index.html plus any standalone page this app ships (e.g. admin/*.html)
