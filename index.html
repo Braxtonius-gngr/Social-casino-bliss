@@ -8239,11 +8239,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderedModerators = [];
       const panel = document.getElementById('ownerPanel');
       if (panel) panel.style.display = 'none';
-      ['moderatorList', 'catalogAccessList', 'linkHitsList', 'ownerShotResults', 'ownerShotStatus'].forEach(id => {
+      ['moderatorList', 'catalogAccessList', 'linkHitsList', 'ownerShotStatus'].forEach(id => {
         const list = document.getElementById(id);
         if (list) list.innerHTML = '';
       });
       ownerShotDrops = [];
+      renderOwnerShotResults(); // clears the list and hides the open-in-admin button
     }
 
     // --- Owner tools: the moderator list ---

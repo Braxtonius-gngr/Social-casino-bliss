@@ -674,7 +674,8 @@
     shotDrops = handoff.drops;
     renderShotResults();
     setShotStatus(`${shotDrops.length} draft${shotDrops.length === 1 ? '' : 's'} read in the app. Load one into the form, check it against the screenshot, then SAVE.`);
-    const wanted = Number(new URL(location.href).searchParams.get('draft'));
+    const asked = new URL(location.href).searchParams.get('draft');
+    const wanted = asked === null || asked === '' ? NaN : Number(asked);
     if (Number.isInteger(wanted) && shotDrops[wanted]) loadShotIntoForm(wanted);
     else document.getElementById('shotResults').scrollIntoView({ behavior: 'smooth' });
   }
@@ -688,14 +689,19 @@
     document.getElementById('authGate').style.display = authed ? 'none' : '';
     document.getElementById('adminApp').style.display = authed ? '' : 'none';
     if (authed) {
-      // The form is reset once per page load, not on every auth event,
-      // so a draft handed over from the app survives the second render.
+      // The form is reset once per signed-in stretch, not on every auth
+      // event, so a draft handed over from the app survives the second
+      // render; signing out ends the stretch, so the next sign-in starts
+      // from a clean form.
       if (!adminReady) {
         adminReady = true;
         resetForm();
         takeShotHandoff();
       }
       loadEntries();
+    } else if (adminReady) {
+      adminReady = false;
+      resetForm();
     } else if (session && session.user && session.user.email !== ADMIN_EMAIL) {
       showStatus(`Signed in as ${session.user.email}, which isn't the admin account. Sign out and use the link sent to ${ADMIN_EMAIL}.`, true);
     }
