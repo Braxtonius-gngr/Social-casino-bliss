@@ -498,50 +498,49 @@
 
     <section id="viewResources" style="display: none;">
 
-      <!-- Three cards, each doing one job, instead of one dense card
-           mixing strategy tips with a UI legend: a scan-first cheat
-           sheet (read, don't tap - only one thing here actually goes
-           anywhere, so only one thing is a link), a separate reference
-           for what the icons on a platform card mean, and the outbound
-           links grouped by what kind of resource they are instead of
-           each carrying its own repeated badge. -->
+      <!-- Two cards: the playthrough plan, worked out here rather than
+           quoted from anywhere, and the reference for reading a platform
+           card and its tier badge. -->
       <div class="res-brief glass-panel">
-        <div class="res-brief-label">Cheat Sheet</div>
-        <div class="res-brief-lead">Lowest viable bet, highest line count. Playthrough is a tax &mdash; minimise variance, don't chase it.</div>
+        <div class="res-brief-label">Playthrough Plan</div>
+        <div class="res-brief-lead">Most daily SC has to be played once before it can be redeemed. What that costs is arithmetic: <b>SC played &times; the game's house edge</b>. Whether you get there at all is variance. So play the lowest-edge game at its lowest-variance setting, at the smallest bet, and stop when the playthrough clears.</div>
         <div class="tactic-list">
           <div class="tactic-row">
             <span class="tactic-k">01</span>
             <span class="tactic-name">Plinko</span>
-            <span class="tactic-set">Low volatility &middot; 14 lines &middot; min bet</span>
+            <span class="tactic-set">Low risk &middot; most rows &middot; smallest bet. About 1% edge: 1 SC played costs about 0.01 SC. Low risk keeps nearly every drop near 1&times;, so a small balance survives the whole playthrough.</span>
           </div>
           <div class="tactic-row">
             <span class="tactic-k">02</span>
-            <span class="tactic-name">Blackjack</span>
-            <span class="tactic-set">Min bet &middot; basic strategy &middot; never martingale</span>
+            <span class="tactic-name">Dice, Limbo, Mines</span>
+            <span class="tactic-set">Set the highest win chance the game allows (a 1.01&times; to 1.05&times; target) at the smallest bet. Also about 1% edge, and the swings are the smallest of any game: the slow, boring way through is the point.</span>
           </div>
           <div class="tactic-row">
             <span class="tactic-k">03</span>
-            <span class="tactic-name">Slots</span>
-            <span class="tactic-set">Smallest bet &middot; max lines where adjustable</span>
+            <span class="tactic-name">Blackjack</span>
+            <span class="tactic-set">Smallest bet, basic strategy, the same bet every hand. About 0.5% edge when played right, several times that when not. Never raise the bet after a loss; a losing run at higher stakes is how a balance dies before the playthrough is done.</span>
           </div>
           <div class="tactic-row">
             <span class="tactic-k">04</span>
-            <span class="tactic-name">Dice / Mines / Limbo</span>
-            <span class="tactic-set">99% RTP configuration</span>
+            <span class="tactic-name">Baccarat, Roulette</span>
+            <span class="tactic-set">Baccarat: banker only, 1.06% edge. Roulette: one even-money outside bet, 2.7% on a single-zero wheel and 5.3% with two zeros, so it is the fallback when nothing above is offered.</span>
+          </div>
+          <div class="tactic-row">
+            <span class="tactic-k">05</span>
+            <span class="tactic-name">Slots</span>
+            <span class="tactic-set">Smallest bet, every line on, never a bonus buy. 3% to 6% edge, so 1 SC costs 0.03 to 0.06 SC, and the swings are the widest here. Use a slot when the platform offers nothing else, and pick the lowest-volatility one.</span>
+          </div>
+          <div class="tactic-row">
+            <span class="tactic-k">06</span>
+            <span class="tactic-name">Worked example</span>
+            <span class="tactic-set">A 1 SC daily with a 1&times; playthrough: through Plinko you expect to keep about 0.99 SC of it; through a slot, 0.94 to 0.97. Over 300 days that gap is several SC of pure edge. Each platform's card shows its <b>Play plan</b>: the lowest-cost game of each kind offered there and how to set it up.</span>
           </div>
         </div>
-        <a class="tactic-full-guide" href="https://sweepsgrail.com/guides/" target="_blank">Full strategy write-ups at SweepsGrail &#8599;</a>
       </div>
 
       <div class="res-brief glass-panel res-legend-card">
         <div class="res-brief-label">Reading a Platform Card</div>
-        <p class="res-legend-intro">Tap any tile in <b>Catalogue</b> to open its detail panel. Under <b>Recommended</b>, the best games to play there are marked:</p>
-        <dl class="res-legend-list">
-          <dt>&#9733;</dt>
-          <dd>The preferred pick for that platform &mdash; play this one first.</dd>
-          <dt>BB</dt>
-          <dd>Bonus buy: paying up front to trigger a feature round. Counts toward playthrough but burns balance fast.</dd>
-        </dl>
+        <p class="res-legend-intro">Tap any tile in <b>Catalogue</b> to open its detail panel. <b>Play plan</b> lists one game of each kind worth playing there, with the setup from the plan above.</p>
         <p class="res-legend-intro" style="margin-top:16px;">The tier badge (tap any badge in the app for this same breakdown) is days of daily claims to reach a platform's own minimum CASH redemption &mdash; lower is faster:</p>
         <dl class="res-legend-list tier-legend">
           <dt><span class="tier-badge tier-S">S</span></dt>
@@ -565,35 +564,6 @@
           <a class="tactic-full-guide" href="platforms/index.html">The full tier list &#8599;</a>
           <button type="button" class="res-share-btn" onclick="shareTierList()">SHARE IT</button>
         </div>
-      </div>
-
-      <div class="res-links-label">External</div>
-
-      <div class="res-ext-group">
-        <div class="res-ext-kind">Data</div>
-        <a href="https://docs.google.com/spreadsheets/d/1CcQhgeod8UEECb2H6qcFxiPhjMFxdzlxXsFYHfS4UlQ/edit" target="_blank" class="res-ext-link glass-panel">
-          <span class="res-ext-title">TheSweepsGuy Master Sheet</span>
-          <span class="res-ext-sub">Community-maintained daily SC tracker</span>
-          <span class="res-ext-go">Open &#8599;</span>
-        </a>
-      </div>
-
-      <div class="res-ext-group">
-        <div class="res-ext-kind">Guides</div>
-        <a href="https://sweepsgrail.com/guides/" target="_blank" class="res-ext-link glass-panel">
-          <span class="res-ext-title">SweepsGrail</span>
-          <span class="res-ext-sub">VIP leveling, AMOE, playthrough strategy</span>
-          <span class="res-ext-go">Open &#8599;</span>
-        </a>
-      </div>
-
-      <div class="res-ext-group">
-        <div class="res-ext-kind">Community</div>
-        <a href="https://www.reddit.com/r/SweepstakeSideHustle/" target="_blank" class="res-ext-link glass-panel">
-          <span class="res-ext-title">r/SweepstakeSideHustle</span>
-          <span class="res-ext-sub">Discussion, drops, payout reports</span>
-          <span class="res-ext-go">Open &#8599;</span>
-        </a>
       </div>
 
           <p class="drops-note" style="text-align:center; margin:18px 0 6px;">&copy; 2026 Daily Roll Over. The catalogue, rankings and research notes are original work; copying or scraping them is not permitted. <a href="terms.html" style="color:var(--accent-cyan);">Terms</a> &middot; <a href="privacy.html" style="color:var(--accent-cyan);">Privacy</a></p>
@@ -1658,46 +1628,75 @@ Yayz,-,-,-,-,-
 Zula,-,-,Epic Joker,-,Balloon Mania
 Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
-    const STRATEGY_TIPS = {
-      plinko: "<strong>Setup:</strong> Low volatility &middot; 14 lines &middot; small bet<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:var(--accent-cyan); text-decoration:none; margin-top:6px; display:inline-block; font-weight:800; text-shadow:0 0 5px rgba(0, 229, 255, 0.4);'>Plinko strategy</a>",
-      bj: "<strong>Setup:</strong> Small bet &middot; no martingale<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:var(--accent-cyan); text-decoration:none; margin-top:6px; display:inline-block; font-weight:800; text-shadow:0 0 5px rgba(0, 229, 255, 0.4);'>Basic strategy guide</a>",
-      slots: "<strong>Setup:</strong> Smallest bet. Max lines if adjustable.",
-      dice: "<strong>Setup:</strong> Try on Mines, Limbo, or Dice.<br><a href='https://sweepsgrail.com/guides/' target='_blank' style='color:var(--accent-cyan); text-decoration:none; margin-top:6px; display:inline-block; font-weight:800; text-shadow:0 0 5px rgba(0, 229, 255, 0.4);'>99% RTP dice strategy</a>"
+    // The play plan. Every game type gets one setup and one house-edge
+    // figure, derived here rather than quoted from anyone: the expected
+    // cost of playing 1 SC through a game is 1 SC x its house edge, and the
+    // lowest-variance setting of each game is the one that keeps a small
+    // balance alive long enough to finish the playthrough.
+    //
+    //   Plinko, low risk, most rows:  1% edge   -> 1 SC played costs ~0.01 SC
+    //   Dice / Limbo / Mines at 99%:  1% edge   -> ~0.01 SC, highest win chance
+    //   Blackjack, basic strategy:    ~0.5% edge -> ~0.005 SC, but only played right
+    //   Baccarat, banker only:        1.06% edge -> ~0.011 SC
+    //   Roulette, one outside bet:    2.7% (one zero) to 5.3% (two zeros)
+    //   Slots:                        3% to 6% edge -> 0.03 to 0.06 SC, and the
+    //                                 widest swings; smallest bet, every line on,
+    //                                 never a bonus buy
+    const PLAY_PLAN = {
+      plinko: { label: 'Plinko', setup: 'Low risk \u00b7 most rows \u00b7 smallest bet', edge: '1% house edge' },
+      dice: { label: 'Dice / Limbo / Mines', setup: 'Highest win chance the game allows \u00b7 smallest bet', edge: '1% house edge' },
+      blackjack: { label: 'Blackjack', setup: 'Smallest bet \u00b7 basic strategy \u00b7 flat bets', edge: 'about 0.5% house edge' },
+      baccarat: { label: 'Baccarat', setup: 'Banker only \u00b7 smallest bet', edge: '1.06% house edge' },
+      roulette: { label: 'Roulette', setup: 'One even-money outside bet \u00b7 smallest bet \u00b7 single zero if offered', edge: '2.7% to 5.3% house edge' },
+      slot: { label: 'Slot', setup: 'Smallest bet \u00b7 every line on \u00b7 no bonus buys', edge: '3% to 6% house edge' }
     };
 
-    function makeStrategyItem(iconTitle, gameName, tipHtml) {
-      if (!tipHtml) {
-        return `<div class="strategy-row non-interactive"><div class="strategy-row-header"><span>${iconTitle}: <span style="color:#fff; text-shadow:0 0 5px rgba(255,255,255,0.4);">${gameName}</span></span></div></div>`;
-      }
-      return `
-        <div class="strategy-row interactive" onclick="this.classList.toggle('expanded')">
-          <div class="strategy-row-header">
-            <span>${iconTitle}: <span style="color:#fff; text-shadow:0 0 5px rgba(255,255,255,0.4);">${gameName}</span></span>
-            <span class="expand-icon" style="transition: transform 0.2s; color:#fff;">&#9662;</span>
-          </div>
-          <div class="strategy-row-body">${tipHtml}</div>
-        </div>
-      `;
+    // The first name in a " / " list, minus any bonus-buy marker: one game
+    // per kind is the plan, and a bonus buy is never it.
+    function firstGame(cell) {
+      if (!cell || cell.trim() === '-') return null;
+      const names = cell.split('/').map(n => n.replace(/\(BB\)/gi, '').trim()).filter(Boolean);
+      return names[0] || null;
+    }
+
+    function tableGameKind(name) {
+      if (/blackjack/i.test(name)) return 'blackjack';
+      if (/baccarat|bac bo/i.test(name)) return 'baccarat';
+      if (/roulette/i.test(name)) return 'roulette';
+      return null;
+    }
+
+    function planRow(kind, gameName) {
+      const plan = PLAY_PLAN[kind];
+      return `<div class="plan-row">
+        <span class="plan-type">${plan.label}</span>
+        <span class="plan-game">${escHtml(gameName)}</span>
+        <span class="plan-setup">${plan.setup} \u00b7 ${plan.edge}</span>
+      </div>`;
     }
 
     const parsedRecommendations = {};
     BEST_GAMES_CSV.trim().split('\n').slice(1).forEach(line => {
       const cols = line.split(',');
-      if (cols.length >= 6) {
-        const rawName = cols[0].trim();
-        const cleanName = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        let recs = '<div class="strategy-list">';
-        let hasRecs = false;
-        
-        if (cols[1] && cols[1] !== '-') { recs += makeStrategyItem('Plinko', cols[1], STRATEGY_TIPS.plinko); hasRecs = true; }
-        if (cols[2] && cols[2] !== '-') { recs += makeStrategyItem('BJ', cols[2], STRATEGY_TIPS.bj); hasRecs = true; }
-        if (cols[3] && cols[3] !== '-') { recs += makeStrategyItem('Slots', cols[3], STRATEGY_TIPS.slots); hasRecs = true; }
-        if (cols[4] && cols[4] !== '-') { recs += makeStrategyItem('Dice', cols[4], STRATEGY_TIPS.dice); hasRecs = true; }
-        if (cols[5] && cols[5] !== '-') { recs += makeStrategyItem('Live', cols[5], null); hasRecs = true; }
-        
-        recs += '</div>';
-        if (hasRecs) parsedRecommendations[cleanName] = recs;
+      if (cols.length < 6) return;
+      const cleanName = cols[0].trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      const rows = [];
+      // The low-edge game: plinko first, else a 99% dice-style game.
+      const plinko = firstGame(cols[1]);
+      const dice = firstGame(cols[4]);
+      if (plinko) rows.push(planRow('plinko', plinko));
+      else if (dice) rows.push(planRow('dice', dice));
+      // The table game: blackjack first, else a live table with a known edge.
+      const blackjack = firstGame(cols[2]);
+      if (blackjack) {
+        rows.push(planRow('blackjack', blackjack));
+      } else {
+        const live = (cols[5] || '').split('/').map(n => n.trim()).find(n => tableGameKind(n));
+        if (live) rows.push(planRow(tableGameKind(live), live));
       }
+      const slot = firstGame(cols[3]);
+      if (slot) rows.push(planRow('slot', slot));
+      if (rows.length) parsedRecommendations[cleanName] = `<div class="plan-list">${rows.join('')}</div>`;
     });
 
     function applyCatalogRecommendations() {
@@ -2681,7 +2680,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               <summary>Research notes</summary>
               <div class="keen-notes-body">${game.notes || 'No specific warning flags. 24h standard reset cycle.'}</div>
             </details>
-            ${goToGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">RECOMMENDED MODULES:</strong>${goToGames}</div>` : ''}
+            ${goToGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">PLAY PLAN:</strong>${goToGames}</div>` : ''}
             ${pagePaths.has(game.name.trim().toLowerCase()) ? `<button type="button" class="keen-share" data-share-name="${escHtml(game.name)}" onclick="sharePlatformFrom(this, event)">Share this platform</button>` : ''}
           </div>
         `;
@@ -2849,7 +2848,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
               <summary>Research notes</summary>
               <div class="keen-notes-body">${item.notes || 'No critical flags. Normal 1x playthrough.'}</div>
             </details>
-            ${item.bestGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">RECOMMENDED MODULES:</strong>${item.bestGames}</div>` : ''}
+            ${item.bestGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">PLAY PLAN:</strong>${item.bestGames}</div>` : ''}
             ${pagePaths.has(item.name.trim().toLowerCase()) ? `<button type="button" class="keen-share" data-share-name="${escHtml(item.name)}" onclick="sharePlatformFrom(this, event)">Share this platform</button>` : ''}
           </div>
         `;
@@ -11348,7 +11347,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         ${dailyRunLaunchFallback && sameUrl(dailyRunLaunchFallback.url, launchUrlFor(game))
           ? `<button type="button" class="btn-open" style="width:100%; margin:10px 0 0;" onclick="openLaunchFallback()">OPEN IN THIS TAB</button>`
           : ''}
-        ${goToGames ? `<div class="run-bestgames"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0,229,255,0.4);">RECOMMENDED MODULES:</strong>${goToGames}</div>` : ''}
+        ${goToGames ? `<div class="run-bestgames"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0,229,255,0.4);">PLAY PLAN:</strong>${goToGames}</div>` : ''}
       `;
     }
 
