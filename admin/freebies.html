@@ -445,9 +445,12 @@
       const { data, error } = await client.rpc('publish_catalog', { p_catalog: list });
       if (error) throw error;
       catalogNames = null;
-      setPublishStatus(data && data.changed
+      const dropped = data && Array.isArray(data.droppedFields) && data.droppedFields.length
+        ? ` Not published (unknown fields): ${data.droppedFields.join(', ')}.`
+        : '';
+      setPublishStatus((data && data.changed
         ? `Published ${data.entries} platforms (${data.referralLinks} with referral links kept server-side). Version ${String(data.version).slice(0, 8)}.`
-        : `Already live: ${data ? data.entries : list.length} platforms, nothing changed.`);
+        : `Already live: ${data ? data.entries : list.length} platforms, nothing changed.`) + dropped);
       return data;
     } catch (e) {
       const message = (e && e.message) || 'publish failed';

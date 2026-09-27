@@ -4848,7 +4848,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const message = (error && error.message) || '';
       if (/RATE_LIMITED/.test(message)) return 'This account has downloaded the Catalogue too many times today; using the last known rules.';
       if (/NO_CATALOG/.test(message)) return 'The Catalogue has not been published yet.';
-      if (/switched off/.test(message)) return 'Cloud Sync is off, so the Catalogue cannot refresh; the last copy stays in use.';
+      if (/switched off/.test(message)) return 'The Catalogue is served to the device\'s account, and with Cloud Sync off no account is made; the last saved copy stays in use.';
       if (/NOT_SIGNED_IN|Sign-in/.test(message)) return 'The Catalogue needs the device to be signed in; it will retry.';
       return `Live Catalogue refresh failed; using the last known rules (${message || 'unknown error'}).`;
     }
@@ -4921,8 +4921,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       catalogRefreshInFlight = true;
       try {
         // The device's account, created here if this is the first thing to
-        // need one. With Cloud Sync switched off no account is made: the
-        // catalogue then stays at the last saved copy.
+        // need one. Cloud Sync being off never creates an account, but an
+        // account the device already has is used: the catalogue is the
+        // app's content, not the player's data, and the privacy page
+        // describes the access count separately from sync.
         const session = await ensureSyncSignedIn(client, isSyncEnabled);
         catalogSessionUser = session && session.user ? session.user.id : null;
         const { data, error } = await client.rpc('get_catalog', { p_version: lastCatalogVersion });
