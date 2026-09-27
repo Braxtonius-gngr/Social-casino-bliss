@@ -53,22 +53,50 @@ const BILLING_CHANGED = "Your billing details just changed. Please try again.";
 // and its page is the one left to pay.
 const CHECKOUT_ELSEWHERE = "A checkout for this account just started in another tab or window. Finish it there, or try again.";
 
-// A customer this request made that the account's row turned down (another
-// request saved its own first) is never used: delete it rather than leave
-// it unattached in Stripe. Not after a save error: the write may still have
-// landed, and then the row names this customer.
-// Best-effort Stripe calls answer within their time or give up: no retries,
-// which would start the timeout over.
-function bestEffort(timeout: number) {
-  return { timeout, maxNetworkRetries: 0 };
+// Best-effort Stripe calls finish by a deadline or give up, and never retry
+// (a retry would start over). Stripe's own `timeout` only runs until the
+// response headers arrive; it reads the body afterwards. So these calls go
+// through a client whose fetch reads the whole body before it disarms the
+// deadline's abort.
+function fetchUntil(deadline: number): typeof fetch {
+  return async (input, init) => {
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), Math.max(0, deadline - Date.now()));
+    const signal = init?.signal ? AbortSignal.any([init.signal, abort.signal]) : abort.signal;
+    try {
+      const response = await fetch(input, { ...init, signal });
+      const body = await response.arrayBuffer();
+      const nullBody = [101, 204, 205, 304].includes(response.status);
+      return new Response(nullBody ? null : body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+}
+
+function bestEffortStripe(deadline: number) {
+  return new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
+    apiVersion: '2025-01-27.acacia' as any,
+    httpClient: Stripe.createFetchHttpClient(fetchUntil(deadline)),
+    maxNetworkRetries: 0,
+    timeout: Math.max(1, deadline - Date.now()),
+  });
 }
 
 // Short, so the 409 it runs before comes back promptly.
 const DISCARD_CUSTOMER_TIMEOUT_MS = 2000;
 
+// A customer this request made that the account's row turned down (another
+// request saved its own first) is never used: delete it rather than leave
+// it unattached in Stripe. Not after a save error: the write may still have
+// landed, and then the row names this customer.
 async function discardCustomer(customerId: string) {
   try {
-    await stripe.customers.del(customerId, {}, bestEffort(DISCARD_CUSTOMER_TIMEOUT_MS));
+    await bestEffortStripe(Date.now() + DISCARD_CUSTOMER_TIMEOUT_MS).customers.del(customerId);
   } catch (error) {
     console.warn("Couldn't delete an unused Stripe customer.", { customerId, error: errorMessage(error) });
   }
@@ -102,18 +130,19 @@ function outranks(a: OpenSession, b: OpenSession) {
 async function keepNewestOpenSession(customerId: string, current: Stripe.Checkout.Session): Promise<boolean> {
   const deadline = Date.now() + SESSION_CLEANUP_BUDGET_MS;
   const remaining = () => deadline - Date.now();
+  const client = bestEffortStripe(deadline);
   const open: OpenSession[] = [{ id: current.id, created: current.created }];
   try {
     // Every page is read before anything is expired, so expiring doesn't
     // move the list under the cursor.
     let startingAfter: string | undefined;
     do {
-      const page = await stripe.checkout.sessions.list({
+      const page = await client.checkout.sessions.list({
         customer: customerId,
         status: "open",
         limit: 100,
         ...(startingAfter ? { starting_after: startingAfter } : {}),
-      }, bestEffort(remaining()));
+      });
       for (const session of page.data) {
         if (session.id !== current.id) open.push({ id: session.id, created: session.created });
       }
@@ -130,7 +159,7 @@ async function keepNewestOpenSession(customerId: string, current: Stripe.Checkou
       break;
     }
     try {
-      await stripe.checkout.sessions.expire(session.id, {}, bestEffort(remaining()));
+      await client.checkout.sessions.expire(session.id);
     } catch (error) {
       console.warn("Couldn't expire an older checkout session.", { sessionId: session.id, error: errorMessage(error) });
     }
