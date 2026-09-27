@@ -44,6 +44,129 @@ function isMissing(error: unknown): boolean {
   return e?.code === "resource_missing" || e?.raw?.code === "resource_missing" || e?.statusCode === 404;
 }
 
+// Another checkout or a webhook changed this account's billing row while
+// this request was working from an older copy: nothing is decided on the
+// stale view. The page shows this and refreshes the account's status.
+const BILLING_CHANGED = "Your billing details just changed. Please try again.";
+
+// Another checkout for the account started while this one was being made,
+// and its page is the one left to pay.
+const CHECKOUT_ELSEWHERE = "A checkout for this account just started in another tab or window. Finish it there, or try again.";
+
+// Best-effort Stripe calls finish by a deadline or give up, and never retry
+// (a retry would start over). Stripe's own `timeout` only runs until the
+// response headers arrive; it reads the body afterwards. So these calls go
+// through a client whose fetch reads the whole body before it disarms the
+// deadline's abort.
+function fetchUntil(deadline: number): typeof fetch {
+  return async (input, init) => {
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), Math.max(0, deadline - Date.now()));
+    const signal = init?.signal ? AbortSignal.any([init.signal, abort.signal]) : abort.signal;
+    try {
+      const response = await fetch(input, { ...init, signal });
+      const body = await response.arrayBuffer();
+      const nullBody = [101, 204, 205, 304].includes(response.status);
+      return new Response(nullBody ? null : body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+}
+
+function bestEffortStripe(deadline: number) {
+  return new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
+    apiVersion: '2025-01-27.acacia' as any,
+    httpClient: Stripe.createFetchHttpClient(fetchUntil(deadline)),
+    maxNetworkRetries: 0,
+    timeout: Math.max(1, deadline - Date.now()),
+  });
+}
+
+// Short, so the 409 it runs before comes back promptly.
+const DISCARD_CUSTOMER_TIMEOUT_MS = 2000;
+
+// A customer this request made that the account's row turned down (another
+// request saved its own first) is never used: delete it rather than leave
+// it unattached in Stripe. Not after a save error: the write may still have
+// landed, and then the row names this customer.
+async function discardCustomer(customerId: string) {
+  try {
+    await bestEffortStripe(Date.now() + DISCARD_CUSTOMER_TIMEOUT_MS).customers.del(customerId);
+  } catch (error) {
+    console.warn("Couldn't delete an unused Stripe customer.", { customerId, error: errorMessage(error) });
+  }
+}
+
+// A subscription starts when a checkout session is paid, which can be long
+// after it was made: an earlier tab left open could still be paid after a
+// newer checkout, and the checks a checkout starts with only see
+// subscriptions that already exist. So once a new session exists, all of
+// the customer's open sessions are ranked, newest first, and all but the
+// first are expired: the newest checkout page is the only one left to pay.
+// Two made in the same second rank by id, so every request ranks them the
+// same way and they agree on which one stays. If another session outranks
+// this request's own (a newer one, or a same-second one with a higher id),
+// its own is expired too and its URL isn't handed out (the caller answers
+// 409). That holds even when the other request's cleanup failed. Stripe's "limit customers to one
+// subscription" setting guards the payment itself (see README).
+// Best-effort and bounded: it gets a few seconds, each Stripe call gives up
+// when they run out, and if listing fails this request's session stays.
+// Normally there is at most one other open session, since each checkout
+// expires the ones before it.
+const SESSION_CLEANUP_BUDGET_MS = 3000;
+
+type OpenSession = { id: string; created: number };
+
+function outranks(a: OpenSession, b: OpenSession) {
+  return a.created !== b.created ? a.created > b.created : a.id > b.id;
+}
+
+// Returns whether this request's own session is the one left to pay.
+async function keepNewestOpenSession(customerId: string, current: Stripe.Checkout.Session): Promise<boolean> {
+  const deadline = Date.now() + SESSION_CLEANUP_BUDGET_MS;
+  const remaining = () => deadline - Date.now();
+  const client = bestEffortStripe(deadline);
+  const open: OpenSession[] = [{ id: current.id, created: current.created }];
+  try {
+    // Every page is read before anything is expired, so expiring doesn't
+    // move the list under the cursor.
+    let startingAfter: string | undefined;
+    do {
+      const page = await client.checkout.sessions.list({
+        customer: customerId,
+        status: "open",
+        limit: 100,
+        ...(startingAfter ? { starting_after: startingAfter } : {}),
+      });
+      for (const session of page.data) {
+        if (session.id !== current.id) open.push({ id: session.id, created: session.created });
+      }
+      startingAfter = page.has_more ? page.data[page.data.length - 1]?.id : undefined;
+    } while (startingAfter && remaining() > 0);
+  } catch (error) {
+    console.warn("Couldn't list older checkout sessions.", { customerId, error: errorMessage(error) });
+  }
+  const newest = open.reduce((best, session) => outranks(session, best) ? session : best);
+  const stale = open.filter((session) => session.id !== newest.id);
+  for (const [index, session] of stale.entries()) {
+    if (remaining() <= 0) {
+      console.warn("Out of time expiring older checkout sessions.", { customerId, leftOpen: stale.length - index });
+      break;
+    }
+    try {
+      await client.checkout.sessions.expire(session.id);
+    } catch (error) {
+      console.warn("Couldn't expire an older checkout session.", { sessionId: session.id, error: errorMessage(error) });
+    }
+  }
+  return newest.id === current.id;
+}
+
 function jsonResponse(body: Record<string, unknown>, status: number, cors: Record<string, string>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -79,11 +202,11 @@ function defaultReturnUrl(req: Request) {
 
 function resolveTargetPriceId(rawPriceId: unknown): string | undefined {
   const monthlyEnvPrice = Deno.env.get("STRIPE_PRICE_ID_PRO_MONTHLY");
-  // The client may send the literal alias "price_pro_monthly" (a stand-in
-  // for "whichever price this deployment's monthly plan uses"), or omit
-  // priceId entirely - both cases mean "use the configured monthly price",
-  // not an actual Stripe price id, so map them to the env var instead of
-  // passing them straight through to allowedPrices/Stripe.
+  // The client names a plan, not a Stripe price: "price_pro_annual" means
+  // this deployment's annual price, and "price_pro_monthly" (or no
+  // priceId) its monthly one. Real price ids differ between test and live
+  // mode, so the page never carries them; they live in the secrets.
+  if (rawPriceId === "price_pro_annual") return Deno.env.get("STRIPE_PRICE_ID_PRO_ANNUAL");
   if (typeof rawPriceId !== "string" || !rawPriceId || rawPriceId === "price_pro_monthly" || !rawPriceId.startsWith("price_")) {
     return monthlyEnvPrice;
   }
@@ -159,12 +282,27 @@ serve(async (req) => {
     // Stripe happily attaches a second subscription to the same customer,
     // so a stale client that still shows "Upgrade" must not double-bill.
     // Asks Stripe rather than trusting our row, which lags a missed webhook.
+    // The subscription id this request last saw in the account's row: the
+    // customer replacement below only lands while the row still holds it.
+    let expectedSubscriptionId: string | null = existing?.stripe_subscription_id ?? null;
     if (existing?.stripe_subscription_id) {
       let current: Stripe.Subscription | null = null;
       try {
         current = await stripe.subscriptions.retrieve(existing.stripe_subscription_id);
       } catch (error) {
         if (!isMissing(error)) throw error;
+        // Forget the id that no longer resolves, so it stops standing in
+        // for the account's subscription; the webhook records the new one.
+        // Only if the row still holds that id: a newer one written since
+        // must stand.
+        const { data: cleared, error: clearError } = await supabase.from("user_subscriptions")
+          .update({ stripe_subscription_id: null, updated_at: new Date().toISOString() })
+          .eq("user_id", user.id)
+          .eq("stripe_subscription_id", existing.stripe_subscription_id)
+          .select("user_id");
+        if (clearError) throw clearError;
+        if (!cleared?.length) return jsonResponse({ error: BILLING_CHANGED }, 409, cors);
+        expectedSubscriptionId = null;
       }
       if (current && ["active", "trialing", "past_due", "unpaid"].includes(current.status)) {
         return jsonResponse({
@@ -193,17 +331,43 @@ serve(async (req) => {
       // A new account gets a free row; an existing row only has its Stripe
       // ids replaced, so its tier (owner, or a Pro period still running)
       // is left for the webhook to change.
-      const { error: saveError } = existing
-        ? await supabase.from("user_subscriptions")
+      if (existing) {
+        // Replaces the ids only if the row still names the customer this
+        // request found missing and the subscription it last saw: a customer
+        // saved since by another checkout, or a subscription the webhook
+        // recorded since, must stand.
+        let replace = supabase.from("user_subscriptions")
           .update({ stripe_customer_id: customerId, stripe_subscription_id: null, updated_at: new Date().toISOString() })
-          .eq("user_id", user.id)
-        : await supabase.from("user_subscriptions").upsert({
+          .eq("user_id", user.id);
+        replace = existing.stripe_customer_id
+          ? replace.eq("stripe_customer_id", existing.stripe_customer_id)
+          : replace.is("stripe_customer_id", null);
+        replace = expectedSubscriptionId
+          ? replace.eq("stripe_subscription_id", expectedSubscriptionId)
+          : replace.is("stripe_subscription_id", null);
+        const { data: replaced, error: saveError } = await replace.select("user_id");
+        if (saveError) throw saveError;
+        if (!replaced?.length) {
+          await discardCustomer(customerId);
+          return jsonResponse({ error: BILLING_CHANGED }, 409, cors);
+        }
+      } else {
+        // Only if the account still has no row: two first checkouts at once
+        // each make a customer, and the one saved first must stand, or the
+        // two sessions would belong to different customers and could both
+        // be paid.
+        const { data: inserted, error: saveError } = await supabase.from("user_subscriptions").upsert({
           user_id: user.id,
           stripe_customer_id: customerId,
           tier: "free",
           status: "active",
-        });
-      if (saveError) throw saveError;
+        }, { onConflict: "user_id", ignoreDuplicates: true }).select("user_id");
+        if (saveError) throw saveError;
+        if (!inserted?.length) {
+          await discardCustomer(customerId);
+          return jsonResponse({ error: BILLING_CHANGED }, 409, cors);
+        }
+      }
     }
 
     const success = new URL(returnUrl);
@@ -221,6 +385,9 @@ serve(async (req) => {
       metadata: { supabase_uid: user.id },
       subscription_data: { metadata: { supabase_uid: user.id } },
     });
+    if (!(await keepNewestOpenSession(customerId, session))) {
+      return jsonResponse({ error: CHECKOUT_ELSEWHERE }, 409, cors);
+    }
 
     console.log("Checkout session created:", { userId: user.id, hasEmail: !!email, priceId: targetPriceId });
     return new Response(JSON.stringify({ url: session.url }), {

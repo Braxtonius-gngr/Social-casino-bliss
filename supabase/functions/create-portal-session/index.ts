@@ -82,9 +82,13 @@ serve(async (req) => {
       });
     } catch (error) {
       // A customer saved while the app ran on Stripe test keys doesn't
-      // exist under live keys: there is no real billing to manage.
-      const e = error as { code?: string; raw?: { code?: string } } | null;
-      if (e?.code === "resource_missing" || e?.raw?.code === "resource_missing") {
+      // exist under live keys: there is no real billing to manage. Any
+      // other missing resource (the portal configuration itself) is a setup
+      // fault and stays an error.
+      const e = error as { code?: string; param?: string; raw?: { code?: string; param?: string } } | null;
+      const code = e?.code ?? e?.raw?.code;
+      const param = e?.param ?? e?.raw?.param;
+      if (code === "resource_missing" && param === "customer") {
         return jsonResponse({ error: "There's no billing to manage on this account yet. Upgrade to start a subscription." }, 404, cors);
       }
       throw error;
