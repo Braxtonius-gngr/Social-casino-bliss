@@ -3861,6 +3861,25 @@
   ],
   "Zula": [
     {
+      "date": "2026-09-27",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": 50,
+        "daysToRedeem": 50
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.2,
+        "cashFloor": 50,
+        "daysToRedeem": 250
+      }
+    },
+    {
       "date": "2026-09-21",
       "changed": [
         "cashFloor"

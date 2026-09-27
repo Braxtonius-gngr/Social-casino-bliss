@@ -500,17 +500,17 @@
     "cooldown": 24,
     "lastVerified": "2026-09-20",
     "url": "https://zulacasino.com/",
-    "tier": "S",
-    "dailySC": 1,
-    "scSource": "stated",
+    "tier": "D",
+    "dailySC": 0.2,
+    "scSource": "third-party",
     "speedHours": 24,
     "reliability": 96,
     "hasLive": false,
     "minRedeem": "50 Cash",
     "cashFloor": 50,
-    "daysToRedeem": 50,
-    "confidence": "medium",
-    "notes": "RECONFIRMED 2026-09-27 (owner screenshot, zulacasino.com store, FREE REWARDS): the Daily Bonus card still reads GC 10,000 + FREE SC 1.00. The reset-type conflict below is untouched (no timer in this capture). | VERIFIED 2026-09-20 (owner screenshot, Zula Casino daily bonus): the claim card reads \"10,000 + FREE SC 1.00\", so dailySC 1.0 is CONFIRMED and now sourced. RESET TYPE IS NOW IN CONFLICT and is deliberately left unchanged pending a decisive capture: at an 11:23 PM capture the timer read 23h59m17s, which fits a ROLLING 24h clock started at about 11:22 PM. Under the fixed 23:00 reset recorded here, the same moment should have shown roughly 23h37m remaining, not 23h59m. The 2026-09-15 pass concluded fixed ~11 PM, so one of the two readings is wrong - though note that some apps display \"24h from claim\" on a fixed schedule, which would explain the discrepancy without the reset being wrong. A capture taken several hours AWAY from the claim moment distinguishes the two cleanly. | INHERITED: Generous daily bonuses and frequent weekend sales. Daily Bonus resets ~11 PM local, not 5 AM - corrected 2026-09-15 from the live in-app countdown; no confirmed server timezone, so still keyed to device-local time like before. TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 1/day against a cash floor of 50 SC, a free player reaches the minimum CASH redemption in about 50 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is S (unchanged). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is medium."
+    "daysToRedeem": 250,
+    "confidence": "low",
+    "notes": "RATE VARIES BY ACCOUNT 2026-09-27 (owner report): the owner's own Daily Bonus card reads GC 10,000 + FREE SC 1.00 (screenshot, zulacasino.com store), but the owner's flatmate and at least two more players on Discord all get 0.20 SC daily. The owner's 1.00 is the outlier, likely an account-level boost, so dailySC 1.0 -> 0.2 as the rate a typical player collects (scSource third-party: other players' accounts, reported by the owner, no screenshot of theirs). TIER 2026-09-27: 50 SC / 0.2 = 250 days, D (C<=242 < 250 <= 304) - down from S. confidence: low. The reset-type conflict below is untouched. | VERIFIED 2026-09-20 (owner screenshot, Zula Casino daily bonus): the claim card reads \"10,000 + FREE SC 1.00\", so dailySC 1.0 is CONFIRMED and now sourced. RESET TYPE IS NOW IN CONFLICT and is deliberately left unchanged pending a decisive capture: at an 11:23 PM capture the timer read 23h59m17s, which fits a ROLLING 24h clock started at about 11:22 PM. Under the fixed 23:00 reset recorded here, the same moment should have shown roughly 23h37m remaining, not 23h59m. The 2026-09-15 pass concluded fixed ~11 PM, so one of the two readings is wrong - though note that some apps display \"24h from claim\" on a fixed schedule, which would explain the discrepancy without the reset being wrong. A capture taken several hours AWAY from the claim moment distinguishes the two cleanly. | INHERITED: Generous daily bonuses and frequent weekend sales. Daily Bonus resets ~11 PM local, not 5 AM - corrected 2026-09-15 from the live in-app countdown; no confirmed server timezone, so still keyed to device-local time like before. TIER 2026-09-21, DERIVED FROM DATA RATHER THAN INHERITED: at dailySC 1/day against a cash floor of 50 SC, a free player reaches the minimum CASH redemption in about 50 days. The catalog's tier rule is now days-to-first-cash-redemption - S up to 60 days, A up to 120, B up to 250, C up to 500, D beyond 500, and Unranked when either the daily rate or the cash floor is unknown - so this entry is S (unchanged). cashFloor and daysToRedeem are recorded as fields alongside it so the arithmetic is checkable rather than asserted, and confidence records how good the inputs are: this one is medium."
   },
   {
     "name": "Fortune Wins",
