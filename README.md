@@ -56,7 +56,7 @@ catalog.
 
 ```bash
 npm run check           # all three checks below
-npm run check:syntax    # syntax-checks every .js file (assets/, utils/, scripts/, data/) plus index.html's inline <script>
+npm run check:syntax    # syntax-checks every .js file (assets/, utils/, scripts/, data/) plus the inline <script> in index.html, admin/, platforms/ and docs/
 npm run check:refs      # confirms every local href/src/precache reference resolves to a real file
 npm run check:catalog   # validates data/catalog.json's records (see below)
 ```

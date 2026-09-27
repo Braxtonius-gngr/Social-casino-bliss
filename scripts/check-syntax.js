@@ -55,7 +55,8 @@ function extractInlineScript(htmlPath) {
   while ((match = scriptTagRe.exec(html))) {
     const attrs = match[1] || '';
     if (/\bsrc\s*=/.test(attrs)) continue;
-    if (/\btype\s*=\s*["'](application\/json|importmap)["']/i.test(attrs)) continue;
+    // JSON payloads (structured data, import maps) aren't scripts.
+    if (/\btype\s*=\s*["'](application\/(ld\+)?json|importmap)["']/i.test(attrs)) continue;
     blocks.push(match[2]);
   }
   return blocks;
@@ -96,14 +97,17 @@ function main() {
     results.push(checkFile(rel, source, file.endsWith('.mjs')));
   }
 
-  // index.html plus any standalone page this app ships (e.g. admin/*.html)
-  // or documents (docs/*.html) - each gets its own inline <script> block(s)
-  // checked the same way. docs/ pages aren't served by the app and aren't
-  // precached, but they're still hand-written script that can rot silently,
-  // which is exactly what this check exists to catch.
+  // index.html plus any standalone page this app ships (e.g. admin/*.html),
+  // the generated platform pages (platforms/*.html, whose inline script comes
+  // from the template in generate-seo-pages.js) or documents (docs/*.html) -
+  // each gets its own inline <script> block(s) checked the same way. docs/
+  // pages aren't served by the app and aren't precached, but they're still
+  // hand-written script that can rot silently, which is exactly what this
+  // check exists to catch.
   const htmlPaths = [
     path.join(ROOT, 'index.html'),
     ...findHtmlFiles(path.join(ROOT, 'admin')),
+    ...findHtmlFiles(path.join(ROOT, 'platforms')),
     ...findHtmlFiles(path.join(ROOT, 'docs')),
   ];
   for (const htmlPath of htmlPaths) {
