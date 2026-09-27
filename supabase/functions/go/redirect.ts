@@ -14,6 +14,13 @@ export function platformNameFrom(url: URL): string | null {
   return raw.toLowerCase();
 }
 
+// The launch token, if the request carries a well-formed one (48 hex
+// characters, as mint_launch_tokens issues them); anything else is ignored.
+export function launchTokenFrom(url: URL): string | null {
+  const raw = (url.searchParams.get("via") ?? "").trim();
+  return /^[0-9a-f]{48}$/.test(raw) ? raw : null;
+}
+
 // A small fixed-window limiter per client address: enough for a person
 // clicking through their whole deck, not enough to harvest every link.
 export class RateLimiter {

@@ -138,6 +138,32 @@ The owner's Staff tab shows who downloaded the catalogue in the last seven
 days (heaviest first) and which platform links were followed, from
 `catalog_access_report()` and `link_hits_report()`.
 
+### Pro referrals and shared lists
+
+Everyone opens a platform through the house link. A Pro account (an active
+or trialing Pro subscription, or the owner) can also save its own referral
+link per platform: the field on the platform's edit sheet unlocks, the link
+is used when that account opens the platform, and it is kept in
+`member_links` (`set_my_referral_link`, `list_my_referral_links`) so it
+follows the account across devices. Every card carries a Share button that
+hands out the account's own link on Pro and the house link otherwise.
+
+**Share My List** (Settings, Pro) stores the deck's platform names and tags
+under an eight-character code (`share_my_list`, one list per account,
+updated in place; `unshare_my_list` removes it) and offers the link
+`?list=CODE`. Anyone signed in can import a code (`get_shared_list`, or
+opening the link); the platforms are added with the code on them. While the
+sharer and the importer both hold Pro, those platforms open through
+`go?p=<name>&via=<launch token>`: `mint_launch_tokens` issues the importer a
+24-hour token per code (none for a free account or for one's own list), and
+`resolve_shared_link` decides per click whether the sharer's link is
+followed, refusing when either side has lost Pro, when the click is the
+sharer's own, and beyond `share_cap()` (20) uses per calendar month on
+platforms where the house has a referral link of its own; other platforms
+do not count. Any refusal falls back to the house link. The sharer sees the
+month's count in Settings (`my_share_status`). These RPCs live in the
+`pro_referrals` migration.
+
 The optional `npm run build:seo` command uses the same catalog to generate
 semantic static landing pages under `platforms/` and a sitemap. It does not
 change the runtime PWA or introduce a bundler. Set `SEO_BASE_URL` when

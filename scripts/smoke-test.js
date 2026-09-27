@@ -776,6 +776,87 @@ const TESTS = [
     answers: { 'rpc:get_catalog': { data: null, error: { message: 'NO_CATALOG: nothing has been published yet' } } }
   }],
 
+  ['a free account cannot change the referral link, still gets a Share button', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    await page.waitFor(() => clientEntitlements.loaded === true);
+    const state = await page.evaluate(() => {
+      openEditModal('smoke1');
+      const field = document.getElementById('modalReferralUrl');
+      const locked = field.readOnly;
+      field.value = 'https://smoke.example/?ref=free';
+      saveModalEntry();
+      shareMyList();
+      return { locked, referralUrl: trackedGames[0].referralUrl, launch: launchUrlFor(trackedGames[0]), share: shareLinkFor(trackedGames[0]),
+        shareButtons: document.querySelectorAll('.btn-share').length, toast: document.getElementById('toastMsg').textContent };
+    });
+    expect(state.locked, true, 'field read-only');
+    expect(state.referralUrl, '', 'typed link not saved');
+    expect(state.launch, 'https://smoke.example', 'OPEN uses the house address');
+    expect(state.share, 'https://smoke.example', 'Share hands out the same');
+    expect(state.shareButtons, 1, 'Share button on the card');
+    expect(/Upgrade to Pro/.test(state.toast), true, 'sharing the list pitches Pro');
+    const calls = await page.calls();
+    expect(byType(calls, 'rpc', 'set_my_referral_link').length + byType(calls, 'rpc', 'share_my_list').length, 0, 'nothing sent to the account');
+  }],
+
+  ['Pro saves its own link to the account and opens with it', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    await page.waitFor(() => clientEntitlements.isPro === true);
+    const state = await page.evaluate(() => {
+      openEditModal('smoke1');
+      const field = document.getElementById('modalReferralUrl');
+      const locked = field.readOnly;
+      field.value = 'https://smoke.example/?ref=me';
+      saveModalEntry();
+      return { locked, referralUrl: trackedGames[0].referralUrl, launch: launchUrlFor(trackedGames[0]), share: shareLinkFor(trackedGames[0]) };
+    });
+    expect(state.locked, false, 'field editable');
+    expect(state.referralUrl, 'https://smoke.example/?ref=me', 'link kept on the device');
+    expect(state.launch, 'https://smoke.example/?ref=me', 'OPEN uses the own link');
+    expect(state.share, 'https://smoke.example/?ref=me', 'Share hands it out');
+    await page.waitFor(() => JSON.parse(sessionStorage.getItem('__smokeCalls') || '[]').some(c => c.type === 'rpc' && c.name === 'set_my_referral_link'));
+    const saved = byType(await page.calls(), 'rpc', 'set_my_referral_link')[0];
+    expect(saved.args, { p_name: 'Smoke Casino', p_url: 'https://smoke.example/?ref=me' }, 'saved to the account');
+  }, { answers: { 'rpc:get_my_entitlement': PRO_ANSWER } }],
+
+  ['Pro shares the deck as a code and imports a friend\'s list', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    await page.waitFor(() => clientEntitlements.isPro === true);
+    await page.waitFor(() => /QWERTY23/.test(document.getElementById('shareListStatus').textContent));
+    await page.evaluate(() => { navigator.clipboard.writeText = async () => {}; return shareMyList(); });
+    const shared = byType(await page.calls(), 'rpc', 'share_my_list')[0];
+    expect(shared && shared.args.p_platforms, [{ name: 'Smoke Casino', tags: [] }], 'the deck is what gets shared');
+    expect(/used 3 of 20 times this month/.test(await page.evaluate(() => document.getElementById('shareListStatus').textContent)), true, 'monthly use shown');
+
+    await page.evaluate(() => { window.alert = () => {}; return importSharedList('abcd2345'); });
+    const state = await page.evaluate(() => {
+      const friend = trackedGames.find(g => g.name === 'Crown Coins');
+      const own = trackedGames.find(g => g.name === 'Smoke Casino');
+      return { count: trackedGames.length, friendCode: friend && friend.shareCode, friendLaunch: friend && launchUrlFor(friend), ownCode: own.shareCode, ownTags: own.tags, ownLaunch: launchUrlFor(own),
+        saved: JSON.parse(localStorage.getItem('the_casino_almanac_v7')).find(g => g.name === 'Crown Coins').shareCode };
+    });
+    expect(state.count, 2, 'one platform added');
+    expect(state.friendCode, 'ABCD2345', 'the code travels with the platform');
+    expect(state.friendLaunch, `https://ewfvyrhlsanzkmozrmhs.supabase.co/functions/v1/go?p=Crown%20Coins&via=${'ab'.repeat(24)}`, 'OPEN carries the launch token');
+    expect(state.ownCode, 'ABCD2345', 'a platform already tracked joins the list');
+    expect(state.ownTags, ['pal'], 'tags merged');
+    expect(state.ownLaunch, 'https://smoke.example', 'no token for a platform outside the catalogue');
+    expect(state.saved, 'ABCD2345', 'code persisted');
+    const minted = byType(await page.calls(), 'rpc', 'mint_launch_tokens').pop();
+    expect(minted && minted.args, { p_codes: ['ABCD2345'] }, 'tokens minted for the imported code');
+  }, {
+    answers: {
+      'rpc:get_my_entitlement': PRO_ANSWER,
+      'rpc:share_my_list': { data: 'QWERTY23', error: null },
+      'rpc:my_share_status': { data: [{ code: 'QWERTY23', title: 'My list', platform_count: 1, uses_this_month: 3, cap: 20, pro: true }], error: null },
+      'rpc:get_shared_list': { data: [{ code: 'ABCD2345', title: 'Friends', sharer: 'Pal', platforms: [{ name: 'Crown Coins', tags: [] }, { name: 'Smoke Casino', tags: ['pal'] }], links_active: true, updated_at: '2026-09-27T00:00:00Z' }], error: null },
+      'rpc:mint_launch_tokens': { data: [{ code: 'ABCD2345', token: 'ab'.repeat(24), expires_at: '2099-01-01T00:00:00Z' }], error: null }
+    }
+  }],
+
   ['a crawler gets no catalogue and no account', async page => {
     await page.goto('/');
     await new Promise(r => setTimeout(r, 800));
