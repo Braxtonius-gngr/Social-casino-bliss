@@ -10546,11 +10546,20 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return /PRO_ONLY/.test((err && err.message) || '');
     }
 
+    // Whatever the caller and whatever stopped it (no Pro, no session, a
+    // refused call), a save that did not reach the account reopens the
+    // sync, so the next Pro answer compares device and account again.
+    function reopenMemberLinkSync() {
+      memberLinksPulledFor = null;
+      try { localStorage.removeItem(MEMBER_LINKS_SYNCED_KEY); } catch (e) {}
+      return false;
+    }
+
     // Saves one of this account's links, or with an empty url removes it.
     async function syncMemberLink(name, url) {
-      if (!proReferralsAllowed()) return false;
+      if (!proReferralsAllowed()) return reopenMemberLinkSync();
       const client = await signedInClient();
-      if (!client) return false;
+      if (!client) return reopenMemberLinkSync();
       try {
         const { error } = await client.rpc('set_my_referral_link', { p_name: name, p_url: url || '' });
         if (error) throw error;
@@ -10558,11 +10567,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } catch (err) {
         if (proOnlyError(err)) referralUpgradePitch();
         else console.warn('set_my_referral_link failed:', err);
-        // Whatever the caller, a failed save reopens the account sync, so
-        // the next Pro answer compares device and account again.
-        memberLinksPulledFor = null;
-        try { localStorage.removeItem(MEMBER_LINKS_SYNCED_KEY); } catch (e) {}
-        return false;
+        return reopenMemberLinkSync();
       }
     }
 
