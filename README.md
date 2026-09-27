@@ -277,6 +277,15 @@ backups remain disabled until a durable external runner is provisioned.
    reviews them when the account goes live.
 2. Enable the Stripe Customer Portal: cancel at period end, payment-method
    updates, invoice history, and links to `/terms.html` and `/privacy.html`.
+3. Limit customers to one subscription: in *Settings → Checkout and Payment
+   Links → Subscriptions*, redirect customers who already have an active
+   subscription to your website (`https://dailyrollover.com/`, where Manage
+   Billing is). Stripe then stops a second subscription when a checkout page
+   is opened. The checkout function can't do that alone: it only sees
+   subscriptions that exist when a checkout starts, and a checkout page left
+   open can be paid later. (Each new checkout also tries to expire the
+   account's older open checkout pages, within a few seconds. That is
+   best-effort, and it doesn't replace this setting.)
 
 ### Supabase deployment
 
@@ -322,8 +331,10 @@ moves every account at once. Do these in order:
 3. **Products:** on each product in test mode, use *Copy to live mode*. Check
    the names, the prices ($4.99/month, $49.90/year) and the statement
    descriptor, then note the two live price IDs.
-4. **Customer Portal:** configure it again in live mode (test and live settings
-   are separate) as in *Stripe configuration* above.
+4. **Customer Portal and Checkout settings:** configure the portal again in
+   live mode (test and live settings are separate) as in *Stripe
+   configuration* above, and check that the one-subscription limit is on in
+   live mode.
 5. **Webhook:** add a live endpoint at the same URL with the four events above,
    and copy its signing secret.
 6. **Secrets:** set `STRIPE_SECRET_KEY` (`sk_live_...`),

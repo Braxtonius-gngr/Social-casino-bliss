@@ -7709,7 +7709,26 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // mode (real price ids differ between the two).
     const PRO_ANNUAL_PRICE_ID = 'price_pro_annual';
 
+    // One checkout at a time: each new Stripe session expires the account's
+    // older open ones, so a second tap while the first is starting (or while
+    // its page is loading) would expire the page the first tap opens. Freed
+    // when a checkout fails, and when the back button returns from Stripe.
+    let proCheckoutStarting = false;
+    window.addEventListener('pageshow', () => { proCheckoutStarting = false; });
+
     async function initiateProCheckout(priceId) {
+      if (proCheckoutStarting) return;
+      proCheckoutStarting = true;
+      let leaving = false;
+      try {
+        leaving = await requestProCheckout(priceId);
+      } finally {
+        if (!leaving) proCheckoutStarting = false;
+      }
+    }
+
+    // Returns true once the page is on its way to Stripe's checkout.
+    async function requestProCheckout(priceId) {
       const client = getSupabaseClient();
       if (!client) {
         showToast('Cloud sync is unavailable. Check your connection and try again.');
@@ -7758,6 +7777,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         }
         await flushAnalytics();
         window.location.href = data.url;
+        return true;
       } catch (error) {
         console.error('Checkout session failure:', error);
         showToast((error && error.message) || 'Checkout failed.');
