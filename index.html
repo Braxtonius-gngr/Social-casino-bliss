@@ -8359,7 +8359,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       ownerShotDrops = [];
       renderOwnerShotResults();
       setOwnerShotStatus('Reading the screenshots. This takes a few seconds.');
+      // The read belongs to this signed-in owner: if the account changes
+      // while it is in flight (accessCheckGen moves on), the answer is
+      // dropped rather than listed or handed over under the next session.
+      const gen = accessCheckGen;
+      const stillOwner = () => gen === accessCheckGen && isOwnerAccount;
       try {
+        // On a fresh install the catalogue arrives asynchronously; without
+        // it the drafts would carry no catalogue match.
+        if (!CATALOG_DATA.length) await refreshExternalCatalog();
         const images = links.map(url => ({ url }));
         for (const file of files) images.push({ data: await shrinkScreenshot(file) });
         const { data, error } = await client.functions.invoke('read-drop', {
@@ -8371,6 +8379,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
           }
         });
+        if (!stillOwner()) return;
         if (error) return setOwnerShotStatus('Read failed: ' + await edgeFunctionErrorText(error), true);
         ownerShotDrops = data && Array.isArray(data.drops) ? data.drops : [];
         const usage = data && data.usage;
@@ -8381,7 +8390,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (ownerShotDrops.length) saveShotHandoff();
         renderOwnerShotResults();
       } catch (err) {
-        setOwnerShotStatus('Read failed: ' + ((err && err.message) || 'unknown error'), true);
+        if (stillOwner()) setOwnerShotStatus('Read failed: ' + ((err && err.message) || 'unknown error'), true);
       } finally {
         btn.disabled = false;
         btn.textContent = 'READ WITH CLAUDE';
