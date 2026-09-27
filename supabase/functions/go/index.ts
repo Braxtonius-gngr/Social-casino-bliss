@@ -1,0 +1,59 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import {
+  RateLimiter,
+  clientAddress,
+  plainResponse,
+  platformNameFrom,
+  redirectResponse,
+  safeDestination,
+} from "./redirect.ts";
+
+// GET /go?p=<platform name> -> 302 to that platform's launch link.
+//
+// The catalogue the browser holds carries each platform's plain address;
+// the referral links live in platform_links and only ever leave the
+// database as a redirect from here. Anyone can follow a redirect (that is
+// the point of a referral link), so the protection is rate: a person
+// opens a handful of platforms a day, a harvester wants all of them at
+// once. Every follow is counted per platform for the owner's report.
+const LIMIT_PER_MINUTE = 30;
+const limiter = new RateLimiter(LIMIT_PER_MINUTE, 60_000);
+
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL") ?? "",
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  { auth: { persistSession: false } },
+);
+
+serve(async (req) => {
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    return plainResponse(405, "Method not allowed");
+  }
+  const name = platformNameFrom(new URL(req.url));
+  if (!name) return plainResponse(400, "Which platform? Add ?p=<platform name>.");
+  if (!limiter.allow(clientAddress(req))) {
+    return plainResponse(429, "Too many link requests from this address. Try again in a minute.");
+  }
+
+  const { data, error } = await supabase
+    .from("platform_links")
+    .select("name, launch_url")
+    .eq("name_key", name)
+    .maybeSingle();
+  if (error) {
+    console.error("platform_links lookup failed:", error.message);
+    return plainResponse(503, "The link service is unavailable right now.");
+  }
+  const destination = safeDestination(data?.launch_url);
+  if (!data || !destination) return plainResponse(404, "No such platform in the catalogue.");
+
+  // Counted after the lookup so unknown names never create rows. A failed
+  // count must not cost the player their redirect.
+  try {
+    await supabase.rpc("record_link_hit", { p_name: data.name });
+  } catch (err) {
+    console.warn("record_link_hit failed:", err);
+  }
+  return redirectResponse(destination);
+});

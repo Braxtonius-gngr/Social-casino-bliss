@@ -546,7 +546,8 @@
         </a>
       </div>
 
-    </section>
+          <p class="drops-note" style="text-align:center; margin:18px 0 6px;">&copy; 2026 Daily Roll Over. The catalogue, rankings and research notes are original work; copying or scraping them is not permitted. <a href="terms.html" style="color:var(--accent-cyan);">Terms</a> &middot; <a href="privacy.html" style="color:var(--accent-cyan);">Privacy</a></p>
+</section>
 
     <section id="viewFreebies" style="display: none;">
       <div class="drops-note" style="margin-bottom:10px;">Codes and claim links pulled from Discord/email sweeps and verified before posting. Account-tied links only work for whoever originally received them &mdash; those show which platform to check directly instead of a dead link.</div>
@@ -601,6 +602,11 @@
           <input type="email" id="modEmailInput" class="catalog-search glass-panel" style="margin-bottom:0; flex:1; min-width:200px;" placeholder="Their linked email" aria-label="Email of the account to make a moderator" autocomplete="off" />
           <button type="button" class="btn-primary" id="btnAddModerator" onclick="addModerator()">ADD MODERATOR</button>
         </div>
+        <h3 style="margin:18px 0 5px;">Catalogue access <span class="ledger-meta">last 7 days</span></h3>
+        <p class="drops-note" style="margin:0 0 10px;">Who is downloading the catalogue, heaviest first. A normal device downloads it once per publish and checks for changes a few dozen times a day; many downloads from one account, or a crowd of fresh accounts, is a scraper.</p>
+        <div id="catalogAccessList"><div class="drops-note">Loading...</div></div>
+        <h3 style="margin:18px 0 5px;">Platform links followed <span class="ledger-meta">last 7 days</span></h3>
+        <div id="linkHitsList"><div class="drops-note">Loading...</div></div>
       </div>
     </section>
   </div>
@@ -2372,9 +2378,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // is whether OPEN itself will navigate through that stored link
     // instead of the catalog's own url. Locked (the default for every
     // distributed copy) means OPEN always uses the catalog's url - for the
-    // handful of platforms Braxtonius has a referral program with, that IS
-    // his referral link (see data/catalog.json), so it can't be quietly
-    // redirected to someone else's code by typing into a field. There is
+    // platforms Braxtonius has a referral program with, that goes through
+    // the `go` endpoint to his referral link (launchUrlFor()), so it can't
+    // be quietly redirected to someone else's code by typing into a field. There is
     // deliberately no UI for this: to release the lock on a given device,
     // set localStorage.almanac_referral_unlocked to '1' from the browser
     // console - a decision Braxtonius makes for his own install, not
@@ -2396,7 +2402,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const prevSnooze = game.snoozedUntil;
       const useReferralOverride = referralOverrideUnlocked() && game.referralUrl && game.referralUrl.trim();
       if (opensLink) {
-        const launchUrl = useReferralOverride ? game.referralUrl : game.url;
+        const launchUrl = useReferralOverride ? game.referralUrl : launchUrlFor(game);
         const launch = openExternal(launchUrl);
         if (!launch.ok) {
           showLaunchFailure(launchUrl, () => collectWithUndo(id, opensLink, opts), launch.reason);
@@ -2709,6 +2715,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const container = document.getElementById('catalogGroupContainer');
       const query = (document.getElementById('catalogSearchInput').value || '').toLowerCase();
       container.innerHTML = '';
+      if (!CATALOG_DATA.length) {
+        const note = document.createElement('div');
+        note.className = 'drops-note';
+        note.textContent = catalogLastError
+          ? `The Catalogue could not be loaded: ${catalogLastError} It will retry.`
+          : 'Loading the Catalogue\u2026';
+        container.appendChild(note);
+        return;
+      }
 
       let filtered = CATALOG_DATA.filter(item => {
         const matchesQuery = item.name.toLowerCase().includes(query);
@@ -4081,7 +4096,6 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       );
     }
 
-    const EXTERNAL_CATALOG_URL = 'data/catalog.json';
     const EXTERNAL_CATALOG_REFRESH_MS = 5 * 60 * 1000;
     const CATALOG_LIVE_FIELDS = [
       'tier', 'dailySC', 'scSource', 'scIsAveraged', 'scRange', 'speedHours',
@@ -4089,17 +4103,38 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       'confidence', 'blocker', 'noGuaranteedDaily', 'notes', 'lastVerified'
     ];
     let catalogRefreshInFlight = false;
+    let catalogRefreshAgain = false;
     let catalogRefreshErrorShown = false;
-    let lastCatalogText = typeof CATALOG_BOOTSTRAP_TEXT === 'string' ? CATALOG_BOOTSTRAP_TEXT : null;
+    // The account the catalogue was last fetched for. The auth listener
+    // refreshes only when a different account appears, not on every
+    // token event, and never on sign-out.
+    let catalogSessionUser = null;
+    // The server's version of what CATALOG_DATA holds. Sent with every
+    // refresh so an unchanged catalogue costs one tiny reply, not a
+    // download; null until the first full copy arrives.
+    let lastCatalogVersion = typeof CATALOG_BOOTSTRAP_VERSION === 'string' ? CATALOG_BOOTSTRAP_VERSION : null;
     // When the live fetch last succeeded this session - shown in bug
     // reports so "is this dev on a stale catalogue?" isn't a guess.
     let catalogLastRefreshedAt = null;
+    // Why the last refresh failed, for the empty Catalogue tab on a first
+    // visit that couldn't load anything yet.
+    let catalogLastError = null;
 
     function catalogVersionLabel() {
       const count = Array.isArray(CATALOG_DATA) ? CATALOG_DATA.length : 0;
+      const version = lastCatalogVersion ? ` v${lastCatalogVersion.slice(0, 8)}` : '';
       return catalogLastRefreshedAt
-        ? `${count} entries (live, refreshed ${catalogLastRefreshedAt.toISOString()})`
-        : `${count} entries (bootstrap copy - live refresh hasn't completed yet this session)`;
+        ? `${count} entries${version} (live, refreshed ${catalogLastRefreshedAt.toISOString()})`
+        : `${count} entries${version} (saved copy - live refresh hasn't completed yet this session)`;
+    }
+
+    function catalogRefreshMessage(error) {
+      const message = (error && error.message) || '';
+      if (/RATE_LIMITED/.test(message)) return 'This account has downloaded the Catalogue too many times today; using the last known rules.';
+      if (/NO_CATALOG/.test(message)) return 'The Catalogue has not been published yet.';
+      if (/switched off/.test(message)) return 'Cloud Sync is off, so the Catalogue cannot refresh; the last copy stays in use.';
+      if (/NOT_SIGNED_IN|Sign-in/.test(message)) return 'The Catalogue needs the device to be signed in; it will retry.';
+      return `Live Catalogue refresh failed; using the last known rules (${message || 'unknown error'}).`;
     }
 
     function validateExternalCatalog(data) {
@@ -4154,22 +4189,37 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return previousSnapshot !== JSON.stringify(nextCatalog) || trackedChanged;
     }
 
+    // The catalogue is served by get_catalog() to signed-in accounts only,
+    // the device's anonymous one included, and downloads are counted per
+    // account. Passing the version we hold makes the common case (nothing
+    // changed) a one-line reply.
     async function refreshExternalCatalog() {
-      if (catalogRefreshInFlight) return;
+      if (isCrawler()) return;
+      if (catalogRefreshInFlight) { catalogRefreshAgain = true; return; }
+      const client = getSupabaseClient();
+      if (!client) {
+        catalogLastError = 'the sync service did not load';
+        if (!CATALOG_DATA.length) renderCatalogList();
+        return;
+      }
       catalogRefreshInFlight = true;
       try {
-        // No ?v= cache-buster: 'no-cache' already revalidates with the
-        // server, and a unique URL per poll defeated the 304 path.
-        const response = await fetch(EXTERNAL_CATALOG_URL, { cache: 'no-cache' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const text = await response.text();
-        // Unchanged text is the common case every poll: it skips the parse,
-        // the ~345 KB localStorage write, and the reconcile.
-        if (text !== lastCatalogText) {
-          const nextCatalog = validateExternalCatalog(JSON.parse(text));
-          lastCatalogText = text;
+        // The device's account, created here if this is the first thing to
+        // need one. With Cloud Sync switched off no account is made: the
+        // catalogue then stays at the last saved copy.
+        const session = await ensureSyncSignedIn(client, isSyncEnabled);
+        catalogSessionUser = session && session.user ? session.user.id : null;
+        const { data, error } = await client.rpc('get_catalog', { p_version: lastCatalogVersion });
+        if (error) throw error;
+        if (!data || !data.unchanged) {
+          const nextCatalog = validateExternalCatalog(data && data.platforms);
+          const text = JSON.stringify(nextCatalog);
+          lastCatalogVersion = typeof data.version === 'string' ? data.version : null;
           // A full localStorage must not block applying the new rules.
-          try { localStorage.setItem(CATALOG_CACHE_KEY, text); } catch (e) {}
+          try {
+            localStorage.setItem(CATALOG_CACHE_KEY, text);
+            if (lastCatalogVersion) localStorage.setItem(CATALOG_VERSION_KEY, lastCatalogVersion);
+          } catch (e) {}
           if (reconcileLiveCatalog(nextCatalog)) {
             renderGames();
             renderCatalogList();
@@ -4179,15 +4229,47 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           }
         }
         catalogRefreshErrorShown = false;
+        catalogLastError = null;
         catalogLastRefreshedAt = new Date();
       } catch (error) {
+        catalogLastError = catalogRefreshMessage(error);
+        if (!CATALOG_DATA.length) renderCatalogList();
         if (!catalogRefreshErrorShown) {
           catalogRefreshErrorShown = true;
-          showToast(`Live Catalogue refresh failed; using the last known rules (${error.message}).`, null, 9000);
+          showToast(catalogLastError, null, 9000);
         }
       } finally {
         catalogRefreshInFlight = false;
+        if (catalogRefreshAgain) {
+          catalogRefreshAgain = false;
+          refreshExternalCatalog();
+        }
       }
+    }
+
+    // Where OPEN goes for a tracked platform. A platform with a referral
+    // link is opened through the `go` endpoint, which holds that link
+    // server-side; the browser never sees it. Everything else opens the
+    // platform's plain address. A player's own saved link is used only on
+    // an unlocked install (referralOverrideUnlocked()).
+    function catalogEntryFor(name) {
+      const key = String(name || '').toLowerCase();
+      return CATALOG_DATA.find(c => c.name.toLowerCase() === key) || null;
+    }
+
+    function goUrlFor(name) {
+      return `${SUPABASE_URL}/functions/v1/go?p=${encodeURIComponent(String(name || '').trim())}`;
+    }
+
+    function launchUrlFor(game) {
+      if (!game) return '';
+      const entry = catalogEntryFor(game.name);
+      if (entry && entry.hasReferral) return goUrlFor(entry.name);
+      return game.url || (entry && entry.url) || '';
+    }
+
+    function sameUrl(a, b) {
+      try { return new URL(a, location.href).href === new URL(b, location.href).href; } catch (e) { return a === b; }
     }
 
     async function hydrateIndexedDBState() {
@@ -5884,7 +5966,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } catch (e) {}
       if (reason === 'embedded-webview' && validatedUrl
         && document.getElementById('dailyRunOverlay').classList.contains('open')
-        && current && current.url === url) {
+        && current && sameUrl(launchUrlFor(current), url)) {
         dailyRunLaunchFallback = { url: validatedUrl, retryFn };
         renderDailyRunStep();
       }
@@ -6450,7 +6532,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // completing - both cases want the same reaction (the email section
       // may now show a linked address; there may be a different account's
       // history to pull down), so no need to distinguish them here.
-      supabaseClient.auth.onAuthStateChange(() => {
+      supabaseClient.auth.onAuthStateChange((event, session) => {
         renderSyncEmailUI();
         kickSync();
         syncUserEntitlements();
@@ -6459,6 +6541,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // recovers their account after boot gets the tab without a reload,
         // and signing out takes it away again.
         setTimeout(checkModeratorAccess, 0);
+        // The catalogue is served per account: a different account asks
+        // again. Token refreshes and sign-outs do not.
+        const userId = session && session.user ? session.user.id : null;
+        if (userId && userId !== catalogSessionUser) setTimeout(refreshExternalCatalog, 0);
       });
       return supabaseClient;
     }
@@ -7099,8 +7185,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderedModerators = [];
       const panel = document.getElementById('ownerPanel');
       if (panel) panel.style.display = 'none';
-      const list = document.getElementById('moderatorList');
-      if (list) list.innerHTML = '';
+      ['moderatorList', 'catalogAccessList', 'linkHitsList'].forEach(id => {
+        const list = document.getElementById(id);
+        if (list) list.innerHTML = '';
+      });
     }
 
     // --- Owner tools: the moderator list ---
@@ -7123,9 +7211,55 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (gen !== accessCheckGen) return false;
       isOwnerAccount = owner;
       panel.style.display = owner ? '' : 'none';
-      if (owner) loadModerators(gen);
-      else hideOwnerTools();
+      if (owner) {
+        loadModerators(gen);
+        loadOwnerReports(gen);
+      } else {
+        hideOwnerTools();
+      }
       return owner;
+    }
+
+    // The owner's scrape watch: catalogue downloads per account and link
+    // follows per platform, both from owner-only RPCs.
+    async function loadOwnerReports(gen = accessCheckGen) {
+      const client = getSupabaseClient();
+      const accessList = document.getElementById('catalogAccessList');
+      const hitsList = document.getElementById('linkHitsList');
+      if (!client || !accessList || !hitsList) return;
+      const [access, hits] = await Promise.all([
+        client.rpc('catalog_access_report', { p_days: 7 }),
+        client.rpc('link_hits_report', { p_days: 7 })
+      ]);
+      if (gen !== accessCheckGen) return;
+      accessList.innerHTML = access.error
+        ? `<div class="drops-note">${escHtml(friendlyOwnerError(access.error))}</div>`
+        : renderAccessReport(Array.isArray(access.data) ? access.data : []);
+      hitsList.innerHTML = hits.error
+        ? `<div class="drops-note">${escHtml(friendlyOwnerError(hits.error))}</div>`
+        : renderLinkHits(Array.isArray(hits.data) ? hits.data : []);
+    }
+
+    function renderAccessReport(rows) {
+      if (!rows.length) return '<div class="drops-note">No catalogue downloads in the last 7 days.</div>';
+      return rows.map(row => {
+        const who = row.email || (row.is_anonymous === false ? 'Linked account' : 'Anonymous device');
+        const heavy = Number(row.full_reads) > 10;
+        return `<div class="ledger-row" style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
+          <div>
+            <strong>${escHtml(who)}</strong>${heavy ? ' <span class="drop-tag unknown">HEAVY</span>' : ''}
+            <div class="ledger-meta">${escHtml(String(row.user_id || '').slice(0, 8))} &middot; active ${escHtml(String(row.days_active))} day${Number(row.days_active) === 1 ? '' : 's'}</div>
+          </div>
+          <div class="ledger-meta" style="text-align:right;">${escHtml(String(row.full_reads))} download${Number(row.full_reads) === 1 ? '' : 's'}<br>${escHtml(String(row.checks))} check${Number(row.checks) === 1 ? '' : 's'}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderLinkHits(rows) {
+      if (!rows.length) return '<div class="drops-note">No platform links followed in the last 7 days.</div>';
+      return rows.map(row => `<div class="ledger-row" style="display:flex; justify-content:space-between; gap:8px; margin-bottom:4px;">
+        <span>${escHtml(row.name)}</span><span class="ledger-meta">${escHtml(String(row.hits))}</span>
+      </div>`).join('');
     }
 
     async function loadModerators(gen = accessCheckGen) {
@@ -10183,7 +10317,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:8px;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
         ${keenSummaryHtml(game)}
         ${game.notes ? `<details class="keen-notes-toggle"><summary>Research notes</summary><div class="keen-notes-body run-notes">${game.notes}</div></details>` : ''}
-        ${dailyRunLaunchFallback && dailyRunLaunchFallback.url === game.url
+        ${dailyRunLaunchFallback && sameUrl(dailyRunLaunchFallback.url, launchUrlFor(game))
           ? `<button type="button" class="btn-open" style="width:100%; margin:10px 0 0;" onclick="openLaunchFallback()">OPEN IN THIS TAB</button>`
           : ''}
         ${goToGames ? `<div class="run-bestgames"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0,229,255,0.4);">RECOMMENDED MODULES:</strong>${goToGames}</div>` : ''}

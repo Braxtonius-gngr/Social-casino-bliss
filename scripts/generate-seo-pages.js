@@ -25,6 +25,14 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+// Platform links go through the `go` edge function, which holds the
+// referral links server-side; the pages never carry one.
+const GO_URL = 'https://ewfvyrhlsanzkmozrmhs.supabase.co/functions/v1/go?p=';
+
+function goUrl(name) {
+  return GO_URL + encodeURIComponent(String(name || '').trim());
+}
+
 function slugify(name) {
   const slug = String(name || '')
     .normalize('NFKD')
@@ -168,47 +176,6 @@ function formatCount(value) {
 
 // The daily streak as a table, Day 1 first. Columns only appear when some
 // day uses them; a day that wasn't readable says so across the row.
-function ladderMarkup(entry) {
-  const ladder = Array.isArray(entry.ladder) ? entry.ladder : null;
-  if (!ladder || !ladder.length) return '';
-  const read = ladder.filter(Boolean);
-  const hasGC = read.some(r => typeof r.gc === 'number');
-  const hasExtra = read.some(r => r.extra);
-  const columns = 1 + (hasGC ? 1 : 0) + (hasExtra ? 1 : 0);
-  const rows = ladder.map((rung, i) => {
-    if (!rung) return `          <tr><td>${i + 1}</td><td class="unread" colspan="${columns}">Not read yet</td></tr>`;
-    const cells = [`<td>${typeof rung.sc === 'number' ? escapeHtml(formatSC(rung.sc)) : '&mdash;'}</td>`];
-    if (hasGC) cells.push(`<td>${typeof rung.gc === 'number' ? escapeHtml(formatCount(rung.gc)) : '&mdash;'}</td>`);
-    if (hasExtra) cells.push(`<td class="text">${escapeHtml(rung.extra || '')}</td>`);
-    return `          <tr><td>${i + 1}</td>${cells.join('')}</tr>`;
-  });
-  const total = read.reduce((sum, r) => sum + (typeof r.sc === 'number' ? r.sc : 0), 0);
-  const complete = read.length === ladder.length;
-  // "About X a day" only when it is the rate the page states above; a day
-  // that pays a variable amount (a wheel) can make the fixed amounts short of it.
-  const average = total / ladder.length;
-  const isTheRate = typeof entry.dailySC === 'number' && Math.abs(average - entry.dailySC) <= 0.006;
-  const summary = complete && isTheRate
-    ? `${formatSC(total)} SC over ${ladder.length} days, about ${formatRate(average)} SC a day`
-    : `At least ${formatSC(total)} SC over ${ladder.length} days, counting only ${complete ? 'the fixed amounts' : 'the days read'}`;
-  const head = ['<th class="day">Day</th>', '<th>Sweepstakes Coins</th>'];
-  if (hasGC) head.push('<th>Gold Coins</th>');
-  if (hasExtra) head.push('<th class="text">Also</th>');
-  const note = entry.ladderNote ? `\n        <p class="disclosure">${escapeHtml(entry.ladderNote)}</p>` : '';
-  return `
-      <section>
-        <h2>Daily login ladder</h2>
-        <p>What the free daily bonus pays on each day of an unbroken streak, as read from the site.</p>
-        <table>
-          <thead><tr>${head.join('')}</tr></thead>
-          <tbody>
-${rows.join('\n')}
-          </tbody>
-          <tfoot><tr><th scope="row">Total</th><td colspan="${columns}">${escapeHtml(summary)}</td></tr></tfoot>
-        </table>${note}
-      </section>`;
-}
-
 function redeemMarkup(entry, name) {
   const methods = Array.isArray(entry.redeemMethods) ? entry.redeemMethods.filter(m => m && m.method) : [];
   if (!methods.length) return '';
@@ -392,12 +359,13 @@ ${headMarkup(title, description, canonicalUrl, jsonLd)}
 ${facts.map(([label, value]) => `        <div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join('\n')}
       </dl>
       <p>${escapeHtml(summarize(entry, name))}</p>
-      <p><a class="cta" href="${escapeHtml(entry.url)}" rel="sponsored noopener noreferrer">Visit ${escapeHtml(name)}</a></p>
-      <p class="disclosure">This may be a referral link; Daily Roll Over can earn a bonus if you sign up through it.</p>${ladderMarkup(entry)}${redeemMarkup(entry, name)}${historyMarkup(history)}${relatedMarkup}
+      <p><a class="cta" href="${escapeHtml(goUrl(entry.name))}" rel="sponsored noopener noreferrer nofollow">Visit ${escapeHtml(name)}</a></p>
+      <p class="disclosure">This may be a referral link; Daily Roll Over can earn a bonus if you sign up through it.</p>${redeemMarkup(entry, name)}${historyMarkup(history)}${relatedMarkup}
     </article>
   </main>
   <footer>
     <p><a href="index.html">Full tier list</a> &middot; <a href="../index.html?src=seo">Back to Daily Roll Over tracker</a></p>
+    <p class="disclosure">&copy; ${new Date().getUTCFullYear()} Daily Roll Over. The catalogue, rankings and research notes are original work; copying or scraping them is not permitted. See the <a href="../terms.html">terms</a>.</p>
     <p><a href="../privacy.html">Privacy</a> &middot; <a href="../terms.html">Terms</a></p>
   </footer>
   ${FORWARD_SRC_SCRIPT}
@@ -460,6 +428,7 @@ ${sections}
   <footer>
     <p><a href="../index.html?src=seo-hub">Daily Roll Over tracker</a></p>
     <p><a href="../privacy.html">Privacy</a> &middot; <a href="../terms.html">Terms</a></p>
+    <p class="disclosure">&copy; ${new Date().getUTCFullYear()} Daily Roll Over. The catalogue, rankings and research notes are original work; copying or scraping them is not permitted. See the <a href="../terms.html">terms</a>.</p>
   </footer>
   ${FORWARD_SRC_SCRIPT}
 </body>

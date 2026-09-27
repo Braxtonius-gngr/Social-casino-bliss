@@ -2,12 +2,12 @@
 
 ## Project Shape
 
-- This is a build-free static PWA deployed as-is, including GitHub Pages subpaths. See [README.md](README.md) for the full rationale and checks.
+- This is a build-free static PWA: the repository runs as is, including under a subpath. The deploy runs one optional step, `npm run build:site` ([scripts/build-site.js](scripts/build-site.js)), which writes `dist/` with the scripts minified (top-level names kept) and without `data/catalog.json`; CI smoke-tests that output too. See [README.md](README.md) for the full rationale and checks.
 - [index.html](index.html) owns the shipped markup and classic inline application JavaScript.
 - [assets/app.css](assets/app.css) owns layout, base styles, and theme overrides.
 - [assets/accessibility.css](assets/accessibility.css) owns focus, skip-link, reduced-motion, and mobile performance styles.
 - [assets/accessibility.js](assets/accessibility.js) owns keyboard and ARIA behavior for dynamic strategy rows.
-- [data/catalog.js](data/catalog.js) owns the `CATALOG_DATA` master array.
+- [data/catalog.json](data/catalog.json) is the catalogue's source of truth, published to the database from the admin page (`publish_catalog`); the app reads it through `get_catalog()` and the file is never deployed. [data/catalog.js](data/catalog.js) only restores the browser's saved copy into `CATALOG_DATA` before the first refresh. Referral links never reach the browser: `launchUrlFor()` sends OPEN through the `go` edge function for platforms flagged `hasReferral`.
 - [sw.js](sw.js) owns offline caching and same-origin network behavior.
 
 ## Working Rules
@@ -16,7 +16,7 @@
 - Use two-space indentation, semicolons, and existing naming patterns.
 - Keep local URLs relative; the app may run under a GitHub Pages subpath.
 - Treat localStorage keys and persisted state as public contracts. Add migration logic before changing a key.
-- Do not add frameworks, bundlers, or unrelated refactors. The one exception already in place is `supabase-js`, loaded via CDN `<script src>` (see Cloud Sync below) the same way Google Fonts already is - no bundler, no build step, nothing to `npm install`. Don't add further runtime dependencies beyond that without deliberate discussion.
+- Do not add frameworks, bundlers, or unrelated refactors. The one runtime exception already in place is `supabase-js`, loaded via CDN `<script src>` (see Cloud Sync below) the same way Google Fonts already is - no bundler, nothing to `npm install` to run the app. The only dev dependency is `terser`, used by the deploy step alone. Don't add further dependencies beyond that without deliberate discussion.
 - Catalog edits must preserve required fields and optional metadata; tracked user copies are persisted separately from the catalog.
 - Dynamic interactive rows must retain the existing accessibility behavior.
 
@@ -29,6 +29,8 @@ npm run check
 npm run check:syntax
 npm run check:refs
 npm run check:catalog
+npm run test:smoke                 # browser flows against a fake Supabase
+npm ci && npm run build:site && SMOKE_ROOT=dist npm run test:smoke
 ```
 
 The authoritative script definitions are in [package.json](package.json), and CI runs the full check through [.github/workflows/checks.yml](.github/workflows/checks.yml). Use the narrowest relevant check first, then the full suite for cross-file changes.
@@ -48,6 +50,8 @@ The authoritative script definitions are in [package.json](package.json), and CI
 - It's an outbox-and-replay design over `collectionHistory` only (the ledger behind streaks/stats - not `trackedGames`, not settings): local mutations enqueue an op via `enqueueHistorySync(entry, deleted)` (a no-op while sync is disabled), `flushSyncOutbox()` pushes it (upsert by id), `pullAndReplay()` fetches rows changed since the last cursor and applies them locally by id, tombstoning (`deleted: true`) rather than hard-deleting so other devices learn about removals instead of resurrecting them. `kickSync()` is the shared "try now" entry point (seed-if-needed + flush + pull) used by every automatic trigger; `initSync()` sets up the recurring interval/listener exactly once and must not be called more than once per page load.
 - Every `collectionHistory` entry needs a stable `id` (assigned by `ensureHistoryEntryIds()` on load, and inline wherever a new entry is created) for this to work - preserve that if you touch collection-history code, even when sync itself isn't what you're changing.
 - The anon/publishable key in `index.html` is meant to be public (protected by RLS, not secrecy) - don't treat it as a secret to scrub, but also don't add anything there that would need to be one.
+- Browser roles start with nothing: the `least_privilege` migration revoked the default table grants from `anon`/`authenticated` and changed the default privileges, so a new table or RPC is unreachable until its migration says `GRANT` explicitly. Views are `security_invoker`; a public view needs a published-row policy and column grants on its tables, not `SECURITY DEFINER`.
+- The catalogue's own RPCs (`get_catalog`, `publish_catalog`, the owner's reports) live in the `catalog_service` migration. After editing [data/catalog.json](data/catalog.json), publish it from the admin page; the repo file alone changes nothing users see.
 
 ### Email linking (device-independent recovery)
 
@@ -71,5 +75,6 @@ The authoritative script definitions are in [package.json](package.json), and CI
 - Keep `index.html` syntax-valid; an inline-script error breaks the shipped app.
 - Run reference checks after renaming or adding local files.
 - Bump `CACHE_NAME` in [sw.js](sw.js) when cache invalidation is required.
+- After a catalogue edit, run `npm run build:seo` (the pages and history are generated from the file) and publish the catalogue from the admin page.
 - Keep editor-local `.vscode/` settings and personal Git/Copilot overrides out of the repository.
 - Avoid reformatting unrelated sections.

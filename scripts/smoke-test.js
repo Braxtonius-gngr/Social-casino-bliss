@@ -21,7 +21,10 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 
-const ROOT = path.resolve(__dirname, '..');
+const REPO = path.resolve(__dirname, '..');
+// SMOKE_ROOT=dist serves the built output instead of the repo, so the
+// deploy step (minified scripts, no catalogue file) is what gets tested.
+const ROOT = process.env.SMOKE_ROOT ? path.resolve(REPO, process.env.SMOKE_ROOT) : REPO;
 const TIMEOUT_MS = 15000;
 const CHROME_START_MS = 60000;
 const SMOKE_USER = 'smoke-user-1';
@@ -45,8 +48,11 @@ function startServer() {
   const server = http.createServer((req, res) => {
     let file = decodeURIComponent(new URL(req.url, 'http://x').pathname);
     if (file.endsWith('/')) file += 'index.html';
-    const full = path.join(ROOT, path.normalize(file));
-    if (!full.startsWith(ROOT + path.sep)) { res.writeHead(403); res.end(); return; }
+    // The fake Supabase answers get_catalog from the repo's catalogue,
+    // which no deployed root carries.
+    const base = file === '/data/catalog.json' ? REPO : ROOT;
+    const full = path.join(base, path.normalize(file));
+    if (!full.startsWith(base + path.sep)) { res.writeHead(403); res.end(); return; }
     fs.readFile(full, (err, body) => {
       if (err) { res.writeHead(404); res.end('not found'); return; }
       res.writeHead(200, { 'content-type': TYPES[path.extname(full)] || 'application/octet-stream', 'cache-control': 'no-store' });
@@ -205,11 +211,32 @@ function fakeSupabase() {
     return builder;
   }
 
+  // What the server would publish from the repo's catalogue: referral
+  // links replaced by the platform's origin and flagged (the fake keeps
+  // the rule to "has a query string", which is enough to exercise the
+  // routing), under one fixed version.
+  const SMOKE_CATALOG_VERSION = 'smoke-1';
+  let smokeCatalog = null;
+  const publishedCatalog = () => {
+    if (smokeCatalog) return smokeCatalog;
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', '/data/catalog.json', false);
+    xhr.send();
+    smokeCatalog = JSON.parse(xhr.responseText).map(entry => {
+      const hasReferral = /\?/.test(entry.url);
+      return { ...entry, url: hasReferral ? entry.url.replace(/^(https?:\/\/[^/?#]+).*$/, '$1') : entry.url, hasReferral };
+    });
+    return smokeCatalog;
+  };
+
   const RPC_DEFAULTS = {
     server_time: () => ({ data: new Date().toISOString(), error: null }),
     get_my_entitlement: () => ({ data: [], error: null }),
     is_moderator: () => ({ data: false, error: null }),
-    is_owner: () => ({ data: false, error: null })
+    is_owner: () => ({ data: false, error: null }),
+    get_catalog: args => (args && args.p_version === SMOKE_CATALOG_VERSION
+      ? { data: { version: SMOKE_CATALOG_VERSION, unchanged: true }, error: null }
+      : { data: { version: SMOKE_CATALOG_VERSION, publishedAt: '2026-09-27T00:00:00Z', platforms: publishedCatalog() }, error: null })
   };
 
   const auth = {
@@ -247,7 +274,7 @@ function fakeSupabase() {
       log({ type: 'rpc', name, args: clone(args) });
       const custom = answer(`rpc:${name}`);
       if (custom !== undefined) return custom;
-      return RPC_DEFAULTS[name] ? RPC_DEFAULTS[name]() : { data: null, error: null };
+      return RPC_DEFAULTS[name] ? RPC_DEFAULTS[name](args) : { data: null, error: null };
     }),
     functions: {
       invoke: async (name, options) => {
@@ -685,6 +712,64 @@ const TESTS = [
     await page.waitFor(() => document.getElementById('tabModDashboard').style.display === 'none');
     expect(await page.evaluate(() => currentTab), 'games', 'left the staff view');
     expect(await page.evaluate(() => document.getElementById('moderatorList').innerHTML), '', 'moderator list cleared');
+  }],
+
+  ['loads the catalogue from the server and routes referral platforms through go', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    await page.waitFor(() => CATALOG_DATA.length > 100);
+    const first = byType(await page.calls(), 'rpc', 'get_catalog');
+    expect(first.length, 1, 'one catalogue download at boot');
+    expect(first[0].args, { p_version: null }, 'a first visit holds no version');
+    expect(await page.evaluate(() => [localStorage.getItem('almanac_catalog_version_v1'), CATALOG_DATA.some(c => /\?/.test(c.url))]), ['smoke-1', false], 'version saved, no referral address in the browser');
+    const routes = await page.evaluate(() => ({
+      referral: launchUrlFor({ name: 'Crown Coins', url: 'https://crowncoinscasino.com' }),
+      plain: launchUrlFor({ name: 'McLuck', url: 'https://www.mcluck.com/home' }),
+      unknown: launchUrlFor({ name: 'Not In Catalogue', url: 'https://example.com/x' })
+    }));
+    expect(routes.referral, 'https://ewfvyrhlsanzkmozrmhs.supabase.co/functions/v1/go?p=Crown%20Coins', 'referral platform goes through go');
+    expect(routes.plain, 'https://www.mcluck.com/home', 'plain platform opens directly');
+    expect(routes.unknown, 'https://example.com/x', 'an untracked address is kept');
+    await page.evaluate(() => refreshExternalCatalog());
+    const again = byType(await page.calls(), 'rpc', 'get_catalog');
+    expect(again[again.length - 1].args, { p_version: 'smoke-1' }, 'later refreshes send the held version');
+    expect(await page.evaluate(() => document.querySelectorAll('#catalogGroupContainer .catalog-item-row').length > 100), true, 'catalogue tab rendered');
+  }],
+
+  ['keeps the saved catalogue when the server refuses a download', async page => {
+    await page.goto('/');
+    await signedIn(page);
+    await page.waitFor(() => /too many times/.test(document.getElementById('toastMsg').textContent));
+    expect(await page.evaluate(() => CATALOG_DATA.map(c => c.name)), ['Saved One'], 'saved copy still in use');
+    await page.evaluate(() => switchMainTab('catalog', document.getElementById('tabCatalog')));
+    expect(await page.evaluate(() => document.querySelector('#catalogGroupContainer').textContent.includes('Saved One')), true, 'saved copy rendered');
+  }, {
+    localStorage: {
+      almanac_catalog_cache_v1: JSON.stringify([{ name: 'Saved One', url: 'https://saved.example', tier: 'S', dailySC: 1, speedHours: 1, reliability: 90, cooldown: 24, hasLive: false, minRedeem: '50', confidence: 'low' }]),
+      almanac_catalog_version_v1: 'old-version'
+    },
+    answers: { 'rpc:get_catalog': { data: null, error: { message: 'RATE_LIMITED: this account has downloaded the catalogue too many times today' } } }
+  }],
+
+  ['a crawler gets no catalogue and no account', async page => {
+    await page.goto('/');
+    await new Promise(r => setTimeout(r, 800));
+    const calls = await page.calls();
+    expect(byType(calls, 'rpc', 'get_catalog').length, 0, 'no catalogue request');
+    expect(byType(calls, 'auth', 'signInAnonymously').length, 0, 'no anonymous sign-in');
+  }, { userAgent: GOOGLEBOT }],
+
+  ['admin: publishes the catalogue file through the owner RPC', async page => {
+    await page.goto('/admin/freebies.html');
+    await page.waitFor(() => document.getElementById('adminApp').style.display === '');
+    const result = await page.evaluate(() => publishCatalog([{ name: 'A', url: 'https://a.example/?ref=1' }, { name: 'B', url: 'https://b.example/' }]));
+    const call = byType(await page.calls(), 'rpc', 'publish_catalog')[0];
+    expect(call && call.args.p_catalog.length, 2, 'whole file sent');
+    expect(result && result.changed, true, 'result returned');
+    expect(await page.evaluate(() => document.getElementById('publishStatus').textContent), 'Published 2 platforms (1 with referral links kept server-side). Version abcdef12.', 'outcome shown');
+  }, {
+    localStorage: { __smokeSession: { access_token: 'admin-token', user: { id: 'admin-1', email: 'johndopamine210@gmail.com' } } },
+    answers: { 'rpc:publish_catalog': { data: { version: 'abcdef1234', entries: 2, changed: true, referralLinks: 1 }, error: null } }
   }],
 
   ['deletes the cloud account and stops syncing', async page => {

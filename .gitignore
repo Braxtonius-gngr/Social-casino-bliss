@@ -1,3 +1,4 @@
 node_modules/
 .vscode/
 supabase/.temp/
+dist/

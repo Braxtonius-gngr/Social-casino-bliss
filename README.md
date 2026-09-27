@@ -2,7 +2,9 @@
 
 Daily bonus tracker for sweepstakes and social casino platforms. A single
 static `index.html` (plus a handful of small `assets/`/`utils/` scripts and
-stylesheets) - no build step, deployed as-is via GitHub Pages.
+stylesheets) - no build step to run the app. The deploy runs one optional
+step (`npm run build:site`, below) that minifies the scripts and leaves the
+catalogue file out; the repository itself stays readable and runs as is.
 
 Everything is local-first: platforms, timers, notes, balances and settings
 live in this browser, always. User-owned platform records, collection history,
@@ -59,9 +61,11 @@ npm run check:refs      # confirms every local href/src/precache reference resol
 npm run check:catalog   # validates data/catalog.json's records (see below)
 ```
 
-`data/catalog.json` is the authoritative, network-loaded platform-rules
-payload. `data/catalog.js` is only a bootstrap loader that reads the JSON (or
-the last valid local cache) before the first refresh succeeds. `check:catalog`
+`data/catalog.json` is the authoritative platform-rules payload, edited in
+the repository and published to the database (see **The catalogue** below);
+the deployed site never carries the file. `data/catalog.js` is only a
+bootstrap that puts the browser's last saved copy back on screen before the
+first refresh answers. `check:catalog`
 requires every entry to have a non-empty `name` and a valid
 `http(s)` URL, and validates numeric fields when present (finite values;
 `reliability` between 0-100; positive `cooldown`/`speedHours`). It also
@@ -90,11 +94,49 @@ They also run automatically on every push and pull request via
 
 `npm run test:smoke` runs browser smoke tests for the flows that talk to the
 server: anonymous sign-in (exactly one per device, and none for crawlers),
-Cloud Sync, Pro checkout and entitlements, background push, and account
-deletion. It drives an installed Chrome or Chromium over the DevTools
-protocol (set `CHROME_PATH` if it isn't found) against a recording fake of
-Supabase, so it needs no network and, like the checks, no `npm install`. CI
-runs it after `npm run check`.
+the catalogue download and its rate-limit fallback, Cloud Sync, Pro checkout
+and entitlements, background push, and account deletion. It drives an
+installed Chrome or Chromium over the DevTools protocol (set `CHROME_PATH`
+if it isn't found) against a recording fake of Supabase, so it needs no
+network and, like the checks, no `npm install`. CI runs it after
+`npm run check`, and again with `SMOKE_ROOT=dist` against the built output.
+
+## Deploying
+
+```bash
+npm ci                 # terser, the one dev dependency
+npm run build:site     # writes dist/
+```
+
+`dist/` is what the host serves: every file the site needs, every script
+(inline ones included) minified with top-level names kept, and no
+`data/catalog.json`, migrations, scripts or docs. On Cloudflare Pages set
+the build command to `npm ci && npm run build:site` and the output directory
+to `dist`. A deploy that skips the build still never serves the repo-only
+paths: `_redirects` sends them to the home page. If GitHub Pages is still
+enabled for the repository, turn it off; it serves the raw repository.
+
+## The catalogue
+
+The catalogue is served by the database, not as a file. `get_catalog()`
+answers a signed-in account (the device's anonymous one counts, a crawler
+never gets one), returns only `{unchanged: true}` when the app already
+holds the current version, and counts full downloads per account per day,
+refusing past forty. The published payload carries each platform's plain
+address; referral links stay in `platform_links` and players reach them
+through the `go` edge function (`/functions/v1/go?p=<platform name>`),
+which redirects, rate-limits by address and counts each follow. The SEO
+pages link there too.
+
+To publish after editing `data/catalog.json`: open `admin/freebies.html`,
+choose the file under **Publish Catalogue** and press Publish. The database
+splits the referral links off and stores the rest under a new version; the
+app picks it up within five minutes or on its next focus. Publishing an
+unchanged file does nothing.
+
+The owner's Staff tab shows who downloaded the catalogue in the last seven
+days (heaviest first) and which platform links were followed, from
+`catalog_access_report()` and `link_hits_report()`.
 
 The optional `npm run build:seo` command uses the same catalog to generate
 semantic static landing pages under `platforms/` and a sitemap. It does not
@@ -139,10 +181,11 @@ the drop from the public feed and opens Freebies when tapped.
 Setup, once:
 
 ```bash
-supabase db push                                  # 20260926174321_drop_alerts.sql
+supabase db push                                  # drop_alerts, owner_tier, least_privilege, catalog_service
 supabase secrets set ANTHROPIC_API_KEY="sk-ant-..."
 supabase functions deploy read-drop
 supabase functions deploy web-push
+supabase functions deploy go                      # referral redirects
 ```
 
 Apply the migration before the app update reaches people. The app copes

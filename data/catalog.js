@@ -1,56 +1,38 @@
 /*
- * Runtime bootstrap for the external platform-rules payload.
+ * Runtime bootstrap for the platform catalogue.
  *
  * This stays a classic script because the inline app script consumes
- * CATALOG_DATA synchronously. The JSON file is authoritative; the saved
- * snapshot renders instantly and refreshExternalCatalog() replaces it with
- * the live copy moments later. Only a first visit, with nothing saved yet,
- * blocks on the network.
+ * CATALOG_DATA synchronously. The catalogue itself lives in the database
+ * now (get_catalog, served to the device's signed-in account) and the
+ * deployed site carries no catalogue file. What this does is put the last
+ * copy this browser saved back on screen instantly; refreshExternalCatalog()
+ * in index.html then asks the server whether anything changed. A first
+ * visit starts empty and fills in a moment later.
  */
 const CATALOG_CACHE_KEY = 'almanac_catalog_cache_v1';
+const CATALOG_VERSION_KEY = 'almanac_catalog_version_v1';
 const CATALOG_DATA = [];
-// The exact text CATALOG_DATA came from, so the live refresh can skip
-// re-parsing and re-rendering when nothing changed.
-let CATALOG_BOOTSTRAP_TEXT = null;
+// The server version the saved copy came from, so the first refresh can
+// ask "anything newer than this?" instead of downloading it all again.
+let CATALOG_BOOTSTRAP_VERSION = null;
 
 (function loadCatalogBootstrap() {
-  function parseCatalog(raw) {
-    try {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
-      console.warn('The catalogue is not an array.');
-    } catch (error) {
-      console.warn('The catalogue is not valid JSON:', error.message);
-    }
-    return null;
-  }
-
   let raw = null;
+  let version = null;
   try {
     raw = localStorage.getItem(CATALOG_CACHE_KEY);
+    version = localStorage.getItem(CATALOG_VERSION_KEY);
   } catch (error) {
     console.warn('Could not read the cached catalogue:', error.message);
   }
-  let parsed = raw ? parseCatalog(raw) : null;
-
-  if (!parsed) {
-    try {
-      const xhr = new XMLHttpRequest();
-      xhr.open('GET', 'data/catalog.json', false);
-      xhr.send();
-      if (xhr.status >= 200 && xhr.status < 300) {
-        raw = xhr.responseText;
-        parsed = parseCatalog(raw);
-        if (parsed) {
-          try { localStorage.setItem(CATALOG_CACHE_KEY, raw); } catch (error) { /* quota; refresh retries */ }
-        }
-      }
-    } catch (error) {
-      console.warn('Could not load the external catalogue:', error.message);
-    }
+  if (!raw) return;
+  let parsed = null;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    console.warn('The cached catalogue is not valid JSON:', error.message);
   }
-
-  if (!parsed) return;
+  if (!Array.isArray(parsed)) return;
   CATALOG_DATA.push(...parsed);
-  CATALOG_BOOTSTRAP_TEXT = raw;
+  CATALOG_BOOTSTRAP_VERSION = version || null;
 })();
