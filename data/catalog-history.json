@@ -2974,7 +2974,6 @@
     {
       "date": "2026-09-27",
       "changed": [
-        "tier",
         "dailySC"
       ],
       "from": {
@@ -2984,10 +2983,10 @@
         "daysToRedeem": 50
       },
       "to": {
-        "tier": "A",
-        "dailySC": 0.76,
+        "tier": "S",
+        "dailySC": 0.96,
         "cashFloor": 50,
-        "daysToRedeem": 66
+        "daysToRedeem": 52
       }
     },
     {
@@ -3542,6 +3541,25 @@
   ],
   "Vegas Bonanza": [
     {
+      "date": "2026-09-27",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": 100,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.09,
+        "cashFloor": 100,
+        "daysToRedeem": 1111
+      }
+    },
+    {
       "date": "2026-09-26",
       "changed": [
         "cashFloor"
@@ -3803,6 +3821,25 @@
     }
   ],
   "Zoot": [
+    {
+      "date": "2026-09-27",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.4,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.4,
+        "cashFloor": 100,
+        "daysToRedeem": 250
+      }
+    },
     {
       "date": "2026-09-21",
       "changed": [
