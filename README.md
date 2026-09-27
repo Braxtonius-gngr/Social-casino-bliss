@@ -165,8 +165,11 @@ do not count, and a refused click is not counted. Any refusal falls back
 to the house link. The token is a bearer credential: the redirect is a
 plain navigation, so whoever holds the OPEN address for those 24 hours
 gets the same answer. It is never part of what the Share button hands
-out, and the worst a leaked one can do is spend the sharer's own capped
-uses on a platform the sharer chose to share. The sharer sees the
+out, and a leaked one can only reach the sharer's own links for platforms
+the sharer chose to share: on platforms where the house has a referral
+link it spends the sharer's 20 capped uses, and on the rest, which are
+deliberately uncapped, it follows the sharer's link for as long as the
+token lasts. The sharer sees the
 month's count in Settings (`my_share_status`). These RPCs live in the
 `pro_referrals` migration.
 

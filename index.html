@@ -10558,14 +10558,19 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } catch (err) {
         if (proOnlyError(err)) referralUpgradePitch();
         else console.warn('set_my_referral_link failed:', err);
+        // Whatever the caller, a failed save reopens the account sync, so
+        // the next Pro answer compares device and account again.
+        memberLinksPulledFor = null;
+        try { localStorage.removeItem(MEMBER_LINKS_SYNCED_KEY); } catch (e) {}
         return false;
       }
     }
 
     // On a Pro account: links saved on another device come down onto
     // platforms here that have none, and links this device holds that the
-    // account lacks go up, the upload once per account so a link removed
-    // elsewhere is not put back.
+    // account lacks or has differently go up. The upload runs until it
+    // has succeeded once per account (a failed save reopens it), so a link
+    // removed elsewhere is not put back by every later boot.
     let memberLinksPulledFor = null;
     async function pullMemberLinks() {
       if (!proReferralsAllowed() || !entitlementUid || memberLinksPulledFor === entitlementUid) return;
@@ -10589,7 +10594,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const key = g.name.toLowerCase();
         const own = typeof g.referralUrl === 'string' ? g.referralUrl.trim() : '';
         if (!own && held.has(key)) { g.referralUrl = held.get(key); changed = true; }
-        else if (own && !held.has(key)) missing.push(g);
+        else if (own && held.get(key) !== own) missing.push(g);
       });
       if (changed) persist();
       let synced = null;
