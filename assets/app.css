@@ -3515,12 +3515,13 @@
 
    The mechanism: each .ledger-card carries a ::before the size of the card
    holding a soft, off-centre white ellipse. It translates from fully above
-   the card to fully below over --deck-light-cross, then parks out of sight
-   for the rest of --deck-light-period. renderGames() stamps every card's
-   position in the list into --i, and the animation-delay below offsets
-   card i by i * --deck-light-step. With --deck-light-cross set to exactly
-   twice --deck-light-step, card i+1's highlight enters its top edge at the
-   moment card i's highlight passes its own centre - so at any instant the
+   the card to fully below over the first 8% of --deck-light-period (3.6s
+   at 45s), then parks out of sight for the rest of it. renderGames()
+   stamps every card's position in the list into --i, and the
+   animation-delay below offsets card i by i * --deck-light-step. With that
+   crossing time set to exactly twice --deck-light-step, card i+1's
+   highlight enters its top edge at the moment card i's highlight passes
+   its own centre - so at any instant the
    lit region is about two cards tall and its centre descends the list at
    a constant one card per --deck-light-step. Every card is just a window
    onto the same virtual light moving down the deck. The mod() wraps the
@@ -3546,7 +3547,6 @@
 [data-theme="executive"] {
   --deck-light-period: 45s;
   --deck-light-step: 1.8s;
-  --deck-light-cross: 3.6s;
   --deck-light-cards: 25;
 }
 [data-theme="executive"] .ledger-card {
@@ -3565,7 +3565,7 @@
   animation: exec-deck-light var(--deck-light-period) linear infinite;
   animation-delay: calc(mod(var(--i, 0), var(--deck-light-cards)) * var(--deck-light-step) - var(--deck-light-period));
 }
-/* 8% of 45s = 3.6s = --deck-light-cross. Keep these three in step if the
+/* 8% of 45s = 3.6s = 2 * --deck-light-step. Keep the three in step if the
    period ever changes. The hold from 8% to 100% is the highlight parked
    below the card's bottom edge, where overflow:hidden means it paints
    nothing - not a visible pause. */
@@ -3573,7 +3573,12 @@
   0% { transform: translateY(-100%); }
   8%, 100% { transform: translateY(100%); }
 }
-[data-motion="off"] [data-theme="executive"] .ledger-card::before { animation: none; opacity: 0; }
+/* Both attributes live on <html>, so they compound on one selector - a
+   descendant combinator between them would never match (the base
+   html[data-motion="off"] *::before kill switch already stops the
+   animation; this additionally hides the highlight, which the un-animated
+   base transform leaves parked above the card anyway). */
+html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation: none; opacity: 0; }
 
 [data-theme="executive"] .hero-ring-circle {
   border: 2px solid var(--accent-gold);
@@ -3894,11 +3899,11 @@
   0% { -webkit-mask-position: 0 0, 0 0; mask-position: 0 0, 0 0; }
   100% { -webkit-mask-position: 300px 300px, -470px 470px; mask-position: 300px 300px, -470px 470px; }
 }
-[data-motion="off"] [data-theme="executive"] body::before,
-[data-motion="off"] [data-theme="executive"] .landing-screen::before,
-[data-motion="off"] [data-theme="executive"] #dailyRunOverlay::before,
-[data-motion="off"] [data-theme="executive"] body::after,
-[data-motion="off"] [data-theme="executive"] #dailyRunOverlay::after { animation: none; }
+html[data-motion="off"][data-theme="executive"] body::before,
+html[data-motion="off"][data-theme="executive"] .landing-screen::before,
+html[data-motion="off"][data-theme="executive"] #dailyRunOverlay::before,
+html[data-motion="off"][data-theme="executive"] body::after,
+html[data-motion="off"][data-theme="executive"] #dailyRunOverlay::after { animation: none; }
 
 /* Nav-tab glyphs. Stacked above the label rather than beside it: an inline
    icon adds ~20px per tab, which four tabs cannot afford at 320px, while a
