@@ -264,25 +264,36 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 DECLARE
+  key TEXT := lower(trim(p_name_key));
   t RECORD;
-  sharer UUID;
+  l RECORD;
   link TEXT;
   house_has_link BOOLEAN;
   used INTEGER;
 BEGIN
+  -- The redirect is a plain navigation, so the token is the only thing
+  -- identifying the viewer: a bearer capability, minted only to a Pro
+  -- viewer for a list that is not their own, good for 24 hours, never
+  -- part of what the Share button hands out, and checked here on every
+  -- click: the viewer and the sharer must still hold Pro, the platform
+  -- must be on the shared list, and the month's cap must have room.
   SELECT viewer_id, code INTO t FROM public.launch_tokens WHERE token = p_token AND expires_at > now();
   IF t.viewer_id IS NULL THEN RETURN NULL; END IF;
-  SELECT owner_id INTO sharer FROM public.shared_lists WHERE code = t.code;
-  IF sharer IS NULL OR sharer = t.viewer_id THEN RETURN NULL; END IF;
-  IF NOT public.is_pro_user(sharer) OR NOT public.is_pro_user(t.viewer_id) THEN RETURN NULL; END IF;
-  SELECT referral_url INTO link FROM public.member_links WHERE user_id = sharer AND name_key = lower(trim(p_name_key));
+  SELECT owner_id, platforms INTO l FROM public.shared_lists WHERE code = t.code;
+  IF l.owner_id IS NULL OR l.owner_id = t.viewer_id THEN RETURN NULL; END IF;
+  IF NOT public.is_pro_user(l.owner_id) OR NOT public.is_pro_user(t.viewer_id) THEN RETURN NULL; END IF;
+  IF NOT EXISTS (SELECT 1 FROM jsonb_array_elements(l.platforms) AS e WHERE lower(trim(e->>'name')) = key) THEN RETURN NULL; END IF;
+  SELECT referral_url INTO link FROM public.member_links WHERE user_id = l.owner_id AND name_key = key;
   IF link IS NULL THEN RETURN NULL; END IF;
-  SELECT has_referral INTO house_has_link FROM public.platform_links WHERE name_key = lower(trim(p_name_key));
+  SELECT has_referral INTO house_has_link FROM public.platform_links WHERE name_key = key;
   IF COALESCE(house_has_link, FALSE) THEN
-    INSERT INTO public.share_link_uses (owner_id, month, uses) VALUES (sharer, date_trunc('month', now())::DATE, 1)
+    -- Counted only while under the cap, so the count never passes it and
+    -- a refused click leaves it where it was.
+    INSERT INTO public.share_link_uses (owner_id, month, uses) VALUES (l.owner_id, date_trunc('month', now())::DATE, 1)
     ON CONFLICT (owner_id, month) DO UPDATE SET uses = share_link_uses.uses + 1
+    WHERE share_link_uses.uses < public.share_cap()
     RETURNING uses INTO used;
-    IF used > public.share_cap() THEN RETURN NULL; END IF;
+    IF used IS NULL THEN RETURN NULL; END IF;
   END IF;
   RETURN link;
 END;

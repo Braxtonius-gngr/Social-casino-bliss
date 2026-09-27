@@ -10486,9 +10486,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // referral field is read-only for it. A Pro account keeps its own
     // links, on this device and in member_links, and can hand its list out
     // as a code. The database decides per click whether a friend's link is
-    // served (both Pro, never back to the sharer, twenty a month on
-    // platforms where the house has a link); the app only carries the code
-    // and a 24-hour launch token for it.
+    // served (both Pro, never back to the sharer, only platforms on the
+    // list, twenty a month on platforms where the house has a link); the
+    // app only carries the code and a 24-hour launch token for it. The
+    // token is a bearer credential on the OPEN address: it is never part
+    // of what Share hands out, and every click is re-checked server-side.
     const SHARE_CODE_RE = /^[A-Z2-9]{8}$/;
     const LAUNCH_TOKENS_KEY = 'almanac_launch_tokens_v1';
     const MEMBER_LINKS_SYNCED_KEY = 'almanac_member_links_synced_v1';
@@ -10544,11 +10546,20 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return /PRO_ONLY/.test((err && err.message) || '');
     }
 
+    // Whatever the caller and whatever stopped it (no Pro, no session, a
+    // refused call), a save that did not reach the account reopens the
+    // sync, so the next Pro answer compares device and account again.
+    function reopenMemberLinkSync() {
+      memberLinksPulledFor = null;
+      try { localStorage.removeItem(MEMBER_LINKS_SYNCED_KEY); } catch (e) {}
+      return false;
+    }
+
     // Saves one of this account's links, or with an empty url removes it.
     async function syncMemberLink(name, url) {
-      if (!proReferralsAllowed()) return false;
+      if (!proReferralsAllowed()) return reopenMemberLinkSync();
       const client = await signedInClient();
-      if (!client) return false;
+      if (!client) return reopenMemberLinkSync();
       try {
         const { error } = await client.rpc('set_my_referral_link', { p_name: name, p_url: url || '' });
         if (error) throw error;
@@ -10556,14 +10567,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } catch (err) {
         if (proOnlyError(err)) referralUpgradePitch();
         else console.warn('set_my_referral_link failed:', err);
-        return false;
+        return reopenMemberLinkSync();
       }
     }
 
     // On a Pro account: links saved on another device come down onto
     // platforms here that have none, and links this device holds that the
-    // account lacks go up, the upload once per account so a link removed
-    // elsewhere is not put back.
+    // account lacks or has differently go up. The upload runs until it
+    // has succeeded once per account (a failed save reopens it), so a link
+    // removed elsewhere is not put back by every later boot.
     let memberLinksPulledFor = null;
     async function pullMemberLinks() {
       if (!proReferralsAllowed() || !entitlementUid || memberLinksPulledFor === entitlementUid) return;
@@ -10587,15 +10599,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const key = g.name.toLowerCase();
         const own = typeof g.referralUrl === 'string' ? g.referralUrl.trim() : '';
         if (!own && held.has(key)) { g.referralUrl = held.get(key); changed = true; }
-        else if (own && !held.has(key)) missing.push(g);
+        else if (own && held.get(key) !== own) missing.push(g);
       });
       if (changed) persist();
       let synced = null;
       try { synced = localStorage.getItem(MEMBER_LINKS_SYNCED_KEY); } catch (e) {}
-      if (missing.length && synced !== entitlementUid) {
-        for (const g of missing) await syncMemberLink(g.name, g.referralUrl.trim());
+      if (synced === entitlementUid) return;
+      // The marker is set only once every upload has succeeded; a failed
+      // one is retried on the next Pro answer (and the pull with it).
+      let allSaved = true;
+      for (const g of missing) {
+        if (!(await syncMemberLink(g.name, g.referralUrl.trim()))) allSaved = false;
       }
-      try { localStorage.setItem(MEMBER_LINKS_SYNCED_KEY, entitlementUid); } catch (e) {}
+      if (allSaved) {
+        try { localStorage.setItem(MEMBER_LINKS_SYNCED_KEY, entitlementUid); } catch (e) {}
+      } else {
+        memberLinksPulledFor = null;
+      }
     }
 
     // Launch tokens, held per account and code.
@@ -10804,18 +10824,29 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     // ?list=CODE on the app's address: offered, not applied, since a link
-    // can be sent to anyone. Runs after the boot sign-in the import needs.
+    // can be sent to anyone. The import needs a session, and the boot
+    // sign-in is asynchronous, so the offer waits for one (up to 20
+    // seconds) rather than racing it.
     function consumeListParam() {
+      let clean = '';
       try {
         const url = new URL(window.location.href);
         const code = url.searchParams.get('list');
         if (code === null) return;
         url.searchParams.delete('list');
         window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
-        const clean = String(code).trim().toUpperCase();
-        if (!SHARE_CODE_RE.test(clean)) return;
-        setTimeout(() => { if (confirm(`Import the shared platform list ${clean}?`)) importSharedList(clean); }, 1500);
-      } catch (e) {}
+        clean = String(code).trim().toUpperCase();
+      } catch (e) { return; }
+      if (!SHARE_CODE_RE.test(clean)) return;
+      const startedAt = Date.now();
+      const offer = async () => {
+        if (!(await signedInClient())) {
+          if (Date.now() - startedAt < 20000) return setTimeout(offer, 500);
+          return showToast('Turn Cloud Sync on in Settings, then use Import a List with code ' + clean + '.', null, 10000);
+        }
+        if (confirm(`Import the shared platform list ${clean}?`)) importSharedList(clean);
+      };
+      setTimeout(offer, 1000);
     }
 
     // Called with every entitlement answer, like noteAlertRulesAccess().
