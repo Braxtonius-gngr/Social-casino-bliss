@@ -635,71 +635,182 @@
 
     /* ==========================================================================
        ROLL INTRO - the Daily Roll Over brand intro on the landing screen.
-       Shot list: a leather cup throws two craps dice (4 + 3), time drops
-       into near-still slow motion as the camera snaps in on the pair at
-       the top of the arc (5 + 2), a light behind the camera sweeps a glint
-       and a flare across them as time speeds back up, and they land on
-       6 + 1, then pop into cash, coins and crypto before the wordmark
-       flies in.
-       Split of work: playRollIntro() in index.html drives the cup, dice,
-       floor shadows, face flips and .roll-camera on a warped clock (inline
-       transforms, one rAF loop). CSS owns everything after the pop, keyed
-       off .roll-popped, plus the glint/flare keyed off .roll-glint.
-       Base styles ARE the end state: .roll-intro is not displayed and the
-       landing copy is fully visible, so a tap, the timeline ending, or
-       motion being off (the global html[data-motion="off"] kill switch)
-       all land on the same frame.
-       Stage is a fixed 360x560 box centred on the screen; the dice land
-       at x=150/210, y=327 inside it, and the money starts from there.
+       Shot list: deep in the scene, seen side-on, a leather cup shakes and
+       throws two craps dice (4 + 3 as they leave); time eases into a
+       near-freeze at the top of the arc while the camera arcs in to a
+       three-quarter angle and the lens lengthens (5 + 2, bullet time); a
+       bar light swept behind the camera wipes its reflection across the
+       dice, flaring where it is brightest, as time comes back; the camera
+       cranes up as they bounce and settle on 6 + 1, then they pop into
+       cash, coins and crypto before the wordmark flies in.
+       Split of work: playRollIntro() in index.html builds the cup, the
+       chamfered dice and the dust into .roll-world (real CSS 3D under one
+       perspective), then drives everything up to the pop in one rAF loop:
+       cup, dice, shadows, every light layer, the camera (the world's
+       matrix3d and the stage's perspective) and the flare, pinned to the
+       projected reflection. CSS owns everything after the pop, keyed off
+       .roll-popped. Base styles ARE the end state: .roll-intro is not
+       displayed and the landing copy is fully visible, so a tap, the
+       timeline ending, or motion being off (the global
+       html[data-motion="off"] kill switch) all land on the same frame.
+       Stage is a fixed 360x560 box centred on the screen; the world's
+       origin is its centre, the floor is y = 0, z runs toward the viewer.
        ========================================================================== */
     .roll-intro { display: none; position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
     .landing-screen.intro-play .roll-intro { display: block; }
-    .roll-stage { position: absolute; left: 50%; top: 50%; width: 360px; height: 560px; margin: -280px 0 0 -180px; }
+    /* A soft cinematic vignette over the whole shot. */
+    .roll-intro::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(120% 90% at 50% 45%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.5) 100%); }
+    /* The set: a matte charcoal surface under one soft light, with a fine
+       grain, whatever the theme. It and the table give way to the theme's
+       own landing screen after the pop, as the wordmark arrives. */
+    .roll-backdrop { position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E"), radial-gradient(95% 70% at 38% 28%, #26262a 0%, #17171a 55%, #0c0c0e 100%); }
+    .landing-screen.roll-popped .roll-backdrop,
+    .landing-screen.roll-popped .roll-stage,
+    .landing-screen.roll-popped .roll-intro::after { animation: roll-fade-out 1s ease-in-out 0.95s forwards; }
+    @keyframes roll-fade-out { 0% { opacity: 1; } 100% { opacity: 0; } }
+    .roll-stage { position: absolute; left: 50%; top: 50%; width: 360px; height: 560px; margin: -280px 0 0 -180px; perspective: 760px; perspective-origin: 50% 50%; }
     @media (max-width: 360px) { .roll-stage { transform: scale(0.88); } }
-    .roll-camera { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
     .roll-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+    .roll-world { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform-style: preserve-3d; will-change: transform; }
+    .roll-world > * { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
 
-    /* Leather, brass, dice and money are drawn with the gradients in
-       .roll-defs, not theme tokens: they are physical objects under one
-       warm key light, and should read the same whatever the skin. */
-    .roll-cup { position: absolute; left: -30px; top: 150px; width: 90px; height: 100px; transform-origin: 50% 90%; opacity: 0; overflow: visible; filter: drop-shadow(0 10px 14px rgba(0,0,0,0.55)); will-change: transform; }
-    .roll-cup-shadow { fill: #000; opacity: 0; }
+    /* The table: dark felt under one warm pool of light, fading out at
+       its edges so each theme's own backdrop takes over past the scene. */
+    .roll-floor { width: 1400px; height: 1400px; margin: -700px 0 0 -700px; transform: translate3d(0, 0, -260px) rotateX(90deg); background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E"), radial-gradient(closest-side, #242427 0%, #1a1a1d 42%, rgba(14, 14, 16, 0) 100%); background-size: 70px 70px, auto; -webkit-mask-image: radial-gradient(closest-side, #000 55%, rgba(0,0,0,0) 100%); mask-image: radial-gradient(closest-side, #000 55%, rgba(0,0,0,0) 100%); }
+    .roll-floor-pool { width: 760px; height: 760px; margin: -380px 0 0 -380px; transform: translate3d(-40px, -0.3px, -40px) rotateX(90deg); background: radial-gradient(closest-side, rgba(255, 248, 236, 0.1) 0%, rgba(255, 248, 236, 0.035) 45%, rgba(255, 248, 236, 0) 100%); }
+    /* Playing cards, linen finish: built at 3x and scaled down (sharp
+       under the zoom), each lifted a hair above the one below so the
+       browser never has to sort two cards in one plane. The linen weave
+       sits over the print too, as it does on real stock. */
+    .roll-card { width: 240px; height: 336px; margin: -168px 0 0 -120px; border-radius: 15px; overflow: hidden; backface-visibility: hidden; }
+    .roll-card svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .roll-card::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.07) 0 1.2px, rgba(0,0,0,0) 1.2px 3.6px), repeating-linear-gradient(90deg, rgba(0,0,0,0.07) 0 1.2px, rgba(0,0,0,0) 1.2px 3.6px); }
+    .roll-card-cream { background: linear-gradient(155deg, #efede7 0%, #e2dfd8 60%, #d4d0c7 100%); box-shadow: inset 0 0 0 1.5px rgba(0,0,0,0.18); }
+    .roll-card-black { background: linear-gradient(155deg, #222226 0%, #161618 60%, #0f0f11 100%); box-shadow: inset 0 0 0 2px #cbc6bc, inset 0 0 0 4px #141416; }
+    .roll-card-black::after { background: repeating-linear-gradient(0deg, rgba(255,255,255,0.055) 0 1.2px, rgba(255,255,255,0) 1.2px 3.6px), repeating-linear-gradient(90deg, rgba(255,255,255,0.055) 0 1.2px, rgba(255,255,255,0) 1.2px 3.6px); }
+    .roll-card-1 { transform: translate3d(-62px, -0.5px, 2px) rotateX(90deg) rotateZ(-18deg) scale(0.3333); }
+    .roll-card-2 { transform: translate3d(-20px, -1.1px, -10px) rotateX(90deg) rotateZ(-6deg) scale(0.3333); }
+    .roll-card-3 { transform: translate3d(46px, -1.7px, 30px) rotateX(90deg) rotateZ(11deg) scale(0.3333); }
+    .roll-cup-shadow, .roll-die-shadow { border-radius: 50%; opacity: 0; will-change: transform; }
+    .roll-cup-shadow { width: 150px; height: 150px; margin: -75px 0 0 -75px; background: radial-gradient(closest-side, rgba(0,0,0,0.55), rgba(0,0,0,0.2) 55%, rgba(0,0,0,0)); }
+    .roll-die-shadow { width: 64px; height: 64px; margin: -32px 0 0 -32px; background: radial-gradient(closest-side, rgba(0,0,0,0.72), rgba(0,0,0,0.3) 50%, rgba(0,0,0,0)); }
+    .roll-die-ao { width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 4px; opacity: 0; background: radial-gradient(closest-side, rgba(0,0,0,0.9), rgba(0,0,0,0.55) 62%, rgba(0,0,0,0)); }
+    /* No blend mode here: a blend mode on anything directly in the 3D
+       scene makes the browser drop the whole scene. */
+    .roll-caustic { width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, rgba(255,46,66,0.62) 0%, rgba(214,14,38,0.3) 46%, rgba(160,6,24,0.1) 72%, rgba(160,6,24,0) 100%); }
+    .roll-puff { width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, rgba(214,196,160,0.1) 20%, rgba(214,196,160,0.3) 58%, rgba(214,196,160,0.1) 82%, rgba(214,196,160,0) 100%); filter: blur(2px); }
+    /* Dust in the light, billboarded to the lens by playRollIntro(). */
+    /* Dust in the light shaft: a fine speck in focus that glints as it
+       turns; out of focus, a faint disc with a crisp, slightly brighter
+       rim, the way a real lens draws a point of light. */
+    .roll-mote { width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, rgba(255,247,232,0.9) 0%, rgba(255,244,226,0.72) 72%, rgba(255,248,236,0.95) 88%, rgba(255,248,236,0) 100%); }
 
-    .roll-die-x { position: absolute; left: 76px; top: 244px; width: 34px; height: 34px; will-change: transform; }
-    .roll-die-y, .roll-die { width: 34px; height: 34px; display: block; }
-    .roll-die-y { will-change: transform; }
-    .roll-die { opacity: 0; overflow: visible; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5)); }
-    /* Contact shadow on the floor under each die: it rides the die's x
-       track but not its bounce; JS tightens and darkens it as the die
-       comes down, the cue that sells the height of each hop. */
-    .roll-die-shadow { position: absolute; left: 2px; top: 96px; width: 30px; height: 8px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,0.75), rgba(0,0,0,0)); opacity: 0; }
+    /* Leather, brass and the dice are drawn in their own materials, not
+       theme tokens: they are physical objects under one key light and
+       should read the same whatever the skin. */
+    .roll-cup3 { opacity: 0; will-change: transform; }
+    /* Fades ride --o on the leaves: opacity below 1 on a preserve-3d box
+       would flatten its 3D children. */
+    .roll-cup3 > * { position: absolute; left: 0; top: 0; transform-style: preserve-3d; opacity: var(--o, 1); }
+    /* Hand-stitched leather over a cone: pebbled grain, a darker burnish
+       toward the rims, a stitch of waxed thread under each brass band. */
+    .roll-slat { backface-visibility: hidden; background:
+      linear-gradient(#d9c49a, #b89f73) 50% 27px / 46% 1.5px no-repeat,
+      linear-gradient(#d9c49a, #b89f73) 50% calc(100% - 22px) / 46% 1.5px no-repeat,
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cfilter id='l'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.3' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.08 0 0 0 0 0.04 0 0 0 0 0.02 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='60' height='60' filter='url(%23l)'/%3E%3C/svg%3E") 0 0 / 60px 60px,
+      linear-gradient(180deg, #2a170d 0%, #45281a 12%, #5a3522 34%, #62392a 52%, #50301f 76%, #331d11 92%, #22130a 100%); }
+    /* Aged brass bands: warm, not yellow, with a bright bevel and a
+       dark worn edge; every fifth slat carries a domed rivet. */
+    .roll-slat::before, .roll-slat::after { content: ''; position: absolute; left: 0; right: 0; background: linear-gradient(180deg, #3e2d0b 0%, #7e5f1e 18%, #c9a64c 38%, #ecd896 46%, #a8822e 62%, #5f4513 84%, #33250a 100%); }
+    .roll-slat-riv::before { background: radial-gradient(circle at 50% 50%, #fff4c8 0 0.9px, #c9a44a 1.8px, #6a4e14 2.8px, rgba(0,0,0,0) 3.2px), linear-gradient(180deg, #3e2d0b 0%, #7e5f1e 18%, #c9a64c 38%, #ecd896 46%, #a8822e 62%, #5f4513 84%, #33250a 100%); }
+    .roll-slat::before { top: 0; height: 18px; border-bottom: 1px solid rgba(0,0,0,0.55); box-shadow: 0 3px 4px rgba(0,0,0,0.35); }
+    .roll-slat::after { bottom: 0; height: 13px; border-top: 1px solid rgba(0,0,0,0.55); }
+    /* Inside: casino-green felt, dark with depth. */
+    /* Turned to face inward, so the lining shows only from inside the cup. */
+    .roll-slat-in { backface-visibility: hidden; background: radial-gradient(circle, rgba(255,255,255,0.05) 0 0.5px, rgba(0,0,0,0) 0.8px) 0 0 / 3px 3px, linear-gradient(180deg, #0f2b1e 0%, #0b2117 40%, #06140d 100%); }
+    .roll-sh, .roll-sp { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+    .roll-sh { background: #000; }
+    .roll-sp { background: radial-gradient(circle at 36% 30%, #ffffff 0%, rgba(255,246,220,0.75) 28%, rgba(255,240,205,0.22) 62%, rgba(255,240,205,0) 100%); mix-blend-mode: screen; }
+    /* The lip: leather rolled over a brass inlay. */
+    .roll-cup-rim { border-radius: 50%; border: 7px solid #3c2316; background: none; box-shadow: inset 0 0 0 1.5px #1a0e07, inset 0 0 0 3px #b8923a, inset 0 0 0 4px #3e2c0b, 0 0 0 1px #120a05; backface-visibility: visible; }
+    .roll-medal { width: 34px; height: 34px; margin: -17px 0 0 -17px; backface-visibility: hidden; }
+    .roll-medal svg { display: block; width: 100%; height: 100%; }
+    .roll-cup-mouth { border-radius: 50%; background: radial-gradient(closest-side, rgba(2,10,6,0.9), rgba(6,22,14,0.7)); backface-visibility: visible; }
+    .roll-cup-base { border-radius: 50%; border: 5px solid #b8932e; background: radial-gradient(circle at 40% 40%, #5c3721, #2a170d 70%, #1b0f08); backface-visibility: visible; }
+    .roll-cup-base .roll-sh { border-radius: 50%; }
 
-    /* The light behind the camera: a glint sweeps each die face, a
-       horizontal flare crosses the frame where the dice are held, and a
-       soft bloom lifts the shot for a beat. */
-    .roll-die-glint { opacity: 0; }
-    .roll-glint .roll-die-glint { animation: roll-die-glint 0.45s ease-out both; }
-    @keyframes roll-die-glint {
-      0% { transform: translateX(0); opacity: 0; }
-      30% { opacity: 1; }
-      100% { transform: translateX(58px); opacity: 0; }
-    }
-    .roll-streak { position: absolute; left: -60px; top: 249px; width: 480px; height: 3px; border-radius: 2px; opacity: 0; background: linear-gradient(90deg, rgba(255,246,207,0) 0%, rgba(255,246,207,0.9) 42%, #ffffff 50%, rgba(255,246,207,0.9) 58%, rgba(255,246,207,0) 100%); box-shadow: 0 0 14px 3px rgba(243,218,146,0.55), 0 0 40px 8px rgba(212,175,55,0.25); }
-    .roll-glint .roll-streak { animation: roll-streak 0.55s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
-    @keyframes roll-streak {
-      0% { transform: translateX(-160px) scaleX(0.15); opacity: 0; }
-      25% { opacity: 1; }
-      100% { transform: translateX(160px) scaleX(1); opacity: 0; }
-    }
-    .roll-bloom { position: absolute; left: 30px; top: 100px; width: 300px; height: 300px; border-radius: 50%; opacity: 0; background: radial-gradient(closest-side, rgba(255,250,230,0.55), rgba(243,218,146,0.18) 55%, rgba(243,218,146,0) 100%); }
-    .roll-glint .roll-bloom { animation: roll-bloom 0.5s ease-out both; }
-    @keyframes roll-bloom {
-      0% { opacity: 0; transform: scale(0.7); }
-      30% { opacity: 1; }
-      100% { opacity: 0; transform: scale(1.15); }
-    }
+    /* Precision dice, built at ROLL_SS (3x) and scaled down by their
+       matrix so they rasterise sharp under the zoom: six faces inset by the
+       chamfer (ROLL_BEVEL 3.4px, so a 27.2px flat on a 34px cube - here
+       81.6 on 102), twelve edge strips and eight corner facets - all
+       translucent - and six inner walls (.roll-inner) seen through them,
+       carrying the far faces' pips. Each face stacks six light layers over
+       the printed acrylic, all driven by playRollIntro(): shade (sh), the
+       red glow of light passing through (ss), the room's reflection with
+       its horizon line (env), the key softbox's reflection (sp, a window
+       sized by distance), the swept bar light's reflection (sp2) and a
+       fresnel rim (fr). */
+    /* No will-change here: it would pin the dice's raster scale at their
+       34px layout size, and the lens zoom would then enlarge a bitmap. */
+    .roll-die3, .roll-ghost3 { width: 102px; height: 102px; margin: -51px 0 0 -51px; opacity: 0; }
+    .roll-face3 { position: absolute; left: 10.2px; top: 10.2px; width: 81.6px; height: 81.6px; overflow: hidden; backface-visibility: hidden; opacity: var(--o, 1); }
+    .roll-ghost3 .roll-face3 { left: 0; top: 0; width: 102px; height: 102px; }
+    .roll-face3 svg { display: block; width: 100%; height: 100%; }
+    /* Light travelling through the oxblood acrylic: it glows red at the
+       face's edges and pools in a caustic toward the far corner. */
+    .roll-face3 .roll-ss { background: radial-gradient(circle at 74% 78%, rgba(255,34,56,0.42), rgba(255,34,56,0) 38%), radial-gradient(closest-side, rgba(200,16,40,0) 66%, rgba(190,14,36,0.35) 90%, rgba(255,42,62,0.7) 100%); mix-blend-mode: screen; }
+    .roll-face3 .roll-sp, .roll-face3 .roll-sp2 { inset: auto; left: 50%; top: 50%; width: 100px; height: 100px; margin: -50px 0 0 -50px; mix-blend-mode: screen; }
+    /* The key softbox's reflection: a crisp, glassy window of light. */
+    .roll-face3 .roll-sp { height: 72px; margin-top: -36px; border-radius: 34%; background: radial-gradient(closest-side, #ffffff 0%, rgba(255,255,255,0.9) 60%, rgba(255,255,255,0.18) 86%, rgba(255,255,255,0) 100%); }
+    .roll-face3 .roll-sp2 { height: 320px; margin-top: -160px; background: linear-gradient(90deg, rgba(255,232,190,0) 0%, rgba(255,238,205,0.45) 28%, rgba(255,255,255,0.96) 46%, #ffffff 50%, rgba(255,255,255,0.96) 54%, rgba(255,238,205,0.45) 72%, rgba(255,232,190,0) 100%); }
+    /* The room reflected in the gloss: dim ceiling, a bright horizon line,
+       the dark table below. playRollIntro() turns and slides it so the
+       horizon's image sits where the mirrored ray runs level. */
+    .roll-env { position: absolute; left: 50%; top: 50%; width: 320px; height: 320px; margin: -160px 0 0 -160px; opacity: 0; pointer-events: none; background: linear-gradient(90deg, rgba(0,0,0,0.26) 0%, rgba(0,0,0,0.06) 44%, rgba(0,0,0,0) 48.6%, rgba(255,238,228,0.34) 49.7%, rgba(255,250,244,0.16) 50.8%, rgba(255,255,255,0.07) 56%, rgba(255,255,255,0.035) 100%); }
+    /* The far walls seen through the body (built by rollInnerMarkup). */
+    .roll-inner { position: absolute; left: 3px; top: 3px; width: 96px; height: 96px; backface-visibility: hidden; opacity: var(--o, 1); }
+    .roll-inner svg { display: block; width: 100%; height: 100%; }
+    .roll-fr { position: absolute; inset: 0; opacity: 0; pointer-events: none; box-shadow: inset 0 0 5px 1.5px rgba(255,205,212,0.55), inset 0 0 20px 4px rgba(255,60,80,0.16); }
+    .roll-ss { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+    /* The rounded edges: light caught inside the acrylic runs along
+       them as a hot red line between two dark shoulders. */
+    .roll-bev { position: absolute; left: 51px; top: 51px; transform-origin: 0 0; backface-visibility: hidden; opacity: var(--o, 1); background: linear-gradient(180deg, rgba(18,1,2,0.9) 0%, rgba(62,5,13,0.84) 32%, rgba(222,36,60,0.92) 50%, rgba(62,5,13,0.84) 68%, rgba(18,1,2,0.9) 100%); }
+    .roll-bev-c { background: radial-gradient(closest-side, rgba(170,22,44,0.9), rgba(42,3,7,0.9)); }
+    .roll-bev .roll-sp { background: #ffffff; mix-blend-mode: screen; }
+    /* The core just inside the chamfers, so no corner ever shows through. */
+    .roll-core { position: absolute; inset: 8.67px; background: #1a0205; backface-visibility: hidden; opacity: var(--o, 1); }
 
-    .roll-flash { position: absolute; left: calc(var(--x) - 30px); top: 297px; width: 60px; height: 60px; opacity: 0; }
+    /* Photographers' flashes on the red carpet: a hot core and a cross of
+       light, popped by playRollIntro() during the slow motion. They sit
+       outside the world, like flashes firing from the crowd. */
+    .roll-pap { position: absolute; width: 96px; height: 96px; margin: -48px 0 0 -48px; border-radius: 50%; opacity: 0; mix-blend-mode: screen; background: radial-gradient(closest-side, #ffffff 0%, rgba(235,245,255,0.85) 18%, rgba(200,225,255,0.25) 45%, rgba(200,225,255,0) 100%); }
+    .roll-pap::before, .roll-pap::after { content: ''; position: absolute; left: 50%; top: 50%; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, #ffffff 50%, rgba(255,255,255,0) 100%); }
+    .roll-pap::before { width: 170px; height: 2px; margin: -1px 0 0 -85px; }
+    .roll-pap::after { width: 2px; height: 110px; margin: -55px 0 0 -1px; background: linear-gradient(180deg, rgba(255,255,255,0) 0%, #ffffff 50%, rgba(255,255,255,0) 100%); }
+
+    /* The light swept behind the camera at the end of the freeze. Its
+       reflection on the dice lives in the face layers above; these are
+       the lens's response to it, all placed by playRollIntro() at the
+       brightest projected reflection: a four-point star per die, a bloom,
+       an anamorphic streak (ice-blue core, gold wing), lens ghosts strung
+       along the line through the frame centre, and a soft band of the
+       light itself crossing the frame. */
+    .roll-star { position: absolute; left: 0; top: 0; width: 64px; height: 64px; margin: -32px 0 0 -32px; opacity: 0; mix-blend-mode: screen; background: radial-gradient(closest-side, #ffffff 0%, rgba(255,246,222,0.9) 10%, rgba(255,228,178,0.28) 34%, rgba(255,228,178,0) 62%); }
+    .roll-star::before, .roll-star::after { content: ''; position: absolute; left: 50%; top: 50%; }
+    .roll-star::before { width: 64px; height: 2px; margin: -1px 0 0 -32px; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, #ffffff 50%, rgba(255,255,255,0) 100%); }
+    .roll-star::after { width: 2px; height: 64px; margin: -32px 0 0 -1px; background: linear-gradient(180deg, rgba(255,255,255,0) 0%, #ffffff 50%, rgba(255,255,255,0) 100%); }
+    .roll-sweep { position: absolute; left: -260px; top: -120px; width: 200px; height: 800px; opacity: 0; mix-blend-mode: screen; background: linear-gradient(90deg, rgba(255,240,210,0) 0%, rgba(255,240,210,0.12) 40%, rgba(255,255,255,0.24) 50%, rgba(255,240,210,0.12) 60%, rgba(255,240,210,0) 100%); transform: rotate(18deg); }
+    .roll-streak { position: absolute; left: 0; top: 0; width: 620px; height: 2px; margin: -1px 0 0 -310px; border-radius: 2px; opacity: 0; mix-blend-mode: screen; background: linear-gradient(90deg, rgba(150,210,255,0) 0%, rgba(150,210,255,0.55) 30%, rgba(210,240,255,0.95) 46%, #ffffff 50%, rgba(210,240,255,0.95) 54%, rgba(150,210,255,0.55) 70%, rgba(150,210,255,0) 100%); box-shadow: 0 0 8px 1px rgba(120,195,255,0.75), 0 0 26px 5px rgba(90,160,255,0.35), 0 0 60px 12px rgba(212,175,55,0.22); }
+    .roll-streak-gold { height: 1px; width: 480px; margin: 0 0 0 -240px; background: linear-gradient(90deg, rgba(243,218,146,0) 0%, rgba(243,218,146,0.8) 45%, #fff6d6 50%, rgba(243,218,146,0.8) 55%, rgba(243,218,146,0) 100%); box-shadow: 0 0 12px 2px rgba(212,175,55,0.45); }
+    .roll-orb { position: absolute; left: 0; top: 0; border-radius: 50%; opacity: 0; mix-blend-mode: screen; }
+    .roll-orb-1 { width: 26px; height: 26px; margin: -13px 0 0 -13px; background: radial-gradient(closest-side, rgba(243,218,146,0) 55%, rgba(243,218,146,0.55) 78%, rgba(243,218,146,0) 100%); }
+    .roll-orb-2 { width: 46px; height: 46px; margin: -23px 0 0 -23px; background: radial-gradient(closest-side, rgba(140,210,255,0.08) 40%, rgba(140,210,255,0.5) 76%, rgba(140,210,255,0) 100%); }
+    .roll-orb-3 { width: 16px; height: 16px; margin: -8px 0 0 -8px; background: radial-gradient(closest-side, rgba(255,255,255,0.7) 0%, rgba(243,218,146,0.35) 60%, rgba(243,218,146,0) 100%); }
+    .roll-bloom { position: absolute; left: 0; top: 0; width: 220px; height: 220px; margin: -110px 0 0 -110px; border-radius: 50%; opacity: 0; mix-blend-mode: screen; background: radial-gradient(closest-side, rgba(255,255,255,0.8) 0%, rgba(200,232,255,0.3) 28%, rgba(212,175,55,0.12) 60%, rgba(212,175,55,0) 100%); }
+
+    /* The burst and the money start from where each die came to rest on
+       screen; playRollIntro() sets --x/--y from the projected cubes. */
+    .roll-flash { position: absolute; left: calc(var(--x, 180px) - 30px); top: calc(var(--y, 330px) - 30px); width: 60px; height: 60px; opacity: 0; }
     .roll-flash svg, .roll-cash svg { display: block; width: 100%; height: 100%; overflow: visible; }
     .roll-popped .roll-flash { animation: roll-flash 0.5s ease-out forwards; }
     .roll-popped .roll-flash + .roll-flash { animation-delay: 0.06s; }
@@ -712,7 +823,7 @@
     /* Banknotes, gold coins and the two crypto coins are drawn from
        #rollBill / #rollCoin* in .roll-defs: engraved frame and guilloche
        on the notes, reeded edges and a struck face on every coin. */
-    .roll-cash { position: absolute; left: var(--x); top: 327px; opacity: 0; transform: translate(-50%, -50%) scale(0); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+    .roll-cash { position: absolute; left: var(--x, 180px); top: var(--y, 330px); opacity: 0; transform: translate(-50%, -50%) scale(0); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
     .roll-bill { width: 60px; height: 28px; }
     .roll-coin { width: 28px; height: 28px; }
     .roll-crypto { width: 32px; height: 32px; }
@@ -727,9 +838,13 @@
     /* The copy arrives last. Until the pop it is held hidden (the dark
        well behind it sits above the intro layer and would hide the
        dice); from the pop the wordmark flies in from large and blurred,
-       then the tagline and the rest rise in. Delays are from the pop. */
+       then the tagline and the rest rise in. Delays are from the pop.
+       The card box goes too: some themes paint it (Western's solid
+       poster paper, Prism's framed glass), and it would cover the roll. */
+    .landing-screen.intro-play .landing-inner,
     .landing-screen.intro-play .landing-inner > *,
     .landing-screen.intro-play .landing-inner::before { opacity: 0; }
+    .landing-screen.intro-play.roll-popped .landing-inner { animation: roll-fade 0.35s ease-out 0.2s both; }
     /* Hidden controls must not take a tap: a skip tap that lands where
        the button will be should only skip, never enter the app. */
     .landing-screen.intro-play .landing-btn,
