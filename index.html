@@ -4446,7 +4446,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const cv = stage.querySelector('.roll-fx');
       if (!cv || !cv.getContext) return null;
       const r = stage.getBoundingClientRect();
-      const sc = r.width / 360 || 1;
+      // Not laid out yet (the intro is shown only once the shot starts):
+      // the caller tries again on the next frame.
+      if (!r.width) return null;
+      const sc = r.width / 360;
       const mx = Math.ceil(Math.max(0, (window.innerWidth - r.width) / 2) / sc) + 24;
       const my = Math.ceil(Math.max(0, (window.innerHeight - r.height) / 2) / sc) + 24;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -4558,7 +4561,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           });
         }
       }
-      const canvas = rollFxCanvas(stage);
+      // The effects canvas is fitted once the stage is on screen (its size
+      // follows the screen past the stage), and again on every resize.
+      let canvas = null;
+      let lastT = 0;
+      const fitCanvas = () => { const c = rollFxCanvas(stage); if (c) canvas = c; };
 
       const sweepAt = ROLL_SWEEP.at;
       let raf = 0;
@@ -4600,6 +4607,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // everything faintly present, so the browser rasterises the cup and
       // the dice before the clock starts instead of mid-shot.
       const render = (t, warmup) => {
+        lastT = t;
+        if (!canvas) fitCanvas();
         const w = rollWorldTime(t);
         const rate = rollRate(t);
         const c = camAt(t);
@@ -5037,9 +5046,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // and the burnt cards). It stays under the landing copy.
       const pose = () => {
         dice.forEach(d => { d.sweepBase = null; });
-        render(totalReal, false);
         screen.classList.remove('intro-play', 'roll-popped');
         screen.classList.add('roll-rest');
+        render(totalReal, false);
       };
       const end = () => {
         if (done) return;
@@ -5071,8 +5080,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           (screen.getAnimations ? screen.getAnimations({ subtree: true }) : []).forEach(a => { a.pause(); a.currentTime = ms; });
         };
       }
+      // A turned phone or a resized window: the canvas is fitted to the new
+      // screen, and a finished (or paused) frame is drawn again on it.
+      window.addEventListener('resize', () => {
+        fitCanvas();
+        if (done) render(lastT, false);
+      });
       // Motion off (the global html[data-motion="off"] switch): the still.
-      if (document.documentElement.getAttribute('data-motion') === 'off') { pose(); return; }
+      if (document.documentElement.getAttribute('data-motion') === 'off') { done = true; pose(); return; }
 
       const frame = now => {
         if (done) return;
