@@ -27,7 +27,12 @@ const CATALOG_PATH = path.join(ROOT, 'data', 'catalog.json');
 const DEFAULT_BATCH_SIZE = 6;
 const DEFAULT_SKIP_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
+// Same tie-break as buildReviewQueue in validate-catalog.js: among entries
+// equally overdue, a ranked platform outranks an Unranked one, and S the rest.
+const TIER_RANK = { S: 6, A: 5, B: 4, C: 3, D: 2, F: 1 };
 
+// Reads an integer flag such as "--size 8"; anything missing or invalid
+// falls back to the default rather than failing the run.
 function readArg(name, fallback) {
   const i = process.argv.indexOf(name);
   if (i === -1 || i === process.argv.length - 1) return fallback;
@@ -35,6 +40,8 @@ function readArg(name, fallback) {
   return Number.isInteger(n) && n > 0 ? n : fallback;
 }
 
+// Days since a "YYYY-MM-DD" date; Infinity when the field is missing or
+// malformed, so a never-verified entry sorts as the most overdue.
 function daysSince(dateText) {
   if (typeof dateText !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateText)) return Infinity;
   const ms = Date.now() - new Date(dateText + 'T00:00:00Z').getTime();
@@ -50,6 +57,7 @@ function lastSweepDate(notes) {
   return dates.length ? dates.sort().pop() : null;
 }
 
+// Builds the batch and prints it, as a readable list or as JSON.
 function main() {
   const size = readArg('--size', DEFAULT_BATCH_SIZE);
   const skipDays = readArg('--skip-days', DEFAULT_SKIP_DAYS);
@@ -68,7 +76,10 @@ function main() {
 
   const eligible = rows.filter(r => daysSince(r.lastSweep) >= skipDays);
   const skipped = rows.length - eligible.length;
-  eligible.sort((a, b) => b.verifiedAge - a.verifiedAge || a.index - b.index);
+  eligible.sort((a, b) =>
+    b.verifiedAge - a.verifiedAge
+    || (TIER_RANK[b.tier] || 0) - (TIER_RANK[a.tier] || 0)
+    || a.index - b.index);
   const batch = eligible.slice(0, size);
 
   if (asJson) {
