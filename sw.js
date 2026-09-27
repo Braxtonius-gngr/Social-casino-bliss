@@ -16,7 +16,7 @@ const CACHE_NAME = 'almanac-v52';
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
 // and silently fail.
-const PRECACHE_URLS = ['./', './index.html', './manifest.json', './assets/app.css', './assets/storage.js', './data/catalog.js', './data/catalog.json',
+const PRECACHE_URLS = ['./', './index.html', './manifest.json', './assets/app.css', './assets/storage.js', './data/catalog.js',
   // Ground texture for the Executive Lounge theme. Precached because a theme
   // whose background only appears once the network is back is not the theme.
   // NOTE: no apostrophes in comments inside this array - check-references.js

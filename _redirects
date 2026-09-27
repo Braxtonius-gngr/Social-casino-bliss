@@ -1,0 +1,14 @@
+# Cloudflare Pages: paths that exist in the repository but must never be
+# served, whether or not the deploy ran the build step. The catalogue is
+# served by the database to signed-in accounts; the rest is repo-only.
+/data/catalog.json / 302
+/data/catalog-history.json / 302
+/scripts/* / 302
+/supabase/* / 302
+/docs/* / 302
+/package.json / 302
+/package-lock.json / 302
+/README.md / 302
+/AGENTS.md / 302
+/CLAUDE.md / 302
+/SECURITY.md / 302

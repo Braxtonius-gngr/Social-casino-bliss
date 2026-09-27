@@ -22,8 +22,13 @@ jobs:
       - run: npm run test:smoke
       # sw.js's push handler against fakes: drop alerts and ready alerts.
       - run: npm run test:sw
+      # The deploy step: dist/ with every script minified and no catalogue
+      # file, then the same smoke tests against that output.
+      - run: npm ci
+      - run: npm run build:site
+      - run: SMOKE_ROOT=dist npm run test:smoke
       # The edge functions' pure parts: drop matching, image and answer checks.
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno test supabase/functions/web-push/ supabase/functions/read-drop/extract_test.ts
+      - run: deno test supabase/functions/web-push/ supabase/functions/read-drop/extract_test.ts supabase/functions/go/redirect_test.ts

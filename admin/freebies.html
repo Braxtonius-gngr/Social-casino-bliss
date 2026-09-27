@@ -43,6 +43,18 @@
     </div>
 
     <div class="glass-panel admin-panel">
+      <h2 style="font-size:0.85rem; color:var(--accent-cyan); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">Publish Catalogue</h2>
+      <p class="backup-helper" style="margin-bottom:10px;">Choose the repo's <code>data/catalog.json</code> and publish it. Referral links are kept in the database and served through the <code>go</code> link; the app receives the rest. Publishing the same file twice changes nothing.</p>
+      <div class="shot-inputs">
+        <input type="file" id="catalogFile" aria-label="Catalogue file to publish" accept="application/json,.json" />
+      </div>
+      <div class="modal-actions">
+        <button id="publishBtn" class="btn-primary" onclick="publishCatalogFromFile()">Publish</button>
+      </div>
+      <div id="publishStatus" style="min-height:16px; font-size:0.75rem; margin-top:8px; color:var(--text-muted);"></div>
+    </div>
+
+    <div class="glass-panel admin-panel">
       <h2 style="font-size:0.85rem; color:var(--accent-cyan); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">Read Screenshots</h2>
       <p class="backup-helper" style="margin-bottom:10px;">Paste Discord image links (in Discord: open the image, then Copy Link / Copy Media Link) or choose the screenshots, up to 4 at a time. Claude reads each offer into a draft; load one into the form, check it, and SAVE. Discord links expire after about a day. Each read costs roughly a cent or two.</p>
       <div class="shot-inputs">
@@ -400,16 +412,67 @@
   // size, and it keeps the upload well under the function's limit.
   const SHOT_MAX_EDGE = 2048;
 
+  // The deployed site carries no catalogue file; the names come from the
+  // same RPC the app uses (the owner's account is never rate-limited).
   async function loadCatalogNames() {
     if (catalogNames) return catalogNames;
     try {
-      const response = await fetch('../data/catalog.json', { cache: 'no-cache' });
-      const list = await response.json();
+      const { data, error } = await client.rpc('get_catalog');
+      if (error) throw error;
+      const list = data && data.platforms;
       catalogNames = Array.isArray(list) ? list.map((c) => c && c.name).filter((n) => typeof n === 'string' && n.trim()).map((n) => n.trim()) : [];
     } catch (e) {
       catalogNames = [];
     }
     return catalogNames;
+  }
+
+  // --- Publish catalogue ---
+  // data/catalog.json from the repo, as is. The database splits the
+  // referral links off into platform_links and serves the rest.
+  function setPublishStatus(msg, isError) {
+    const el = document.getElementById('publishStatus');
+    el.textContent = msg || '';
+    el.style.color = isError ? 'var(--accent-pink)' : 'var(--text-muted)';
+  }
+
+  async function publishCatalog(list) {
+    const btn = document.getElementById('publishBtn');
+    if (!Array.isArray(list) || !list.length) { setPublishStatus('That file is not a catalogue array.', true); return null; }
+    btn.disabled = true;
+    setPublishStatus(`Publishing ${list.length} platforms...`);
+    try {
+      const { data, error } = await client.rpc('publish_catalog', { p_catalog: list });
+      if (error) throw error;
+      catalogNames = null;
+      const dropped = data && Array.isArray(data.droppedFields) && data.droppedFields.length
+        ? ` Not published (unknown fields): ${data.droppedFields.join(', ')}.`
+        : '';
+      setPublishStatus((data && data.changed
+        ? `Published ${data.entries} platforms (${data.referralLinks} with referral links kept server-side). Version ${String(data.version).slice(0, 8)}.`
+        : `Already live: ${data ? data.entries : list.length} platforms, nothing changed.`) + dropped);
+      return data;
+    } catch (e) {
+      const message = (e && e.message) || 'publish failed';
+      setPublishStatus(/OWNER_ONLY/.test(message) ? 'Only the owner account can publish the catalogue.' : `Publish failed: ${message}`, true);
+      return null;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function publishCatalogFromFile() {
+    const input = document.getElementById('catalogFile');
+    const file = input.files && input.files[0];
+    if (!file) { setPublishStatus('Choose data/catalog.json first.', true); return; }
+    let list;
+    try {
+      list = JSON.parse(await file.text());
+    } catch (e) {
+      setPublishStatus('That file is not valid JSON.', true);
+      return;
+    }
+    await publishCatalog(list);
   }
 
   // Shrinks a chosen photo to a JPEG no larger than SHOT_MAX_EDGE on its
