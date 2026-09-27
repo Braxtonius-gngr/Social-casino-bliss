@@ -923,7 +923,9 @@
     /* The intro lab (?lab): pick an ending, a felt and a room, and replay.
        Shown once the shot is over. */
     .roll-lab { position: absolute; top: max(10px, env(safe-area-inset-top)); left: 50%; z-index: 6; transform: translateX(-50%); width: min(94vw, 420px); padding: 8px 10px; border-radius: 12px; background: rgba(12,12,14,0.82); border: 1px solid rgba(232,200,106,0.35); font: 600 11px/1.2 system-ui, sans-serif; color: #d8d2c2; display: flex; flex-direction: column; gap: 6px; }
-    .landing-screen.intro-play:not(.roll-popped) .roll-lab { opacity: 0; visibility: hidden; pointer-events: none; }
+    /* Until the finished frame is posed (.roll-rest) - the endings run on
+       past the copy's reveal - it is hidden and out of the Tab order. */
+    .landing-screen:not(.roll-rest) .roll-lab { opacity: 0; visibility: hidden; pointer-events: none; }
     .roll-lab-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .roll-lab-row > span { width: 62px; color: #9d967f; text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; }
     .roll-lab a { padding: 5px 9px; border-radius: 999px; border: 1px solid rgba(232,200,106,0.3); color: #e8dfc4; text-decoration: none; }
