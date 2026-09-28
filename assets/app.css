@@ -1011,8 +1011,8 @@
        end), finer with the tier - oxblood and gold for D and C, bronze
        foil for B, pearl and platinum for A, black lacquer and gold foil
        for S - each with its own lattice, frame and medallion. The
-       --r3t-sheen custom property sets how bright the sweep of light
-       across a face is. */
+       --r3t-sheen custom property sets how much a face shines: lacquer
+       most, paper hardly at all. */
     .r3t-back { transform: rotateY(180deg); border: 15px solid #efe6d3; --bk: #4a0b14; --bk2: #3a0810; --lat: rgba(214,176,98,0.42); --fr: #d6b062; --fr2: #f2d894; --r3t-sheen: 0.18;
       background: repeating-linear-gradient(45deg, transparent 0 17px, var(--lat) 17px 19px), repeating-linear-gradient(-45deg, transparent 0 17px, var(--lat) 17px 19px), radial-gradient(120% 90% at 50% 40%, var(--bk), var(--bk2)); }
     .r3t-bk-frame { position: absolute; inset: 9px; border: 3px solid var(--fr); border-radius: 8px; box-shadow: inset 0 0 0 4px transparent, inset 0 0 0 5px var(--fr); opacity: 0.9; }
@@ -1034,7 +1034,10 @@
     .r3t-back.t-S::after { bottom: 46px; }
     /* the front: fine ivory stock, printed in black and oxblood */
     .r3t-front { color: #1b1410; font-family: Georgia, "Times New Roman", serif;
-      background: radial-gradient(130% 90% at 30% 10%, #fbf6ea 0%, #f1e9d8 60%, #e6dcc6 100%); }
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.28 0 0 0 0 0.2 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
+        radial-gradient(130% 90% at 30% 10%, #fbf6ea 0%, #f1e9d8 60%, #e6dcc6 100%); }
+    /* (printed into the stock: a hair of light under each stroke) */
+    .r3t-front:not(.t-S) :is(.r3t-idx, .r3t-seal, .r3t-name, .r3t-meta) { text-shadow: 0 1.5px 0 rgba(255,255,255,0.55); }
     .r3t-front.r3t-red { color: #7a1020; }
     .r3t-frame { position: absolute; inset: 22px; border: 2px solid currentColor; border-radius: 8px; opacity: 0.55; }
     .r3t-idx { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 0.95; }
@@ -1049,12 +1052,16 @@
     /* (kept clear of the corner indexes) */
     .r3t-meta { position: absolute; left: 70px; right: 70px; top: 346px; display: flex; justify-content: center; font-size: 32px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.85; }
     .r3t-meta span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .r3t-sheen { position: absolute; inset: 0; pointer-events: none; overflow: hidden; opacity: var(--r3t-sheen, 0.18); }
-    .r3t-sheen::before { content: ""; position: absolute; top: -20%; bottom: -20%; left: -70%; width: 50%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.42), transparent); transform: skewX(-18deg); animation: r3tSheen 5.5s ease-in-out infinite; }
-    .r3t-front { --r3t-sheen: 0.18; }
-    .r3t-front.t-C { --r3t-sheen: 0.26; }
-    .r3t-front.t-B { --r3t-sheen: 0.4; }
-    @keyframes r3tSheen { 0%, 55% { transform: translateX(0) skewX(-18deg); } 100% { transform: translateX(420%) skewX(-18deg); } }
+    /* The lamp's reflection: no sweep - it sits where the lamp over the
+       table would put it on each card (--gx, from where the card lies:
+       table.mjs), faint on paper and clearer on lacquer, and a card lifted
+       toward you tips into it (--lift), so only the card in your hand
+       catches the light. */
+    .r3t-sheen { position: absolute; inset: 0; pointer-events: none; overflow: hidden; opacity: calc(var(--r3t-sheen, 0.12) * (0.5 + 0.5 * var(--lift, 0))); }
+    .r3t-sheen::before { content: ""; position: absolute; inset: 0; background: radial-gradient(70% 34% at var(--gx, 50%) calc(12% + 26% * var(--lift, 0)), rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.16) 42%, transparent 72%); }
+    .r3t-front { --r3t-sheen: 0.12; }
+    .r3t-front.t-C { --r3t-sheen: 0.14; }
+    .r3t-front.t-B { --r3t-sheen: 0.24; }
     /* D and C: an oxblood double rule */
     .r3t-front.t-D .r3t-frame, .r3t-front.t-C .r3t-frame { border-color: #7a1020; opacity: 0.9; box-shadow: 0 0 0 6px #f1e9d8, 0 0 0 8px #7a1020; }
     .r3t-front.t-C .r3t-seal { color: #7a1020; }
@@ -1065,7 +1072,7 @@
     .r3t-front.t-A { background: repeating-radial-gradient(circle at 50% 40%, rgba(120,120,140,0.07) 0 3px, transparent 3px 7px), radial-gradient(130% 90% at 30% 10%, #fdfcf8 0%, #eeebe4 60%, #dcd8cf 100%); color: #20242c; }
     .r3t-front.t-A .r3t-frame { inset: 17px; border: 7px solid transparent; opacity: 1; background: linear-gradient(#f4f2ec, #f4f2ec) padding-box, linear-gradient(135deg, #8a8f98, #f5f7fa 28%, #9aa0aa 50%, #ffffff 70%, #7d838c) border-box; }
     .r3t-front.t-A .r3t-seal { color: #5b616b; }
-    .r3t-front.t-A { --r3t-sheen: 0.6; }
+    .r3t-front.t-A { --r3t-sheen: 0.4; }
     /* S: black lacquer, gold foil, the table's filigree across it */
     .r3t-front.t-S { color: #e9c978; background: radial-gradient(120% 80% at 50% 38%, #221a14 0%, #0f0c0a 55%, #070605 100%); }
     .r3t-front.t-S .r3t-frame { inset: 16px; border: 5px solid transparent; opacity: 1; border-radius: 10px; background: linear-gradient(#0e0b09, #0e0b09) padding-box, linear-gradient(135deg, #7a5a24, #f7dc92 25%, #9a7030 48%, #fff0c0 66%, #7a5a24) border-box; box-shadow: inset 0 0 0 10px #0e0b09, inset 0 0 0 12px rgba(233,201,120,0.7); }
@@ -1077,7 +1084,7 @@
     .r3t-front.t-S .r3t-seal { top: 118px; width: 118px; height: 118px; margin-left: -59px; }
     .r3t-front.t-S .r3t-name { color: #f6e2b0; top: 252px; }
     .r3t-front.t-S .r3t-meta { color: #d9b467; top: 338px; }
-    .r3t-front.t-S { --r3t-sheen: 1; }
+    .r3t-front.t-S { --r3t-sheen: 0.6; }
 
     /* Your phone: titanium and glass, in the corner of the view half out
        of your pocket, up in front of you on a tap. Everything inside is
@@ -1138,6 +1145,45 @@
        cards (the global kill switch stops the sweep; this takes the streak
        off the print too), and the phone's pocket pill holds still. */
     html[data-motion="off"] .r3t-sheen { display: none; }
+
+    /* A lifted card's info (table.mjs, showInfo): the Deck's Keen Info with
+       the card's moves - OPEN, collected, run from here - in a low sheet
+       over the rail, the lifted card held in view above it. It stays short
+       (about a quarter of the screen): the name and the moves are pinned,
+       and the Keen Info scrolls under them. It settles in rather than
+       sweeping up the whole height. The page's own * rule sets every
+       element's font, so the serif is named on each element that wears it. */
+    .r3t-info { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; pointer-events: auto; color: #efe2c4;
+      padding: 10px 14px calc(8px + env(safe-area-inset-bottom)); border-radius: 16px 16px 0 0;
+      border-top: 1px solid rgba(214,176,98,0.5); background: linear-gradient(180deg, #1c1510 0%, #0c0908 100%);
+      box-shadow: 0 -14px 32px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,236,190,0.1);
+      opacity: 0; transform: translateY(18px); transition: opacity .28s ease, transform .34s cubic-bezier(.22,.9,.3,1); }
+    .r3t-info.r3t-open { opacity: 1; transform: none; }
+    .r3t-info-in { display: flex; flex-direction: column; gap: 8px; max-height: min(27vh, 230px); }
+    .r3t-info-head { display: flex; align-items: center; gap: 9px; flex: none; }
+    .r3t-info-head b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 1.05rem/1.2 Georgia, "Times New Roman", serif; color: #f6ead0; }
+    .r3t-info-tier { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 700 13px/1 Georgia, "Times New Roman", serif; color: #2a1a08; background: linear-gradient(180deg, #f6dc92, #b98a33); box-shadow: inset 0 1px 0 rgba(255,250,220,0.8), 0 0 0 1px #6b4a1a; }
+    .r3t-info-tier.t-A { background: linear-gradient(180deg, #f6f6f3, #a7abb0); box-shadow: inset 0 1px 0 #fff, 0 0 0 1px #5d6166; }
+    .r3t-info-tier.t-B { background: linear-gradient(180deg, #edb77c, #8f5a28); box-shadow: inset 0 1px 0 rgba(255,235,200,0.8), 0 0 0 1px #5a3512; }
+    .r3t-info-tier:is(.t-C, .t-D) { color: #f6ead0; background: linear-gradient(180deg, #b24c5d, #5c1522); box-shadow: inset 0 1px 0 rgba(255,200,200,0.4), 0 0 0 1px #3a0a12; }
+    .r3t-info-tier:is(.t-F, .t-U) { color: #f6ead0; background: linear-gradient(180deg, #8d877e, #47433d); box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 0 0 1px #2a2724; }
+    .r3t-info-state { flex: none; font: 600 10.5px/1 system-ui, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #a89670; }
+    .r3t-info-state.r3t-ready { color: #7ed3a4; }
+    .r3t-info-x { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(232,200,106,0.3); background: rgba(255,255,255,0.05); color: #e8dfc4; font: 400 19px/1 system-ui, sans-serif; cursor: pointer; }
+    .r3t-info-acts { display: flex; gap: 7px; flex: none; }
+    .r3t-act { flex: 1 1 auto; min-height: 38px; padding: 0 11px; border-radius: 11px; border: 1px solid rgba(232,200,106,0.42); background: rgba(255,255,255,0.05); color: #f0dca6; font: 600 13.5px/1 Georgia, "Times New Roman", serif; letter-spacing: 0.04em; white-space: nowrap; cursor: pointer; }
+    .r3t-act:is(.r3t-act-open, .r3t-act-track) { flex-grow: 2; border: 0; color: #3a0a12; font-weight: 700; letter-spacing: 0.14em; background: linear-gradient(180deg, #fbe7ae 0%, #e8c064 38%, #b7862c 70%, #d9ad55 100%); box-shadow: inset 0 2px 0 rgba(255,250,225,0.8), inset 0 -3px 0 rgba(90,50,10,0.5), 0 0 0 1px #6b4a1a; }
+    .r3t-act:active { filter: brightness(0.9); }
+    .r3t-info-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; font-size: 0.78rem; line-height: 1.45; color: var(--text-main); border-top: 1px solid rgba(214,176,98,0.18); padding-top: 8px; }
+    /* (the Keen Info's own rules, as in the Deck's popout) */
+    .r3t-info-body .keen-share { display: inline-block; width: auto; margin-top: 8px; padding: 6px 12px; font-size: 12px; }
+    @media (min-width: 700px) {
+      .r3t-info { left: 50%; right: auto; width: 440px; transform: translate(-50%, 18px); }
+      .r3t-info.r3t-open { transform: translate(-50%, 0); }
+    }
+    html[data-motion="off"] .r3t-info { transition: none; }
+    /* A card collected at the table: its face says how long it has left. */
+    .r3t-card.r3t-spent .r3t-state { color: #a89670; }
 
     /* While the landing flies into the table its copy steps aside. */
     .landing-screen.r3-flying .landing-inner, .landing-screen.r3-flying .roll-lab, .landing-screen.r3-flying .r3-sound { opacity: 0; transition: opacity .35s ease; pointer-events: none; }

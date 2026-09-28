@@ -63,6 +63,16 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="assets/app.css" />
   <link rel="stylesheet" href="assets/accessibility.css" />
+  <!-- The landing's WebGL intro and the table it flies into, fetched and
+       compiled while the page parses rather than one import level at a
+       time once the shot is asked for (assets/intro3d/*.mjs import three,
+       which imports its core). -->
+  <link rel="modulepreload" href="assets/intro3d/intro.mjs" />
+  <link rel="modulepreload" href="assets/intro3d/physics.mjs" />
+  <link rel="modulepreload" href="assets/vendor/three/three.module.js" />
+  <link rel="modulepreload" href="assets/vendor/three/three.core.js" />
+  <link rel="modulepreload" href="assets/vendor/three/three.addons.js" />
+  <link rel="modulepreload" href="assets/intro3d/table.mjs" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Oswald:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet" />
@@ -2245,6 +2255,37 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       </div>`;
     }
 
+    // Keen Info - what the logo pops out, in the Deck and the Catalogue.
+    // One copy of each, because the card table shows the same thing when a
+    // card is lifted (rollTableHooks().cardInfo) and the two must not drift.
+    function deckKeenInfoHtml(game, pagePaths) {
+      const goToGames = getBestGames(game.name) || game.bestGames;
+      return `<div class="keen-title">Keen Info - Min Redeem: ${game.minRedeem || 'Varies'}</div>
+            ${keenSummaryHtml(game)}
+            ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:4px; font-weight:700;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
+            ${cashBarHtml(game)}
+            ${game.userNotes ? `<div class="user-note"><strong>Your note:</strong> ${escHtml(game.userNotes)}</div>` : ''}
+            ${(game.tags || []).length ? `<div style="margin-bottom:6px;">${game.tags.map(t=>`<span class="tag-pill">${escHtml(t)}</span>`).join('')}</div>` : ''}
+            <details class="keen-notes-toggle">
+              <summary>Research notes</summary>
+              <div class="keen-notes-body">${game.notes || 'No specific warning flags. 24h standard reset cycle.'}</div>
+            </details>
+            ${goToGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">PLAY PLAN:</strong>${goToGames}</div>` : ''}
+            ${pagePaths.has(game.name.trim().toLowerCase()) ? `<button type="button" class="keen-share" data-share-name="${escHtml(game.name)}" onclick="sharePlatformFrom(this, event)">Share this platform</button>` : ''}`;
+    }
+    function catalogKeenInfoHtml(item, pagePaths) {
+      return `<div class="keen-title">${item.name} - Min Redeem: ${item.minRedeem || 'Varies'}</div>
+            <div class="verify-tag ${catalogIsStale(item) ? 'stale' : ''}" style="margin-bottom:4px;">${catalogVerifiedLabel(item)}${item.lastVerified ? ` (${item.lastVerified})` : ''}</div>
+            ${keenSummaryHtml(item)}
+            ${item.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:4px; font-weight:700;">*Averaged from reported range ${item.scRange}/day</div>` : ''}
+            <details class="keen-notes-toggle">
+              <summary>Research notes</summary>
+              <div class="keen-notes-body">${item.notes || 'No critical flags. Normal 1x playthrough.'}</div>
+            </details>
+            ${item.bestGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">PLAY PLAN:</strong>${item.bestGames}</div>` : ''}
+            ${pagePaths.has(item.name.trim().toLowerCase()) ? `<button type="button" class="keen-share" data-share-name="${escHtml(item.name)}" onclick="sharePlatformFrom(this, event)">Share this platform</button>` : ''}`;
+    }
+
     // Blank clears the field rather than storing 0: "I don't track a
     // balance here" and "my balance is zero" are different states, and
     // only the first one should make the bar go away entirely.
@@ -2574,7 +2615,6 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       list.forEach((game, cardIndex) => {
         const { isReady, remainingMs } = getCooldownState(game);
         const cardWrapper = document.createElement('div');
-        const goToGames = getBestGames(game.name) || game.bestGames;
         
         cardWrapper.className = 'ledger-card-wrapper';
         const pct = isReady ? 100 : Math.round(cooldownProgress(game, remainingMs) * 100);
@@ -2617,18 +2657,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             </div>
           </div>
           <div id="keen_${game.id}" class="keen-info-popover ${openKeenIds.has(game.id) ? 'open' : ''}">
-            <div class="keen-title">Keen Info - Min Redeem: ${game.minRedeem || 'Varies'}</div>
-            ${keenSummaryHtml(game)}
-            ${game.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:4px; font-weight:700;">*Averaged from reported range ${game.scRange}/day</div>` : ''}
-            ${cashBarHtml(game)}
-            ${game.userNotes ? `<div class="user-note"><strong>Your note:</strong> ${escHtml(game.userNotes)}</div>` : ''}
-            ${(game.tags || []).length ? `<div style="margin-bottom:6px;">${game.tags.map(t=>`<span class="tag-pill">${escHtml(t)}</span>`).join('')}</div>` : ''}
-            <details class="keen-notes-toggle">
-              <summary>Research notes</summary>
-              <div class="keen-notes-body">${game.notes || 'No specific warning flags. 24h standard reset cycle.'}</div>
-            </details>
-            ${goToGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">PLAY PLAN:</strong>${goToGames}</div>` : ''}
-            ${pagePaths.has(game.name.trim().toLowerCase()) ? `<button type="button" class="keen-share" data-share-name="${escHtml(game.name)}" onclick="sharePlatformFrom(this, event)">Share this platform</button>` : ''}
+            ${deckKeenInfoHtml(game, pagePaths)}
           </div>
         `;
         container.appendChild(cardWrapper);
@@ -2787,16 +2816,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             </span>
           </div>
           <div id="keen_${catId}" class="keen-info-popover ${openKeenIds.has(catId) ? 'open' : ''}">
-            <div class="keen-title">${item.name} - Min Redeem: ${item.minRedeem || 'Varies'}</div>
-            <div class="verify-tag ${catalogIsStale(item) ? 'stale' : ''}" style="margin-bottom:4px;">${catalogVerifiedLabel(item)}${item.lastVerified ? ` (${item.lastVerified})` : ''}</div>
-            ${keenSummaryHtml(item)}
-            ${item.scIsAveraged ? `<div style="color:var(--accent-gold); font-size:0.75rem; margin-bottom:4px; font-weight:700;">*Averaged from reported range ${item.scRange}/day</div>` : ''}
-            <details class="keen-notes-toggle">
-              <summary>Research notes</summary>
-              <div class="keen-notes-body">${item.notes || 'No critical flags. Normal 1x playthrough.'}</div>
-            </details>
-            ${item.bestGames ? `<div style="color:var(--text-main); font-size:0.75rem; margin-top:10px; border-top:1px solid var(--glass-border); padding-top:6px;"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0, 229, 255, 0.4);">PLAY PLAN:</strong>${item.bestGames}</div>` : ''}
-            ${pagePaths.has(item.name.trim().toLowerCase()) ? `<button type="button" class="keen-share" data-share-name="${escHtml(item.name)}" onclick="sharePlatformFrom(this, event)">Share this platform</button>` : ''}
+            ${catalogKeenInfoHtml(item, pagePaths)}
           </div>
         `;
         container.appendChild(cardWrapper);
@@ -5455,6 +5475,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function rollTableHooks() {
       const TIER_RANK = { S: 0, A: 1, B: 2, C: 3, D: 4, F: 5 };
       const ready = () => trackedGames.filter(g => getCooldownState(g).isReady && !isSnoozed(g));
+      // A card's platform: a tracked one, or - for the demonstration hand -
+      // the catalogue's (and, once added to the deck, the tracked copy).
+      const demoItem = id => (/^demo_/.test(id) ? CATALOG_DATA.find(c => c.tier === id.slice(5)) || null : null);
+      const gameFor = id => {
+        const g = trackedGames.find(x => x.id === id);
+        if (g) return g;
+        const item = demoItem(id);
+        return item ? trackedGames.find(x => x.name.toLowerCase() === item.name.toLowerCase()) || null : null;
+      };
       return {
         deck() {
           const r = ready().sort((a, b) => ((TIER_RANK[a.tier] ?? 9) - (TIER_RANK[b.tier] ?? 9)) || ((b.dailySC || 0) - (a.dailySC || 0)));
@@ -5473,7 +5502,40 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           return { ready: r.length, value: r.reduce((s, g) => s + (g.dailySC || 0), 0), next, done };
         },
         run() { if (ready().length) startDailyRun(); else showToast('Nothing ready yet', null); },
-        openView(view) { rollTableSheet(view); }
+        openView(view) { rollTableSheet(view); },
+        // A lifted card: the Keen Info its logo pops out in the Deck (the
+        // Catalogue's for a demonstration card) and what it can do from
+        // there - the Deck card's OPEN and check, and the Daily Run with
+        // this platform first.
+        cardInfo(id) {
+          const pages = platformPageMap();
+          const g = gameFor(id);
+          if (g) {
+            const st = getCooldownState(g);
+            const acts = [['open', st.isReady ? 'OPEN' : 'WAIT'], ['check', '\u2713 Collected']];
+            if (st.isReady) acts.push(['run', 'Run from here \u25B8']);
+            return { name: g.name, tier: g.tier, ready: st.isReady, state: st.isReady ? 'Ready' : `Ready in ${formatTime(st.remainingMs)}`, html: deckKeenInfoHtml(g, pages), acts };
+          }
+          const item = demoItem(id);
+          if (!item) return null;
+          return { name: item.name, tier: item.tier, ready: false, state: 'Not in your deck', html: catalogKeenInfoHtml(item, pages), acts: [['track', '+ Add to my deck']] };
+        },
+        cardAction(id, act) {
+          const g = gameFor(id);
+          if (act === 'open' && g) collect(g.id);
+          else if (act === 'check' && g) markCollected(g.id);
+          else if (act === 'run' && g) startDailyRun(g.id);
+          else if (act === 'track') {
+            const item = demoItem(id);
+            if (item && !g) { toggleCatalogItem(item); showToast(`${item.name} is in your deck`, null); }
+          }
+        },
+        cardState(id) {
+          const g = gameFor(id);
+          if (!g) return null;
+          const st = getCooldownState(g);
+          return { remaining: st.isReady ? 0 : st.remainingMs };
+        }
       };
     }
     // A view from the phone (Freebies, Community) over the table, with a
@@ -6478,7 +6540,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const THEMES = {
       refinement: {
         name: 'Refinement × Realization',
-        description: 'The visualized skin. A throw of the dice, then the card table as your home: the deck dealt to you by hand, the rail your clock, your phone for the rest.',
+        description: 'The visualized skin. A throw of the dice, then the card table as your home: the deck dealt to you by an arm that rises out of the table, the rail your clock, your phone for the rest.',
         look: 'executive',
         table: 'card',
         // (the palette, background and colour are Executive Lounge's - set
@@ -12825,7 +12887,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       showToast('S-Tier picks added to your deck', null);
     }
 
-    function startDailyRun() {
+    // firstId (optional): the platform to run first - "Run from here" on a
+    // card lifted at the table - then the rest in their usual order.
+    function startDailyRun(firstId) {
       // Queue is built ONCE and not rebuilt mid-run.
       // Scope the run to whatever's filtered - that's what makes tags useful:
       // "morning" becomes a 12-platform run instead of all 139.
@@ -12835,6 +12899,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         pool = pool.filter(g => (g.tags || []).includes(t));
       }
       dailyRunQueue = pool.sort((a, b) => compareByStack(a, b, sortStackGames));
+      const first = typeof firstId === 'string' ? trackedGames.find(g => g.id === firstId && getCooldownState(g).isReady) : null;
+      if (first) dailyRunQueue = [first, ...dailyRunQueue.filter(g => g !== first)];
 
       if (dailyRunQueue.length === 0) return;
 

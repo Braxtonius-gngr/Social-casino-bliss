@@ -45,7 +45,7 @@ function fakeIndexedDB(initial) {
   };
 }
 
-function loadWorker({ idb, rows, fetchFails, windows }) {
+function loadWorker({ idb, rows, fetchFails, windows, cached }) {
   const handlers = {};
   const shown = [];
   const fetched = [];
@@ -53,12 +53,14 @@ function loadWorker({ idb, rows, fetchFails, windows }) {
   const messages = [];
   const focused = [];
   const precached = [];
+  const stored = [];
   const openWindows = (windows || []).map(url => ({
     url,
     focus: async () => { focused.push(url); },
     postMessage: msg => messages.push({ url, ...msg })
   }));
   const self = {
+    location: new URL('https://app.test/sw.js'),
     addEventListener: (type, fn) => { handlers[type] = fn; },
     registration: {
       scope: 'https://app.test/',
@@ -76,15 +78,19 @@ function loadWorker({ idb, rows, fetchFails, windows }) {
     caches: {
       open: async () => ({
         addAll: async urls => { precached.push(...urls); },
-        put: async () => {}
+        put: async key => { stored.push(String(key)); },
+        match: async key => (cached && cached.get(String(key))) || undefined
       }),
       keys: async () => [],
       match: async () => undefined,
       delete: async () => true
     },
-    fetch: async url => {
+    fetch: async req => {
+      const url = req && req.url ? req.url : req;
       fetched.push(String(url));
       if (fetchFails) throw new TypeError('offline');
+      // (a file the app itself serves - the intro's - as a plain 200)
+      if (/\/assets\//.test(String(url))) return { ok: true, status: 200, type: 'basic', url: String(url), clone() { return this; } };
       // Serves the requested page, as the REST feed does.
       const params = new URL(String(url)).searchParams;
       const offset = Number(params.get('offset')) || 0;
@@ -100,7 +106,16 @@ function loadWorker({ idb, rows, fetchFails, windows }) {
   });
   vm.runInContext(SOURCE, context, { filename: 'sw.js' });
   return {
-    shown, fetched, opened, messages, focused,
+    shown, fetched, opened, messages, focused, stored,
+    // a page's GET through the fetch handler: what it answers with
+    async request(url) {
+      const waits = [];
+      let answer = null;
+      handlers.fetch({ request: { url, method: 'GET', mode: 'no-cors' }, respondWith: p => { answer = p; }, waitUntil: p => waits.push(p) });
+      const response = await answer;
+      await Promise.all(waits);
+      return response;
+    },
     async install() {
       const waits = [];
       handlers.install({ waitUntil: p => waits.push(p) });
@@ -157,6 +172,19 @@ const TESTS = [
       './assets/intro3d/icons/coin-house.webp',
       './assets/intro3d/icons/coin-send.webp'
     ].forEach(url => expect(precached.includes(url), true, `${url} precached`));
+  }],
+
+  ['the intro is served from the cache at once and refreshed behind it', async () => {
+    const core = 'https://app.test/assets/vendor/three/three.core.js';
+    const sw = loadWorker({ idb: fakeIndexedDB(), cached: new Map([[core, { cachedCopy: true }]]) });
+    const hit = await sw.request(core);
+    expect(hit.cachedCopy, true, 'the cached copy answers');
+    expect(sw.fetched.includes(core), true, 'and the file is refreshed in the background');
+    expect(sw.stored.includes(core), true, 'the refreshed copy is kept for the next launch');
+    const rare = 'https://app.test/assets/intro3d/rare/plaque-25k.jpg';
+    const miss = await sw.request(rare);
+    expect(miss.status, 200, 'a file not yet cached comes from the network');
+    expect(sw.stored.includes(rare), true, 'and is kept for next time');
   }],
 
   ['a drop push for a tracked platform shows the drop, once', async () => {
