@@ -54,6 +54,8 @@ function loadWorker({ idb, rows, fetchFails, windows, cached }) {
   const focused = [];
   const precached = [];
   const stored = [];
+  // (one cache, whatever its name: what a test seeds, and what the worker puts)
+  const store = new Map(cached || []);
   const openWindows = (windows || []).map(url => ({
     url,
     focus: async () => { focused.push(url); },
@@ -78,8 +80,8 @@ function loadWorker({ idb, rows, fetchFails, windows, cached }) {
     caches: {
       open: async () => ({
         addAll: async urls => { precached.push(...urls); },
-        put: async key => { stored.push(String(key)); },
-        match: async key => (cached && cached.get(String(key))) || undefined
+        put: async (key, value) => { stored.push(String(key)); store.set(String(key), value); },
+        match: async key => store.get(String(key))
       }),
       keys: async () => [],
       match: async () => undefined,
@@ -89,8 +91,9 @@ function loadWorker({ idb, rows, fetchFails, windows, cached }) {
       const url = req && req.url ? req.url : req;
       fetched.push(String(url));
       if (fetchFails) throw new TypeError('offline');
-      // (a file the app itself serves - the intro's - as a plain 200)
-      if (/\/assets\//.test(String(url))) return { ok: true, status: 200, type: 'basic', url: String(url), clone() { return this; } };
+      // (a file the app itself serves - the intro's, or one the precache
+      // asks for by its relative path - as a plain 200)
+      if (/\/assets\/|^\.\//.test(String(url))) return { ok: true, status: 200, type: 'basic', url: String(url), clone() { return this; } };
       // Serves the requested page, as the REST feed does.
       const params = new URL(String(url)).searchParams;
       const offset = Number(params.get('offset')) || 0;
@@ -99,6 +102,7 @@ function loadWorker({ idb, rows, fetchFails, windows, cached }) {
       return { ok: true, json: async () => JSON.parse(JSON.stringify(page)) };
     },
     URL,
+    Response,
     console,
     setTimeout,
     Date,
@@ -120,7 +124,15 @@ function loadWorker({ idb, rows, fetchFails, windows, cached }) {
       const waits = [];
       handlers.install({ waitUntil: p => waits.push(p) });
       await Promise.all(waits);
-      return precached.slice();
+      return precached.concat(stored);
+    },
+    // a message from a page, and the worker's reply to it
+    async ask(data) {
+      const waits = [];
+      let reply = null;
+      handlers.message({ data, ports: [{ postMessage: msg => { reply = msg; } }], waitUntil: p => waits.push(p) });
+      await Promise.all(waits);
+      return reply;
     },
     async pushTogether(n) {
       const waits = [];
@@ -172,6 +184,30 @@ const TESTS = [
       './assets/intro3d/icons/coin-house.webp',
       './assets/intro3d/icons/coin-send.webp'
     ].forEach(url => expect(precached.includes(url), true, `${url} precached`));
+  }],
+
+  ['a new build downloads everything but the rare extras, telling open windows how far it has got', async () => {
+    const sw = loadWorker({ idb: fakeIndexedDB(), windows: ['https://app.test/'] });
+    const stored = await sw.install();
+    ['./index.html', './assets/app.css', './assets/vendor/three/three.core.js', './assets/intro3d/felt-normal.jpg', './assets/intro/room-metal.jpg', './utils/classifyDropText.js']
+      .forEach(url => expect(stored.includes(url), true, `${url} precached`));
+    expect(stored.some(url => /\/rare\//.test(url)), false, 'no rare-tier file is precached');
+    const progress = sw.messages.filter(m => m.type === 'precache');
+    const last = progress[progress.length - 1];
+    expect(progress.length > 10, true, 'progress is reported file by file');
+    expect(last.complete, true, 'and the end is announced');
+    expect(last.done, last.total, 'with every file counted');
+    expect(last.failed, 0, 'none of them failed');
+    expect(/^almanac-v\d+$/.test(last.version), true, 'under this build\'s version');
+    const status = await sw.ask({ type: 'precache-status' });
+    expect(status.complete, true, 'a page asking afterwards hears the build is complete');
+    expect(status.version, last.version, 'for the same version');
+  }],
+
+  ['a build that has not finished its download says so', async () => {
+    const sw = loadWorker({ idb: fakeIndexedDB() });
+    const status = await sw.ask({ type: 'precache-status' });
+    expect(status.complete, false, 'no mark, not complete');
   }],
 
   ['the intro is served from the cache at once and refreshed behind it', async () => {

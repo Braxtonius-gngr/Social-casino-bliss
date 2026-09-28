@@ -11,44 +11,109 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v63';
+const CACHE_NAME = 'almanac-v64';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
 // and silently fail.
-const PRECACHE_URLS = ['./', './index.html', './manifest.json', './assets/app.css', './assets/storage.js', './data/catalog.js',
-  // Ground texture for the Executive Lounge theme. Precached because a theme
-  // whose background only appears once the network is back is not the theme.
-  // NOTE: no apostrophes in comments inside this array - check-references.js
-  // regex-scans it for quoted strings and would read one as a broken path.
+//
+// Everything the app can load is precached except the rare tiers' extras
+// (assets/intro3d/rare/, fetched and kept on first use: most launches never
+// need them). A new build downloads the whole set once, while the landing
+// shows its "Updating" bar (see precacheAll below and appWhenCached in
+// index.html), so no launch after that waits on the network. check:refs
+// fails if an asset is missing here, or if this CACHE_NAME and index.html
+// APP_BUILD disagree.
+// NOTE: no apostrophes in comments inside this array - check-references.js
+// regex-scans it for quoted strings and would read one as a broken path.
+const PRECACHE_URLS = [
+  // the shell
+  './', './index.html', './manifest.json', './apple-touch-icon.png', './assets/icon-192.webp', './assets/icon-512.webp',
+  './assets/app.css', './assets/accessibility.css', './assets/accessibility.js', './assets/storage.js',
+  './data/catalog.js', './utils/cleanDropUrl.js', './utils/classifyDropText.js',
+  // the Executive Lounge ground
   './assets/background.webp',
-  // The intro set as it plays by default (green felt, lamp-lit room), so a
-  // first offline launch still opens on the table.
-  './assets/intro/felt.png', './assets/intro/room-lamp.jpg',
-  // The WebGL intro (three.js and its base set). The extras for the rare
-  // tiers are left to cache on first use: most launches never fetch them.
+  // the CSS intro (the fallback without WebGL 2): its rooms, felt and cash
+  './assets/intro/felt.png', './assets/intro/room-lamp.jpg', './assets/intro/room-metal.jpg', './assets/intro/room-both.jpg',
+  './assets/intro/bill.svg', './assets/intro/bill-back.svg', './assets/intro/coin-btc.svg', './assets/intro/coin-eth.svg',
+  './assets/intro/coin-gold.svg', './assets/intro/coin-gold-back.svg', './assets/intro/scorch.svg',
+  // the WebGL intro: three.js, the modules and the set
   './assets/vendor/three/three.core.js', './assets/vendor/three/three.module.js', './assets/vendor/three/three.addons.js',
   './assets/intro3d/intro.mjs', './assets/intro3d/physics.mjs', './assets/intro3d/table.mjs',
   './assets/intro3d/felt-normal.jpg', './assets/intro3d/rubber-normal.jpg', './assets/intro3d/leather-normal.jpg',
   './assets/intro3d/walnut.jpg', './assets/intro3d/gunmetal.jpg', './assets/intro3d/badge.png',
+  './assets/intro3d/gold-trim-color.jpg', './assets/intro3d/gold-trim-alpha.png', './assets/intro3d/gold-trim-normal.jpg',
+  './assets/intro3d/walnut-normal.jpg', './assets/intro3d/cushion-normal.jpg',
+  './assets/intro3d/carpet-color.jpg', './assets/intro3d/carpet-normal.jpg',
+  // the card table: its chips, the clock bezel and the phone icons
   './assets/intro3d/icons/chip-emerald.webp', './assets/intro3d/icons/chip-gold.webp', './assets/intro3d/icons/chip-ivory.webp',
   './assets/intro3d/icons/chip-onyx.webp', './assets/intro3d/icons/chip-oxblood.webp', './assets/intro3d/icons/chip-plum.webp',
   './assets/intro3d/icons/clock-bezel.webp', './assets/intro3d/icons/coin-clock.webp', './assets/intro3d/icons/coin-deck.webp',
-  './assets/intro3d/icons/coin-house.webp', './assets/intro3d/icons/coin-send.webp',
-  './assets/intro3d/gold-trim-color.jpg', './assets/intro3d/gold-trim-alpha.png', './assets/intro3d/gold-trim-normal.jpg',
-  './assets/intro3d/walnut-normal.jpg', './assets/intro3d/cushion-normal.jpg',
-  './assets/intro3d/carpet-color.jpg', './assets/intro3d/carpet-normal.jpg'];
-// (the card table the landing flies into - the home screen of the default
-// skin, Refinement x Realization - is precached above with its chips, its
-// clock bezel and the phone icons: an offline launch has to land on it)
+  './assets/intro3d/icons/coin-house.webp', './assets/intro3d/icons/coin-send.webp'];
+// Stored last, once the whole set is in: the build is complete.
+const PRECACHE_MARK = './__precache-complete__';
+
+// Downloads the set, four files at a time, telling every open window how
+// far it has got - including a first visit's page, which this worker does
+// not control yet - as { type: 'precache', version, done, total }, and
+// finally { ..., complete: true, failed }. Each file is fetched past the
+// browser's HTTP cache (cache: 'no-cache' revalidates) so a new build never
+// stores an old copy, and tried twice before it counts as failed. One run
+// at a time: a second ask joins the first.
+let precaching = null;
+let progress = { done: 0, total: 0 };
+function precacheAll() {
+  if (precaching) return precaching;
+  precaching = (async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const total = PRECACHE_URLS.length;
+    let done = 0, next = 0;
+    progress = { done, total };
+    const failed = [];
+    const tell = async (extra) => {
+      const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      wins.forEach((w) => w.postMessage(Object.assign({ type: 'precache', version: CACHE_NAME, done, total }, extra)));
+    };
+    const fetchOne = async (url) => {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const response = await fetch(url, { cache: 'no-cache' });
+          if (response && response.ok) { await cache.put(url, response); return true; }
+        } catch (e) { /* try again, then count it */ }
+      }
+      return false;
+    };
+    const lane = async () => {
+      while (next < total) {
+        const url = PRECACHE_URLS[next++];
+        if (!(await fetchOne(url))) failed.push(url);
+        done++;
+        progress = { done, total };
+        await tell();
+      }
+    };
+    await Promise.all([lane(), lane(), lane(), lane()]);
+    await cache.put(PRECACHE_MARK, new Response(JSON.stringify({ version: CACHE_NAME, failed }), { headers: { 'Content-Type': 'application/json' } }));
+    await tell({ complete: true, failed: failed.length });
+  })();
+  precaching.catch(() => {}).then(() => { precaching = null; });
+  return precaching;
+}
+
+// How this build stands, for a page deciding whether its intro can play
+// from the cache: { type: 'precache-status', version, complete }.
+async function precacheStatus() {
+  const cache = await caches.open(CACHE_NAME);
+  const mark = await cache.match(PRECACHE_MARK);
+  return { type: 'precache-status', version: CACHE_NAME, complete: !!mark, running: !!precaching, done: progress.done, total: progress.total };
+}
 
 self.addEventListener('install', (event) => {
-  // Precache the shell so the very first offline load works, even if the
-  // fetch handler never ran while the worker was still activating.
+  // The whole set, before this build takes over; a failure is best-effort
+  // (the pages still work from the network) and never blocks the install.
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
-      .catch(() => { /* precache is best-effort; don't block install */ })
+    precacheAll()
+      .catch(() => { /* best-effort */ })
       .then(() => self.skipWaiting())
   );
 });
@@ -61,6 +126,21 @@ self.addEventListener('activate', (event) => {
       ))
       .then(() => self.clients.claim())
   );
+});
+
+// A page asks how this build stands ('precache-status'), or asks it to
+// finish a set an earlier run left incomplete ('precache-start').
+self.addEventListener('message', (event) => {
+  const data = event.data || {};
+  const reply = (msg) => {
+    if (event.ports && event.ports[0]) event.ports[0].postMessage(msg);
+    else if (event.source) event.source.postMessage(msg);
+  };
+  if (data.type === 'precache-status') {
+    event.waitUntil(precacheStatus().then(reply));
+  } else if (data.type === 'precache-start') {
+    event.waitUntil(precacheAll().catch(() => {}));
+  }
 });
 
 self.addEventListener('fetch', (event) => {
