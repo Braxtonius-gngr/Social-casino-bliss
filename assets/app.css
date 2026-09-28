@@ -942,7 +942,200 @@
     .r3-sound { position: absolute; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: 3; width: 42px; height: 42px; padding: 10px; border-radius: 50%; border: 1px solid rgba(232,200,106,0.35); background: rgba(10,10,12,0.55); color: #e8dfc4; pointer-events: auto; cursor: pointer; }
     .r3-sound svg { display: block; width: 100%; height: 100%; }
     .r3-sound[aria-pressed="false"] { color: #9d967f; }
-    .landing-screen.roll-rest .r3-sound { display: none; }
+    /* (the speaker stays through the float after the shot; the intro hides
+       it itself when the frame is held still or handed on) */
+
+    /* ---- Refinement x Realization: the table the landing flies to
+       (assets/intro3d/table.mjs). Page elements laid into the 3D scene by
+       CSS3DRenderer: sizes here are page pixels on the element, scaled into
+       centimetres by the scene (cards 50 px/cm, the rail 40, the phone 55).
+       Nothing that holds a 3D flip may take opacity < 1 (it would flatten
+       the card's faces), so cards come and go by visibility only. */
+    .r3-stage { position: fixed; inset: 0; z-index: 250; background: #050506; }
+    .r3-stage > canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    /* (overflow clip, not hidden: nothing - a focus, a tap - can scroll the
+       layer and shift the whole table) */
+    .r3t-css { position: absolute; inset: 0; pointer-events: none; overflow: clip !important; }
+    .r3t-css.r3t-hide { visibility: hidden; }
+    .r3t-hand { position: absolute; inset: 0; width: 100% !important; height: 100% !important; pointer-events: none; }
+    .r3t-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .r3t-rail, .r3t-phone { opacity: var(--r3t-in, 1); }
+
+    /* The rail's instruments: walnut-black lacquer in a brass frame, let
+       into the rail in front of the seat. */
+    .r3t-rail { width: 500px; height: 330px; }
+    .r3t-rail-in { position: absolute; inset: 0; display: grid; grid-template-columns: 124px 1fr; grid-template-rows: 1fr 110px; grid-template-areas: "dial time" "run run"; align-items: center; column-gap: 18px; row-gap: 14px; padding: 20px 26px 22px; border-radius: 34px; color: #efe2c4; font-family: Georgia, "Times New Roman", serif;
+      background: radial-gradient(120% 140% at 50% 0%, #241a15 0%, #120d0b 55%, #0a0807 100%);
+      border: 4px solid #c39a52; box-shadow: inset 0 0 0 9px #0c0908, inset 0 0 0 11px rgba(214,176,98,0.55), inset 0 2px 0 13px rgba(255,236,190,0.08), 0 16px 34px rgba(0,0,0,0.65); }
+    /* (the dial sits in the house's gold bezel - assets/intro3d/icons -
+       whose centre is cut out for the live hands) */
+    .r3t-clock { grid-area: dial; width: 124px; height: 124px; border-radius: 50%; background: url(intro3d/icons/clock-bezel.webp) center / 100% 100% no-repeat; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.6)); }
+    .r3t-dial { display: block; width: 52%; height: 52%; margin: 24%; }
+    .r3t-dial-face { fill: #171310; stroke: #6a5024; stroke-width: 1.2; }
+    .r3t-tick { stroke: #a88a4a; stroke-width: 1.6; stroke-linecap: round; }
+    .r3t-tick-q { stroke-width: 3.2; stroke: #e8c77a; }
+    .r3t-hand-h { stroke: #f1e3bd; stroke-width: 5; stroke-linecap: round; }
+    .r3t-hand-m { stroke: #f1e3bd; stroke-width: 3.4; stroke-linecap: round; }
+    .r3t-hand-s { stroke: #c9202e; stroke-width: 1.6; stroke-linecap: round; }
+    .r3t-pin { fill: #e8c77a; }
+    .r3t-run-coin { width: 62px; height: 62px; flex: none; border-radius: 50%; background: url(intro3d/icons/coin-send.webp) center / contain no-repeat; box-shadow: 0 0 0 3px rgba(58,10,18,0.55), 0 4px 8px rgba(0,0,0,0.35); }
+    .r3t-time { grid-area: time; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .r3t-time > b { font-size: 64px; font-weight: 400; letter-spacing: 0.02em; line-height: 1; color: #f6ead0; }
+    .r3t-time > small { font-size: 17px; letter-spacing: 0.2em; text-transform: uppercase; color: #b9a67c; }
+    .r3t-run { grid-area: run; height: 110px; border-radius: 22px; border: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #3a0a12; font-family: Georgia, "Times New Roman", serif;
+      background: linear-gradient(180deg, #fbe7ae 0%, #e8c064 38%, #b7862c 70%, #d9ad55 100%);
+      box-shadow: inset 0 3px 0 rgba(255,250,225,0.8), inset 0 -4px 0 rgba(90,50,10,0.5), 0 0 0 3px #6b4a1a, 0 10px 22px rgba(0,0,0,0.55); }
+    /* (the coin at the left, the label over the count: the right end of the
+       plaque is under your phone) */
+    .r3t-run { display: grid; grid-template-columns: auto 1fr; grid-template-areas: "coin k" "coin v"; column-gap: 20px; row-gap: 4px; align-items: center; justify-items: start; padding: 0 0 0 26px; text-align: left; }
+    .r3t-run-coin { grid-area: coin; }
+    .r3t-run-k { grid-area: k; align-self: end; font-size: 33px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; line-height: 1; }
+    .r3t-run-v { grid-area: v; align-self: start; font-size: 22px; letter-spacing: 0.04em; color: #5a1a14; white-space: nowrap; line-height: 1; }
+    .r3t-run:active { filter: brightness(0.92); }
+    .r3t-status { display: flex; gap: 14px; align-items: baseline; white-space: nowrap; margin-top: 4px; }
+    .r3t-status b { font-size: 22px; font-weight: 400; color: #f0dca6; }
+    .r3t-status small { font-size: 15px; letter-spacing: 0.12em; text-transform: uppercase; color: #a89670; }
+
+    /* The cards. A card is a button holding two faces back to back; the
+       scene turns it, so its faces flip in 3D. */
+    .r3t-card { width: 318px; height: 445px; transform-style: preserve-3d; cursor: pointer; outline: none; }
+    .r3t-card:focus-visible .r3t-front { box-shadow: 0 0 0 8px #f0cf7f, 0 10px 24px rgba(0,0,0,0.35); }
+    .r3t-card-in { position: absolute; inset: 0; transform-style: preserve-3d; }
+    /* (the scene says which face is up - .r3t-up once the turn passes edge
+       on - rather than backface-visibility, which the CSS3D camera's
+       mirrored axes defeat: the hidden face would otherwise paint over) */
+    .r3t-card:not(.r3t-up) .r3t-front, .r3t-card.r3t-up .r3t-back { visibility: hidden; }
+    .r3t-face { position: absolute; inset: 0; border-radius: 18px; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 3px 5px rgba(0,0,0,0.45), 0 10px 24px rgba(0,0,0,0.35); }
+    /* The backs: the same the same way up (a dealt card is turned end over
+       end), finer with the tier - oxblood and gold for D and C, bronze
+       foil for B, pearl and platinum for A, black lacquer and gold foil
+       for S - each with its own lattice, frame and medallion. The
+       --r3t-sheen custom property sets how bright the sweep of light
+       across a face is. */
+    .r3t-back { transform: rotateY(180deg); border: 15px solid #efe6d3; --bk: #4a0b14; --bk2: #3a0810; --lat: rgba(214,176,98,0.42); --fr: #d6b062; --fr2: #f2d894; --r3t-sheen: 0.18;
+      background: repeating-linear-gradient(45deg, transparent 0 17px, var(--lat) 17px 19px), repeating-linear-gradient(-45deg, transparent 0 17px, var(--lat) 17px 19px), radial-gradient(120% 90% at 50% 40%, var(--bk), var(--bk2)); }
+    .r3t-bk-frame { position: absolute; inset: 9px; border: 3px solid var(--fr); border-radius: 8px; box-shadow: inset 0 0 0 4px transparent, inset 0 0 0 5px var(--fr); opacity: 0.9; }
+    .r3t-bk-seal { position: absolute; left: 50%; top: 50%; width: 118px; height: 118px; margin: -59px 0 0 -59px; border-radius: 50%; background: var(--bk2); border: 3px solid var(--fr); box-shadow: inset 0 0 0 6px var(--bk2), inset 0 0 0 8px var(--fr), 0 0 0 14px var(--bk2), 0 0 0 16px var(--fr); }
+    .r3t-bk-seal::before { content: ""; position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; background: linear-gradient(135deg, var(--fr2), var(--fr)); transform: rotate(45deg); }
+    .r3t-bk-seal::after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; background: var(--bk2); transform: rotate(45deg); }
+    .r3t-back.t-C { --lat: rgba(214,176,98,0.6); --r3t-sheen: 0.26; }
+    .r3t-back.t-B { --bk: #3a2312; --bk2: #24150b; --lat: rgba(232,183,122,0.55); --fr: #c98a4e; --fr2: #f0c48c; --r3t-sheen: 0.4; }
+    .r3t-back.t-B .r3t-bk-frame { border-color: transparent; border-width: 6px; inset: 8px; background: linear-gradient(var(--bk2), var(--bk2)) padding-box, linear-gradient(135deg, #6e3f1a, #d9a066 30%, #7a4a22 50%, #e8b77a 72%, #6e3f1a) border-box; box-shadow: none; opacity: 1; }
+    .r3t-back.t-A { --bk: #f1efe9; --bk2: #dcd8cf; --lat: rgba(110,116,128,0.35); --fr: #8a8f98; --fr2: #ffffff; --r3t-sheen: 0.6; }
+    .r3t-back.t-A .r3t-bk-frame { border-color: transparent; border-width: 7px; inset: 7px; background: linear-gradient(#f4f2ec, #f4f2ec) padding-box, linear-gradient(135deg, #8a8f98, #f5f7fa 28%, #9aa0aa 50%, #ffffff 70%, #7d838c) border-box; box-shadow: none; opacity: 1; }
+    .r3t-back.t-A .r3t-bk-seal { background: #e6e3dc; box-shadow: inset 0 0 0 6px #e6e3dc, inset 0 0 0 8px var(--fr), 0 0 0 14px var(--bk), 0 0 0 16px var(--fr); }
+    .r3t-back.t-A .r3t-bk-seal::after { background: #e6e3dc; }
+    .r3t-back.t-S { --bk: #1d1510; --bk2: #0b0908; --lat: rgba(233,201,120,0.42); --fr: #d9b467; --fr2: #fff0c0; --r3t-sheen: 1; border-color: #0e0b09; }
+    .r3t-back.t-S .r3t-bk-frame { border-color: transparent; border-width: 5px; inset: 7px; border-radius: 10px; background: linear-gradient(#0e0b09, #0e0b09) padding-box, linear-gradient(135deg, #7a5a24, #f7dc92 25%, #9a7030 48%, #fff0c0 66%, #7a5a24) border-box; box-shadow: inset 0 0 0 9px #0e0b09, inset 0 0 0 11px rgba(233,201,120,0.7); opacity: 1; }
+    .r3t-back.t-S::before, .r3t-back.t-S::after { content: ""; position: absolute; left: 30px; right: 30px; height: 34px; background: linear-gradient(90deg, #8a6428, #f5d98f, #a57a34, #fbe7ae, #8a6428);
+      -webkit-mask: url(intro3d/gold-trim-alpha.png) 0 50% / 272px 100% repeat-x; mask: url(intro3d/gold-trim-alpha.png) 0 50% / 272px 100% repeat-x; }
+    .r3t-back.t-S::before { top: 46px; }
+    .r3t-back.t-S::after { bottom: 46px; }
+    /* the front: fine ivory stock, printed in black and oxblood */
+    .r3t-front { color: #1b1410; font-family: Georgia, "Times New Roman", serif;
+      background: radial-gradient(130% 90% at 30% 10%, #fbf6ea 0%, #f1e9d8 60%, #e6dcc6 100%); }
+    .r3t-front.r3t-red { color: #7a1020; }
+    .r3t-frame { position: absolute; inset: 22px; border: 2px solid currentColor; border-radius: 8px; opacity: 0.55; }
+    .r3t-idx { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 0.95; }
+    .r3t-idx b { font-size: 50px; font-weight: 700; }
+    .r3t-idx i { font-style: normal; font-size: 34px; }
+    .r3t-tl { top: 30px; left: 30px; }
+    .r3t-br { bottom: 30px; right: 30px; transform: rotate(180deg); }
+    .r3t-seal { position: absolute; left: 50%; top: 96px; width: 132px; height: 132px; margin-left: -66px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      border: 3px solid currentColor; box-shadow: inset 0 0 0 7px transparent, inset 0 0 0 9px currentColor; opacity: 0.9; }
+    .r3t-seal span { font-size: 50px; font-weight: 700; letter-spacing: 0.04em; }
+    .r3t-name { position: absolute; left: 30px; right: 30px; top: 250px; text-align: center; font-size: 40px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; line-height: 1.05; max-height: 86px; overflow: hidden; }
+    /* (kept clear of the corner indexes) */
+    .r3t-meta { position: absolute; left: 70px; right: 70px; top: 346px; display: flex; justify-content: center; font-size: 32px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.85; }
+    .r3t-meta span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .r3t-sheen { position: absolute; inset: 0; pointer-events: none; overflow: hidden; opacity: var(--r3t-sheen, 0.18); }
+    .r3t-sheen::before { content: ""; position: absolute; top: -20%; bottom: -20%; left: -70%; width: 50%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.42), transparent); transform: skewX(-18deg); animation: r3tSheen 5.5s ease-in-out infinite; }
+    .r3t-front { --r3t-sheen: 0.18; }
+    .r3t-front.t-C { --r3t-sheen: 0.26; }
+    .r3t-front.t-B { --r3t-sheen: 0.4; }
+    @keyframes r3tSheen { 0%, 55% { transform: translateX(0) skewX(-18deg); } 100% { transform: translateX(420%) skewX(-18deg); } }
+    /* D and C: an oxblood double rule */
+    .r3t-front.t-D .r3t-frame, .r3t-front.t-C .r3t-frame { border-color: #7a1020; opacity: 0.9; box-shadow: 0 0 0 6px #f1e9d8, 0 0 0 8px #7a1020; }
+    .r3t-front.t-C .r3t-seal { color: #7a1020; }
+    /* B: bronze foil */
+    .r3t-front.t-B .r3t-frame { inset: 18px; border: 6px solid transparent; opacity: 1; background: linear-gradient(#f1e9d8, #f1e9d8) padding-box, linear-gradient(135deg, #6e3f1a, #d9a066 30%, #7a4a22 50%, #e8b77a 72%, #6e3f1a) border-box; }
+    .r3t-front.t-B .r3t-seal { color: #8a5424; }
+    /* A: pearl stock, a guilloche ground and a platinum frame, a slow sheen */
+    .r3t-front.t-A { background: repeating-radial-gradient(circle at 50% 40%, rgba(120,120,140,0.07) 0 3px, transparent 3px 7px), radial-gradient(130% 90% at 30% 10%, #fdfcf8 0%, #eeebe4 60%, #dcd8cf 100%); color: #20242c; }
+    .r3t-front.t-A .r3t-frame { inset: 17px; border: 7px solid transparent; opacity: 1; background: linear-gradient(#f4f2ec, #f4f2ec) padding-box, linear-gradient(135deg, #8a8f98, #f5f7fa 28%, #9aa0aa 50%, #ffffff 70%, #7d838c) border-box; }
+    .r3t-front.t-A .r3t-seal { color: #5b616b; }
+    .r3t-front.t-A { --r3t-sheen: 0.6; }
+    /* S: black lacquer, gold foil, the table's filigree across it */
+    .r3t-front.t-S { color: #e9c978; background: radial-gradient(120% 80% at 50% 38%, #221a14 0%, #0f0c0a 55%, #070605 100%); }
+    .r3t-front.t-S .r3t-frame { inset: 16px; border: 5px solid transparent; opacity: 1; border-radius: 10px; background: linear-gradient(#0e0b09, #0e0b09) padding-box, linear-gradient(135deg, #7a5a24, #f7dc92 25%, #9a7030 48%, #fff0c0 66%, #7a5a24) border-box; box-shadow: inset 0 0 0 10px #0e0b09, inset 0 0 0 12px rgba(233,201,120,0.7); }
+    .r3t-front.t-S::before, .r3t-front.t-S::after { content: ""; position: absolute; left: 34px; right: 34px; height: 36px; background: linear-gradient(90deg, #8a6428, #f5d98f, #a57a34, #fbe7ae, #8a6428);
+      -webkit-mask: url(intro3d/gold-trim-alpha.png) 0 50% / 288px 100% repeat-x; mask: url(intro3d/gold-trim-alpha.png) 0 50% / 288px 100% repeat-x; }
+    .r3t-front.t-S::before { top: 72px; }
+    .r3t-front.t-S::after { bottom: 34px; }
+    .r3t-front.t-S .r3t-seal { color: #f0cf7f; border-width: 4px; background: radial-gradient(circle, #1d1510, #0c0907); box-shadow: inset 0 0 0 8px #0c0907, inset 0 0 0 10px #d9b467, 0 0 18px rgba(240,207,127,0.25); }
+    .r3t-front.t-S .r3t-seal { top: 118px; width: 118px; height: 118px; margin-left: -59px; }
+    .r3t-front.t-S .r3t-name { color: #f6e2b0; top: 252px; }
+    .r3t-front.t-S .r3t-meta { color: #d9b467; top: 338px; }
+    .r3t-front.t-S { --r3t-sheen: 1; }
+
+    /* Your phone: titanium and glass, in the corner of the view half out
+       of your pocket, up in front of you on a tap. Everything inside is
+       sized to its width (cqw), so it scales with the screen. */
+    .r3t-phone { position: absolute; left: 50%; top: 50%; width: min(76vmin, 40vh); aspect-ratio: 300 / 640; transform: translate(-50%, -50%) perspective(1200px) translate(calc(50vw - 44px), calc(50vh + 8%)) rotate(-14deg) rotateX(34deg) scale(0.58); transform-origin: 50% 50%; transition: transform .6s cubic-bezier(.22,.9,.3,1); container-type: inline-size; pointer-events: auto; cursor: pointer; outline: none; z-index: 3; -webkit-tap-highlight-color: transparent; }
+    .r3t-card, .r3t-rail, .r3t-phone * { -webkit-tap-highlight-color: transparent; }
+    .r3t-phone.r3t-held { transform: translate(-50%, -50%) perspective(1200px) translate(0, 0) rotate(0) rotateX(0) scale(1); cursor: default; }
+    .r3t-phone::after { content: "Pick up"; position: absolute; left: 4cqw; top: -9cqw; padding: 2.4cqw 5cqw; border-radius: 6cqw; background: rgba(12,10,9,0.85); border: 1px solid rgba(232,200,106,0.5); color: #f0dca6; font: 600 4.4cqw/1 Georgia, serif; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; opacity: 0.9; transition: opacity .3s; }
+    .r3t-phone.r3t-held::after { opacity: 0; }
+    .r3t-phone:focus-visible .r3t-ph-body { box-shadow: 0 0 0 4px #f0cf7f, 0 40px 70px rgba(0,0,0,0.6); }
+    .r3t-ph-body { position: absolute; inset: 0; border-radius: 15cqw; padding: 2.4cqw; background: linear-gradient(155deg, #e6e3dd 0%, #8f8c87 16%, #3b3a38 40%, #706d69 58%, #d8d5cf 80%, #7b7874 100%); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4), inset 0 0 0 2.4cqw rgba(0,0,0,0.25), 0 40px 70px rgba(0,0,0,0.6), 0 8px 18px rgba(0,0,0,0.45); }
+    .r3t-ph-body::before, .r3t-ph-body::after { content: ""; position: absolute; width: 1.2cqw; border-radius: 1cqw; background: linear-gradient(180deg, #b9b6b0, #4a4846); }
+    .r3t-ph-body::before { left: -1.2cqw; top: 26cqw; height: 16cqw; box-shadow: 0 22cqw 0 0 #7a7773; }
+    .r3t-ph-body::after { right: -1.2cqw; top: 34cqw; height: 24cqw; }
+    .r3t-ph-screen { position: absolute; inset: 2.4cqw; border-radius: 12.6cqw; overflow: hidden; color: #f2efe8; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+      background: radial-gradient(120% 70% at 50% 0%, rgba(122,16,32,0.55), transparent 58%), radial-gradient(90% 55% at 50% 100%, rgba(185,140,60,0.28), transparent 70%), #07070a; }
+    .r3t-ph-screen::after { content: ""; position: absolute; left: 6cqw; right: 6cqw; bottom: 3cqw; height: 7cqw; opacity: 0.55; background: linear-gradient(90deg, #8a6428, #f5d98f, #a57a34, #fbe7ae, #8a6428); -webkit-mask: url(intro3d/gold-trim-alpha.png) 50% 50% / auto 100% repeat-x; mask: url(intro3d/gold-trim-alpha.png) 50% 50% / auto 100% repeat-x; pointer-events: none; }
+    .r3t-ph-island { position: absolute; left: 50%; top: 3.4cqw; width: 30cqw; height: 8.2cqw; margin-left: -15cqw; border-radius: 4.2cqw; background: #000; box-shadow: inset 0 0 0 1px #151515; }
+    .r3t-ph-island::after { content: ""; position: absolute; right: 2.4cqw; top: 2.2cqw; width: 3.8cqw; height: 3.8cqw; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #2a3a55, #050810 60%); }
+    .r3t-ph-status { position: absolute; top: 4.6cqw; left: 9cqw; right: 8.5cqw; display: flex; justify-content: space-between; align-items: center; font-size: 5cqw; font-weight: 600; letter-spacing: 0.01em; }
+    .r3t-ph-sig { display: inline-flex; align-items: flex-end; gap: 0.7cqw; height: 4cqw; }
+    .r3t-ph-sig i { width: 1.3cqw; background: #f2efe8; border-radius: 0.4cqw; height: 40%; }
+    .r3t-ph-sig i:nth-child(2) { height: 60%; } .r3t-ph-sig i:nth-child(3) { height: 80%; } .r3t-ph-sig i:nth-child(4) { height: 100%; }
+    .r3t-ph-sig b { width: 7.6cqw; height: 3.6cqw; margin-left: 1.8cqw; border: 1px solid rgba(242,239,232,0.6); border-radius: 1.2cqw; position: relative; }
+    .r3t-ph-sig b::before { content: ""; position: absolute; inset: 0.6cqw; right: 1.6cqw; background: #e8c064; border-radius: 0.6cqw; }
+    .r3t-ph-lock, .r3t-ph-app { position: absolute; inset: 15cqw 6.5cqw 8cqw; display: flex; flex-direction: column; align-items: center; transition: opacity .35s ease, visibility .35s; }
+    .r3t-ph-day { font-size: 5.2cqw; font-weight: 500; opacity: 0.85; margin-top: 6cqw; }
+    .r3t-ph-big { font-size: 30cqw; font-weight: 200; letter-spacing: -0.03em; line-height: 1; margin: 0 0 9cqw; font-variant-numeric: tabular-nums; }
+    .r3t-ph-notes { width: 100%; display: flex; flex-direction: column; gap: 2.6cqw; }
+    .r3t-ph-note { display: grid; grid-template-columns: 12cqw 1fr auto; gap: 3.5cqw; align-items: center; padding: 3.6cqw 4cqw; border-radius: 6.4cqw; background: rgba(46,40,44,0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); text-align: left; }
+    .r3t-ph-note div { display: flex; flex-direction: column; gap: 0.8cqw; min-width: 0; }
+    .r3t-ph-note b { font-size: 4.6cqw; font-weight: 600; } .r3t-ph-note span { font-size: 4.1cqw; opacity: 0.8; } .r3t-ph-note i { font-style: normal; font-size: 3.6cqw; opacity: 0.6; align-self: flex-start; }
+    .r3t-ph-coin { width: 12cqw; height: 12cqw; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.6)); }
+    .r3t-ph-hint { display: none; }
+    .r3t-ph-app { opacity: 0; visibility: hidden; }
+    .r3t-phone.r3t-held .r3t-ph-lock { opacity: 0; visibility: hidden; }
+    .r3t-phone.r3t-held .r3t-ph-app { opacity: 1; visibility: visible; }
+    .r3t-ph-title { font: 700 9cqw/1.1 Georgia, "Times New Roman", serif; color: #f6ead0; text-align: center; margin: 3cqw 0 6cqw; letter-spacing: 0.01em; }
+    .r3t-ph-title em { font-style: normal; color: #e8c064; }
+    .r3t-ph-grid { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 3.5cqw; }
+    .r3t-ph-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 1.4cqw; padding: 4.6cqw 4.2cqw 4.4cqw; border-radius: 7cqw; border: 1px solid rgba(240,213,143,0.3); background: linear-gradient(160deg, rgba(255,255,255,0.11), rgba(255,255,255,0.03)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); color: #f2efe8; text-align: left; cursor: pointer; font-family: inherit; }
+    .r3t-ph-tile:active { background: rgba(255,255,255,0.16); }
+    .r3t-ph-tile .r3t-ph-coin { width: 15cqw; height: 15cqw; margin-bottom: 1.6cqw; }
+    .r3t-ph-tile b { font: 600 5cqw/1.1 Georgia, "Times New Roman", serif; color: #f6ead0; }
+    .r3t-ph-tile span { font-size: 3.6cqw; line-height: 1.25; opacity: 0.72; }
+    .r3t-ph-today { width: 100%; margin-top: 4.5cqw; padding: 4.4cqw 5cqw; border-radius: 6cqw; background: linear-gradient(160deg, rgba(232,192,100,0.16), rgba(232,192,100,0.05)); border: 1px solid rgba(240,213,143,0.28); display: flex; flex-direction: column; gap: 1.4cqw; text-align: left; }
+    .r3t-ph-today b { font: 600 6cqw/1.1 Georgia, "Times New Roman", serif; color: #f6ead0; }
+    .r3t-ph-today span { font-size: 3.8cqw; opacity: 0.75; }
+    .r3t-ph-put { margin-top: auto; width: 100%; padding: 4.6cqw; border-radius: 12cqw; border: 1px solid rgba(240,213,143,0.38); background: rgba(255,255,255,0.1); color: #f0dca6; font: 600 4.6cqw/1 system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+    .r3t-ph-put:active { background: rgba(255,255,255,0.18); }
+    html[data-motion="off"] .r3t-phone, html[data-motion="off"] .r3t-ph-lock, html[data-motion="off"] .r3t-ph-app { transition: none; }
+
+    /* While the landing flies into the table its copy steps aside. */
+    .landing-screen.r3-flying .landing-inner, .landing-screen.r3-flying .roll-lab, .landing-screen.r3-flying .r3-sound { opacity: 0; transition: opacity .35s ease; pointer-events: none; }
+    body.r3-table-mode #main-content { visibility: hidden; }
+    /* A view opened from the phone, over the table, and the way back. */
+    body.r3-table-mode.r3-sheet-open #main-content { visibility: visible; position: fixed; inset: 0; z-index: 260; overflow-y: auto; background: var(--bg-base); padding-top: 64px; }
+    .r3-sheet-back { display: none; }
+    body.r3-table-mode.r3-sheet-open .r3-sheet-back { display: block; position: fixed; top: max(12px, env(safe-area-inset-top)); left: 12px; z-index: 261; padding: 10px 16px; border-radius: 22px; border: 1px solid rgba(232,200,106,0.45); background: rgba(12,10,9,0.9); color: #f0dca6; font: 600 14px/1 Georgia, serif; letter-spacing: 0.04em; cursor: pointer; }
 
     /* The intro lab (?lab): pick an ending, a felt and a room, and replay.
        Shown once the shot is over. */
