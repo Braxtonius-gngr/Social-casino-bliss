@@ -955,6 +955,7 @@
     .r3-stage > canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
     .r3t-css { position: absolute; inset: 0; pointer-events: none; }
     .r3t-css.r3t-hide { visibility: hidden; }
+    .r3t-hand { position: absolute; inset: 0; width: 100% !important; height: 100% !important; pointer-events: none; }
     .r3t-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .r3t-rail, .r3t-phone { opacity: var(--r3t-in, 1); }
 
@@ -997,12 +998,31 @@
        mirrored axes defeat: the hidden face would otherwise paint over) */
     .r3t-card:not(.r3t-up) .r3t-front, .r3t-card.r3t-up .r3t-back { visibility: hidden; }
     .r3t-face { position: absolute; inset: 0; border-radius: 18px; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 3px 5px rgba(0,0,0,0.45), 0 10px 24px rgba(0,0,0,0.35); }
-    .r3t-back { transform: rotateY(180deg); border: 16px solid #efe6d3;
-      background: radial-gradient(circle at 50% 50%, #4a0b14 0 21%, #d6b062 21.5% 23%, transparent 23.5%),
-        repeating-linear-gradient(45deg, transparent 0 18px, rgba(214,176,98,0.5) 18px 20px),
-        repeating-linear-gradient(-45deg, transparent 0 18px, rgba(214,176,98,0.5) 18px 20px), #4a0b14;
-      box-shadow: inset 0 0 0 5px #d6b062, 0 3px 5px rgba(0,0,0,0.45); }
-    .r3t-back::after { content: "DRO"; position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; font: 700 44px/1 Georgia, serif; color: #ecd08a; letter-spacing: 0.06em; }
+    /* The backs: the same the same way up (a dealt card is turned end over
+       end), finer with the tier - oxblood and gold for D and C, bronze
+       foil for B, pearl and platinum for A, black lacquer and gold foil
+       for S - each with its own lattice, frame and medallion. The
+       --r3t-sheen custom property sets how bright the sweep of light
+       across a face is. */
+    .r3t-back { transform: rotateY(180deg); border: 15px solid #efe6d3; --bk: #4a0b14; --bk2: #3a0810; --lat: rgba(214,176,98,0.42); --fr: #d6b062; --fr2: #f2d894; --r3t-sheen: 0.18;
+      background: repeating-linear-gradient(45deg, transparent 0 17px, var(--lat) 17px 19px), repeating-linear-gradient(-45deg, transparent 0 17px, var(--lat) 17px 19px), radial-gradient(120% 90% at 50% 40%, var(--bk), var(--bk2)); }
+    .r3t-bk-frame { position: absolute; inset: 9px; border: 3px solid var(--fr); border-radius: 8px; box-shadow: inset 0 0 0 4px transparent, inset 0 0 0 5px var(--fr); opacity: 0.9; }
+    .r3t-bk-seal { position: absolute; left: 50%; top: 50%; width: 118px; height: 118px; margin: -59px 0 0 -59px; border-radius: 50%; background: var(--bk2); border: 3px solid var(--fr); box-shadow: inset 0 0 0 6px var(--bk2), inset 0 0 0 8px var(--fr), 0 0 0 14px var(--bk2), 0 0 0 16px var(--fr); }
+    .r3t-bk-seal::before { content: ""; position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; background: linear-gradient(135deg, var(--fr2), var(--fr)); transform: rotate(45deg); }
+    .r3t-bk-seal::after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; background: var(--bk2); transform: rotate(45deg); }
+    .r3t-back.t-C { --lat: rgba(214,176,98,0.6); --r3t-sheen: 0.26; }
+    .r3t-back.t-B { --bk: #3a2312; --bk2: #24150b; --lat: rgba(232,183,122,0.55); --fr: #c98a4e; --fr2: #f0c48c; --r3t-sheen: 0.4; }
+    .r3t-back.t-B .r3t-bk-frame { border-color: transparent; border-width: 6px; inset: 8px; background: linear-gradient(var(--bk2), var(--bk2)) padding-box, linear-gradient(135deg, #6e3f1a, #d9a066 30%, #7a4a22 50%, #e8b77a 72%, #6e3f1a) border-box; box-shadow: none; opacity: 1; }
+    .r3t-back.t-A { --bk: #f1efe9; --bk2: #dcd8cf; --lat: rgba(110,116,128,0.35); --fr: #8a8f98; --fr2: #ffffff; --r3t-sheen: 0.6; }
+    .r3t-back.t-A .r3t-bk-frame { border-color: transparent; border-width: 7px; inset: 7px; background: linear-gradient(#f4f2ec, #f4f2ec) padding-box, linear-gradient(135deg, #8a8f98, #f5f7fa 28%, #9aa0aa 50%, #ffffff 70%, #7d838c) border-box; box-shadow: none; opacity: 1; }
+    .r3t-back.t-A .r3t-bk-seal { background: #e6e3dc; box-shadow: inset 0 0 0 6px #e6e3dc, inset 0 0 0 8px var(--fr), 0 0 0 14px var(--bk), 0 0 0 16px var(--fr); }
+    .r3t-back.t-A .r3t-bk-seal::after { background: #e6e3dc; }
+    .r3t-back.t-S { --bk: #1d1510; --bk2: #0b0908; --lat: rgba(233,201,120,0.42); --fr: #d9b467; --fr2: #fff0c0; --r3t-sheen: 1; border-color: #0e0b09; }
+    .r3t-back.t-S .r3t-bk-frame { border-color: transparent; border-width: 5px; inset: 7px; border-radius: 10px; background: linear-gradient(#0e0b09, #0e0b09) padding-box, linear-gradient(135deg, #7a5a24, #f7dc92 25%, #9a7030 48%, #fff0c0 66%, #7a5a24) border-box; box-shadow: inset 0 0 0 9px #0e0b09, inset 0 0 0 11px rgba(233,201,120,0.7); opacity: 1; }
+    .r3t-back.t-S::before, .r3t-back.t-S::after { content: ""; position: absolute; left: 30px; right: 30px; height: 34px; background: linear-gradient(90deg, #8a6428, #f5d98f, #a57a34, #fbe7ae, #8a6428);
+      -webkit-mask: url(intro3d/gold-trim-alpha.png) 0 50% / 272px 100% repeat-x; mask: url(intro3d/gold-trim-alpha.png) 0 50% / 272px 100% repeat-x; }
+    .r3t-back.t-S::before { top: 46px; }
+    .r3t-back.t-S::after { bottom: 46px; }
     /* the front: fine ivory stock, printed in black and oxblood */
     .r3t-front { color: #1b1410; font-family: Georgia, "Times New Roman", serif;
       background: radial-gradient(130% 90% at 30% 10%, #fbf6ea 0%, #f1e9d8 60%, #e6dcc6 100%); }
@@ -1020,8 +1040,11 @@
     /* (kept clear of the corner indexes) */
     .r3t-meta { position: absolute; left: 70px; right: 70px; top: 346px; display: flex; justify-content: center; font-size: 32px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.85; }
     .r3t-meta span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .r3t-sheen { position: absolute; inset: 0; pointer-events: none; overflow: hidden; display: none; }
+    .r3t-sheen { position: absolute; inset: 0; pointer-events: none; overflow: hidden; opacity: var(--r3t-sheen, 0.18); }
     .r3t-sheen::before { content: ""; position: absolute; top: -20%; bottom: -20%; left: -70%; width: 50%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.42), transparent); transform: skewX(-18deg); animation: r3tSheen 5.5s ease-in-out infinite; }
+    .r3t-front { --r3t-sheen: 0.18; }
+    .r3t-front.t-C { --r3t-sheen: 0.26; }
+    .r3t-front.t-B { --r3t-sheen: 0.4; }
     @keyframes r3tSheen { 0%, 55% { transform: translateX(0) skewX(-18deg); } 100% { transform: translateX(420%) skewX(-18deg); } }
     /* D and C: an oxblood double rule */
     .r3t-front.t-D .r3t-frame, .r3t-front.t-C .r3t-frame { border-color: #7a1020; opacity: 0.9; box-shadow: 0 0 0 6px #f1e9d8, 0 0 0 8px #7a1020; }
@@ -1033,7 +1056,7 @@
     .r3t-front.t-A { background: repeating-radial-gradient(circle at 50% 40%, rgba(120,120,140,0.07) 0 3px, transparent 3px 7px), radial-gradient(130% 90% at 30% 10%, #fdfcf8 0%, #eeebe4 60%, #dcd8cf 100%); color: #20242c; }
     .r3t-front.t-A .r3t-frame { inset: 17px; border: 7px solid transparent; opacity: 1; background: linear-gradient(#f4f2ec, #f4f2ec) padding-box, linear-gradient(135deg, #8a8f98, #f5f7fa 28%, #9aa0aa 50%, #ffffff 70%, #7d838c) border-box; }
     .r3t-front.t-A .r3t-seal { color: #5b616b; }
-    .r3t-front.t-A .r3t-sheen { display: block; opacity: 0.55; }
+    .r3t-front.t-A { --r3t-sheen: 0.6; }
     /* S: black lacquer, gold foil, the table's filigree across it */
     .r3t-front.t-S { color: #e9c978; background: radial-gradient(120% 80% at 50% 38%, #221a14 0%, #0f0c0a 55%, #070605 100%); }
     .r3t-front.t-S .r3t-frame { inset: 16px; border: 5px solid transparent; opacity: 1; border-radius: 10px; background: linear-gradient(#0e0b09, #0e0b09) padding-box, linear-gradient(135deg, #7a5a24, #f7dc92 25%, #9a7030 48%, #fff0c0 66%, #7a5a24) border-box; box-shadow: inset 0 0 0 10px #0e0b09, inset 0 0 0 12px rgba(233,201,120,0.7); }
@@ -1045,7 +1068,7 @@
     .r3t-front.t-S .r3t-seal { top: 118px; width: 118px; height: 118px; margin-left: -59px; }
     .r3t-front.t-S .r3t-name { color: #f6e2b0; top: 252px; }
     .r3t-front.t-S .r3t-meta { color: #d9b467; top: 338px; }
-    .r3t-front.t-S .r3t-sheen { display: block; }
+    .r3t-front.t-S { --r3t-sheen: 1; }
 
     /* The phone: glass and a lock screen; picked up, the drops. */
     .r3t-phone { width: 392px; height: 820px; border-radius: 66px; overflow: hidden; cursor: pointer; border: 10px solid transparent;
