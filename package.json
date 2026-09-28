@@ -8,6 +8,7 @@
     "check:refs": "node scripts/check-references.js",
     "check:catalog": "node scripts/validate-catalog.js",
     "check:seo": "node scripts/generate-seo-pages.js --check",
+    "sweep:batch": "node scripts/sweep-batch.js",
     "test:smoke": "node scripts/smoke-test.js",
     "test:sw": "node scripts/sw-push-test.js",
     "build:history": "node scripts/catalog-history.js",
