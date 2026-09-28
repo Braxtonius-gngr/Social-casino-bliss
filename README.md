@@ -92,6 +92,18 @@ No `npm install` needed - both scripts use only Node's standard library.
 They also run automatically on every push and pull request via
 [`.github/workflows/checks.yml`](.github/workflows/checks.yml).
 
+`npm run sweep:batch` is a read-only helper, not part of CI: it prints the
+next handful of entries to re-check (never-verified first, then oldest
+`lastVerified`, skipping anything with a `SWEEP` note from the last two
+weeks) and changes nothing. It feeds a daily catalogue sweep that runs
+outside this repository as a scheduled Claude task: that job re-reads each
+entry's URL, cooldown, reset window and redeem floor against the platform's
+own public pages, records what it found as a dated `SWEEP YYYY-MM-DD (...)`
+note, and opens a pull request for a human to review and merge. It sets
+`lastVerified` only when an official page confirmed the claim cadence as
+well as the URL; a redeem floor alone, a login-gated site or one that
+refuses automated reading gets the note but keeps its date.
+
 `npm run test:smoke` runs browser smoke tests for the flows that talk to the
 server: anonymous sign-in (exactly one per device, and none for crawlers),
 the catalogue download and its rate-limit fallback, Cloud Sync, Pro checkout

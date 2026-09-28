@@ -199,6 +199,26 @@
   ],
   "Card Crush": [
     {
+      "date": "2026-09-27",
+      "changed": [
+        "tier",
+        "dailySC",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "A",
+        "dailySC": 0.5,
+        "cashFloor": 50,
+        "daysToRedeem": 100
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": 75,
+        "daysToRedeem": null
+      }
+    },
+    {
       "date": "2026-09-21",
       "changed": [
         "tier",
@@ -628,6 +648,27 @@
       "to": {
         "tier": "Unranked",
         "dailySC": 0.45,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Daruma Casino": [
+    {
+      "date": "2026-09-27",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
         "cashFloor": null,
         "daysToRedeem": null
       }
@@ -1102,6 +1143,25 @@
     }
   ],
   "GoMining": [
+    {
+      "date": "2026-09-27",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": null,
+        "daysToRedeem": null
+      }
+    },
     {
       "date": "2026-09-23",
       "added": true,
@@ -2912,6 +2972,24 @@
   ],
   "Sportzino": [
     {
+      "date": "2026-09-27",
+      "changed": [
+        "dailySC"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": 50,
+        "daysToRedeem": 50
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 0.96,
+        "cashFloor": 50,
+        "daysToRedeem": 52
+      }
+    },
+    {
       "date": "2026-09-21",
       "changed": [
         "cashFloor"
@@ -3463,6 +3541,25 @@
   ],
   "Vegas Bonanza": [
     {
+      "date": "2026-09-27",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": 100,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.09,
+        "cashFloor": 100,
+        "daysToRedeem": 1111
+      }
+    },
+    {
       "date": "2026-09-26",
       "changed": [
         "cashFloor"
@@ -3724,6 +3821,25 @@
     }
   ],
   "Zoot": [
+    {
+      "date": "2026-09-27",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.4,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.4,
+        "cashFloor": 100,
+        "daysToRedeem": 250
+      }
+    },
     {
       "date": "2026-09-21",
       "changed": [
