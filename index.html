@@ -33,6 +33,16 @@
         // same for the rest of the app, so the stale key never needs an
         // explicit migration step.
         var look = { refinement: 'executive', executive: 'executive', prism: 'prism', neon: 'neon', obsidian: 'obsidian', glitch: 'glitch', western: 'western' };
+        // Refinement x Realization became the default on 2026-09-28 and
+        // everyone was moved onto it once, whatever they had picked - the
+        // picker switches back, and the flag keeps that choice from then
+        // on. Done here, before first paint, so the old skin never shows;
+        // getActiveThemeId() reads the key this writes.
+        if (localStorage.getItem('almanac_skin_rxr_v1') !== 'done') {
+          id = 'refinement';
+          localStorage.setItem('almanac_theme_v1', id);
+          localStorage.setItem('almanac_skin_rxr_v1', 'done');
+        }
         var skin = look[id] ? id : 'refinement';
         document.documentElement.setAttribute('data-theme', look[skin]);
         document.documentElement.setAttribute('data-skin', skin);
@@ -5169,6 +5179,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // ?intro=css forces the CSS one; ?tier= and ?seed= pick a tier and a
     // throw; ?lab adds a switcher and window.rollIntroSeek(t).
     const ROLL_SOUND_KEY = 'almanac_intro_sound';   // 'on' | 'off'
+    const ROLL_SOUND_RESET_KEY = 'almanac_intro_sound_on_v1';   // 'done': the one-time reset to on
     function rollHasWebGL2() {
       try {
         const c = document.createElement('canvas');
@@ -5236,13 +5247,22 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const tier = mod.TIERS.includes(tierQ) ? tierQ : mod.pickTier(Math.random());
       const seedQ = parseInt(q.get('seed'), 10);
       const seed = Number.isFinite(seedQ) ? seedQ >>> 0 : Math.floor(Math.random() * 4294967296);
+      // Sound is on by default. It was made on for everyone once, on
+      // 2026-09-28: a speaker switched off before then is back on (the
+      // speaker still switches it off, and that choice holds from here).
       let soundPref = null;
-      try { soundPref = localStorage.getItem(ROLL_SOUND_KEY); } catch (e) { soundPref = null; }
+      try {
+        if (localStorage.getItem(ROLL_SOUND_RESET_KEY) !== 'done') {
+          if (localStorage.getItem(ROLL_SOUND_KEY) === 'off') localStorage.removeItem(ROLL_SOUND_KEY);
+          localStorage.setItem(ROLL_SOUND_RESET_KEY, 'done');
+        }
+        soundPref = localStorage.getItem(ROLL_SOUND_KEY);
+      } catch (e) { soundPref = null; }
       // The table the landing flies into after the shot (table.mjs): the
-      // skin's own (see THEMES), or ?dest=card / ?dest=craps to compare the
-      // two, ?dest=none for the landing as it always was.
+      // skin's own (see THEMES), or ?dest=card for it under any skin,
+      // ?dest=none for the landing as it always was.
       const destQ = q.get('dest');
-      const tableDest = destQ === 'card' || destQ === 'craps' ? destQ : destQ === 'none' ? null : themeTable();
+      const tableDest = destQ === 'card' ? destQ : destQ === 'none' ? null : themeTable();
       let tablePrep = null, flying = false;
       const prepTable = () => {
         if (!tableDest || tablePrep || !api) return tablePrep;
@@ -6720,8 +6740,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const id = localStorage.getItem(THEME_KEY);
       return THEMES[id] ? id : DEFAULT_THEME;
     }
-    // The table the skin flies the landing into and makes its home ('card',
-    // 'craps'), or null: the classic home.
+    // The table the skin flies the landing into and makes its home ('card'),
+    // or null: the classic home.
     function themeTable(themeId) {
       const t = THEMES[themeId || getActiveThemeId()];
       return (t && t.table) || null;
