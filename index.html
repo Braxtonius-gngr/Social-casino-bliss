@@ -63,6 +63,16 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="assets/app.css" />
   <link rel="stylesheet" href="assets/accessibility.css" />
+  <!-- The landing's WebGL intro and the table it flies into, fetched and
+       compiled while the page parses rather than one import level at a
+       time once the shot is asked for (assets/intro3d/*.mjs import three,
+       which imports its core). -->
+  <link rel="modulepreload" href="assets/intro3d/intro.mjs" />
+  <link rel="modulepreload" href="assets/intro3d/physics.mjs" />
+  <link rel="modulepreload" href="assets/vendor/three/three.module.js" />
+  <link rel="modulepreload" href="assets/vendor/three/three.core.js" />
+  <link rel="modulepreload" href="assets/vendor/three/three.addons.js" />
+  <link rel="modulepreload" href="assets/intro3d/table.mjs" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Oswald:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet" />
@@ -5305,9 +5315,6 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         table = await prep.fly(world, Object.assign({
           host: world.host,
           reduced: motionOff(),
-          // (a lifted card's info: two takes while they are compared -
-          // ?cardinfo=placard for the one on the felt)
-          info: q.get('cardinfo') === 'placard' ? 'placard' : 'sheet',
           seatView: seatcam.length === 4 && seatcam.every(Number.isFinite) ? seatcam : null,
           onArrive: layer => {
             const stage = document.createElement('div');
@@ -6533,7 +6540,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const THEMES = {
       refinement: {
         name: 'Refinement × Realization',
-        description: 'The visualized skin. A throw of the dice, then the card table as your home: the deck dealt to you by hand, the rail your clock, your phone for the rest.',
+        description: 'The visualized skin. A throw of the dice, then the card table as your home: the deck dealt to you by an arm that rises out of the table, the rail your clock, your phone for the rest.',
         look: 'executive',
         table: 'card',
         // (the palette, background and colour are Executive Lounge's - set

@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v62';
+const CACHE_NAME = 'almanac-v63';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -76,6 +76,18 @@ self.addEventListener('fetch', (event) => {
   }
   if (req.method !== 'GET' || url.origin !== self.location.origin) return;
 
+  // The landing's intro - three.js, its modules, textures and sounds, and
+  // the table it flies into - is served from the cache straight away and
+  // refreshed behind it (stale-while-revalidate). Network-first made every
+  // launch wait on a round of revalidations, one module level at a time,
+  // before the shot could start: the lag on each first play. A changed
+  // file is fetched in the background and used from the next launch (a
+  // CACHE_NAME bump replaces the whole set at once, as ever).
+  if (isIntroAsset(url)) {
+    event.respondWith(introFromCache(event, req, url));
+    return;
+  }
+
   event.respondWith(
     // cache: 'no-cache' always revalidates with the server, so a fresh
     // deploy is never masked by the browser's HTTP cache (e.g. app.css,
@@ -114,6 +126,40 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
+// The directories served cache-first (see the fetch handler), as absolute
+// paths under this worker's scope, so a subpath deploy still matches.
+// (worked out on first use: nothing but the fetch handler needs them)
+let introDirs = null;
+function isIntroAsset(url) {
+  if (!introDirs) {
+    introDirs = ['assets/intro3d/', 'assets/vendor/three/', 'assets/intro/']
+      .map((dir) => new URL(dir, self.registration.scope).pathname);
+  }
+  return introDirs.some((dir) => url.pathname.startsWith(dir));
+}
+
+async function introFromCache(event, req, url) {
+  const cache = await caches.open(CACHE_NAME);
+  const key = url.origin + url.pathname;
+  const hit = await cache.match(key);
+  const refresh = fetch(req, { cache: 'no-cache' }).then((response) => {
+    if (response && response.status === 200 && response.type === 'basic') {
+      const copy = response.clone();
+      event.waitUntil(cache.put(key, copy));
+    }
+    return response;
+  });
+  if (hit) {
+    // (the refresh finishes in the background; offline, it simply fails)
+    event.waitUntil(refresh.catch(() => {}));
+    return hit;
+  }
+  return refresh.catch(() => new Response('Offline and no cached copy is available.', {
+    status: 503,
+    headers: { 'Content-Type': 'text/plain' }
+  }));
+}
 
 // --- Background push alerts ---
 // Pushes arrive with no payload (the server never holds message text). The
