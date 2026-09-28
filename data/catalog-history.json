@@ -1926,6 +1926,26 @@
       }
     }
   ],
+  "LuckyOne": [
+    {
+      "date": "2026-09-28",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": 100,
+        "daysToRedeem": null
+      }
+    }
+  ],
   "Lunaland Casino": [
     {
       "date": "2026-09-22",
@@ -2306,6 +2326,27 @@
         "dailySC": 0.014,
         "cashFloor": 75,
         "daysToRedeem": 5357
+      }
+    }
+  ],
+  "PlayTana": [
+    {
+      "date": "2026-09-28",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Not Rankable",
+        "dailySC": null,
+        "cashFloor": null,
+        "daysToRedeem": null
       }
     }
   ],
@@ -2952,6 +2993,25 @@
   ],
   "Spinfinite": [
     {
+      "date": "2026-09-28",
+      "changed": [
+        "tier",
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0.4,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.4,
+        "cashFloor": 100,
+        "daysToRedeem": 250
+      }
+    },
+    {
       "date": "2026-09-21",
       "changed": [
         "tier"
@@ -2966,6 +3026,26 @@
         "tier": "Unranked",
         "dailySC": 0.4,
         "cashFloor": null,
+        "daysToRedeem": null
+      }
+    }
+  ],
+  "Spinszy": [
+    {
+      "date": "2026-09-28",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": 100,
         "daysToRedeem": null
       }
     }
@@ -3009,6 +3089,25 @@
     }
   ],
   "Spree": [
+    {
+      "date": "2026-09-28",
+      "changed": [
+        "tier",
+        "dailySC"
+      ],
+      "from": {
+        "tier": "D",
+        "dailySC": 0.4,
+        "cashFloor": 100,
+        "daysToRedeem": 250
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.3,
+        "cashFloor": 100,
+        "daysToRedeem": 333
+      }
+    },
     {
       "date": "2026-09-22",
       "changed": [
@@ -3316,6 +3415,26 @@
         "dailySC": 0.05,
         "cashFloor": 100,
         "daysToRedeem": 2000
+      }
+    }
+  ],
+  "SweepStars": [
+    {
+      "date": "2026-09-28",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": 100,
+        "daysToRedeem": null
       }
     }
   ],
@@ -3817,6 +3936,26 @@
         "dailySC": 0.5,
         "cashFloor": 50,
         "daysToRedeem": 100
+      }
+    }
+  ],
+  "Zonko": [
+    {
+      "date": "2026-09-28",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": 100,
+        "daysToRedeem": null
       }
     }
   ],
