@@ -37,8 +37,10 @@ The authoritative script definitions are in [package.json](package.json), and CI
 
 ## Theme Work
 
-- Theme definitions live in the inline `THEMES` object in [index.html](index.html).
+- Theme definitions live in the inline `THEMES` object in [index.html](index.html). Object order is picker order.
 - Theme variables, `bodyBg`, and browser `theme-color` are applied through the existing theme engine and exposed via `data-theme`.
+- Skins come in pairs: a **visualized** skin and its **muted** pairing - same colours, different effects. A visualized skin names its pairing in `look` (it wears that theme's palette and every `[data-theme="<look>"]` rule) and the table the landing flies into in `table` (its home; see `assets/intro3d/table.mjs`). `applyTheme()` sets `data-theme` to the look and `data-skin` to the skin itself, so rules that are the visualized skin's own - the things that move - are scoped `[data-skin="<id>"]`, and the muted pairing is the readable, motion-free take of the same room. Refinement × Realization (`refinement`, the default for anyone without a saved theme) / Executive Lounge is the first pair; the pre-paint bootstrap at the top of `index.html` mirrors the look table and must be kept in step.
+- With motion off (`html[data-motion="off"]`), a visualized skin's pages must be exactly its muted pairing's, and its table is entered with `reduced: true` (a cut to the seat, the cards already dealt, nothing moving after).
 - Put visual overrides in [assets/app.css](assets/app.css), scoped to the relevant theme selector.
 - Preserve accessibility and reduced-motion behavior, including the existing `screenShake()` and `hapticBuzz()` hooks.
 - For Ransom Note / Revolver Chamber work, follow [.github/agents/ransom-chamber.agent.md](.github/agents/ransom-chamber.agent.md).

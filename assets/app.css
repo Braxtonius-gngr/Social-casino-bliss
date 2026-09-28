@@ -1114,8 +1114,13 @@
     .r3t-ph-app { opacity: 0; visibility: hidden; }
     .r3t-phone.r3t-held .r3t-ph-lock { opacity: 0; visibility: hidden; }
     .r3t-phone.r3t-held .r3t-ph-app { opacity: 1; visibility: visible; }
-    .r3t-ph-title { font: 700 9cqw/1.1 Georgia, "Times New Roman", serif; color: #f6ead0; text-align: center; margin: 3cqw 0 6cqw; letter-spacing: 0.01em; }
+    .r3t-ph-title { position: relative; font: 700 8.2cqw/1.1 Georgia, "Times New Roman", serif; color: #f6ead0; text-align: center; margin: 3.4cqw 0 6cqw; padding: 0 9.5cqw; letter-spacing: 0.01em; white-space: nowrap; }
     .r3t-ph-title em { font-style: normal; color: #e8c064; }
+    /* Settings, from the phone: the one door from the table to the app's
+       own controls (the skin, motion, notifications, sync). */
+    .r3t-ph-gear { position: absolute; z-index: 1; right: 0; top: 50%; transform: translateY(-50%); width: 9.5cqw; height: 9.5cqw; padding: 1.8cqw; border-radius: 50%; border: 1px solid rgba(240,213,143,0.3); background: rgba(255,255,255,0.08); color: #f0dca6; cursor: pointer; }
+    .r3t-ph-gear svg { display: block; width: 100%; height: 100%; }
+    .r3t-ph-gear:active { background: rgba(255,255,255,0.16); }
     .r3t-ph-grid { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 3.5cqw; }
     .r3t-ph-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 1.4cqw; padding: 4.6cqw 4.2cqw 4.4cqw; border-radius: 7cqw; border: 1px solid rgba(240,213,143,0.3); background: linear-gradient(160deg, rgba(255,255,255,0.11), rgba(255,255,255,0.03)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); color: #f2efe8; text-align: left; cursor: pointer; font-family: inherit; }
     .r3t-ph-tile:active { background: rgba(255,255,255,0.16); }
@@ -1128,14 +1133,39 @@
     .r3t-ph-put { margin-top: auto; width: 100%; padding: 4.6cqw; border-radius: 12cqw; border: 1px solid rgba(240,213,143,0.38); background: rgba(255,255,255,0.1); color: #f0dca6; font: 600 4.6cqw/1 system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
     .r3t-ph-put:active { background: rgba(255,255,255,0.18); }
     html[data-motion="off"] .r3t-phone, html[data-motion="off"] .r3t-ph-lock, html[data-motion="off"] .r3t-ph-app { transition: none; }
+    /* Motion off - the readable take of the table: no light sweeping the
+       cards (the global kill switch stops the sweep; this takes the streak
+       off the print too), and the phone's pocket pill holds still. */
+    html[data-motion="off"] .r3t-sheen { display: none; }
 
     /* While the landing flies into the table its copy steps aside. */
     .landing-screen.r3-flying .landing-inner, .landing-screen.r3-flying .roll-lab, .landing-screen.r3-flying .r3-sound { opacity: 0; transition: opacity .35s ease; pointer-events: none; }
+    /* Taking the seat without the shot (the landing switched off, or the
+       skin switched to one with a table): the set builds in the dark and
+       the camera goes down into the chair - nothing of the landing's copy
+       or controls shows. */
+    .landing-screen.r3-direct { transition: none; }
+    .landing-screen.r3-direct :is(.landing-inner, .roll-lab, .r3-sound, .r3-tier, .r3-call, .r3-flash, .landing-smoke, #circuitBg) { display: none !important; }
     body.r3-table-mode #main-content { visibility: hidden; }
-    /* A view opened from the phone, over the table, and the way back. */
-    body.r3-table-mode.r3-sheet-open #main-content { visibility: visible; position: fixed; inset: 0; z-index: 260; overflow-y: auto; background: var(--bg-base); padding-top: 64px; }
+    /* A view opened from the phone, over the table, and the way back. The
+       page stands on the skin's own background (the body's, with its
+       glows), and the table rests out of sight under it until you go
+       back - nothing of it is painted while you read. */
+    body.r3-table-mode.r3-sheet-open #main-content { visibility: visible; position: fixed; inset: 0; z-index: 260; overflow-y: auto; padding-top: 64px; }
+    /* (display, not visibility: the cards set their own visibility inline
+       as they are dealt, which would show through an inherited hidden) */
+    body.r3-table-mode.r3-sheet-open .r3-stage { display: none; }
     .r3-sheet-back { display: none; }
     body.r3-table-mode.r3-sheet-open .r3-sheet-back { display: block; position: fixed; top: max(12px, env(safe-area-inset-top)); left: 12px; z-index: 261; padding: 10px 16px; border-radius: 22px; border: 1px solid rgba(232,200,106,0.45); background: rgba(12,10,9,0.9); color: #f0dca6; font: 600 14px/1 Georgia, serif; letter-spacing: 0.04em; cursor: pointer; }
+    /* With the table up, the app's own layers - its modals (Settings, Add
+       platform...), the docked footer and the feedback button - sit above
+       the stage (250) and the sheet (260), where they were always meant
+       to be reachable from; the run overlay (300) and toasts (400) already
+       are. The footer and the button only show over a sheet. */
+    body.r3-table-mode .sheet-backdrop { z-index: 270; }
+    body.r3-table-mode :is(.docked-footer, .feedback-fab) { visibility: hidden; }
+    body.r3-table-mode.r3-sheet-open :is(.docked-footer, .feedback-fab) { visibility: visible; z-index: 262; }
+    body.r3-table-mode.r3-sheet-open .feedback-fab { z-index: 263; }
 
     /* The intro lab (?lab): pick an ending, a felt and a room, and replay.
        Shown once the shot is over. */
@@ -1495,6 +1525,9 @@
     .theme-name { font-size: 0.9rem; color: var(--text-main); font-weight: 800; }
     .theme-name .active-tag { font-size: 0.6rem; color: var(--accent-green); margin-left: 8px; letter-spacing: 0.08em; }
     .theme-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
+    /* The pair a skin belongs to: a visualized skin and its muted take
+       (see THEMES in index.html), each card naming the other. */
+    .theme-pair { font-size: 0.62rem; color: var(--accent-gold); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 2px; opacity: 0.85; }
     .theme-swatches { display: flex; gap: 4px; flex-shrink: 0; }
     /* ---------- Refinement layer (applies to every theme) ---------- */
 
@@ -1625,7 +1658,10 @@
     .ready-at { color: var(--text-dim); font-size: 0.7rem; font-family: "Courier New", monospace; }
     .btn-check { background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); border-radius: 8px; padding: 7px 10px; font-size: 0.9rem; cursor: pointer; flex-shrink: 0; line-height: 1; transition: all 0.2s ease; }
     .btn-check:hover { border-color: var(--accent-green); color: var(--accent-green); }
-    #toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%) translateY(220%); opacity: 0; pointer-events: none; background: rgba(20,22,18,0.97); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px 14px; border-radius: 10px; z-index: 400; display: flex; align-items: center; gap: 14px; font-size: 0.85rem; box-shadow: 0 10px 30px rgba(0,0,0,0.7); transition: transform .28s cubic-bezier(.22,1,.36,1), opacity .2s ease; max-width: calc(100% - 32px); }
+    /* (width: max-content - a fixed box at left: 50% otherwise shrinks to
+       fit the half of the screen right of centre and wraps a one-line
+       message into three) */
+    #toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%) translateY(220%); opacity: 0; pointer-events: none; background: rgba(20,22,18,0.97); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px 14px; border-radius: 10px; z-index: 400; display: flex; align-items: center; gap: 14px; font-size: 0.85rem; box-shadow: 0 10px 30px rgba(0,0,0,0.7); transition: transform .28s cubic-bezier(.22,1,.36,1), opacity .2s ease; width: max-content; max-width: calc(100% - 32px); }
     #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
     #toast .undo { background: transparent; border: 1px solid var(--accent-gold); color: var(--accent-gold); border-radius: 6px; padding: 6px 12px; font-weight: 800; font-size: 0.75rem; cursor: pointer; letter-spacing: 0.06em; flex-shrink: 0; }
 
@@ -3746,7 +3782,19 @@
    choices other themes rely on the base NOT making (hero-ring-circle stays
    green in the base because Neon Grid needs it green), plus decoration the
    base was never going to carry for everyone (the metallic button gradient,
-   the recessed cooldown well, the segmented filter-chip shape). */
+   the recessed cooldown well, the segmented filter-chip shape).
+
+   Two skins wear this look (see THEMES in index.html): Refinement x
+   Realization, the visualized skin - html[data-skin="refinement"], with
+   html[data-theme="executive"] as its look - and Executive Lounge itself,
+   its muted pairing, html[data-skin="executive"]. Same colours, different
+   effects: everything still - the glass, the poured gold, the podium -
+   is [data-theme="executive"] and both have it; everything that moves -
+   the light crossing the deck, the sweep on the gold, the drifting mesh
+   and the gold dust - is [data-skin="refinement"] and only the visualized
+   skin has it. Executive Lounge is the readable, motion-free take, on
+   purpose: what someone with sensitive eyes, or a device asking for
+   reduced motion, gets of the same room. */
 
 /* Wordmark, upgraded from flat gold to a poured-metal gradient clipped to
    the text itself, plus a short gold rule underneath - the signature mark a
@@ -3843,8 +3891,11 @@
 
    mod() has shipped in every engine since 2024; where it hasn't, the
    animation-delay declaration is dropped and every card sweeps in unison
-   once per period - degraded, not broken. */
-[data-theme="executive"] {
+   once per period - degraded, not broken.
+
+   The light is the visualized skin's (data-skin="refinement"): Executive
+   Lounge, the muted pairing, has the same cards without it. */
+[data-skin="refinement"] {
   --deck-light-period: 45s;
   --deck-light-step: 1.8s;
   --deck-light-cards: 25;
@@ -3853,7 +3904,7 @@
   position: relative;
   overflow: hidden;
 }
-[data-theme="executive"] .ledger-card::before {
+[data-skin="refinement"] .ledger-card::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -3878,7 +3929,7 @@
    html[data-motion="off"] *::before kill switch already stops the
    animation; this additionally hides the highlight, which the un-animated
    base transform leaves parked above the card anyway). */
-html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation: none; opacity: 0; }
+html[data-motion="off"][data-skin="refinement"] .ledger-card::before { animation: none; opacity: 0; }
 
 [data-theme="executive"] .hero-ring-circle {
   border: 2px solid var(--accent-gold);
@@ -3937,9 +3988,11 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
 [data-theme="executive"] .btn-open { border: 1px solid rgba(255,255,255,0.18); font-weight: 800; }
 [data-theme="executive"] .btn-open:hover,
 [data-theme="executive"] .btn-primary:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 5px 16px rgba(0,0,0,0.6), 0 8px 30px rgba(212,175,55,0.4); }
-[data-theme="executive"] .btn-open::after,
-[data-theme="executive"] .btn-primary::after,
-[data-theme="executive"] .btn-run-collect::after {
+/* (the sweep is the visualized skin's - Executive Lounge's gold holds
+   still) */
+[data-skin="refinement"] .btn-open::after,
+[data-skin="refinement"] .btn-primary::after,
+[data-skin="refinement"] .btn-run-collect::after {
   content: '';
   position: absolute;
   top: 0; left: -60%;
@@ -3949,8 +4002,8 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
   animation: gold-sheen 4.5s linear infinite;
   pointer-events: none;
 }
-[data-theme="executive"] .btn-primary::after { animation-delay: 1.5s; }
-[data-theme="executive"] .btn-run-collect::after { animation-delay: 3s; }
+[data-skin="refinement"] .btn-primary::after { animation-delay: 1.5s; }
+[data-skin="refinement"] .btn-run-collect::after { animation-delay: 3s; }
 /* A straight 0%->100% sweep, no repeated keyframe value anywhere in
    between. The previous version held the streak still at each end (0-8%
    and 38-100% both pinned to the same `left`), which reads as exactly what
@@ -3967,9 +4020,9 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
    this - restated per the pattern the rest of this file follows, so an
    audit of "what does motion-off actually silence" doesn't have to trust
    an ancestor rule it can't see from here. */
-[data-motion="off"] [data-theme="executive"] .btn-open::after,
-[data-motion="off"] [data-theme="executive"] .btn-primary::after,
-[data-motion="off"] [data-theme="executive"] .btn-run-collect::after { animation: none; opacity: 0; }
+html[data-motion="off"][data-skin="refinement"] .btn-open::after,
+html[data-motion="off"][data-skin="refinement"] .btn-primary::after,
+html[data-motion="off"][data-skin="refinement"] .btn-run-collect::after { animation: none; opacity: 0; }
 
 /* A platform on cooldown gets the recessed well instead: inset shadow, no
    fill, muted text. Not-yet-actionable should look pressed into the card. */
@@ -4062,6 +4115,15 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
   box-shadow: 0 4px 16px rgba(0,0,0,0.55);
 }
 
+/* The theme picker: the active card is marked in the room's own gold, not
+   the base's green, and a visualized skin's card carries a hairline of
+   gold foil down its left edge - the one thing that tells the two halves
+   of a pair apart at a glance. */
+[data-theme="executive"] .theme-card.active { border-color: var(--accent-gold); box-shadow: 0 0 0 1px rgba(212,175,55,0.22), 0 0 20px rgba(212,175,55,0.10); }
+[data-theme="executive"] .theme-name .active-tag { color: var(--accent-gold); }
+[data-theme="executive"] .theme-card.theme-visual { background: linear-gradient(90deg, #f2d894 0, #c9a75a 3px, transparent 3px), rgba(0,0,0,0.35); }
+[data-theme="executive"] .theme-card.theme-visual.active { background: linear-gradient(90deg, #f2d894 0, #c9a75a 3px, transparent 3px), rgba(0,0,0,0.5); }
+
 /* The onboarding tour reads as a still gold callout rather than a pulsing
    cyan flare - restraint extends to motion, not just colour. */
 [data-theme="executive"] .tour-target-active { animation: none !important; box-shadow: 0 0 0 2px var(--accent-gold) !important; }
@@ -4104,11 +4166,19 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
     radial-gradient(52% 45% at 85% 78%, rgba(63,191,143,0.20) 0%, transparent 66%),
     radial-gradient(48% 40% at 88% 12%, rgba(79,216,232,0.14) 0%, transparent 64%);
   background-size: 220% 220%;
-  animation: exec-mesh-drift 52s ease-in-out infinite, exec-mesh-hue 110s linear infinite;
+  background-position: 5% 10%, 95% 90%, 92% 8%;
 }
 [data-theme="executive"] .landing-screen::before,
 [data-theme="executive"] #dailyRunOverlay::before {
   position: absolute;
+}
+/* The drift and the slow turn through the spectrum are the visualized
+   skin's; in Executive Lounge the same three glows are simply the room's
+   light, and stay where they are. */
+[data-skin="refinement"] body::before,
+[data-skin="refinement"] .landing-screen::before,
+[data-skin="refinement"] #dailyRunOverlay::before {
+  animation: exec-mesh-drift 52s ease-in-out infinite, exec-mesh-hue 110s linear infinite;
 }
 /* Each glow relocates across about a third of the screen and back. The
    amplitude is Amped's; only the clock changed - at this speed the motion
@@ -4146,9 +4216,12 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
    class of cost as the mesh itself, and the two together are still less
    than Amped's total, which also spun a ring, pulsed every badge and
    button, and shimmered the wordmark. If it ever has to be clawed back on
-   low-end hardware, drop this layer before touching the mesh. */
-[data-theme="executive"] body::after,
-[data-theme="executive"] #dailyRunOverlay::after {
+   low-end hardware, drop this layer before touching the mesh.
+
+   The dust is the visualized skin's only: Executive Lounge, the muted
+   pairing, keeps the light and not the motes. */
+[data-skin="refinement"] body::after,
+[data-skin="refinement"] #dailyRunOverlay::after {
   content: '';
   position: fixed;
   inset: 0;
@@ -4179,7 +4252,7 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
   mask-repeat: repeat;
   animation: exec-fleck-drift 52s ease-in-out infinite, exec-fleck-shimmer 20s linear infinite;
 }
-[data-theme="executive"] #dailyRunOverlay::after {
+[data-skin="refinement"] #dailyRunOverlay::after {
   position: absolute;
 }
 /* Same clock and the same lower-right heading as the mesh's dominant gold
@@ -4199,11 +4272,14 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
   0% { -webkit-mask-position: 0 0, 0 0; mask-position: 0 0, 0 0; }
   100% { -webkit-mask-position: 300px 300px, -470px 470px; mask-position: 300px 300px, -470px 470px; }
 }
-html[data-motion="off"][data-theme="executive"] body::before,
-html[data-motion="off"][data-theme="executive"] .landing-screen::before,
-html[data-motion="off"][data-theme="executive"] #dailyRunOverlay::before,
-html[data-motion="off"][data-theme="executive"] body::after,
-html[data-motion="off"][data-theme="executive"] #dailyRunOverlay::after { animation: none; }
+html[data-motion="off"][data-skin="refinement"] body::before,
+html[data-motion="off"][data-skin="refinement"] .landing-screen::before,
+html[data-motion="off"][data-skin="refinement"] #dailyRunOverlay::before { animation: none; }
+html[data-motion="off"][data-skin="refinement"] body::after,
+html[data-motion="off"][data-skin="refinement"] #dailyRunOverlay::after { animation: none; content: none; }
+/* (with motion off, then, the visualized skin's pages ARE its muted
+   pairing's: the glows stay, still; the dust goes; what is left is exactly
+   Executive Lounge) */
 
 /* Nav-tab glyphs. Stacked above the label rather than beside it: an inline
    icon adds ~20px per tab, which four tabs cannot afford at 320px, while a
