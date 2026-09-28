@@ -109,8 +109,52 @@ function checkServiceWorker() {
   }
   const itemRe = /(["'])(.*?)\1/g;
   let m;
+  const listed = new Set();
   while ((m = itemRe.exec(arrayMatch[1]))) {
     checkLocalRef(file, m[2], `${m[2]} (PRECACHE_URLS entry)`);
+    listed.add(path.normalize(stripFragmentAndQuery(m[2])));
+  }
+  checkPrecacheCoverage(file, listed);
+  checkBuildVersion(source);
+}
+
+// Everything the app can load is precached, except the rare tiers' extras
+// (assets/intro3d/rare/, kept on first use): a new asset left out of
+// PRECACHE_URLS would be fetched mid-shot on every first play, the lag the
+// "Updating" download exists to prevent.
+const PRECACHE_SKIP = [/^assets\/intro3d\/rare\//, /(^|\/)(README\.md|LICENSE)$/];
+function listFiles(dir) {
+  const out = [];
+  const full = path.join(ROOT, dir);
+  if (!fs.existsSync(full)) return out;
+  for (const entry of fs.readdirSync(full, { withFileTypes: true })) {
+    const rel = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...listFiles(rel));
+    else out.push(rel.split(path.sep).join('/'));
+  }
+  return out;
+}
+function checkPrecacheCoverage(file, listed) {
+  const wanted = ['index.html', 'manifest.json', 'apple-touch-icon.png', 'data/catalog.js', ...listFiles('assets'), ...listFiles('utils')];
+  for (const rel of wanted) {
+    const rare = PRECACHE_SKIP.some(re => re.test(rel));
+    const inList = listed.has(path.normalize(rel));
+    checkedCount += 1;
+    if (!rare && !inList) problems.push({ sourceFile: file, rawValue: rel, context: `${rel} is not in PRECACHE_URLS (every asset but the rare extras is precached)` });
+    if (rare && inList && /rare/.test(rel)) problems.push({ sourceFile: file, rawValue: rel, context: `${rel} is a rare-tier extra: it caches on first use, not in the precache` });
+  }
+}
+
+// The page knows which build it is (index.html APP_BUILD) and asks the
+// service worker whether that build is fully cached (sw.js CACHE_NAME): the
+// two must be bumped together.
+function checkBuildVersion(swSource) {
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const cacheName = (swSource.match(/const CACHE_NAME = '([^']+)'/) || [])[1];
+  const appBuild = (html.match(/const APP_BUILD = '([^']+)'/) || [])[1];
+  checkedCount += 1;
+  if (!cacheName || !appBuild || cacheName !== appBuild) {
+    problems.push({ sourceFile: 'sw.js / index.html', rawValue: `${cacheName} / ${appBuild}`, context: `sw.js CACHE_NAME (${cacheName || 'missing'}) and index.html APP_BUILD (${appBuild || 'missing'}) must match - bump both together` });
   }
 }
 

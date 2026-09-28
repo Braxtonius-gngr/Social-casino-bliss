@@ -8314,10 +8314,167 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
       let swRefreshToastShown = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (swRefreshToastShown) return;
+        // (while the landing's own "Updating" bar is up, its Refresh is the
+        // one to offer - see appWhenCached)
+        if (swRefreshToastShown || appUpdate.active) return;
         swRefreshToastShown = true;
         showToast('The app was updated. Refresh to get the latest.', () => location.reload(), 30000, 'REFRESH');
       });
+    }
+
+    // --- The build and its download ---
+    // This page's build: the service worker's CACHE_NAME for the files it
+    // shipped with. npm run check:refs keeps the two equal, so bump both.
+    const APP_BUILD = 'almanac-v64';
+    // The intro plays from the cache. When this build's files are not all
+    // there yet (a first visit, or an update that has just shipped), it
+    // waits. A slim "Updating" bar fills while the service worker downloads
+    // them (everything but the rare tiers' extras), then "Ready · Refresh"
+    // reloads into the build, smooth from the cache. It never traps anyone:
+    // without a service worker, or with no answer or a stalled download,
+    // the page goes on as it always has.
+    const appUpdate = { active: false, el: null, go: null, timers: [] };
+    // Asks the worker serving this page how this build stands (with none
+    // yet, on a first visit, the newest one there is); resolves null with
+    // no answer (an older worker does not know the question). It has to be
+    // the one serving the page: a new worker can have the build whole
+    // before it takes over, while the old one still answers the requests.
+    function appAskBuild(ms) {
+      return new Promise(resolve => {
+        if (!('serviceWorker' in navigator)) { resolve(null); return; }
+        navigator.serviceWorker.getRegistration().then(reg => {
+          const sw = navigator.serviceWorker.controller || (reg ? (reg.installing || reg.waiting || reg.active) : null);
+          if (!sw) { resolve(null); return; }
+          const ch = new MessageChannel();
+          const timer = setTimeout(() => resolve(null), ms);
+          ch.port1.onmessage = e => { clearTimeout(timer); resolve(e.data || null); };
+          sw.postMessage({ type: 'precache-status' }, [ch.port2]);
+        }).catch(() => resolve(null));
+      });
+    }
+    // go: what the page would have done (play the intro, or take the seat).
+    // where: 'landing' (the bar under the landing's copy) or 'strip' (a
+    // small pill at the top of the app, with the landing switched off).
+    function appWhenCached(go, where) {
+      // (?lab plays at once: the intro is being tuned, not shipped)
+      if (!('serviceWorker' in navigator) || !window.MessageChannel || rollOptions().lab) { go(); return; }
+      // (a whole build answers at once; anything slower shows the bar while
+      // the answer comes, and a late "whole" takes it away again)
+      let answered = false;
+      const early = setTimeout(() => { if (!answered) appHoldForUpdate(go, where, null); }, 350);
+      appAskBuild(2500).then(st => {
+        answered = true;
+        clearTimeout(early);
+        // this build, whole, and already serving this page: play
+        if (st && st.version === APP_BUILD && st.complete && navigator.serviceWorker.controller) {
+          if (appUpdate.active) appUpdateEnd(true); else go();
+          return;
+        }
+        if (!appUpdate.active) appHoldForUpdate(go, where, st);
+      });
+    }
+    function appHoldForUpdate(go, where, st) {
+      appUpdate.active = true;
+      appUpdate.go = go;
+      const bar = document.createElement('div');
+      bar.className = `app-update app-update-${where}`;
+      bar.setAttribute('role', 'status');
+      bar.setAttribute('aria-live', 'polite');
+      bar.innerHTML = '<div class="app-update-track"><i></i></div><span class="app-update-label">Updating</span>';
+      appUpdate.el = bar;
+      const screen = document.getElementById('landingScreen');
+      if (where === 'landing' && screen) {
+        screen.classList.add('app-updating');
+        const inner = screen.querySelector('.landing-inner');
+        const btn = inner && inner.querySelector('.landing-btn');
+        if (btn) btn.after(bar); else if (inner) inner.appendChild(bar); else screen.appendChild(bar);
+      } else {
+        document.body.appendChild(bar);
+      }
+      let last = 0;
+      const show = (done, total) => {
+        const k = total ? Math.max(0, Math.min(1, done / total)) : 0;
+        if (k < last) return;
+        last = k;
+        bar.style.setProperty('--k', k.toFixed(3));
+        const label = bar.querySelector('.app-update-label');
+        if (label) label.textContent = `Updating · ${Math.round(k * 100)}%`;
+        appUpdateStalled(false);
+      };
+      if (st && st.version === APP_BUILD && st.total) show(st.done || 0, st.total);
+      const onMsg = e => {
+        const d = e.data || {};
+        if (d.type !== 'precache' || d.version !== APP_BUILD) return;
+        show(d.done, d.total);
+        if (!d.complete) return;
+        // (all of it down: ready; some of it missed: the way on without it,
+        // and the next visit asks for it again)
+        if (!d.failed) { appUpdateReady(); return; }
+        const label = bar.querySelector('.app-update-label');
+        if (label) label.textContent = 'Some files didn\u2019t download';
+        appUpdateStalled(true);
+      };
+      navigator.serviceWorker.addEventListener('message', onMsg);
+      appUpdate.off = () => navigator.serviceWorker.removeEventListener('message', onMsg);
+      // this build's worker, on its way: registered now rather than on
+      // load, asked for an update, and - should it be here already with
+      // its download unfinished - asked to finish it
+      navigator.serviceWorker.register('sw.js').then(reg => {
+        reg.update().catch(() => {});
+        if (reg.active && !reg.installing && !reg.waiting) reg.active.postMessage({ type: 'precache-start' });
+      }).catch(() => appUpdateEnd(true));   // (no worker possible here: nothing to wait for)
+      // (and asked again every couple of seconds, should a message be missed)
+      const poll = setInterval(() => {
+        appAskBuild(1500).then(s2 => {
+          if (!s2 || s2.version !== APP_BUILD) return;
+          if (s2.total) show(s2.done || 0, s2.total);
+          if (s2.complete) appUpdateReady();
+        });
+      }, 2000);
+      appUpdate.timers.push(poll);
+      appUpdateStalled(false);
+    }
+    // No progress for a while (no network, a worker that will not start):
+    // the way on without it.
+    function appUpdateStalled(now) {
+      clearTimeout(appUpdate.stall);
+      const bar = appUpdate.el;
+      if (!bar || bar.classList.contains('app-update-ready')) return;
+      const offer = () => {
+        if (bar.querySelector('.app-update-skip')) return;
+        const skip = document.createElement('button');
+        skip.type = 'button';
+        skip.className = 'app-update-skip';
+        skip.textContent = 'Continue without it';
+        skip.onclick = () => appUpdateEnd(true);
+        bar.appendChild(skip);
+      };
+      if (now) offer(); else appUpdate.stall = setTimeout(offer, 15000);
+    }
+    function appUpdateReady() {
+      const bar = appUpdate.el;
+      if (!bar || bar.classList.contains('app-update-ready')) return;
+      clearTimeout(appUpdate.stall);
+      appUpdate.timers.forEach(clearInterval);
+      if (appUpdate.off) appUpdate.off();
+      bar.classList.add('app-update-ready');
+      bar.style.setProperty('--k', '1');
+      bar.innerHTML = '<div class="app-update-track"><i></i></div><button type="button" class="app-update-go">Ready &middot; Refresh</button>';
+      bar.querySelector('.app-update-go').onclick = () => location.reload();
+    }
+    // Out of the hold without a refresh: the bar goes and the page does
+    // what it would have done.
+    function appUpdateEnd(runGo) {
+      clearTimeout(appUpdate.stall);
+      appUpdate.timers.forEach(clearInterval);
+      if (appUpdate.off) appUpdate.off();
+      if (appUpdate.el) appUpdate.el.remove();
+      const screen = document.getElementById('landingScreen');
+      if (screen) screen.classList.remove('app-updating');
+      appUpdate.active = false;
+      const go = appUpdate.go;
+      appUpdate.go = null;
+      if (runGo && go) go();
     }
 
     // --- Collection history & stats ---
@@ -13243,12 +13400,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // ?lab always plays the intro, whatever the landing setting, so the
     // intro's options can be compared (see rollOptions).
     const showLanding = localStorage.getItem('almanac_show_landing') !== 'false' || rollOptions().lab;
+    // (neither the shot nor the seat starts until this build's files are
+    // all cached - see appWhenCached)
     if (!showLanding) {
       document.getElementById('landingScreen').classList.add('hidden');
       // (a skin whose home is a table: the seat is taken without the shot)
-      rollEnterTable();
+      appWhenCached(() => rollEnterTable(), 'strip');
     } else {
-      playRollIntro();
+      appWhenCached(() => playRollIntro(), 'landing');
     }
 
     // trackedGames is loaded near the top of this script and every element

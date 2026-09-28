@@ -1185,6 +1185,25 @@
     /* A card collected at the table: its face says how long it has left. */
     .r3t-card.r3t-spent .r3t-state { color: #a89670; }
 
+    /* A new build's download (index.html, appWhenCached): the intro waits
+       while a slim bar fills under the landing's copy, then offers the
+       refresh that plays it from the cache. With the landing off it is a
+       small pill at the top of the app, out of the way until it is ready. */
+    .landing-screen.app-updating .landing-btn { display: none; }
+    .app-update { display: flex; flex-direction: column; align-items: center; gap: 9px; margin: 6px 0 14px; min-height: 44px; }
+    .app-update-track { position: relative; width: 150px; height: 2px; border-radius: 2px; background: rgba(214,176,98,0.18); overflow: hidden; }
+    .app-update-track i { position: absolute; inset: 0; background: linear-gradient(90deg, #b98a33, #f2d894); transform-origin: 0 50%; transform: scaleX(var(--k, 0)); transition: transform .35s ease-out; }
+    .app-update-label { font: 600 10.5px/1 system-ui, sans-serif; letter-spacing: 0.22em; text-transform: uppercase; color: #b9a67c; }
+    .app-update-go { padding: 9px 18px; border-radius: 20px; border: 1px solid rgba(232,200,106,0.6); background: rgba(12,10,9,0.6); color: #f0dca6; font: 600 11.5px/1 system-ui, sans-serif; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; animation: app-update-in .4s ease-out both; }
+    .app-update-go:active { filter: brightness(0.9); }
+    .app-update-skip { border: 0; background: none; padding: 4px 8px; color: #8a8068; font: 500 11px/1 system-ui, sans-serif; letter-spacing: 0.06em; text-decoration: underline; cursor: pointer; }
+    .app-update-strip { position: fixed; z-index: 90; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); margin: 0; min-height: 0; padding: 8px 14px 9px; border-radius: 16px; background: rgba(10,9,8,0.82); border: 1px solid rgba(214,176,98,0.22); pointer-events: none; gap: 7px; }
+    .app-update-strip.app-update-ready, .app-update-strip:has(.app-update-skip) { pointer-events: auto; }
+    .app-update-strip .app-update-track { width: 110px; }
+    .app-update-ready .app-update-track { display: none; }
+    @keyframes app-update-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    html[data-motion="off"] :is(.app-update-track i, .app-update-go) { transition: none; animation: none; }
+
     /* While the landing flies into the table its copy steps aside. */
     .landing-screen.r3-flying .landing-inner, .landing-screen.r3-flying .roll-lab, .landing-screen.r3-flying .r3-sound { opacity: 0; transition: opacity .35s ease; pointer-events: none; }
     /* Taking the seat without the shot (the landing switched off, or the
