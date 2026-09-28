@@ -11,23 +11,44 @@
        "BASE = EXECUTIVE LOUNGE" in app.css), so falling through to no
        attribute at all is already correct - this still sets one explicitly
        so every [data-theme="executive"] rule matches too. Mirrors
-       getActiveThemeId()'s own fallback (executive) so the two never
-       disagree. Deliberately tiny and synchronous - this has to finish
+       getActiveThemeId()'s own fallback (refinement, which wears the
+       executive look) so the two never disagree. Deliberately tiny and
+       synchronous - this has to finish
        before the browser's first paint, so it can't wait for the rest of
        the page or any external script. -->
   <script>
     (function () {
       try {
         var id = localStorage.getItem('almanac_theme_v1');
+        // Each skin, and the look it wears in the app - the data-theme the
+        // stylesheet keys on. A visualized skin (Refinement x Realization,
+        // the default: the dice, the shot, the card table as home) wears
+        // its muted pairing's look, so the in-app pages are the same
+        // colours with the effects left to the table; data-skin carries
+        // the skin itself for the few rules that are the skin's own.
+        // Mirrors THEMES / applyTheme() below so the two never disagree.
         // 'amped' (Executive Lounge: Amped) was retired 2026-09-27 - its two
         // keepable effects now live in executive itself. Anyone who had it
-        // stored lands on executive here, and getActiveThemeId() does the
+        // stored lands on the default here, and getActiveThemeId() does the
         // same for the rest of the app, so the stale key never needs an
         // explicit migration step.
-        var valid = ['western', 'prism', 'neon', 'obsidian', 'glitch', 'executive'];
-        document.documentElement.setAttribute('data-theme', valid.indexOf(id) !== -1 ? id : 'executive');
+        var look = { refinement: 'executive', executive: 'executive', prism: 'prism', neon: 'neon', obsidian: 'obsidian', glitch: 'glitch', western: 'western' };
+        // Refinement x Realization became the default on 2026-09-28 and
+        // everyone was moved onto it once, whatever they had picked - the
+        // picker switches back, and the flag keeps that choice from then
+        // on. Done here, before first paint, so the old skin never shows;
+        // getActiveThemeId() reads the key this writes.
+        if (localStorage.getItem('almanac_skin_rxr_v1') !== 'done') {
+          id = 'refinement';
+          localStorage.setItem('almanac_theme_v1', id);
+          localStorage.setItem('almanac_skin_rxr_v1', 'done');
+        }
+        var skin = look[id] ? id : 'refinement';
+        document.documentElement.setAttribute('data-theme', look[skin]);
+        document.documentElement.setAttribute('data-skin', skin);
       } catch (e) {
         document.documentElement.setAttribute('data-theme', 'executive');
+        document.documentElement.setAttribute('data-skin', 'refinement');
       }
     })();
   </script>
@@ -731,7 +752,7 @@
         <span class="slc-net" id="settingsLedgerNet"></span>
       </button>
       <div class="toggle-row">
-        <span style="color:#fff;">Show Landing Page on Open</span>
+        <span style="color:#fff;">Show Landing Page on Open<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Off: straight to your seat at the table, or to the Deck</span></span>
         <input type="checkbox" id="settingLandingToggle" onchange="toggleLandingSetting()" checked />
       </div>
       <div class="toggle-row">
@@ -5158,6 +5179,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // ?intro=css forces the CSS one; ?tier= and ?seed= pick a tier and a
     // throw; ?lab adds a switcher and window.rollIntroSeek(t).
     const ROLL_SOUND_KEY = 'almanac_intro_sound';   // 'on' | 'off'
+    const ROLL_SOUND_RESET_KEY = 'almanac_intro_sound_on_v1';   // 'done': the one-time reset to on
     function rollHasWebGL2() {
       try {
         const c = document.createElement('canvas');
@@ -5169,18 +5191,36 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (!screen || screen.classList.contains('hidden')) return;
       let q = null;
       try { q = new URLSearchParams(window.location.search); } catch (e) { q = null; }
-      if ((q && q.get('intro') === 'css') || !rollHasWebGL2()) { playRollIntroCss(); return; }
+      if ((q && q.get('intro') === 'css') || !rollHasWebGL2()) { playRollIntroCss(themeMuted()); return; }
       rollIntro3d(screen, q || new URLSearchParams());
     }
-    async function rollIntro3d(screen, q) {
+    // The table that is home (a skin with one - see THEMES): the landing is
+    // skipped or already gone, so the seat is taken directly - the set
+    // built in the dark behind the landing screen, then a short fly down
+    // into the seat, or a cut with motion off. Without WebGL there is no
+    // table, and the classic home stands in (the skin's muted pairing is
+    // the same look).
+    function rollEnterTable() {
+      const screen = document.getElementById('landingScreen');
+      if (!screen || !themeTable() || rollTableSession) return false;
+      let q = null;
+      try { q = new URLSearchParams(window.location.search); } catch (e) { q = null; }
+      if ((q && q.get('intro') === 'css') || !rollHasWebGL2()) return false;
+      screen.classList.remove('hidden');
+      rollIntro3d(screen, q || new URLSearchParams(), { direct: true });
+      return true;
+    }
+    async function rollIntro3d(screen, q, mode = {}) {
       const host = screen.querySelector('.roll-intro');
       const motionOff = () => document.documentElement.getAttribute('data-motion') === 'off';
+      const direct = !!mode.direct;
       let api = null, fellBack = false, done = false, timer = null;
       // Aborting stops a shot that is still being built: it gives back
       // everything it has made so far and rejects (see createIntro).
       const building = typeof AbortController === 'function' ? new AbortController() : null;
       screen.classList.remove('roll-rest', 'roll-popped');
       screen.classList.add('intro-play', 'roll-webgl');
+      screen.classList.toggle('r3-direct', direct);
       const fallBack = still => {
         if (fellBack || api) return;
         fellBack = true;
@@ -5189,13 +5229,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         screen.removeEventListener('pointerdown', skipWhileLoading);
         // (without roll-webgl, CSS hides any of the shot's pieces that are
         // already on the page until the abort removes them)
-        screen.classList.remove('roll-webgl');
+        screen.classList.remove('roll-webgl', 'r3-direct');
+        // (taking the seat directly, and no seat to take: the classic home)
+        if (direct) { screen.classList.remove('intro-play'); screen.classList.add('hidden'); return; }
         playRollIntroCss(still);
       };
       // A tap before the shot has loaded: straight to the finished frame.
       const skipWhileLoading = () => fallBack(true);
-      screen.addEventListener('pointerdown', skipWhileLoading);
-      timer = setTimeout(() => fallBack(false), 6000);
+      if (!direct) screen.addEventListener('pointerdown', skipWhileLoading);
+      timer = setTimeout(() => fallBack(false), direct ? 15000 : 6000);
       let mod;
       try {
         mod = await import('./assets/intro3d/intro.mjs');
@@ -5205,13 +5247,22 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const tier = mod.TIERS.includes(tierQ) ? tierQ : mod.pickTier(Math.random());
       const seedQ = parseInt(q.get('seed'), 10);
       const seed = Number.isFinite(seedQ) ? seedQ >>> 0 : Math.floor(Math.random() * 4294967296);
+      // Sound is on by default. It was made on for everyone once, on
+      // 2026-09-28: a speaker switched off before then is back on (the
+      // speaker still switches it off, and that choice holds from here).
       let soundPref = null;
-      try { soundPref = localStorage.getItem(ROLL_SOUND_KEY); } catch (e) { soundPref = null; }
-      // The table the landing flies into after the shot (table.mjs): for
-      // now only while the two destinations are being compared, ?dest=card
-      // or ?dest=craps; without one, the landing behaves as it always has.
+      try {
+        if (localStorage.getItem(ROLL_SOUND_RESET_KEY) !== 'done') {
+          if (localStorage.getItem(ROLL_SOUND_KEY) === 'off') localStorage.removeItem(ROLL_SOUND_KEY);
+          localStorage.setItem(ROLL_SOUND_RESET_KEY, 'done');
+        }
+        soundPref = localStorage.getItem(ROLL_SOUND_KEY);
+      } catch (e) { soundPref = null; }
+      // The table the landing flies into after the shot (table.mjs): the
+      // skin's own (see THEMES), or ?dest=card for it under any skin,
+      // ?dest=none for the landing as it always was.
       const destQ = q.get('dest');
-      const tableDest = destQ === 'card' || destQ === 'craps' ? destQ : null;
+      const tableDest = destQ === 'card' ? destQ : destQ === 'none' ? null : themeTable();
       let tablePrep = null, flying = false;
       const prepTable = () => {
         if (!tableDest || tablePrep || !api) return tablePrep;
@@ -5237,7 +5288,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const world = api.release();
         screen.classList.add('r3-flying');
         const seatcam = (q.get('seatcam') || '').split(',').map(Number);
-        const table = await prep.fly(world, Object.assign({
+        const session = { world, table: null, stage: null };
+        rollTableSession = session;
+        let table = null;
+        try {
+        table = await prep.fly(world, Object.assign({
           host: world.host,
           reduced: motionOff(),
           seatView: seatcam.length === 4 && seatcam.every(Number.isFinite) ? seatcam : null,
@@ -5246,18 +5301,31 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             stage.className = 'r3-stage';
             document.body.appendChild(stage);
             stage.append(world.canvas, layer);
+            session.stage = stage;
             document.body.classList.add('r3-table-mode');
             screen.classList.add('hidden');
+            screen.classList.remove('r3-flying', 'r3-direct', 'intro-play', 'roll-webgl', 'roll-popped', 'roll-rest');
             kickSync();
           }
         }, flyOpts));
+        } catch (e) {
+          // (the shot is lost with the renderer already handed over: the
+          // classic home, as if there had been no table)
+          console.warn('table', e);
+          rollLeaveTable();
+          return false;
+        }
+        session.table = table;
         window.rollTable = table;
         return true;
       };
       const onTap = e => {
         if (e.target.closest && e.target.closest('a, .roll-lab, .r3-sound')) return;
-        flyIn();
+        enter();
       };
+      // Into the seat - or, should the table not be there to fly to, into
+      // the classic home the way the landing always went.
+      const enter = () => { flyIn().then(ok => { if (!ok) dismissLanding(true); }); };
       const disarmTable = () => {
         screen.removeEventListener('pointerdown', onTap);
         window.rollIntroEnter = null;
@@ -5266,7 +5334,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (!tableDest) return;
         prepTable();
         screen.addEventListener('pointerdown', onTap);
-        window.rollIntroEnter = () => { flyIn(); return true; };
+        window.rollIntroEnter = () => { enter(); return true; };
+        // (the button says where the tap goes)
+        const btn = screen.querySelector('.landing-btn');
+        if (btn) { btn.innerHTML = 'TAKE YOUR SEAT &rarr;'; btn.setAttribute('aria-label', 'Take your seat at the table'); }
       };
       // The shot is over - played through, skipped, or held still: the copy
       // settles in, and (with a table to go to) the next tap flies in.
@@ -5294,7 +5365,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           signal: building ? building.signal : null,
           motionOff,
           quality: q.get('quality') || 'auto',
-          sound: soundPref !== 'off',
+          sound: !direct && soundPref !== 'off',
           onReveal: () => screen.classList.add('roll-popped'),
           onEnd: end,
           onSoundChange: on => { try { localStorage.setItem(ROLL_SOUND_KEY, on ? 'on' : 'off'); } catch (e) { /* private mode */ } }
@@ -5308,6 +5379,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       clearTimeout(timer);
       screen.removeEventListener('pointerdown', skipWhileLoading);
       window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; };
+      if (direct) {
+        // Straight to the seat: the shot is over before it began - the
+        // frame it ends on, with the table built into it - and the camera
+        // goes down into the chair from there.
+        done = true;
+        if (motionOff()) api.finish(); else api.seek(api.plan.totalReal);
+        const ok = await flyIn({ duration: 2.2 });
+        if (!ok) { screen.classList.remove('intro-play', 'roll-webgl', 'r3-direct'); screen.classList.add('hidden'); if (window.rollIntroDispose) window.rollIntroDispose(); rollTableSession = null; }
+        return;
+      }
       if (q.has('lab')) {
         window.rollIntroPlan = api.plan;
         window.rollIntroSeek = t => {
@@ -5328,13 +5409,44 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         window.rollTableFly = o => { done = true; return flyIn(o); };
         window.rollIntroPeek = () => api && api.peek();
       }
-      if (motionOff()) { api.finish(); end(); return; }
+      // Motion off - or a muted skin, the still take of a visualized one
+      // (see THEMES): the finished frame, held, and no shot.
+      if (motionOff() || themeMuted()) { api.finish(); end(); return; }
       // Any tap, key press, or focus arriving on the screen skips straight
       // to the end of the shot (as in the CSS intro).
       screen.addEventListener('pointerdown', skip);
       screen.addEventListener('focusin', skip);
       document.addEventListener('keydown', skip);
       api.play();
+    }
+    // The table that is up, when one is: the intro's world (its renderer
+    // and set), the table controller and the stage they were moved to.
+    let rollTableSession = null;
+    // The home changes with the skin (selectTheme): a skin with a table
+    // takes the seat now, one without leaves it for the classic home.
+    function rollSetHome(table) {
+      if (table) { if (!rollTableSession) { closeModals(); rollEnterTable(); } return; }
+      rollLeaveTable();
+    }
+    // Out of the seat: the table and the intro's world go, the classic
+    // home is back where it was.
+    function rollLeaveTable() {
+      const s = rollTableSession;
+      rollTableSession = null;
+      window.rollTable = null;
+      if (s) {
+        try { if (s.table) s.table.dispose(); } catch (e) { /* gone */ }
+        try { if (s.world) s.world.dispose(); } catch (e) { /* gone */ }
+        if (s.stage) s.stage.remove();
+      }
+      if (window.rollIntroDispose) window.rollIntroDispose();
+      document.body.classList.remove('r3-table-mode', 'r3-sheet-open');
+      const back = document.getElementById('r3SheetBack');
+      if (back) back.remove();
+      const screen = document.getElementById('landingScreen');
+      if (screen) { screen.classList.remove('intro-play', 'roll-webgl', 'r3-flying', 'r3-direct'); screen.classList.add('hidden'); }
+      const main = document.getElementById('main-content');
+      if (main) main.focus({ preventScroll: true });
     }
     // What the table deals and shows (assets/intro3d/table.mjs): the ready
     // platforms in the deck - best tier first, then the richest - or, with
@@ -5367,6 +5479,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // A view from the phone (Freebies, Community) over the table, with a
     // way back to it.
     function rollTableSheet(view) {
+      // (Settings is a modal of its own, over the table, not a sheet)
+      if (view === 'settings') { openSettingsModal(); return; }
       const tab = { freebies: ['freebies', 'tabFreebies'], community: ['community', 'tabCommunity'], deck: ['games', 'tabPlatforms'], catalogue: ['catalog', 'tabCatalog'] }[view];
       if (!tab) return;
       switchMainTab(tab[0], document.getElementById(tab[1]));
@@ -5402,9 +5516,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       nav.addEventListener('pointerdown', e => e.stopPropagation());
     }
 
-    function dismissLanding() {
-      // (with a table to fly to, Enter Deck is the cue for the fly-in)
-      if (window.rollIntroEnter && window.rollIntroEnter()) return;
+    function dismissLanding(classic) {
+      // (with a table to fly to, Enter Deck is the cue for the fly-in;
+      // `classic` is the fly-in itself giving up and coming this way)
+      if (!classic && window.rollIntroEnter && window.rollIntroEnter()) return;
+      window.rollIntroEnter = null;
       const screen = document.getElementById('landingScreen');
       const burnEligible = isWesternTheme() && document.documentElement.getAttribute('data-motion') !== 'off';
       if (burnEligible) {
@@ -6342,11 +6458,35 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const THEME_KEY = 'almanac_theme_v1';
 
     // Object order is picker order - renderThemeUI() iterates
-    // Object.entries(THEMES) with no explicit sort. Executive Lounge is
-    // listed first because it is the default (see getActiveThemeId() and
-    // the pre-paint bootstrap above); the renamed western theme is last,
-    // demoted out of its old first-and-default slot.
+    // Object.entries(THEMES) with no explicit sort. Refinement x
+    // Realization is listed first because it is the default (see
+    // getActiveThemeId() and the pre-paint bootstrap above), with
+    // Executive Lounge, its muted pairing, right after it; the renamed
+    // western theme is last, demoted out of its old first-and-default slot.
+    //
+    // Skins come in pairs: a visualized skin and its muted pairing. The
+    // visualized one has the effects - the WebGL landing shot, the fly-in
+    // to a table that is the home screen, the light moving through the
+    // in-app pages - and names its pairing in `look`: it wears that
+    // theme's palette and in-app stylesheet (every [data-theme="<look>"]
+    // rule) so the two are the same colours with different effects, and
+    // the pairing is the readable, motion-free take of the same skin for
+    // anyone who wants it (or whose device asks for reduced motion). `table`
+    // is the table the landing flies into - the skin's home. Refinement x
+    // Realization / Executive Lounge is the first pair; the other skins
+    // get their visualized halves the same way, each with a `look`.
     const THEMES = {
+      refinement: {
+        name: 'Refinement × Realization',
+        description: 'The visualized skin. A throw of the dice, then the card table as your home: the deck dealt to you by hand, the rail your clock, your phone for the rest.',
+        look: 'executive',
+        table: 'card',
+        // (the palette, background and colour are Executive Lounge's - set
+        // from it after this object, see below)
+        vars: null,
+        bodyBg: null,
+        metaColor: null
+      },
       // Executive Lounge: the brief's own palette, taken literally -
       // deep obsidian #0B0C10, dark frosted glass rgba(22,24,29,0.85),
       // metallic gold #D4AF37 for anything actionable, bright cyan as
@@ -6360,9 +6500,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // into the base and this override block is comparatively small.
       executive: {
         name: 'Executive Lounge',
-        description: 'Dark-mode fintech meets VIP floor. Obsidian, frosted glass, metallic gold.',
+        description: 'The muted pairing of Refinement × Realization. Clean black cards on brushed obsidian, one warm light swaying slowly through the room, a little gold dust: no shot, no table - built for readability and easy eyes.',
         vars: {
-          '--bg-base': '#050507',
+          // The brief's obsidian: matte, not pure black.
+          '--bg-base': '#0B0C10',
           '--accent-gold': '#D4AF37',
           '--accent-gold-hover': '#E8C860',
           '--accent-gold-dim': 'rgba(212, 175, 55, 0.16)',
@@ -6412,20 +6553,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // DOCUMENT, where the path is right - and stays right under a GitHub
         // Pages subpath, since it never starts with a slash.
         //
-        // background.webp is itself a subtle, near-black brushed-metal
-        // texture - it was never going to read as anything but flat black
-        // once a 0.75-0.85 alpha wash sat on top of it (the previous value
-        // here). That's the actual bug behind "the background reads as
-        // primarily black": not a rendering issue, a wash heavy enough to
-        // bury an already-dark source image. Two things fix it - a much
-        // lighter, single-stop wash so the texture itself is visible, and
-        // real ambient light: a gold glow top-left and a cool emerald glow
-        // lower-right, both large and soft. This is also the light source
-        // .glass-panel's backdrop-filter: saturate() is meant to pick up -
-        // frosted glass over a flat color can only ever look like a dark
-        // grey box, no matter how much blur it carries.
-        bodyBg: "radial-gradient(130% 90% at 12% -8%, rgba(212,175,55,0.20) 0%, transparent 52%) center/cover fixed, radial-gradient(110% 80% at 92% 20%, rgba(63,191,143,0.14) 0%, transparent 55%) center/cover fixed, linear-gradient(180deg, rgba(5,5,7,0.30) 0%, rgba(5,5,7,0.48) 45%, rgba(5,5,7,0.66) 100%) center/cover fixed, url('assets/background.webp') center/cover fixed #050507",
-        metaColor: '#050507'
+        // background.webp is a subtle, near-black brushed-metal texture:
+        // matte obsidian with a grain to it, not pure black. It is the whole
+        // ground here - a light wash over it so the grain stays visible, and
+        // no coloured light on top. The gold and emerald glows this used to
+        // carry (and the drifting three-tone mesh in app.css that went with
+        // them) are the visualized skin's own now, over this same ground:
+        // Executive Lounge is the clean room - black cards with their detail
+        // on brushed obsidian - and the colour is only ever in the gold.
+        bodyBg: "linear-gradient(180deg, rgba(11,12,16,0.22) 0%, rgba(11,12,16,0.42) 55%, rgba(11,12,16,0.58) 100%) center/cover fixed, url('assets/background.webp') center/cover fixed #0B0C10",
+        metaColor: '#0B0C10'
       },
       prism: {
         name: 'Prism Noir',
@@ -6587,17 +6724,44 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         metaColor: '#0B0B0B'
       }
     };
+    // A visualized skin is its pairing's colours; the pairing knows which
+    // skin it is the muted take of (the picker says so).
+    Object.entries(THEMES).forEach(([id, t]) => {
+      const m = t.look && THEMES[t.look];
+      if (!m) return;
+      t.vars = t.vars || m.vars;
+      t.bodyBg = t.bodyBg || m.bodyBg;
+      t.metaColor = t.metaColor || m.metaColor;
+      m.visual = m.visual || id;
+    });
+    const DEFAULT_THEME = 'refinement';
 
     function getActiveThemeId() {
       const id = localStorage.getItem(THEME_KEY);
-      return THEMES[id] ? id : 'executive';
+      return THEMES[id] ? id : DEFAULT_THEME;
+    }
+    // The table the skin flies the landing into and makes its home ('card'),
+    // or null: the classic home.
+    function themeTable(themeId) {
+      const t = THEMES[themeId || getActiveThemeId()];
+      return (t && t.table) || null;
+    }
+    // A muted skin: the still take of a visualized one (it names it in
+    // `visual`) - nothing moves, the landing included.
+    function themeMuted(themeId) {
+      const t = THEMES[themeId || getActiveThemeId()];
+      return !!(t && t.visual);
     }
 
     function applyTheme(themeId) {
-      const theme = THEMES[themeId] || THEMES.executive;
+      if (!THEMES[themeId]) themeId = DEFAULT_THEME;
+      const theme = THEMES[themeId];
       const root = document.documentElement;
       Object.entries(theme.vars).forEach(([k, v]) => root.style.setProperty(k, v));
-      root.setAttribute('data-theme', themeId);
+      // (data-theme is the look the stylesheet keys on; data-skin the skin
+      // itself - see the pre-paint bootstrap at the top of this page)
+      root.setAttribute('data-theme', theme.look || themeId);
+      root.setAttribute('data-skin', themeId);
       if (document.body) document.body.style.background = theme.bodyBg;
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute('content', theme.metaColor);
@@ -6639,9 +6803,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function selectTheme(themeId) {
+      if (!THEMES[themeId]) return;
+      const was = getActiveThemeId();
       try { localStorage.setItem(THEME_KEY, themeId); } catch (e) {}
       applyTheme(themeId);
       renderThemeUI();
+      // A skin with a table for a home, or without one: the home changes
+      // with it (see rollSetHome).
+      if (themeTable(was) !== themeTable(themeId)) rollSetHome(themeTable(themeId));
     }
 
     function renderThemeUI() {
@@ -6652,10 +6821,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const isActive = id === active;
         const swatches = [t.vars['--accent-cyan'], t.vars['--accent-pink'], t.vars['--accent-gold'], t.vars['--accent-green']]
           .map(c => `<div class="theme-swatch" style="background:${c}"></div>`).join('');
-        return `<div class="theme-card ${isActive ? 'active' : ''}" onclick="selectTheme('${id}')">
+        // (the pair: a visualized skin and its muted take, each naming the other)
+        const pair = t.look ? `Visualized · muted take: ${escHtml(THEMES[t.look].name)}`
+          : t.visual ? `Muted · visualized take: ${escHtml(THEMES[t.visual].name)}` : '';
+        return `<div class="theme-card ${isActive ? 'active' : ''}${t.look ? ' theme-visual' : ''}" onclick="selectTheme('${id}')">
           <div class="theme-info">
             <span class="theme-name">${escHtml(t.name)}${isActive ? '<span class="active-tag">ACTIVE</span>' : ''}</span>
             <span class="theme-desc">${escHtml(t.description)}</span>
+            ${pair ? `<span class="theme-pair">${pair}</span>` : ''}
           </div>
           <div class="theme-swatches">${swatches}</div>
         </div>`;
@@ -13006,6 +13179,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const showLanding = localStorage.getItem('almanac_show_landing') !== 'false' || rollOptions().lab;
     if (!showLanding) {
       document.getElementById('landingScreen').classList.add('hidden');
+      // (a skin whose home is a table: the seat is taken without the shot)
+      rollEnterTable();
     } else {
       playRollIntro();
     }

@@ -1115,8 +1115,13 @@
     .r3t-ph-app { opacity: 0; visibility: hidden; }
     .r3t-phone.r3t-held .r3t-ph-lock { opacity: 0; visibility: hidden; }
     .r3t-phone.r3t-held .r3t-ph-app { opacity: 1; visibility: visible; }
-    .r3t-ph-title { font: 700 9cqw/1.1 Georgia, "Times New Roman", serif; color: #f6ead0; text-align: center; margin: 3cqw 0 6cqw; letter-spacing: 0.01em; }
+    .r3t-ph-title { position: relative; font: 700 8.2cqw/1.1 Georgia, "Times New Roman", serif; color: #f6ead0; text-align: center; margin: 3.4cqw 0 6cqw; padding: 0 9.5cqw; letter-spacing: 0.01em; white-space: nowrap; }
     .r3t-ph-title em { font-style: normal; color: #e8c064; }
+    /* Settings, from the phone: the one door from the table to the app's
+       own controls (the skin, motion, notifications, sync). */
+    .r3t-ph-gear { position: absolute; z-index: 1; right: 0; top: 50%; transform: translateY(-50%); width: 9.5cqw; height: 9.5cqw; padding: 1.8cqw; border-radius: 50%; border: 1px solid rgba(240,213,143,0.3); background: rgba(255,255,255,0.08); color: #f0dca6; cursor: pointer; }
+    .r3t-ph-gear svg { display: block; width: 100%; height: 100%; }
+    .r3t-ph-gear:active { background: rgba(255,255,255,0.16); }
     .r3t-ph-grid { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 3.5cqw; }
     .r3t-ph-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 1.4cqw; padding: 4.6cqw 4.2cqw 4.4cqw; border-radius: 7cqw; border: 1px solid rgba(240,213,143,0.3); background: linear-gradient(160deg, rgba(255,255,255,0.11), rgba(255,255,255,0.03)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); color: #f2efe8; text-align: left; cursor: pointer; font-family: inherit; }
     .r3t-ph-tile:active { background: rgba(255,255,255,0.16); }
@@ -1129,14 +1134,39 @@
     .r3t-ph-put { margin-top: auto; width: 100%; padding: 4.6cqw; border-radius: 12cqw; border: 1px solid rgba(240,213,143,0.38); background: rgba(255,255,255,0.1); color: #f0dca6; font: 600 4.6cqw/1 system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
     .r3t-ph-put:active { background: rgba(255,255,255,0.18); }
     html[data-motion="off"] .r3t-phone, html[data-motion="off"] .r3t-ph-lock, html[data-motion="off"] .r3t-ph-app { transition: none; }
+    /* Motion off - the readable take of the table: no light sweeping the
+       cards (the global kill switch stops the sweep; this takes the streak
+       off the print too), and the phone's pocket pill holds still. */
+    html[data-motion="off"] .r3t-sheen { display: none; }
 
     /* While the landing flies into the table its copy steps aside. */
     .landing-screen.r3-flying .landing-inner, .landing-screen.r3-flying .roll-lab, .landing-screen.r3-flying .r3-sound { opacity: 0; transition: opacity .35s ease; pointer-events: none; }
+    /* Taking the seat without the shot (the landing switched off, or the
+       skin switched to one with a table): the set builds in the dark and
+       the camera goes down into the chair - nothing of the landing's copy
+       or controls shows. */
+    .landing-screen.r3-direct { transition: none; }
+    .landing-screen.r3-direct :is(.landing-inner, .roll-lab, .r3-sound, .r3-tier, .r3-call, .r3-flash, .landing-smoke, #circuitBg) { display: none !important; }
     body.r3-table-mode #main-content { visibility: hidden; }
-    /* A view opened from the phone, over the table, and the way back. */
-    body.r3-table-mode.r3-sheet-open #main-content { visibility: visible; position: fixed; inset: 0; z-index: 260; overflow-y: auto; background: var(--bg-base); padding-top: 64px; }
+    /* A view opened from the phone, over the table, and the way back. The
+       page stands on the skin's own background (the body's, with its
+       glows), and the table rests out of sight under it until you go
+       back - nothing of it is painted while you read. */
+    body.r3-table-mode.r3-sheet-open #main-content { visibility: visible; position: fixed; inset: 0; z-index: 260; overflow-y: auto; padding-top: 64px; }
+    /* (display, not visibility: the cards set their own visibility inline
+       as they are dealt, which would show through an inherited hidden) */
+    body.r3-table-mode.r3-sheet-open .r3-stage { display: none; }
     .r3-sheet-back { display: none; }
     body.r3-table-mode.r3-sheet-open .r3-sheet-back { display: block; position: fixed; top: max(12px, env(safe-area-inset-top)); left: 12px; z-index: 261; padding: 10px 16px; border-radius: 22px; border: 1px solid rgba(232,200,106,0.45); background: rgba(12,10,9,0.9); color: #f0dca6; font: 600 14px/1 Georgia, serif; letter-spacing: 0.04em; cursor: pointer; }
+    /* With the table up, the app's own layers - its modals (Settings, Add
+       platform...), the docked footer and the feedback button - sit above
+       the stage (250) and the sheet (260), where they were always meant
+       to be reachable from; the run overlay (300) and toasts (400) already
+       are. The footer and the button only show over a sheet. */
+    body.r3-table-mode .sheet-backdrop { z-index: 270; }
+    body.r3-table-mode :is(.docked-footer, .feedback-fab) { visibility: hidden; }
+    body.r3-table-mode.r3-sheet-open :is(.docked-footer, .feedback-fab) { visibility: visible; z-index: 262; }
+    body.r3-table-mode.r3-sheet-open .feedback-fab { z-index: 263; }
 
     /* The intro lab (?lab): pick an ending, a felt and a room, and replay.
        Shown once the shot is over. */
@@ -1496,6 +1526,9 @@
     .theme-name { font-size: 0.9rem; color: var(--text-main); font-weight: 800; }
     .theme-name .active-tag { font-size: 0.6rem; color: var(--accent-green); margin-left: 8px; letter-spacing: 0.08em; }
     .theme-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
+    /* The pair a skin belongs to: a visualized skin and its muted take
+       (see THEMES in index.html), each card naming the other. */
+    .theme-pair { font-size: 0.62rem; color: var(--accent-gold); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 2px; opacity: 0.85; }
     .theme-swatches { display: flex; gap: 4px; flex-shrink: 0; }
     /* ---------- Refinement layer (applies to every theme) ---------- */
 
@@ -1626,7 +1659,10 @@
     .ready-at { color: var(--text-dim); font-size: 0.7rem; font-family: "Courier New", monospace; }
     .btn-check { background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); border-radius: 8px; padding: 7px 10px; font-size: 0.9rem; cursor: pointer; flex-shrink: 0; line-height: 1; transition: all 0.2s ease; }
     .btn-check:hover { border-color: var(--accent-green); color: var(--accent-green); }
-    #toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%) translateY(220%); opacity: 0; pointer-events: none; background: rgba(20,22,18,0.97); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px 14px; border-radius: 10px; z-index: 400; display: flex; align-items: center; gap: 14px; font-size: 0.85rem; box-shadow: 0 10px 30px rgba(0,0,0,0.7); transition: transform .28s cubic-bezier(.22,1,.36,1), opacity .2s ease; max-width: calc(100% - 32px); }
+    /* (width: max-content - a fixed box at left: 50% otherwise shrinks to
+       fit the half of the screen right of centre and wraps a one-line
+       message into three) */
+    #toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%) translateY(220%); opacity: 0; pointer-events: none; background: rgba(20,22,18,0.97); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px 14px; border-radius: 10px; z-index: 400; display: flex; align-items: center; gap: 14px; font-size: 0.85rem; box-shadow: 0 10px 30px rgba(0,0,0,0.7); transition: transform .28s cubic-bezier(.22,1,.36,1), opacity .2s ease; width: max-content; max-width: calc(100% - 32px); }
     #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
     #toast .undo { background: transparent; border: 1px solid var(--accent-gold); color: var(--accent-gold); border-radius: 6px; padding: 6px 12px; font-weight: 800; font-size: 0.75rem; cursor: pointer; letter-spacing: 0.06em; flex-shrink: 0; }
 
@@ -3732,13 +3768,13 @@
    at the component level, so a variable swap alone can't produce a restrained
    theme. These rules strip the lighting and restate the surfaces.
 
-   Panels are rgba(22,24,29,0.75) with backdrop-filter: blur(12px), both
-   straight from the brief. An earlier pass used 0.85/6px on frame-budget
-   grounds - backdrop-filter is priced per pixel per frame and this app
-   scrolls a long column of panels - but at 0.75 the blur is genuinely
-   visible rather than decorative, so it earns its cost. If this ever needs
-   clawing back on low-end hardware, lower the radius here; don't raise the
-   opacity, which is what makes the glass read as glass.
+   The room: brushed obsidian (THEMES.executive.bodyBg, assets/background.webp
+   under a light wash - matte, not pure black), clean black cards with their
+   detail in the edges, and colour only in the gold. No coloured light on
+   the ground and no blur behind the cards - the glass-over-glow treatment
+   an earlier pass built here was retired 2026-09-28 in favour of the clean
+   room; the ambient mesh it was built to catch is the visualized skin's
+   own now (see below).
    ========================================================================== */
 /* Everything this block used to restate for glass panels, the wordmark, and
    text-shadow suppression is now simply what the base looks like (Executive
@@ -3747,7 +3783,19 @@
    choices other themes rely on the base NOT making (hero-ring-circle stays
    green in the base because Neon Grid needs it green), plus decoration the
    base was never going to carry for everyone (the metallic button gradient,
-   the recessed cooldown well, the segmented filter-chip shape). */
+   the recessed cooldown well, the segmented filter-chip shape).
+
+   Two skins wear this look (see THEMES in index.html): Refinement x
+   Realization, the visualized skin - html[data-skin="refinement"], with
+   html[data-theme="executive"] as its look - and Executive Lounge itself,
+   its muted pairing, html[data-skin="executive"]. Same colours, different
+   effects. The room itself is [data-theme="executive"] and both have it:
+   the black cards, the poured gold, the podium, the one warm light
+   swaying slowly through everything, and a little gold dust. The
+   visualized skin's own effects are [data-skin="refinement"]: the
+   drifting three-tone mesh and the sweep on the gold. Executive Lounge
+   is the quiet take, on purpose - and with motion off, both hold
+   completely still. */
 
 /* Wordmark, upgraded from flat gold to a poured-metal gradient clipped to
    the text itself, plus a short gold rule underneath - the signature mark a
@@ -3778,108 +3826,76 @@
 [data-theme="executive"] .app-title::after { width: 52px; }
 [data-theme="executive"] .landing-title::after { width: 72px; }
 
-/* Real glass, not a dark rounded rectangle: the base .glass-panel (0.75
-   opacity, 12px blur, flat fill) reads as a solid card because it basically
-   is one - at that opacity there's nothing behind it left to see, and
-   nothing for backdrop-filter to actually do. Executive Lounge is the one
-   theme with real light to catch (the gold + emerald glow bodyBg now
-   carries), so it's the one that can afford to actually be translucent:
-   - opacity down to ~0.5 and a diagonal gradient fill rather than flat,
-     so the panel has its own subtle depth even before anything sits on it
-   - blur nearly doubled, plus saturate() - the actual glassmorphism trick.
-     A blurred, desaturated backdrop reads as a dirty smear; saturating
-     what shows through first is what makes it read as glass instead
-   - a brighter top/left edge and a matching dark inset on the opposite
-     corner, so the card has one consistent light source rather than a
-     border that's the same shade on all four sides
-   - a soft gold-tinted outer glow alongside the drop shadow, so cards read
-     as sitting IN the ambient light rather than punched into flat black */
+/* Clean black cards with their detail, on brushed obsidian. The card is a
+   surface, not a window: a near-opaque black with a slight diagonal fall
+   from lit corner to dark one, and no backdrop-filter at all (there is no
+   coloured light behind it to catch any more - see THEMES.executive.bodyBg
+   - and a tall list of blurring cards is where a phone's frame budget
+   went). The detail is in the edges: a warm gold-white hairline along the
+   top where light lands on metal, a fainter one down the left, a soft
+   dark inset at the bottom so the card sits in the ground rather than on
+   it, and a deep drop shadow. No gold halo around the card - the gold is
+   for what you can act on. */
 [data-theme="executive"] .glass-panel {
-  background: linear-gradient(160deg, rgba(36,39,47,0.58) 0%, rgba(18,20,25,0.44) 100%);
-  backdrop-filter: blur(22px) saturate(150%);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
-  border: 1px solid rgba(255,255,255,0.09);
-  border-top: 1px solid rgba(255,255,255,0.20);
-  border-left: 1px solid rgba(255,255,255,0.13);
+  background: linear-gradient(160deg, #17181d 0%, #0e0f13 58%, #0a0b0e 100%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid rgba(255,255,255,0.075);
+  border-top: 1px solid rgba(232,205,140,0.22);
+  border-left: 1px solid rgba(255,255,255,0.11);
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.07) inset,
-    0 -12px 20px -14px rgba(0,0,0,0.5) inset,
-    0 14px 36px rgba(0,0,0,0.5),
-    0 0 24px rgba(212,175,55,0.06);
+    0 1px 0 rgba(255,255,255,0.045) inset,
+    0 -14px 22px -16px rgba(0,0,0,0.7) inset,
+    0 12px 30px rgba(0,0,0,0.55);
 }
 
-/* One light crossing the whole deck. Inherited from the retired "Amped"
-   variant, which gave every card its own soft white highlight drifting
-   side-to-side on a 10s loop - the one piece of that theme worth keeping,
-   slowed down and made into a single movement instead of 137 independent
-   ones.
+/* One light, swaying slowly through the room. Descended from the retired
+   "Amped" variant's per-card highlight, by way of a band that crossed the
+   deck one card at a time (each .ledger-card::before on an index-based
+   delay - retired 2026-09-28, with the mesh); this is the same idea done
+   once: a single soft, warm ellipse of light, fixed to the viewport and
+   over the page, that wanders across it on a slow figure and lights
+   whatever it passes - the black cards, the ground between them, the
+   footer - the way a lamp's reflection moves over a table.
 
-   The mechanism: each .ledger-card carries a ::before the size of the card
-   holding a soft, off-centre white ellipse. It translates from fully above
-   the card to fully below over the first 8% of --deck-light-period (3.6s
-   at 45s), then parks out of sight for the rest of it. renderGames()
-   stamps every card's position in the list into --i, and the
-   animation-delay below offsets card i by i * --deck-light-step. With that
-   crossing time set to exactly twice --deck-light-step, card i+1's
-   highlight enters its top edge at the moment card i's highlight passes
-   its own centre - so at any instant the
-   lit region is about two cards tall and its centre descends the list at
-   a constant one card per --deck-light-step. Every card is just a window
-   onto the same virtual light moving down the deck. The mod() wraps the
-   delay so a 137-card deck doesn't wait three minutes for its last card:
-   one band exists every --deck-light-cards cards, and on a phone that
-   shows five or six at once only one is ever on screen.
+   mix-blend-mode: screen is what makes it light rather than a white
+   smear: it only ever adds, so the near-black cards take a soft sheen,
+   the brushed ground lifts a shade, and white text is untouched. The
+   layer is a pseudo on #main-content, not body - body::before is the
+   visualized skin's mesh and body::after its dust - and it goes with
+   #main-content: hidden with it under the table, above the sheet's own
+   content when a sheet is up (its z-index is then inside #main-content's
+   stacking context), under every modal (100+) in the classic home.
 
-   Timing is deliberately slow. A band takes ~11s to cross a phone's worth
-   of cards and returns every 45s - present enough to register as light
-   moving through the room, rare enough never to compete with the content.
-   Intensity is under Amped's 0.13 too: this is meant to be noticed
-   on the third glance, not the first.
-
-   position:relative + overflow:hidden on the card itself: relative so the
-   pseudo (and .cd-fill, which was already position:absolute) resolve
-   against the card, hidden so the sweep clips to the rounded corners.
-   The keen-info popover is a sibling of the card, not a child, and the
-   streak badge sits inside the card's own padding, so neither is clipped.
-
-   mod() has shipped in every engine since 2024; where it hasn't, the
-   animation-delay declaration is dropped and every card sweeps in unison
-   once per period - degraded, not broken. */
-[data-theme="executive"] {
-  --deck-light-period: 45s;
-  --deck-light-step: 1.8s;
-  --deck-light-cards: 25;
-}
-[data-theme="executive"] .ledger-card {
-  position: relative;
-  overflow: hidden;
-}
-[data-theme="executive"] .ledger-card::before {
+   Cost: one composited layer a little over a screen in size, moved by
+   transform only - no repaint per frame. Timing is slow on purpose: a
+   full wander takes just over a minute, so the light is noticed on the
+   third glance, not the first. */
+[data-theme="executive"] #main-content::after {
   content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
+  position: fixed;
+  left: -10vw;
+  top: 4vh;
+  width: 120vw;
+  height: 92vh;
+  z-index: 90;
   pointer-events: none;
-  border-radius: inherit;
-  background: radial-gradient(ellipse 95% 62% at 38% 50%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.045) 42%, transparent 74%);
-  transform: translateY(-100%);
-  animation: exec-deck-light var(--deck-light-period) linear infinite;
-  animation-delay: calc(mod(var(--i, 0), var(--deck-light-cards)) * var(--deck-light-step) - var(--deck-light-period));
+  mix-blend-mode: screen;
+  background: radial-gradient(ellipse 50% 48% at 50% 50%, rgba(255,238,200,0.19) 0%, rgba(255,238,200,0.085) 42%, transparent 72%);
+  transform: translate(-16%, -34%);
+  animation: exec-light-sway 66s ease-in-out infinite;
+  will-change: transform;
 }
-/* 8% of 45s = 3.6s = 2 * --deck-light-step. Keep the three in step if the
-   period ever changes. The hold from 8% to 100% is the highlight parked
-   below the card's bottom edge, where overflow:hidden means it paints
-   nothing - not a visible pause. */
-@keyframes exec-deck-light {
-  0% { transform: translateY(-100%); }
-  8%, 100% { transform: translateY(100%); }
+/* Four stations on a loose figure - nothing repeats a leg, so the light
+   never seems to bounce between two points. */
+@keyframes exec-light-sway {
+  0% { transform: translate(-16%, -34%); }
+  28% { transform: translate(15%, -10%); }
+  52% { transform: translate(-8%, 22%); }
+  78% { transform: translate(17%, 30%); }
+  100% { transform: translate(-16%, -34%); }
 }
-/* Both attributes live on <html>, so they compound on one selector - a
-   descendant combinator between them would never match (the base
-   html[data-motion="off"] *::before kill switch already stops the
-   animation; this additionally hides the highlight, which the un-animated
-   base transform leaves parked above the card anyway). */
-html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation: none; opacity: 0; }
+html[data-motion="off"][data-theme="executive"] #main-content::after { animation: none; content: none; }
 
 [data-theme="executive"] .hero-ring-circle {
   border: 2px solid var(--accent-gold);
@@ -3938,9 +3954,11 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
 [data-theme="executive"] .btn-open { border: 1px solid rgba(255,255,255,0.18); font-weight: 800; }
 [data-theme="executive"] .btn-open:hover,
 [data-theme="executive"] .btn-primary:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 5px 16px rgba(0,0,0,0.6), 0 8px 30px rgba(212,175,55,0.4); }
-[data-theme="executive"] .btn-open::after,
-[data-theme="executive"] .btn-primary::after,
-[data-theme="executive"] .btn-run-collect::after {
+/* (the sweep is the visualized skin's - Executive Lounge's gold holds
+   still) */
+[data-skin="refinement"] .btn-open::after,
+[data-skin="refinement"] .btn-primary::after,
+[data-skin="refinement"] .btn-run-collect::after {
   content: '';
   position: absolute;
   top: 0; left: -60%;
@@ -3950,8 +3968,8 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
   animation: gold-sheen 4.5s linear infinite;
   pointer-events: none;
 }
-[data-theme="executive"] .btn-primary::after { animation-delay: 1.5s; }
-[data-theme="executive"] .btn-run-collect::after { animation-delay: 3s; }
+[data-skin="refinement"] .btn-primary::after { animation-delay: 1.5s; }
+[data-skin="refinement"] .btn-run-collect::after { animation-delay: 3s; }
 /* A straight 0%->100% sweep, no repeated keyframe value anywhere in
    between. The previous version held the streak still at each end (0-8%
    and 38-100% both pinned to the same `left`), which reads as exactly what
@@ -3968,9 +3986,9 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
    this - restated per the pattern the rest of this file follows, so an
    audit of "what does motion-off actually silence" doesn't have to trust
    an ancestor rule it can't see from here. */
-[data-motion="off"] [data-theme="executive"] .btn-open::after,
-[data-motion="off"] [data-theme="executive"] .btn-primary::after,
-[data-motion="off"] [data-theme="executive"] .btn-run-collect::after { animation: none; opacity: 0; }
+html[data-motion="off"][data-skin="refinement"] .btn-open::after,
+html[data-motion="off"][data-skin="refinement"] .btn-primary::after,
+html[data-motion="off"][data-skin="refinement"] .btn-run-collect::after { animation: none; opacity: 0; }
 
 /* A platform on cooldown gets the recessed well instead: inset shadow, no
    fill, muted text. Not-yet-actionable should look pressed into the card. */
@@ -4006,7 +4024,10 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
 
 /* Cooldown fill bar: money accruing toward ready, not a generic orange
    loading bar - it counts up in the same metal as everything else worth
-   having. */
+   having. The card is positioned so the bar (position:absolute) lies
+   along ITS bottom edge and not the app container's, and clips to the
+   card's rounded corners. */
+[data-theme="executive"] .ledger-card { position: relative; overflow: hidden; }
 [data-theme="executive"] .cd-fill { background: var(--gold-metal); opacity: 0.85; }
 
 /* Segmented control: the sort/filter chips read as one connected switch
@@ -4018,7 +4039,7 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
 }
 [data-theme="executive"] .cooldown-chip { border-radius: 4px; }
 
-[data-theme="executive"] .hero-stat-card { background: linear-gradient(160deg, rgba(36,39,47,0.5) 0%, rgba(18,20,25,0.38) 100%); }
+[data-theme="executive"] .hero-stat-card { background: linear-gradient(160deg, #191a20 0%, #0f1014 58%, #0a0b0e 100%); }
 
 [data-theme="executive"] .docked-footer {
   background: rgba(11,12,16,0.92);
@@ -4027,28 +4048,16 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
 }
 
 /* .landing-screen is position:fixed; inset:0 - a full-viewport layer that
-   sits on top of and completely hides whatever body carries underneath it.
-   The old flat, colorless radial here meant the landing screen stayed pure
-   black no matter what the gold/emerald ambient glow in bodyBg was doing -
-   this is the surface a first-time visitor sees before anything else, so
-   it gets the same two-tone glow rather than its own disconnected one. */
-/* Two soft glows fading straight into --bg-base, no separate vignette
-   shape in between - the same recipe THEMES.executive.bodyBg already uses
-   successfully for the app itself (see index.html). The vignette that used
-   to sit here (radial-gradient(circle at 50% 35%, #101218 0%, #050507 65%,
-   #030304 100%)) was a third, independently-edged shape UNDER the two
-   glows - close, low-contrast colour stops that band on a real display,
-   and a boundary that doesn't line up with either glow's own falloff, so
-   it read as a stacked layer rather than one light source. Sizing in
-   vmin/px rather than the glows' old %-of-box units too: percentages
-   stretch a shape tuned for a ~390px phone into something enormous and
-   misshapen on a desktop-width window, which is the other half of "not
-   so nice on computer" - vmin keeps the glow's actual size consistent
-   regardless of viewport width. */
+   sits on top of and completely hides whatever body carries underneath it,
+   so it needs the ground of its own: the same brushed obsidian the app
+   stands on (THEMES.executive.bodyBg in index.html), with the same light
+   wash. The url() is relative to this stylesheet, which lives in assets/
+   beside the texture. Under the WebGL shot the canvas covers this; it is
+   what the CSS poster and the held still stand on. */
 [data-theme="executive"] .landing-screen {
   background:
-    radial-gradient(min(70vmin, 620px) min(50vmin, 460px) at 12% 0%, rgba(212,175,55,0.26) 0%, transparent 72%),
-    radial-gradient(min(65vmin, 560px) min(48vmin, 420px) at 100% 100%, rgba(63,191,143,0.19) 0%, transparent 74%),
+    linear-gradient(180deg, rgba(11,12,16,0.22) 0%, rgba(11,12,16,0.42) 55%, rgba(11,12,16,0.58) 100%),
+    url(background.webp) center / cover no-repeat,
     var(--bg-base);
 }
 /* base's own .landing-btn is a filled gold button (see the base rule up top) -
@@ -4063,6 +4072,15 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
   box-shadow: 0 4px 16px rgba(0,0,0,0.55);
 }
 
+/* The theme picker: the active card is marked in the room's own gold, not
+   the base's green, and a visualized skin's card carries a hairline of
+   gold foil down its left edge - the one thing that tells the two halves
+   of a pair apart at a glance. */
+[data-theme="executive"] .theme-card.active { border-color: var(--accent-gold); box-shadow: 0 0 0 1px rgba(212,175,55,0.22), 0 0 20px rgba(212,175,55,0.10); }
+[data-theme="executive"] .theme-name .active-tag { color: var(--accent-gold); }
+[data-theme="executive"] .theme-card.theme-visual { background: linear-gradient(90deg, #f2d894 0, #c9a75a 3px, transparent 3px), rgba(0,0,0,0.35); }
+[data-theme="executive"] .theme-card.theme-visual.active { background: linear-gradient(90deg, #f2d894 0, #c9a75a 3px, transparent 3px), rgba(0,0,0,0.5); }
+
 /* The onboarding tour reads as a still gold callout rather than a pulsing
    cyan flare - restraint extends to motion, not just colour. */
 [data-theme="executive"] .tour-target-active { animation: none !important; box-shadow: 0 0 0 2px var(--accent-gold) !important; }
@@ -4072,10 +4090,13 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
    variant - there it completed a drift pass in 14s and a full hue cycle in
    19s, which read as a lava lamp; here the same three glows take 52s to
    drift and nearly two minutes to turn through the spectrum, so the room's
-   colour is always changing and never seen to change. Stops are dimmer
-   than Amped's too (0.26/0.20/0.14 vs 0.42/0.34/0.26) because this sits
-   on top of THEMES.executive.bodyBg, which already carries a static gold
-   and emerald glow of its own.
+   colour is always changing and never seen to change.
+
+   The mesh is the visualized skin's (data-skin="refinement") and only its:
+   Executive Lounge, the muted pairing, is the clean room - black cards on
+   brushed obsidian, no coloured light at all (its ground is
+   THEMES.executive.bodyBg alone). The visualized skin's pages are the same
+   room with this light moving through it.
 
    Why a pseudo-element and not part of bodyBg: applyTheme() writes
    body.style.background as an inline SHORTHAND (documented on
@@ -4092,9 +4113,9 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
    parent identically but sidesteps a mobile WebKit bug where fixed inside
    fixed can fail to paint at all - headless Chromium never reproduces it,
    a real phone did. */
-[data-theme="executive"] body::before,
-[data-theme="executive"] .landing-screen::before,
-[data-theme="executive"] #dailyRunOverlay::before {
+[data-skin="refinement"] body::before,
+[data-skin="refinement"] .landing-screen::before,
+[data-skin="refinement"] #dailyRunOverlay::before {
   content: '';
   position: fixed;
   inset: 0;
@@ -4105,10 +4126,11 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
     radial-gradient(52% 45% at 85% 78%, rgba(63,191,143,0.20) 0%, transparent 66%),
     radial-gradient(48% 40% at 88% 12%, rgba(79,216,232,0.14) 0%, transparent 64%);
   background-size: 220% 220%;
+  background-position: 5% 10%, 95% 90%, 92% 8%;
   animation: exec-mesh-drift 52s ease-in-out infinite, exec-mesh-hue 110s linear infinite;
 }
-[data-theme="executive"] .landing-screen::before,
-[data-theme="executive"] #dailyRunOverlay::before {
+[data-skin="refinement"] .landing-screen::before,
+[data-skin="refinement"] #dailyRunOverlay::before {
   position: absolute;
 }
 /* Each glow relocates across about a third of the screen and back. The
@@ -4147,7 +4169,12 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
    class of cost as the mesh itself, and the two together are still less
    than Amped's total, which also spun a ring, pulsed every badge and
    button, and shimmered the wordmark. If it ever has to be clawed back on
-   low-end hardware, drop this layer before touching the mesh. */
+   low-end hardware, drop this layer before touching the mesh.
+
+   The dust is both skins' - it is part of the room, not of the mesh -
+   and it is a little brighter than it first shipped (2026-09-28): the
+   flecks a touch larger and fuller, and the mask's solid core wider so
+   more of them are lit at any moment. Still sparse; still gold. */
 [data-theme="executive"] body::after,
 [data-theme="executive"] #dailyRunOverlay::after {
   content: '';
@@ -4155,27 +4182,30 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  /* (each fleck: a bright core and a soft halo a few times wider, so it
+     reads as a point of light and not a speck of dust on the glass) */
   background-image:
-    radial-gradient(circle at 14% 22%, rgba(248,226,160,0.95) 0, rgba(248,226,160,0.55) 0.7px, transparent 1.7px),
-    radial-gradient(circle at 71% 9%, rgba(243,218,146,0.9) 0, rgba(243,218,146,0.45) 0.6px, transparent 1.5px),
-    radial-gradient(circle at 43% 58%, rgba(248,226,160,0.9) 0, rgba(248,226,160,0.5) 0.9px, transparent 2.1px),
-    radial-gradient(circle at 88% 47%, rgba(243,218,146,0.85) 0, rgba(243,218,146,0.4) 0.6px, transparent 1.4px),
-    radial-gradient(circle at 27% 83%, rgba(248,226,160,0.9) 0, rgba(248,226,160,0.5) 0.7px, transparent 1.7px),
-    radial-gradient(circle at 62% 91%, rgba(243,218,146,0.85) 0, rgba(243,218,146,0.4) 0.5px, transparent 1.3px),
-    radial-gradient(circle at 93% 76%, rgba(248,226,160,0.9) 0, rgba(248,226,160,0.5) 0.8px, transparent 1.9px),
-    radial-gradient(circle at 36% 31%, rgba(212,175,55,0.75) 0, rgba(212,175,55,0.3) 1.4px, transparent 3px),
-    radial-gradient(circle at 77% 64%, rgba(212,175,55,0.7) 0, rgba(212,175,55,0.28) 1.2px, transparent 2.8px);
+    radial-gradient(circle at 14% 22%, rgba(255,240,190,1) 0, rgba(255,240,190,0.75) 1px, rgba(250,225,150,0.22) 2.2px, transparent 4.2px),
+    radial-gradient(circle at 71% 9%, rgba(252,232,170,1) 0, rgba(252,232,170,0.7) 0.9px, rgba(250,225,150,0.2) 2px, transparent 3.8px),
+    radial-gradient(circle at 43% 58%, rgba(255,240,190,1) 0, rgba(255,240,190,0.75) 1.2px, rgba(250,225,150,0.24) 2.6px, transparent 4.8px),
+    radial-gradient(circle at 88% 47%, rgba(252,232,170,0.96) 0, rgba(252,232,170,0.66) 0.9px, rgba(250,225,150,0.2) 1.9px, transparent 3.6px),
+    radial-gradient(circle at 27% 83%, rgba(255,240,190,1) 0, rgba(255,240,190,0.72) 1px, rgba(250,225,150,0.22) 2.2px, transparent 4.2px),
+    radial-gradient(circle at 62% 91%, rgba(252,232,170,0.96) 0, rgba(252,232,170,0.64) 0.8px, rgba(250,225,150,0.18) 1.8px, transparent 3.4px),
+    radial-gradient(circle at 93% 76%, rgba(255,240,190,1) 0, rgba(255,240,190,0.74) 1.1px, rgba(250,225,150,0.22) 2.4px, transparent 4.4px),
+    radial-gradient(circle at 56% 37%, rgba(252,232,170,0.94) 0, rgba(252,232,170,0.62) 0.8px, rgba(250,225,150,0.18) 1.8px, transparent 3.4px),
+    radial-gradient(circle at 36% 31%, rgba(232,196,88,0.95) 0, rgba(232,196,88,0.55) 1.8px, rgba(218,182,68,0.18) 4px, transparent 7px),
+    radial-gradient(circle at 77% 64%, rgba(232,196,88,0.9) 0, rgba(232,196,88,0.5) 1.6px, rgba(218,182,68,0.16) 3.6px, transparent 6.4px);
   background-size:
-    340px 340px, 340px 340px, 340px 340px, 340px 340px, 340px 340px, 340px 340px, 340px 340px,
+    340px 340px, 340px 340px, 340px 340px, 340px 340px, 340px 340px, 340px 340px, 340px 340px, 340px 340px,
     560px 560px, 560px 560px;
   -webkit-mask-image:
-    radial-gradient(circle at 50% 50%, #000 0%, #000 14%, transparent 44%),
-    radial-gradient(circle at 50% 50%, #000 0%, #000 10%, transparent 40%);
+    radial-gradient(circle at 50% 50%, #000 0%, #000 24%, transparent 52%),
+    radial-gradient(circle at 50% 50%, #000 0%, #000 19%, transparent 48%);
   -webkit-mask-size: 300px 300px, 470px 470px;
   -webkit-mask-repeat: repeat;
   mask-image:
-    radial-gradient(circle at 50% 50%, #000 0%, #000 14%, transparent 44%),
-    radial-gradient(circle at 50% 50%, #000 0%, #000 10%, transparent 40%);
+    radial-gradient(circle at 50% 50%, #000 0%, #000 24%, transparent 52%),
+    radial-gradient(circle at 50% 50%, #000 0%, #000 19%, transparent 48%);
   mask-size: 300px 300px, 470px 470px;
   mask-repeat: repeat;
   animation: exec-fleck-drift 52s ease-in-out infinite, exec-fleck-shimmer 20s linear infinite;
@@ -4188,9 +4218,9 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
    the light doesn't move with the dust. Large tiles move a little further
    than small ones, which reads as depth. */
 @keyframes exec-fleck-drift {
-  0% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
-  50% { background-position: 44px 36px, 44px 36px, 44px 36px, 44px 36px, 44px 36px, 44px 36px, 44px 36px, 70px 58px, 70px 58px; }
-  100% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  0% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  50% { background-position: 44px 36px, 44px 36px, 44px 36px, 44px 36px, 44px 36px, 44px 36px, 44px 36px, 44px 36px, 70px 58px, 70px 58px; }
+  100% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
 }
 /* The mask tiles travel one full tile per loop on different diagonals, so
    the loop seam is invisible (a tile shifted by exactly one tile is the
@@ -4200,11 +4230,14 @@ html[data-motion="off"][data-theme="executive"] .ledger-card::before { animation
   0% { -webkit-mask-position: 0 0, 0 0; mask-position: 0 0, 0 0; }
   100% { -webkit-mask-position: 300px 300px, -470px 470px; mask-position: 300px 300px, -470px 470px; }
 }
-html[data-motion="off"][data-theme="executive"] body::before,
-html[data-motion="off"][data-theme="executive"] .landing-screen::before,
-html[data-motion="off"][data-theme="executive"] #dailyRunOverlay::before,
+html[data-motion="off"][data-skin="refinement"] body::before,
+html[data-motion="off"][data-skin="refinement"] .landing-screen::before,
+html[data-motion="off"][data-skin="refinement"] #dailyRunOverlay::before { animation: none; }
 html[data-motion="off"][data-theme="executive"] body::after,
-html[data-motion="off"][data-theme="executive"] #dailyRunOverlay::after { animation: none; }
+html[data-motion="off"][data-theme="executive"] #dailyRunOverlay::after { animation: none; content: none; }
+/* (with motion off, then: the mesh's glows stay where they are, the dust
+   and the swaying light go, and the visualized skin's pages are its muted
+   pairing's held still) */
 
 /* Nav-tab glyphs. Stacked above the label rather than beside it: an inline
    icon adds ~20px per tab, which four tabs cannot afford at 320px, while a

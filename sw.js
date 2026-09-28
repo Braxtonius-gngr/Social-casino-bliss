@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v60';
+const CACHE_NAME = 'almanac-v61';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -38,8 +38,9 @@ const PRECACHE_URLS = ['./', './index.html', './manifest.json', './assets/app.cs
   './assets/intro3d/gold-trim-color.jpg', './assets/intro3d/gold-trim-alpha.png', './assets/intro3d/gold-trim-normal.jpg',
   './assets/intro3d/walnut-normal.jpg', './assets/intro3d/cushion-normal.jpg',
   './assets/intro3d/carpet-color.jpg', './assets/intro3d/carpet-normal.jpg'];
-// (the table the landing flies into is also precached so a first offline
-// visit to a ?dest= URL still has the module and its icon set)
+// (the card table the landing flies into - the home screen of the default
+// skin, Refinement x Realization - is precached above with its chips, its
+// clock bezel and the phone icons: an offline launch has to land on it)
 
 self.addEventListener('install', (event) => {
   // Precache the shell so the very first offline load works, even if the
