@@ -8337,13 +8337,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // without a service worker, or with no answer or a stalled download,
     // the page goes on as it always has.
     const appUpdate = { active: false, el: null, go: null, timers: [] };
-    // Asks the newest worker how this build stands; resolves null with no
-    // answer (an older worker does not know the question).
+    // Asks the worker serving this page how this build stands (with none
+    // yet, on a first visit, the newest one there is); resolves null with
+    // no answer (an older worker does not know the question). It has to be
+    // the one serving the page: a new worker can have the build whole
+    // before it takes over, while the old one still answers the requests.
     function appAskBuild(ms) {
       return new Promise(resolve => {
         if (!('serviceWorker' in navigator)) { resolve(null); return; }
         navigator.serviceWorker.getRegistration().then(reg => {
-          const sw = reg ? (reg.installing || reg.waiting || reg.active) : null;
+          const sw = navigator.serviceWorker.controller || (reg ? (reg.installing || reg.waiting || reg.active) : null);
           if (!sw) { resolve(null); return; }
           const ch = new MessageChannel();
           const timer = setTimeout(() => resolve(null), ms);
@@ -8406,7 +8409,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const d = e.data || {};
         if (d.type !== 'precache' || d.version !== APP_BUILD) return;
         show(d.done, d.total);
-        if (d.complete) appUpdateReady();
+        if (!d.complete) return;
+        // (all of it down: ready; some of it missed: the way on without it,
+        // and the next visit asks for it again)
+        if (!d.failed) { appUpdateReady(); return; }
+        const label = bar.querySelector('.app-update-label');
+        if (label) label.textContent = 'Some files didn\u2019t download';
+        appUpdateStalled(true);
       };
       navigator.serviceWorker.addEventListener('message', onMsg);
       appUpdate.off = () => navigator.serviceWorker.removeEventListener('message', onMsg);

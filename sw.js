@@ -93,7 +93,10 @@ function precacheAll() {
       }
     };
     await Promise.all([lane(), lane(), lane(), lane()]);
-    await cache.put(PRECACHE_MARK, new Response(JSON.stringify({ version: CACHE_NAME, failed }), { headers: { 'Content-Type': 'application/json' } }));
+    // (marked whole only when every file came down: a build with files
+    // missing is not whole, so a page waits on it again - and asks for
+    // the download again - rather than playing with gaps in it)
+    if (!failed.length) await cache.put(PRECACHE_MARK, new Response(JSON.stringify({ version: CACHE_NAME }), { headers: { 'Content-Type': 'application/json' } }));
     await tell({ complete: true, failed: failed.length });
   })();
   precaching.catch(() => {}).then(() => { precaching = null; });
