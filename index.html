@@ -5180,7 +5180,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (!screen || screen.classList.contains('hidden')) return;
       let q = null;
       try { q = new URLSearchParams(window.location.search); } catch (e) { q = null; }
-      if ((q && q.get('intro') === 'css') || !rollHasWebGL2()) { playRollIntroCss(); return; }
+      if ((q && q.get('intro') === 'css') || !rollHasWebGL2()) { playRollIntroCss(themeMuted()); return; }
       rollIntro3d(screen, q || new URLSearchParams());
     }
     // The table that is home (a skin with one - see THEMES): the landing is
@@ -5385,7 +5385,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         window.rollTableFly = o => { done = true; return flyIn(o); };
         window.rollIntroPeek = () => api && api.peek();
       }
-      if (motionOff()) { api.finish(); end(); return; }
+      // Motion off - or a muted skin, the still take of a visualized one
+      // (see THEMES): the finished frame, held, and no shot.
+      if (motionOff() || themeMuted()) { api.finish(); end(); return; }
       // Any tap, key press, or focus arriving on the screen skips straight
       // to the end of the shot (as in the CSS intro).
       screen.addEventListener('pointerdown', skip);
@@ -6722,6 +6724,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function themeTable(themeId) {
       const t = THEMES[themeId || getActiveThemeId()];
       return (t && t.table) || null;
+    }
+    // A muted skin: the still take of a visualized one (it names it in
+    // `visual`) - nothing moves, the landing included.
+    function themeMuted(themeId) {
+      const t = THEMES[themeId || getActiveThemeId()];
+      return !!(t && t.visual);
     }
 
     function applyTheme(themeId) {
