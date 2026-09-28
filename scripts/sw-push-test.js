@@ -15,6 +15,13 @@ const vm = require('vm');
 
 const SOURCE = fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8');
 const HOUR = 3600000;
+const PRECACHE_URLS = (() => {
+  const match = SOURCE.match(/const PRECACHE_URLS = \[([\s\S]*?)\];/);
+  if (!match) throw new Error('Could not read PRECACHE_URLS from sw.js');
+  const urls = [];
+  match[1].replace(/'([^']+)'/g, (_, url) => { urls.push(url); return _; });
+  return urls;
+})();
 
 // An IndexedDB with one database and one object store, which is all sw.js
 // and assets/storage.js ever open.
@@ -125,6 +132,23 @@ const DROP = {
 const OTHER = { ...DROP, id: 'd2', platform_name: 'Other Place', code: null, bucket: 'B_claim', root_domain: 'other.example' };
 
 const TESTS = [
+  ['the table destination module and icon assets are precached', async () => {
+    [
+      './assets/intro3d/table.mjs',
+      './assets/intro3d/icons/chip-emerald.webp',
+      './assets/intro3d/icons/chip-gold.webp',
+      './assets/intro3d/icons/chip-ivory.webp',
+      './assets/intro3d/icons/chip-onyx.webp',
+      './assets/intro3d/icons/chip-oxblood.webp',
+      './assets/intro3d/icons/chip-plum.webp',
+      './assets/intro3d/icons/clock-bezel.webp',
+      './assets/intro3d/icons/coin-clock.webp',
+      './assets/intro3d/icons/coin-deck.webp',
+      './assets/intro3d/icons/coin-house.webp',
+      './assets/intro3d/icons/coin-send.webp'
+    ].forEach(url => expect(PRECACHE_URLS.includes(url), true, `${url} precached`));
+  }],
+
   ['a drop push for a tracked platform shows the drop, once', async () => {
     const idb = fakeIndexedDB({ drop_alerts: STATE, push_schedule: [] });
     const sw = loadWorker({ idb, rows: [DROP, OTHER] });

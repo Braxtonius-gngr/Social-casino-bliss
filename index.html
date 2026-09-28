@@ -5217,7 +5217,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (!tableDest || tablePrep || !api) return tablePrep;
         tablePrep = import('./assets/intro3d/table.mjs')
           .then(m => m.prepareTable({ scene: api.peek().scene, dest: tableDest, hooks: rollTableHooks() }))
-          .catch(e => { console.warn('table', e); return null; });
+          .catch(e => { console.warn('table', e); disarmTable(); return null; });
         return tablePrep;
       };
       // One continuous shot from the float into the seat; on arrival the
@@ -5257,6 +5257,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const onTap = e => {
         if (e.target.closest && e.target.closest('a, .roll-lab, .r3-sound')) return;
         flyIn();
+      };
+      const disarmTable = () => {
+        screen.removeEventListener('pointerdown', onTap);
+        window.rollIntroEnter = null;
       };
       const armTable = () => {
         if (!tableDest) return;
