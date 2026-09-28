@@ -6476,9 +6476,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // into the base and this override block is comparatively small.
       executive: {
         name: 'Executive Lounge',
-        description: 'The muted pairing of Refinement × Realization. The same obsidian, glass and gold, held still: no shot, no table, nothing that moves - built for readability and easy eyes.',
+        description: 'The muted pairing of Refinement × Realization. Clean black cards on brushed obsidian, one warm light swaying slowly through the room, a little gold dust: no shot, no table - built for readability and easy eyes.',
         vars: {
-          '--bg-base': '#050507',
+          // The brief's obsidian: matte, not pure black.
+          '--bg-base': '#0B0C10',
           '--accent-gold': '#D4AF37',
           '--accent-gold-hover': '#E8C860',
           '--accent-gold-dim': 'rgba(212, 175, 55, 0.16)',
@@ -6528,20 +6529,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // DOCUMENT, where the path is right - and stays right under a GitHub
         // Pages subpath, since it never starts with a slash.
         //
-        // background.webp is itself a subtle, near-black brushed-metal
-        // texture - it was never going to read as anything but flat black
-        // once a 0.75-0.85 alpha wash sat on top of it (the previous value
-        // here). That's the actual bug behind "the background reads as
-        // primarily black": not a rendering issue, a wash heavy enough to
-        // bury an already-dark source image. Two things fix it - a much
-        // lighter, single-stop wash so the texture itself is visible, and
-        // real ambient light: a gold glow top-left and a cool emerald glow
-        // lower-right, both large and soft. This is also the light source
-        // .glass-panel's backdrop-filter: saturate() is meant to pick up -
-        // frosted glass over a flat color can only ever look like a dark
-        // grey box, no matter how much blur it carries.
-        bodyBg: "radial-gradient(130% 90% at 12% -8%, rgba(212,175,55,0.20) 0%, transparent 52%) center/cover fixed, radial-gradient(110% 80% at 92% 20%, rgba(63,191,143,0.14) 0%, transparent 55%) center/cover fixed, linear-gradient(180deg, rgba(5,5,7,0.30) 0%, rgba(5,5,7,0.48) 45%, rgba(5,5,7,0.66) 100%) center/cover fixed, url('assets/background.webp') center/cover fixed #050507",
-        metaColor: '#050507'
+        // background.webp is a subtle, near-black brushed-metal texture:
+        // matte obsidian with a grain to it, not pure black. It is the whole
+        // ground here - a light wash over it so the grain stays visible, and
+        // no coloured light on top. The gold and emerald glows this used to
+        // carry (and the drifting three-tone mesh in app.css that went with
+        // them) are the visualized skin's own now, over this same ground:
+        // Executive Lounge is the clean room - black cards with their detail
+        // on brushed obsidian - and the colour is only ever in the gold.
+        bodyBg: "linear-gradient(180deg, rgba(11,12,16,0.22) 0%, rgba(11,12,16,0.42) 55%, rgba(11,12,16,0.58) 100%) center/cover fixed, url('assets/background.webp') center/cover fixed #0B0C10",
+        metaColor: '#0B0C10'
       },
       prism: {
         name: 'Prism Noir',
