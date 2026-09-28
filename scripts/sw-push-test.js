@@ -15,13 +15,6 @@ const vm = require('vm');
 
 const SOURCE = fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8');
 const HOUR = 3600000;
-const PRECACHE_URLS = (() => {
-  const match = SOURCE.match(/const PRECACHE_URLS = \[([\s\S]*?)\];/);
-  if (!match) throw new Error('Could not read PRECACHE_URLS from sw.js');
-  const urls = [];
-  match[1].replace(/'([^']+)'/g, (_, url) => { urls.push(url); return _; });
-  return urls;
-})();
 
 // An IndexedDB with one database and one object store, which is all sw.js
 // and assets/storage.js ever open.
@@ -59,6 +52,7 @@ function loadWorker({ idb, rows, fetchFails, windows }) {
   const opened = [];
   const messages = [];
   const focused = [];
+  const precached = [];
   const openWindows = (windows || []).map(url => ({
     url,
     focus: async () => { focused.push(url); },
@@ -79,7 +73,15 @@ function loadWorker({ idb, rows, fetchFails, windows }) {
   const context = vm.createContext({
     self,
     indexedDB: idb.api,
-    caches: { open: async () => ({}), keys: async () => [], match: async () => undefined, delete: async () => true },
+    caches: {
+      open: async () => ({
+        addAll: async urls => { precached.push(...urls); },
+        put: async () => {}
+      }),
+      keys: async () => [],
+      match: async () => undefined,
+      delete: async () => true
+    },
     fetch: async url => {
       fetched.push(String(url));
       if (fetchFails) throw new TypeError('offline');
@@ -99,6 +101,12 @@ function loadWorker({ idb, rows, fetchFails, windows }) {
   vm.runInContext(SOURCE, context, { filename: 'sw.js' });
   return {
     shown, fetched, opened, messages, focused,
+    async install() {
+      const waits = [];
+      handlers.install({ waitUntil: p => waits.push(p) });
+      await Promise.all(waits);
+      return precached.slice();
+    },
     async pushTogether(n) {
       const waits = [];
       for (let i = 0; i < n; i++) handlers.push({ waitUntil: p => waits.push(p) });
@@ -133,6 +141,8 @@ const OTHER = { ...DROP, id: 'd2', platform_name: 'Other Place', code: null, buc
 
 const TESTS = [
   ['the table destination module and icon assets are precached', async () => {
+    const sw = loadWorker({ idb: fakeIndexedDB() });
+    const precached = await sw.install();
     [
       './assets/intro3d/table.mjs',
       './assets/intro3d/icons/chip-emerald.webp',
@@ -146,7 +156,7 @@ const TESTS = [
       './assets/intro3d/icons/coin-deck.webp',
       './assets/intro3d/icons/coin-house.webp',
       './assets/intro3d/icons/coin-send.webp'
-    ].forEach(url => expect(PRECACHE_URLS.includes(url), true, `${url} precached`));
+    ].forEach(url => expect(precached.includes(url), true, `${url} precached`));
   }],
 
   ['a drop push for a tracked platform shows the drop, once', async () => {
