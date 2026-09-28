@@ -143,8 +143,12 @@ pages link there too.
 Merging a change to `data/catalog.json` into `main` publishes it: the
 **Publish catalogue** workflow (`.github/workflows/publish-catalog.yml`)
 validates the file and runs `scripts/publish-catalog.js`, which calls
-`publish_catalog_with_key()` with the `CATALOG_PUBLISH_KEY` repository
-secret. The database splits the referral links off and stores the rest under
+`publish_catalog_with_key()` with the `CATALOG_PUBLISH_KEY` secret. That
+secret belongs to the `catalog-publish` environment (Settings → Environments),
+whose deployment branches are limited to `main`, so a workflow on any other
+branch cannot read it. The workflow also skips the publish when `main` has
+moved on to a newer catalogue, so a re-run of an old job cannot put an older
+file back. The database splits the referral links off and stores the rest under
 a new version; the app picks it up within five minutes or on its next focus.
 Publishing an unchanged file does nothing. To republish by hand, run the
 workflow from the Actions tab, or open `admin/freebies.html`, choose the file

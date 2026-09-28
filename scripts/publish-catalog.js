@@ -29,7 +29,7 @@ function readConst(html, name) {
 async function main() {
   const key = process.env.CATALOG_PUBLISH_KEY;
   if (!key) {
-    console.error('CATALOG_PUBLISH_KEY is not set - add it as a repository secret (README, "The catalogue").');
+    console.error('CATALOG_PUBLISH_KEY is not set - add it to the catalog-publish environment (README, "The catalogue").');
     process.exit(1);
   }
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
@@ -44,7 +44,9 @@ async function main() {
   const res = await fetch(`${url}/rest/v1/rpc/publish_catalog_with_key`, {
     method: 'POST',
     headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ p_key: key, p_catalog: catalog })
+    body: JSON.stringify({ p_key: key, p_catalog: catalog }),
+    // An overall deadline: the runtime's own timers only catch a silent socket.
+    signal: AbortSignal.timeout(120000)
   });
   const text = await res.text();
   let data = null;

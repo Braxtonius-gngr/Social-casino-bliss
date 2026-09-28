@@ -2,9 +2,10 @@ name: Publish catalogue
 
 # Publishes data/catalog.json to the database whenever it changes on main:
 # the same publish as the admin page's button, so a merged catalogue edit
-# goes live without anyone picking a file. Needs the CATALOG_PUBLISH_KEY
-# repository secret (README, "The catalogue"). Run it by hand from the
-# Actions tab to republish main's file.
+# goes live without anyone picking a file. The publish key lives in the
+# catalog-publish environment, whose deployment branches are limited to main,
+# so no other branch can read it (README, "The catalogue"). Run it by hand
+# from the Actions tab to republish main's file.
 
 on:
   push:
@@ -22,7 +23,11 @@ concurrency:
 
 jobs:
   publish:
+    # A manual run from any other branch would publish that branch's file.
+    if: github.ref == 'refs/heads/main'
+    environment: catalog-publish
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,6 +35,21 @@ jobs:
           node-version: '22'
       # Never publish a catalogue the validator rejects.
       - run: npm run check:catalog
-      - run: node scripts/publish-catalog.js
+      # A re-run of an old job, or a run that waited behind a newer push,
+      # must not put an older catalogue back: publish only while this
+      # checkout's file is still the one on main. (A newer non-catalogue
+      # commit on main does not count - the file is compared, not the SHA.)
+      - name: Check this is still main's catalogue
+        id: fresh
+        run: |
+          git fetch --quiet --depth=1 origin main
+          if git diff --quiet HEAD FETCH_HEAD -- data/catalog.json; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::main has a newer data/catalog.json; its own run publishes it."
+          fi
+      - if: steps.fresh.outputs.current == 'true'
+        run: node scripts/publish-catalog.js
         env:
           CATALOG_PUBLISH_KEY: ${{ secrets.CATALOG_PUBLISH_KEY }}

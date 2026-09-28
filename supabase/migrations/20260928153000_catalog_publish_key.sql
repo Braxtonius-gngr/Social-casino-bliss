@@ -8,8 +8,9 @@
 -- only publish the catalogue - the same checks and writes as the owner's
 -- button - and is revoked by deleting its row.
 --
--- publish_catalog()'s body moves unchanged into catalog_publish_as(), which
--- is told who published (NULL for a key). publish_catalog() keeps its owner
+-- publish_catalog()'s body moves into catalog_publish_as(), which is told
+-- who published (NULL for a key) and now takes a transaction-scoped lock so
+-- two publishes cannot interleave. publish_catalog() keeps its owner
 -- check, signature and grant, so the admin page is untouched.
 
 CREATE TABLE IF NOT EXISTS public.catalog_publish_keys (
@@ -36,6 +37,9 @@ DECLARE
   i INTEGER;
   dropped TEXT[];
 BEGIN
+  -- One publish at a time. Two at once could both read the same latest
+  -- release and leave the payload and platform_links from different files.
+  PERFORM pg_advisory_xact_lock(hashtext('public.catalog_publish'));
   IF jsonb_typeof(p_catalog) <> 'array' OR jsonb_array_length(p_catalog) = 0 THEN
     RAISE EXCEPTION 'BAD_CATALOG: expected a non-empty array of platforms';
   END IF;
