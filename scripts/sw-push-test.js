@@ -52,6 +52,7 @@ function loadWorker({ idb, rows, fetchFails, windows }) {
   const opened = [];
   const messages = [];
   const focused = [];
+  const precached = [];
   const openWindows = (windows || []).map(url => ({
     url,
     focus: async () => { focused.push(url); },
@@ -72,7 +73,15 @@ function loadWorker({ idb, rows, fetchFails, windows }) {
   const context = vm.createContext({
     self,
     indexedDB: idb.api,
-    caches: { open: async () => ({}), keys: async () => [], match: async () => undefined, delete: async () => true },
+    caches: {
+      open: async () => ({
+        addAll: async urls => { precached.push(...urls); },
+        put: async () => {}
+      }),
+      keys: async () => [],
+      match: async () => undefined,
+      delete: async () => true
+    },
     fetch: async url => {
       fetched.push(String(url));
       if (fetchFails) throw new TypeError('offline');
@@ -92,6 +101,12 @@ function loadWorker({ idb, rows, fetchFails, windows }) {
   vm.runInContext(SOURCE, context, { filename: 'sw.js' });
   return {
     shown, fetched, opened, messages, focused,
+    async install() {
+      const waits = [];
+      handlers.install({ waitUntil: p => waits.push(p) });
+      await Promise.all(waits);
+      return precached.slice();
+    },
     async pushTogether(n) {
       const waits = [];
       for (let i = 0; i < n; i++) handlers.push({ waitUntil: p => waits.push(p) });
@@ -125,6 +140,25 @@ const DROP = {
 const OTHER = { ...DROP, id: 'd2', platform_name: 'Other Place', code: null, bucket: 'B_claim', root_domain: 'other.example' };
 
 const TESTS = [
+  ['the table destination module and icon assets are precached', async () => {
+    const sw = loadWorker({ idb: fakeIndexedDB() });
+    const precached = await sw.install();
+    [
+      './assets/intro3d/table.mjs',
+      './assets/intro3d/icons/chip-emerald.webp',
+      './assets/intro3d/icons/chip-gold.webp',
+      './assets/intro3d/icons/chip-ivory.webp',
+      './assets/intro3d/icons/chip-onyx.webp',
+      './assets/intro3d/icons/chip-oxblood.webp',
+      './assets/intro3d/icons/chip-plum.webp',
+      './assets/intro3d/icons/clock-bezel.webp',
+      './assets/intro3d/icons/coin-clock.webp',
+      './assets/intro3d/icons/coin-deck.webp',
+      './assets/intro3d/icons/coin-house.webp',
+      './assets/intro3d/icons/coin-send.webp'
+    ].forEach(url => expect(precached.includes(url), true, `${url} precached`));
+  }],
+
   ['a drop push for a tracked platform shows the drop, once', async () => {
     const idb = fakeIndexedDB({ drop_alerts: STATE, push_schedule: [] });
     const sw = loadWorker({ idb, rows: [DROP, OTHER] });
