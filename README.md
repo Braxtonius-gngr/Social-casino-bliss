@@ -140,11 +140,24 @@ through the `go` edge function (`/functions/v1/go?p=<platform name>`),
 which redirects, rate-limits by address and counts each follow. The SEO
 pages link there too.
 
-To publish after editing `data/catalog.json`: open `admin/freebies.html`,
-choose the file under **Publish Catalogue** and press Publish. The database
-splits the referral links off and stores the rest under a new version; the
-app picks it up within five minutes or on its next focus. Publishing an
-unchanged file does nothing.
+Merging a change to `data/catalog.json` into `main` publishes it: the
+**Publish catalogue** workflow (`.github/workflows/publish-catalog.yml`)
+validates the file and runs `scripts/publish-catalog.js`, which calls
+`publish_catalog_with_key()` with the `CATALOG_PUBLISH_KEY` secret. That
+secret belongs to the `catalog-publish` environment (Settings → Environments),
+whose deployment branches are limited to `main`, so a workflow on any other
+branch cannot read it. The workflow also skips the publish when `main` has
+moved on to a newer catalogue, so a re-run of an old job cannot put an older
+file back. The database splits the referral links off and stores the rest under
+a new version; the app picks it up within five minutes or on its next focus.
+Publishing an unchanged file does nothing. To republish by hand, run the
+workflow from the Actions tab, or open `admin/freebies.html`, choose the file
+under **Publish Catalogue** and press Publish.
+
+The publish key can only publish the catalogue. The database keeps just its
+SHA-256 hash, in `catalog_publish_keys`, which no browser role can read. To
+rotate it: make a new random key (32+ characters), insert its hash as a new
+row, put the key in the `CATALOG_PUBLISH_KEY` secret, then delete the old row.
 
 The owner's Staff tab shows who downloaded the catalogue in the last seven
 days (heaviest first) and which platform links were followed, from
