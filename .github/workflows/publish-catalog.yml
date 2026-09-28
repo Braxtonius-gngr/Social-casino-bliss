@@ -1,0 +1,35 @@
+name: Publish catalogue
+
+# Publishes data/catalog.json to the database whenever it changes on main:
+# the same publish as the admin page's button, so a merged catalogue edit
+# goes live without anyone picking a file. Needs the CATALOG_PUBLISH_KEY
+# repository secret (README, "The catalogue"). Run it by hand from the
+# Actions tab to republish main's file.
+
+on:
+  push:
+    branches: [main]
+    paths: ['data/catalog.json']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One publish at a time; a newer push waits rather than racing the older one.
+concurrency:
+  group: publish-catalog
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Never publish a catalogue the validator rejects.
+      - run: npm run check:catalog
+      - run: node scripts/publish-catalog.js
+        env:
+          CATALOG_PUBLISH_KEY: ${{ secrets.CATALOG_PUBLISH_KEY }}
