@@ -204,6 +204,17 @@ const TESTS = [
     expect(status.version, last.version, 'for the same version');
   }],
 
+  ['a download with files missed is announced as such and not marked whole', async () => {
+    const sw = loadWorker({ idb: fakeIndexedDB(), windows: ['https://app.test/'], fetchFails: true });
+    await sw.install();
+    const progress = sw.messages.filter(m => m.type === 'precache');
+    const last = progress[progress.length - 1];
+    expect(last.complete, true, 'the end is still announced');
+    expect(last.failed > 0, true, 'with the files it missed counted');
+    const status = await sw.ask({ type: 'precache-status' });
+    expect(status.complete, false, 'and a page asking afterwards hears the build is not whole');
+  }],
+
   ['a build that has not finished its download says so', async () => {
     const sw = loadWorker({ idb: fakeIndexedDB() });
     const status = await sw.ask({ type: 'precache-status' });
