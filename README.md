@@ -92,6 +92,18 @@ No `npm install` needed - both scripts use only Node's standard library.
 They also run automatically on every push and pull request via
 [`.github/workflows/checks.yml`](.github/workflows/checks.yml).
 
+`npm run sweep:batch` is a read-only helper, not part of CI: it prints the
+next handful of entries to re-check (never-verified first, then oldest
+`lastVerified`, skipping anything with a `SWEEP` note from the last two
+weeks) and changes nothing. It feeds a daily catalogue sweep that runs
+outside this repository as a scheduled Claude task: that job re-reads each
+entry's URL, cooldown, reset window and redeem floor against the platform's
+own public pages, records what it found as a dated `SWEEP YYYY-MM-DD (...)`
+note, and opens a pull request for a human to review and merge. It sets
+`lastVerified` only when an official page confirmed the claim cadence as
+well as the URL; a redeem floor alone, a login-gated site or one that
+refuses automated reading gets the note but keeps its date.
+
 `npm run test:smoke` runs browser smoke tests for the flows that talk to the
 server: anonymous sign-in (exactly one per device, and none for crawlers),
 the catalogue download and its rate-limit fallback, Cloud Sync, Pro checkout
@@ -128,11 +140,24 @@ through the `go` edge function (`/functions/v1/go?p=<platform name>`),
 which redirects, rate-limits by address and counts each follow. The SEO
 pages link there too.
 
-To publish after editing `data/catalog.json`: open `admin/freebies.html`,
-choose the file under **Publish Catalogue** and press Publish. The database
-splits the referral links off and stores the rest under a new version; the
-app picks it up within five minutes or on its next focus. Publishing an
-unchanged file does nothing.
+Merging a change to `data/catalog.json` into `main` publishes it: the
+**Publish catalogue** workflow (`.github/workflows/publish-catalog.yml`)
+validates the file and runs `scripts/publish-catalog.js`, which calls
+`publish_catalog_with_key()` with the `CATALOG_PUBLISH_KEY` secret. That
+secret belongs to the `catalog-publish` environment (Settings → Environments),
+whose deployment branches are limited to `main`, so a workflow on any other
+branch cannot read it. The workflow also skips the publish when `main` has
+moved on to a newer catalogue, so a re-run of an old job cannot put an older
+file back. The database splits the referral links off and stores the rest under
+a new version; the app picks it up within five minutes or on its next focus.
+Publishing an unchanged file does nothing. To republish by hand, run the
+workflow from the Actions tab, or open `admin/freebies.html`, choose the file
+under **Publish Catalogue** and press Publish.
+
+The publish key can only publish the catalogue. The database keeps just its
+SHA-256 hash, in `catalog_publish_keys`, which no browser role can read. To
+rotate it: make a new random key (32+ characters), insert its hash as a new
+row, put the key in the `CATALOG_PUBLISH_KEY` secret, then delete the old row.
 
 The owner's Staff tab shows who downloaded the catalogue in the last seven
 days (heaviest first) and which platform links were followed, from

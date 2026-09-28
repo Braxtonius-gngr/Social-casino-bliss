@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v60';
+const CACHE_NAME = 'almanac-v61';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -28,20 +28,19 @@ const PRECACHE_URLS = ['./', './index.html', './manifest.json', './assets/app.cs
   // The WebGL intro (three.js and its base set). The extras for the rare
   // tiers are left to cache on first use: most launches never fetch them.
   './assets/vendor/three/three.core.js', './assets/vendor/three/three.module.js', './assets/vendor/three/three.addons.js',
-  './assets/intro3d/intro.mjs', './assets/intro3d/physics.mjs',
+  './assets/intro3d/intro.mjs', './assets/intro3d/physics.mjs', './assets/intro3d/table.mjs',
   './assets/intro3d/felt-normal.jpg', './assets/intro3d/rubber-normal.jpg', './assets/intro3d/leather-normal.jpg',
   './assets/intro3d/walnut.jpg', './assets/intro3d/gunmetal.jpg', './assets/intro3d/badge.png',
-  './assets/intro3d/gold-trim-color.jpg', './assets/intro3d/gold-trim-alpha.png', './assets/intro3d/gold-trim-normal.jpg',
-  './assets/intro3d/walnut-normal.jpg', './assets/intro3d/cushion-normal.jpg',
-  './assets/intro3d/carpet-color.jpg', './assets/intro3d/carpet-normal.jpg',
-  // The card table the landing flies into - the home screen of the default
-  // skin (Refinement x Realization) - with its chips, its clock bezel and
-  // the phone icons (156 KB in all): an offline launch has to land on it.
-  './assets/intro3d/table.mjs',
   './assets/intro3d/icons/chip-emerald.webp', './assets/intro3d/icons/chip-gold.webp', './assets/intro3d/icons/chip-ivory.webp',
   './assets/intro3d/icons/chip-onyx.webp', './assets/intro3d/icons/chip-oxblood.webp', './assets/intro3d/icons/chip-plum.webp',
-  './assets/intro3d/icons/clock-bezel.webp',
-  './assets/intro3d/icons/coin-clock.webp', './assets/intro3d/icons/coin-deck.webp', './assets/intro3d/icons/coin-house.webp', './assets/intro3d/icons/coin-send.webp'];
+  './assets/intro3d/icons/clock-bezel.webp', './assets/intro3d/icons/coin-clock.webp', './assets/intro3d/icons/coin-deck.webp',
+  './assets/intro3d/icons/coin-house.webp', './assets/intro3d/icons/coin-send.webp',
+  './assets/intro3d/gold-trim-color.jpg', './assets/intro3d/gold-trim-alpha.png', './assets/intro3d/gold-trim-normal.jpg',
+  './assets/intro3d/walnut-normal.jpg', './assets/intro3d/cushion-normal.jpg',
+  './assets/intro3d/carpet-color.jpg', './assets/intro3d/carpet-normal.jpg'];
+// (the card table the landing flies into - the home screen of the default
+// skin, Refinement x Realization - is precached above with its chips, its
+// clock bezel and the phone icons: an offline launch has to land on it)
 
 self.addEventListener('install', (event) => {
   // Precache the shell so the very first offline load works, even if the

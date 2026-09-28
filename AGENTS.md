@@ -7,7 +7,7 @@
 - [assets/app.css](assets/app.css) owns layout, base styles, and theme overrides.
 - [assets/accessibility.css](assets/accessibility.css) owns focus, skip-link, reduced-motion, and mobile performance styles.
 - [assets/accessibility.js](assets/accessibility.js) owns keyboard and ARIA behavior for dynamic strategy rows.
-- [data/catalog.json](data/catalog.json) is the catalogue's source of truth, published to the database from the admin page (`publish_catalog`); the app reads it through `get_catalog()` and the file is never deployed. [data/catalog.js](data/catalog.js) only restores the browser's saved copy into `CATALOG_DATA` before the first refresh. Referral links never reach the browser: `launchUrlFor()` sends OPEN through the `go` edge function for platforms flagged `hasReferral`. A Pro account's own link (the edit sheet's referral field, mirrored to `member_links`) comes first; a platform imported from a friend's shared list carries its `shareCode` and adds `&via=<launch token>` so the database can serve the sharer's link when both hold Pro (see README, *Pro referrals and shared lists*).
+- [data/catalog.json](data/catalog.json) is the catalogue's source of truth, published to the database when it merges to `main` (the Publish catalogue workflow, `publish_catalog_with_key`) or from the admin page (`publish_catalog`); the app reads it through `get_catalog()` and the file is never deployed. [data/catalog.js](data/catalog.js) only restores the browser's saved copy into `CATALOG_DATA` before the first refresh. Referral links never reach the browser: `launchUrlFor()` sends OPEN through the `go` edge function for platforms flagged `hasReferral`. A Pro account's own link (the edit sheet's referral field, mirrored to `member_links`) comes first; a platform imported from a friend's shared list carries its `shareCode` and adds `&via=<launch token>` so the database can serve the sharer's link when both hold Pro (see README, *Pro referrals and shared lists*).
 - [sw.js](sw.js) owns offline caching and same-origin network behavior.
 
 ## Working Rules
@@ -53,7 +53,7 @@ The authoritative script definitions are in [package.json](package.json), and CI
 - Every `collectionHistory` entry needs a stable `id` (assigned by `ensureHistoryEntryIds()` on load, and inline wherever a new entry is created) for this to work - preserve that if you touch collection-history code, even when sync itself isn't what you're changing.
 - The anon/publishable key in `index.html` is meant to be public (protected by RLS, not secrecy) - don't treat it as a secret to scrub, but also don't add anything there that would need to be one.
 - Browser roles start with nothing: the `least_privilege` migration revoked the default table grants from `anon`/`authenticated` and changed the default privileges, so a new table or RPC is unreachable until its migration says `GRANT` explicitly. Views are `security_invoker`; a public view needs a published-row policy and column grants on its tables, not `SECURITY DEFINER`.
-- The catalogue's own RPCs (`get_catalog`, `publish_catalog`, the owner's reports) live in the `catalog_service` migration. After editing [data/catalog.json](data/catalog.json), publish it from the admin page; the repo file alone changes nothing users see.
+- The catalogue's own RPCs (`get_catalog`, `publish_catalog`, the owner's reports) live in the `catalog_service` migration. Merging a [data/catalog.json](data/catalog.json) change to `main` publishes it through the Publish catalogue workflow; a branch alone changes nothing users see.
 
 ### Email linking (device-independent recovery)
 
@@ -77,6 +77,6 @@ The authoritative script definitions are in [package.json](package.json), and CI
 - Keep `index.html` syntax-valid; an inline-script error breaks the shipped app.
 - Run reference checks after renaming or adding local files.
 - Bump `CACHE_NAME` in [sw.js](sw.js) when cache invalidation is required.
-- After a catalogue edit, run `npm run build:seo` (the pages and history are generated from the file) and publish the catalogue from the admin page.
+- After a catalogue edit, run `npm run build:seo` (the pages and history are generated from the file); merging to `main` publishes the catalogue.
 - Keep editor-local `.vscode/` settings and personal Git/Copilot overrides out of the repository.
 - Avoid reformatting unrelated sections.

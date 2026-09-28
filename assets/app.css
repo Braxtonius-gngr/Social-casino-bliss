@@ -960,6 +960,7 @@
     .r3t-hand { position: absolute; inset: 0; width: 100% !important; height: 100% !important; pointer-events: none; }
     .r3t-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .r3t-rail, .r3t-phone { opacity: var(--r3t-in, 1); }
+    .r3t-rail, .r3t-card { pointer-events: auto; }
 
     /* The rail's instruments: walnut-black lacquer in a brass frame, let
        into the rail in front of the seat. */
@@ -1006,7 +1007,7 @@
        mirrored axes defeat: the hidden face would otherwise paint over) */
     .r3t-card:not(.r3t-up) .r3t-front, .r3t-card.r3t-up .r3t-back { visibility: hidden; }
     .r3t-face { position: absolute; inset: 0; border-radius: 18px; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 3px 5px rgba(0,0,0,0.45), 0 10px 24px rgba(0,0,0,0.35); }
-    /* The backs: the same the same way up (a dealt card is turned end over
+    /* The backs: the same way up (a dealt card is turned end over
        end), finer with the tier - oxblood and gold for D and C, bronze
        foil for B, pearl and platinum for A, black lacquer and gold foil
        for S - each with its own lattice, frame and medallion. The
