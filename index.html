@@ -5363,9 +5363,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // A view from the phone (Freebies, Community) over the table, with a
     // way back to it.
     function rollTableSheet(view) {
-      const tab = { freebies: 'tabFreebies', community: 'tabCommunity' }[view];
+      const tab = { freebies: ['freebies', 'tabFreebies'], community: ['community', 'tabCommunity'], deck: ['games', 'tabPlatforms'], catalogue: ['catalog', 'tabCatalog'] }[view];
       if (!tab) return;
-      switchMainTab(view, document.getElementById(tab));
+      switchMainTab(tab[0], document.getElementById(tab[1]));
       document.body.classList.add('r3-sheet-open');
       let back = document.getElementById('r3SheetBack');
       if (!back) {
