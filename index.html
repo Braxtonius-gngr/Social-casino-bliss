@@ -842,6 +842,15 @@
       </div>
 
       <div class="theme-settings">
+        <h4>How much show?</h4>
+        <!-- Showroom / Lounge / Quiet: one tap sets the skin and the Motion
+             setting below together (assets/show.js). -->
+        <div id="showLevelList" class="show-levels" role="radiogroup" aria-label="How much show"></div>
+        <div id="showLevelNote" class="backup-helper" style="text-align:left; margin-top:6px;"></div>
+        <button type="button" id="btnPlayPayout" class="btn-dock show-replay" onclick="playPayoutFromSettings()">PLAY THE PAYOUT</button>
+      </div>
+
+      <div class="theme-settings">
         <h4>Theme</h4>
         <div id="themeList" class="theme-grid"></div>
       </div>
@@ -958,6 +967,17 @@
       <div class="modal-actions" style="flex-shrink:0; border-top:1px solid var(--glass-border); padding-top:14px;">
         <button class="btn-primary" onclick="closeModals()">DONE</button>
       </div>
+    </div>
+  </div>
+
+  <!-- The tour's last step: how much show (assets/show.js) -->
+  <div id="showLevelModal" class="sheet-backdrop show-sheet">
+    <div class="sheet-modal glass-panel">
+      <p class="show-eyebrow">Last step of the tour</p>
+      <h3>How much show?</h3>
+      <p class="show-sub">Same deck and the same gold on all three. You can change this later in Settings.</p>
+      <div id="showSheetList" class="show-levels" role="radiogroup" aria-label="How much show"></div>
+      <div class="modal-actions"><button type="button" class="btn-primary" id="showSheetDone" onclick="closeShowSheet()">DONE</button></div>
     </div>
   </div>
 
@@ -1437,6 +1457,7 @@
   <script src="utils/classifyDropText.js"></script>
   <script src="assets/accessibility.js"></script>
   <script src="assets/storage.js"></script>
+  <script src="assets/show.js"></script>
   <!-- Cloud sync (optional, opt-in - see the "Cloud sync" block near the
        end of the inline script below). Loaded from a CDN rather than
        vendored, matching how Google Fonts is already loaded here - this
@@ -2665,6 +2686,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         `;
         container.appendChild(cardWrapper);
       });
+      if (window.showAfterRender) showAfterRender();
     }
 
     let heroCountDisplayed = null;
@@ -2736,6 +2758,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         el.textContent = ready;
       }
       heroCountDisplayed = ready;
+      // today's run, done / tracked: the watch-bezel ring and the gold edge
+      // light carry it (assets/show.js)
+      if (window.showRunProgress) showRunProgress(total > 0 ? (total - ready) / total : 0);
 
       document.getElementById('heroReadyText').textContent = `${ready} ready to collect`;
       document.getElementById('heroCooldownText').textContent = `${cooldown} on cooldown`;
@@ -3149,6 +3174,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('settingDenseToggle').checked = document.body.classList.contains('dense');
       renderThemeUI();
       refreshMotionUI();
+      if (window.renderShowLevelUI) renderShowLevelUI();
       refreshTZUI();
       refreshNotifyUI();
       refreshDropInboxUI();
@@ -5664,6 +5690,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         currentTourTarget = null;
         currentTourSecondary = null;
         tourStep = 0;
+        // (then its real last step: how much show - once, see assets/show.js)
+        if (window.openShowSheet) setTimeout(openShowSheet, 450);
         return;
       }
 
@@ -6491,6 +6519,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try { localStorage.setItem(MOTION_KEY, v); } catch (e) {}
       applyMotionPref();
       refreshMotionUI();
+      if (window.showRefresh) showRefresh();
     }
 
     function setLockedTZ(v) {
@@ -6523,7 +6552,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     applyMotionPref();
     if (window.matchMedia) {
       const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-      const onChange = () => { applyMotionPref(); refreshMotionUI(); };
+      const onChange = () => { applyMotionPref(); refreshMotionUI(); if (window.showRefresh) showRefresh(); };
       if (mq.addEventListener) mq.addEventListener('change', onChange);
       else if (mq.addListener) mq.addListener(onChange);
     }
@@ -6885,6 +6914,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // A skin with a table for a home, or without one: the home changes
       // with it (see rollSetHome).
       if (themeTable(was) !== themeTable(themeId)) rollSetHome(themeTable(themeId));
+      if (window.showRefresh) showRefresh();
     }
 
     function renderThemeUI() {
@@ -8337,7 +8367,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v69';
+    const APP_BUILD = 'almanac-v70';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
@@ -10612,6 +10642,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       saveIndexedState('the_casino_almanac_history_v1', collectionHistory);
       enqueueHistorySync(entry, false);
       collectFlash();
+      if (window.showCollected) showCollected(id);
     }
 
     // Removes the most recent collectionHistory entry for this platform
@@ -13395,6 +13426,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function exitDailyRun() {
+      const finishedRun = dailyRunIndex >= dailyRunQueue.length;
+      const collectedThisRun = dailyRunStats ? dailyRunStats.collected : 0;
       recordDailyRunEnd();
       hideRunUndoBar();
       dailyRunLaunchFallback = null;
@@ -13403,6 +13436,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderGames();
       updateHeroStats();
       updateDailyRunButton();
+      if (window.showOnRunExit) showOnRunExit(finishedRun, collectedThisRun);
     }
 
     const d = new Date();
