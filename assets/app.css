@@ -658,6 +658,18 @@
        origin is its centre, the floor is y = 0, z runs toward the viewer.
        ========================================================================== */
     .roll-intro { display: none; position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+    /* The loader: the seal turning slowly in the dark while the 3D shot is
+       built, shown only if the build takes more than a moment. */
+    .r3-loader { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; pointer-events: none; background: #050404; opacity: 0; visibility: hidden; transition: opacity 0.35s ease-out, visibility 0s linear 0.35s; }
+    .landing-screen.r3-loading .r3-loader { opacity: 1; visibility: visible; transition: opacity 0.5s ease-out 0.45s, visibility 0s; }
+    .r3-loader-seal { position: relative; width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid rgba(214,176,98,0.75); box-shadow: inset 0 0 0 5px #050404, inset 0 0 0 6px rgba(214,176,98,0.45); }
+    .r3-loader-seal::before { content: ""; position: absolute; inset: -9px; border-radius: 50%; border: 1px dashed rgba(214,176,98,0.45); animation: r3-loader-turn 9s linear infinite; }
+    .r3-loader-seal b { font: 700 19px/1 Georgia, "Times New Roman", serif; letter-spacing: 0.08em; color: #d9b467; background: linear-gradient(110deg, #9c7a3c 20%, #f6dfa3 45%, #9c7a3c 70%) 0 0 / 250% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: r3-loader-sheen 2.4s ease-in-out infinite; }
+    .r3-loader-line { width: 96px; height: 1px; background: linear-gradient(90deg, transparent, rgba(214,176,98,0.85), transparent) 0 0 / 50% 100% no-repeat; animation: r3-loader-run 1.6s ease-in-out infinite; }
+    @keyframes r3-loader-turn { to { transform: rotate(360deg); } }
+    @keyframes r3-loader-sheen { 0% { background-position: 100% 0; } 100% { background-position: -50% 0; } }
+    @keyframes r3-loader-run { 0% { background-position: -100% 0; } 100% { background-position: 200% 0; } }
+    html[data-motion="off"] .r3-loader-seal::before, html[data-motion="off"] .r3-loader-seal b, html[data-motion="off"] .r3-loader-line { animation: none; }
     .landing-screen.intro-play .roll-intro { display: block; }
     /* Performance: no blend modes anywhere in the intro and no filters in
        the shot itself (each forces an extra full off-screen pass per frame;
