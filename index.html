@@ -5319,9 +5319,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         table = await prep.fly(world, Object.assign({
           host: world.host,
           reduced: motionOff(),
-          // (?deal=single|rows|columns|spread: the way the arm deals; by
+          // (?deal=single|rows|columns|spread: the way the dealer deals; by
           // default each deal picks one)
           dealStyle: q.get('deal'),
+          // (?cards=N: a hand of N cards at the table, for the lab)
+          cards: parseInt(q.get('cards'), 10) || 0,
           seatView: seatcam.length === 4 && seatcam.every(Number.isFinite) ? seatcam : null,
           onArrive: layer => {
             const stage = document.createElement('div');
@@ -8335,7 +8337,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v67';
+    const APP_BUILD = 'almanac-v68';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
