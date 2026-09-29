@@ -970,6 +970,10 @@
     .r3t-css { position: absolute; inset: 0; pointer-events: none; overflow: clip !important; }
     .r3t-css.r3t-hide { visibility: hidden; }
     .r3t-hand { position: absolute; inset: 0; width: 100% !important; height: 100% !important; pointer-events: none; }
+    /* (the dealer's canvas belongs to the room, not the page: it shows while
+       the page's parts are still hidden, so the machine is seen rising out of
+       its port as the camera settles into the seat) */
+    .r3t-css.r3t-hide .r3t-hand { visibility: visible; }
     .r3t-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .r3t-rail, .r3t-phone { opacity: var(--r3t-in, 1); }
     .r3t-rail, .r3t-card { pointer-events: auto; }
