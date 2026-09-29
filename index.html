@@ -100,6 +100,9 @@
          perspectively correct, and no solid ever passes through another.
          The finished frame - the dice at rest on the cards - stays under
          the copy (.roll-rest); with motion off it is the only frame. -->
+    <!-- While the 3D shot is being built (a few seconds on a phone), the
+         house's seal turns in the dark instead of a black screen. -->
+    <div class="r3-loader" aria-hidden="true"><span class="r3-loader-seal"><b>DRO</b></span><i class="r3-loader-line"></i></div>
     <div class="roll-intro" aria-hidden="true">
       <div class="roll-backdrop"></div>
       <div class="roll-stage">
@@ -5239,12 +5242,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // everything it has made so far and rejects (see createIntro).
       const building = typeof AbortController === 'function' ? new AbortController() : null;
       screen.classList.remove('roll-rest', 'roll-popped');
-      screen.classList.add('intro-play', 'roll-webgl');
+      screen.classList.add('intro-play', 'roll-webgl', 'r3-loading');
       screen.classList.toggle('r3-direct', direct);
       const fallBack = still => {
         if (fellBack || api) return;
         fellBack = true;
         clearTimeout(timer);
+        screen.classList.remove('r3-loading');
         if (building) building.abort();
         screen.removeEventListener('pointerdown', skipWhileLoading);
         // (without roll-webgl, CSS hides any of the shot's pieces that are
@@ -5400,6 +5404,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
       if (fellBack) { api.dispose(); return; }
       clearTimeout(timer);
+      screen.classList.remove('r3-loading');
       screen.removeEventListener('pointerdown', skipWhileLoading);
       window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; };
       if (direct) {
@@ -8328,7 +8333,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v65';
+    const APP_BUILD = 'almanac-v66';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
