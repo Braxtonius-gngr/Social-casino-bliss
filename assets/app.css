@@ -258,8 +258,8 @@
        pills (seven with Staff) stopped fitting a phone width, and the
        flex layout's only answer was to squeeze every label until they
        all wrapped or truncated. Now they keep their natural width and
-       the rail scrolls instead. Scrollbar hidden the same way
-       .filter-chips below already does it. */
+       the rail scrolls instead. Its scrollbar is hidden like .filter-chips
+       below. */
     .nav-pill-group {
       display: flex; gap: 6px; margin-bottom: 12px;
       padding: 6px;
@@ -1100,9 +1100,9 @@
     .r3t-phone { position: absolute; left: 50%; top: 50%; width: min(76vmin, 40vh); aspect-ratio: 300 / 640; transform: translate(-50%, -50%) perspective(1200px) translate(calc(50vw - 44px), calc(50vh + 8%)) rotate(-14deg) rotateX(34deg) scale(0.58); transform-origin: 50% 50%; transition: transform .6s cubic-bezier(.22,.9,.3,1); container-type: inline-size; pointer-events: auto; cursor: pointer; outline: none; z-index: 3; -webkit-tap-highlight-color: transparent; }
     .r3t-card, .r3t-rail, .r3t-phone * { -webkit-tap-highlight-color: transparent; }
     .r3t-phone.r3t-held { transform: translate(-50%, -50%) perspective(1200px) translate(0, 0) rotate(0) rotateX(0) scale(1); cursor: default; }
-    .r3t-phone::after { content: "Pick up"; position: absolute; left: 4cqw; top: -9cqw; padding: 2.4cqw 5cqw; border-radius: 6cqw; background: rgba(12,10,9,0.85); border: 1px solid rgba(232,200,106,0.5); color: #f0dca6; font: 600 4.4cqw/1 Georgia, serif; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; opacity: 0.9; transition: opacity .3s; }
-    .r3t-phone.r3t-held::after { opacity: 0; }
-    .r3t-phone:focus-visible .r3t-ph-body { box-shadow: 0 0 0 4px #f0cf7f, 0 40px 70px rgba(0,0,0,0.6); }
+    .r3t-ph-pickup { position: absolute; left: 4cqw; top: -9cqw; padding: 2.4cqw 5cqw; border-radius: 6cqw; background: rgba(12,10,9,0.85); border: 1px solid rgba(232,200,106,0.5); color: #f0dca6; font: 600 4.4cqw/1 Georgia, serif; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; opacity: 0.9; transition: opacity .3s; cursor: pointer; z-index: 4; }
+    .r3t-phone.r3t-held .r3t-ph-pickup { display: none; }
+    .r3t-ph-pickup:focus-visible + .r3t-ph-body { box-shadow: 0 0 0 4px #f0cf7f, 0 40px 70px rgba(0,0,0,0.6); }
     .r3t-ph-body { position: absolute; inset: 0; border-radius: 15cqw; padding: 2.4cqw; background: linear-gradient(155deg, #e6e3dd 0%, #8f8c87 16%, #3b3a38 40%, #706d69 58%, #d8d5cf 80%, #7b7874 100%); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4), inset 0 0 0 2.4cqw rgba(0,0,0,0.25), 0 40px 70px rgba(0,0,0,0.6), 0 8px 18px rgba(0,0,0,0.45); }
     .r3t-ph-body::before, .r3t-ph-body::after { content: ""; position: absolute; width: 1.2cqw; border-radius: 1cqw; background: linear-gradient(180deg, #b9b6b0, #4a4846); }
     .r3t-ph-body::before { left: -1.2cqw; top: 26cqw; height: 16cqw; box-shadow: 0 22cqw 0 0 #7a7773; }
