@@ -26,7 +26,7 @@ const ROOT = path.resolve(__dirname, '..');
 const OUT = path.join(ROOT, process.env.BUILD_OUT || 'dist');
 
 // Repo-only: never served.
-const SKIP_DIRS = new Set(['.git', '.github', '.vscode', 'node_modules', 'dist', 'docs', 'scripts', 'supabase']);
+const SKIP_DIRS = new Set(['.git', '.github', '.claude', '.vscode', 'node_modules', 'dist', 'docs', 'scripts', 'supabase', 'tools']);
 const SKIP_FILES = new Set([
   '.gitignore', 'package.json', 'package-lock.json',
   'AGENTS.md', 'CLAUDE.md', 'README.md', 'SECURITY.md'

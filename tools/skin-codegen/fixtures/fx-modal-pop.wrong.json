@@ -1,0 +1,6 @@
+{
+  "why": "Right look, but 300ms instead of 320ms, and the pop overshoots to scale 1.3 so the panel leaves the stage mid-animation.",
+  "html": "<div data-part=\"root\" class=\"mp\"><h2 data-part=\"title\">You won!</h2></div>",
+  "css": ".mp{position:absolute;left:20px;top:30px;width:280px;height:180px;background-color:#16161F;border-radius:20px;display:grid;place-items:center;animation:mp-in 300ms ease-out 1 both}\n.mp [data-part=title]{color:#fff;font:700 22px/1.2 system-ui,sans-serif;margin:0}\n@keyframes mp-in{0%{opacity:0;transform:scale(.9)}60%{transform:scale(1.3)}100%{opacity:1;transform:scale(1)}}",
+  "js": ""
+}

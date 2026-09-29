@@ -1,0 +1,27 @@
+{
+  "flow": "skin-codegen",
+  "description": "Design spec (Figma/Canva export) to animated HTML/CSS. Rung 1: one structured-output call per component, graded in headless Chromium.",
+  "metrics": [
+    { "id": "pass", "label": "Pass", "kind": "binary" },
+    { "id": "syntax", "label": "Syntax", "kind": "binary" },
+    { "id": "fidelity", "label": "Fidelity", "kind": "float", "scale": 1 },
+    { "id": "timing", "label": "Timing", "kind": "float", "scale": 1 },
+    { "id": "no_clip", "label": "No clipping", "kind": "binary" },
+    { "id": "frame_ok", "label": "Frame budget", "kind": "binary" }
+  ],
+  "perf_fields": [
+    { "id": "cost_usd", "label": "Cost", "unit": "$" },
+    { "id": "in_tokens", "label": "In tokens" },
+    { "id": "out_tokens", "label": "Out tokens" },
+    { "id": "latency_s", "label": "Latency", "unit": "s" },
+    { "id": "frame_p95_ms", "label": "Frame p95", "unit": "ms" },
+    { "id": "dropped_pct", "label": "Dropped", "unit": "%" }
+  ],
+  "prices": { "claude-opus-5-5": { "in": 4, "out": 20 } },
+  "harness_paths": [
+    "tools/skin-codegen/generate.mjs",
+    "tools/skin-codegen/grade.mjs",
+    "tools/skin-codegen/score.mjs",
+    "tools/skin-codegen/package.json"
+  ]
+}

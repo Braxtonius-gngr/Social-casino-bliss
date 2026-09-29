@@ -1,0 +1,17 @@
+{
+  "id": "fx-glow-banner",
+  "tags": ["banner", "fixture"],
+  "source": "synthetic harness fixture, not an eval case",
+  "canvas": { "width": 360, "height": 120, "background": "#000000" },
+  "tokens": { "plum": "#2A0F3D", "gold-soft": "#FFD76A" },
+  "component": {
+    "description": "Daily bonus banner with breathing glow",
+    "root": { "box": { "x": 20, "y": 28, "width": 320, "height": 64 },
+              "styles": { "background-color": "{plum}", "border-radius": "12px" } },
+    "parts": [ { "name": "glow" },
+               { "name": "label", "text": "DAILY BONUS",
+                 "styles": { "color": "{gold-soft}", "font-size": "20px" } } ]
+  },
+  "animations": [ { "target": "glow", "duration_ms": 2400, "delay_ms": 0, "iterations": "infinite",
+                    "direction": "alternate", "easing": "ease-in-out", "properties": ["opacity"] } ]
+}

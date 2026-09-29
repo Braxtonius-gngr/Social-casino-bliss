@@ -1,0 +1,6 @@
+{
+  "why": "Drives the glow from a JS rAF loop that also does a fixed chunk of main-thread work each frame (about 15 ms at full speed, several frames at 4x slowdown). Passes the property rule, so only the measured frame check can catch it.",
+  "html": "<div data-part=\"root\" class=\"gb\"><span data-part=\"glow\" class=\"gb-glow\"></span><span data-part=\"label\" class=\"gb-label\">DAILY BONUS</span></div>",
+  "css": ".gb{position:absolute;left:20px;top:28px;width:320px;height:64px;background-color:#2A0F3D;border-radius:12px;display:flex;align-items:center;justify-content:center}\n.gb-glow{position:absolute;inset:0;border-radius:inherit;box-shadow:0 0 18px 4px rgba(255,200,80,.6);opacity:.4}\n.gb-label{position:relative;color:#FFD76A;font:800 20px/1 system-ui,sans-serif;letter-spacing:.06em}",
+  "js": "const g=document.querySelector('[data-part=glow]');g.animate([{opacity:.4},{opacity:1}],{duration:2400,iterations:Infinity,direction:'alternate',easing:'ease-in-out'});(function spin(){let x=0;for(let i=0;i<4e6;i++)x+=Math.sqrt(i);g.dataset.x=x;requestAnimationFrame(spin);})();"
+}

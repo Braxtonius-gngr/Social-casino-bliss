@@ -1,0 +1,5 @@
+{
+  "html": "<div data-part=\"root\" class=\"mp\"><h2 data-part=\"title\">You won!</h2></div>",
+  "css": ".mp{position:absolute;left:20px;top:30px;width:280px;height:180px;background-color:#16161F;border-radius:20px;display:grid;place-items:center;animation:mp-in 320ms ease-out 1 both}\n.mp [data-part=title]{color:#fff;font:700 22px/1.2 system-ui,sans-serif;margin:0}\n@keyframes mp-in{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}",
+  "js": ""
+}
