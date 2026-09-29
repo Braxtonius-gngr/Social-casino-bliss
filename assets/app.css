@@ -4497,10 +4497,11 @@ html[data-motion="off"][data-theme="executive"] #dailyRunOverlay::after { animat
 
 /* The gold edge light: a hairline round the screen, lit for today's run
    from the top centre clockwise (show.js sets the dash), under every sheet,
-   the tour, the landing and the table. The highlight is one short streak
-   riding the same path (offset-path), so circling it moves a layer rather
-   than repainting the edge; 12 s a lap, the same slow light as the rest of
-   the room. */
+   the tour, the landing and the table. The highlight is a comet riding the
+   same path (offset-path): a bright head and five fading segments, each
+   only 12px long so it bends round a corner instead of cutting across it,
+   and circling it moves layers rather than repainting the edge. 12 s a
+   lap. */
 .show-edge, .show-edge-hi { display: none; }
 [data-theme="executive"] .show-edge { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 95; pointer-events: none; overflow: visible; }
 .show-edge path { fill: none; }
@@ -4508,13 +4509,20 @@ html[data-motion="off"][data-theme="executive"] #dailyRunOverlay::after { animat
 .show-edge-glow { stroke: #D4AF37; stroke-width: 3; opacity: 0.32; }
 .show-edge-lit { stroke: #DDBB4E; stroke-width: 1.5; stroke-linecap: round; }
 [data-theme="executive"] .show-edge-hi {
+  --k: 0;
   display: block; position: fixed; left: 0; top: 0; z-index: 95; pointer-events: none;
-  width: 64px; height: 2px; border-radius: 2px;
-  background: linear-gradient(90deg, rgba(255,241,204,0) 0%, rgba(255,241,204,0.95) 50%, rgba(255,241,204,0) 100%);
-  filter: drop-shadow(0 0 3px rgba(232,200,96,0.85));
+  width: 12px; height: 1.6px; border-radius: 1px;
+  /* each segment fades in and out along its length, so where neighbours
+     overlap they add up to an even streak instead of beads */
+  background: linear-gradient(90deg, rgba(255,241,204,0) 0%, rgba(255,241,204,0.92) 45%, rgba(255,241,204,0.92) 55%, rgba(255,241,204,0) 100%);
+  opacity: calc(1 - var(--k) * 0.17);
   offset-rotate: auto; offset-distance: 0%;
+  /* the head leads: each segment behind it is 30 ms (about 6px) later on
+     the same path, so the segments overlap into one bending streak */
   animation: show-edge-run 12s linear infinite;
+  animation-delay: calc((var(--k) - 5) * 30ms);
 }
+[data-theme="executive"] .show-edge-hi.head { filter: drop-shadow(0 0 2.5px rgba(232,200,96,0.9)); height: 2px; }
 @keyframes show-edge-run { from { offset-distance: 0%; } to { offset-distance: 100%; } }
 html[data-motion="off"] .show-edge-hi { display: none !important; animation: none; }
 html[data-motion="off"] .show-edge-glow { display: none; }
@@ -4558,8 +4566,8 @@ html[data-motion="off"] .show-glint { display: none; }
 .show-fx-back { z-index: 96; perspective: 1000px; transform-style: preserve-3d; }
 .show-fx-shadows { z-index: 97; overflow: hidden; }
 .show-fx-front { z-index: 98; perspective: 1000px; transform-style: preserve-3d; }
-.show-flash { position: fixed; left: -999px; top: -999px; width: 260px; height: 260px; margin: -130px 0 0 -130px; border-radius: 50%; z-index: 96; pointer-events: none; opacity: 0; mix-blend-mode: screen;
-  background: radial-gradient(circle, rgba(255,236,190,0.55) 0%, rgba(232,200,96,0.22) 30%, transparent 66%); }
+.show-flash { position: fixed; left: -999px; top: -999px; width: 150px; height: 150px; margin: -75px 0 0 -75px; border-radius: 50%; z-index: 96; pointer-events: none; opacity: 0; mix-blend-mode: screen;
+  background: radial-gradient(circle, rgba(255,236,190,0.5) 0%, rgba(232,200,96,0.18) 32%, transparent 62%); }
 .show-shd { position: absolute; left: 0; top: 0; background: #000; }
 .show-piece { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
 .show-cl { position: absolute; inset: 0; border-radius: 50%; background-size: 100% 100%; }

@@ -16,10 +16,50 @@
    - the watch-bezel ring round the ready count: 60 minute ticks, the run as
      a gold arc in a groove, a polished bead at its head;
    - one gold glint across a card when it is collected;
-   - the payout: when a Daily Run is finished, the dial opens into a port and
-     the house pays out - clay chips and DRO sweeps notes rise through it,
-     cross the glass and settle round the screen, and hold still until the
-     next touch sends them past you. Settings can play it again any time.
+   - the payout: when a Daily Run is finished, the dial's iris opens into a
+     port and the house pays out - clay chips and DRO sweeps notes rise
+     through it, cross the glass and settle round the screen, and hold still
+     until the next touch sends them past you (a touch mid-flight does too).
+     Settings can play it again any time.
+
+   Each piece is held to a real maker, at three distances (across the room:
+   silhouette; arm's length: materials, bevels, seams; pinched in 3x:
+   engraving, grain, wear), for what its surfaces do with the one key light
+   (above left, in front of the glass), what it touches and how it moves.
+
+   Edge light - a gold inlay line set into a watch case, lit by a jeweller's
+     lamp. Room: a thin gold frame, fuller as the run fills. Arm: a hairline
+     with a soft bloom, brighter on the lit length. 3x: the highlight is a
+     comet of short segments that follows the corners rather than cutting
+     them. It runs round the glass: rounded like the screen's corners only
+     when installed; in a browser tab the page's corners are square, so it
+     is a frame with a small inner radius. Moves at constant speed, like
+     light travelling along a groove; 12 s a lap.
+   Bezel ring - a Patek Philippe minute track on a circular-brushed bezel.
+     Room: a dark ring with a gold arc. Arm: 60 gold-filled ticks, the arc
+     in a sunk groove, a polished bead at its head. 3x: radial brushing, two
+     bright wedges where the lamp mirrors in the brushing (top left), a fine
+     chamfer line inside and out. The arc winds back a hair, overshoots and
+     settles when the run moves.
+   Iris port - the six blackened-steel blades of a Zeiss lens iris over a
+     machined bore. Room: the count's dial, then a hole. Arm: the blades
+     turn and slide back together, the aperture a hexagon growing to a
+     circle. 3x: each blade has a satin sheen that turns with it, a lit
+     bevel on its leading edge and a shadow on the blade under it; the bore
+     wall is dark where the lip shades it (top left) and lit on the far side
+     (bottom right). It takes up the slack (a hair shut) before it opens,
+     overshoots a touch and settles; it closes with a lag once the last
+     piece is out.
+   Glint - a jeweller's lamp passing over a lacquered black placard: a warm
+     band across the clear coat, a spark along the top hairline.
+   Chips - Paulson clay chips from a Macau private salon: edge spots through
+     body and rim, a gold-stamped inlay with a microtext ring. Clay is matte;
+     the inlay flashes as it turns through the light.
+   Notes - an intaglio note from a banknote printer: guilloche borders, a
+     rosette, a foil strip with microtext, a serial. Paper is shaded panel by
+     panel as it bows at its folds, and sheens only where it faces the lamp.
+   Contact - every piece in front of the glass drops a shadow on it along
+     the key light, softer the higher it is; the nearest fall out of focus.
 
    Classic script, loaded before the inline app script; everything that
    needs the app's own globals (THEMES, selectTheme, trackedGames, ...) runs
@@ -149,8 +189,9 @@
   }
 
   // ---------- Edge light ----------
-  var edge = null, edgeHi = null, edgeD = '';
+  var edge = null, edgeHi = [], edgeD = '';
   var hasOffsetPath = !!(window.CSS && CSS.supports && CSS.supports('offset-path', "path('M0 0H1')"));
+  var COMET = 6;   // the highlight: a head and five trailing segments, each short enough to follow a corner
   function buildEdge() {
     if (edge) return;
     edge = document.createElementNS(NS, 'svg');
@@ -161,19 +202,30 @@
       '<path class="show-edge-lit" pathLength="1000"/>';
     document.body.appendChild(edge);
     if (hasOffsetPath) {
-      edgeHi = document.createElement('div');
-      edgeHi.className = 'show-edge-hi';
-      edgeHi.setAttribute('aria-hidden', 'true');
-      document.body.appendChild(edgeHi);
+      for (var k = 0; k < COMET; k++) {
+        var seg = document.createElement('div');
+        seg.className = 'show-edge-hi' + (k === 0 ? ' head' : '');
+        seg.style.setProperty('--k', k);
+        seg.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(seg);
+        edgeHi.push(seg);
+      }
     }
     layoutEdge();
+  }
+  // The glass the light runs round: an installed app fills the screen, so
+  // the frame follows the screen's own corners; a browser tab's page has
+  // square corners, so there it is a frame with a small inner radius.
+  function edgeRadius() {
+    var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+    if (!standalone) return 12;
+    var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    return ios ? 47 : 24;
   }
   function layoutEdge() {
     if (!edge) return;
     var w = window.innerWidth, h = window.innerHeight;
-    // rounded like the glass it runs round on a phone; square on a desktop window
-    var coarse = window.matchMedia && matchMedia('(pointer: coarse)').matches;
-    var r = coarse && Math.min(w, h) < 700 ? 46 : 0;
+    var r = edgeRadius();
     var i = 1.3, rr = Math.max(0.01, r - i);
     edgeD = 'M' + (w / 2) + ' ' + i + 'H' + (w - i - rr) + 'A' + rr + ' ' + rr + ' 0 0 1 ' + (w - i) + ' ' + (i + rr) +
       'V' + (h - i - rr) + 'A' + rr + ' ' + rr + ' 0 0 1 ' + (w - i - rr) + ' ' + (h - i) +
@@ -181,11 +233,61 @@
       'V' + (i + rr) + 'A' + rr + ' ' + rr + ' 0 0 1 ' + (i + rr) + ' ' + i + 'Z';
     edge.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
     edge.querySelectorAll('path').forEach(function (p) { p.setAttribute('d', edgeD); });
-    if (edgeHi) edgeHi.style.offsetPath = "path('" + edgeD + "')";
+    edgeHi.forEach(function (seg) { seg.style.offsetPath = "path('" + edgeD + "')"; });
+  }
+
+  // ---------- The iris ----------
+  // Six blades over the bore (the dial's own radius, 35.4 in the ring's
+  // 120-unit box). Opening, each turns about a pivot on the rim and slides
+  // back along its own axis, so the aperture grows from a hexagon to the
+  // full bore. Blade 0 is drawn a second time over blade 5, clipped to its
+  // leading wedge, so the overlap goes round the circle the way a real
+  // iris's does.
+  var IRIS = { R: 35.4, N: 6, out: 1.6, span: 78, pivotR: 1.0, pivotA: 40, bow: 6, rot: 50, slide: 22 };
+  function irisBlade(i) {
+    var rad = function (a) { return a * Math.PI / 180; };
+    var pt = function (r, a) { return [60 + r * Math.cos(rad(a)), 60 + r * Math.sin(rad(a))]; };
+    var f2 = function (p) { return p[0].toFixed(2) + ' ' + p[1].toFixed(2); };
+    var th = -90 + i * 60;
+    var c = pt(3, th + 36 + 180);                     // just past the centre, so the blades overlap there
+    var a = pt(IRIS.R * IRIS.out, th), b = pt(IRIS.R * IRIS.out, th + IRIS.span);
+    var k = pt(1, th + 90), m = [(c[0] + a[0]) / 2, (c[1] + a[1]) / 2];
+    var q = [m[0] + (k[0] - 60) * IRIS.bow, m[1] + (k[1] - 60) * IRIS.bow];   // leading edge bowed, so the aperture rounds
+    var edgeD = 'M' + f2(c) + ' Q' + f2(q) + ' ' + f2(a);
+    var bis = rad(th + IRIS.span / 2);
+    return {
+      d: edgeD + ' L' + f2(b) + ' Z', edge: edgeD,
+      pivot: pt(IRIS.R * IRIS.pivotR, th + IRIS.pivotA),
+      dir: [Math.cos(bis), Math.sin(bis)]
+    };
+  }
+  function irisBladeSvg(b) {
+    return '<path d="' + b.d + '" fill="url(#showBlade)"/>' +
+      '<path d="' + b.edge + '" fill="none" stroke="rgba(0,0,0,0.55)" stroke-width="1.4" transform="translate(-0.5 0.6)"/>' +
+      '<path d="' + b.edge + '" fill="none" stroke="rgba(255,238,205,0.34)" stroke-width="0.45"/>';
+  }
+  function irisSvg() {
+    var s = '<clipPath id="showAperture"><circle cx="60" cy="60" r="' + IRIS.R + '"/></clipPath>' +
+      '<clipPath id="showWedge0"><path d="M' + (60 + 3 * Math.cos(Math.PI * 126 / 180)).toFixed(2) + ' ' + (60 + 3 * Math.sin(Math.PI * 126 / 180)).toFixed(2) +
+      ' L' + (60 + 60 * Math.cos(-Math.PI * 96 / 180)).toFixed(2) + ' ' + (60 + 60 * Math.sin(-Math.PI * 96 / 180)).toFixed(2) +
+      ' L' + (60 + 60 * Math.cos(-Math.PI * 66 / 180)).toFixed(2) + ' ' + (60 + 60 * Math.sin(-Math.PI * 66 / 180)).toFixed(2) + ' Z"/></clipPath>' +
+      '<g class="show-iris" clip-path="url(#showAperture)">';
+    for (var i = 0; i < IRIS.N; i++) s += '<g class="show-blade">' + irisBladeSvg(irisBlade(i)) + '</g>';
+    s += '<g class="show-blade"><g clip-path="url(#showWedge0)">' + irisBladeSvg(irisBlade(0)) + '</g></g></g>';
+    return s;
+  }
+  var irisBlades = [], irisGeo = [];
+  // open: 0 shut, 1 fully open (a little past either end is the overshoot)
+  function setIris(open) {
+    irisBlades.forEach(function (g, i) {
+      var b = irisGeo[i % IRIS.N], sl = IRIS.slide * open;
+      g.setAttribute('transform', 'translate(' + (b.dir[0] * sl).toFixed(2) + ' ' + (b.dir[1] * sl).toFixed(2) + ') rotate(' +
+        (IRIS.rot * open).toFixed(2) + ' ' + b.pivot[0].toFixed(2) + ' ' + b.pivot[1].toFixed(2) + ')');
+    });
   }
 
   // ---------- The ring ----------
-  var bezel = null, arc = null, bead = null, ticks = [], dial = null, litCount = -1;
+  var bezel = null, arc = null, bead = null, ticks = [], boreGlow = null, litCount = -1;
   function buildBezel() {
     var wrap = document.querySelector('.hero-ring-wrapper');
     if (!wrap || bezel) return;
@@ -202,14 +304,20 @@
     bezel.innerHTML = '<div class="show-bezel-metal"></div>' +
       '<svg viewBox="0 0 120 120"><defs>' +
       '<linearGradient id="showArc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3DA92"/><stop offset=".5" stop-color="#D4AF37"/><stop offset="1" stop-color="#A87A22"/></linearGradient>' +
-      '<radialGradient id="showDial" cx=".42" cy=".36" r=".78"><stop offset="0" stop-color="#18191e"/><stop offset="1" stop-color="#07080a"/></radialGradient>' +
       '<radialGradient id="showPort" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000"/><stop offset=".78" stop-color="#030304"/><stop offset="1" stop-color="#15130e"/></radialGradient>' +
-      '<radialGradient id="showBead" cx=".34" cy=".3" r=".8"><stop offset="0" stop-color="#FFF6DA"/><stop offset=".35" stop-color="#E8C860"/><stop offset="1" stop-color="#8A6519"/></radialGradient></defs>' +
+      '<radialGradient id="showBead" cx=".34" cy=".3" r=".8"><stop offset="0" stop-color="#FFF6DA"/><stop offset=".35" stop-color="#E8C860"/><stop offset="1" stop-color="#8A6519"/></radialGradient>' +
+      '<linearGradient id="showBlade" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a3b40"/><stop offset=".5" stop-color="#1b1c20"/><stop offset="1" stop-color="#0c0d10"/></linearGradient>' +
+      '<linearGradient id="showWall" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#030304"/><stop offset=".55" stop-color="#0b0b0c"/><stop offset="1" stop-color="#6a5f44"/></linearGradient>' +
+      '<radialGradient id="showGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#FFE9B0" stop-opacity=".9"/><stop offset=".45" stop-color="#E8C860" stop-opacity=".35"/><stop offset="1" stop-color="#E8C860" stop-opacity="0"/></radialGradient></defs>' +
       '<circle cx="60" cy="60" r="52.2" fill="none" stroke="rgba(0,0,0,0.65)" stroke-width="1"/>' +
       '<circle cx="60" cy="60" r="51.6" fill="none" stroke="rgba(255,240,210,0.13)" stroke-width="0.6"/>' +
+      // the bore under the iris: dark where the lip shades it, its far wall lit
       '<circle cx="60" cy="60" r="35.4" fill="url(#showPort)"/>' +
-      '<circle cx="60" cy="60" r="34.6" fill="none" stroke="rgba(255,236,190,0.14)" stroke-width="0.5"/>' +
-      '<g class="show-dial"><circle cx="60" cy="60" r="35.4" fill="url(#showDial)"/><circle cx="60" cy="60" r="35.4" fill="none" stroke="rgba(0,0,0,0.9)" stroke-width="1.6"/></g>' +
+      '<circle cx="60" cy="60" r="33.4" fill="none" stroke="url(#showWall)" stroke-width="4"/>' +
+      '<circle class="show-bore-glow" cx="60" cy="60" r="29" fill="url(#showGlow)" opacity="0"/>' +
+      irisSvg() +
+      '<circle cx="60" cy="60" r="35.4" fill="none" stroke="rgba(0,0,0,0.9)" stroke-width="1.6"/>' +
+      '<circle cx="60" cy="60" r="36.2" fill="none" stroke="rgba(255,236,190,0.12)" stroke-width="0.5"/>' +
       '<circle cx="60" cy="60" r="38.7" fill="none" stroke="#040405" stroke-width="3.8"/>' +
       '<circle cx="60" cy="60" r="40.7" fill="none" stroke="rgba(255,236,190,0.09)" stroke-width="0.5"/>' +
       '<circle class="show-arc" cx="60" cy="60" r="38.7" fill="none" stroke="url(#showArc)" stroke-width="2.4" stroke-linecap="round" pathLength="100" transform="rotate(-90 60 60)" stroke-dasharray="0 100"/>' +
@@ -217,8 +325,12 @@
     wrap.insertBefore(bezel, wrap.firstChild);
     arc = bezel.querySelector('.show-arc');
     bead = bezel.querySelector('.show-bead');
-    dial = bezel.querySelector('.show-dial');
+    boreGlow = bezel.querySelector('.show-bore-glow');
     ticks = Array.prototype.slice.call(bezel.querySelectorAll('.show-tick'));
+    irisBlades = Array.prototype.slice.call(bezel.querySelectorAll('.show-blade'));
+    irisGeo = [];
+    for (var i = 0; i < IRIS.N; i++) irisGeo.push(irisBlade(i));
+    setIris(0);
   }
 
   var runVis = null, runRAF = 0;
@@ -499,6 +611,7 @@
 
   function pose(p, x, y, z, m, bow, alpha, shAlpha) {
     var f = p.fl;
+    f.cur = { x: x, y: y, z: z, m: m, bow: bow, a: alpha };
     p.el.style.opacity = alpha.toFixed(3);
     // through the glass: once it is in front of it, it belongs to the room
     if (!f.inFront && z >= 0) { f.inFront = true; fxFront.appendChild(p.el); }
@@ -574,51 +687,110 @@
     pose(p, x, y, z, m, bow, Math.min(1, te / 60), Math.min(1, u / 0.12));
     return te < T;
   }
-  // Leaving: each piece carries on toward you and past, faster as it comes.
-  function stepExit(p, el, g) {
-    var f = p.fl, x0 = f.p1;
+  // Leaving: each piece carries on toward you and past, faster as it comes,
+  // from wherever it is - settled, or still in flight.
+  function stepExit(p, el) {
+    var f = p.fl, c = f.cur;
     if (el < f.xDelay) return true;
     var u = Math.max(0, Math.min(1, (el - f.xDelay) / f.xDur));
     var e = Math.pow(u, 2.3);
-    var x = x0.x + f.xDir.x * 70 * e, y = x0.y + f.xDir.y * 70 * e - 26 * e;
-    var z = x0.z + (f.xZ - x0.z) * e;
-    var m = new DOMMatrix().rotateAxisAngleSelf(f.axis[0], f.axis[1], f.axis[2], -f.xSpin * e).rotateSelf(f.r[0], f.r[1], f.r[2]);
-    var bow = f.bowRest + 9 * Math.sin(f.bowPh + u * 9) * u;
-    var a = 1 - Math.max(0, (u - 0.5) / 0.5);
+    var x = c.x + f.xDir.x * 70 * e, y = c.y + f.xDir.y * 70 * e - 26 * e;
+    var z = c.z + (f.xZ - c.z) * e;
+    var m = new DOMMatrix().rotateAxisAngleSelf(f.axis[0], f.axis[1], f.axis[2], -f.xSpin * e).multiply(c.m);
+    var bow = c.bow + 9 * Math.sin(f.bowPh + u * 9) * u;
+    var a = c.a * (1 - Math.max(0, (u - 0.5) / 0.5));
     pose(p, x, y, z, m, bow, a, a);
+    f.cur = c;                                      // (pose() overwrote it; the exit runs from where it began)
     return u < 1;
   }
 
   function clearPayout() {
     cancelAnimationFrame(fxRAF);
+    cancelAnimationFrame(mechRAF);
     playing = false; resting = false;
     launchAnims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
     launchAnims = [];
+    mechPose(1e9);
     pieces.forEach(function (p) { p.el.remove(); p.shd.remove(); });
     pieces = [];
     if (fxBack) fxBack.style.clipPath = '';
   }
   function exitPayout(then) {
-    if (!pieces.length || !resting) { if (then) then(); return; }
-    resting = false;
-    var g = geometry(), leaving = pieces;
+    if (!pieces.length || !(resting || playing)) { if (then) then(); return; }
+    cancelAnimationFrame(fxRAF);
+    resting = false; playing = false;
+    var g = geometry(), leaving = [];
+    pieces.forEach(function (p) {
+      if (!p.fl.cur || p.fl.cur.a <= 0.01) { p.el.remove(); p.shd.remove(); return; }   // not out of the port yet
+      leaving.push(p);
+    });
     pieces = [];
     leaving.forEach(function (p, i) {
-      var f = p.fl, dx = f.p1.x - g.ox, dy = f.p1.y - g.oy, l = Math.hypot(dx, dy) || 1;
+      var f = p.fl, dx = f.cur.x - g.ox, dy = f.cur.y - g.oy, l = Math.hypot(dx, dy) || 1;
       f.xDir = { x: dx / l, y: dy / l };
       f.xDelay = i * 22 + rnd() * 60; f.xDur = 560 + rnd() * 220;
-      f.xZ = 860 + rnd() * 60; f.xSpin = 60 + rnd() * 140;
+      f.xZ = Math.max(f.cur.z + 300, 860 + rnd() * 60); f.xSpin = 60 + rnd() * 140;
       p.el.style.willChange = 'transform';
     });
     var t0 = performance.now();
     var frame = function (t) {
       var running = false;
-      leaving.forEach(function (p) { if (stepExit(p, t - t0, g)) running = true; });
+      leaving.forEach(function (p) { if (stepExit(p, t - t0)) running = true; });
       if (running) requestAnimationFrame(frame);
       else { leaving.forEach(function (p) { p.el.remove(); p.shd.remove(); }); if (then) then(); }
     };
     requestAnimationFrame(frame);
   }
+
+  // The mechanism, on its own clock from the launch: the count clears, the
+  // iris takes up its slack, opens with a small overshoot and settles, the
+  // bore lights from below; once the last piece is out it closes, with a
+  // lag, and the count comes back. It runs to the end whatever the pieces
+  // do, so the port is never left open.
+  var mechRAF = 0, mechT0 = 0;
+  var smooth = function (u) { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); };
+  function irisOpenAt(ms) {
+    if (ms < 110) return 0;
+    if (ms < 150) return -0.03 * Math.sin(Math.PI / 2 * (ms - 110) / 40);              // slack taken up
+    if (ms < 310) { var u = (ms - 150) / 160; return -0.03 + 1.07 * (1 - Math.pow(1 - u, 3)); } // out, a touch past
+    if (ms < 400) return 1.04 - 0.04 * smooth((ms - 310) / 90);                        // settle
+    if (ms < 1000) return 1;
+    if (ms < 1320) return 1 - 1.018 * smooth((ms - 1000) / 320);                       // closing, just past shut
+    if (ms < 1400) return -0.018 * (1 - smooth((ms - 1320) / 80));                     // seat
+    return 0;
+  }
+  function mechPose(ms) {
+    var open = irisOpenAt(ms);
+    setIris(open);
+    if (boreGlow) {
+      var gl = ms < 180 ? 0 : ms < 330 ? 0.85 * smooth((ms - 180) / 150) : ms < 1000 ? 0.85 * (1 - smooth((ms - 330) / 670)) : 0;
+      boreGlow.setAttribute('opacity', gl.toFixed(3));
+    }
+    var count = document.getElementById('heroCount');
+    if (count) {
+      var co = ms < 50 ? 1 : ms < 150 ? 1 - smooth((ms - 50) / 100) : ms < 1260 ? 0 : ms < 1480 ? smooth((ms - 1260) / 220) : 1;
+      count.style.opacity = co >= 1 ? '' : co.toFixed(3);
+    }
+    // nothing rises through blade: the port's window is the aperture
+    if (fxBack) {
+      var rr = ringVisible();
+      if (rr && ms < 1400) {
+        var portR = rr.width * IRIS.R / 120 * Math.max(0, Math.min(1, open * 1.12));
+        fxBack.style.clipPath = 'circle(' + portR.toFixed(1) + 'px at ' + (rr.left + rr.width / 2).toFixed(1) + 'px ' + (rr.top + rr.height / 2).toFixed(1) + 'px)';
+      } else fxBack.style.clipPath = 'circle(0px at 0px 0px)';
+    }
+    return ms < 1500;                               // (the count is back by 1480)
+  }
+  function runMech() {
+    cancelAnimationFrame(mechRAF);
+    mechT0 = performance.now();
+    var frame = function (t) {
+      if (mechPose(t - mechT0)) mechRAF = requestAnimationFrame(frame);
+    };
+    mechPose(0);
+    mechRAF = requestAnimationFrame(frame);
+  }
+
   function ringVisible() {
     var wrap = document.querySelector('.hero-ring-wrapper');
     if (!wrap || !bezel || document.body.classList.contains('r3-table-mode')) return null;
@@ -633,21 +805,17 @@
     var g = geometry();
     fxFront.style.perspectiveOrigin = fxBack.style.perspectiveOrigin = g.ox + 'px ' + g.oy + 'px';
     var O = { x: rr.left + rr.width / 2, y: rr.top + rr.height / 2 };
-    var portR = rr.width * 35.4 / 120;
-    fxBack.style.clipPath = 'circle(' + portR.toFixed(1) + 'px at ' + O.x.toFixed(1) + 'px ' + O.y.toFixed(1) + 'px)';
-    var wrap = document.querySelector('.hero-ring-wrapper'), count = document.getElementById('heroCount');
+    var wrap = document.querySelector('.hero-ring-wrapper');
     launchAnims = [];
     // wind-up in the ring, then the pop; the dial opens during the wind-up
     launchAnims.push(wrap.animate([
       { transform: 'scale(1)', easing: 'cubic-bezier(.45,0,.55,1)' }, { transform: 'scale(0.952)', offset: 0.4, easing: 'cubic-bezier(.2,.9,.3,1)' },
       { transform: 'scale(1.036)', offset: 0.6, easing: 'ease-in-out' }, { transform: 'scale(0.994)', offset: 0.8, easing: 'ease-in-out' }, { transform: 'scale(1)' }
     ], { duration: 720 }));
-    var opens = [{ opacity: 1 }, { opacity: 1, offset: 0.04, easing: 'ease-in-out' }, { opacity: 0, offset: 0.15 }, { opacity: 0, offset: 0.8, easing: 'ease-in-out' }, { opacity: 1 }];
-    if (dial) launchAnims.push(dial.animate(opens, { duration: 1700 }));
-    if (count) launchAnims.push(count.animate(opens, { duration: 1700 }));
+    runMech();
     flash.style.left = O.x + 'px'; flash.style.top = O.y + 'px';
-    launchAnims.push(flash.animate([{ opacity: 0, transform: 'scale(.55)' }, { opacity: 0, transform: 'scale(.55)', offset: 0.36, easing: 'ease-out' },
-      { opacity: 1, transform: 'scale(1)', offset: 0.5, easing: 'ease-out' }, { opacity: 0, transform: 'scale(1.5)' }], { duration: 820 }));
+    launchAnims.push(flash.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 0, transform: 'scale(.6)', offset: 0.3, easing: 'ease-out' },
+      { opacity: 0.8, transform: 'scale(1)', offset: 0.46, easing: 'ease-out' }, { opacity: 0, transform: 'scale(1.35)' }], { duration: 820 }));
     var glow = edge && edge.querySelector('.show-edge-glow');
     if (glow) launchAnims.push(glow.animate([{ opacity: 0.32 }, { opacity: 0.32, offset: 0.3 }, { opacity: 0.95, offset: 0.5 }, { opacity: 0.32 }], { duration: 1300, easing: 'ease-out' }));
 
@@ -707,7 +875,7 @@
     if (!lively()) return false;
     var wrap = document.querySelector('.hero-ring-wrapper');
     if (!wrap || !ringVisible()) return false;
-    var go = function () { if (resting) exitPayout(launch); else { clearPayout(); launch(); } };
+    var go = function () { if (resting || playing) exitPayout(launch); else { clearPayout(); launch(); } };
     var r = wrap.getBoundingClientRect();
     if (r.top < 0 || r.bottom > window.innerHeight) {
       wrap.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -727,7 +895,7 @@
   }
   // The first touch after it settles sends the tableau past you (the touch
   // still reaches whatever it lands on).
-  document.addEventListener('pointerdown', function () { if (resting) exitPayout(); }, true);
+  document.addEventListener('pointerdown', function () { if (resting || playing) exitPayout(); }, true);
 
   // ---------- Keeping it all in step ----------
   function showRefresh() {
