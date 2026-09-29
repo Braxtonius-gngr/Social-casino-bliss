@@ -5356,6 +5356,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const disarmTable = () => {
         screen.removeEventListener('pointerdown', onTap);
         window.rollIntroEnter = null;
+        const btn = screen.querySelector('.landing-btn');
+        if (btn) { btn.innerHTML = 'ENTER DECK &rarr;'; btn.setAttribute('aria-label', 'Enter app'); }
       };
       const armTable = () => {
         if (!tableDest) return;
