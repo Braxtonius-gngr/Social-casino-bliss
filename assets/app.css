@@ -1021,7 +1021,8 @@
        card lifted by a tap; from the keyboard they take the gold ring on
        their face instead) */
     .r3t-card:focus, .r3t-ph-pickup:focus { outline: none; }
-    .r3t-card:focus-visible .r3t-front { box-shadow: 0 0 0 8px #f0cf7f, 0 10px 24px rgba(0,0,0,0.35); }
+    /* (on whichever face is toward you: a card turned over by hand shows its back) */
+    .r3t-card:focus-visible .r3t-face { box-shadow: 0 0 0 8px #f0cf7f, 0 10px 24px rgba(0,0,0,0.35); }
     .r3t-card-in { position: absolute; inset: 0; transform-style: preserve-3d; }
     /* (the scene says which face is up - .r3t-up once the turn passes edge
        on - rather than backface-visibility, which the CSS3D camera's
