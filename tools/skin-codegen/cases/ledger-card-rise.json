@@ -1,0 +1,114 @@
+{
+  "id": "ledger-card-rise",
+  "tags": [
+    "card",
+    "app-css",
+    "executive"
+  ],
+  "source": "app:assets/app.css .ledger-card-wrapper card-rise, card title row, tier badge, status dot",
+  "canvas": {
+    "width": 380,
+    "height": 120,
+    "background": "#050507"
+  },
+  "tokens": {
+    "gold": "#D4AF37",
+    "text": "#F8F9FA",
+    "muted": "#8A8D93",
+    "gold-metal": "linear-gradient(180deg, #F3DA92 0%, #D4AF37 48%, #A87A22 100%)",
+    "green": "#3FBF8F"
+  },
+  "component": {
+    "description": "Platform card frame with avatar, name, tier badge and READY status. It rises 10px into place while fading in, after a 40ms stagger delay.",
+    "root": {
+      "box": {
+        "x": 20,
+        "y": 24,
+        "width": 340,
+        "height": 72
+      },
+      "styles": {
+        "background-color": "#0E0E12",
+        "border": "1px solid rgba(255, 255, 255, 0.08)",
+        "border-radius": "14px"
+      }
+    },
+    "parts": [
+      {
+        "name": "avatar",
+        "text": "CC",
+        "box": {
+          "x": 33,
+          "y": 40,
+          "width": 40,
+          "height": 40
+        },
+        "styles": {
+          "background-color": "rgba(212, 175, 55, 0.15)",
+          "color": "{gold}",
+          "border-radius": "10px",
+          "font-size": "14px",
+          "font-weight": "800"
+        }
+      },
+      {
+        "name": "name",
+        "text": "Crown Coins",
+        "styles": {
+          "color": "{text}",
+          "font-size": "15px",
+          "font-weight": "800"
+        }
+      },
+      {
+        "name": "tier",
+        "text": "S",
+        "styles": {
+          "color": "{gold}",
+          "border": "1px solid {gold}",
+          "background-color": "rgba(212, 175, 55, 0.2)",
+          "border-radius": "4px",
+          "font-size": "11px",
+          "font-weight": "900"
+        }
+      },
+      {
+        "name": "dot",
+        "box": {
+          "x": 86,
+          "y": 66,
+          "width": 8,
+          "height": 8
+        },
+        "styles": {
+          "background-color": "{green}",
+          "border-radius": "50%"
+        }
+      },
+      {
+        "name": "status",
+        "text": "READY",
+        "styles": {
+          "color": "{text}",
+          "font-family": "monospace",
+          "font-size": "12px",
+          "font-weight": "600"
+        }
+      }
+    ]
+  },
+  "animations": [
+    {
+      "target": "root",
+      "duration_ms": 340,
+      "delay_ms": 40,
+      "iterations": 1,
+      "direction": "normal",
+      "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+      "properties": [
+        "opacity",
+        "transform"
+      ]
+    }
+  ]
+}

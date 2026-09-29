@@ -1,15 +1,17 @@
-// Grader self-test, no API calls. For every fixture in fixtures/:
+// Grader self-test, no API calls. For every case in fixtures/ (or the
+// directory in SKIN_CASES, e.g. cases/):
 //   - the hand-written correct answer (<id>.oracle.json) must pass every rep,
 //   - an empty answer must fail,
-//   - the plausible-but-wrong answer (<id>.wrong.json) must fail.
+//   - the plausible-but-wrong answer (<id>.wrong.json), where there is one,
+//     must fail.
 // Grading runs several at once, like the runner does, so the frame budget is
 // checked under the same contention a real run sees.
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { grade, closeBrowser } from './grade.mjs';
 
-const DIR = fileURLToPath(new URL('./fixtures/', import.meta.url));
+const DIR = process.env.SKIN_CASES ? resolve(process.env.SKIN_CASES) : fileURLToPath(new URL('./fixtures/', import.meta.url));
 const REPS = Number(process.env.REPS || 3);
 const ids = readdirSync(DIR).filter((f) => /^[\w-]+\.json$/.test(f)).map((f) => f.slice(0, -5)).sort();
 const load = (f) => JSON.parse(readFileSync(join(DIR, f), 'utf8'));
@@ -19,7 +21,7 @@ for (const id of ids) {
   const spec = load(`${id}.json`);
   for (let r = 0; r < REPS; r++) jobs.push({ id, kind: 'oracle', spec, out: load(`${id}.oracle.json`), want: 1 });
   jobs.push({ id, kind: 'null', spec, out: { html: '', css: '', js: '' }, want: 0 });
-  jobs.push({ id, kind: 'wrong', spec, out: load(`${id}.wrong.json`), want: 0 });
+  if (existsSync(join(DIR, `${id}.wrong.json`))) jobs.push({ id, kind: 'wrong', spec, out: load(`${id}.wrong.json`), want: 0 });
 }
 
 let bad = 0;

@@ -1,0 +1,5 @@
+{
+  "html": "<span class=\"nb\" data-part=\"root\"><span data-part=\"label\">NEW</span></span>",
+  "css": ".nb{position:absolute;left:32px;top:24px;width:56px;height:24px;display:flex;align-items:center;justify-content:center;background-color:#C2843C;border-radius:6px;animation:pop 240ms cubic-bezier(.34,1.56,.64,1) both}\n.nb [data-part=label]{color:#121212;font-family:Inter, Roboto, sans-serif;font-size:11px;font-weight:800;letter-spacing:1px}\n@keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}",
+  "js": ""
+}

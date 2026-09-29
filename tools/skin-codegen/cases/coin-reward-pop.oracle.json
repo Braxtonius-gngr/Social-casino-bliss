@@ -1,0 +1,5 @@
+{
+  "html": "<div class=\"cr\" data-part=\"root\"><i data-part=\"coin\"></i><span data-part=\"amount\">+1.00 SC</span></div>",
+  "css": ".cr{position:absolute;left:70px;top:30px;width:100px;height:80px}\n.cr [data-part=coin]{position:absolute;left:30px;top:4px;width:40px;height:40px;box-sizing:border-box;border-radius:50%;border:2px solid #A87A22;background-image:linear-gradient(180deg,#F3DA92 0%,#D4AF37 48%,#A87A22 100%);animation:pop 420ms cubic-bezier(.34,1.56,.64,1) both}\n.cr [data-part=amount]{position:absolute;left:0;right:0;top:54px;text-align:center;color:#D4AF37;font-family:\"Roboto Mono\", monospace;font-size:16px;font-weight:700;animation:rise 600ms ease-out 150ms both}\n@keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}\n@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}",
+  "js": ""
+}

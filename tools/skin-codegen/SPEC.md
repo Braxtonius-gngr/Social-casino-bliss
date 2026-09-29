@@ -34,6 +34,12 @@ rendered output against these numbers, so no reference code is needed.
 ```
 
 - `{token}` in any style value resolves from `tokens`.
+- Style values are px (never em or rem) and leave out `line-height` and
+  `transform-origin`: the grader resolves each value on a separate probe
+  element, so anything relative to the element's own size or font would
+  resolve differently there.
+- A shorthand like `border` is only checked when all four sides agree;
+  give per-side properties otherwise.
 - `box.x` / `box.y` are relative to the stage's top-left corner, rest state,
   ignoring transforms.
 - `target` names a part (`root` or a `parts[].name`). An animation on an
@@ -54,5 +60,5 @@ after the HTML is inserted.
 | `syntax` | no script errors, CSS produced rules, every named part present |
 | `fidelity` | share of box and style values matching the spec exactly (box within 0.5 px) |
 | `timing` | share of spec animations found with matching target, duration, delay, iterations, direction, easing and properties |
-| `no_clip` | nothing leaves the stage, a clipping ancestor, or its own text box at 0/25/50/75/99% of every animation |
+| `no_clip` | at 0/25/50/75/99% of every animation, nothing visibly leaves the stage, no text is cut by a clipping container, and all text fits the box that holds it. A decorative layer masked by its container (a sheen inside a button) is fine |
 | `frame_ok` | animates only transform/opacity, and measured frame timing under 4x CPU slowdown stays in budget |

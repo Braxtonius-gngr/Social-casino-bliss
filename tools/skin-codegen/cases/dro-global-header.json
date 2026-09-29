@@ -1,0 +1,61 @@
+{
+  "id": "dro-global-header",
+  "tags": [
+    "banner",
+    "canva-dro",
+    "derived"
+  ],
+  "source": "canva:DAHWWIBbmQI p7 Global Header",
+  "canvas": {
+    "width": 360,
+    "height": 80,
+    "background": "#121212"
+  },
+  "tokens": {
+    "ready": "#10B981",
+    "pending": "#4B5563",
+    "expiring": "#F59E0B",
+    "bg": "#121212",
+    "surface": "#1C1C1C",
+    "text": "#F8F9FA",
+    "muted": "#8A8D93"
+  },
+  "component": {
+    "description": "Sticky global header: app name on the left, the local overnight reset time on the right. Static.",
+    "root": {
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 360,
+        "height": 56
+      },
+      "styles": {
+        "background-color": "{bg}",
+        "border-bottom": "1px solid rgba(255, 255, 255, 0.08)"
+      }
+    },
+    "parts": [
+      {
+        "name": "title",
+        "text": "DAILY ROLL OVER",
+        "styles": {
+          "color": "{text}",
+          "font-family": "Inter, Roboto, sans-serif",
+          "font-size": "14px",
+          "font-weight": "800",
+          "letter-spacing": "2px"
+        }
+      },
+      {
+        "name": "reset",
+        "text": "RESET 05:00",
+        "styles": {
+          "color": "{ready}",
+          "font-family": "\"Roboto Mono\", monospace",
+          "font-size": "11px"
+        }
+      }
+    ]
+  },
+  "animations": []
+}

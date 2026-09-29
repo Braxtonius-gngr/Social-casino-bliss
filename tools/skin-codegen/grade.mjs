@@ -53,7 +53,9 @@ function resolveTokens(value, tokens) {
 // leak into the next.
 async function renderPage(spec, out) {
   const b = await browser();
-  const page = await b.newPage({ viewport: { width: spec.canvas.width + 40, height: spec.canvas.height + 40 } });
+  // Headless Chromium throttles frames in very small windows (under about
+  // 90px tall), so the window never shrinks below 320x240.
+  const page = await b.newPage({ viewport: { width: Math.max(320, spec.canvas.width + 40), height: Math.max(240, spec.canvas.height + 40) } });
   const errors = [];
   page.on('pageerror', (e) => errors.push(`script: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(`console: ${m.text()}`); });
@@ -203,21 +205,46 @@ export async function grade(spec, out) {
         const r = el.getBoundingClientRect();
         if (!r.width && !r.height) continue;
         const tag = el.dataset.part ? `[${el.dataset.part}]` : el.tagName.toLowerCase();
-        if (r.left < sr.left - 0.5 || r.top < sr.top - 0.5 || r.right > sr.right + 0.5 || r.bottom > sr.bottom + 0.5)
-          problems.push(`${tag} leaves the stage at ${f * 100}%`);
+        // What's actually painted: the box cut down by every clipping
+        // ancestor. A decorative layer masked by its container (a sheen
+        // sweeping across a button) is intended; text cut by one isn't.
+        const v = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+        let cutText = false;
+        const ownText = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
         for (let p = el.parentElement; p && p !== stage; p = p.parentElement) {
           if (!clips(p)) continue;
           const pr = p.getBoundingClientRect();
-          if (r.left < pr.left - 0.5 || r.top < pr.top - 0.5 || r.right > pr.right + 0.5 || r.bottom > pr.bottom + 0.5)
-            problems.push(`${tag} clipped by its container at ${f * 100}%`);
-          break;
+          if (ownText && (r.left < pr.left - 0.5 || r.top < pr.top - 0.5 || r.right > pr.right + 0.5 || r.bottom > pr.bottom + 0.5)) cutText = true;
+          v.left = Math.max(v.left, pr.left); v.top = Math.max(v.top, pr.top);
+          v.right = Math.min(v.right, pr.right); v.bottom = Math.min(v.bottom, pr.bottom);
         }
-        // Glyphs poking a couple of px past a tight line-height aren't
-        // clipping; text wider than its box, or a wrapped extra line, is.
-        if (el.dataset.part && el.textContent.trim() && el.clientWidth > 0) {
-          const fs = parseFloat(getComputedStyle(el).fontSize) || 16;
-          if (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + Math.max(2, fs * 0.3))
-            problems.push(`${tag} text overflows its box at ${f * 100}%`);
+        if (cutText) problems.push(`${tag} text clipped by its container at ${f * 100}%`);
+        if (v.right > v.left && v.bottom > v.top
+            && (v.left < sr.left - 0.5 || v.top < sr.top - 0.5 || v.right > sr.right + 0.5 || v.bottom > sr.bottom + 0.5))
+          problems.push(`${tag} leaves the stage at ${f * 100}%`);
+      }
+      // Text must fit the box that holds it: each run of text is measured
+      // against its nearest non-inline container. Glyphs poking a couple of
+      // px past a tight line-height are fine; text wider than its box, or a
+      // wrapped extra line, isn't. Decorative layers overflowing a parent
+      // don't count, since only text is measured.
+      const walker = document.createTreeWalker(stage, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (!n.textContent.trim()) continue;
+        let box = n.parentElement;
+        while (box !== stage && ['inline', 'contents'].includes(getComputedStyle(box).display)) box = box.parentElement;
+        if (box === stage) continue;
+        const range = document.createRange();
+        range.selectNodeContents(n);
+        const rs = [...range.getClientRects()].filter((q) => q.width || q.height);
+        if (!rs.length) continue;
+        const u = { left: Math.min(...rs.map((q) => q.left)), right: Math.max(...rs.map((q) => q.right)),
+          top: Math.min(...rs.map((q) => q.top)), bottom: Math.max(...rs.map((q) => q.bottom)) };
+        const br = box.getBoundingClientRect();
+        const tol = Math.max(2, (parseFloat(getComputedStyle(n.parentElement).fontSize) || 16) * 0.3);
+        if (u.left < br.left - 1 || u.right > br.right + 1 || u.top < br.top - tol || u.bottom > br.bottom + tol) {
+          const tag = box.dataset.part ? `[${box.dataset.part}]` : box.tagName.toLowerCase();
+          problems.push(`${tag} text overflows its box at ${f * 100}%`);
         }
       }
     }

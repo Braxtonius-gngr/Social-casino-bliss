@@ -1,0 +1,38 @@
+{
+  "id": "type-badge-slots",
+  "tags": [
+    "badge",
+    "app-css",
+    "executive"
+  ],
+  "source": "app:assets/app.css .type-badge",
+  "canvas": {
+    "width": 108,
+    "height": 56,
+    "background": "#050507"
+  },
+  "tokens": {
+    "orange": "#C2843C"
+  },
+  "component": {
+    "description": "Game-type badge \"SLOTS\". Static.",
+    "root": {
+      "box": {
+        "x": 32,
+        "y": 19,
+        "width": 44,
+        "height": 18
+      },
+      "styles": {
+        "background-color": "rgba(194, 132, 60, 0.15)",
+        "color": "{orange}",
+        "border": "1px solid {orange}",
+        "border-radius": "4px",
+        "font-size": "10px",
+        "font-weight": "800"
+      }
+    },
+    "parts": []
+  },
+  "animations": []
+}

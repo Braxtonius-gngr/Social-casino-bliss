@@ -1,0 +1,79 @@
+{
+  "id": "western-run-cta",
+  "tags": [
+    "button",
+    "app-css",
+    "western"
+  ],
+  "source": "app:assets/app.css western .hero-run-btn run-btn-breathe + run-chevron-nudge",
+  "canvas": {
+    "width": 300,
+    "height": 80,
+    "background": "#1A1410"
+  },
+  "tokens": {
+    "gold": "#FFC107",
+    "blood": "#810000",
+    "ink": "#0B0B0B",
+    "ember": "#C16B2C",
+    "bone": "#E3DAC9"
+  },
+  "component": {
+    "description": "Boxless call to action: gold text with a hard offset shadow and a chevron at its right end. The label breathes (grows 11% from its left edge and back) while the chevron nudges right and brightens on its own faster cycle.",
+    "root": {
+      "box": {
+        "x": 20,
+        "y": 24,
+        "width": 220,
+        "height": 32
+      },
+      "styles": {}
+    },
+    "parts": [
+      {
+        "name": "label",
+        "text": "RUN TODAY'S DROPS",
+        "styles": {
+          "color": "{gold}",
+          "font-size": "15px",
+          "font-weight": "800",
+          "text-shadow": "1px 1px 0 {ink}"
+        }
+      },
+      {
+        "name": "chevron",
+        "text": "»",
+        "styles": {
+          "color": "{gold}",
+          "font-size": "15px",
+          "font-weight": "900"
+        }
+      }
+    ]
+  },
+  "animations": [
+    {
+      "target": "root",
+      "duration_ms": 2200,
+      "delay_ms": 0,
+      "iterations": "infinite",
+      "direction": "normal",
+      "easing": "ease-in-out",
+      "properties": [
+        "transform"
+      ]
+    },
+    {
+      "target": "chevron",
+      "duration_ms": 1300,
+      "delay_ms": 0,
+      "iterations": "infinite",
+      "direction": "normal",
+      "easing": "ease-in-out",
+      "properties": [
+        "transform",
+        "opacity"
+      ]
+    }
+  ]
+}

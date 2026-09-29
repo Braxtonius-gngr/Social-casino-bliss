@@ -1,0 +1,57 @@
+{
+  "id": "loader-line",
+  "tags": [
+    "loader",
+    "app-css",
+    "landing",
+    "adapted"
+  ],
+  "source": "app:assets/app.css .r3-loader-line (background-position run restated as a moving streak)",
+  "canvas": {
+    "width": 200,
+    "height": 40,
+    "background": "#050404"
+  },
+  "tokens": {},
+  "component": {
+    "description": "Hairline loader: a faint 96px line with a bright streak that runs across it from left to right and repeats. The streak is masked to the line.",
+    "root": {
+      "box": {
+        "x": 52,
+        "y": 20,
+        "width": 96,
+        "height": 1
+      },
+      "styles": {
+        "background-color": "rgba(214, 176, 98, 0.12)"
+      }
+    },
+    "parts": [
+      {
+        "name": "streak",
+        "box": {
+          "x": 52,
+          "y": 20,
+          "width": 48,
+          "height": 1
+        },
+        "styles": {
+          "background-image": "linear-gradient(90deg, rgba(214, 176, 98, 0), rgba(214, 176, 98, 0.85), rgba(214, 176, 98, 0))"
+        }
+      }
+    ]
+  },
+  "animations": [
+    {
+      "target": "streak",
+      "duration_ms": 1600,
+      "delay_ms": 0,
+      "iterations": "infinite",
+      "direction": "normal",
+      "easing": "ease-in-out",
+      "properties": [
+        "transform"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "html": "<div class=\"sb\" data-part=\"root\"><span data-part=\"active\">SC TIER</span><span data-part=\"option\">FREQUENCY</span></div>",
+  "css": ".sb{position:absolute;left:16px;top:16px;width:328px;height:40px;display:flex;align-items:center;gap:8px;font-family:Inter, Roboto, sans-serif;animation:fadeIn 200ms ease-in-out}\n@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}\n.sb span{border-radius:6px;font-size:11px;font-weight:700;padding:6px 10px}\n.sb [data-part=active]{background-color:rgba(16,185,129,.15);color:#10B981;border:1px solid #10B981}\n.sb [data-part=option]{background-color:transparent;color:#8A8D93;border:1px solid rgba(255,255,255,.12)}",
+  "js": ""
+}

@@ -1,0 +1,5 @@
+{
+  "html": "<button class=\"cb\" data-part=\"root\" disabled><span data-part=\"label\">CLAIM NOW</span></button>",
+  "css": ".cb{position:absolute;left:40px;top:36px;width:200px;height:48px;box-sizing:border-box;border:0;padding:0;display:flex;align-items:center;justify-content:center;background-color:#4B5563;border-radius:8px}\n.cb [data-part=label]{font-family:Inter, Roboto, sans-serif;font-size:15px;font-weight:800;letter-spacing:1px}\n.cb{cursor:not-allowed}.cb [data-part=label]{color:rgba(248,249,250,.55)}",
+  "js": ""
+}

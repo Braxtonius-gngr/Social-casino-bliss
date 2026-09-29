@@ -1,0 +1,109 @@
+{
+  "id": "dro-status-pills",
+  "tags": [
+    "badge",
+    "canva-dro",
+    "derived"
+  ],
+  "source": "canva:DAHWZ7PJKM4 status indicators board; error colour is the app accent-pink",
+  "canvas": {
+    "width": 360,
+    "height": 80,
+    "background": "#121212"
+  },
+  "tokens": {
+    "ready": "#10B981",
+    "pending": "#4B5563",
+    "expiring": "#F59E0B",
+    "bg": "#121212",
+    "surface": "#1C1C1C",
+    "text": "#F8F9FA",
+    "muted": "#8A8D93",
+    "error": "#B4485C"
+  },
+  "component": {
+    "description": "Row of status pills: Success, Warning, Error, and Syncing, whose small ring icon spins.",
+    "root": {
+      "box": {
+        "x": 12,
+        "y": 20,
+        "width": 336,
+        "height": 40
+      },
+      "styles": {}
+    },
+    "parts": [
+      {
+        "name": "success",
+        "text": "Success",
+        "styles": {
+          "background-color": "rgba(16, 185, 129, 0.12)",
+          "color": "{ready}",
+          "border": "1px solid {ready}",
+          "border-radius": "999px",
+          "font-size": "12px",
+          "font-weight": "700"
+        }
+      },
+      {
+        "name": "warning",
+        "text": "Warning",
+        "styles": {
+          "background-color": "rgba(245, 158, 11, 0.12)",
+          "color": "{expiring}",
+          "border": "1px solid {expiring}",
+          "border-radius": "999px",
+          "font-size": "12px",
+          "font-weight": "700"
+        }
+      },
+      {
+        "name": "error",
+        "text": "Error",
+        "styles": {
+          "background-color": "rgba(180, 72, 92, 0.12)",
+          "color": "{error}",
+          "border": "1px solid {error}",
+          "border-radius": "999px",
+          "font-size": "12px",
+          "font-weight": "700"
+        }
+      },
+      {
+        "name": "syncing",
+        "text": "Syncing",
+        "styles": {
+          "background-color": "rgba(138, 141, 147, 0.12)",
+          "color": "{muted}",
+          "border": "1px solid {muted}",
+          "border-radius": "999px",
+          "font-size": "12px",
+          "font-weight": "700"
+        }
+      },
+      {
+        "name": "spinner",
+        "styles": {
+          "width": "10px",
+          "height": "10px",
+          "border-radius": "50%",
+          "border-bottom": "2px solid {muted}",
+          "border-top": "2px solid rgba(0, 0, 0, 0)"
+        }
+      }
+    ]
+  },
+  "animations": [
+    {
+      "target": "spinner",
+      "duration_ms": 900,
+      "delay_ms": 0,
+      "iterations": "infinite",
+      "direction": "normal",
+      "easing": "linear",
+      "properties": [
+        "transform"
+      ]
+    }
+  ]
+}

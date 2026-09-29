@@ -1,0 +1,51 @@
+{
+  "id": "western-splatter",
+  "tags": [
+    "reward",
+    "app-css",
+    "western"
+  ],
+  "source": "app:assets/app.css western collect flash splatter-burst",
+  "canvas": {
+    "width": 240,
+    "height": 160,
+    "background": "#0B0B0B"
+  },
+  "tokens": {
+    "gold": "#FFC107",
+    "blood": "#810000",
+    "ink": "#0B0B0B",
+    "ember": "#C16B2C",
+    "bone": "#E3DAC9"
+  },
+  "component": {
+    "description": "Collect-flash splatter: a blood-red radial blot bursts in from a quarter size, overshoots to 120%, settles, then swells to 135% while fading out. Plays once.",
+    "root": {
+      "box": {
+        "x": 60,
+        "y": 50,
+        "width": 120,
+        "height": 60
+      },
+      "styles": {
+        "background-image": "radial-gradient(circle, rgb(129, 0, 0) 0%, rgba(129, 0, 0, 0) 70%)",
+        "border-radius": "50%"
+      }
+    },
+    "parts": []
+  },
+  "animations": [
+    {
+      "target": "root",
+      "duration_ms": 700,
+      "delay_ms": 0,
+      "iterations": 1,
+      "direction": "normal",
+      "easing": "ease-out",
+      "properties": [
+        "opacity",
+        "transform"
+      ]
+    }
+  ]
+}

@@ -14,7 +14,8 @@ component, no tools, no retries on quality.
 | `grade.mjs` | Renders the output in headless Chromium and checks it against the spec |
 | `run-eval.mjs` | Runner (from the build-eval scaffold): resume, retries, harness gate |
 | `score.mjs` | PESR score and the keep rule |
-| `cases/` | The eval set, one JSON file per component state |
+| `cases/` | The eval set: `<id>.json` per component state, plus `<id>.oracle.json`, a hand-written correct answer the model never sees |
+| `seed/build-seed.mjs` | Builds the 30 seed cases and their answers |
 | `fixtures/` | Three synthetic specs with correct and wrong answers, for `selftest.mjs` |
 
 Results live in `.claude/hillclimb/skin-codegen/<variant>/`.
@@ -33,6 +34,7 @@ real runs.
 
 ```sh
 npm run selftest   # grader check, free: correct answers pass, wrong ones fail
+SKIN_CASES=cases npm run selftest   # same check over the 30 real cases
 npm run eval -- --reps 2   # paid: every case in cases/, twice
 npm run score      # PESR score for the baseline
 node tools/skin-codegen/score.mjs --flow .claude/hillclimb/skin-codegen baseline v1   # keep rule, from the repo root
@@ -70,6 +72,23 @@ A change is kept only if it breaks no component that passed every rep
 before, has no unscored errors, and raises the score. The weights are in
 `score.mjs` and are provisional until the baseline has been reviewed. A
 person approves anything that ships.
+
+## The seed set
+
+30 cases, built by `seed/build-seed.mjs`:
+
+- 12 from the "Daily Roll Over System" Canva deck: tokens, type, tracker
+  card states, header, sort bar, and the buttons, pills, badges and toggle
+  boards. The deck gives no pixel sizes or timings, so those were set when
+  the cases were written (tag `derived`).
+- 18 from the app's own `assets/app.css`: tier and type badges, the card
+  frame, the modal, the update pill and track, the loader, and the Western
+  and Prism effects. Where the app animates box-shadow or
+  background-position, the case restates it as a layer whose opacity or
+  transform moves (tag `adapted`).
+
+Every case has an answer key, and `SKIN_CASES=cases npm run selftest`
+must show all of them passing and empty answers failing before a paid run.
 
 ## Adding cases
 

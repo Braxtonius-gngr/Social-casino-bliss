@@ -1,0 +1,5 @@
+{
+  "html": "<div class=\"sl\" data-part=\"root\"><span data-part=\"ring\"></span><b data-part=\"mark\">DR</b></div>",
+  "css": ".sl{position:absolute;left:78px;top:58px;width:84px;height:84px;box-sizing:border-box;display:grid;place-items:center;border:1.5px solid rgba(214,176,98,.75);border-radius:50%}\n.sl [data-part=ring]{position:absolute;left:-10.5px;top:-10.5px;width:102px;height:102px;box-sizing:border-box;border:1px dashed rgba(214,176,98,.45);border-radius:50%;animation:turn 9000ms linear infinite}\n.sl [data-part=mark]{color:#D9B467;font:700 19px/1 Georgia, \"Times New Roman\", serif;letter-spacing:1.5px}\n@keyframes turn{to{transform:rotate(360deg)}}",
+  "js": ""
+}

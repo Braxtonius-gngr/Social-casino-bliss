@@ -1,0 +1,69 @@
+{
+  "id": "loader-seal",
+  "tags": [
+    "loader",
+    "app-css",
+    "landing"
+  ],
+  "source": "app:assets/app.css .r3-loader-seal + r3-loader-turn",
+  "canvas": {
+    "width": 240,
+    "height": 200,
+    "background": "#050404"
+  },
+  "tokens": {},
+  "component": {
+    "description": "Loading seal: a gold-ringed circle with a serif monogram, and a dashed outer ring that turns slowly and continuously.",
+    "root": {
+      "box": {
+        "x": 78,
+        "y": 58,
+        "width": 84,
+        "height": 84
+      },
+      "styles": {
+        "border": "1.5px solid rgba(214, 176, 98, 0.75)",
+        "border-radius": "50%"
+      }
+    },
+    "parts": [
+      {
+        "name": "ring",
+        "box": {
+          "x": 69,
+          "y": 49,
+          "width": 102,
+          "height": 102
+        },
+        "styles": {
+          "border": "1px dashed rgba(214, 176, 98, 0.45)",
+          "border-radius": "50%"
+        }
+      },
+      {
+        "name": "mark",
+        "text": "DR",
+        "styles": {
+          "color": "#D9B467",
+          "font-family": "Georgia, \"Times New Roman\", serif",
+          "font-size": "19px",
+          "font-weight": "700",
+          "letter-spacing": "1.5px"
+        }
+      }
+    ]
+  },
+  "animations": [
+    {
+      "target": "ring",
+      "duration_ms": 9000,
+      "delay_ms": 0,
+      "iterations": "infinite",
+      "direction": "normal",
+      "easing": "linear",
+      "properties": [
+        "transform"
+      ]
+    }
+  ]
+}

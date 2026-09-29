@@ -1,0 +1,5 @@
+{
+  "html": "<div class=\"hr\" data-part=\"root\"><span data-part=\"glow\"></span><span data-part=\"count\">3</span></div>",
+  "css": ".hr{position:absolute;left:54px;top:54px;width:92px;height:92px;box-sizing:border-box;display:grid;place-items:center;background-color:#810000;border:3px solid #0B0B0B;border-radius:50%;animation:beat 2400ms ease-in-out infinite}\n.hr [data-part=glow]{position:absolute;left:-19px;top:-19px;width:124px;height:124px;border-radius:50%;background-image:radial-gradient(circle,rgba(193,18,31,.42) 40%,rgba(255,193,7,0) 70%);animation:heat 2200ms ease-in-out infinite}\n.hr [data-part=count]{position:relative;color:#E3DAC9;font:700 32px/1 system-ui,sans-serif}\n@keyframes beat{0%,100%{transform:scale(1)}14%{transform:scale(1.12)}28%{transform:scale(1)}42%{transform:scale(1.08)}56%{transform:scale(1)}}\n@keyframes heat{0%,100%{opacity:0}50%{opacity:1}}",
+  "js": ""
+}

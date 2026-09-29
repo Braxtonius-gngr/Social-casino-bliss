@@ -1,0 +1,51 @@
+{
+  "id": "update-refresh-pill",
+  "tags": [
+    "button",
+    "app-css",
+    "landing"
+  ],
+  "source": "app:assets/app.css .app-update-go + app-update-in",
+  "canvas": {
+    "width": 240,
+    "height": 96,
+    "background": "#050404"
+  },
+  "tokens": {},
+  "component": {
+    "description": "The \"REFRESH\" pill offered when a new build is cached. It fades in, rising 4px.",
+    "root": {
+      "box": {
+        "x": 60,
+        "y": 32,
+        "width": 120,
+        "height": 32
+      },
+      "styles": {
+        "background-color": "rgba(12, 10, 9, 0.6)",
+        "border": "1px solid rgba(232, 200, 106, 0.6)",
+        "border-radius": "20px",
+        "color": "#F0DCA6",
+        "font-size": "11.5px",
+        "font-weight": "600",
+        "letter-spacing": "2.3px",
+        "text-transform": "uppercase"
+      }
+    },
+    "parts": []
+  },
+  "animations": [
+    {
+      "target": "root",
+      "duration_ms": 400,
+      "delay_ms": 0,
+      "iterations": 1,
+      "direction": "normal",
+      "easing": "ease-out",
+      "properties": [
+        "opacity",
+        "transform"
+      ]
+    }
+  ]
+}

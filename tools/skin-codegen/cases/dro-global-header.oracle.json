@@ -1,0 +1,5 @@
+{
+  "html": "<header class=\"gh\" data-part=\"root\"><span data-part=\"title\">DAILY ROLL OVER</span><span data-part=\"reset\">RESET 05:00</span></header>",
+  "css": ".gh{position:absolute;left:0;top:0;width:360px;height:56px;box-sizing:border-box;padding:0 16px;display:flex;align-items:center;justify-content:space-between;background-color:#121212;border-bottom:1px solid rgba(255,255,255,.08)}\n.gh [data-part=title]{color:#F8F9FA;font-family:Inter, Roboto, sans-serif;font-size:14px;font-weight:800;letter-spacing:2px}\n.gh [data-part=reset]{color:#10B981;font-family:\"Roboto Mono\", monospace;font-size:11px}",
+  "js": ""
+}

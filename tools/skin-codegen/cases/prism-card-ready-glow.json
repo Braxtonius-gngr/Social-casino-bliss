@@ -1,0 +1,152 @@
+{
+  "id": "prism-card-ready-glow",
+  "tags": [
+    "card",
+    "app-css",
+    "prism",
+    "adapted"
+  ],
+  "source": "app:assets/app.css prism-live-glow (box-shadow pulse restated as a glow layer) + prism-tick",
+  "canvas": {
+    "width": 380,
+    "height": 120,
+    "background": "#07070A"
+  },
+  "tokens": {
+    "gold": "#D4AF37",
+    "text": "#F8F9FA",
+    "muted": "#8A8D93",
+    "gold-metal": "linear-gradient(180deg, #F3DA92 0%, #D4AF37 48%, #A87A22 100%)",
+    "green": "#3FBF8F",
+    "amber": "#FF8A1F"
+  },
+  "component": {
+    "description": "Prism-theme platform card in the READY state. A warm glow layer the size of the card runs in and out, and a small amber tick pulses beside the name.",
+    "root": {
+      "box": {
+        "x": 20,
+        "y": 24,
+        "width": 340,
+        "height": 72
+      },
+      "styles": {
+        "background-color": "#0D0B0A",
+        "border": "1px solid rgba(255, 138, 31, 0.35)",
+        "border-radius": "14px"
+      }
+    },
+    "parts": [
+      {
+        "name": "avatar",
+        "text": "CC",
+        "box": {
+          "x": 33,
+          "y": 40,
+          "width": 40,
+          "height": 40
+        },
+        "styles": {
+          "background-color": "rgba(212, 175, 55, 0.15)",
+          "color": "{gold}",
+          "border-radius": "10px",
+          "font-size": "14px",
+          "font-weight": "800"
+        }
+      },
+      {
+        "name": "name",
+        "text": "Crown Coins",
+        "styles": {
+          "color": "{text}",
+          "font-size": "15px",
+          "font-weight": "800"
+        }
+      },
+      {
+        "name": "tier",
+        "text": "S",
+        "styles": {
+          "color": "{gold}",
+          "border": "1px solid {gold}",
+          "background-color": "rgba(212, 175, 55, 0.2)",
+          "border-radius": "4px",
+          "font-size": "11px",
+          "font-weight": "900"
+        }
+      },
+      {
+        "name": "dot",
+        "box": {
+          "x": 86,
+          "y": 66,
+          "width": 8,
+          "height": 8
+        },
+        "styles": {
+          "background-color": "{green}",
+          "border-radius": "50%"
+        }
+      },
+      {
+        "name": "status",
+        "text": "READY",
+        "styles": {
+          "color": "{text}",
+          "font-family": "monospace",
+          "font-size": "12px",
+          "font-weight": "600"
+        }
+      },
+      {
+        "name": "glow",
+        "box": {
+          "x": 20,
+          "y": 24,
+          "width": 340,
+          "height": 72
+        },
+        "styles": {
+          "border-radius": "14px",
+          "box-shadow": "rgba(255, 180, 60, 0.95) 3px 0px 0px -1px inset"
+        }
+      },
+      {
+        "name": "tick",
+        "box": {
+          "x": 338,
+          "y": 36,
+          "width": 8,
+          "height": 8
+        },
+        "styles": {
+          "background-color": "{amber}",
+          "border-radius": "50%"
+        }
+      }
+    ]
+  },
+  "animations": [
+    {
+      "target": "glow",
+      "duration_ms": 3000,
+      "delay_ms": 0,
+      "iterations": "infinite",
+      "direction": "normal",
+      "easing": "ease-in-out",
+      "properties": [
+        "opacity"
+      ]
+    },
+    {
+      "target": "tick",
+      "duration_ms": 2200,
+      "delay_ms": 0,
+      "iterations": "infinite",
+      "direction": "normal",
+      "easing": "ease-in-out",
+      "properties": [
+        "opacity"
+      ]
+    }
+  ]
+}

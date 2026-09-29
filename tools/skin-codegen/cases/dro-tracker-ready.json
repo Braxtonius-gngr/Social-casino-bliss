@@ -1,0 +1,105 @@
+{
+  "id": "dro-tracker-ready",
+  "tags": [
+    "card",
+    "canva-dro",
+    "derived"
+  ],
+  "source": "canva:DAHWWIBbmQI p8 Tracker Card, READY state",
+  "canvas": {
+    "width": 360,
+    "height": 120,
+    "background": "#121212"
+  },
+  "tokens": {
+    "ready": "#10B981",
+    "pending": "#4B5563",
+    "expiring": "#F59E0B",
+    "bg": "#121212",
+    "surface": "#1C1C1C",
+    "text": "#F8F9FA",
+    "muted": "#8A8D93"
+  },
+  "component": {
+    "description": "Tracker card, READY state: platform name, SC tier, a live status dot that pulses, and a CLAIM NOW button.",
+    "root": {
+      "box": {
+        "x": 16,
+        "y": 16,
+        "width": 328,
+        "height": 88
+      },
+      "styles": {
+        "background-color": "{surface}",
+        "border-radius": "12px",
+        "border": "1px solid {ready}",
+        "padding": "16px"
+      }
+    },
+    "parts": [
+      {
+        "name": "dot",
+        "box": {
+          "x": 33,
+          "y": 33,
+          "width": 8,
+          "height": 8
+        },
+        "styles": {
+          "background-color": "{ready}",
+          "border-radius": "50%"
+        }
+      },
+      {
+        "name": "name",
+        "text": "NORTHSTAR",
+        "styles": {
+          "color": "{text}",
+          "font-family": "Inter, Roboto, sans-serif",
+          "font-size": "15px",
+          "font-weight": "700",
+          "letter-spacing": "1px"
+        }
+      },
+      {
+        "name": "tier",
+        "text": "SC TIER · 1.00",
+        "styles": {
+          "color": "{muted}",
+          "font-family": "\"Roboto Mono\", monospace",
+          "font-size": "12px"
+        }
+      },
+      {
+        "name": "cta",
+        "text": "CLAIM NOW",
+        "box": {
+          "x": 226,
+          "y": 44,
+          "width": 102,
+          "height": 32
+        },
+        "styles": {
+          "background-color": "{ready}",
+          "color": "{bg}",
+          "border-radius": "6px",
+          "font-size": "13px",
+          "font-weight": "800"
+        }
+      }
+    ]
+  },
+  "animations": [
+    {
+      "target": "dot",
+      "duration_ms": 2200,
+      "delay_ms": 0,
+      "iterations": "infinite",
+      "direction": "normal",
+      "easing": "ease-in-out",
+      "properties": [
+        "opacity"
+      ]
+    }
+  ]
+}
