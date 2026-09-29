@@ -1,0 +1,5 @@
+{
+  "html": "<div class=\"eb\" data-part=\"root\"><i data-part=\"ember-1\"></i><i data-part=\"ember-2\"></i><i data-part=\"ember-3\"></i></div>",
+  "css": ".eb{position:absolute;left:60px;top:40px;width:80px;height:100px}\n.eb i{position:absolute;width:3px;height:3px;border-radius:50%;animation:burst 600ms ease-out both}\n.eb [data-part=ember-1]{left:20px;top:94px;background-color:#FFC107}\n.eb [data-part=ember-2]{left:39px;top:96px;background-color:#810000;animation-delay:80ms}\n.eb [data-part=ember-3]{left:58px;top:94px;background-color:#C16B2C;animation-delay:160ms}\n@keyframes burst{from{transform:translate(0,0) scale(1);opacity:.95}to{transform:translate(14px,-60px) scale(.6);opacity:0}}",
+  "js": ""
+}

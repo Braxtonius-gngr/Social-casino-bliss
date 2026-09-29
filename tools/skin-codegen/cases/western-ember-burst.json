@@ -1,0 +1,112 @@
+{
+  "id": "western-ember-burst",
+  "tags": [
+    "reward",
+    "app-css",
+    "western"
+  ],
+  "source": "app:assets/app.css western #emberField ember-burst",
+  "canvas": {
+    "width": 200,
+    "height": 160,
+    "background": "#0B0B0B"
+  },
+  "tokens": {
+    "gold": "#FFC107",
+    "blood": "#810000",
+    "ink": "#0B0B0B",
+    "ember": "#C16B2C",
+    "bone": "#E3DAC9"
+  },
+  "component": {
+    "description": "Collect burst: three embers shoot up about 60px, drift right, shrink and fade, one after another 80ms apart.",
+    "root": {
+      "box": {
+        "x": 60,
+        "y": 40,
+        "width": 80,
+        "height": 100
+      },
+      "styles": {}
+    },
+    "parts": [
+      {
+        "name": "ember-1",
+        "box": {
+          "x": 80,
+          "y": 134,
+          "width": 3,
+          "height": 3
+        },
+        "styles": {
+          "background-color": "{gold}",
+          "border-radius": "50%"
+        }
+      },
+      {
+        "name": "ember-2",
+        "box": {
+          "x": 99,
+          "y": 136,
+          "width": 3,
+          "height": 3
+        },
+        "styles": {
+          "background-color": "{blood}",
+          "border-radius": "50%"
+        }
+      },
+      {
+        "name": "ember-3",
+        "box": {
+          "x": 118,
+          "y": 134,
+          "width": 3,
+          "height": 3
+        },
+        "styles": {
+          "background-color": "{ember}",
+          "border-radius": "50%"
+        }
+      }
+    ]
+  },
+  "animations": [
+    {
+      "target": "ember-1",
+      "duration_ms": 600,
+      "delay_ms": 0,
+      "iterations": 1,
+      "direction": "normal",
+      "easing": "ease-out",
+      "properties": [
+        "transform",
+        "opacity"
+      ]
+    },
+    {
+      "target": "ember-2",
+      "duration_ms": 600,
+      "delay_ms": 80,
+      "iterations": 1,
+      "direction": "normal",
+      "easing": "ease-out",
+      "properties": [
+        "transform",
+        "opacity"
+      ]
+    },
+    {
+      "target": "ember-3",
+      "duration_ms": 600,
+      "delay_ms": 160,
+      "iterations": 1,
+      "direction": "normal",
+      "easing": "ease-out",
+      "properties": [
+        "transform",
+        "opacity"
+      ]
+    }
+  ]
+}

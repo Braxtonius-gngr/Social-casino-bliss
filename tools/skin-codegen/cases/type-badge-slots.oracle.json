@@ -1,0 +1,5 @@
+{
+  "html": "<span class=\"ty\" data-part=\"root\">SLOTS</span>",
+  "css": ".ty{position:absolute;left:32px;top:19px;width:44px;height:18px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background-color:rgba(194,132,60,.15);color:#C2843C;border:1px solid #C2843C;border-radius:4px;font:800 10px/1 system-ui,sans-serif}",
+  "js": ""
+}

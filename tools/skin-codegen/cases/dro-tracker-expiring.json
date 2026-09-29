@@ -1,0 +1,111 @@
+{
+  "id": "dro-tracker-expiring",
+  "tags": [
+    "card",
+    "canva-dro",
+    "derived"
+  ],
+  "source": "canva:DAHWWIBbmQI p8 Tracker Card, EXPIRING SOON state",
+  "canvas": {
+    "width": 360,
+    "height": 120,
+    "background": "#121212"
+  },
+  "tokens": {
+    "ready": "#10B981",
+    "pending": "#4B5563",
+    "expiring": "#F59E0B",
+    "bg": "#121212",
+    "surface": "#1C1C1C",
+    "text": "#F8F9FA",
+    "muted": "#8A8D93"
+  },
+  "component": {
+    "description": "Tracker card, EXPIRING SOON state: amber countdown and an amber glow layer the size of the card that breathes in and out.",
+    "root": {
+      "box": {
+        "x": 16,
+        "y": 16,
+        "width": 328,
+        "height": 88
+      },
+      "styles": {
+        "background-color": "{surface}",
+        "border-radius": "12px",
+        "border": "1px solid {expiring}",
+        "padding": "16px"
+      }
+    },
+    "parts": [
+      {
+        "name": "glow",
+        "box": {
+          "x": 16,
+          "y": 16,
+          "width": 328,
+          "height": 88
+        },
+        "styles": {
+          "border-radius": "12px",
+          "box-shadow": "0 0 16px rgba(245, 158, 11, 0.55)"
+        }
+      },
+      {
+        "name": "dot",
+        "box": {
+          "x": 33,
+          "y": 33,
+          "width": 8,
+          "height": 8
+        },
+        "styles": {
+          "background-color": "{expiring}",
+          "border-radius": "50%"
+        }
+      },
+      {
+        "name": "name",
+        "text": "NORTHSTAR",
+        "styles": {
+          "color": "{text}",
+          "font-family": "Inter, Roboto, sans-serif",
+          "font-size": "15px",
+          "font-weight": "700",
+          "letter-spacing": "1px"
+        }
+      },
+      {
+        "name": "tier",
+        "text": "SC TIER · 1.00",
+        "styles": {
+          "color": "{muted}",
+          "font-family": "\"Roboto Mono\", monospace",
+          "font-size": "12px"
+        }
+      },
+      {
+        "name": "countdown",
+        "text": "00:12:44",
+        "styles": {
+          "color": "{expiring}",
+          "font-family": "\"Roboto Mono\", monospace",
+          "font-size": "15px",
+          "font-weight": "500"
+        }
+      }
+    ]
+  },
+  "animations": [
+    {
+      "target": "glow",
+      "duration_ms": 1200,
+      "delay_ms": 0,
+      "iterations": "infinite",
+      "direction": "alternate",
+      "easing": "ease-in-out",
+      "properties": [
+        "opacity"
+      ]
+    }
+  ]
+}

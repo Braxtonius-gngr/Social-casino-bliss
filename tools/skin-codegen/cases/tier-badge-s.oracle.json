@@ -1,0 +1,5 @@
+{
+  "html": "<span class=\"tb\" data-part=\"root\">s</span>",
+  "css": ".tb{position:absolute;left:32px;top:19px;width:22px;height:18px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background-color:rgba(212,175,55,0.2);color:#D4AF37;border:1px solid #D4AF37;border-radius:4px;font:900 11px/1 system-ui,sans-serif;text-transform:uppercase}",
+  "js": ""
+}

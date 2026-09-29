@@ -1,0 +1,39 @@
+{
+  "id": "tier-badge-not-rankable",
+  "tags": [
+    "badge",
+    "app-css",
+    "executive"
+  ],
+  "source": "app:assets/app.css .tier-badge + .tier-Not-Rankable",
+  "canvas": {
+    "width": 176,
+    "height": 56,
+    "background": "#050507"
+  },
+  "tokens": {
+    "tier": "#6E5A8C"
+  },
+  "component": {
+    "description": "Tier badge \"NOT RANKABLE\". Static.",
+    "root": {
+      "box": {
+        "x": 32,
+        "y": 19,
+        "width": 112,
+        "height": 18
+      },
+      "styles": {
+        "background-color": "rgba(110, 90, 140, 0.14)",
+        "color": "{tier}",
+        "border": "1px dotted {tier}",
+        "border-radius": "4px",
+        "font-size": "11px",
+        "font-weight": "900",
+        "text-transform": "uppercase"
+      }
+    },
+    "parts": []
+  },
+  "animations": []
+}

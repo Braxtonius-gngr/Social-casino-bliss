@@ -1,0 +1,5 @@
+{
+  "html": "<div data-part=\"root\" class=\"gb\"><span data-part=\"glow\" class=\"gb-glow\"></span><span data-part=\"label\" class=\"gb-label\">DAILY BONUS</span></div>",
+  "css": ".gb{position:absolute;left:20px;top:28px;width:320px;height:64px;background-color:#2A0F3D;border-radius:12px;display:flex;align-items:center;justify-content:center}\n.gb-glow{position:absolute;inset:0;border-radius:inherit;box-shadow:0 0 18px 4px rgba(255,200,80,.6);opacity:.4;animation:gb-breathe 2400ms ease-in-out infinite alternate}\n.gb-label{position:relative;color:#FFD76A;font:800 20px/1 system-ui,sans-serif;letter-spacing:.06em}\n@keyframes gb-breathe{from{opacity:.4}to{opacity:1}}",
+  "js": ""
+}

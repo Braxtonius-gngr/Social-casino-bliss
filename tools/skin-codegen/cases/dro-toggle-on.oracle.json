@@ -1,0 +1,5 @@
+{
+  "html": "<span class=\"tg\" data-part=\"root\"><span data-part=\"knob\"></span></span>",
+  "css": ".tg{position:absolute;left:24px;top:24px;width:44px;height:24px;background-color:#10B981;border-radius:12px}\n.tg [data-part=knob]{position:absolute;left:22px;top:2px;width:20px;height:20px;border-radius:50%;background-color:#F8F9FA;animation:slide 180ms ease-out}\n@keyframes slide{from{transform:translateX(-20px)}to{transform:none}}",
+  "js": ""
+}

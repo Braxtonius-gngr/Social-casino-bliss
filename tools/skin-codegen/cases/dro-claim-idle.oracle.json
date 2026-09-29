@@ -1,0 +1,5 @@
+{
+  "html": "<button class=\"cb\" data-part=\"root\"><span data-part=\"label\">CLAIM NOW</span></button>",
+  "css": ".cb{position:absolute;left:40px;top:36px;width:200px;height:48px;box-sizing:border-box;border:0;padding:0;display:flex;align-items:center;justify-content:center;background-color:#10B981;border-radius:8px}\n.cb [data-part=label]{font-family:Inter, Roboto, sans-serif;font-size:15px;font-weight:800;letter-spacing:1px}\n.cb{animation:breathe 2200ms ease-in-out infinite}.cb [data-part=label]{color:#121212}\n@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}",
+  "js": ""
+}

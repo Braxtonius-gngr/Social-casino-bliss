@@ -1,0 +1,5 @@
+{
+  "html": "<div class=\"cd\" data-part=\"root\"><span data-part=\"digits\">00:12:44</span><span data-part=\"label\">EXPIRING SOON</span></div>",
+  "css": ".cd{position:absolute;left:24px;top:24px;width:200px;height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}\n.cd [data-part=digits]{color:#F59E0B;font-family:\"Roboto Mono\", monospace;font-size:28px;font-weight:500;animation:blink 1000ms ease-in-out infinite alternate}\n.cd [data-part=label]{color:#8A8D93;font-family:Inter, Roboto, sans-serif;font-size:10px;font-weight:700;letter-spacing:2px}\n@keyframes blink{from{opacity:1}to{opacity:.45}}",
+  "js": ""
+}

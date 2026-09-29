@@ -1,0 +1,5 @@
+{
+  "html": "<div class=\"tc\" data-part=\"root\"><span data-part=\"dot\"></span><span data-part=\"name\">LUCKY BAY</span><span data-part=\"tier\">SC TIER · 1.00</span><span data-part=\"countdown\">04:37:12</span></div>",
+  "css": "\n.tc{position:absolute;left:16px;top:16px;width:328px;height:88px;box-sizing:border-box;padding:16px;background-color:#1C1C1C;border:1px solid #4B5563;border-radius:12px;font-family:Inter, Roboto, sans-serif}\n.tc [data-part=dot]{position:absolute;left:16px;top:16px;width:8px;height:8px;border-radius:50%}\n.tc [data-part=name]{position:absolute;left:32px;top:10px;color:#F8F9FA;font-size:15px;font-weight:700;letter-spacing:1px;white-space:nowrap}\n.tc [data-part=tier]{position:absolute;left:16px;top:44px;color:#8A8D93;font-family:\"Roboto Mono\", monospace;font-size:12px;white-space:nowrap}\n.tc [data-part=dot]{background-color:#4B5563}\n.tc [data-part=countdown]{position:absolute;right:16px;top:30px;color:#F8F9FA;font-family:\"Roboto Mono\", monospace;font-size:15px;font-weight:500}",
+  "js": ""
+}

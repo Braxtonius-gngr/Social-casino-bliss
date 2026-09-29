@@ -1,0 +1,86 @@
+{
+  "id": "western-hero-ring",
+  "tags": [
+    "reward",
+    "app-css",
+    "western",
+    "adapted"
+  ],
+  "source": "app:assets/app.css western .hero-ring-circle heartbeat-pulse + hero-number-pulse (glow restated as a layer)",
+  "canvas": {
+    "width": 200,
+    "height": 200,
+    "background": "#0B0B0B"
+  },
+  "tokens": {
+    "gold": "#FFC107",
+    "blood": "#810000",
+    "ink": "#0B0B0B",
+    "ember": "#C16B2C",
+    "bone": "#E3DAC9"
+  },
+  "component": {
+    "description": "Ready-count medallion: a blood-red disc with the count, beating with a double thump, while a red-to-gold glow behind it breathes on its own slightly faster cycle.",
+    "root": {
+      "box": {
+        "x": 54,
+        "y": 54,
+        "width": 92,
+        "height": 92
+      },
+      "styles": {
+        "background-color": "{blood}",
+        "border": "3px solid {ink}",
+        "border-radius": "50%"
+      }
+    },
+    "parts": [
+      {
+        "name": "glow",
+        "box": {
+          "x": 38,
+          "y": 38,
+          "width": 124,
+          "height": 124
+        },
+        "styles": {
+          "background-image": "radial-gradient(circle, rgba(193, 18, 31, 0.42) 40%, rgba(255, 193, 7, 0) 70%)",
+          "border-radius": "50%"
+        }
+      },
+      {
+        "name": "count",
+        "text": "3",
+        "styles": {
+          "color": "{bone}",
+          "font-size": "32px",
+          "font-weight": "700"
+        }
+      }
+    ]
+  },
+  "animations": [
+    {
+      "target": "root",
+      "duration_ms": 2400,
+      "delay_ms": 0,
+      "iterations": "infinite",
+      "direction": "normal",
+      "easing": "ease-in-out",
+      "properties": [
+        "transform"
+      ]
+    },
+    {
+      "target": "glow",
+      "duration_ms": 2200,
+      "delay_ms": 0,
+      "iterations": "infinite",
+      "direction": "normal",
+      "easing": "ease-in-out",
+      "properties": [
+        "opacity"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "id": "dro-badge-new-pop",
+  "tags": [
+    "badge",
+    "canva-dro",
+    "derived"
+  ],
+  "source": "canva:DAHWZ7PJKM4 badges & tags board, New; colour is the app accent-orange",
+  "canvas": {
+    "width": 120,
+    "height": 72,
+    "background": "#121212"
+  },
+  "tokens": {
+    "ready": "#10B981",
+    "pending": "#4B5563",
+    "expiring": "#F59E0B",
+    "bg": "#121212",
+    "surface": "#1C1C1C",
+    "text": "#F8F9FA",
+    "muted": "#8A8D93",
+    "new": "#C2843C"
+  },
+  "component": {
+    "description": "A \"NEW\" tag that pops in once: grows from small and transparent with a springy overshoot.",
+    "root": {
+      "box": {
+        "x": 32,
+        "y": 24,
+        "width": 56,
+        "height": 24
+      },
+      "styles": {
+        "background-color": "{new}",
+        "border-radius": "6px"
+      }
+    },
+    "parts": [
+      {
+        "name": "label",
+        "text": "NEW",
+        "styles": {
+          "color": "{bg}",
+          "font-family": "Inter, Roboto, sans-serif",
+          "font-size": "11px",
+          "font-weight": "800",
+          "letter-spacing": "1px"
+        }
+      }
+    ]
+  },
+  "animations": [
+    {
+      "target": "root",
+      "duration_ms": 240,
+      "delay_ms": 0,
+      "iterations": 1,
+      "direction": "normal",
+      "easing": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+      "properties": [
+        "transform",
+        "opacity"
+      ]
+    }
+  ]
+}

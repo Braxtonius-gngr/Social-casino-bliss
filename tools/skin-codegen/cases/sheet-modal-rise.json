@@ -1,0 +1,90 @@
+{
+  "id": "sheet-modal-rise",
+  "tags": [
+    "modal",
+    "app-css",
+    "executive"
+  ],
+  "source": "app:assets/app.css .sheet-modal + sheet-rise; button fill is --gold-metal",
+  "canvas": {
+    "width": 360,
+    "height": 280,
+    "background": "#000000"
+  },
+  "tokens": {
+    "gold": "#D4AF37",
+    "text": "#F8F9FA",
+    "muted": "#8A8D93",
+    "gold-metal": "linear-gradient(180deg, #F3DA92 0%, #D4AF37 48%, #A87A22 100%)"
+  },
+  "component": {
+    "description": "Bottom-sheet modal: serif uppercase title, one line of body text, and a full-width gold SAVE button. The sheet rises 18px into place from 98.5% scale while fading in.",
+    "root": {
+      "box": {
+        "x": 20,
+        "y": 40,
+        "width": 320,
+        "height": 200
+      },
+      "styles": {
+        "background-color": "#111014",
+        "border": "1px solid rgba(255, 255, 255, 0.08)",
+        "border-radius": "20px",
+        "padding": "24px"
+      }
+    },
+    "parts": [
+      {
+        "name": "title",
+        "text": "Set tier",
+        "styles": {
+          "color": "{text}",
+          "font-family": "Georgia, \"Times New Roman\", serif",
+          "font-size": "22px",
+          "font-weight": "400",
+          "letter-spacing": "1px",
+          "text-transform": "uppercase"
+        }
+      },
+      {
+        "name": "body",
+        "text": "Pick a tier for 3 platforms.",
+        "styles": {
+          "color": "{muted}",
+          "font-size": "14px"
+        }
+      },
+      {
+        "name": "save",
+        "text": "SAVE",
+        "box": {
+          "x": 45,
+          "y": 171,
+          "width": 270,
+          "height": 44
+        },
+        "styles": {
+          "background-image": "{gold-metal}",
+          "color": "#050507",
+          "border-radius": "10px",
+          "font-size": "13px",
+          "font-weight": "800"
+        }
+      }
+    ]
+  },
+  "animations": [
+    {
+      "target": "root",
+      "duration_ms": 300,
+      "delay_ms": 0,
+      "iterations": 1,
+      "direction": "normal",
+      "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+      "properties": [
+        "opacity",
+        "transform"
+      ]
+    }
+  ]
+}

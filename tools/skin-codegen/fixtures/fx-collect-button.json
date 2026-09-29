@@ -1,0 +1,16 @@
+{
+  "id": "fx-collect-button",
+  "tags": ["button", "fixture"],
+  "source": "synthetic harness fixture, not an eval case",
+  "canvas": { "width": 360, "height": 200, "background": "#0B0B10" },
+  "tokens": { "gold": "#F5C542", "ink": "#1A1206", "radius-lg": "14px" },
+  "component": {
+    "description": "Collect button, idle pulse",
+    "root": { "box": { "x": 60, "y": 72, "width": 240, "height": 56 },
+              "styles": { "background-color": "{gold}", "border-radius": "{radius-lg}" } },
+    "parts": [ { "name": "label", "text": "COLLECT",
+                 "styles": { "color": "{ink}", "font-size": "18px", "font-weight": "800" } } ]
+  },
+  "animations": [ { "target": "root", "duration_ms": 1800, "delay_ms": 0, "iterations": "infinite",
+                    "direction": "normal", "easing": "cubic-bezier(0.4, 0, 0.2, 1)", "properties": ["transform"] } ]
+}

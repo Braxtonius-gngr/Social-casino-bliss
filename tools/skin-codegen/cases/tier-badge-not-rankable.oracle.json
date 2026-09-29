@@ -1,0 +1,5 @@
+{
+  "html": "<span class=\"tb\" data-part=\"root\">not rankable</span>",
+  "css": ".tb{position:absolute;left:32px;top:19px;width:112px;height:18px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background-color:rgba(110,90,140,0.14);color:#6E5A8C;border:1px dotted #6E5A8C;border-radius:4px;font:900 11px/1 system-ui,sans-serif;text-transform:uppercase}",
+  "js": ""
+}

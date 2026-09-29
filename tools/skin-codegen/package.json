@@ -1,0 +1,15 @@
+{
+  "name": "skin-codegen",
+  "private": true,
+  "description": "Dev-only: design spec to animated HTML/CSS generator and its PESR eval. Not part of the shipped site.",
+  "type": "module",
+  "scripts": {
+    "selftest": "node selftest.mjs",
+    "score": "cd ../.. && node tools/skin-codegen/score.mjs --flow .claude/hillclimb/skin-codegen baseline",
+    "eval": "cd ../.. && node tools/skin-codegen/run-eval.mjs --flow .claude/hillclimb/skin-codegen --variant baseline --model claude-opus-5-5"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.129.0",
+    "playwright-core": "1.56.1"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "id": "dro-toggle-on",
+  "tags": [
+    "toggle",
+    "canva-dro",
+    "derived"
+  ],
+  "source": "canva:DAHWZ7PJKM4 toggles & switches board, on state",
+  "canvas": {
+    "width": 92,
+    "height": 72,
+    "background": "#121212"
+  },
+  "tokens": {
+    "ready": "#10B981",
+    "pending": "#4B5563",
+    "expiring": "#F59E0B",
+    "bg": "#121212",
+    "surface": "#1C1C1C",
+    "text": "#F8F9FA",
+    "muted": "#8A8D93"
+  },
+  "component": {
+    "description": "Visibility toggle switching on: the knob slides from the left end to the right end once.",
+    "root": {
+      "box": {
+        "x": 24,
+        "y": 24,
+        "width": 44,
+        "height": 24
+      },
+      "styles": {
+        "background-color": "{ready}",
+        "border-radius": "12px"
+      }
+    },
+    "parts": [
+      {
+        "name": "knob",
+        "box": {
+          "x": 46,
+          "y": 26,
+          "width": 20,
+          "height": 20
+        },
+        "styles": {
+          "background-color": "{text}",
+          "border-radius": "50%"
+        }
+      }
+    ]
+  },
+  "animations": [
+    {
+      "target": "knob",
+      "duration_ms": 180,
+      "delay_ms": 0,
+      "iterations": 1,
+      "direction": "normal",
+      "easing": "ease-out",
+      "properties": [
+        "transform"
+      ]
+    }
+  ]
+}

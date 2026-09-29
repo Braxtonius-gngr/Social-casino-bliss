@@ -1,0 +1,5 @@
+{
+  "html": "<button data-part=\"root\" class=\"cb\"><span data-part=\"label\">COLLECT</span></button>",
+  "css": ".cb{position:absolute;left:60px;top:72px;width:240px;height:56px;box-sizing:border-box;border:0;padding:0;background-color:#F5C542;border-radius:14px;display:flex;align-items:center;justify-content:center;animation:cb-pulse 1800ms cubic-bezier(0.4,0,0.2,1) infinite}\n.cb [data-part=label]{color:#1A1206;font:800 18px/1 system-ui,sans-serif}\n@keyframes cb-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}",
+  "js": ""
+}

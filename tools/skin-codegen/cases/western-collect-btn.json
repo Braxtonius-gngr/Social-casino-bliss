@@ -1,0 +1,75 @@
+{
+  "id": "western-collect-btn",
+  "tags": [
+    "button",
+    "app-css",
+    "western",
+    "adapted"
+  ],
+  "source": "app:assets/app.css western .btn-run-collect btn-collect-gleam (background-position sweep restated as a moving sheen layer)",
+  "canvas": {
+    "width": 320,
+    "height": 120,
+    "background": "#1A1410"
+  },
+  "tokens": {
+    "gold": "#FFC107",
+    "blood": "#810000",
+    "ink": "#0B0B0B",
+    "ember": "#C16B2C",
+    "bone": "#E3DAC9"
+  },
+  "component": {
+    "description": "Hard-edged gold COLLECT button with a black border and offset shadow. A white sheen sweeps across the face from left to right and repeats, masked to the button.",
+    "root": {
+      "box": {
+        "x": 30,
+        "y": 34,
+        "width": 260,
+        "height": 52
+      },
+      "styles": {
+        "background-color": "{gold}",
+        "border": "3px solid {ink}",
+        "box-shadow": "4px 4px 0 {ink}"
+      }
+    },
+    "parts": [
+      {
+        "name": "label",
+        "text": "COLLECT",
+        "styles": {
+          "color": "{ink}",
+          "font-size": "16px",
+          "font-weight": "900",
+          "letter-spacing": "2px"
+        }
+      },
+      {
+        "name": "sheen",
+        "box": {
+          "x": 33,
+          "y": 37,
+          "width": 52,
+          "height": 46
+        },
+        "styles": {
+          "background-image": "linear-gradient(115deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0) 100%)"
+        }
+      }
+    ]
+  },
+  "animations": [
+    {
+      "target": "sheen",
+      "duration_ms": 1800,
+      "delay_ms": 0,
+      "iterations": "infinite",
+      "direction": "normal",
+      "easing": "linear",
+      "properties": [
+        "transform"
+      ]
+    }
+  ]
+}

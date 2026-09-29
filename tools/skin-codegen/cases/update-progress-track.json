@@ -1,0 +1,58 @@
+{
+  "id": "update-progress-track",
+  "tags": [
+    "loader",
+    "app-css",
+    "landing",
+    "adapted"
+  ],
+  "source": "app:assets/app.css .app-update-track (transition restated as a one-shot fill animation)",
+  "canvas": {
+    "width": 240,
+    "height": 60,
+    "background": "#050404"
+  },
+  "tokens": {},
+  "component": {
+    "description": "Slim download progress track. The gold fill grows from the left edge to full width once.",
+    "root": {
+      "box": {
+        "x": 45,
+        "y": 29,
+        "width": 150,
+        "height": 2
+      },
+      "styles": {
+        "background-color": "rgba(214, 176, 98, 0.18)",
+        "border-radius": "2px"
+      }
+    },
+    "parts": [
+      {
+        "name": "fill",
+        "box": {
+          "x": 45,
+          "y": 29,
+          "width": 150,
+          "height": 2
+        },
+        "styles": {
+          "background-image": "linear-gradient(90deg, #B98A33, #F2D894)"
+        }
+      }
+    ]
+  },
+  "animations": [
+    {
+      "target": "fill",
+      "duration_ms": 1600,
+      "delay_ms": 0,
+      "iterations": 1,
+      "direction": "normal",
+      "easing": "ease-out",
+      "properties": [
+        "transform"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "html": "<div class=\"sp\" data-part=\"root\"></div>",
+  "css": ".sp{position:absolute;left:60px;top:50px;width:120px;height:60px;border-radius:50%;background-image:radial-gradient(circle,#810000 0%,rgba(129,0,0,0) 70%);animation:splat 700ms ease-out both}\n@keyframes splat{0%{opacity:0;transform:scale(.25)}12%{opacity:1;transform:scale(1.2)}30%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.35)}}",
+  "js": ""
+}

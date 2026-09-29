@@ -1,0 +1,5 @@
+{
+  "html": "<button class=\"rc\" data-part=\"root\"><span data-part=\"label\">RUN TODAY'S DROPS</span><span data-part=\"chevron\">»</span></button>",
+  "css": ".rc{position:absolute;left:20px;top:24px;width:220px;height:32px;box-sizing:border-box;padding:0;border:0;background:none;display:flex;align-items:center;gap:6px;font-family:system-ui,sans-serif;transform-origin:left center;animation:breathe 2200ms ease-in-out infinite}\n.rc [data-part=label]{color:#FFC107;font-size:15px;font-weight:800;text-shadow:1px 1px 0 #0B0B0B;white-space:nowrap}\n.rc [data-part=chevron]{color:#FFC107;font-size:15px;font-weight:900;animation:nudge 1300ms ease-in-out infinite}\n@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.11)}}\n@keyframes nudge{0%,100%{transform:translateX(0);opacity:.55}50%{transform:translateX(9px) scale(1.15);opacity:1}}",
+  "js": ""
+}
