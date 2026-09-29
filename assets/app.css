@@ -4463,3 +4463,126 @@ html[data-motion="off"][data-theme="executive"] #dailyRunOverlay::after { animat
   background: rgba(239, 68, 68, 0.1);
   color: #fca5a5;
 }
+
+/* ============================================================
+   HOW MUCH SHOW (assets/show.js)
+   Showroom / Lounge / Quiet, and the Executive room's lively pieces:
+   the gold edge light, the watch-bezel ring, the collect glint and the
+   payout. All of it is [data-theme="executive"], so the visualized
+   skin's pages wear it too, and with motion off both hold still (the
+   edge and the ring stay as a still picture of the run).
+   ============================================================ */
+
+/* The level rows: Settings and the tour's last step */
+.show-levels { display: grid; gap: 7px; }
+.show-level { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 10px; align-items: center; width: 100%; text-align: left; padding: 9px 10px 9px 9px; border-radius: 14px; cursor: pointer; font-family: inherit; color: var(--text-main); background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); box-shadow: inset 0 1px 2px rgba(0,0,0,0.5); }
+.show-level[aria-checked="true"] { border-color: color-mix(in srgb, var(--accent-gold) 60%, transparent); background: color-mix(in srgb, var(--accent-gold) 7%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-gold) 18%, transparent), 0 0 18px color-mix(in srgb, var(--accent-gold) 8%, transparent); }
+.show-level:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
+.show-mini { width: 48px; height: 48px; display: block; }
+.show-level-name { display: block; font-size: 0.9rem; font-weight: 800; margin-bottom: 2px; }
+.show-level-desc { display: block; font-size: 0.72rem; line-height: 1.35; color: var(--text-muted); }
+.show-level-meter { display: grid; justify-items: end; gap: 4px; }
+.show-bars { display: flex; gap: 2px; }
+.show-bars i { width: 4px; height: 10px; border-radius: 1px; background: rgba(255,255,255,0.12); }
+.show-bars i.on { background: var(--accent-gold); }
+.show-meter-cap { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
+.show-replay { width: 100%; max-width: 100%; margin-top: 10px; border-color: var(--accent-gold); color: var(--accent-gold); }
+.show-replay[hidden] { display: none; }
+.show-replay:disabled { border-color: var(--glass-border); color: var(--text-dim); cursor: default; }
+.show-replay:disabled:hover { background: rgba(0,0,0,0.6); border-color: var(--glass-border); color: var(--text-dim); }
+.show-sheet.sheet-backdrop { align-items: flex-end; }
+.show-sheet .sheet-modal { max-width: 460px; }
+.show-eyebrow { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+.show-sub { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 12px; }
+
+/* The gold edge light: a hairline round the screen, lit for today's run
+   from the top centre clockwise (show.js sets the dash), under every sheet,
+   the tour, the landing and the table. The highlight is one short streak
+   riding the same path (offset-path), so circling it moves a layer rather
+   than repainting the edge; 12 s a lap, the same slow light as the rest of
+   the room. */
+.show-edge, .show-edge-hi { display: none; }
+[data-theme="executive"] .show-edge { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 95; pointer-events: none; overflow: visible; }
+.show-edge path { fill: none; }
+.show-edge-base { stroke: rgba(212,175,55,0.17); stroke-width: 1; }
+.show-edge-glow { stroke: #D4AF37; stroke-width: 3; opacity: 0.32; }
+.show-edge-lit { stroke: #DDBB4E; stroke-width: 1.5; stroke-linecap: round; }
+[data-theme="executive"] .show-edge-hi {
+  display: block; position: fixed; left: 0; top: 0; z-index: 95; pointer-events: none;
+  width: 64px; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, rgba(255,241,204,0) 0%, rgba(255,241,204,0.95) 50%, rgba(255,241,204,0) 100%);
+  filter: drop-shadow(0 0 3px rgba(232,200,96,0.85));
+  offset-rotate: auto; offset-distance: 0%;
+  animation: show-edge-run 12s linear infinite;
+}
+@keyframes show-edge-run { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+html[data-motion="off"] .show-edge-hi { display: none !important; animation: none; }
+html[data-motion="off"] .show-edge-glow { display: none; }
+
+/* The watch-bezel ring: a circular-brushed bezel carrying 60 gold-filled
+   minute ticks, the run as a gold arc in a groove with a polished bead at
+   its head, and the dial the ready count sits on (which opens into the
+   payout's port). The count keeps its own element on top. */
+.show-bezel { display: none; }
+[data-theme="executive"] .hero-ring-wrapper { width: 88px; height: 88px; }
+[data-theme="executive"] .show-bezel { display: block; position: absolute; inset: 0; pointer-events: none; }
+[data-theme="executive"] .show-bezel::before { content: ''; position: absolute; inset: 4%; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.7), 0 1px 2px rgba(0,0,0,0.8); }
+.show-bezel-metal { position: absolute; inset: 0; border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 0deg, rgba(255,255,255,0.045) 0deg 0.35deg, transparent 0.35deg 1.1deg),
+    conic-gradient(from 0deg, #242320 0deg, #131314 70deg, #2e2b25 128deg, #151510 160deg, #0e0e0f 220deg, #534b36 296deg, #a8966a 317deg, #4a4432 340deg, #242320 360deg);
+  -webkit-mask: radial-gradient(circle, transparent 69.4%, #000 70%, #000 86.4%, transparent 87%);
+  mask: radial-gradient(circle, transparent 69.4%, #000 70%, #000 86.4%, transparent 87%); }
+.show-bezel svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.show-tick { stroke: #5b4a22; stroke-linecap: round; }
+.show-tick.lit { stroke: #E6C65E; }
+[data-theme="executive"] .hero-ring-circle { position: absolute; inset: 20.5%; width: auto; height: auto; z-index: 1; border: 0; background: transparent; box-shadow: none; font-size: 1.35rem; }
+
+/* One gold glint across a card when it is collected: a warm band, and a
+   spark running along the card's top hairline where the light lands. */
+.show-glint { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; z-index: 2; }
+.show-glint::before { content: ''; position: absolute; top: -30%; bottom: -30%; left: 0; width: 60%; opacity: 0; mix-blend-mode: screen;
+  background: linear-gradient(100deg, transparent 0%, rgba(255,236,196,0) 32%, rgba(255,236,196,0.16) 46%, rgba(255,248,226,0.3) 50%, rgba(255,236,196,0.16) 54%, transparent 68%);
+  transform: translateX(-120%) skewX(-10deg); animation: show-glint 1000ms cubic-bezier(.42,0,.2,1) forwards; }
+.show-glint::after { content: ''; position: absolute; top: 0; left: 0; width: 64px; height: 1px; opacity: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,243,208,0.95), transparent);
+  transform: translateX(-70px); animation: show-spark 1000ms cubic-bezier(.42,0,.2,1) forwards; }
+@keyframes show-glint { 0% { transform: translateX(-120%) skewX(-10deg); opacity: 0; } 14% { opacity: 1; } 86% { opacity: 1; } 100% { transform: translateX(230%) skewX(-10deg); opacity: 0; } }
+@keyframes show-spark { 0% { transform: translateX(-70px); opacity: 0; } 18% { opacity: 1; } 82% { opacity: 1; } 100% { transform: translateX(var(--show-w, 320px)); opacity: 0; } }
+html[data-motion="off"] .show-glint { display: none; }
+
+/* The payout: the port behind the glass (clipped to the dial), the
+   shadows the pieces drop on the glass, and the room in front of it.
+   Above the page, under every sheet and toast. */
+.show-fx { position: fixed; inset: 0; pointer-events: none; }
+.show-fx-back { z-index: 96; perspective: 1000px; transform-style: preserve-3d; }
+.show-fx-shadows { z-index: 97; overflow: hidden; }
+.show-fx-front { z-index: 98; perspective: 1000px; transform-style: preserve-3d; }
+.show-flash { position: fixed; left: -999px; top: -999px; width: 260px; height: 260px; margin: -130px 0 0 -130px; border-radius: 50%; z-index: 96; pointer-events: none; opacity: 0; mix-blend-mode: screen;
+  background: radial-gradient(circle, rgba(255,236,190,0.55) 0%, rgba(232,200,96,0.22) 30%, transparent 66%); }
+.show-shd { position: absolute; left: 0; top: 0; background: #000; }
+.show-piece { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
+.show-cl { position: absolute; inset: 0; border-radius: 50%; background-size: 100% 100%; }
+.show-cl.face { backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; }
+.show-cl .shade, .show-np-f .shade { position: absolute; inset: 0; background: #000; opacity: 0.3; border-radius: inherit; }
+.show-cl .spec { position: absolute; inset: 0; border-radius: 50%; opacity: 0; mix-blend-mode: screen;
+  background: radial-gradient(circle at 42% 38%, rgba(255,246,214,0.9) 0%, rgba(255,226,150,0.35) 22%, transparent 48%); }
+.show-np { position: absolute; top: 0; height: 100%; transform-style: preserve-3d; }
+.show-np.l { right: 100%; transform-origin: 100% 50%; }
+.show-np.r { left: 100%; transform-origin: 0 50%; }
+.show-np-f { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; background-repeat: no-repeat; }
+.show-np-f.b { transform: rotateY(180deg); }
+.show-np-f .sheen { position: absolute; inset: 0; opacity: 0; mix-blend-mode: screen; background: linear-gradient(115deg, transparent 20%, rgba(255,250,236,0.55) 50%, transparent 80%); }
+html[data-motion="off"] .show-fx, html[data-motion="off"] .show-flash { display: none; }
+
+/* Quiet: the room held still, and read more easily - larger numbers,
+   stronger contrast on the small print. (With motion off, the visualized
+   skin's pages are these too.) */
+html[data-motion="off"][data-theme="executive"] .hero-ring-circle { font-size: 1.6rem; }
+html[data-motion="off"][data-theme="executive"] .casino-name { font-size: 1.06rem; }
+html[data-motion="off"][data-theme="executive"] .card-status { opacity: 1; }
+html[data-motion="off"][data-theme="executive"] .status-time { font-size: 0.88rem; }
+html[data-motion="off"][data-theme="executive"] .card-status .ready-at,
+html[data-motion="off"][data-theme="executive"] .date-header,
+html[data-motion="off"][data-theme="executive"] .hero-details p,
+html[data-motion="off"][data-theme="executive"] .cooldown-chip { color: #AEB1B8; }
