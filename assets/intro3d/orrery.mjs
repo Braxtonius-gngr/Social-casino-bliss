@@ -66,9 +66,9 @@ const RATIO = [4.15, 1.62, 1, 0.53, 0.084, 0.034, 0.012];
 const SIGNS = ['ARIES', 'TAURUS', 'GEMINI', 'CANCER', 'LEO', 'VIRGO', 'LIBRA', 'SCORPIO', 'SAGITTARIUS', 'CAPRICORN', 'AQUARIUS', 'PISCES'];
 
 // ------------------------------------------------------------ materials
-let shared = null;
+// (each instrument its own: the breakout cuts its materials at the glass,
+// which must never reach an instrument standing anywhere else)
 function materials() {
-  if (shared) return shared;
   // Lacquered brass: the metal warm and a little rough, the lacquer over it
   // hard and clear - two highlights, a soft one and a crisp one.
   const brass = new THREE.MeshPhysicalMaterial({ color: 0xc19a62, metalness: 1, roughness: 0.34, clearcoat: 0.85, clearcoatRoughness: 0.1 });
@@ -77,8 +77,7 @@ function materials() {
   const brassDark = new THREE.MeshPhysicalMaterial({ color: 0x9b7746, metalness: 1, roughness: 0.42, clearcoat: 0.6, clearcoatRoughness: 0.18 });
   // Gilt: the sun, water-gilded and burnished - brighter and smoother.
   const gilt = new THREE.MeshPhysicalMaterial({ color: 0xf0cc86, metalness: 1, roughness: 0.16, clearcoat: 1, clearcoatRoughness: 0.05 });
-  shared = { brass, brassDark, gilt };
-  return shared;
+  return { brass, brassDark, gilt };
 }
 
 // ------------------------------------------------------------ textures
@@ -170,31 +169,123 @@ function bandTex(size, r0, r1) {
   };
 }
 
+// ------------------------------------------------------------ the dome's chart
+// The glass dome over the instrument on a desk is engraved as a celestial
+// chart: a planisphere, the north pole at its crown and the rim at
+// declination -45, so the sky is seen as it is from inside (and mirrored,
+// as a celestial globe's is, from outside). Stars cut as frosted dots, the
+// brighter ones larger; the figures of the constellations every almanac
+// printed; the equator, the ecliptic, the hour circles and a few parallels.
+// Drawn once, as an alpha map: white where the glass is cut.
+// ([RA hours, Dec degrees, size 1-3] - a few of the brightest named)
+const STARS = {
+  UMa: [[11.06, 61.75, 2], [11.03, 56.38, 2], [11.9, 53.7, 2], [12.26, 57.03, 1], [12.9, 55.96, 2], [13.4, 54.93, 2], [13.79, 49.31, 2]],
+  Cas: [[0.15, 59.15, 2], [0.68, 56.54, 2], [0.95, 60.72, 2], [1.43, 60.24, 2], [1.91, 63.67, 1]],
+  Ori: [[5.92, 7.41, 3], [5.42, 6.35, 2], [5.53, -0.3, 2], [5.6, -1.2, 2], [5.68, -1.94, 2], [5.8, -9.67, 2], [5.24, -8.2, 3], [5.59, 9.93, 1]],
+  Cyg: [[20.69, 45.28, 3], [20.37, 40.26, 2], [20.77, 33.97, 2], [19.75, 45.13, 1], [19.51, 27.96, 2]],
+  Lyr: [[18.62, 38.78, 3], [18.75, 37.6, 1], [18.83, 33.36, 1], [18.98, 32.69, 1], [18.9, 36.9, 1]],
+  Leo: [[10.14, 11.97, 3], [10.12, 16.76, 1], [10.33, 19.84, 2], [10.28, 23.42, 1], [9.88, 26.0, 1], [11.24, 20.52, 2], [11.82, 14.57, 2], [11.24, 15.43, 1]],
+  Sco: [[16.09, -19.8, 2], [16.0, -22.62, 2], [15.98, -26.1, 1], [16.49, -26.43, 3], [16.6, -28.2, 1], [16.84, -34.29, 2], [16.86, -38.05, 1], [16.9, -42.36, 1], [17.2, -43.24, 1], [17.62, -43.0, 2], [17.79, -40.13, 1], [17.71, -39.03, 1], [17.56, -37.1, 2]],
+  Gem: [[7.58, 31.89, 3], [7.76, 28.03, 3], [6.63, 16.4, 2], [7.34, 21.98, 1], [6.38, 22.51, 1], [7.07, 20.57, 1]],
+  Tau: [[4.6, 16.5, 3], [4.33, 15.63, 1], [4.48, 15.87, 1], [4.38, 17.54, 1], [5.44, 28.61, 2], [5.63, 21.14, 1]],
+  Aql: [[19.85, 8.87, 3], [19.77, 10.61, 1], [19.92, 6.41, 1], [19.09, 13.86, 1], [19.1, -4.88, 1]],
+  Boo: [[14.26, 19.18, 3], [14.75, 27.07, 2], [15.03, 40.39, 1], [14.53, 38.31, 1], [14.53, 30.37, 1]],
+  Per: [[3.41, 49.86, 3], [3.14, 40.96, 2], [3.72, 47.79, 1], [3.96, 40.01, 1], [3.08, 53.51, 1]],
+  UMi: [[2.53, 89.26, 3], [17.54, 86.59, 1], [16.77, 82.04, 1], [15.73, 77.79, 1], [16.29, 75.76, 1], [14.85, 74.16, 2], [15.35, 71.83, 1]],
+  CMa: [[6.75, -16.72, 3], [6.38, -17.96, 2], [7.14, -26.39, 2], [6.98, -28.97, 2], [7.4, -29.3, 1]],
+  Vir: [[13.42, -11.16, 3], [12.69, -1.45, 1], [13.04, 10.96, 1], [12.33, -0.67, 1], [11.84, 1.76, 1]]
+};
+const FIGURES = {
+  UMa: [[0, 1, 2, 3, 0], [3, 4, 5, 6]], Cas: [[0, 1, 2, 3, 4]], Ori: [[7, 0], [7, 1], [0, 4], [1, 2], [2, 3, 4], [4, 5], [2, 6]],
+  Cyg: [[0, 1, 4], [3, 1, 2]], Lyr: [[0, 1, 2, 3, 4, 1]], Leo: [[0, 1, 2, 3, 4], [2, 5, 6, 7, 0], [5, 7]],
+  Sco: [[0, 1, 2], [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]], Gem: [[0, 3, 2], [1, 5, 2], [0, 1]], Tau: [[0, 1, 2, 3, 0], [0, 5], [3, 4]],
+  Aql: [[3, 1, 0, 2, 4]], Boo: [[0, 4, 3, 2, 1, 0]], Per: [[4, 0, 2, 3], [0, 1]], UMi: [[0, 1, 2, 3, 4, 5, 6, 3]],
+  CMa: [[0, 1], [0, 2, 3, 4]], Vir: [[0, 3, 4], [3, 1, 2]]
+};
+function domeChart(S = 2048) {
+  const c = document.createElement('canvas');
+  c.width = c.height = S;
+  const g = c.getContext('2d');
+  g.fillStyle = '#000'; g.fillRect(0, 0, S, S);
+  // (RA hours and Dec degrees to the planisphere: the pole in the middle,
+  // Dec -45 at the rim)
+  const at = (ra, dec) => {
+    const rho = (90 - dec) / 135, phi = ra * 15 * DEG;
+    return [S * (0.5 + 0.5 * rho * Math.cos(phi)), S * (0.5 - 0.5 * rho * Math.sin(phi))];
+  };
+  const line = (pts, w, a) => {
+    g.strokeStyle = `rgba(255,255,255,${a})`; g.lineWidth = w; g.lineCap = 'round'; g.lineJoin = 'round';
+    g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke();
+  };
+  // the parallels and the equator (bolder), the hour circles
+  [60, 30, -30].forEach(d => line(Array.from({ length: 241 }, (_, k) => at(k / 10, d)), 1.4, 0.32));
+  line(Array.from({ length: 241 }, (_, k) => at(k / 10, 0)), 2.6, 0.55);
+  for (let h = 0; h < 24; h++) line([at(h, 80), at(h, -45)], h % 6 ? 1 : 1.8, h % 6 ? 0.2 : 0.34);
+  // the ecliptic, cut as a double line
+  const eps = 23.44 * DEG;
+  const ecl = off => Array.from({ length: 361 }, (_, k) => {
+    const lam = k * DEG, ra = Math.atan2(Math.cos(eps) * Math.sin(lam), Math.cos(lam)) / (15 * DEG);
+    return at((ra + 24) % 24, Math.asin(Math.sin(eps) * Math.sin(lam)) / DEG + off);
+  });
+  line(ecl(0.5), 1.6, 0.5); line(ecl(-0.5), 1.6, 0.5);
+  // a field of fainter stars, the same every time
+  let seed = 20260930;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  for (let k = 0; k < 900; k++) {
+    const [x, y] = at(rnd() * 24, Math.asin(rnd() * 1.707 - 0.707) / DEG);
+    g.fillStyle = `rgba(255,255,255,${(0.35 + rnd() * 0.45).toFixed(2)})`;
+    g.beginPath(); g.arc(x, y, 0.9 + rnd() * 1.4, 0, Math.PI * 2); g.fill();
+  }
+  // the figures, then their stars over them
+  Object.keys(STARS).forEach(k => (FIGURES[k] || []).forEach(run => line(run.map(i => at(STARS[k][i][0], STARS[k][i][1])), 2.2, 0.62)));
+  Object.values(STARS).forEach(list => list.forEach(([ra, dec, m]) => {
+    const [x, y] = at(ra, dec), r = 2.4 + m * 2.2;
+    g.fillStyle = 'rgba(255,255,255,0.28)'; g.beginPath(); g.arc(x, y, r * 2.1, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+    // (the brightest cut as a four-point star)
+    if (m >= 3) { g.lineWidth = 1.6; g.strokeStyle = '#fff'; g.beginPath(); g.moveTo(x - r * 3.2, y); g.lineTo(x + r * 3.2, y); g.moveTo(x, y - r * 3.2); g.lineTo(x, y + r * 3.2); g.stroke(); }
+  }));
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.NoColorSpace; t.anisotropy = 8;
+  return t;
+}
+
 // ------------------------------------------------------------ the instrument
-// opts: planets [{ initials, hue, tier }], radius (the outermost hoop's, px),
-//       bandWidth. Returns the group and a pose(state) that sets it:
+// opts: planets [{ id, initials, hue, tier, spent }], radius (the outermost
+//       hoop's, in the instrument's own units), bandWidth, wire (a factor on
+//       the hoops' gauge), planetScale (a factor on the planets' size), stand (standing on a desk: { height } - the sun's
+//       height over the desk - a turned walnut plinth under the pillar and
+//       four legs up to the band), dome (the engraved glass dome resting on
+//       the band). Returns the group and a pose(state) that sets it:
 //       state.open (0 folded to 1 run out: the arms' reach), state.crank
 //       (the train's turn, in Earth turns), state.face (a point the planets
-//       turn their painted side toward).
+//       turn their painted side toward) - and, for a hand on it: hits (the
+//       meshes a tap can find: each planet's ball with its id, the sun) and
+//       setSpent(id, on) (a platform collected: its planet in shadow).
 export function buildOrrery(opts = {}) {
   const M = materials();
   const planets = (opts.planets && opts.planets.length ? opts.planets : [{ initials: '', hue: 36 }, { initials: '', hue: 150 }, { initials: '', hue: 12 }]).slice(0, 7);
   const n = planets.length;
   const R = opts.radius || 240;
-  const made = [];                               // geometries and textures, for dispose()
+  const made = [M.brass, M.brassDark, M.gilt];     // geometries, materials and textures, for dispose()
   const keep = x => { made.push(x); return x; };
   const group = new THREE.Group();                // the instrument: its axis is +y, its plane xz
   const SUN = Math.max(10, R * 0.066);
   // the planets' paths: spaced out from the sun, a little wider apart outward
   const radii = planets.map((p, i) => lerp(SUN * 3.2, R, n === 1 ? 1 : Math.pow(i / (n - 1), 0.85)));
+  const hits = [];
 
-  // The pillar: a turned brass column down the axis, collars for the arms.
-  const pillarH = SUN * 1.6 + n * SUN * 0.34 + SUN * 2;
+  // The pillar: a turned brass column down the axis, collars for the arms;
+  // on a desk, down to its plinth.
+  const stand = opts.stand || null;
+  const pillarH = stand ? stand.height : SUN * 1.6 + n * SUN * 0.34 + SUN * 2;
   const pillar = new THREE.Mesh(keep(new THREE.CylinderGeometry(SUN * 0.2, SUN * 0.24, pillarH, 20)), M.brass);
   pillar.position.y = -pillarH / 2;
   group.add(pillar);
   // The sun: a gilt ball with twelve short rays in the plane.
   const sun = new THREE.Mesh(keep(new THREE.SphereGeometry(SUN, 48, 32)), M.gilt);
+  sun.userData.sun = true;
+  hits.push(sun);
   group.add(sun);
   const rayGeo = keep(new THREE.ConeGeometry(SUN * 0.16, SUN * 0.62, 10));
   for (let k = 0; k < 12; k++) {
@@ -210,6 +301,7 @@ export function buildOrrery(opts = {}) {
   // the instrument opens (it is a folding instrument: the bar is drawn out
   // of its collar), and its hoop opens with it.
   const arms = [];
+  const wireK = opts.wire || 1;
   planets.forEach((p, i) => {
     const collarY = -SUN * 1.6 - i * SUN * 0.34;
     const arm = new THREE.Group();
@@ -227,15 +319,17 @@ export function buildOrrery(opts = {}) {
     // the planet: its ball, and its ring on two pins (turned to face you
     // with the ball, so the paint and the ring are seen as the deck shows them)
     const size = p.tier === 'S' ? 1.25 : p.tier === 'A' ? 1.12 : p.tier === 'B' ? 1.0 : 0.92;
-    const pr = Math.max(6, R * 0.043) * size;
+    const pr = Math.max(6, R * 0.043) * size * (opts.planetScale || 1);
     const tex = keep(planetTex(p));
     const ballMat = keep(new THREE.MeshPhysicalMaterial({ map: tex, roughness: 0.55, metalness: 0, clearcoat: 0.55, clearcoatRoughness: 0.28 }));
     const ball = new THREE.Mesh(keep(new THREE.SphereGeometry(pr, 40, 24)), ballMat);
+    ball.userData.id = p.id;
+    hits.push(ball);
     const planet = new THREE.Group();
     planet.add(ball);
     const ringHolder = new THREE.Group();
-    const ringMesh = new THREE.Mesh(keep(new THREE.RingGeometry(pr * 1.34, pr * 1.52, 64)), new THREE.MeshPhysicalMaterial({ color: 0xc19a62, metalness: 1, roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.1, side: THREE.DoubleSide }));
-    made.push(ringMesh.material);
+    const ringMat = keep(new THREE.MeshPhysicalMaterial({ color: 0xc19a62, metalness: 1, roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.1, side: THREE.DoubleSide }));
+    const ringMesh = new THREE.Mesh(keep(new THREE.RingGeometry(pr * 1.34, pr * 1.52, 64)), ringMat);
     ringMesh.rotation.x = Math.PI / 2;        // flat in the holder's xz
     ringHolder.add(ringMesh);
     [-1, 1].forEach(sd => {
@@ -250,11 +344,11 @@ export function buildOrrery(opts = {}) {
     arm.add(planet);
     // its hoop: brass wire round the path (drawn full size, scaled with
     // the arm's reach as it opens)
-    const wire = Math.max(0.55, R * 0.0026);
+    const wire = Math.max(0.55, R * 0.0026) * wireK;
     const hoop = new THREE.Mesh(keep(new THREE.TorusGeometry(radii[i], wire, 6, 220)), M.brassDark);
     hoop.rotation.x = Math.PI / 2;
     group.add(hoop);
-    arms.push({ arm, bar, post, planet, ball, ringHolder, hoop, collarY, r: radii[i], pr, wire, ratio: RATIO[i] || 0.01, a0: (i * 137.508) * DEG });
+    arms.push({ id: p.id, arm, bar, post, planet, ball, ballMat, ringMat, ringHolder, hoop, collarY, r: radii[i], pr, wire, ratio: RATIO[i] || 0.01, a0: (i * 137.508) * DEG, spent: 0 });
   });
   // The ecliptic band, outside the last path: engraved brass, laid flat.
   const b0 = R * 1.1, b1 = R * 1.1 + (opts.bandWidth || Math.max(12, R * 0.085));
@@ -270,6 +364,71 @@ export function buildOrrery(opts = {}) {
   const bandHolder = new THREE.Group();
   bandHolder.add(band);
   group.add(bandHolder);
+
+  // On a desk: a turned walnut plinth under the pillar, a brass collar
+  // where the pillar enters it, and four turned brass legs from the desk up
+  // under the band, each on a small foot.
+  if (stand) {
+    const wood = stand.wood || new THREE.MeshPhysicalMaterial({ color: 0x3a2418, roughness: 0.45, clearcoat: 0.7, clearcoatRoughness: 0.2 });
+    const pr0 = SUN * 2.6, ph = SUN * 1.1;
+    // (the profile of a lathe-turned base: a foot, a cove, a bead, a dome)
+    const prof = [[0, 0], [pr0, 0], [pr0, ph * 0.18], [pr0 * 0.93, ph * 0.26], [pr0 * 0.95, ph * 0.36], [pr0 * 0.8, ph * 0.46],
+      [pr0 * 0.62, ph * 0.62], [pr0 * 0.46, ph * 0.84], [pr0 * 0.3, ph], [0, ph]].map(([x, y]) => new THREE.Vector2(x, y));
+    const plinth = new THREE.Mesh(keep(new THREE.LatheGeometry(prof, 64)), wood);
+    plinth.position.y = -pillarH;
+    group.add(plinth);
+    const collar = new THREE.Mesh(keep(new THREE.TorusGeometry(SUN * 0.34, SUN * 0.08, 10, 40)), M.brass);
+    collar.rotation.x = Math.PI / 2; collar.position.y = -pillarH + ph;
+    group.add(collar);
+    const legR = (b0 + b1) / 2, legGeo = keep(new THREE.CylinderGeometry(SUN * 0.1, SUN * 0.14, pillarH, 16));
+    const footGeo = keep(new THREE.CylinderGeometry(SUN * 0.34, SUN * 0.4, SUN * 0.12, 24));
+    const knopGeo = keep(new THREE.SphereGeometry(SUN * 0.2, 20, 14));
+    [45, 135, 225, 315].forEach(d => {
+      const x = Math.cos(d * DEG) * legR, z = Math.sin(d * DEG) * legR;
+      const leg = new THREE.Mesh(legGeo, M.brass); leg.position.set(x, -pillarH / 2, z);
+      const foot = new THREE.Mesh(footGeo, M.brassDark); foot.position.set(x, -pillarH + SUN * 0.06, z);
+      const knop = new THREE.Mesh(knopGeo, M.brass); knop.position.set(x, -pillarH * 0.42, z);
+      group.add(leg, foot, knop);
+    });
+  }
+  // The dome: a glass hemisphere resting on the band, its crown engraved
+  // as the sky (see domeChart). The glass itself is almost nothing - what
+  // shows is what it reflects, more of it at a grazing angle - and the
+  // engraving is frosted: it takes the lamp's light where the lamp reaches
+  // it and is dark where it doesn't.
+  let dome = null;
+  if (opts.dome) {
+    const DR = b1 * 1.02;
+    const geo = keep(new THREE.SphereGeometry(DR, 128, 48, 0, Math.PI * 2, 0, Math.PI / 2));
+    // (a planisphere's UVs: the crown in the middle, the rim at the edge)
+    const P = geo.attributes.position, U = geo.attributes.uv;
+    for (let k = 0; k < P.count; k++) {
+      const x = P.getX(k), y = P.getY(k), z = P.getZ(k);
+      const rho = Math.acos(clamp01(y / DR)) / (Math.PI / 2), phi = Math.atan2(z, x);
+      U.setXY(k, 0.5 + 0.5 * rho * Math.cos(phi), 0.5 + 0.5 * rho * Math.sin(phi));
+    }
+    // (black: glass has no colour of its own to light - only what it reflects)
+    const glass = keep(new THREE.MeshStandardMaterial({ color: 0x000000, metalness: 0, roughness: 0.03, transparent: true, opacity: 0.0, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 0.55 }));
+    glass.onBeforeCompile = sh => {
+      sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>', `
+        float gFres = pow(1.0 - saturate(abs(dot(normal, normalize(vViewPosition)))), 4.0);
+        diffuseColor.a = clamp(max(mix(diffuseColor.a, 0.32, gFres), dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722)) * 0.55), 0.0, 1.0);
+        #include <opaque_fragment>`);
+    };
+    glass.customProgramCacheKey = () => 'orrery-dome-glass';
+    const chart = keep(domeChart());
+    const cut = keep(new THREE.MeshStandardMaterial({ color: 0xf1e6cf, emissive: 0x2a2418, alphaMap: chart, transparent: true, opacity: 0.62, roughness: 0.9, metalness: 0, depthWrite: false, side: THREE.DoubleSide }));
+    dome = new THREE.Group();
+    const shell = new THREE.Mesh(geo, glass);
+    const engraved = new THREE.Mesh(geo, cut);
+    shell.renderOrder = 2; engraved.renderOrder = 3;
+    dome.add(shell, engraved);
+    // (its foot: a brass rim on the band where the glass sits)
+    const rim = new THREE.Mesh(keep(new THREE.TorusGeometry(DR, SUN * 0.07, 8, 256)), M.brass);
+    rim.rotation.x = Math.PI / 2;
+    dome.add(rim);
+    group.add(dome);
+  }
 
   const tmp = new THREE.Vector3(), pq = new THREE.Quaternion(), fq = new THREE.Quaternion(), Z = new THREE.Vector3(0, 0, 1);
   function pose(s = {}) {
@@ -304,12 +463,24 @@ export function buildOrrery(opts = {}) {
     sun.scale.setScalar(s.sun == null ? 1 : Math.max(0.001, s.sun));
   }
   pose({ open: 1 });
+  // A planet whose platform has been collected: its paint in shadow, its
+  // varnish and ring gone dull - there, but spent until it comes round.
+  function setSpent(id, on) {
+    const A = arms.find(x => x.id === id);
+    if (!A || A.spent === (on ? 1 : 0)) return;
+    A.spent = on ? 1 : 0;
+    A.ballMat.color.setScalar(on ? 0.42 : 1);
+    A.ballMat.clearcoat = on ? 0.15 : 0.55;
+    A.ringMat.color.set(on ? 0x6f5a3c : 0xc19a62);
+    A.ringMat.roughness = on ? 0.55 : 0.3;
+  }
+  planets.forEach(p => { if (p.spent) setSpent(p.id, true); });
 
   function dispose() {
     group.removeFromParent();
     made.forEach(x => x.dispose && x.dispose());
   }
-  return { group, pose, dispose, radii, sun: SUN, arms };
+  return { group, pose, dispose, radii, sun: SUN, arms, hits, setSpent, dome, band: [b0, b1], pillarH };
 }
 
 // ------------------------------------------------------------ the breakout
@@ -357,7 +528,17 @@ export function createBreakout() {
     catcher.receiveShadow = true;
     scene.add(catcher);
     glass = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+    // A lost context (a phone short of GPU memory drops it): the payout is
+    // put away; once it is back, the studio the brass mirrors is made again
+    // (a render target, which the loss empties - without it every metal
+    // here would draw near black).
     renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); clear(); });
+    renderer.domElement.addEventListener('webglcontextrestored', () => {
+      const old = env;
+      env = studioEnvironment(renderer);
+      scene.environment = env;
+      if (old) old.dispose();
+    });
     return true;
   }
   // the page's box: the glass at 1:1 from the camera

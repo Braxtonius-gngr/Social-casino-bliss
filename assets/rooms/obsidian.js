@@ -238,7 +238,21 @@
   }
 
   // ---------- The levels' art ----------
+  // Showroom: the desk seen from the chair - the leather, the orrery under
+  // its dome, the ledger to the left, the lamp's green shade to the right.
+  var MINI_STUDY = '<svg class="show-mini" viewBox="0 0 56 56" aria-hidden="true"><rect width="56" height="56" rx="12" fill="#121110"/>' +
+    '<path d="M0 38 L56 38 L56 56 L0 56 Z" fill="#4a3226"/><path d="M5 40 L51 40 L54 55 L2 55 Z" fill="#1d2a22"/>' +
+    '<path d="M6.2 41.2 L49.8 41.2 L52.4 53.8 L3.6 53.8 Z" fill="none" stroke="#c9a45e" stroke-width="0.4"/>' +
+    '<ellipse cx="29" cy="44" rx="12" ry="3.4" fill="none" stroke="#b08d57" stroke-width="0.9"/>' +
+    '<ellipse cx="29" cy="44" rx="8" ry="2.2" fill="none" stroke="#8c6a3a" stroke-width="0.4"/>' +
+    '<path d="M17 44 A12 12 0 0 1 41 44" fill="rgba(236,229,217,0.06)" stroke="rgba(236,229,217,0.35)" stroke-width="0.4"/>' +
+    '<circle cx="29" cy="40" r="2.2" fill="#E6CC96"/><circle cx="21.5" cy="44.8" r="1.2" fill="#8FA98B"/><circle cx="36" cy="43.2" r="1" fill="#A86B62"/>' +
+    '<path d="M29 42.2 V48" stroke="#8c6a3a" stroke-width="0.6"/>' +
+    '<path d="M3 47 L14 46 L15 51 L3 52.4 Z" fill="#ECE5D9"/><path d="M9 46.5 L9.3 51.7" stroke="#b9ad96" stroke-width="0.3"/>' +
+    '<path d="M44 26 L52 26 L54.5 31.5 L41.5 31.5 Z" fill="#1f4a33"/><path d="M48 31.5 V41" stroke="#b08d57" stroke-width="0.6"/>' +
+    '<ellipse cx="48" cy="31.6" rx="6.6" ry="0.9" fill="#FFF1D6" opacity="0.9"/></svg>';
   function mini(level) {
+    if (level === 'showroom') return MINI_STUDY;
     var dots = '', arcLen = 0.62;
     for (var k = 0; k < 72; k++) {
       var a = (k / 72) * Math.PI * 2 - Math.PI / 2, house = k % 6 === 0;
@@ -302,10 +316,11 @@
 
   window.showAddRoom('obsidian', {
     name: 'Obsidian Ledger',
-    lede: 'A celestial almanac at two levels of show: the same brass and parchment on each, with more or less of it moving.',
-    showroom: null,
+    lede: 'A celestial almanac at three levels of show: the same brass and parchment on each, with more or less of it moving. Showroom is all of it — the dice, then the study, its orrery and a way inside.',
+    showroom: 'orrery',
     muted: 'obsidian',
     copy: {
+      showroom: 'The study stays your home: a grand orrery on the desk, your platforms its planets, and a way in. Uses the most battery.',
       lounge: 'Your deck with the brass orbit round the glass, a moon on every collect and the orrery that breaks out when a run is done.',
       quiet: 'Your deck, held still. The same brass and parchment, nothing moving, easiest on battery.'
     },

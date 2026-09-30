@@ -32,7 +32,7 @@
         // stored lands on the default here, and getActiveThemeId() does the
         // same for the rest of the app, so the stale key never needs an
         // explicit migration step.
-        var look = { refinement: 'executive', executive: 'executive', prism: 'prism', neon: 'neon', obsidian: 'obsidian', glitch: 'glitch', western: 'western' };
+        var look = { refinement: 'executive', executive: 'executive', prism: 'prism', neon: 'neon', orrery: 'obsidian', obsidian: 'obsidian', glitch: 'glitch', western: 'western' };
         // Refinement x Realization became the default on 2026-09-28 and
         // everyone was moved onto it once, whatever they had picked - the
         // picker switches back, and the flag keeps that choice from then
@@ -5332,20 +5332,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         }
         soundPref = localStorage.getItem(ROLL_SOUND_KEY);
       } catch (e) { soundPref = null; }
-      // The table the landing flies into after the shot (table.mjs): the
-      // skin's own (see THEMES), or ?dest=card for it under any skin,
-      // ?dest=none for the landing as it always was.
+      // The home the landing flies into after the shot: the skin's own (see
+      // THEMES) - the card table (table.mjs) or the study (study.mjs) - or
+      // ?dest=card / ?dest=study for one under any skin, ?dest=none for the
+      // landing as it always was.
       const destQ = q.get('dest');
-      const tableDest = destQ === 'card' ? destQ : destQ === 'none' ? null : themeTable();
-      const shotFelt = FELT_CHOICES[q.get('felt')] ? q.get('felt') : tableDest ? getFelt() : 'black';
+      const tableDest = ROLL_DESTS[destQ] ? destQ : destQ === 'none' ? null : themeTable();
+      // (the felt and trim are the card table's: another home's shot keeps
+      // the house's black and gold)
+      const shotFelt = FELT_CHOICES[q.get('felt')] ? q.get('felt') : tableDest === 'card' ? getFelt() : 'black';
       // (the trim the same way: ?trim= any, for the lab)
-      const shotTrim = TRIM_CHOICES[q.get('trim')] ? q.get('trim') : tableDest ? getTrim() : 'gold';
+      const shotTrim = TRIM_CHOICES[q.get('trim')] ? q.get('trim') : tableDest === 'card' ? getTrim() : 'gold';
       // (the landing's copy is printed on a light felt: see app.css)
       document.documentElement.setAttribute('data-felt', shotFelt);
       let tablePrep = null, flying = false;
       const prepTable = () => {
         if (!tableDest || tablePrep || !api) return tablePrep;
-        tablePrep = import('./assets/intro3d/table.mjs')
+        tablePrep = import(ROLL_DESTS[tableDest])
           .then(m => m.prepareTable({ scene: api.peek().scene, dest: tableDest, hooks: rollTableHooks(), warm: opts => (api ? api.warm(opts) : null) }))
           .catch(e => { console.warn('table', e); disarmTable(); return null; });
         return tablePrep;
@@ -5367,7 +5370,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const world = api.release();
         screen.classList.add('r3-flying');
         const seatcam = (q.get('seatcam') || '').split(',').map(Number);
-        const session = { world, table: null, stage: null };
+        const session = { world, table: null, stage: null, dest: tableDest };
         rollTableSession = session;
         let table = null;
         try {
@@ -5515,10 +5518,18 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // The table that is up, when one is: the intro's world (its renderer
     // and set), the table controller and the stage they were moved to.
     let rollTableSession = null;
+    // The homes a skin can fly into, and their modules (each exports
+    // prepareTable(): see assets/intro3d/table.mjs).
+    const ROLL_DESTS = { card: './assets/intro3d/table.mjs', study: './assets/intro3d/study.mjs' };
     // The home changes with the skin (selectTheme): a skin with a table
-    // takes the seat now, one without leaves it for the classic home.
+    // takes its seat now - leaving another home first - and one without
+    // leaves it for the classic home.
     function rollSetHome(table) {
-      if (table) { if (!rollTableSession) { closeModals(); rollEnterTable(); } return; }
+      if (table) {
+        if (rollTableSession && rollTableSession.dest !== table) rollLeaveTable();
+        if (!rollTableSession) { closeModals(); rollEnterTable(); }
+        return;
+      }
       rollLeaveTable();
     }
     // Out of the seat: the table and the intro's world go, the classic
@@ -6776,9 +6787,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         bodyBg: 'radial-gradient(circle at 20% 30%, rgba(255, 0, 127, 0.18), transparent 45%), radial-gradient(circle at 80% 60%, rgba(0, 229, 255, 0.18), transparent 45%), radial-gradient(circle at 50% 100%, rgba(0, 255, 102, 0.15), transparent 50%), linear-gradient(135deg, #05070d 0%, #0a0612 50%, #030a14 100%)',
         metaColor: '#05070d'
       },
+      // Obsidian Ledger at Showroom: the study as home (assets/intro3d/
+      // study.mjs) - a grand orrery on a partners' desk, the deck's ready
+      // platforms its planets, and a way inside it. Wears the muted
+      // pairing's palette, set from it after this object.
+      orrery: {
+        name: 'Obsidian Ledger',
+        description: 'A celestial almanac at three levels of show, set above. At Showroom, a throw of the dice, then the study as your home: a grand orrery on the desk, your platforms its planets, and a way inside it; at Lounge and Quiet, the same brass and parchment with less moving.',
+        look: 'obsidian',
+        table: 'study',
+        vars: null,
+        bodyBg: null,
+        metaColor: null
+      },
+      // (Obsidian Ledger's Lounge and Quiet levels: not listed on its own)
       obsidian: {
         name: 'Obsidian Ledger',
-        description: 'Warm dark neutrals with aged brass and sage. Quiet, matte, print-like.',
+        description: 'Its Lounge and Quiet levels. Warm dark neutrals with aged brass and sage - quiet, matte, print-like - an orbit round the glass and the orrery that breaks out when a run is done.',
         vars: {
           '--bg-base': '#161514',
           '--accent-gold': '#b08d57',
@@ -6974,7 +6999,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderFeltUI();
       // (the table's cloth, and its shot's: another skin's shot keeps the
       // house's black)
-      if (!themeTable()) return;
+      if (themeTable() !== 'card') return;
       if (window.rollTable && window.rollTable.setFelt) window.rollTable.setFelt(id);
       else if (window.rollIntroSetFelt) window.rollIntroSetFelt(id);
     }
@@ -6993,7 +7018,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (!TRIM_CHOICES[id]) return;
       try { localStorage.setItem(TRIM_KEY, id); } catch (e) {}
       renderTrimUI();
-      if (!themeTable()) return;
+      // (the card table's: another skin's shot keeps the house's gold)
+      if (themeTable() !== 'card') return;
       if (window.rollTable && window.rollTable.setTrim) window.rollTable.setTrim(id);
       else if (window.rollIntroSetTrim) window.rollIntroSetTrim(id);
     }
@@ -8484,7 +8510,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v76';
+    const APP_BUILD = 'almanac-v77';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
