@@ -861,6 +861,14 @@
       </div>
 
       <div class="theme-settings">
+        <h4>Table trim</h4>
+        <!-- The inlay round the felt: the filigree band and the fine lines
+             either side of it. See TRIM_CHOICES. -->
+        <div id="trimList" class="felt-list trim-list" role="radiogroup" aria-label="Table trim"></div>
+        <div class="backup-helper" style="text-align:left; margin-top:8px;">The inlay round the felt, at Showroom.</div>
+      </div>
+
+      <div class="theme-settings">
         <h4>Theme</h4>
         <div id="themeList" class="theme-grid"></div>
       </div>
@@ -3184,6 +3192,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('settingDenseToggle').checked = document.body.classList.contains('dense');
       renderThemeUI();
       renderFeltUI();
+      renderTrimUI();
       refreshMotionUI();
       if (window.renderShowLevelUI) renderShowLevelUI();
       refreshTZUI();
@@ -5325,6 +5334,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const destQ = q.get('dest');
       const tableDest = destQ === 'card' ? destQ : destQ === 'none' ? null : themeTable();
       const shotFelt = FELT_CHOICES[q.get('felt')] ? q.get('felt') : tableDest ? getFelt() : 'black';
+      // (the trim the same way: ?trim= any, for the lab)
+      const shotTrim = TRIM_CHOICES[q.get('trim')] ? q.get('trim') : tableDest ? getTrim() : 'gold';
       // (the landing's copy is printed on a light felt: see app.css)
       document.documentElement.setAttribute('data-felt', shotFelt);
       let tablePrep = null, flying = false;
@@ -5439,6 +5450,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           // (the felt picked in Settings - the table's, so a skin without
           // one keeps the house's black; ?felt= any, for the lab)
           felt: shotFelt,
+          trim: shotTrim,
           sound: !direct && soundPref !== 'off',
           onReveal: () => screen.classList.add('roll-popped'),
           onEnd: end,
@@ -5453,8 +5465,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       clearTimeout(timer);
       screen.classList.remove('r3-loading');
       screen.removeEventListener('pointerdown', skipWhileLoading);
-      window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; window.rollIntroSetFelt = null; };
+      window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; window.rollIntroSetFelt = null; window.rollIntroSetTrim = null; };
       window.rollIntroSetFelt = id => { if (api && api.setFelt) { api.setFelt(id); document.documentElement.setAttribute('data-felt', id); } };
+      window.rollIntroSetTrim = id => { if (api && api.setTrim) api.setTrim(id); };
       if (direct) {
         // Straight to the seat: the shot is over before it began - the
         // frame it ends on, with the table built into it - and the camera
@@ -6935,15 +6948,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       setTimeout(() => document.body.classList.remove('collect-flash-active'), 500);
     }
 
-    // --- The table's felt (Showroom): the house's black baize, or one of three
-    // lighter cloths - a camel tan, an ivory, a dove grey. A look, kept like
+    // --- The table's felt (Showroom): the house's black baize, one of the
+    // light cloths - a camel tan, an ivory, a dove grey, a pastel lilac, a
+    // cream - or a dark dyed one - chocolate, mahogany, crimson. A look, kept like
     // the theme (and carried by a backup); the table and the shot's own table
     // are dressed with it, and the gold print on the felt takes a dark
     // keyline on the light ones so it reads (assets/intro3d/intro.mjs FELTS,
     // table.mjs). The swatch is the cloth as it looks under the lamp.
     const FELT_KEY = 'almanac_felt_v1';
     // (each swatch the cloth's colour as the table draws it, sampled)
-    const FELT_CHOICES = { black: ['Black', '#1a1612'], tan: ['Tan', '#c2945a'], ivory: ['Ivory', '#ded3bc'], dove: ['Dove grey', '#a49f99'] };
+    const FELT_CHOICES = { black: ['Black', '#1a1612'], tan: ['Tan', '#c2945a'], ivory: ['Ivory', '#ded3bc'], dove: ['Dove grey', '#a49f99'], lilac: ['Pastel purple', '#c4aebc'], cream: ['Cream', '#dccda4'], chocolate: ['Chocolate', '#573e29'], mahogany: ['Mahogany', '#783b2a'], crimson: ['Crimson', '#9f2830'] };
     function getFelt() {
       let v = null;
       try { v = localStorage.getItem(FELT_KEY); } catch (e) { v = null; }
@@ -6958,6 +6972,31 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (!themeTable()) return;
       if (window.rollTable && window.rollTable.setFelt) window.rollTable.setFelt(id);
       else if (window.rollIntroSetFelt) window.rollIntroSetFelt(id);
+    }
+    // --- The trim round the felt (Showroom): the filigree band inlaid in it
+    // and the fine lines either side, in the house's gold or one of four
+    // other inlays (assets/intro3d/intro.mjs TRIMS). Kept and carried like
+    // the felt; the swatch is the inlay under the lamp.
+    const TRIM_KEY = 'almanac_trim_v1';
+    const TRIM_CHOICES = { gold: ['Gold', 'gold'], onyx: ['Shiny onyx', 'onyx'], silver: ['Luminous silver', 'silver'], crimson: ['Pooled crimson', 'crimson'], burgundy: ['Bronzed burgundy', 'burgundy'] };
+    function getTrim() {
+      let v = null;
+      try { v = localStorage.getItem(TRIM_KEY); } catch (e) { v = null; }
+      return TRIM_CHOICES[v] ? v : 'gold';
+    }
+    function setTableTrim(id) {
+      if (!TRIM_CHOICES[id]) return;
+      try { localStorage.setItem(TRIM_KEY, id); } catch (e) {}
+      renderTrimUI();
+      if (!themeTable()) return;
+      if (window.rollTable && window.rollTable.setTrim) window.rollTable.setTrim(id);
+      else if (window.rollIntroSetTrim) window.rollIntroSetTrim(id);
+    }
+    function renderTrimUI() {
+      const list = document.getElementById('trimList');
+      if (!list) return;
+      const cur = getTrim();
+      list.innerHTML = Object.entries(TRIM_CHOICES).map(([id, [name, cls]]) => `<button type="button" class="felt-choice" role="radio" aria-checked="${id === cur}" onclick="setTableTrim('${id}')"><span class="trim-swatch trim-${cls}" aria-hidden="true"></span><span class="felt-name">${name}</span></button>`).join('');
     }
     function renderFeltUI() {
       const list = document.getElementById('feltList');
@@ -8441,7 +8480,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v73';
+    const APP_BUILD = 'almanac-v74';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
@@ -12438,7 +12477,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const ALL_APP_STORAGE_KEYS = [
       'the_casino_almanac_v7', 'the_casino_almanac_history_v1', 'the_casino_almanac_runs_v1',
       LEDGER_KEY, THEME_KEY, 'almanac_tz_v1', NOTIFY_KEY,
-      'almanac_hide_collected', 'almanac_show_landing', 'almanac_dense', VIEW_STATE_KEY, FELT_KEY
+      'almanac_hide_collected', 'almanac_show_landing', 'almanac_dense', VIEW_STATE_KEY, FELT_KEY, TRIM_KEY
     ];
 
     // WHY THE EXCLUSIONS ABOVE, so the next schema bump doesn't have to
@@ -12666,7 +12705,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           hideCollected: typeof p.hideCollected === 'boolean' ? p.hideCollected : null,
           showLanding: typeof p.showLanding === 'boolean' ? p.showLanding : null,
           dense: typeof p.dense === 'boolean' ? p.dense : null,
-          felt: typeof p.felt === 'string' && FELT_CHOICES[p.felt] ? p.felt : null
+          felt: typeof p.felt === 'string' && FELT_CHOICES[p.felt] ? p.felt : null,
+          trim: typeof p.trim === 'string' && TRIM_CHOICES[p.trim] ? p.trim : null
         };
       }
 
@@ -12733,7 +12773,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             hideCollected: localStorage.getItem('almanac_hide_collected') === 'true',
             showLanding: localStorage.getItem('almanac_show_landing') !== 'false',
             dense: localStorage.getItem('almanac_dense') === 'true',
-            felt: localStorage.getItem(FELT_KEY) || null
+            felt: localStorage.getItem(FELT_KEY) || null,
+            trim: localStorage.getItem(TRIM_KEY) || null
           };
         })(),
         viewState: (() => {
@@ -12945,6 +12986,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (typeof p.showLanding === 'boolean') writePref('almanac_show_landing', String(p.showLanding));
         if (typeof p.dense === 'boolean') writePref('almanac_dense', String(p.dense));
         if (typeof p.felt === 'string' && FELT_CHOICES[p.felt]) writePref(FELT_KEY, p.felt);
+        if (typeof p.trim === 'string' && TRIM_CHOICES[p.trim]) writePref(TRIM_KEY, p.trim);
         (prefsOk ? written : failed).push('preferences');
       }
 
