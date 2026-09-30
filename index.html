@@ -842,12 +842,22 @@
       </div>
 
       <div class="theme-settings">
-        <h4>How much show?</h4>
-        <!-- Showroom / Lounge / Quiet: one tap sets the skin and the Motion
-             setting below together (assets/show.js). -->
-        <div id="showLevelList" class="show-levels" role="radiogroup" aria-label="How much show"></div>
+        <h4>Refinement &times; Realization</h4>
+        <!-- One skin at three levels - Showroom / Lounge / Quiet. One tap
+             sets the skin and the Motion setting below together
+             (assets/show.js); the Theme list shows the skin once. -->
+        <div class="backup-helper show-lede">One skin at three levels of show: the same deck and the same gold on each, with more or less of it moving. Showroom is all of it &mdash; the dice, the dealer, the card table as your home.</div>
+        <div id="showLevelList" class="show-levels" role="radiogroup" aria-label="Refinement &times; Realization: how much show"></div>
         <div id="showLevelNote" class="backup-helper" style="text-align:left; margin-top:6px;"></div>
         <button type="button" id="btnPlayPayout" class="btn-dock show-replay" onclick="playPayoutFromSettings()">PLAY THE PAYOUT</button>
+      </div>
+
+      <div class="theme-settings">
+        <h4>Table felt</h4>
+        <!-- The cloth on the card table (Showroom): the house's black, or a
+             lighter one. See FELT_CHOICES. -->
+        <div id="feltList" class="felt-list" role="radiogroup" aria-label="Table felt"></div>
+        <div class="backup-helper" style="text-align:left; margin-top:8px;">The cloth on the card table, at Showroom.</div>
       </div>
 
       <div class="theme-settings">
@@ -3173,6 +3183,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('settingHideCollected').checked = localStorage.getItem('almanac_hide_collected') === 'true';
       document.getElementById('settingDenseToggle').checked = document.body.classList.contains('dense');
       renderThemeUI();
+      renderFeltUI();
       refreshMotionUI();
       if (window.renderShowLevelUI) renderShowLevelUI();
       refreshTZUI();
@@ -5313,11 +5324,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // ?dest=none for the landing as it always was.
       const destQ = q.get('dest');
       const tableDest = destQ === 'card' ? destQ : destQ === 'none' ? null : themeTable();
+      const shotFelt = FELT_CHOICES[q.get('felt')] ? q.get('felt') : tableDest ? getFelt() : 'black';
+      // (the landing's copy is printed on a light felt: see app.css)
+      document.documentElement.setAttribute('data-felt', shotFelt);
       let tablePrep = null, flying = false;
       const prepTable = () => {
         if (!tableDest || tablePrep || !api) return tablePrep;
         tablePrep = import('./assets/intro3d/table.mjs')
-          .then(m => m.prepareTable({ scene: api.peek().scene, dest: tableDest, hooks: rollTableHooks() }))
+          .then(m => m.prepareTable({ scene: api.peek().scene, dest: tableDest, hooks: rollTableHooks(), warm: opts => (api ? api.warm(opts) : null) }))
           .catch(e => { console.warn('table', e); disarmTable(); return null; });
         return tablePrep;
       };
@@ -5422,6 +5436,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           signal: building ? building.signal : null,
           motionOff,
           quality: q.get('quality') || 'auto',
+          // (the felt picked in Settings - the table's, so a skin without
+          // one keeps the house's black; ?felt= any, for the lab)
+          felt: shotFelt,
           sound: !direct && soundPref !== 'off',
           onReveal: () => screen.classList.add('roll-popped'),
           onEnd: end,
@@ -5436,7 +5453,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       clearTimeout(timer);
       screen.classList.remove('r3-loading');
       screen.removeEventListener('pointerdown', skipWhileLoading);
-      window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; };
+      window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; window.rollIntroSetFelt = null; };
+      window.rollIntroSetFelt = id => { if (api && api.setFelt) { api.setFelt(id); document.documentElement.setAttribute('data-felt', id); } };
       if (direct) {
         // Straight to the seat: the shot is over before it began - the
         // frame it ends on, with the table built into it - and the camera
@@ -6519,6 +6537,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try { localStorage.setItem(MOTION_KEY, v); } catch (e) {}
       applyMotionPref();
       refreshMotionUI();
+      // (Lounge or Quiet: the Theme picker marks the level)
+      renderThemeUI();
       if (window.showRefresh) showRefresh();
     }
 
@@ -6564,8 +6584,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // Object.entries(THEMES) with no explicit sort. Refinement x
     // Realization is listed first because it is the default (see
     // getActiveThemeId() and the pre-paint bootstrap above), with
-    // Executive Lounge, its muted pairing, right after it; the renamed
+    // `executive`, its muted pairing, right after it; the renamed
     // western theme is last, demoted out of its old first-and-default slot.
+    //
+    // A pair is one skin to the person using it: the picker lists the
+    // visualized one only, lit while either half is on, and its levels -
+    // Showroom (the visualized skin), Lounge and Quiet (the muted pairing,
+    // motion on or off) - are chosen in Settings' levels block above the
+    // list (assets/show.js). The ids and the stored `almanac_theme_v1`
+    // values stay as they were.
     //
     // Skins come in pairs: a visualized skin and its muted pairing. The
     // visualized one has the effects - the WebGL landing shot, the fly-in
@@ -6581,7 +6608,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const THEMES = {
       refinement: {
         name: 'Refinement × Realization',
-        description: 'The visualized skin. A throw of the dice, then the card table as your home: the deck dealt to you by an arm that rises out of the table, the rail your clock, your phone for the rest.',
+        description: 'Gold on black at three levels of show, set above. At Showroom, a throw of the dice, then the card table as your home, the deck dealt to you by an arm that rises out of the table; at Lounge and Quiet, the same room with less moving.',
         look: 'executive',
         table: 'card',
         // (the palette, background and colour are Executive Lounge's - set
@@ -6601,9 +6628,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // and note this theme's vars are also the app's base :root now, so
       // most of what used to be a per-theme override for it has folded
       // into the base and this override block is comparatively small.
+      // (Refinement x Realization's Lounge and Quiet levels, once called
+      // Executive Lounge - the name the stylesheet's [data-theme="executive"]
+      // rules and AGENTS.md still use for its room; not listed on its own)
       executive: {
-        name: 'Executive Lounge',
-        description: 'The muted pairing of Refinement × Realization. Clean black cards on brushed obsidian, one warm light swaying slowly through the room, a little gold dust: no shot, no table - built for readability and easy eyes.',
+        name: 'Refinement × Realization',
+        description: 'Its Lounge and Quiet levels. Clean black cards on brushed obsidian, one warm light swaying slowly through the room, a little gold dust: no shot, no table - built for readability and easy eyes.',
         vars: {
           // The brief's obsidian: matte, not pure black.
           '--bg-base': '#0B0C10',
@@ -6905,6 +6935,37 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       setTimeout(() => document.body.classList.remove('collect-flash-active'), 500);
     }
 
+    // --- The table's felt (Showroom): the house's black baize, or one of three
+    // lighter cloths - a camel tan, an ivory, a dove grey. A look, kept like
+    // the theme (and carried by a backup); the table and the shot's own table
+    // are dressed with it, and the gold print on the felt takes a dark
+    // keyline on the light ones so it reads (assets/intro3d/intro.mjs FELTS,
+    // table.mjs). The swatch is the cloth as it looks under the lamp.
+    const FELT_KEY = 'almanac_felt_v1';
+    // (each swatch the cloth's colour as the table draws it, sampled)
+    const FELT_CHOICES = { black: ['Black', '#1a1612'], tan: ['Tan', '#c2945a'], ivory: ['Ivory', '#ded3bc'], dove: ['Dove grey', '#a49f99'] };
+    function getFelt() {
+      let v = null;
+      try { v = localStorage.getItem(FELT_KEY); } catch (e) { v = null; }
+      return FELT_CHOICES[v] ? v : 'black';
+    }
+    function setFelt(id) {
+      if (!FELT_CHOICES[id]) return;
+      try { localStorage.setItem(FELT_KEY, id); } catch (e) {}
+      renderFeltUI();
+      // (the table's cloth, and its shot's: another skin's shot keeps the
+      // house's black)
+      if (!themeTable()) return;
+      if (window.rollTable && window.rollTable.setFelt) window.rollTable.setFelt(id);
+      else if (window.rollIntroSetFelt) window.rollIntroSetFelt(id);
+    }
+    function renderFeltUI() {
+      const list = document.getElementById('feltList');
+      if (!list) return;
+      const cur = getFelt();
+      list.innerHTML = Object.entries(FELT_CHOICES).map(([id, [name, hex]]) => `<button type="button" class="felt-choice" role="radio" aria-checked="${id === cur}" onclick="setFelt('${id}')"><span class="felt-swatch" style="--felt:${hex}" aria-hidden="true"></span><span class="felt-name">${name}</span></button>`).join('');
+    }
+
     function selectTheme(themeId) {
       if (!THEMES[themeId]) return;
       const was = getActiveThemeId();
@@ -6917,18 +6978,31 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (window.showRefresh) showRefresh();
     }
 
+    // A skin picked from the list: onto it at its first level - or, already
+    // on it at any level, to its levels above the list.
+    function pickSkin(themeId) {
+      if (!THEMES[themeId]) return;
+      const cur = THEMES[getActiveThemeId()];
+      if (themeId !== getActiveThemeId() && !(cur && cur.visual === themeId)) { selectTheme(themeId); return; }
+      const levels = document.getElementById('showLevelList');
+      if (levels && THEMES[themeId].look) levels.scrollIntoView({ block: 'center', behavior: document.documentElement.getAttribute('data-motion') === 'off' ? 'auto' : 'smooth' });
+    }
+
     function renderThemeUI() {
       const list = document.getElementById('themeList');
       if (!list) return;
       const active = getActiveThemeId();
-      list.innerHTML = Object.entries(THEMES).map(([id, t]) => {
-        const isActive = id === active;
+      // (a pair is listed once, as its visualized skin - see THEMES)
+      list.innerHTML = Object.entries(THEMES).filter(([, t]) => !t.visual).map(([id, t]) => {
+        const isActive = id === active || (!!t.look && THEMES[active].visual === id);
         const swatches = [t.vars['--accent-cyan'], t.vars['--accent-pink'], t.vars['--accent-gold'], t.vars['--accent-green']]
           .map(c => `<div class="theme-swatch" style="background:${c}"></div>`).join('');
-        // (the pair: a visualized skin and its muted take, each naming the other)
-        const pair = t.look ? `Visualized · muted take: ${escHtml(THEMES[t.look].name)}`
-          : t.visual ? `Muted · visualized take: ${escHtml(THEMES[t.visual].name)}` : '';
-        return `<div class="theme-card ${isActive ? 'active' : ''}${t.look ? ' theme-visual' : ''}" onclick="selectTheme('${id}')">
+        // (its levels, the one it is at marked)
+        const level = isActive && window.showLevel ? window.showLevel() : null;
+        const pair = t.look && window.showLevelNames
+          ? window.showLevelNames().map(([lv, name]) => lv === level ? `<b>${escHtml(name)}</b>` : escHtml(name)).join(' · ')
+          : '';
+        return `<div class="theme-card ${isActive ? 'active' : ''}${t.look ? ' theme-visual' : ''}" onclick="pickSkin('${id}')">
           <div class="theme-info">
             <span class="theme-name">${escHtml(t.name)}${isActive ? '<span class="active-tag">ACTIVE</span>' : ''}</span>
             <span class="theme-desc">${escHtml(t.description)}</span>
@@ -12364,7 +12438,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const ALL_APP_STORAGE_KEYS = [
       'the_casino_almanac_v7', 'the_casino_almanac_history_v1', 'the_casino_almanac_runs_v1',
       LEDGER_KEY, THEME_KEY, 'almanac_tz_v1', NOTIFY_KEY,
-      'almanac_hide_collected', 'almanac_show_landing', 'almanac_dense', VIEW_STATE_KEY
+      'almanac_hide_collected', 'almanac_show_landing', 'almanac_dense', VIEW_STATE_KEY, FELT_KEY
     ];
 
     // WHY THE EXCLUSIONS ABOVE, so the next schema bump doesn't have to
@@ -12591,7 +12665,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           notify: sanitizeNotifyPrefs(p.notify),
           hideCollected: typeof p.hideCollected === 'boolean' ? p.hideCollected : null,
           showLanding: typeof p.showLanding === 'boolean' ? p.showLanding : null,
-          dense: typeof p.dense === 'boolean' ? p.dense : null
+          dense: typeof p.dense === 'boolean' ? p.dense : null,
+          felt: typeof p.felt === 'string' && FELT_CHOICES[p.felt] ? p.felt : null
         };
       }
 
@@ -12657,7 +12732,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             },
             hideCollected: localStorage.getItem('almanac_hide_collected') === 'true',
             showLanding: localStorage.getItem('almanac_show_landing') !== 'false',
-            dense: localStorage.getItem('almanac_dense') === 'true'
+            dense: localStorage.getItem('almanac_dense') === 'true',
+            felt: localStorage.getItem(FELT_KEY) || null
           };
         })(),
         viewState: (() => {
@@ -12868,6 +12944,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (typeof p.hideCollected === 'boolean') writePref('almanac_hide_collected', String(p.hideCollected));
         if (typeof p.showLanding === 'boolean') writePref('almanac_show_landing', String(p.showLanding));
         if (typeof p.dense === 'boolean') writePref('almanac_dense', String(p.dense));
+        if (typeof p.felt === 'string' && FELT_CHOICES[p.felt]) writePref(FELT_KEY, p.felt);
         (prefsOk ? written : failed).push('preferences');
       }
 
