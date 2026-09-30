@@ -5032,3 +5032,68 @@ html[data-motion="off"][data-theme="neon"] .casino-name { font-size: 1.22rem; }
 html[data-motion="off"][data-theme="neon"] .status-time { font-size: 0.95em; }
 html[data-motion="off"][data-theme="neon"] .card-status .ready-at,
 html[data-motion="off"][data-theme="neon"] .cooldown-chip { color: #b9c6db; }
+
+/* The arcade (Showroom: assets/intro3d/arcade.mjs). The CRT's high-score
+   table, laid on the tube under the glass: phosphor on black - each line
+   glowing in its own colour, the ranks cycling through them as an old
+   attract screen does - with the tube's scanlines and its dimming corners
+   over it all. Held at 30 page pixels to the centimetre (a 25-inch tube's
+   37 x 49 cm picture: 1110 x 1470) and scaled down in 3D, so it is
+   rasterised sharp. The two buttons are at the top, clear of the phone
+   lying in the corner; the rows start 420 px down, 145 px each: the card a
+   row gives up rises from there (arcade.mjs rowAt). */
+/* (no overflow clipping on the page itself: a clipped 3D-transformed
+   element stops taking taps) */
+.r3a-screen { pointer-events: auto; color: #e2f1ec; font-family: 'Rajdhani', 'Orbitron', sans-serif; line-height: 1; }
+.r3a-screen-in { position: absolute; inset: 0; border-radius: 26px; background: #04030a; }
+.r3a-screen.r3a-far { cursor: zoom-in; }
+.r3a-screen.r3a-far .r3a-screen-in > * { pointer-events: none; }
+.r3a-screen-in::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 26px;
+  background: repeating-linear-gradient(180deg, rgba(0,0,0,0.34) 0 2px, transparent 2px 5px), radial-gradient(120% 90% at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%); }
+.r3a-screen-in > * { position: absolute; left: 70px; right: 70px; margin: 0; }
+.r3a-top { top: 64px; display: flex; justify-content: space-between; align-items: baseline; }
+.r3a-title { font-family: 'Orbitron', 'Rajdhani', sans-serif; font-weight: 700; font-size: 64px; letter-spacing: 0.06em; color: #ff2d95; text-shadow: 0 0 10px rgba(255,45,149,0.8), 0 0 28px rgba(255,45,149,0.45); }
+.r3a-clock { font-family: 'Orbitron', 'Rajdhani', sans-serif; color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.8), 0 0 26px rgba(0,229,255,0.4); }
+.r3a-now { font-weight: 700; font-size: 76px; font-variant-numeric: tabular-nums; }
+.r3a-ampm { font-weight: 500; font-size: 34px; margin-left: 10px; }
+.r3a-sub { top: 176px; display: flex; justify-content: space-between; align-items: baseline; font-weight: 700; font-size: 54px; letter-spacing: 0.04em; }
+.r3a-ready { color: #00ff66; text-shadow: 0 0 10px rgba(0,255,102,0.7); }
+.r3a-value { color: #ffcc00; font-size: 50px; text-shadow: 0 0 10px rgba(255,204,0,0.6); }
+.r3a-rows { top: 420px; display: flex; flex-direction: column; }
+.r3a-row { position: relative; display: grid; grid-template-columns: 150px 1fr auto; align-items: center; height: 145px; width: 100%; padding: 0; margin: 0; border: 0; border-top: 2px dashed rgba(226,241,236,0.10); background: none; cursor: pointer; text-align: left;
+  font-family: 'Rajdhani', 'Orbitron', sans-serif; font-weight: 700; color: var(--r3a-c, #e2f1ec); text-shadow: 0 0 10px var(--r3a-g, rgba(226,241,236,0.5)); }
+.r3a-row:first-child { border-top: 0; }
+.r3a-rank { font-family: 'Orbitron', 'Rajdhani', sans-serif; font-size: 48px; opacity: 0.9; }
+.r3a-name { font-size: 70px; letter-spacing: 0.04em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.r3a-st { font-family: 'Orbitron', 'Rajdhani', sans-serif; font-size: 44px; padding-left: 20px; color: #00ff66; text-shadow: 0 0 10px rgba(0,255,102,0.6); }
+.r3a-st.r3a-wait { color: rgba(226,241,236,0.62); text-shadow: none; }
+.r3a-row:nth-child(1) { --r3a-c: #ff2d95; --r3a-g: rgba(255,45,149,0.7); }
+.r3a-row:nth-child(2) { --r3a-c: #ff8a1f; --r3a-g: rgba(255,138,31,0.7); }
+.r3a-row:nth-child(3) { --r3a-c: #ffcc00; --r3a-g: rgba(255,204,0,0.6); }
+.r3a-row:nth-child(4) { --r3a-c: #00ff66; --r3a-g: rgba(0,255,102,0.6); }
+.r3a-row:nth-child(5) { --r3a-c: #00e5ff; --r3a-g: rgba(0,229,255,0.6); }
+.r3a-row:nth-child(6) { --r3a-c: #b18cff; --r3a-g: rgba(139,92,246,0.7); }
+.r3a-row.r3a-empty { cursor: default; opacity: 0.32; }
+.r3a-row:active:not(.r3a-empty) { background: rgba(226,241,236,0.06); }
+.r3a-run { top: 262px; right: auto; width: 520px; height: 112px; border: 4px solid #ff2d95; border-radius: 14px; background: rgba(255,45,149,0.14); cursor: pointer;
+  font-family: 'Orbitron', 'Rajdhani', sans-serif; font-weight: 700; font-size: 50px; letter-spacing: 0.06em; color: #fff;
+  text-shadow: 0 0 10px rgba(255,45,149,0.9); box-shadow: 0 0 22px rgba(255,45,149,0.55), inset 0 0 22px rgba(255,45,149,0.35); }
+.r3a-run:active { background: rgba(255,45,149,0.3); }
+.r3a-dive { top: 262px; left: auto; width: 410px; height: 112px; border: 4px solid #00e5ff; border-radius: 14px; background: rgba(0,229,255,0.1); cursor: pointer; font-family: 'Orbitron', 'Rajdhani', sans-serif; font-weight: 700; font-size: 42px; letter-spacing: 0.04em; color: #fff; text-shadow: 0 0 10px rgba(0,229,255,0.9); box-shadow: 0 0 20px rgba(0,229,255,0.45), inset 0 0 20px rgba(0,229,255,0.3); }
+.r3a-dive:active { background: rgba(0,229,255,0.24); }
+.r3a-foot { top: 1338px; text-align: center; font-weight: 600; font-size: 36px; letter-spacing: 0.14em; color: #ffcc00; opacity: 0.85; animation: r3a-blink 1.6s steps(1, end) infinite; }
+@keyframes r3a-blink { 50% { opacity: 0.15; } }
+html[data-motion="off"] .r3a-foot { animation: none; }
+.r3a-screen :focus-visible { outline: 5px solid #00e5ff; outline-offset: 4px; }
+/* Inside the game, the way out: a neon-edged plate at the top. */
+.r3a-out { position: absolute; top: max(16px, env(safe-area-inset-top)); left: 50%; transform: translate(-50%, -12px); opacity: 0; visibility: hidden; pointer-events: auto;
+  padding: 11px 18px; border-radius: 10px; border: 1.5px solid #00e5ff; background: rgba(5,4,9,0.8); color: #e2f1ec; cursor: pointer;
+  font-family: 'Orbitron', 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+  box-shadow: 0 0 14px rgba(0,229,255,0.45); transition: opacity .5s ease, transform .5s ease, visibility 0s linear .5s; }
+.r3a-out.r3a-on { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition: opacity .6s ease .1s, transform .6s ease .1s, visibility 0s; }
+.r3a-out:focus-visible { outline: 2px solid #ff2d95; outline-offset: 3px; }
+html[data-motion="off"] .r3a-out { transition: none; }
+/* Leaning in, the way back to the seat: the same plate, in the corner,
+   clear of the tube's title. */
+.r3a-out.r3a-back { left: max(14px, env(safe-area-inset-left)); transform: translate(0, -12px); }
+.r3a-out.r3a-back.r3a-on { transform: translate(0, 0); }
