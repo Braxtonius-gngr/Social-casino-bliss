@@ -1060,6 +1060,9 @@ export async function prepareTable(opts) {
 
     // ---- The frame at time tt (seconds from the tap).
     let tNow = 0, arrived = false, pulseT0 = 0;
+    // (a plate takes the keyboard's focus on the frame it shows: a hidden
+    // one can't hold it)
+    let focusOut = false, focusBack = false;
     const flyEye = V(0, 0, 0), qTable = new THREE.Quaternion(), qSeat = new THREE.Quaternion();
     const placeCamera = tt => {
       camera.up.copy(up);
@@ -1135,8 +1138,11 @@ export async function prepareTable(opts) {
       poseCard(tt);
       screenEl.style.opacity = uiK.toFixed(3);
       screenEl.style.visibility = uiK <= 0.001 ? 'hidden' : '';
-      outEl.classList.toggle('r3a-on', dive >= 0.999 && diveTo === 1);
-      backEl.classList.toggle('r3a-on', focus >= 0.999 && focusTo === 1 && dive <= 0 && diveTo === 0);
+      const outOn = dive >= 0.999 && diveTo === 1, backOn = focus >= 0.999 && focusTo === 1 && dive <= 0 && diveTo === 0;
+      outEl.classList.toggle('r3a-on', outOn);
+      backEl.classList.toggle('r3a-on', backOn);
+      if (outOn && focusOut) { focusOut = false; outEl.focus({ preventScroll: true }); }
+      if (backOn && focusBack) { focusBack = false; backEl.focus({ preventScroll: true }); }
       put(q('.r3a-foot'), focusTo === 1 ? 'TAP A NAME FOR ITS CARD' : 'TAP THE SCREEN TO LEAN IN');
       screenEl.classList.toggle('r3a-far', focusTo !== 1);
       const stg = world.canvas.parentElement;
@@ -1180,6 +1186,7 @@ export async function prepareTable(opts) {
       const to = on ? 1 : 0;
       if (focusTo === to || diveTo !== 0 || dive > 0) return;
       if (!on) putBack();
+      focusBack = on;
       focusFrom = focus; focusTo = to; focusT0 = tNow;
       wake();
     };
@@ -1190,7 +1197,8 @@ export async function prepareTable(opts) {
       if (diveTo === to) return;
       putBack();
       diveFrom = dive; diveTo = to; diveT0 = tNow;
-      if (on) { pulseT0 = tNow + T.dive; outEl.focus({ preventScroll: true }); }
+      focusOut = on; focusBack = false;
+      if (on) pulseT0 = tNow + T.dive;
       wake();
     };
 
