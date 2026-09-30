@@ -264,7 +264,7 @@ export function createBreakout() {
   let moon = null, halo = null, floor = null, floorM = null, tree = null, ring = null, from = null, to = null, F = 200, Rm = 150, MZ = -900;
 
   function canWebGL() {
-    try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) { return false; }
+    try { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); } catch (e) { return false; }
   }
   function setup() {
     if (renderer) return true;
