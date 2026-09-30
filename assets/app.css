@@ -1310,16 +1310,16 @@
        table's own print is: dark ink, the gold keylined in umber, the
        button a disc of black lacquer. No veil: a dark veil on a light cloth
        reads as a smudge, not a shade - just a breath of light under it. */
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"]) .landing-screen.roll-webgl:is(.roll-popped, .roll-rest) .landing-inner::before { background: radial-gradient(ellipse 72% 56% at 50% 50%, rgba(255,250,238,0.2) 0%, rgba(255,250,238,0.1) 55%, transparent 88%); }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"]) .landing-screen.roll-webgl .landing-title { color: #1c140c; text-shadow: none; }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"]) .landing-screen.roll-webgl .landing-title span,
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"]) .landing-screen.roll-webgl .landing-title::after { filter: drop-shadow(0 0 0.6px #1a1108) drop-shadow(0 0 0.6px #1a1108) drop-shadow(0 1px 1px rgba(26,17,8,0.5)); }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"]) .landing-screen.roll-webgl .landing-tagline { color: #36281a; }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"]) .landing-screen.roll-webgl .landing-subtitle { color: rgba(34,25,15,0.84); }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"]) .landing-screen.roll-webgl .landing-btn { background: #16110b; border-color: #16110b; color: var(--accent-gold); box-shadow: 0 2px 10px rgba(26,17,8,0.35); }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"]) .landing-screen.roll-webgl .landing-btn:hover { background: #231a10; }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"]) .landing-screen.roll-webgl .landing-legal { color: #36281a; }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"]) .landing-screen.roll-webgl .landing-legal a { color: #1c140c; }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl:is(.roll-popped, .roll-rest) .landing-inner::before { background: radial-gradient(ellipse 72% 56% at 50% 50%, rgba(255,250,238,0.2) 0%, rgba(255,250,238,0.1) 55%, transparent 88%); }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-title { color: #1c140c; text-shadow: none; }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-title span,
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-title::after { filter: drop-shadow(0 0 0.6px #1a1108) drop-shadow(0 0 0.6px #1a1108) drop-shadow(0 1px 1px rgba(26,17,8,0.5)); }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-tagline { color: #36281a; }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-subtitle { color: rgba(34,25,15,0.84); }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-btn { background: #16110b; border-color: #16110b; color: var(--accent-gold); box-shadow: 0 2px 10px rgba(26,17,8,0.35); }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-btn:hover { background: #231a10; }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-legal { color: #36281a; }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-legal a { color: #1c140c; }
     .landing-screen.intro-play.roll-popped .landing-title { animation: roll-title-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s both; }
     .landing-screen.intro-play.roll-popped .landing-tagline { animation: roll-rise 0.6s ease-out 0.95s both; }
     .landing-screen.intro-play.roll-popped .landing-subtitle { animation: roll-rise 0.6s ease-out 1.15s both; }
@@ -4639,8 +4639,21 @@ html[data-motion="off"][data-theme="executive"] .cooldown-chip { color: #AEB1B8;
 /* ---- The table's felt (Settings): four cloths, each a swatch of the
    cloth as it lies under the lamp - a disc of it with its nap and a gold
    hairline, ringed in gold when picked. */
-.felt-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.felt-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .felt-choice { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 10px 4px 9px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.02); color: var(--text-muted); font-family: inherit; font-size: 12px; font-weight: 600; line-height: 1.2; letter-spacing: 0.04em; cursor: pointer; }
 .felt-choice[aria-checked="true"] { border-color: var(--accent-gold); color: var(--text-main); background: var(--accent-gold-dim); }
 .felt-swatch { width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(90% 90% at 38% 30%, rgba(255,240,215,0.22), transparent 62%), repeating-linear-gradient(45deg, rgba(0,0,0,0.08) 0 1px, transparent 1px 3px), var(--felt); box-shadow: inset 0 0 0 1.5px rgba(212,175,55,0.55), inset 0 -6px 10px rgba(0,0,0,0.35), 0 2px 5px rgba(0,0,0,0.4); }
 .felt-choice[aria-checked="true"] .felt-swatch { box-shadow: inset 0 0 0 1.5px rgba(212,175,55,0.8), inset 0 -6px 10px rgba(0,0,0,0.35), 0 0 0 2px var(--accent-gold), 0 2px 8px rgba(212,175,55,0.35); }
+/* The trim picker: each swatch a short length of the inlay under the lamp -
+   the band's scroll suggested by a fine repeat, the metal's own highlight
+   across it (see TRIMS in assets/intro3d/intro.mjs). */
+.trim-list { grid-template-columns: repeat(3, 1fr); }
+.trim-swatch { width: 40px; height: 40px; border-radius: 50%; position: relative; overflow: hidden; background: var(--trim-metal); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.55), inset 0 -6px 10px rgba(0,0,0,0.35), 0 2px 5px rgba(0,0,0,0.4); }
+.trim-swatch::before { content: ""; position: absolute; inset: 0; background: repeating-radial-gradient(circle at 30% 70%, rgba(0,0,0,0.12) 0 1px, transparent 1.5px 4px), repeating-linear-gradient(90deg, rgba(0,0,0,0.1) 0 1px, transparent 1px 6px); mix-blend-mode: multiply; }
+.trim-swatch::after { content: ""; position: absolute; inset: 0; background: linear-gradient(125deg, transparent 30%, rgba(255,255,255,var(--trim-spec, 0.55)) 46%, transparent 58%); }
+.trim-gold { --trim-metal: linear-gradient(160deg, #f3da92 0%, #d4af37 45%, #8f6a1c 100%); }
+.trim-onyx { --trim-metal: radial-gradient(90% 90% at 35% 30%, #2a2a30 0%, #0c0c0f 55%, #030304 100%); --trim-spec: 0.8; }
+.trim-silver { --trim-metal: linear-gradient(160deg, #ffffff 0%, #d9dde3 45%, #8e949c 100%); --trim-spec: 0.7; }
+.trim-crimson { --trim-metal: radial-gradient(90% 90% at 35% 30%, #ff5068 0%, #c0162e 45%, #4e0410 100%); --trim-spec: 0.75; }
+.trim-burgundy { --trim-metal: linear-gradient(160deg, #c46a5c 0%, #86342f 45%, #3e1214 100%); --trim-spec: 0.35; }
+.felt-choice[aria-checked="true"] .trim-swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.55), inset 0 -6px 10px rgba(0,0,0,0.35), 0 0 0 2px var(--accent-gold), 0 2px 8px rgba(212,175,55,0.35); }
