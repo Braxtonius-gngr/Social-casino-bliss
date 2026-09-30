@@ -255,6 +255,10 @@ function buildRing(R, run) {
 }
 
 // ------------------------------------------------------------ the breakout
+// (the moon's face and the soft glow are also the arcade's - its rooftop
+// moon and the game's, assets/intro3d/arcade.mjs - so the three are one moon)
+export { moonTex, glowTex };
+
 export function createBreakout() {
   let renderer = null, back = null, back2d = null, front = null, front2d = null, scene = null, camera = null;
   let key = null, moonLight = null, ringLight = null, catcher = null, glass = null, raf = 0;

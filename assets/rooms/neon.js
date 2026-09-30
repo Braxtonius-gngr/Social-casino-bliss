@@ -292,7 +292,19 @@
   }
 
   // ---------- The levels' art ----------
+  // Showroom: the cabinet seen from the seat - the glowing table under the
+  // glass, the stick at your end, the window's mullions over it and the red
+  // moon low over the roofs.
+  var MINI_ARCADE = '<svg class="show-mini" viewBox="0 0 56 56" aria-hidden="true"><defs><linearGradient id="nnSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#07060F"/><stop offset=".7" stop-color="#3a0f45"/><stop offset="1" stop-color="#b0266a"/></linearGradient></defs><rect width="56" height="56" rx="12" fill="#07060F"/>' +
+    '<rect x="4" y="5" width="48" height="24" fill="url(#nnSky)"/><circle cx="23" cy="24" r="6.5" fill="#FF2D55"/><path d="M16 24.6h14M16.4 26.4h13.2M17.2 28h11.6" stroke="#3a0f45" stroke-width=".7"/>' +
+    '<path d="M4 23h9v6H4zM31 21h7v8h-7zM41 19h11v10H41z" fill="#0a0910"/><path d="M36 16.5h5v4h-5zM36.8 20.5v2M40.2 20.5v2" fill="#120c14" stroke="#120c14" stroke-width=".6"/>' +
+    '<path d="M4 5v24M16 5v24M28 5v24M40 5v24M52 5v24M4 13h48M4 21h48" stroke="#0b0b0d" stroke-width="1.1"/>' +
+    '<path d="M10 33 L46 33 L53 55 L3 55 Z" fill="#0d0c10"/><path d="M11.5 34.2 L44.5 34.2 L50.6 53.8 L5.4 53.8 Z" fill="none" stroke="#ff1f8e" stroke-width=".7"/>' +
+    '<path d="M18 36 L38 36 L41 50 L15 50 Z" fill="#05030a" stroke="#00e5ff" stroke-width=".5"/>' +
+    '<path d="M20 39.5h8M20 42.5h11M20 45.5h6" stroke="#ff2d95" stroke-width="1"/><path d="M30 39.5h4M33 42.5h3M28 45.5h5" stroke="#00ff66" stroke-width="1"/>' +
+    '<circle cx="14" cy="53" r="1.8" fill="#d8102e"/></svg>';
   function mini(level) {
+    if (level === 'showroom') return MINI_ARCADE;
     var lounge = level === 'lounge';
     var rainbow = '<linearGradient id="nnMini" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff007f"/><stop offset=".3" stop-color="#ffcc00"/><stop offset=".55" stop-color="#00ff66"/><stop offset=".8" stop-color="#00e5ff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>';
     return '<svg class="show-mini" viewBox="0 0 56 56" aria-hidden="true"><defs>' + rainbow + '</defs><rect width="56" height="56" rx="12" fill="#07060F"/>' +
@@ -334,11 +346,12 @@
 
   window.showAddRoom('neon', {
     name: 'Neon Grid',
-    lede: 'Synthwave night at two levels of show: the same neon and the same grid on each, with more or less of it moving.',
-    showroom: null,
+    lede: 'Synthwave night at three levels of show: the same neon and the same grid on each, with more or less of it moving. Showroom is all of it — the dice, then the arcade, its cabinet and a way into the game.',
+    showroom: 'arcade',
     muted: 'neon',
     copy: {
-      lounge: 'Your deck inside a neon tube that lights with the day’s run, beads rising on every collect and the moon that rises when a run is done.',
+      showroom: 'The arcade stays your home: a cocktail cabinet by a rooftop window, your platforms its high scores, and a way into the game. Uses the most battery.',
+      lounge: 'Your deck inside a neon tube, a ring that lights with the day’s run, beads rising on every collect and the moon that rises when a run is done.',
       quiet: 'Your deck, held still. The same neon, nothing moving, easiest on battery.'
     },
     mini: mini,

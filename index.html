@@ -32,7 +32,7 @@
         // stored lands on the default here, and getActiveThemeId() does the
         // same for the rest of the app, so the stale key never needs an
         // explicit migration step.
-        var look = { refinement: 'executive', executive: 'executive', prism: 'prism', neon: 'neon', orrery: 'obsidian', obsidian: 'obsidian', glitch: 'glitch', western: 'western' };
+        var look = { refinement: 'executive', executive: 'executive', prism: 'prism', arcade: 'neon', neon: 'neon', orrery: 'obsidian', obsidian: 'obsidian', glitch: 'glitch', western: 'western' };
         // Refinement x Realization became the default on 2026-09-28 and
         // everyone was moved onto it once, whatever they had picked - the
         // picker switches back, and the flag keeps that choice from then
@@ -5334,8 +5334,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         soundPref = localStorage.getItem(ROLL_SOUND_KEY);
       } catch (e) { soundPref = null; }
       // The home the landing flies into after the shot: the skin's own (see
-      // THEMES) - the card table (table.mjs) or the study (study.mjs) - or
-      // ?dest=card / ?dest=study for one under any skin, ?dest=none for the
+      // THEMES) - the card table (table.mjs), the study (study.mjs) or the
+      // arcade (arcade.mjs) - or ?dest=card / ?dest=study / ?dest=arcade for
+      // one under any skin, ?dest=none for the
       // landing as it always was.
       const destQ = q.get('dest');
       const tableDest = ROLL_DESTS[destQ] ? destQ : destQ === 'none' ? null : themeTable();
@@ -5521,7 +5522,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     let rollTableSession = null;
     // The homes a skin can fly into, and their modules (each exports
     // prepareTable(): see assets/intro3d/table.mjs).
-    const ROLL_DESTS = { card: './assets/intro3d/table.mjs', study: './assets/intro3d/study.mjs' };
+    const ROLL_DESTS = { card: './assets/intro3d/table.mjs', study: './assets/intro3d/study.mjs', arcade: './assets/intro3d/arcade.mjs' };
     // The home changes with the skin (selectTheme): a skin with a table
     // takes its seat now - leaving another home first - and one without
     // leaves it for the classic home.
@@ -6759,9 +6760,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         bodyBg: 'radial-gradient(90% 60% at 8% -5%, rgba(255,138,31,0.10) 0%, transparent 55%), radial-gradient(90% 60% at 95% 25%, rgba(255,47,176,0.09) 0%, transparent 55%), radial-gradient(80% 55% at 50% 105%, rgba(164,92,255,0.10) 0%, transparent 60%), radial-gradient(120% 90% at 50% -10%, #16180f 0%, #0d0e0b 45%, #070807 100%)',
         metaColor: '#0a0b0a'
       },
+      // Neon Grid at Showroom: the arcade as home (assets/intro3d/
+      // arcade.mjs) - a cocktail-table cabinet by a rooftop bar's window,
+      // the deck's ready platforms its high-score table, and a way into the
+      // game along its grid. Wears the muted pairing's palette.
+      arcade: {
+        name: 'Neon Grid',
+        description: 'Synthwave night at three levels of show, set above. At Showroom, a throw of the dice, then the arcade as your home: a cocktail cabinet by a rooftop window, your platforms its high scores, and a way into the game; at Lounge and Quiet, the same neon with less moving.',
+        look: 'neon',
+        table: 'arcade',
+        vars: null,
+        bodyBg: null,
+        metaColor: null
+      },
+      // (Neon Grid's Lounge and Quiet levels: not listed on its own)
       neon: {
         name: 'Neon Grid',
-        description: 'High-contrast cyberpunk. Cyan and magenta on near-black, with glow.',
+        description: 'Its Lounge and Quiet levels. Cyan and magenta on near-black: a rainbow tube round the glass, a neon ring for the day\'s run, and the moon that rises when a run is done.',
         vars: {
           '--bg-base': '#070a10',
           '--accent-gold': '#ffcc00',
@@ -8511,7 +8526,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v79';
+    const APP_BUILD = 'almanac-v80';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads

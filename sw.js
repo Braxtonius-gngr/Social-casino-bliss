@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v79';
+const CACHE_NAME = 'almanac-v80';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -31,7 +31,7 @@ const PRECACHE_URLS = [
   './', './index.html', './manifest.json', './apple-touch-icon.png', './assets/icon-192.webp', './assets/icon-512.webp',
   './assets/app.css', './assets/accessibility.css', './assets/accessibility.js', './assets/storage.js', './assets/show.js',
   // each skin room past the default one (see show.js)
-  './assets/rooms/obsidian.js', './assets/rooms/neon.js', './assets/intro3d/moonrise.mjs',
+  './assets/rooms/obsidian.js', './assets/rooms/neon.js', './assets/intro3d/moonrise.mjs', './assets/intro3d/arcade.mjs',
   './data/catalog.js', './utils/cleanDropUrl.js', './utils/classifyDropText.js',
   // the Executive Lounge ground
   './assets/background.webp',
