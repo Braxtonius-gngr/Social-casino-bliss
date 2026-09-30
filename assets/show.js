@@ -1,10 +1,12 @@
 /* assets/show.js
-   How much show: the three amounts of it in the Executive room, and the
-   pieces that only the lively two of them carry.
+   How much show: the three levels of Refinement x Realization - one skin to
+   the person using it, listed once in the Theme picker - and the pieces
+   that only the lively two of them carry.
 
-   - Showroom is Refinement x Realization (the card table as home).
-   - Lounge is Executive Lounge with motion on.
-   - Quiet is Executive Lounge with Motion set to Off - the pairing the app
+   - Showroom is the visualized skin, `refinement` (the card table as home).
+   - Lounge is its muted pairing, `executive` (the Executive room), with
+     motion on.
+   - Quiet is the same pairing with Motion set to Off - the pairing the app
      already defines (see "Theme Work" in AGENTS.md). Nothing here stores a
      level of its own: the level is read back from the skin and the motion
      setting, and choosing one sets both.
@@ -146,7 +148,7 @@
     if (level === 'lounge' && !motionOn()) {
       return 'This device is asking for reduced motion, so Lounge holds still like Quiet. Set Animations to "Always on" below to see it move.';
     }
-    if (level === null) return 'You are on another skin. Pick one of these to move into the Executive room.';
+    if (level === null) return 'You are on another skin. Pick a level to come back to Refinement × Realization.';
     return '';
   }
   function renderShowLevelUI() {
@@ -919,6 +921,8 @@
 
   window.showLevel = showLevel;
   window.setShowLevel = setShowLevel;
+  // (the levels by name, in order - the Theme picker's line under the skin)
+  window.showLevelNames = function () { return LEVELS.map(function (id) { return [id, COPY[id].name]; }); };
   window.renderShowLevelUI = renderShowLevelUI;
   window.openShowSheet = openShowSheet;
   window.closeShowSheet = closeShowSheet;
