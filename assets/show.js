@@ -1,15 +1,27 @@
 /* assets/show.js
-   How much show: the three levels of Refinement x Realization - one skin to
-   the person using it, listed once in the Theme picker - and the pieces
-   that only the lively two of them carry.
+   How much show: a skin's levels - one skin to the person using it, listed
+   once in the Theme picker - and the pieces that only its lively levels
+   carry. Every skin with a room has them:
 
-   - Showroom is the visualized skin, `refinement` (the card table as home).
-   - Lounge is its muted pairing, `executive` (the Executive room), with
-     motion on.
+   - Showroom is the visualized skin, with a table for its home (for
+     Refinement x Realization, `refinement` and the card table). A skin
+     whose room has no Showroom yet has only the other two.
+   - Lounge is its muted pairing (for R x R, `executive`), with motion on.
    - Quiet is the same pairing with Motion set to Off - the pairing the app
      already defines (see "Theme Work" in AGENTS.md). Nothing here stores a
      level of its own: the level is read back from the skin and the motion
      setting, and choosing one sets both.
+
+   A room is the look (data-theme) a family of skins wears, and what it
+   brings: its levels' copy and art, its pieces (built once, then kept in
+   step with today's run), what a collect does, and its payout. Rooms are
+   registered with showAddRoom(look, room) (see ROOM below for the shape).
+   Refinement x Realization's room, `executive`, is here; each other room
+   is its own file in assets/rooms/, loaded after this one. Off a room's
+   skins (a skin that has not been given one), Settings offers the
+   default's levels, the way back to it.
+
+   The rest of this header is the `executive` room's.
 
    The room's pieces (all [data-theme="executive"], so the visualized skin's
    pages wear them too, and with motion off both hold still):
@@ -78,29 +90,67 @@
 
   var theme = function () { return root.getAttribute('data-theme'); };
   var motionOn = function () { return root.getAttribute('data-motion') !== 'off'; };
-  var inRoom = function () { return theme() === 'executive'; };
+  // ROOM - the shape of a registered room (all but the first four optional):
+  //   name       the family's name, heading its levels in Settings
+  //   lede       one line on what the levels are
+  //   showroom   the visualized skin's id (its table is its home), or null
+  //   muted      the skin that is the room at Lounge and Quiet
+  //   copy       { showroom, lounge, quiet }: each level's line
+  //   mini       function (level): the level's 56x56 art, an SVG string
+  //   build      makes the room's pieces (called whenever it may be needed:
+  //              keep it idempotent); they hide themselves off the room,
+  //              keyed in CSS on [data-theme="<look>"]
+  //   layout     the window changed size
+  //   run        function (f): draw today's run, done / tracked (f can be a
+  //              little under 0 or over 1 mid-move: the wind-up, the overshoot)
+  //   collect    function (card, id): a card just collected, re-rendered
+  //   payout     { label, play() -> true if it played, clear(), busy() }
+  var ROOMS = {};
+  function showAddRoom(look, r) {
+    ROOMS[look] = r;
+    if (theme() === look && document.readyState !== 'loading') showRefresh();
+  }
+  var room = function () { return ROOMS[theme()] || null; };
+  var inRoom = function () { return !!room(); };
   var lively = function () { return inRoom() && motionOn(); };
+  // (the executive room's own pieces below check for it by name)
+  var inExec = function () { return theme() === 'executive'; };
+  var livelyExec = function () { return inExec() && motionOn(); };
 
   // ---------- Levels ----------
+  var skinNow = function () { return typeof getActiveThemeId === 'function' ? getActiveThemeId() : root.getAttribute('data-skin'); };
+  // the room a skin belongs to (as its visualized skin or its muted one)
+  function familyOf(skin) {
+    for (var look in ROOMS) {
+      var r = ROOMS[look];
+      if (r.showroom === skin || r.muted === skin) return r;
+    }
+    return null;
+  }
+  // the family Settings' block is about: the skin's own, or off a room's
+  // skins the default's (the way back to it)
+  function settingsFamily() { return familyOf(skinNow()) || ROOMS.executive || null; }
+  function levelsOf(r) { return r && r.showroom ? LEVELS : LEVELS.slice(1); }
   function showLevel() {
-    var skin = typeof getActiveThemeId === 'function' ? getActiveThemeId() : root.getAttribute('data-skin');
-    if (skin === 'refinement') return 'showroom';
-    if (skin !== 'executive') return null;
+    var skin = skinNow(), r = familyOf(skin);
+    if (!r) return null;
+    if (skin === r.showroom) return 'showroom';
     var pref = typeof getMotionPref === 'function' ? getMotionPref() : 'system';
     return pref === 'off' ? 'quiet' : 'lounge';
   }
   function setShowLevel(level) {
-    if (LEVELS.indexOf(level) === -1 || typeof selectTheme !== 'function') return;
+    var r = settingsFamily();
+    if (!r || levelsOf(r).indexOf(level) === -1 || typeof selectTheme !== 'function') return;
     if (level === 'quiet') setMotionPref('off');
     else if (getMotionPref() === 'off') setMotionPref('system');
-    selectTheme(level === 'showroom' ? 'refinement' : 'executive');
+    selectTheme(level === 'showroom' ? r.showroom : r.muted);
     showRefresh();
   }
 
   var COPY = {
-    showroom: { name: 'Showroom', desc: 'The card table stays your home. Dice, the dealer, every effect. Uses the most battery.', bars: 3 },
-    lounge: { name: 'Lounge', desc: 'Your deck with the gold edge light, the payout and a glint on every collect.', bars: 2 },
-    quiet: { name: 'Quiet', desc: 'Your deck, held still. Larger numbers, stronger contrast, easiest on battery.', bars: 1 }
+    showroom: { name: 'Showroom', bars: 3 },
+    lounge: { name: 'Lounge', bars: 2 },
+    quiet: { name: 'Quiet', bars: 1 }
   };
   var MINI_TABLE = '<svg class="show-mini" viewBox="0 0 56 56" aria-hidden="true">' +
     '<rect width="56" height="56" rx="12" fill="#0B0C10"/>' +
@@ -127,13 +177,15 @@
       (glint ? '<circle cx="45.5" cy="12" r="1.6" fill="#FFF1CC"/><circle cx="45.5" cy="12" r="4" fill="#FFF1CC" opacity=".18"/>' : '') + '</svg>';
   }
   function levelRowsHtml() {
+    var r = settingsFamily();
+    if (!r) return '';
     var current = showLevel();
-    return LEVELS.map(function (id) {
+    return levelsOf(r).map(function (id) {
       var c = COPY[id], on = current === id;
-      var art = id === 'showroom' ? MINI_TABLE : miniRing(id === 'lounge');
+      var art = r.mini ? r.mini(id) : '';
       var bars = [1, 2, 3].map(function (n) { return '<i' + (n <= c.bars ? ' class="on"' : '') + '></i>'; }).join('');
       return '<button type="button" class="show-level" role="radio" aria-checked="' + on + '" data-level="' + id + '">' + art +
-        '<span class="show-level-copy"><span class="show-level-name">' + c.name + '</span><span class="show-level-desc">' + c.desc + '</span></span>' +
+        '<span class="show-level-copy"><span class="show-level-name">' + c.name + '</span><span class="show-level-desc">' + ((r.copy && r.copy[id]) || '') + '</span></span>' +
         '<span class="show-level-meter"><span class="show-bars" aria-label="Motion: ' + ['', 'none', 'some', 'full'][c.bars] + '">' + bars + '</span>' +
         '<span class="show-meter-cap" aria-hidden="true">motion</span></span></button>';
     }).join('');
@@ -148,19 +200,29 @@
     if (level === 'lounge' && !motionOn()) {
       return 'This device is asking for reduced motion, so Lounge holds still like Quiet. Set Animations to "Always on" below to see it move.';
     }
-    if (level === null) return 'You are on another skin. Pick a level to come back to Refinement × Realization.';
+    var r = settingsFamily();
+    if (level === null && r) return 'You are on another skin. Pick a level to come back to ' + r.name + '.';
     return '';
   }
   function renderShowLevelUI() {
+    var r = settingsFamily();
+    var title = document.getElementById('showLevelTitle');
+    if (title && r) title.textContent = r.name;
+    var lede = document.getElementById('showLevelLede');
+    if (lede && r) lede.textContent = r.lede || '';
     var list = document.getElementById('showLevelList');
-    if (list) { list.innerHTML = levelRowsHtml(); bindRows(list); }
+    if (list) {
+      if (r) list.setAttribute('aria-label', r.name + ': how much show');
+      list.innerHTML = levelRowsHtml(); bindRows(list);
+    }
     var note = document.getElementById('showLevelNote');
     if (note) note.textContent = levelNote();
     var btn = document.getElementById('btnPlayPayout');
     if (btn) {
-      btn.hidden = !inRoom();
-      btn.disabled = !lively();
-      btn.textContent = lively() ? 'PLAY THE PAYOUT' : 'THE PAYOUT IS OFF WHILE THINGS HOLD STILL';
+      var p = room() && room().payout;
+      btn.hidden = !p;
+      btn.disabled = !(p && lively());
+      btn.textContent = p && lively() ? (p.label || 'PLAY THE PAYOUT') : 'THE PAYOUT IS OFF WHILE THINGS HOLD STILL';
     }
     var sheetList = document.getElementById('showSheetList');
     if (sheetList) { sheetList.innerHTML = levelRowsHtml(); bindRows(sheetList); }
@@ -359,12 +421,17 @@
     var v = (u - a) / (1 - a) - 1, c1 = 1.2, c3 = c1 + 1;
     return 1 + c3 * v * v * v + c1 * v * v;
   }
+  // today's run, drawn by the room it is in
+  function drawRunHere(f) {
+    var r = room();
+    if (r && r.run) r.run(f);
+  }
   // f: today's run as a share, done / tracked (updateHeroStats() passes it in)
   function showRunProgress(f) {
     if (!isFinite(f)) f = 0;
     if (runVis === null || !lively() || Math.abs(f - runVis) < 1e-4) {
       cancelAnimationFrame(runRAF);
-      runVis = f; drawRun(f);
+      runVis = f; drawRunHere(f);
       return;
     }
     var from = runVis, t0 = performance.now(), dur = 950;
@@ -372,22 +439,28 @@
     var step = function (t) {
       var u = Math.min(1, (t - t0) / dur);
       runVis = from + (f - from) * weighted(u);
-      drawRun(runVis);
-      if (u < 1) runRAF = requestAnimationFrame(step); else { runVis = f; drawRun(f); }
+      drawRunHere(runVis);
+      if (u < 1) runRAF = requestAnimationFrame(step); else { runVis = f; drawRunHere(f); }
     };
     runRAF = requestAnimationFrame(step);
   }
 
-  // ---------- The glint ----------
-  var glintId = null;
-  function showCollected(id) { glintId = lively() ? id : null; }
-  // (the deck re-renders after a collect, so the glint plays on the new card)
+  // ---------- A collect ----------
+  // (logCollection() marks the card; the deck re-renders after a collect,
+  // so the room's collect plays on the new card)
+  var collectedId = null;
+  function showCollected(id) { collectedId = lively() ? id : null; }
   function showAfterRender() {
-    if (!glintId) return;
-    var id = glintId;
-    glintId = null;
+    if (!collectedId) return;
+    var id = collectedId;
+    collectedId = null;
     var card = document.querySelector('.ledger-card[data-gid="' + id + '"]');
-    if (!card || !lively()) return;
+    var r = room();
+    if (!card || !lively() || !r || !r.collect) return;
+    r.collect(card, id);
+  }
+  // The executive room's: one gold glint across the card.
+  function glintCard(card) {
     var g = document.createElement('div');
     g.className = 'show-glint';
     card.style.setProperty('--show-w', (card.offsetWidth + 8) + 'px');
@@ -802,7 +875,7 @@
   }
   function launch() {
     var rr = ringVisible();
-    if (!rr || !lively()) return;
+    if (!rr || !livelyExec()) return;
     buildFx();
     var g = geometry();
     fxFront.style.perspectiveOrigin = fxBack.style.perspectiveOrigin = g.ox + 'px ' + g.oy + 'px';
@@ -871,10 +944,10 @@
     };
     fxRAF = requestAnimationFrame(frame);
   }
-  // Plays the payout from the ready ring, if this is a room that moves and
-  // the ring is on the page; scrolls it into view first when it is not.
-  function playPayout() {
-    if (!lively()) return false;
+  // Plays the payout from the ready ring, if this is the room and it moves
+  // and the ring is on the page; scrolls it into view first when it is not.
+  function playPayoutExec() {
+    if (!livelyExec()) return false;
     var wrap = document.querySelector('.hero-ring-wrapper');
     if (!wrap || !ringVisible()) return false;
     var go = function () { if (resting || playing) exitPayout(launch); else { clearPayout(); launch(); } };
@@ -884,6 +957,12 @@
       setTimeout(go, 520);
     } else go();
     return true;
+  }
+  // The payout of the room the page is in, if it moves.
+  function playPayout() {
+    var r = room();
+    if (!r || !r.payout || !lively()) return false;
+    return r.payout.play();
   }
   function playPayoutFromSettings() {
     if (typeof closeModals === 'function') closeModals();
@@ -899,30 +978,68 @@
   // still reaches whatever it lands on).
   document.addEventListener('pointerdown', function () { if (resting || playing) exitPayout(); }, true);
 
+  // ---------- The executive room ----------
+  showAddRoom('executive', {
+    name: 'Refinement × Realization',
+    lede: 'One skin at three levels of show: the same deck and the same gold on each, with more or less of it moving. Showroom is all of it — the dice, the dealer, the card table as your home.',
+    showroom: 'refinement',
+    muted: 'executive',
+    copy: {
+      showroom: 'The card table stays your home. Dice, the dealer, every effect. Uses the most battery.',
+      lounge: 'Your deck with the gold edge light, the payout and a glint on every collect.',
+      quiet: 'Your deck, held still. Larger numbers, stronger contrast, easiest on battery.'
+    },
+    mini: function (level) { return level === 'showroom' ? MINI_TABLE : miniRing(level === 'lounge'); },
+    build: function () { buildEdge(); buildBezel(); },
+    layout: layoutEdge,
+    run: drawRun,
+    collect: glintCard,
+    payout: { label: 'PLAY THE PAYOUT', play: playPayoutExec, clear: clearPayout, busy: function () { return resting || playing; } }
+  });
+
   // ---------- Keeping it all in step ----------
+  // (a room left, or one that holds still now, clears its payout)
   function showRefresh() {
-    if (!lively()) clearPayout();
-    if (inRoom()) { buildEdge(); buildBezel(); }
-    if (runVis !== null) drawRun(runVis);
+    var here = room();
+    for (var look in ROOMS) {
+      var r = ROOMS[look];
+      if (r.payout && (r !== here || !motionOn())) r.payout.clear();
+    }
+    if (here && here.build) here.build();
+    if (runVis !== null) drawRunHere(runVis);
     renderShowLevelUI();
   }
   var resizeRAF = 0;
   window.addEventListener('resize', function () {
     cancelAnimationFrame(resizeRAF);
-    resizeRAF = requestAnimationFrame(function () { layoutEdge(); if (resting || playing) clearPayout(); });
+    resizeRAF = requestAnimationFrame(function () {
+      for (var look in ROOMS) {
+        var r = ROOMS[look];
+        if (r.layout) r.layout();
+        if (r.payout && r.payout.busy && r.payout.busy()) r.payout.clear();
+      }
+    });
   });
 
   document.addEventListener('DOMContentLoaded', function () {
-    buildEdge();
-    buildBezel();
-    if (runVis !== null) drawRun(runVis);
+    var here = room();
+    if (here && here.build) here.build();
+    if (runVis !== null) drawRunHere(runVis);
     renderShowLevelUI();
   });
 
+  window.showAddRoom = showAddRoom;
+  // (what a room in its own file may use: the key light, the motion curve,
+  // the glass's corner radius, whether the page moves)
+  window.showKit = { NS: NS, LIGHT: LIGHT, HALF: HALF, weighted: weighted, edgeRadius: edgeRadius, motionOn: motionOn, run: function () { return runVis; } };
   window.showLevel = showLevel;
   window.setShowLevel = setShowLevel;
-  // (the levels by name, in order - the Theme picker's line under the skin)
-  window.showLevelNames = function () { return LEVELS.map(function (id) { return [id, COPY[id].name]; }); };
+  // (a skin's levels by name, in order - the Theme picker's line under the
+  // skin - or null for a skin without a room)
+  window.showLevelNames = function (skin) {
+    var r = familyOf(skin || skinNow());
+    return r ? levelsOf(r).map(function (id) { return [id, COPY[id].name]; }) : null;
+  };
   window.renderShowLevelUI = renderShowLevelUI;
   window.openShowSheet = openShowSheet;
   window.closeShowSheet = closeShowSheet;

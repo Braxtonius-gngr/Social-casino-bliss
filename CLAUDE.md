@@ -9,8 +9,9 @@ gate, and change hygiene in detail. This file is only a summary.
 - **Build-free static PWA.** Deployed as-is, including under GitHub Pages subpaths -
   keep local URLs relative. No build step, nothing to `npm install` for the app itself.
 - **No frameworks or bundlers.** Runtime dependencies: `supabase-js` via CDN `<script src>`,
-  and three.js vendored in `assets/vendor/three/` for the WebGL landing intro and the table
-  it flies into only (loaded by a dynamic `import()`). Don't add more without discussion.
+  and three.js vendored in `assets/vendor/three/` for the WebGL landing intro, the table
+  it flies into and Obsidian Ledger's orrery only (loaded by a dynamic `import()`). Don't add
+  more without discussion.
 - **Classic scripts.** Preserve global functions, inline `onclick` handlers, and the
   current script-loading order.
 - **Two-space indentation**, semicolons, and existing naming patterns.

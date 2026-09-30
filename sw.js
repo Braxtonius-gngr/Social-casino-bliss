@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v74';
+const CACHE_NAME = 'almanac-v75';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -30,6 +30,8 @@ const PRECACHE_URLS = [
   // the shell
   './', './index.html', './manifest.json', './apple-touch-icon.png', './assets/icon-192.webp', './assets/icon-512.webp',
   './assets/app.css', './assets/accessibility.css', './assets/accessibility.js', './assets/storage.js', './assets/show.js',
+  // each skin room past the default one (see show.js)
+  './assets/rooms/obsidian.js',
   './data/catalog.js', './utils/cleanDropUrl.js', './utils/classifyDropText.js',
   // the Executive Lounge ground
   './assets/background.webp',
@@ -40,6 +42,8 @@ const PRECACHE_URLS = [
   // the WebGL intro: three.js, the modules and the set
   './assets/vendor/three/three.core.js', './assets/vendor/three/three.module.js', './assets/vendor/three/three.addons.js',
   './assets/intro3d/intro.mjs', './assets/intro3d/physics.mjs', './assets/intro3d/table.mjs',
+  // Obsidian Ledger: the orrery (its Lounge payout, from the same three.js)
+  './assets/intro3d/orrery.mjs',
   './assets/intro3d/felt-normal.jpg', './assets/intro3d/rubber-normal.jpg', './assets/intro3d/leather-normal.jpg',
   './assets/intro3d/walnut.jpg', './assets/intro3d/gunmetal.jpg', './assets/intro3d/badge.png',
   './assets/intro3d/gold-trim-color.jpg', './assets/intro3d/gold-trim-alpha.png', './assets/intro3d/gold-trim-normal.jpg',

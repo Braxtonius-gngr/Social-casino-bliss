@@ -842,11 +842,13 @@
       </div>
 
       <div class="theme-settings">
-        <h4>Refinement &times; Realization</h4>
-        <!-- One skin at three levels - Showroom / Lounge / Quiet. One tap
-             sets the skin and the Motion setting below together
-             (assets/show.js); the Theme list shows the skin once. -->
-        <div class="backup-helper show-lede">One skin at three levels of show: the same deck and the same gold on each, with more or less of it moving. Showroom is all of it &mdash; the dice, the dealer, the card table as your home.</div>
+        <h4 id="showLevelTitle">Refinement &times; Realization</h4>
+        <!-- One skin at its levels - Showroom / Lounge / Quiet, or the last
+             two for a room without a Showroom yet. One tap sets the skin and
+             the Motion setting below together (assets/show.js, which names
+             this block for the skin you are on); the Theme list shows the
+             skin once. -->
+        <div id="showLevelLede" class="backup-helper show-lede">One skin at three levels of show: the same deck and the same gold on each, with more or less of it moving. Showroom is all of it &mdash; the dice, the dealer, the card table as your home.</div>
         <div id="showLevelList" class="show-levels" role="radiogroup" aria-label="Refinement &times; Realization: how much show"></div>
         <div id="showLevelNote" class="backup-helper" style="text-align:left; margin-top:6px;"></div>
         <button type="button" id="btnPlayPayout" class="btn-dock show-replay" onclick="playPayoutFromSettings()">PLAY THE PAYOUT</button>
@@ -1476,6 +1478,8 @@
   <script src="assets/accessibility.js"></script>
   <script src="assets/storage.js"></script>
   <script src="assets/show.js"></script>
+  <!-- Each skin's room past the default's (assets/show.js, showAddRoom) -->
+  <script src="assets/rooms/obsidian.js"></script>
   <!-- Cloud sync (optional, opt-in - see the "Cloud sync" block near the
        end of the inline script below). Loaded from a CDN rather than
        vendored, matching how Google Fonts is already loaded here - this
@@ -6830,8 +6834,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         bodyBg: 'repeating-linear-gradient(0deg, rgba(57,255,20,0.035) 0px, rgba(57,255,20,0.035) 1px, transparent 1px, transparent 3px), radial-gradient(120% 90% at 50% 15%, rgba(57,255,20,0.09) 0%, transparent 55%), linear-gradient(180deg, #060806 0%, #020302 100%)',
         metaColor: '#060806'
       },
-      // Texas Chainsaw Massacre: the renamed, re-tinted Boot Hill. Display
-      // name and description only - the object key stays 'western' so the
+      // West Texas Gore Fest: the renamed, re-tinted Boot Hill (briefly
+      // "Texas Chainsaw Massacre" - a film's name, dropped 2026-09-30).
+      // Display name and description only - the object key stays 'western' so the
       // 187 [data-theme="western"] selectors in app.css, isWesternTheme(),
       // and any localStorage value already saved as 'western' all keep
       // working with no migration. Demoted to the last picker slot, last in
@@ -6841,8 +6846,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // gore treatment (splatter, jagged torn edges, a rougher tearing
       // animation character) lives in assets/app.css.
       western: {
-        name: 'Texas Chainsaw Massacre',
-        description: 'Western Texas gore fest. Arterial red, bone, rust, oil-black - dark and jagged.',
+        name: 'West Texas Gore Fest',
+        description: 'Arterial red, bone, rust, oil-black - dark and jagged.',
         vars: {
           '--bg-base': '#0B0B0B',
           '--accent-gold': '#FFC107',
@@ -6914,9 +6919,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     // isWesternTheme() keeps its name - the object key never changed (see
-    // the Texas Chainsaw Massacre entry in THEMES above) - but only two of
+    // the West Texas Gore Fest entry in THEMES above) - but only two of
     // the three effects it gates are still theme-exclusive. screenShake()
-    // and collectFlash() stay Chainsaw-only: a screen shake and a red flash
+    // and collectFlash() stay Gore Fest-only: a screen shake and a red flash
     // are off-brand for a restrained default. hapticBuzz() is different -
     // a buzz on collect is feedback, not decoration, and gating it to one
     // theme meant switching to Executive Lounge silently lost it. It's
@@ -7024,7 +7029,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const cur = THEMES[getActiveThemeId()];
       if (themeId !== getActiveThemeId() && !(cur && cur.visual === themeId)) { selectTheme(themeId); return; }
       const levels = document.getElementById('showLevelList');
-      if (levels && THEMES[themeId].look) levels.scrollIntoView({ block: 'center', behavior: document.documentElement.getAttribute('data-motion') === 'off' ? 'auto' : 'smooth' });
+      if (levels && window.showLevelNames && window.showLevelNames(themeId)) levels.scrollIntoView({ block: 'center', behavior: document.documentElement.getAttribute('data-motion') === 'off' ? 'auto' : 'smooth' });
     }
 
     function renderThemeUI() {
@@ -7036,11 +7041,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const isActive = id === active || (!!t.look && THEMES[active].visual === id);
         const swatches = [t.vars['--accent-cyan'], t.vars['--accent-pink'], t.vars['--accent-gold'], t.vars['--accent-green']]
           .map(c => `<div class="theme-swatch" style="background:${c}"></div>`).join('');
-        // (its levels, the one it is at marked)
+        // (its levels, if it has a room, the one it is at marked)
         const level = isActive && window.showLevel ? window.showLevel() : null;
-        const pair = t.look && window.showLevelNames
-          ? window.showLevelNames().map(([lv, name]) => lv === level ? `<b>${escHtml(name)}</b>` : escHtml(name)).join(' · ')
-          : '';
+        const names = window.showLevelNames ? window.showLevelNames(id) : null;
+        const pair = names ? names.map(([lv, name]) => lv === level ? `<b>${escHtml(name)}</b>` : escHtml(name)).join(' · ') : '';
         return `<div class="theme-card ${isActive ? 'active' : ''}${t.look ? ' theme-visual' : ''}" onclick="pickSkin('${id}')">
           <div class="theme-info">
             <span class="theme-name">${escHtml(t.name)}${isActive ? '<span class="active-tag">ACTIVE</span>' : ''}</span>
@@ -8480,7 +8484,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v74';
+    const APP_BUILD = 'almanac-v75';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads

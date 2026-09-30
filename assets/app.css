@@ -4636,6 +4636,208 @@ html[data-motion="off"][data-theme="executive"] .date-header,
 html[data-motion="off"][data-theme="executive"] .hero-details p,
 html[data-motion="off"][data-theme="executive"] .cooldown-chip { color: #AEB1B8; }
 
+/* =========================================================
+   OBSIDIAN LEDGER'S ROOM (assets/rooms/obsidian.js) - a celestial
+   almanac: quiet, matte and print-like, brass instruments and parchment
+   on warm black. Its Lounge and Quiet levels; the pieces' makers are in
+   the room's own header. The type: Cormorant Garamond for the wordmark,
+   the names and the status line, Cinzel for labels, tabs and buttons, IBM
+   Plex Mono for numbers and timers (the room fetches them when it is
+   first built - until then the fallbacks stand in).
+   ========================================================= */
+[data-theme="obsidian"] {
+  --ob-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --ob-caps: 'Cinzel', Georgia, serif;
+  --ob-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  --ob-brass: #B08D57;
+  --ob-brass-hi: #E6CC96;
+  --ob-brass-lo: #8C6A3A;
+  --ob-ink: rgba(236, 229, 217, 0.10);
+}
+/* The page: warm black, the grain of laid paper, and a star chart engraved
+   so faintly it reads as texture - a few dozen stars and three figures, at
+   a few per cent. Fixed behind the deck; the panels are near-opaque, so it
+   only shows between them. */
+[data-theme="obsidian"] body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='390' height='844' viewBox='0 0 390 844'%3E%3Cg fill='%23ECE5D9'%3E%3Ccircle cx='38' cy='92' r='1.1'/%3E%3Ccircle cx='71' cy='131' r='.6'/%3E%3Ccircle cx='112' cy='108' r='.8'/%3E%3Ccircle cx='150' cy='150' r='.5'/%3E%3Ccircle cx='331' cy='64' r='.9'/%3E%3Ccircle cx='356' cy='118' r='.6'/%3E%3Ccircle cx='302' cy='171' r='1.2'/%3E%3Ccircle cx='270' cy='128' r='.5'/%3E%3Ccircle cx='24' cy='388' r='.7'/%3E%3Ccircle cx='60' cy='446' r='1'/%3E%3Ccircle cx='96' cy='402' r='.6'/%3E%3Ccircle cx='365' cy='372' r='.8'/%3E%3Ccircle cx='338' cy='430' r='.5'/%3E%3Ccircle cx='372' cy='498' r='1.1'/%3E%3Ccircle cx='44' cy='640' r='.6'/%3E%3Ccircle cx='88' cy='700' r='.9'/%3E%3Ccircle cx='131' cy='662' r='.5'/%3E%3Ccircle cx='318' cy='690' r='.7'/%3E%3Ccircle cx='350' cy='742' r='1'/%3E%3Ccircle cx='280' cy='770' r='.5'/%3E%3Ccircle cx='205' cy='36' r='.6'/%3E%3Ccircle cx='190' cy='812' r='.7'/%3E%3C/g%3E%3Cg fill='none' stroke='%23ECE5D9' stroke-width='.35'%3E%3Cpath d='M38 92 71 131 112 108 150 150'/%3E%3Cpath d='M331 64 356 118 302 171 270 128'/%3E%3Cpath d='M24 388 60 446 96 402M338 430 365 372M338 430 372 498'/%3E%3Cpath d='M44 640 88 700 131 662M318 690 350 742 280 770'/%3E%3C/g%3E%3C/svg%3E") center top / 100% auto no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9 .6' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 .92 0 0 0 0 .89 0 0 0 0 .85 0 0 0 .5 -.18'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.07;
+}
+[data-theme="obsidian"] .app-container, [data-theme="obsidian"] .docked-footer { position: relative; z-index: 2; }
+[data-theme="obsidian"] .docked-footer { position: fixed; }
+
+/* The masthead: the date in small capitals, the wordmark set in Cormorant
+   with "Roll Over" in brass italic, and under it a rule with a star cut in
+   its middle. */
+[data-theme="obsidian"] .date-header { font-family: var(--ob-caps); font-weight: 500; letter-spacing: 0.24em; color: var(--text-muted); font-size: 0.66rem; }
+[data-theme="obsidian"] .app-title { font-family: var(--ob-serif); font-weight: 500; font-size: 2.45rem; letter-spacing: 0; line-height: 1.05; margin-bottom: 20px; position: relative; padding-bottom: 14px; }
+[data-theme="obsidian"] .app-title span { font-style: italic; font-weight: 500; color: var(--ob-brass); }
+[data-theme="obsidian"] .landing-title { font-family: var(--ob-serif); font-weight: 500; }
+[data-theme="obsidian"] .landing-title span { font-style: italic; }
+[data-theme="obsidian"] .app-title::after {
+  content: ''; position: absolute; left: 50%; bottom: 0; width: 124px; height: 9px; transform: translateX(-50%);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 124 9'%3E%3Cpath d='M0 4.5h52M72 4.5h52' stroke='%23B08D57' stroke-width='.6' opacity='.7'/%3E%3Cpath d='M62 .6l1.1 2.8 2.8 1.1-2.8 1.1L62 8.4l-1.1-2.8-2.8-1.1 2.8-1.1z' fill='%23C29E63'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* Panels: matte paper-dark boards with a single hairline, no glow. */
+[data-theme="obsidian"] .glass-panel { background: rgba(27, 25, 22, 0.94); border: 1px solid var(--ob-ink); box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset, 0 6px 16px rgba(0,0,0,0.45); }
+[data-theme="obsidian"] .hero-stat-card { border-radius: 12px; background: rgba(27, 25, 22, 0.94); padding: 16px 18px; }
+[data-theme="obsidian"] .ledger-card { border-radius: 10px; }
+
+/* The orrery round the ready count: the plate is drawn by the room (SVG);
+   the count sits on it in Cormorant, READY cut small under it. */
+.ob-plate { display: none; }
+[data-theme="obsidian"] .hero-ring-wrapper { width: 112px; height: 112px; }
+[data-theme="obsidian"] .ob-plate { display: block; position: absolute; inset: 0; pointer-events: none; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.55)); }
+.ob-plate svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ob-cut { stroke: rgba(0,0,0,0.75); stroke-width: 0.55; fill: none; }
+.ob-wall { stroke: rgba(214, 190, 140, 0.32); stroke-width: 0.4; fill: none; }
+.ob-path { fill: none; stroke: #9A7B4C; stroke-width: 0.9; stroke-linecap: round; stroke-dasharray: 0.01 2.49; opacity: 0.75; }
+.ob-arc { fill: none; stroke: url(#obArc); stroke-width: 2.1; stroke-linecap: round; }
+.ob-star { fill: #C29E63; }
+[data-theme="obsidian"] .hero-ring-circle { position: absolute; inset: 22%; width: auto; height: auto; z-index: 1; border: 0; background: transparent; box-shadow: none;
+  flex-direction: column; gap: 0; font-family: var(--ob-serif); font-weight: 600; font-size: 2.15rem; line-height: 1; color: var(--text-main); font-variant-numeric: lining-nums; }
+[data-theme="obsidian"] .hero-ring-circle::after { content: 'READY'; font-family: var(--ob-caps); font-size: 0.42rem; font-weight: 600; letter-spacing: 0.26em; color: var(--text-muted); margin-top: 3px; padding-left: 0.26em; }
+
+/* The hand's button: brass, lettered in Cinzel; waiting, a hairline. */
+[data-theme="obsidian"] .btn-start-run.hero-run-btn { font-family: var(--ob-caps); font-weight: 600; letter-spacing: 0.11em; font-size: 0.74rem; line-height: 1.35; text-align: center; padding: 11px 14px; border-radius: 3px; border: 1px solid #C9A86B;
+  color: #1c1812; background: linear-gradient(180deg, #D8B983 0%, #B99664 52%, #A1804F 100%); box-shadow: inset 0 1px 0 rgba(255,244,214,0.45), 0 2px 6px rgba(0,0,0,0.4); }
+[data-theme="obsidian"] .btn-start-run.hero-run-btn:disabled { background: transparent; color: var(--text-dim); border-color: var(--ob-ink); box-shadow: none; }
+[data-theme="obsidian"] .hero-details p { font-family: var(--ob-mono); font-size: 0.7rem; }
+[data-theme="obsidian"] .hero-details h2 { font-family: var(--ob-serif); font-weight: 600; font-size: 1.3rem; }
+
+/* Tabs: set as a running head - small capitals, no pills, the one you are
+   on in brass with a rule under it. */
+[data-theme="obsidian"] .nav-pill-group { background: transparent; border: 0; border-top: 1px solid var(--ob-ink); border-bottom: 1px solid var(--ob-ink); border-radius: 0; box-shadow: none; padding: 2px 4px; gap: 2px; }
+[data-theme="obsidian"] .nav-tab { font-family: var(--ob-caps); font-weight: 600; font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; border-radius: 0; border: 0; padding: 12px 8px; color: var(--text-muted); }
+[data-theme="obsidian"] .nav-tab .tab-ico { display: none; }
+[data-theme="obsidian"] .nav-tab.active { background: transparent; border: 0; color: var(--ob-brass-hi); box-shadow: inset 0 -1px 0 var(--ob-brass); }
+
+/* The search line and the filters: a hairline field, italic placeholder;
+   chips as small-capital labels in a square hairline. */
+[data-theme="obsidian"] .catalog-search { border-radius: 4px; font-family: var(--ob-serif); font-size: 1.05rem; }
+[data-theme="obsidian"] .catalog-search::placeholder { font-style: italic; color: var(--text-dim); }
+[data-theme="obsidian"] .filter-btn, [data-theme="obsidian"] .sort-trigger-btn { font-family: var(--ob-caps); font-weight: 600; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; border-radius: 3px; background: transparent; }
+[data-theme="obsidian"] .filter-btn.active { background: rgba(176, 141, 87, 0.12); border-color: var(--ob-brass); color: var(--ob-brass-hi); }
+
+/* A card: the platform's planet, its name in Cormorant, a circled tier
+   letter, the status in italic (a cut star when ready), timers in Plex. */
+[data-theme="obsidian"] .casino-name { font-family: var(--ob-serif); font-weight: 600; font-size: 1.36rem; letter-spacing: 0; line-height: 1.1; }
+[data-theme="obsidian"] .card-title-row .tier-badge { display: inline-flex; align-items: center; justify-content: center; width: 19px; height: 19px; padding: 0; border-radius: 50%;
+  font-family: var(--ob-caps); font-size: 0.6rem; font-weight: 700; background: transparent; border: 1px solid currentColor; }
+[data-theme="obsidian"] .cooldown-chip { font-family: var(--ob-mono); font-weight: 400; border-radius: 3px; }
+[data-theme="obsidian"] .card-status { font-family: var(--ob-serif); font-style: italic; font-size: 1.02rem; opacity: 1; gap: 7px; }
+[data-theme="obsidian"] .status-time { display: inline-block; font-family: var(--ob-serif); font-weight: 600; text-transform: lowercase; color: var(--accent-green); }
+[data-theme="obsidian"] .status-time::first-letter { text-transform: uppercase; }
+[data-theme="obsidian"] .status-dot { width: auto; height: auto; background: none; border-radius: 0; box-shadow: none; }
+[data-theme="obsidian"] .status-dot::before { content: '\2726'; font-style: normal; font-size: 0.72rem; color: var(--accent-green); }
+[data-theme="obsidian"] .status-dot.cooldown::before { content: '\2727'; color: var(--ob-brass-lo); }
+[data-theme="obsidian"] .status-dot.cooldown + .status-time { font-family: var(--ob-mono); font-style: normal; font-weight: 500; font-size: 0.78rem; text-transform: none; color: var(--text-main); }
+[data-theme="obsidian"] .status-dot.cooldown + .status-time::first-letter { text-transform: none; }
+[data-theme="obsidian"] .card-status .ready-at { font-family: var(--ob-serif); font-style: italic; font-size: 0.9rem; color: var(--text-dim); }
+/* the cooldown as a planet's path: a brass hairline along the card's foot
+   with a bead at its head */
+[data-theme="obsidian"] .cd-fill { height: 1px; bottom: 7px; left: 14px; max-width: calc(100% - 28px); background: linear-gradient(90deg, rgba(176,141,87,0.25), rgba(194,158,99,0.85)); opacity: 1; overflow: visible; }
+[data-theme="obsidian"] .cd-fill::after { content: ''; position: absolute; right: -3px; top: -2.5px; width: 6px; height: 6px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 32%, #F4E6C4 0%, #C29E63 45%, #6f5430 100%); box-shadow: 1px 1.5px 2px rgba(0,0,0,0.6); }
+/* The buttons: OPEN is brass, lettered in Cinzel; WAIT a hairline; the
+   small ones square hairlines. */
+[data-theme="obsidian"] .btn-open { font-family: var(--ob-caps); font-weight: 700; letter-spacing: 0.14em; font-size: 0.66rem; border-radius: 3px; padding: 9px 14px;
+  background: linear-gradient(180deg, #D0B07A 0%, #B08D57 55%, #977543 100%); color: #1c1812; box-shadow: inset 0 1px 0 rgba(255,244,214,0.4), 0 1px 3px rgba(0,0,0,0.5); }
+[data-theme="obsidian"] .btn-open.cooldown { background: transparent; border: 1px solid var(--ob-ink); color: var(--text-dim); box-shadow: none; font-size: 0.62rem; }
+[data-theme="obsidian"] .btn-check, [data-theme="obsidian"] .btn-share { border-radius: 3px; border-color: var(--ob-ink); color: var(--text-muted); }
+[data-theme="obsidian"] .btn-snooze { font-family: var(--ob-caps); font-weight: 700; font-size: 0.72rem; }
+[data-theme="obsidian"] .btn-share { font-family: var(--ob-caps); font-weight: 600; letter-spacing: 0.1em; font-size: 0.58rem; }
+[data-theme="obsidian"] .btn-dock { font-family: var(--ob-caps); font-weight: 600; letter-spacing: 0.14em; font-size: 0.72rem; border-radius: 3px; background: transparent; border-color: var(--ob-brass); color: var(--ob-brass-hi); box-shadow: none; }
+/* (the footer's second button carries an orange glow inline) */
+[data-theme="obsidian"] .docked-footer .btn-dock { border-color: var(--ob-ink) !important; color: var(--text-muted) !important; text-shadow: none !important; box-shadow: none !important; }
+[data-theme="obsidian"] .docked-footer .btn-dock:first-child { border-color: var(--ob-brass) !important; color: var(--ob-brass-hi) !important; }
+[data-theme="obsidian"] .sort-stack-chip { font-family: var(--ob-caps); font-weight: 600; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 3px; background: transparent; border-color: rgba(176,141,87,0.45); color: var(--ob-brass-hi); }
+
+/* The planets: each platform a turned boxwood ball painted a flat earth
+   colour (its hue, greyed toward the almanac's palette) and varnished -
+   lit from above left, a soft terminator, a varnish spark - its initials
+   cut in and filled with parchment. A brass ring on two pins round it: the
+   far half passes behind the ball (in its shadow, darker), the near half
+   crosses in front and drops a thin shadow on it. */
+[data-theme="obsidian"] .card-left { gap: 20px; }
+[data-theme="obsidian"] .avatar-wrap { isolation: isolate; margin-left: 4px; }
+/* (the paint: the platform's own hue, greyed to a pigment, under a warm
+   varnish that yellows everything a little toward the brass) */
+[data-theme="obsidian"] .casino-avatar { position: relative; z-index: 1; width: 42px; height: 42px; border: 0;
+  background:
+    radial-gradient(circle at 34% 27%, rgba(255,250,236,0.5) 0%, rgba(255,250,236,0) 15%),
+    radial-gradient(circle at 40% 36%, rgba(214,178,118,0.26) 0%, rgba(176,141,87,0.1) 55%, rgba(0,0,0,0) 80%),
+    radial-gradient(circle at 36% 32%, hsl(var(--avatar-hue, 30) 20% 60%) 0%, hsl(var(--avatar-hue, 30) 17% 41%) 42%, hsl(var(--avatar-hue, 30) 20% 21%) 80%, hsl(var(--avatar-hue, 30) 24% 10%) 100%);
+  box-shadow: 2px 3px 5px rgba(0,0,0,0.55);
+  font-family: var(--ob-caps); font-weight: 700; font-size: 0.74rem; letter-spacing: 0.04em; color: rgba(242, 235, 222, 0.94);
+  text-shadow: 0 -0.5px 0 rgba(0,0,0,0.55), 0 0.6px 0 rgba(255,255,255,0.18) !important; }
+[data-theme="obsidian"] .avatar-wrap::before,
+[data-theme="obsidian"] .avatar-wrap::after {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 60px; height: 16px; margin: -8px 0 0 -30px; border-radius: 50%;
+  border: 1.2px solid #B99664; box-shadow: 0 0 0 0.4px rgba(0,0,0,0.55), inset 0 0 0 0.4px rgba(255,240,205,0.35);
+  transform: rotate(-17deg); pointer-events: none;
+}
+[data-theme="obsidian"] .avatar-wrap::before { z-index: 0; clip-path: inset(0 0 50% 0); border-color: #6f5a38; opacity: 0.9; }
+[data-theme="obsidian"] .avatar-wrap::after { z-index: 2; clip-path: inset(50% 0 0 0); filter: drop-shadow(0 1.2px 0.8px rgba(0,0,0,0.55)); }
+[data-theme="obsidian"] .streak-badge { z-index: 3; font-family: var(--ob-mono); font-weight: 500; border-radius: 3px; background: #2a2520; color: var(--ob-brass-hi); border: 1px solid var(--ob-brass); box-shadow: none; }
+
+/* A collect: a moon once round the card's planet's ring - out through the
+   near side (larger, in the lamp), round behind the ball (smaller, in its
+   shadow) and home, slow to leave and slow to arrive. */
+.ob-orbit { position: absolute; left: 50%; top: 50%; width: 60px; height: 16px; margin: -8px 0 0 -30px; transform: rotate(-17deg); pointer-events: none;
+  animation: ob-orbit-z 1.25s linear forwards; }
+.ob-moon { position: absolute; left: 0; top: 0; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #FFF8E6 0%, #E4D6B6 40%, #8f8266 100%); box-shadow: 1px 1.5px 2px rgba(0,0,0,0.55);
+  offset-path: path('M60 8 A30 8 0 1 1 0 8 A30 8 0 1 1 60 8'); offset-rotate: 0deg; offset-distance: 0%;
+  animation: ob-moon 1.25s cubic-bezier(.55,.05,.35,1) forwards; }
+@keyframes ob-orbit-z { 0% { z-index: 4; } 49% { z-index: 4; } 51% { z-index: 0; } 100% { z-index: 0; } }
+@keyframes ob-moon {
+  0% { offset-distance: 0%; transform: scale(1.05); filter: brightness(1.05); opacity: 0; }
+  6% { opacity: 1; }
+  25% { transform: scale(1.22); filter: brightness(1.15); }
+  50% { transform: scale(1); filter: brightness(0.9); }
+  75% { transform: scale(0.78); filter: brightness(0.55); }
+  94% { opacity: 1; }
+  100% { offset-distance: 100%; transform: scale(1.05); filter: brightness(1.05); opacity: 0; }
+}
+html[data-motion="off"] .ob-orbit { display: none; }
+
+/* Orbit: the almanac's double rule round the glass, hour ticks down its
+   long edges, today's run as the lit length of the outer rule, and the
+   brass ball riding the groove - a clock (see the room's header). Under
+   every sheet, the tour, the landing and the table, like the gold edge. */
+.ob-edge, .ob-body { display: none; }
+[data-theme="obsidian"] .ob-edge { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 95; pointer-events: none; overflow: visible; }
+.ob-edge path { fill: none; }
+.ob-rule { stroke: rgba(176, 141, 87, 0.30); stroke-width: 0.8; }
+.ob-rule-2 { stroke: rgba(236, 229, 217, 0.10); stroke-width: 0.5; }
+.ob-tick { stroke: rgba(0, 0, 0, 0.7); stroke-width: 0.6; }
+.ob-tick-lit { stroke: rgba(194, 158, 99, 0.55); stroke-width: 0.45; }
+.ob-edge-lit { stroke: #C29E63; stroke-width: 1.2; stroke-linecap: round; }
+[data-theme="obsidian"] .ob-body { display: block; position: fixed; left: 0; top: 0; width: 7.2px; height: 7.2px; border-radius: 50%; z-index: 95; pointer-events: none;
+  background: radial-gradient(circle at 34% 28%, #FFF6DC 0%, #E6CC96 22%, #B08D57 55%, #5e4726 100%);
+  box-shadow: 1.2px 1.8px 2.4px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(40,30,15,0.6); }
+
+/* The payout: the orrery out of the phone (assets/intro3d/orrery.mjs),
+   drawn twice - what is behind the glass under the app (between it and the
+   star chart), what is in front of it over the app, under every sheet. */
+.ob-orrery { position: fixed; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.ob-orrery-back { z-index: 1; }
+.ob-orrery-front { z-index: 98; }
+html[data-motion="off"] .ob-orrery { display: none; }
+
+/* Quiet: the room held still and read more easily - larger numbers and
+   stronger contrast on the small print. */
+html[data-motion="off"][data-theme="obsidian"] .hero-ring-circle { font-size: 2.35rem; }
+html[data-motion="off"][data-theme="obsidian"] .casino-name { font-size: 1.44rem; }
+html[data-motion="off"][data-theme="obsidian"] .card-status .ready-at,
+html[data-motion="off"][data-theme="obsidian"] .date-header,
+html[data-motion="off"][data-theme="obsidian"] .cooldown-chip { color: #B8AFA3; }
+
 /* ---- The table's felt (Settings): four cloths, each a swatch of the
    cloth as it lies under the lamp - a disc of it with its nap and a gold
    hairline, ringed in gold when picked. */
