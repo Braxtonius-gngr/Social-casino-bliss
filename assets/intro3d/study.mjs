@@ -691,6 +691,9 @@ export async function prepareTable(opts) {
 
     // ---- The frame at time tt (seconds from the tap).
     let tNow = 0, arrived = false;
+    // (the way out takes the keyboard's focus on the frame it shows: a
+    // hidden plate can't hold it)
+    let focusOut = false;
     const flyEye = V(0, 0, 0), qTable = new THREE.Quaternion(), qSeat = new THREE.Quaternion(), camQ = new THREE.Quaternion();
     const placeCamera = tt => {
       camera.up.copy(up);
@@ -763,7 +766,9 @@ export async function prepareTable(opts) {
       ledgerBody.userData.pages.mesh.visible = dive > 0 || tt < FLY;
       ledgerEl.style.opacity = (1 - inK).toFixed(3);
       ledgerEl.style.visibility = inK >= 1 || tt < FLY ? 'hidden' : '';
-      outEl.classList.toggle('r3s-on', dive >= 0.999 && diveTo === 1);
+      const outOn = dive >= 0.999 && diveTo === 1;
+      outEl.classList.toggle('r3s-on', outOn);
+      if (outOn && focusOut) { focusOut = false; outEl.focus({ preventScroll: true }); }
       const stg = world.canvas.parentElement;
       if (stg && stg.classList.contains('r3t-focus') !== !!(cardId && liftTo)) stg.classList.toggle('r3t-focus', !!(cardId && liftTo));
       const uiK = clamp01((tt - FLY + 0.1) / UI_IN);
@@ -811,7 +816,7 @@ export async function prepareTable(opts) {
       // (the pages as print, drawn now, before anything moves)
       printPages();
       diveFrom = dive; diveTo = to; diveT0 = tNow;
-      if (on) outEl.focus({ preventScroll: true });
+      focusOut = on;
       wake();
     };
 
