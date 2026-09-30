@@ -4913,3 +4913,122 @@ html[data-motion="off"][data-theme="obsidian"] .cooldown-chip { color: #B8AFA3; 
 .trim-crimson { --trim-metal: radial-gradient(90% 90% at 35% 30%, #ff5068 0%, #c0162e 45%, #4e0410 100%); --trim-spec: 0.75; }
 .trim-burgundy { --trim-metal: linear-gradient(160deg, #c46a5c 0%, #86342f 45%, #3e1214 100%); --trim-spec: 0.35; }
 .felt-choice[aria-checked="true"] .trim-swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.55), inset 0 -6px 10px rgba(0,0,0,0.35), 0 0 0 2px var(--accent-gold), 0 2px 8px rgba(212,175,55,0.35); }
+
+/* =========================================================
+   NEON GRID'S ROOM (assets/rooms/neon.js) - synthwave night: real neon
+   round the glass, a red moon and a grid that runs out of the screen. Its
+   Lounge and Quiet levels; the pieces' makers are in the room's own header.
+   The type: Tilt Neon for the wordmark, Rajdhani for the UI, names and
+   buttons, Orbitron for numbers and timers (fetched when the room is first
+   built - until then the fallbacks stand in).
+   ========================================================= */
+[data-theme="neon"] {
+  --nn-sign: 'Tilt Neon', 'Rajdhani', system-ui, sans-serif;
+  --nn-ui: 'Rajdhani', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --nn-num: 'Orbitron', 'Rajdhani', ui-monospace, monospace;
+  --nn-night: #07060F;
+  --nn-red: #FF2D55;
+  --nn-magenta: #FF007F;
+  --nn-hot: #FF2D95;
+  --nn-violet: #8B5CF6;
+}
+[data-theme="neon"] .app-container, [data-theme="neon"] .docked-footer { position: relative; z-index: 2; }
+[data-theme="neon"] .docked-footer { position: fixed; }
+
+/* The wordmark: lettered in neon - a white-hot core in a coloured sheath,
+   its bloom thrown on the page. "Daily" in magenta, "Roll Over" in cyan, as
+   two tubes would be. */
+[data-theme="neon"] .app-title,
+[data-theme="neon"] .landing-title { font-family: var(--nn-sign); font-weight: 400; letter-spacing: 0.02em; -webkit-text-stroke: 0; color: #FFE9F3;
+  text-shadow: 0 0 1px #fff, 0 0 3px var(--nn-hot), 0 0 9px var(--nn-magenta), 0 0 22px rgba(255,0,127,0.65), 0 0 44px rgba(255,0,127,0.3); }
+[data-theme="neon"] .app-title span,
+[data-theme="neon"] .landing-title span { -webkit-text-stroke: 0; color: #E6FCFF;
+  text-shadow: 0 0 1px #fff, 0 0 3px #7ff3ff, 0 0 9px var(--accent-cyan), 0 0 22px rgba(0,229,255,0.6), 0 0 44px rgba(0,229,255,0.28); }
+[data-theme="neon"] .app-title { font-size: 2.2rem; }
+/* (a tube now and then stutters as a real sign does - the room sets this
+   for a moment at a random interval) */
+[data-theme="neon"] .app-title.nn-stutter span { animation: nn-stutter 0.34s steps(1, end); }
+@keyframes nn-stutter { 0% { opacity: 1; } 12% { opacity: 0.35; } 22% { opacity: 1; } 40% { opacity: 0.6; } 48% { opacity: 1; } 100% { opacity: 1; } }
+
+/* Type: the UI in Rajdhani, numbers and timers in Orbitron. */
+[data-theme="neon"] .date-header { font-family: var(--nn-ui); font-weight: 700; letter-spacing: 0.22em; }
+[data-theme="neon"] .casino-name { font-family: var(--nn-ui); font-weight: 700; font-size: 1.14rem; letter-spacing: 0.01em; }
+[data-theme="neon"] .nav-tab, [data-theme="neon"] .filter-btn, [data-theme="neon"] .sort-trigger-btn,
+[data-theme="neon"] .btn-open, [data-theme="neon"] .btn-dock, [data-theme="neon"] .btn-start-run,
+[data-theme="neon"] .btn-share, [data-theme="neon"] .sort-stack-chip { font-family: var(--nn-ui); font-weight: 700; letter-spacing: 0.06em; }
+[data-theme="neon"] .status-time, [data-theme="neon"] .cooldown-chip, [data-theme="neon"] .ready-at,
+[data-theme="neon"] .hero-details p { font-family: var(--nn-num); font-weight: 500; letter-spacing: 0.02em; }
+[data-theme="neon"] .hero-details h2 { font-family: var(--nn-ui); font-weight: 700; }
+
+/* The ring round the ready count: drawn by the room (SVG) - a hand-bent
+   neon circle on a spun-aluminium plate. The count sits on the plate in
+   Orbitron, lit by the tube round it. */
+.nn-ring { display: none; }
+[data-theme="neon"] .hero-ring-wrapper { width: 112px; height: 112px; }
+[data-theme="neon"] .nn-ring { display: block; position: absolute; inset: 0; pointer-events: none; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6)); transition: opacity 0.3s; }
+.nn-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.nn-rtube { fill: none; stroke: rgba(210, 220, 235, 0.13); stroke-width: 4.2; }
+.nn-rtube-in { fill: none; stroke: rgba(0, 0, 0, 0.35); stroke-width: 0.7; }
+.nn-rtube-hi { fill: none; stroke: rgba(255, 255, 255, 0.4); stroke-width: 0.5; stroke-dasharray: 18 100; stroke-dashoffset: -58; stroke-linecap: round; }
+.nn-rarc { fill: none; stroke-linecap: butt; }
+.nn-rarc-glow { stroke: #FF2D55; stroke-width: 9; opacity: 0.75; }
+.nn-rarc-sheath { stroke: #FF3B62; stroke-width: 3.6; }
+.nn-rarc-core { stroke: #FFE6EC; stroke-width: 1.3; }
+.nn-clip { fill: rgba(200, 215, 235, 0.18); stroke: rgba(255,255,255,0.35); stroke-width: 0.4; }
+.nn-clip-screw { fill: #8b919c; stroke: rgba(0,0,0,0.6); stroke-width: 0.25; }
+.nn-clip-slot { stroke: rgba(0,0,0,0.75); stroke-width: 0.3; }
+.nn-relec rect { fill: #1b1c22; stroke: rgba(0,0,0,0.8); stroke-width: 0.3; }
+.nn-relec rect.nn-relec-band { fill: #c7ccd6; stroke: none; }
+[data-theme="neon"] .hero-ring-circle { position: absolute; inset: 22%; width: auto; height: auto; z-index: 1; border: 0; background: transparent; box-shadow: none;
+  font-family: var(--nn-num); font-weight: 700; font-size: 1.85rem; line-height: 1; color: #FFF3F6;
+  text-shadow: 0 0 2px rgba(255,255,255,0.8), 0 0 10px rgba(255,45,85,0.75), 0 0 20px rgba(255,45,85,0.35); }
+/* (while the payout's ring is out of the plate, the plate's own tube is bare) */
+[data-theme="neon"] .hero-ring-wrapper.nn-out .nn-rarc { opacity: 0 !important; }
+[data-theme="neon"] .hero-ring-wrapper.nn-out .nn-rtube { stroke: rgba(210, 220, 235, 0.06); }
+
+/* The beads: clear glass rising into the ring - a spark top left, the far
+   rim bright where it bends the light, cyan from the ring above. */
+.nn-bead { position: absolute; z-index: 2; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 34% 30%, rgba(255,255,255,0.95) 0 10%, rgba(255,255,255,0) 20%),
+    radial-gradient(circle at 60% 66%, rgba(0,0,0,0) 45%, rgba(170, 250, 255, 0.9) 70%, rgba(0, 229, 255, 0.25) 84%, rgba(0,0,0,0) 100%),
+    radial-gradient(circle at 50% 50%, rgba(0, 229, 255, 0.12) 0 60%, rgba(0,0,0,0) 72%);
+  box-shadow: 0 0 5px rgba(0, 229, 255, 0.55); will-change: transform, opacity; }
+html[data-motion="off"] .nn-bead { display: none; }
+
+/* The tube round the glass: under every sheet, the tour, the landing and
+   the table, like the gold edge. Its gas colour flows once round in 8 s
+   (the hue turns; the bare glass and the metal are grey, so they don't). */
+.nn-edge { display: none; }
+[data-theme="neon"] .nn-edge { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 95; pointer-events: none; overflow: visible;
+  animation: nn-flow 8s linear infinite; will-change: filter; }
+@keyframes nn-flow { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(-360deg); } }
+.nn-edge path { fill: none; stroke-linecap: round; }
+.nn-bare { stroke: rgba(210, 220, 235, 0.12); stroke-width: 3.4; }
+.nn-bare-hi { stroke: url(#nnLamp); stroke-width: 0.55; }
+.nn-glow { stroke-width: 7px; opacity: 1; }
+.nn-glow path { stroke-width: inherit; }
+.nn-sheath path { stroke-width: 3.2; }
+.nn-core path { stroke-width: 1.15; }
+.nn-stud rect { fill: rgba(205, 225, 245, 0.2); stroke: rgba(255,255,255,0.4); stroke-width: 0.35; }
+.nn-stud path { stroke: rgba(170, 176, 188, 0.85); stroke-width: 0.35; }
+.nn-stud-hi { fill: #fff; opacity: 0.85; }
+.nn-elec-case { fill: #17181d; stroke: rgba(0,0,0,0.85); stroke-width: 0.35; }
+.nn-elec-band { fill: #c5cad4; }
+.nn-elec-hi { stroke: rgba(255,255,255,0.35); stroke-width: 0.4; }
+html[data-motion="off"] .nn-edge { animation: none; filter: none; }
+
+/* The payout: Moonrise out of the phone (assets/intro3d/moonrise.mjs),
+   drawn twice - what is behind the glass under the app, what is in front
+   of it over the app, under every sheet. */
+.nn-moon { position: fixed; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.nn-moon-back { z-index: 1; }
+.nn-moon-front { z-index: 98; }
+html[data-motion="off"] .nn-moon { display: none; }
+
+/* Quiet: the room held still and read more easily - larger numbers, the
+   small print lifted. */
+html[data-motion="off"][data-theme="neon"] .hero-ring-circle { font-size: 2.05rem; }
+html[data-motion="off"][data-theme="neon"] .casino-name { font-size: 1.22rem; }
+html[data-motion="off"][data-theme="neon"] .status-time { font-size: 0.95em; }
+html[data-motion="off"][data-theme="neon"] .card-status .ready-at,
+html[data-motion="off"][data-theme="neon"] .cooldown-chip { color: #b9c6db; }

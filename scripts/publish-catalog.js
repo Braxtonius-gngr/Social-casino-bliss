@@ -9,7 +9,7 @@
  * It authenticates with a publish key instead of the owner's session. The
  * database's publish_catalog_with_key() checks the key against the SHA-256
  * hashes in catalog_publish_keys, then runs the owner's publish unchanged
- * (supabase/migrations/20260928153000_catalog_publish_key.sql). The project
+ * (supabase/migrations/20260928152228_catalog_publish_key.sql). The project
  * URL and the public anon key are read from index.html, so each has one copy.
  *
  * Usage:  CATALOG_PUBLISH_KEY=... node scripts/publish-catalog.js
