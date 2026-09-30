@@ -4665,8 +4665,10 @@ html[data-motion="off"][data-theme="executive"] .cooldown-chip { color: #AEB1B8;
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9 .6' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 .92 0 0 0 0 .89 0 0 0 0 .85 0 0 0 .5 -.18'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
   opacity: 0.07;
 }
-[data-theme="obsidian"] .app-container, [data-theme="obsidian"] .docked-footer { position: relative; z-index: 2; }
-[data-theme="obsidian"] .docked-footer { position: fixed; }
+/* (the deck over the star chart and over the orrery's far half - see
+   .ob-orrery-back; the docked footer keeps its own z-index: 50, already
+   over both) */
+[data-theme="obsidian"] .app-container { position: relative; z-index: 2; }
 
 /* The masthead: the date in small capitals, the wordmark set in Cormorant
    with "Roll Over" in brass italic, and under it a rule with a star cut in
@@ -4829,6 +4831,58 @@ html[data-motion="off"] .ob-orbit { display: none; }
 .ob-orrery-back { z-index: 1; }
 .ob-orrery-front { z-index: 98; }
 html[data-motion="off"] .ob-orrery { display: none; }
+
+/* The study (Showroom: assets/intro3d/study.mjs). The ledger's pages, laid
+   open on the desk: paper ruled in faint blue with the ledger's red double
+   margin, the gutter in shadow where the leaves go down into the binding;
+   set in Cormorant and Cinzel. Held at 30 page pixels to the centimetre
+   (a 38 x 25 cm folio: 1140 x 750) and scaled down in 3D, so the print is
+   rasterised sharp. Laid out to the pixel as drawPages() prints the same
+   spread onto the book for the dive, so the one hands over to the other
+   without a jump: each line placed by its baseline (top = baseline - 0.8
+   of its size). */
+.r3s-ledger { pointer-events: auto; color: #2b241a; font-family: 'Cormorant Garamond', Georgia, serif; line-height: 1; }
+.r3s-ledger-in { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr;
+  background: radial-gradient(62% 90% at 50% 40%, #efe7d3 0%, #e6dcc3 70%, #d9ccae 100%); border-radius: 6px; }
+.r3s-page { position: relative; background: repeating-linear-gradient(180deg, transparent 0 53px, rgba(70,95,140,0.16) 53px 54px); }
+.r3s-page::before { content: ''; position: absolute; top: 0; bottom: 0; left: 62px; width: 4.2px; border-left: 1.8px solid rgba(165,45,40,0.45); border-right: 1.8px solid rgba(165,45,40,0.45); }
+.r3s-right::before { left: 32px; }
+.r3s-left { box-shadow: inset -46px 0 40px -30px rgba(60,40,15,0.42); }
+.r3s-right { box-shadow: inset 46px 0 40px -30px rgba(60,40,15,0.42); }
+.r3s-page > * { position: absolute; margin: 0; white-space: nowrap; }
+.r3s-eyebrow { top: 76px; font-family: 'Cinzel', Georgia, serif; font-weight: 600; font-size: 25px; letter-spacing: 0; color: #6d5530; }
+.r3s-left > * { left: 88px; }
+.r3s-right > * { left: 60px; }
+.r3s-day { top: 120px; font-style: italic; font-weight: 500; font-size: 38px; color: #3b3122; }
+.r3s-clock { top: 183px; display: flex; align-items: baseline; gap: 14px; }
+.r3s-now { font-weight: 600; font-size: 146px; line-height: 1; color: #221c13; font-variant-numeric: lining-nums; }
+.r3s-ampm { font-family: 'Cinzel', Georgia, serif; font-weight: 500; font-size: 28px; color: #6d5530; }
+.r3s-line { right: 60px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.4px dotted rgba(90,70,40,0.35); padding-bottom: 8px; }
+.r3s-l1 { top: 391px; }
+.r3s-l2 { top: 461px; }
+.r3s-line span { font-style: italic; font-weight: 500; font-size: 36px; color: #5d4f3a; }
+.r3s-line b { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 500; font-size: 30px; color: #2b241a; }
+.r3s-hand { top: 169px; display: flex; align-items: baseline; gap: 16px; }
+.r3s-ready { font-weight: 600; font-size: 164px; line-height: 1; color: #221c13; font-variant-numeric: lining-nums; }
+.r3s-ready-k { font-style: italic; font-weight: 500; font-size: 50px; color: #5d4f3a; }
+.r3s-value { top: 333px; font-style: italic; font-weight: 500; font-size: 34px; color: #5d4f3a; }
+/* the hand's plate: brass, lettered in Cinzel - struck, not printed */
+.r3s-run { top: 420px; right: 60px; height: 92px; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; border: 2px solid #8c6a3a; border-radius: 0; cursor: pointer;
+  font-family: 'Cinzel', Georgia, serif; font-weight: 700; font-size: 32px; letter-spacing: 0; color: #1c1812;
+  background: linear-gradient(180deg, #dcbf8a 0%, #bd9a66 52%, #a2814f 100%); box-shadow: inset 0 1.5px 0 rgba(255,244,214,0.6), 0 3px 6px rgba(60,40,15,0.35); }
+.r3s-run i { font-style: normal; font-size: 50px; line-height: 0.6; }
+.r3s-run:active { transform: translateY(1px); box-shadow: inset 0 1px 0 rgba(255,244,214,0.4), 0 1px 2px rgba(60,40,15,0.35); }
+.r3s-dive { top: 646px; padding: 0; border: 0; background: none; cursor: pointer; font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-weight: 600; font-size: 42px; color: #7a4a22; }
+.r3s-foot { top: 658px; font-style: italic; font-weight: 500; font-size: 28px; color: #7d6d55; }
+.r3s-ledger :focus-visible { outline: 4px solid #6d5530; outline-offset: 6px; }
+/* Inside the orrery, the way out: a small brass-edged plate at the top. */
+.r3s-out { position: absolute; top: max(16px, env(safe-area-inset-top)); left: 50%; transform: translate(-50%, -12px); opacity: 0; visibility: hidden; pointer-events: auto;
+  padding: 10px 18px; border-radius: 3px; border: 1px solid rgba(201,164,94,0.7); background: rgba(18,16,14,0.78); color: #e6cc96; cursor: pointer;
+  font-family: 'Cinzel', Georgia, serif; font-weight: 600; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase;
+  transition: opacity .5s ease, transform .5s ease, visibility 0s linear .5s; }
+.r3s-out.r3s-on { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition: opacity .6s ease .1s, transform .6s ease .1s, visibility 0s; }
+.r3s-out:focus-visible { outline: 2px solid #e6cc96; outline-offset: 3px; }
+html[data-motion="off"] .r3s-out { transition: none; }
 
 /* Quiet: the room held still and read more easily - larger numbers and
    stronger contrast on the small print. */

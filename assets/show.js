@@ -219,8 +219,9 @@
     if (note) note.textContent = levelNote();
     var btn = document.getElementById('btnPlayPayout');
     if (btn) {
+      // (the payout plays over the deck: at Showroom, the home is a table)
       var p = room() && room().payout;
-      btn.hidden = !p;
+      btn.hidden = !p || showLevel() === 'showroom';
       btn.disabled = !(p && lively());
       btn.textContent = p && lively() ? (p.label || 'PLAY THE PAYOUT') : 'THE PAYOUT IS OFF WHILE THINGS HOLD STILL';
     }
