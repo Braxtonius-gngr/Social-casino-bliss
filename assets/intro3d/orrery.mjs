@@ -321,7 +321,7 @@ export function createBreakout() {
   let crankEnd = 0, lastFrame = 0, crankAt = 0, drift = 0;
 
   function canWebGL() {
-    try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) { return false; }
+    try { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); } catch (e) { return false; }
   }
   function setup() {
     if (renderer) return true;
