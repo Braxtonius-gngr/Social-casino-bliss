@@ -241,6 +241,10 @@ function describeRanking(to) {
   return parts.join(', ');
 }
 
+function ruleOnlyChange(event) {
+  return Array.isArray(event.changed) && event.changed.length === 1 && event.changed[0] === 'blocker';
+}
+
 // One line of a platform's history, from data/catalog-history.json.
 function historyLine(event) {
   const { from, to } = event;
@@ -265,7 +269,7 @@ function historyLine(event) {
     }
   }
   if (to.blocker && to.blocker !== from.blocker) details.push(blockerText(to.blocker));
-  else if (from.blocker && !to.blocker) details.push('rule warning lifted');
+  else if (from.blocker && !to.blocker && !ruleOnlyChange(event)) details.push('rule warning lifted');
   else if (RANKED.has(to.tier) && !to.blocker && typeof to.daysToRedeem === 'number') details.push(`about ${formatCount(to.daysToRedeem)} days to cash out`);
   const renamed = event.renamedFrom ? ` (listed as ${event.renamedFrom} before)` : '';
   if (to.tier === 'Not Rankable' && from.tier !== 'Not Rankable') {
@@ -273,8 +277,9 @@ function historyLine(event) {
   }
   let headline;
   // A change to the rule warning alone is not a numbers update.
-  const ruleOnly = Array.isArray(event.changed) && event.changed.length === 1 && event.changed[0] === 'blocker';
-  if (from.tier === to.tier && ruleOnly) headline = `Rule warning ${to.blocker ? 'added' : 'changed'}${RANKED.has(to.tier) ? `, still tier ${to.tier}` : ''}`;
+  const ruleOnly = ruleOnlyChange(event);
+  const ruleVerb = !from.blocker ? 'added' : !to.blocker ? 'lifted' : 'changed';
+  if (from.tier === to.tier && ruleOnly) headline = `Rule warning ${ruleVerb}${RANKED.has(to.tier) ? `, still tier ${to.tier}` : ''}`;
   else if (from.tier === to.tier) headline = RANKED.has(to.tier) ? `Numbers updated, still tier ${to.tier}` : 'Numbers updated';
   else if (to.tier === 'Unranked') headline = RANKED.has(from.tier) ? `Taken out of tier ${from.tier} until its numbers are confirmed` : 'Moved to not yet ranked';
   else if (!RANKED.has(from.tier)) headline = `Ranked tier ${to.tier}`;
