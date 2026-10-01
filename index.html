@@ -5447,12 +5447,6 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         screen.classList.remove('intro-play', 'roll-popped');
         screen.classList.add('roll-rest');
         armTable();
-        // (a replayed landing: the keyboard comes to its button)
-        if (rollFocusLanding) {
-          rollFocusLanding = false;
-          const btn = screen.querySelector('.landing-btn');
-          if (btn) setTimeout(() => btn.focus({ preventScroll: true }), 60);
-        }
       };
       // A tap, a key or focus arriving mid-shot: straight to the end of it -
       // held still with motion off, floating on otherwise.
@@ -5573,9 +5567,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const main = document.getElementById('main-content');
       if (main) main.focus({ preventScroll: true });
     }
-    // (set by replayLanding: the landing's button takes focus when the shot
-    // settles)
-    let rollFocusLanding = false;
+    // (replayLanding: the landing's button takes focus once the shot rests -
+    // the class every intro path ends on - or if the landing goes first,
+    // nothing; one watcher at a time)
+    let rollFocusWatch = null;
+    function rollFocusLandingWhenSettled(screen) {
+      if (rollFocusWatch) rollFocusWatch.disconnect();
+      const done = () => { if (rollFocusWatch) { rollFocusWatch.disconnect(); rollFocusWatch = null; } };
+      const check = () => {
+        if (screen.classList.contains('hidden')) { done(); return; }
+        if (!screen.classList.contains('roll-rest')) return;
+        done();
+        const btn = screen.querySelector('.landing-btn');
+        if (btn) setTimeout(() => btn.focus({ preventScroll: true }), 60);
+      };
+      rollFocusWatch = new MutationObserver(check);
+      rollFocusWatch.observe(screen, { attributes: true, attributeFilter: ['class'] });
+    }
     // ---- Out of body: drifting from one home to another.
     // The homes share one room (the craps table in the middle, the card
     // table, the study, the arcade round it), and every home's fly-in starts
@@ -5615,6 +5623,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const s = rollTableSession;
       if (!s || !s.world || !s.stage || s.drifting || !ROLL_DESTS[dest] || dest === s.dest) return false;
       s.drifting = true;
+      // (chosen from the keyboard: the keyboard lands with you - see onArrive)
+      const ae = document.activeElement;
+      const byKeyboard = !!(ae && ae.closest && ae.closest('#r3Drift, #r3DriftPanel'));
       rollDriftClose();
       const world = s.world;
       const motionOff = () => document.documentElement.getAttribute('data-motion') === 'off';
@@ -5651,6 +5662,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             document.body.classList.remove('r3-adrift');
             s.drifting = false;
             rollDriftUI(s);
+            if (byKeyboard) {
+              const next = document.querySelector('#r3Drift .r3-drift-sit') || document.querySelector('#r3Drift .r3-drift-out');
+              if (next) next.focus({ preventScroll: true });
+            }
           }
         });
         s.table = table;
@@ -5769,8 +5784,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       screen.classList.remove('hidden', 'roll-rest', 'roll-popped', 'r3-flying', 'r3-direct');
       screen.scrollTop = 0;
       // (the keyboard goes where the eye is: to the landing's button once
-      // the shot has settled - see end() in rollIntro3d)
-      rollFocusLanding = true;
+      // the shot has settled - WebGL or CSS, played or held still)
+      rollFocusLandingWhenSettled(screen);
       // (a startup hold still waiting gives way: its bar goes, its callback
       // doesn't run, and this replay is what plays)
       if (appUpdate.active) appUpdateEnd(false);
@@ -8789,10 +8804,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // (a whole build answers at once; anything slower shows the bar while
       // the answer comes, and a late "whole" takes it away again)
       let answered = false;
-      const early = setTimeout(() => { if (!answered) appHoldForUpdate(go, where, null); }, 350);
+      // (a call another has superseded touches nothing: not the bar, not the
+      // hold - the newer call owns them)
+      const current = () => gen === appWhenCachedGen;
+      const early = setTimeout(() => { if (!answered && current()) appHoldForUpdate(go, where, null); }, 350);
       appAskBuild(2500).then(st => {
         answered = true;
         clearTimeout(early);
+        if (!current()) return;
         // this build, whole, and already serving this page: play
         if (st && st.version === APP_BUILD && st.complete && navigator.serviceWorker.controller) {
           if (appUpdate.active) appUpdateEnd(true); else go();
