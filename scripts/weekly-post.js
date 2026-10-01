@@ -78,7 +78,7 @@ function netChanges(history, since, until) {
     }
     const from = first.added ? null : first.from;
     const to = last.to;
-    if (from && from.tier === to.tier && from.dailySC === to.dailySC && from.cashFloor === to.cashFloor) continue;
+    if (from && from.tier === to.tier && from.dailySC === to.dailySC && from.cashFloor === to.cashFloor && from.blocker === to.blocker) continue;
     out.push({ name, from, to, added: !!first.added });
   }
   return out;
