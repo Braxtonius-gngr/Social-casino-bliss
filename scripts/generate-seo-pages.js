@@ -412,7 +412,12 @@ function hubMarkup(entries, baseUrl, updated) {
 ${rows.map(({ entry, slug }) => `        <li><a href="${escapeHtml(slug)}.html">${escapeHtml(entry.name.trim())}</a></li>`).join('\n')}
       </ul>`;
     }
-    return `${heading}
+    // A blocker entry sits in its tier by rule, not by the band's day range
+    // (validate-catalog.js), so say so rather than let the heading imply it.
+    const ruleNote = rows.some(({ entry }) => entry.blocker)
+      ? `\n      <p>Platforms marked "No free path" are placed in tier ${tier} by rule, not by the day range: a platform rule stops free daily bonuses alone from reaching the cash minimum.</p>`
+      : '';
+    return `${heading}${ruleNote}
       <table>
         <thead><tr><th>Platform</th><th>SC per day</th><th>Cash minimum</th><th>Days to cash out</th></tr></thead>
         <tbody>
