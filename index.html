@@ -1482,6 +1482,7 @@
   <!-- Each skin's room past the default's (assets/show.js, showAddRoom) -->
   <script src="assets/rooms/obsidian.js"></script>
   <script src="assets/rooms/neon.js"></script>
+  <script src="assets/rooms/glitch.js"></script>
   <!-- Cloud sync (optional, opt-in - see the "Cloud sync" block near the
        end of the inline script below). Loaded from a CDN rather than
        vendored, matching how Google Fonts is already loaded here - this
@@ -7069,33 +7070,32 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       },
       glitch: {
         name: 'Dead Channel',
-        description: 'Broken CRT signal. Acid green and alarm red on true black, with a static jolt that never quite settles.',
+        description: 'A television left on a dead channel. Bone phosphor and blood red on black glass: the picture tunes in with the day\'s run, a scope traces it, a face shows in the snow when you collect, and when a run is done, something comes through the glass.',
         vars: {
-          '--bg-base': '#060806',
-          '--accent-gold': '#39FF14',
-          '--accent-gold-hover': '#5EFF42',
-          '--accent-gold-dim': 'rgba(57, 255, 20, 0.16)',
-          '--accent-green': '#00FFA0',
-          '--accent-green-dim': 'rgba(0, 255, 160, 0.16)',
-          '--accent-pink': '#FF2A2A',
-          '--accent-pink-dim': 'rgba(255, 42, 42, 0.18)',
-          '--accent-orange': '#FFB000',
-          '--accent-orange-dim': 'rgba(255, 176, 0, 0.16)',
-          '--accent-cyan': '#00E5FF',
-          '--accent-cyan-dim': 'rgba(0, 229, 255, 0.16)',
-          '--glass-border': 'rgba(57, 255, 20, 0.18)',
-          '--glass-highlight': 'rgba(57, 255, 20, 0.08)',
-          '--text-main': '#D6FFD6',
-          '--text-muted': '#7FAE7F',
-          '--text-dim': '#3F5C3F',
-          '--tier-s': '#FF2A2A',
-          '--tier-a': '#FFB000',
-          '--tier-b': '#00E5FF',
-          '--tier-c': '#3F5C3F'
+          '--bg-base': '#050608',
+          '--accent-gold': '#E9E4D8',
+          '--accent-gold-hover': '#FFFFFF',
+          '--accent-gold-dim': 'rgba(233, 228, 216, 0.12)',
+          '--accent-green': '#9ED8C4',
+          '--accent-green-dim': 'rgba(158, 216, 196, 0.14)',
+          '--accent-pink': '#E0242F',
+          '--accent-pink-dim': 'rgba(224, 36, 47, 0.18)',
+          '--accent-orange': '#F0703A',
+          '--accent-orange-dim': 'rgba(240, 112, 58, 0.16)',
+          '--accent-cyan': '#7DB6F0',
+          '--accent-cyan-dim': 'rgba(125, 182, 240, 0.16)',
+          '--glass-border': 'rgba(233, 228, 216, 0.14)',
+          '--glass-highlight': 'rgba(233, 228, 216, 0.06)',
+          '--text-main': '#E6E1D6',
+          '--text-muted': '#8E97A3',
+          '--text-dim': '#4E5661',
+          '--tier-s': '#E0242F',
+          '--tier-a': '#F0703A',
+          '--tier-b': '#7DB6F0',
+          '--tier-c': '#5A6270'
         },
-        bodyBg: 'repeating-linear-gradient(0deg, rgba(57,255,20,0.035) 0px, rgba(57,255,20,0.035) 1px, transparent 1px, transparent 3px), radial-gradient(120% 90% at 50% 15%, rgba(57,255,20,0.09) 0%, transparent 55%), linear-gradient(180deg, #060806 0%, #020302 100%)',
-        metaColor: '#060806'
-      },
+        bodyBg: 'repeating-linear-gradient(0deg, rgba(233,228,216,0.03) 0px, rgba(233,228,216,0.03) 1px, transparent 1px, transparent 3px), radial-gradient(120% 90% at 50% 15%, rgba(125,182,240,0.05) 0%, transparent 55%), linear-gradient(180deg, #07090c 0%, #030405 100%)',
+        metaColor: '#050608',      },
       // West Texas Gore Fest: the renamed, re-tinted Boot Hill (briefly
       // "Texas Chainsaw Massacre" - a film's name, dropped 2026-09-30).
       // Display name and description only - the object key stays 'western' so the
@@ -8747,7 +8747,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v82';
+    const APP_BUILD = 'almanac-v84';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
