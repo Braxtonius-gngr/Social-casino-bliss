@@ -2089,6 +2089,24 @@
   ],
   "Moon Spin": [
     {
+      "date": "2026-09-30",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "C",
+        "dailySC": 0.5,
+        "cashFloor": 100,
+        "daysToRedeem": 200
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 0.5,
+        "cashFloor": 100,
+        "daysToRedeem": 200
+      }
+    },
+    {
       "date": "2026-09-22",
       "changed": [
         "tier"
@@ -2491,6 +2509,24 @@
     }
   ],
   "ReBet": [
+    {
+      "date": "2026-09-30",
+      "changed": [
+        "tier"
+      ],
+      "from": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": 20,
+        "daysToRedeem": 20
+      },
+      "to": {
+        "tier": "D",
+        "dailySC": 1,
+        "cashFloor": 20,
+        "daysToRedeem": 20
+      }
+    },
     {
       "date": "2026-09-21",
       "changed": [
