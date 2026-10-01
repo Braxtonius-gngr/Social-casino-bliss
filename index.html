@@ -9038,14 +9038,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     // Diagnostics attached to every report so the tester need not describe
     // their device: the same set the old direct-to-Discord post carried,
-    // plus the build and the theme in effect, since the skins render the
-    // same bug differently.
+    // plus the build and the skin in effect. The skin id, not data-theme:
+    // Executive Lounge and Refinement x Realization share a look but not
+    // their effects, so a bug must say which one it was seen on.
     function feedbackMeta() {
       return {
         userAgent: (navigator.userAgent || 'unknown').slice(0, 1024),
         appBuild: APP_BUILD,
         catalogVersion: catalogVersionLabel().slice(0, 128),
-        theme: document.documentElement.getAttribute('data-theme') || null,
+        theme: getActiveThemeId(),
         trackedCount: trackedGames.length,
         recentErrors: recentAppErrors.slice(-10)
       };
@@ -9071,11 +9072,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (error) {
           // The function's own message (a rate limit, a validation miss)
           // is more useful than supabase-js's generic wrapper.
-          let detail = error.message || 'request failed';
-          if (error.context && typeof error.context.json === 'function') {
-            try { detail = (await error.context.json()).error || detail; } catch (_) { /* keep the wrapper's message */ }
-          }
-          throw new Error(detail);
+          const detail = await extractFunctionsErrorDetail(error);
+          throw new Error((detail.body && detail.body.error) || error.message || 'request failed');
         }
         if (!data || !data.ok) throw new Error((data && data.error) || 'no reply');
         closeModals();

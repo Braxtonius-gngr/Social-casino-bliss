@@ -14,7 +14,7 @@ create table if not exists public.bug_reports (
   user_agent       text,
   app_build        text,                                 -- APP_BUILD at the time, e.g. almanac-v85
   catalog_version  text,                                 -- catalogVersionLabel() at the time
-  theme            text,                                 -- data-theme in effect, e.g. western
+  theme            text,                                 -- the skin in effect (getActiveThemeId()), e.g. western
   tracked_count    integer,
   recent_errors    jsonb       not null default '[]'::jsonb, -- recentAppErrors, newest last
   user_id          uuid,                                 -- the signed-in account (anonymous ones count), if any

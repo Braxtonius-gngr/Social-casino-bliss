@@ -35,15 +35,16 @@ A floating feedback button (bottom-right, above the docked footer) opens a
 small modal for structured bug reports and ideas - a category
 (timer bug / catalogue-rule correction / feature idea / other) plus a free-text
 description. Submitting calls the `bug-report` edge function with
-`navigator.userAgent`, the app build, the loaded catalogue version, the theme
+`navigator.userAgent`, the app build, the loaded catalogue version, the skin
 in effect, and the last few in-memory app errors auto-attached, so reports are
 debuggable without asking the tester follow-up questions. The function saves
 the report to `public.bug_reports` (owner/service-role only; the PWA never
 reads it) and then forwards the same Discord embed the form used to post
 itself, from the `DISCORD_BUG_WEBHOOK` edge-function secret. Nothing about the
 channel reaches the browser, and a report is kept even when Discord is down
-(`discord_status` records whether the copy went out). One device is limited to
-ten reports an hour. Set the secret in the Supabase dashboard (Edge Functions
+(`discord_status` records whether the copy went out). One address is limited to
+ten reports an hour, counted in the database (`allow_bug_report`) from the
+trusted client address, which is stored only as a salted hash. Set the secret in the Supabase dashboard (Edge Functions
 → Secrets); without it reports are still saved and marked `skipped`. The
 table's `status` column (`new` → `triaged` / `fixed` / `wontfix` / `duplicate`)
 is what the daily brief reads alongside `catalog_sweep_findings`.

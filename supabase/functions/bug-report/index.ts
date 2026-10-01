@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
-import { buildEmbed, CATEGORIES, cleanErrors, type Report, validate } from "./report.ts";
+import { addressKey, buildEmbed, cleanErrors, clientAddress, type Report, validate } from "./report.ts";
 
 // POST { category, text, meta?: { userAgent, appBuild, catalogVersion, theme, trackedCount, recentErrors } }
 //   -> { ok: true, id, discord: 'sent' | 'failed' | 'skipped' }
@@ -17,9 +17,10 @@ const allowedOrigins = new Set([
   "http://localhost:8080",
   "http://localhost:5173",
 ]);
-// One device gets this many reports per hour before being asked to wait.
+// One address gets this many reports per hour before being asked to wait.
+// The count lives in the database (allow_bug_report), so a parallel burst
+// is counted, not raced.
 const RATE_LIMIT = 10;
-const RATE_WINDOW_MS = 60 * 60 * 1000;
 // Discord gets this long before the report is recorded as 'failed' and the
 // tester still sees a thank-you: the row is already saved.
 const DISCORD_TIMEOUT_MS = 8_000;
@@ -39,18 +40,6 @@ function jsonResponse(body: Record<string, unknown>, status: number, cors: Recor
     status,
     headers: { ...cors, "Content-Type": "application/json" },
   });
-}
-
-// The caller's address is only ever stored hashed with a per-project salt,
-// and only so one device cannot flood the channel.
-async function hashAddress(req: Request): Promise<string | null> {
-  const forwarded = req.headers.get("x-forwarded-for") ?? "";
-  const address = forwarded.split(",")[0].trim() || req.headers.get("cf-connecting-ip") || "";
-  if (!address) return null;
-  const salt = Deno.env.get("BUG_REPORT_SALT") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  const bytes = new TextEncoder().encode(`${salt}:${address}`);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 async function forwardToDiscord(report: Report, id: number): Promise<"sent" | "failed" | "skipped"> {
@@ -83,7 +72,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return jsonResponse({ error: "POST only." }, 405, cors);
 
-  let body: Record<string, unknown>;
+  let body: unknown;
   try {
     body = await req.json();
   } catch {
@@ -94,10 +83,18 @@ serve(async (req) => {
   if ("error" in checked) return jsonResponse({ error: checked.error }, 400, cors);
   const report = checked.report;
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-  );
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", serviceKey);
+
+  // Count the request before anything is written. The limiter never sees
+  // the address itself, only a salted hash; a limiter error lets the
+  // report through rather than losing it.
+  const key = await addressKey(clientAddress(req), Deno.env.get("BUG_REPORT_SALT") ?? serviceKey);
+  const { data: allowed, error: rateError } = await supabase.rpc("allow_bug_report", { p_key_hash: key, p_limit: RATE_LIMIT });
+  if (rateError) console.error("allow_bug_report failed", rateError);
+  if (!rateError && allowed === false) {
+    return jsonResponse({ error: "That's plenty for one hour - thank you. Try again a little later." }, 429, cors);
+  }
 
   // The account is recorded when there is one (the device's anonymous
   // account counts); a report from a page with no session is still taken.
@@ -106,19 +103,6 @@ serve(async (req) => {
   if (token) {
     const { data } = await supabase.auth.getUser(token).catch(() => ({ data: { user: null } }));
     userId = data?.user?.id ?? null;
-  }
-
-  const ipHash = await hashAddress(req);
-  if (ipHash) {
-    const since = new Date(Date.now() - RATE_WINDOW_MS).toISOString();
-    const { count, error } = await supabase
-      .from("bug_reports")
-      .select("id", { count: "exact", head: true })
-      .eq("ip_hash", ipHash)
-      .gte("created_at", since);
-    if (!error && (count ?? 0) >= RATE_LIMIT) {
-      return jsonResponse({ error: "That's plenty for one hour - thank you. Try again a little later." }, 429, cors);
-    }
   }
 
   const { data: inserted, error: insertError } = await supabase
@@ -133,7 +117,6 @@ serve(async (req) => {
       tracked_count: report.meta.trackedCount,
       recent_errors: cleanErrors(report.meta.recentErrors),
       user_id: userId,
-      ip_hash: ipHash,
       origin: req.headers.get("Origin"),
     })
     .select("id")
@@ -148,5 +131,3 @@ serve(async (req) => {
 
   return jsonResponse({ ok: true, id: inserted.id, discord }, 200, cors);
 });
-
-export { CATEGORIES };

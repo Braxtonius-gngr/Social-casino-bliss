@@ -45,16 +45,41 @@ export function cleanErrors(value: unknown): string[] {
     .map((e) => e.slice(0, 400));
 }
 
-export function validate(body: Record<string, unknown>): { report: Report } | { error: string } {
-  const category = body.category;
+// The client's address as the platform saw it - the same rule as the `go`
+// function's clientAddress(). Cloudflare sets cf-connecting-ip itself and
+// overwrites anything the client sent; failing that, the LAST
+// x-forwarded-for entry is the one the nearest proxy appended, while the
+// first is whatever the client claimed.
+export function clientAddress(req: Request): string {
+  const cf = (req.headers.get("cf-connecting-ip") ?? "").trim();
+  if (cf) return cf;
+  const forwarded = (req.headers.get("x-forwarded-for") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  return forwarded[forwarded.length - 1] || "unknown";
+}
+
+// What the limiter stores: a salted hash, never the address.
+export async function addressKey(address: string, salt: string): Promise<string> {
+  const bytes = new TextEncoder().encode(`${salt}:${address}`);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// A JSON body that parsed is not yet a report: `null`, an array or a string
+// are all valid JSON and would fault the field reads below.
+export function validate(body: unknown): { report: Report } | { error: string } {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return { error: "Expected a JSON object." };
+  const fields = body as Record<string, unknown>;
+  const category = fields.category;
   if (typeof category !== "string" || !(CATEGORIES as readonly string[]).includes(category)) {
     return { error: "Pick a category." };
   }
-  const text = typeof body.text === "string" ? body.text.trim() : "";
+  const text = typeof fields.text === "string" ? fields.text.trim() : "";
   if (!text) return { error: "Add a quick description first." };
   if (text.length > MAX_TEXT) return { error: `Keep it under ${MAX_TEXT} characters.` };
 
-  const rawMeta = body.meta && typeof body.meta === "object" ? body.meta as Record<string, unknown> : {};
+  const rawMeta = fields.meta && typeof fields.meta === "object" && !Array.isArray(fields.meta)
+    ? fields.meta as Record<string, unknown>
+    : {};
   const count = Number(rawMeta.trackedCount);
   const meta: ReportMeta = {
     userAgent: str(rawMeta.userAgent, MAX_FIELD),
@@ -77,7 +102,7 @@ export function buildEmbed(report: Report, id: number) {
   ];
   if (report.meta.appBuild || report.meta.theme) {
     fields.push({
-      name: "Build / theme",
+      name: "Build / skin",
       value: `${report.meta.appBuild ?? "?"} / ${report.meta.theme ?? "?"}`,
       inline: true,
     });
