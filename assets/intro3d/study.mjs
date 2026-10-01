@@ -972,7 +972,7 @@ export async function prepareTable(opts) {
   return {
     dest: 'study',
     fly,
-    dispose() { scene.remove(seat); orr.dispose(); }
+    dispose() { scene.remove(seat); orr.dispose(); K.freeTree(seat, scene.userData.set); }
   };
 }
 

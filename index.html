@@ -5650,6 +5650,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         console.warn('drift', e);
         // (a set built but never handed to the session is ours to free)
         if (prep && s.prep !== prep) { try { prep.dispose(); } catch (e2) { /* gone */ } }
+        // (and a drift the session has moved on from - a skin change, a
+        // replayed landing - must not tear down what replaced it)
+        if (rollTableSession !== s) return false;
         // (lost on the way: the seat your skin gives you, the way you
         // always come in)
         s.drifting = false;
@@ -5670,7 +5673,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         document.body.appendChild(bar);
       }
       const own = themeTable();
-      const visiting = own && s.dest !== own;
+      // (any home but your skin's own is a visit - also under a skin with no
+      // home at all, as ?dest= allows)
+      const visiting = s.dest !== own;
       const skin = rollSkinOf(s.dest);
       bar.classList.toggle('visiting', !!visiting);
       bar.innerHTML =
