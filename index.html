@@ -32,7 +32,7 @@
         // stored lands on the default here, and getActiveThemeId() does the
         // same for the rest of the app, so the stale key never needs an
         // explicit migration step.
-        var look = { refinement: 'executive', executive: 'executive', prism: 'prism', arcade: 'neon', neon: 'neon', orrery: 'obsidian', obsidian: 'obsidian', glitch: 'glitch', western: 'western' };
+        var look = { refinement: 'executive', executive: 'executive', prism: 'prism', arcade: 'neon', neon: 'neon', orrery: 'obsidian', obsidian: 'obsidian', glitch: 'glitch', seance: 'glitch', western: 'western' };
         // Refinement x Realization became the default on 2026-09-28 and
         // everyone was moved onto it once, whatever they had picked - the
         // picker switches back, and the flag keeps that choice from then
@@ -5337,7 +5337,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } catch (e) { soundPref = null; }
       // The home the landing flies into after the shot: the skin's own (see
       // THEMES) - the card table (table.mjs), the study (study.mjs) or the
-      // arcade (arcade.mjs) - or ?dest=card / ?dest=study / ?dest=arcade for
+      // arcade (arcade.mjs) - or ?dest=card / ?dest=study / ?dest=arcade / ?dest=seance for
       // one under any skin, ?dest=none for the
       // landing as it always was.
       const destQ = q.get('dest');
@@ -5528,7 +5528,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     let rollTableSession = null;
     // The homes a skin can fly into, and their modules (each exports
     // prepareTable(): see assets/intro3d/table.mjs).
-    const ROLL_DESTS = { card: './assets/intro3d/table.mjs', study: './assets/intro3d/study.mjs', arcade: './assets/intro3d/arcade.mjs' };
+    const ROLL_DESTS = { card: './assets/intro3d/table.mjs', study: './assets/intro3d/study.mjs', arcade: './assets/intro3d/arcade.mjs', seance: './assets/intro3d/seance-room.mjs' };
     // The home changes with the skin (selectTheme): a skin with a table
     // takes its seat now - leaving another home first - and one without
     // leaves it for the classic home.
@@ -5591,7 +5591,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // up out of the chair, over the floor and down into another seat. A
     // visit changes nothing but where you are; "Sit here" takes that seat
     // for good (its skin), and your own seat is always one drift away.
-    const ROLL_PLACES = { card: 'The card table', study: 'The study', arcade: 'The arcade' };
+    const ROLL_PLACES = { card: 'The card table', study: 'The study', arcade: 'The arcade', seance: 'The séance room' };
     // the skin whose home a place is (its Showroom skin)
     function rollSkinOf(dest) {
       return Object.keys(THEMES).find(id => THEMES[id].table === dest) || null;
@@ -7083,9 +7083,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         bodyBg: 'linear-gradient(170deg, #1b1917 0%, #161514 55%, #121110 100%)',
         metaColor: '#161514'
       },
+      // Dead Channel at Showroom: the séance room as home (assets/intro3d/
+      // seance-room.mjs) - a portable set on a dead channel at a round table
+      // among candles, the deck's ready platforms its listings, and a way
+      // through the glass. Wears the muted pairing's palette.
+      seance: {
+        name: 'Dead Channel',
+        description: 'A television left on a dead channel, at three levels of show. At Showroom, a throw of the dice, then the séance room as your home: a set among candles, your platforms tonight\'s listings, and a way through the glass; at Lounge and Quiet, the same set with less moving.',
+        look: 'glitch',
+        table: 'seance',
+        vars: null,
+        bodyBg: null,
+        metaColor: null
+      },
+      // (Dead Channel's Lounge and Quiet levels: not listed on its own)
       glitch: {
         name: 'Dead Channel',
-        description: 'A television left on a dead channel. Bone phosphor and blood red on black glass: the picture tunes in with the day\'s run, a scope traces it, a face shows in the snow when you collect, and when a run is done, something comes through the glass.',
+        description: 'Its Lounge and Quiet levels. Bone phosphor and blood red on black glass: the picture tunes in with the day\'s run, a scope traces it, a face shows in the snow when you collect, and when a run is done, something comes through the glass.',
         vars: {
           '--bg-base': '#050608',
           '--accent-gold': '#E9E4D8',
@@ -8762,7 +8776,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v84';
+    const APP_BUILD = 'almanac-v85';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
