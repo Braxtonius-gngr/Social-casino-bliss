@@ -5651,6 +5651,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             document.body.classList.remove('r3-adrift');
             s.drifting = false;
             rollDriftUI(s);
+            const out = document.querySelector('#r3Drift .r3-drift-out');
+            if (out) out.focus({ preventScroll: true });
           }
         });
         s.table = table;
