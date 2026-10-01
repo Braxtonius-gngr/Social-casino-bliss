@@ -5446,6 +5446,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         screen.classList.remove('intro-play', 'roll-popped');
         screen.classList.add('roll-rest');
         armTable();
+        // (a replayed landing: the keyboard comes to its button)
+        if (rollFocusLanding) {
+          rollFocusLanding = false;
+          const btn = screen.querySelector('.landing-btn');
+          if (btn) setTimeout(() => btn.focus({ preventScroll: true }), 60);
+        }
       };
       // A tap, a key or focus arriving mid-shot: straight to the end of it -
       // held still with motion off, floating on otherwise.
@@ -5566,6 +5572,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const main = document.getElementById('main-content');
       if (main) main.focus({ preventScroll: true });
     }
+    // (set by replayLanding: the landing's button takes focus when the shot
+    // settles)
+    let rollFocusLanding = false;
     // ---- Out of body: drifting from one home to another.
     // The homes share one room (the craps table in the middle, the card
     // table, the study, the arcade round it), and every home's fly-in starts
@@ -5758,6 +5767,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (btn) { btn.innerHTML = 'ENTER DECK &rarr;'; btn.setAttribute('aria-label', 'Enter app'); }
       screen.classList.remove('hidden', 'roll-rest', 'roll-popped', 'r3-flying', 'r3-direct');
       screen.scrollTop = 0;
+      // (the keyboard goes where the eye is: to the landing's button once
+      // the shot has settled - see end() in rollIntro3d)
+      rollFocusLanding = true;
+      // (a startup hold still waiting gives way: its bar goes, its callback
+      // doesn't run, and this replay is what plays)
+      if (appUpdate.active) appUpdateEnd(false);
       appWhenCached(() => playRollIntro(), 'landing');
     }
     // What the table deals and shows (assets/intro3d/table.mjs): the ready
@@ -8762,7 +8777,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // go: what the page would have done (play the intro, or take the seat).
     // where: 'landing' (the bar under the landing's copy) or 'strip' (a
     // small pill at the top of the app, with the landing switched off).
-    function appWhenCached(go, where) {
+    // (each call supersedes the one before: only the latest one's go runs -
+    // a replayed landing must not be dropped for the seat an earlier call
+    // was waiting to take)
+    let appWhenCachedGen = 0;
+    function appWhenCached(goNow, where) {
+      const gen = ++appWhenCachedGen;
+      const go = () => { if (gen === appWhenCachedGen) goNow(); };
       // (?lab plays at once: the intro is being tuned, not shipped)
       if (!('serviceWorker' in navigator) || !window.MessageChannel || rollOptions().lab) { go(); return; }
       // (a whole build answers at once; anything slower shows the bar while
