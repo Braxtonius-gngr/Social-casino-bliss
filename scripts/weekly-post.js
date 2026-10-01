@@ -178,7 +178,7 @@ function buildPost({ history, since, until, format, baseUrl, slugs }) {
   const total = Object.values(groups).reduce((n, list) => n + list.length, 0);
 
   if (format === 'discord') {
-    const lines = [`**Sweeps tier list: what changed, ${range}**`, 'Tier = days of free daily bonuses to the site\'s own cash-out minimum, from screenshots of its claim and redeem screens.'];
+    const lines = [`**Sweeps tier list: what changed, ${range}**`, 'Tier = days of free daily bonuses to the site\'s own cash-out minimum, from screenshots of its claim and redeem screens. A platform with a rule warning is placed by that rule, not by a day count.'];
     if (!total) lines.push('', 'No ranking changes this week.');
     for (const { key, title } of SECTIONS) {
       const list = sortChanges(groups[key] || []);
@@ -198,7 +198,7 @@ function buildPost({ history, since, until, format, baseUrl, slugs }) {
   const lines = [
     `Title: Sweepstakes daily bonus tier list: what changed ${range}`,
     '',
-    `Every tier is the number of days of free daily bonuses it takes to reach that site's own minimum cash redemption - no purchases, no wins counted. Each change below comes from screenshots of the site's daily-claim and redeem screens.`
+    `Every tier is the number of days of free daily bonuses it takes to reach that site's own minimum cash redemption - no purchases, no wins counted. Each change below comes from screenshots of the site's daily-claim and redeem screens. A platform with a rule warning (such as no free path to cash-out) is placed by that rule, not by a day count.`
   ];
   if (!total) lines.push('', 'No ranking changes this week.');
   for (const { key, title } of SECTIONS) {

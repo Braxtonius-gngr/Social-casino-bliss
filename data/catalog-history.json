@@ -2514,6 +2514,26 @@
   ],
   "ReBet": [
     {
+      "date": "2026-10-01",
+      "changed": [
+        "tier",
+        "blocker"
+      ],
+      "from": {
+        "tier": "D",
+        "dailySC": 1,
+        "cashFloor": 20,
+        "daysToRedeem": 20,
+        "blocker": "free-play-cannot-reach-floor"
+      },
+      "to": {
+        "tier": "S",
+        "dailySC": 1,
+        "cashFloor": 20,
+        "daysToRedeem": 20
+      }
+    },
+    {
       "date": "2026-09-30",
       "changed": [
         "tier",
