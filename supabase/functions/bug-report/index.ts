@@ -127,7 +127,15 @@ serve(async (req) => {
   }
 
   const discord = await forwardToDiscord(report, inserted.id);
-  await supabase.from("bug_reports").update({ discord_status: discord }).eq("id", inserted.id);
+  // The row is saved and Discord has or hasn't got its copy; only the
+  // record of which is left. A failed update is retried once and then
+  // logged with the id - never resent to Discord, never bounced to the
+  // tester, whose report is already in.
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const { error } = await supabase.from("bug_reports").update({ discord_status: discord }).eq("id", inserted.id);
+    if (!error) break;
+    console.error(`discord_status update failed for bug_reports #${inserted.id} (attempt ${attempt})`, error);
+  }
 
   return jsonResponse({ ok: true, id: inserted.id, discord }, 200, cors);
 });

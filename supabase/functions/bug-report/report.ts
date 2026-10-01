@@ -7,6 +7,12 @@ export type Category = typeof CATEGORIES[number];
 export const MAX_TEXT = 4000;
 export const MAX_FIELD = 1024;
 export const MAX_ERRORS = 10;
+// Discord refuses an embed whose title, description, field names and
+// values and footer together exceed this, whatever the per-field limits.
+export const EMBED_BUDGET = 6000;
+// PostgreSQL integer; a larger tracked_count would fail the insert and
+// lose the report over an optional diagnostic.
+const MAX_INT4 = 2147483647;
 
 // The same colours the form used when it posted to Discord itself.
 const CATEGORY_COLORS: Record<Category, number> = {
@@ -86,14 +92,16 @@ export function validate(body: unknown): { report: Report } | { error: string } 
     appBuild: str(rawMeta.appBuild, 64),
     catalogVersion: str(rawMeta.catalogVersion, 128),
     theme: str(rawMeta.theme, 32),
-    trackedCount: Number.isFinite(count) && count >= 0 ? Math.floor(count) : null,
+    trackedCount: Number.isFinite(count) && count >= 0 && count <= MAX_INT4 ? Math.floor(count) : null,
     recentErrors: cleanErrors(rawMeta.recentErrors),
   };
   return { report: { category: category as Category, text, meta } };
 }
 
 // The embed the form used to post itself, plus the row id in the footer so
-// a channel message can be matched to its bug_reports row.
+// a channel message can be matched to its bug_reports row. The description
+// takes whatever of Discord's total budget the other parts leave; the full
+// text is in the database either way.
 export function buildEmbed(report: Report, id: number) {
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [
     { name: "User Agent", value: (report.meta.userAgent ?? "unknown").slice(0, MAX_FIELD) },
@@ -110,15 +118,26 @@ export function buildEmbed(report: Report, id: number) {
   if (report.meta.recentErrors.length) {
     fields.push({ name: "Recent app errors", value: report.meta.recentErrors.join("\n").slice(0, MAX_FIELD) });
   }
+  const title = `[${report.category}]`;
+  const footer = `bug_reports #${id}`;
+  const spent = title.length + footer.length + fields.reduce((n, f) => n + f.name.length + f.value.length, 0);
+  const room = Math.max(0, Math.min(MAX_TEXT, EMBED_BUDGET - spent));
+  const description = report.text.length > room ? report.text.slice(0, Math.max(0, room - 1)) + "\u2026" : report.text;
   return {
     username: "Daily Roll Over Feedback",
     embeds: [{
-      title: `[${report.category}]`,
-      description: report.text.slice(0, MAX_TEXT),
+      title,
+      description,
       color: CATEGORY_COLORS[report.category],
       fields,
-      footer: { text: `bug_reports #${id}` },
+      footer: { text: footer },
       timestamp: new Date().toISOString(),
     }],
   };
+}
+
+// The characters Discord counts against EMBED_BUDGET.
+export function embedLength(embed: ReturnType<typeof buildEmbed>["embeds"][number]): number {
+  return embed.title.length + embed.description.length + embed.footer.text.length +
+    embed.fields.reduce((n, f) => n + f.name.length + f.value.length, 0);
 }
