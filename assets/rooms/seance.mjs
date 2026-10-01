@@ -216,8 +216,9 @@ export function createBreakout() {
     ctx.fillStyle = g; ctx.fillRect(0, 0, cv.width, cv.height);
     ctx.restore();
   }
+  const SMOKE_MAX = 90;
   function spawnSmoke(n, box) {
-    for (let i = 0; i < n; i++) {
+    for (let i = 0; i < n && smoke.length < SMOKE_MAX; i++) {
       // from behind the head's shoulders and the screen's edges, out over
       // the glass
       const fromEdge = r() < 0.45;
@@ -232,13 +233,19 @@ export function createBreakout() {
     ctx.save();
     for (let i = smoke.length - 1; i >= 0; i--) {
       const p = smoke[i];
-      p.life += dt;
-      if (p.life > p.max && !rest) { smoke.splice(i, 1); continue; }
+      // (at rest the smoke hangs where it is: it stops ageing, so it stops
+      // growing, and keeps the light it had)
+      if (!rest) p.life += dt;
+      if (p.life > p.max) { smoke.splice(i, 1); continue; }
       const u = p.life / p.max;
-      p.x += p.vx * dt * (rest ? 0.25 : 1); p.y += p.vy * dt * (rest ? 0.25 : 1);
-      p.vx *= 0.995; p.rot += p.vr * dt;
-      const a = rest ? Math.min(0.9, p.a + dt * 0.2) : Math.sin(Math.PI * clamp01(u)) * 0.9;
+      const drift = rest ? 0.12 : 1;
+      p.x += p.vx * dt * drift; p.y += p.vy * dt * drift;
+      if (!rest) p.vx *= 0.995;
+      p.rot += p.vr * dt * drift;
+      // (a wisp past its middle when the rest began keeps fading, slowly)
+      const a = rest ? (p.a > 0.02 ? p.a * (u > 0.5 ? 1 - dt * 0.15 : 1) : 0) : Math.sin(Math.PI * clamp01(u)) * 0.9;
       p.a = a;
+      if (a <= 0.02 && rest) continue;
       const S = 220 * (p.s + p.grow * p.life) * dpr;
       // its shadow on the glass: down and right of it, darker, softer
       ctx.globalAlpha = a * 0.7;
@@ -373,7 +380,9 @@ export function createBreakout() {
   const onResize = () => { if (cv) { size(); composed = ''; maskStep = -1; } };
   function off(then) {
     if (state === 'idle') { if (then) then(); return; }
-    if (state === 'off') return;
+    // (already switching off: a call with somewhere to go next still goes
+    // there when the dot is gone)
+    if (state === 'off') { if (then) afterOff = then; return; }
     afterOff = then || null;
     // (what is on the screen now is what folds away)
     wctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -414,5 +423,7 @@ export function createBreakout() {
     return true;
   }
   const resume = () => { if (state !== 'idle' && !raf) raf = requestAnimationFrame(frame); };
-  return { play, clear, off, busy: () => state !== 'idle', seek, resume, timing: T };
+  // (the lab's: the smoke's count and its largest wisp, to see it hold)
+  const probe = () => ({ state, smoke: smoke.length, largest: smoke.reduce((m, p) => Math.max(m, p.s + p.grow * p.life), 0) });
+  return { play, clear, off, busy: () => state !== 'idle', seek, resume, probe, timing: T };
 }
