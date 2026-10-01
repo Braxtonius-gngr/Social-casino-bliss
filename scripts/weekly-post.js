@@ -99,11 +99,16 @@ function classify(change) {
   return toRank ? 'corrected' : null;
 }
 
+// A blocker entry has no day count that applies (validate-catalog.js), so the
+// post says that instead of quoting one.
+const BLOCKED = 'no free path to cash-out';
+
 function numbers(s) {
   const parts = [];
   if (typeof s.dailySC === 'number') parts.push(`${s.dailySC} SC/day`);
   if (typeof s.cashFloor === 'number') parts.push(`${s.cashFloor} SC to cash out`);
-  if (typeof s.daysToRedeem === 'number') parts.push(`~${s.daysToRedeem} days`);
+  if (s.blocker) parts.push(BLOCKED);
+  else if (typeof s.daysToRedeem === 'number') parts.push(`~${s.daysToRedeem} days`);
   return parts.join(' · ');
 }
 
@@ -116,7 +121,8 @@ function reason(from, to) {
   if (from.cashFloor !== to.cashFloor && typeof to.cashFloor === 'number') {
     parts.push(typeof from.cashFloor === 'number' ? `cash minimum ${from.cashFloor} → ${to.cashFloor}` : `cash minimum ${to.cashFloor}`);
   }
-  if (typeof to.daysToRedeem === 'number') parts.push(`~${to.daysToRedeem} days`);
+  if (to.blocker) parts.push(BLOCKED);
+  else if (typeof to.daysToRedeem === 'number') parts.push(`~${to.daysToRedeem} days`);
   return parts.join(', ');
 }
 

@@ -1034,7 +1034,8 @@
       "changed": [
         "tier",
         "dailySC",
-        "cashFloor"
+        "cashFloor",
+        "blocker"
       ],
       "from": {
         "tier": "C",
@@ -1046,7 +1047,8 @@
         "tier": "D",
         "dailySC": 0.1,
         "cashFloor": 100,
-        "daysToRedeem": 1000
+        "daysToRedeem": 1000,
+        "blocker": "lifetime-cap-one-redemption"
       }
     }
   ],
@@ -2091,7 +2093,8 @@
     {
       "date": "2026-09-30",
       "changed": [
-        "tier"
+        "tier",
+        "blocker"
       ],
       "from": {
         "tier": "C",
@@ -2103,7 +2106,8 @@
         "tier": "D",
         "dailySC": 0.5,
         "cashFloor": 100,
-        "daysToRedeem": 200
+        "daysToRedeem": 200,
+        "blocker": "free-play-cannot-reach-floor"
       }
     },
     {
@@ -2512,7 +2516,8 @@
     {
       "date": "2026-09-30",
       "changed": [
-        "tier"
+        "tier",
+        "blocker"
       ],
       "from": {
         "tier": "S",
@@ -2524,7 +2529,8 @@
         "tier": "D",
         "dailySC": 1,
         "cashFloor": 20,
-        "daysToRedeem": 20
+        "daysToRedeem": 20,
+        "blocker": "free-play-cannot-reach-floor"
       }
     },
     {
@@ -3207,7 +3213,8 @@
       "changed": [
         "tier",
         "dailySC",
-        "cashFloor"
+        "cashFloor",
+        "blocker"
       ],
       "from": {
         "tier": "Unranked",
@@ -3219,7 +3226,8 @@
         "tier": "D",
         "dailySC": 0.2,
         "cashFloor": 100,
-        "daysToRedeem": 500
+        "daysToRedeem": 500,
+        "blocker": "free-play-cannot-reach-floor"
       }
     }
   ],
@@ -3280,6 +3288,27 @@
         "dailySC": 1,
         "cashFloor": null,
         "daysToRedeem": null
+      }
+    }
+  ],
+  "Sweep King": [
+    {
+      "date": "2026-09-21",
+      "changed": [
+        "blocker"
+      ],
+      "from": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null
+      },
+      "to": {
+        "tier": "Unranked",
+        "dailySC": 0,
+        "cashFloor": null,
+        "daysToRedeem": null,
+        "blocker": "20x-promo-playthrough-last-in-queue"
       }
     }
   ],
@@ -4078,7 +4107,8 @@
       "date": "2026-09-21",
       "changed": [
         "tier",
-        "dailySC"
+        "dailySC",
+        "blocker"
       ],
       "from": {
         "tier": "B",
@@ -4090,7 +4120,8 @@
         "tier": "Unranked",
         "dailySC": 0,
         "cashFloor": null,
-        "daysToRedeem": null
+        "daysToRedeem": null,
+        "blocker": "purchase-gated-daily"
       }
     }
   ]

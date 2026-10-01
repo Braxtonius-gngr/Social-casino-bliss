@@ -82,6 +82,11 @@ function formatDailyRate(entry) {
 // The same plain-English read the app's Keen Info summary gives. The raw
 // research notes stay in the catalog for the record; they are working
 // notes, not visitor-facing copy.
+function blockerText(blocker) {
+  const label = BLOCKER_LABELS[blocker] || blocker.replace(/-/g, ' ');
+  return label.charAt(0).toLowerCase() + label.slice(1);
+}
+
 function summarize(entry, name) {
   if (entry.blocker) {
     return `Warning: ${BLOCKER_LABELS[entry.blocker] || entry.blocker.replace(/-/g, ' ')}.`;
@@ -221,7 +226,10 @@ function describeRanking(to) {
   const parts = [];
   if (typeof to.dailySC === 'number' && to.dailySC > 0) parts.push(`${formatRate(to.dailySC)} SC a day`);
   if (typeof to.cashFloor === 'number') parts.push(`${to.cashFloor} SC cash minimum`);
-  if (typeof to.daysToRedeem === 'number') parts.push(`about ${formatCount(to.daysToRedeem)} days to cash out`);
+  // A blocker means no day count applies (validate-catalog.js): the rule, not
+  // the arithmetic, sets the tier, so say what stops free play instead.
+  if (to.blocker) parts.push(blockerText(to.blocker));
+  else if (typeof to.daysToRedeem === 'number') parts.push(`about ${formatCount(to.daysToRedeem)} days to cash out`);
   return parts.join(', ');
 }
 
@@ -248,7 +256,8 @@ function historyLine(event) {
       details.push('cash minimum withdrawn');
     }
   }
-  if (RANKED.has(to.tier) && typeof to.daysToRedeem === 'number') details.push(`about ${formatCount(to.daysToRedeem)} days to cash out`);
+  if (to.blocker && to.blocker !== from.blocker) details.push(blockerText(to.blocker));
+  else if (RANKED.has(to.tier) && !to.blocker && typeof to.daysToRedeem === 'number') details.push(`about ${formatCount(to.daysToRedeem)} days to cash out`);
   const renamed = event.renamedFrom ? ` (listed as ${event.renamedFrom} before)` : '';
   if (to.tier === 'Not Rankable' && from.tier !== 'Not Rankable') {
     return `Marked not rankable${renamed}, as it has no guaranteed daily bonus.`;
@@ -302,7 +311,7 @@ function headMarkup(title, description, canonicalUrl, jsonLd) {
 
 function pageMarkup(entry, slug, baseUrl, related, history) {
   const name = entry.name.trim();
-  const ranked = RANKED.has(entry.tier) && typeof entry.dailySC === 'number' && typeof entry.daysToRedeem === 'number';
+  const ranked = RANKED.has(entry.tier) && !entry.blocker && typeof entry.dailySC === 'number' && typeof entry.daysToRedeem === 'number';
   const title = ranked
     ? `${name} Daily Bonus: ${entry.dailySC} SC/day, ~${entry.daysToRedeem} days to cash out | Daily Roll Over`
     : `${name} Daily Bonus Guide | Daily Roll Over`;
@@ -407,7 +416,7 @@ ${rows.map(({ entry, slug }) => `        <li><a href="${escapeHtml(slug)}.html">
       <table>
         <thead><tr><th>Platform</th><th>SC per day</th><th>Cash minimum</th><th>Days to cash out</th></tr></thead>
         <tbody>
-${rows.map(({ entry, slug }) => `          <tr><td><a href="${escapeHtml(slug)}.html">${escapeHtml(entry.name.trim())}</a></td><td>${escapeHtml(entry.dailySC)}</td><td>${escapeHtml(`${entry.cashFloor} SC`)}</td><td>${escapeHtml(`~${entry.daysToRedeem}`)}</td></tr>`).join('\n')}
+${rows.map(({ entry, slug }) => `          <tr><td><a href="${escapeHtml(slug)}.html">${escapeHtml(entry.name.trim())}</a></td><td>${escapeHtml(entry.dailySC)}</td><td>${escapeHtml(`${entry.cashFloor} SC`)}</td><td>${escapeHtml(entry.blocker ? 'No free path' : `~${entry.daysToRedeem}`)}</td></tr>`).join('\n')}
         </tbody>
       </table>`;
   }).filter(Boolean).join('\n');

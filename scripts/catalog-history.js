@@ -21,7 +21,9 @@ const ROOT = path.resolve(__dirname, '..');
 const HISTORY_PATH = path.join(ROOT, 'data', 'catalog-history.json');
 const CATALOG_PATH = path.join(ROOT, 'data', 'catalog.json');
 // The fields a change is recorded for; daysToRedeem follows from two of them.
-const COMPARED = ['tier', 'dailySC', 'cashFloor'];
+// blocker is recorded only on entries that carry one, so every other entry's
+// history reads exactly as it did before the field was tracked.
+const COMPARED = ['tier', 'dailySC', 'cashFloor', 'blocker'];
 
 function git(args) {
   return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] });
@@ -66,7 +68,8 @@ function snapshot(entry) {
     tier: typeof entry.tier === 'string' && entry.tier ? entry.tier : 'Unranked',
     dailySC: num(entry.dailySC),
     cashFloor: num(entry.cashFloor),
-    daysToRedeem: num(entry.daysToRedeem)
+    daysToRedeem: num(entry.daysToRedeem),
+    ...(typeof entry.blocker === 'string' && entry.blocker ? { blocker: entry.blocker } : {})
   };
 }
 
