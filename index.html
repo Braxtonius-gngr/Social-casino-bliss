@@ -768,6 +768,7 @@
         <span style="color:#fff;">Show Landing Page on Open<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Off: straight to your seat at the table, or to the Deck</span></span>
         <input type="checkbox" id="settingLandingToggle" onchange="toggleLandingSetting()" checked />
       </div>
+      <button type="button" class="btn-dock settings-replay-landing" style="max-width:100%; width:100%; margin-bottom:12px;" onclick="replayLanding()">Play the Landing Now</button>
       <div class="toggle-row">
         <span style="color:#fff;">Hide platforms on cooldown<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Keeps your Deck to just what's ready</span></span>
         <input type="checkbox" id="settingHideCollected" onchange="toggleHideCollected()" />
@@ -5373,7 +5374,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const world = api.release();
         screen.classList.add('r3-flying');
         const seatcam = (q.get('seatcam') || '').split(',').map(Number);
-        const session = { world, table: null, stage: null, dest: tableDest };
+        // (prep: the home's set, kept to take it away when you drift to
+        // another; base: the room as the shot left it, handed back to each
+        // home you drift to - see rollDrift)
+        const session = { world, table: null, stage: null, dest: tableDest, prep, base: rollRoomState(world) };
         rollTableSession = session;
         let table = null;
         try {
@@ -5395,6 +5399,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             document.body.classList.add('r3-table-mode');
             screen.classList.add('hidden');
             screen.classList.remove('r3-flying', 'r3-direct', 'intro-play', 'roll-webgl', 'roll-popped', 'roll-rest');
+            rollDriftUI(session);
             kickSync();
           }
         }, flyOpts));
@@ -5543,17 +5548,248 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       window.rollTable = null;
       if (s) {
         try { if (s.table) s.table.dispose(); } catch (e) { /* gone */ }
+        // (the homes' sets: the one you are at, and one you were drifting
+        // away from, if you leave before you land)
+        [s.prevPrep, s.prep].forEach(p => { try { if (p) p.dispose(); } catch (e) { /* gone */ } });
+        s.prep = s.prevPrep = null;
         try { if (s.world) s.world.dispose(); } catch (e) { /* gone */ }
         if (s.stage) s.stage.remove();
       }
       if (window.rollIntroDispose) window.rollIntroDispose();
-      document.body.classList.remove('r3-table-mode', 'r3-sheet-open');
+      document.body.classList.remove('r3-table-mode', 'r3-sheet-open', 'r3-adrift');
+      rollDriftClose();
+      const drift = document.getElementById('r3Drift');
+      if (drift) drift.remove();
       const back = document.getElementById('r3SheetBack');
       if (back) back.remove();
       const screen = document.getElementById('landingScreen');
       if (screen) { screen.classList.remove('intro-play', 'roll-webgl', 'r3-flying', 'r3-direct'); screen.classList.add('hidden'); }
       const main = document.getElementById('main-content');
       if (main) main.focus({ preventScroll: true });
+    }
+    // (replayLanding: the landing's button takes focus once the shot rests -
+    // the class every intro path ends on - or if the landing goes first,
+    // nothing; one watcher at a time)
+    let rollFocusWatch = null;
+    function rollFocusLandingWhenSettled(screen) {
+      if (rollFocusWatch) rollFocusWatch.disconnect();
+      const done = () => { if (rollFocusWatch) { rollFocusWatch.disconnect(); rollFocusWatch = null; } };
+      const check = () => {
+        if (screen.classList.contains('hidden')) { done(); return; }
+        if (!screen.classList.contains('roll-rest')) return;
+        done();
+        const btn = screen.querySelector('.landing-btn');
+        if (btn) setTimeout(() => btn.focus({ preventScroll: true }), 60);
+      };
+      rollFocusWatch = new MutationObserver(check);
+      rollFocusWatch.observe(screen, { attributes: true, attributeFilter: ['class'] });
+    }
+    // ---- Out of body: drifting from one home to another.
+    // The homes share one room (the craps table in the middle, the card
+    // table, the study, the arcade round it), and every home's fly-in starts
+    // wherever the camera is. So leaving your body is one unbroken flight:
+    // up out of the chair, over the floor and down into another seat. A
+    // visit changes nothing but where you are; "Sit here" takes that seat
+    // for good (its skin), and your own seat is always one drift away.
+    const ROLL_PLACES = { card: 'The card table', study: 'The study', arcade: 'The arcade' };
+    // the skin whose home a place is (its Showroom skin)
+    function rollSkinOf(dest) {
+      return Object.keys(THEMES).find(id => THEMES[id].table === dest) || null;
+    }
+    // The room as the shot left it: each home turns the house lights, the
+    // lens and the exposure to suit itself, and the next home must start
+    // from the room, not from the last home's mood.
+    function rollRoomState(world) {
+      const lights = [];
+      world.scene.traverse(o => { if (o.isLight) lights.push([o, o.intensity]); });
+      return {
+        lights,
+        env: world.scene.environmentIntensity,
+        fov: world.camera.fov, near: world.camera.near, far: world.camera.far,
+        bloom: world.bloom ? world.bloom.strength : null,
+        exposure: world.renderer.toneMappingExposure
+      };
+    }
+    function rollRoomRestore(world, b) {
+      if (!b) return;
+      b.lights.forEach(([l, i]) => { if (l.parent) l.intensity = i; });
+      if (b.env != null) world.scene.environmentIntensity = b.env;
+      world.camera.fov = b.fov; world.camera.near = b.near; world.camera.far = b.far;
+      world.camera.updateProjectionMatrix();
+      if (world.bloom && b.bloom != null) world.bloom.strength = b.bloom;
+      world.renderer.toneMappingExposure = b.exposure;
+    }
+    async function rollDrift(dest) {
+      const s = rollTableSession;
+      if (!s || !s.world || !s.stage || s.drifting || !ROLL_DESTS[dest] || dest === s.dest) return false;
+      s.drifting = true;
+      // (chosen from the keyboard: the keyboard lands with you - see onArrive)
+      const ae = document.activeElement;
+      const byKeyboard = !!(ae && ae.closest && ae.closest('#r3Drift, #r3DriftPanel'));
+      rollDriftClose();
+      const world = s.world;
+      const motionOff = () => document.documentElement.getAttribute('data-motion') === 'off';
+      document.body.classList.add('r3-adrift');
+      rollDriftUI(s);
+      let prep = null;
+      try {
+        const m = await import(ROLL_DESTS[dest]);
+        // (built into the same room, hidden, compiled and uploaded before it
+        // shows - while you are still in your chair)
+        prep = await m.prepareTable({ scene: world.scene, dest, hooks: rollTableHooks(), warm: opts => world.warm(opts) });
+        if (rollTableSession !== s) { prep.dispose(); return false; }
+        // (from here the session owns both sets: leaving mid-flight disposes
+        // them - see rollLeaveTable)
+        const was = s.prep;
+        s.prevPrep = was; s.prep = prep; s.dest = dest;
+        // (the chair lets go of the camera and the page; the room goes back
+        // to how the shot left it, and the next home takes it from there)
+        try { if (s.table) s.table.dispose(); } catch (e) { /* gone */ }
+        s.table = null; window.rollTable = null;
+        document.body.classList.remove('r3-sheet-open');
+        const back = document.getElementById('r3SheetBack');
+        if (back) back.remove();
+        rollRoomRestore(world, s.base);
+        const table = await prep.fly(world, {
+          host: s.stage,
+          reduced: motionOff(),
+          onArrive: layer => {
+            if (layer && layer.parentNode !== s.stage) s.stage.appendChild(layer);
+            // (the home you left stays in the room until you are down in
+            // the new chair - you see it fall away behind you)
+            try { if (was) was.dispose(); } catch (e) { /* gone */ }
+            if (s.prevPrep === was) s.prevPrep = null;
+            document.body.classList.remove('r3-adrift');
+            s.drifting = false;
+            rollDriftUI(s);
+            if (byKeyboard) {
+              const next = document.querySelector('#r3Drift .r3-drift-sit') || document.querySelector('#r3Drift .r3-drift-out');
+              if (next) next.focus({ preventScroll: true });
+            }
+          }
+        });
+        s.table = table;
+        window.rollTable = table;
+        return true;
+      } catch (e) {
+        console.warn('drift', e);
+        // (a set built but never handed to the session is ours to free)
+        if (prep && s.prep !== prep) { try { prep.dispose(); } catch (e2) { /* gone */ } }
+        // (and a drift the session has moved on from - a skin change, a
+        // replayed landing - must not tear down what replaced it)
+        if (rollTableSession !== s) return false;
+        // (lost on the way: the seat your skin gives you, the way you
+        // always come in)
+        s.drifting = false;
+        rollLeaveTable();
+        rollEnterTable();
+        return false;
+      }
+    }
+    // The way out of your body: a small button over the home, and the list
+    // of places it opens.
+    function rollDriftUI(s) {
+      if (!s || !s.stage || rollTableSession !== s) return;
+      let bar = document.getElementById('r3Drift');
+      if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'r3Drift';
+        bar.className = 'r3-drift';
+        document.body.appendChild(bar);
+      }
+      const own = themeTable();
+      // (any home but your skin's own is a visit - also under a skin with no
+      // home at all, as ?dest= allows)
+      const visiting = s.dest !== own;
+      const skin = rollSkinOf(s.dest);
+      bar.classList.toggle('visiting', !!visiting);
+      bar.innerHTML =
+        `<button type="button" class="r3-drift-out" onclick="rollDriftOpen()" aria-haspopup="dialog" aria-label="Leave your body: visit another room"${s.drifting ? ' disabled' : ''}>` +
+          '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c-3.6 0-6.2 2.8-6.2 6.4V20l2-1.6 2.1 1.6 2.1-1.6 2.1 1.6 2.1-1.6 2 1.6V9.4C18.2 5.8 15.6 3 12 3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="9.6" cy="10" r="1.1" fill="currentColor"/><circle cx="14.4" cy="10" r="1.1" fill="currentColor"/></svg>' +
+        '</button>' +
+        (visiting && !s.drifting && skin
+          ? `<button type="button" class="r3-drift-sit" onclick="rollDriftSit()">Sit here<span>${escHtml(THEMES[skin].name)}</span></button>`
+          : '');
+    }
+    function rollDriftOpen() {
+      const s = rollTableSession;
+      if (!s || s.drifting) return;
+      rollDriftClose();
+      const own = themeTable();
+      const panel = document.createElement('div');
+      panel.id = 'r3DriftPanel';
+      panel.className = 'r3-drift-panel';
+      panel.setAttribute('role', 'dialog');
+      panel.setAttribute('aria-modal', 'true');
+      panel.setAttribute('aria-labelledby', 'r3DriftTitle');
+      const rows = Object.keys(ROLL_PLACES).filter(d => rollSkinOf(d)).map(d => {
+        const here = d === s.dest, mine = d === own;
+        const note = here ? 'You are here' : mine ? 'Your seat' : 'Visit';
+        return `<li><button type="button" class="r3-drift-place${here ? ' here' : ''}${mine ? ' mine' : ''}" onclick="rollDrift('${d}')"${here ? ' disabled aria-current="location"' : ''}>` +
+          `<span class="r3-drift-name">${ROLL_PLACES[d]}</span><span class="r3-drift-skin">${escHtml(THEMES[rollSkinOf(d)].name)}</span><span class="r3-drift-note">${note}</span></button></li>`;
+      }).join('');
+      panel.innerHTML =
+        '<div class="r3-drift-card">' +
+          '<h2 id="r3DriftTitle">Out of body</h2>' +
+          '<p>Drift to another room and look around. Your skin stays yours until you sit.</p>' +
+          `<ul>${rows}</ul>` +
+          '<button type="button" class="r3-drift-close" onclick="rollDriftClose()">Stay put</button>' +
+        '</div>';
+      panel.addEventListener('pointerdown', e => { if (e.target === panel) rollDriftClose(); });
+      panel.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { e.stopPropagation(); rollDriftClose(); return; }
+        // (a modal: Tab goes round its own buttons, never out to the home
+        // behind it)
+        if (e.key !== 'Tab') return;
+        const items = [...panel.querySelectorAll('button:not([disabled])')];
+        if (!items.length) return;
+        const first = items[0], last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        else if (!panel.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+      });
+      document.body.appendChild(panel);
+      const first = panel.querySelector('.r3-drift-place:not([disabled])') || panel.querySelector('.r3-drift-close');
+      if (first) first.focus({ preventScroll: true });
+    }
+    function rollDriftClose() {
+      const panel = document.getElementById('r3DriftPanel');
+      if (!panel) return;
+      panel.remove();
+      const out = document.querySelector('#r3Drift .r3-drift-out');
+      if (out) out.focus({ preventScroll: true });
+    }
+    // Taking the seat you are visiting: its skin becomes yours (its
+    // Showroom level), and nothing moves - you are already in the chair.
+    function rollDriftSit() {
+      const s = rollTableSession;
+      const skin = s && rollSkinOf(s.dest);
+      if (!skin || s.drifting) return;
+      selectTheme(skin);
+      rollDriftUI(s);
+      showToast(`${THEMES[skin].name}: this seat is yours`, null);
+    }
+    // Settings: the landing once more, now - the dice, then the flight into
+    // your seat (or the Deck) - without reloading.
+    function replayLanding() {
+      closeModals();
+      rollLeaveTable();
+      const screen = document.getElementById('landingScreen');
+      if (!screen) return;
+      // (the last landing's hand-off is spent: a skin with no home must be
+      // able to leave this one the plain way, and the button says so)
+      window.rollIntroEnter = null;
+      const btn = screen.querySelector('.landing-btn');
+      if (btn) { btn.innerHTML = 'ENTER DECK &rarr;'; btn.setAttribute('aria-label', 'Enter app'); }
+      screen.classList.remove('hidden', 'roll-rest', 'roll-popped', 'r3-flying', 'r3-direct');
+      screen.scrollTop = 0;
+      // (the keyboard goes where the eye is: to the landing's button once
+      // the shot has settled - WebGL or CSS, played or held still)
+      rollFocusLandingWhenSettled(screen);
+      // (a startup hold still waiting gives way: its bar goes, its callback
+      // doesn't run, and this replay is what plays)
+      if (appUpdate.active) appUpdateEnd(false);
+      appWhenCached(() => playRollIntro(), 'landing');
     }
     // What the table deals and shows (assets/intro3d/table.mjs): the ready
     // platforms in the deck - best tier first, then the richest - or, with
@@ -8526,7 +8762,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v83';
+    const APP_BUILD = 'almanac-v84';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
@@ -8556,16 +8792,26 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // go: what the page would have done (play the intro, or take the seat).
     // where: 'landing' (the bar under the landing's copy) or 'strip' (a
     // small pill at the top of the app, with the landing switched off).
-    function appWhenCached(go, where) {
+    // (each call supersedes the one before: only the latest one's go runs -
+    // a replayed landing must not be dropped for the seat an earlier call
+    // was waiting to take)
+    let appWhenCachedGen = 0;
+    function appWhenCached(goNow, where) {
+      const gen = ++appWhenCachedGen;
+      const go = () => { if (gen === appWhenCachedGen) goNow(); };
       // (?lab plays at once: the intro is being tuned, not shipped)
       if (!('serviceWorker' in navigator) || !window.MessageChannel || rollOptions().lab) { go(); return; }
       // (a whole build answers at once; anything slower shows the bar while
       // the answer comes, and a late "whole" takes it away again)
       let answered = false;
-      const early = setTimeout(() => { if (!answered) appHoldForUpdate(go, where, null); }, 350);
+      // (a call another has superseded touches nothing: not the bar, not the
+      // hold - the newer call owns them)
+      const current = () => gen === appWhenCachedGen;
+      const early = setTimeout(() => { if (!answered && current()) appHoldForUpdate(go, where, null); }, 350);
       appAskBuild(2500).then(st => {
         answered = true;
         clearTimeout(early);
+        if (!current()) return;
         // this build, whole, and already serving this page: play
         if (st && st.version === APP_BUILD && st.complete && navigator.serviceWorker.controller) {
           if (appUpdate.active) appUpdateEnd(true); else go();

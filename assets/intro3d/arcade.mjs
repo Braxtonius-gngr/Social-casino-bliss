@@ -1364,7 +1364,8 @@ export async function prepareTable(opts) {
     dispose() {
       scene.remove(seat);
       rt.dispose();
-      seat.traverse(m => { if (m.geometry) m.geometry.dispose(); if (m.material) [].concat(m.material).forEach(mat => { Object.values(mat).forEach(v => { if (v && v.isTexture && !v.isRenderTargetTexture) v.dispose(); }); mat.dispose(); }); });
+      // (the house's own materials stay: the room still draws with them)
+      K.freeTree(seat, scene.userData.set);
     }
   };
 }
