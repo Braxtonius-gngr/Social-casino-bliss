@@ -8765,7 +8765,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v85';
+    const APP_BUILD = 'almanac-v86';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
@@ -9020,21 +9020,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const DECK_SYNC_BOOTSTRAPPED_UID_KEY = 'almanac_deck_sync_bootstrapped_uid_v1';
 
     // --- Tester feedback loop ---
-    // A Discord webhook URL, not a real secret - anyone who has it can
-    // post to the channel directly, bypassing this form entirely, the
-    // same way SUPABASE_ANON_KEY above is public-but-RLS-protected rather
-    // than secret. Treat it the same way: fine to ship in client code for
-    // a small trusted tester build, not something to publish widely, and
-    // not a substitute for real auth if this ever needs to resist abuse
-    // at scale. Get one from a Discord channel: Server/Channel Settings ->
-    // Integrations -> Webhooks -> New Webhook -> Copy URL.
-    const FEEDBACK_WEBHOOK_URL = 'https://discord.com/api/webhooks/1552848601137414294/4Tip5oaHSSZxVr7b3tJtxxeVWFbejkdGYAKS2O4IeatIBsaGamXMwIP4HE0c0L6KbDO-';
-    const FEEDBACK_CATEGORY_COLORS = {
-      'Timer bug': 0xff3b30,
-      'Catalogue/rule correction': 0xffcc00,
-      'Feature idea': 0x00e5ff,
-      'Other': 0x8e8e93
-    };
+    // Reports go to the bug-report edge function, which saves a row in
+    // public.bug_reports and forwards the embed to Discord from a project
+    // secret. The webhook URL used to live here in the page; now nothing
+    // about the channel reaches the browser, and a report is kept even
+    // when Discord is down.
+    const FEEDBACK_FUNCTION = 'bug-report';
 
     function openFeedbackModal() {
       closeModals();
@@ -9045,46 +9036,46 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('feedbackModal').classList.add('open');
     }
 
-    // Discord webhooks accept a browser POST with no auth beyond the URL
-    // itself and no preflight-blocking headers, so this goes straight from
-    // the client - no server of our own needed for a tester build.
+    // Diagnostics attached to every report so the tester need not describe
+    // their device: the same set the old direct-to-Discord post carried,
+    // plus the build and the skin in effect. The skin id, not data-theme:
+    // Executive Lounge and Refinement x Realization share a look but not
+    // their effects, so a bug must say which one it was seen on.
+    function feedbackMeta() {
+      return {
+        userAgent: (navigator.userAgent || 'unknown').slice(0, 1024),
+        appBuild: APP_BUILD,
+        catalogVersion: catalogVersionLabel().slice(0, 128),
+        theme: getActiveThemeId(),
+        trackedCount: trackedGames.length,
+        recentErrors: recentAppErrors.slice(-10)
+      };
+    }
+
     async function submitFeedback() {
       const category = document.getElementById('feedbackCategory').value;
       const text = document.getElementById('feedbackText').value.trim();
       if (!text) { showToast('Add a quick description first', null); return; }
-      if (!FEEDBACK_WEBHOOK_URL) {
-        showToast('Feedback isn\u2019t wired up yet on this build (no webhook configured).', null, 9000);
+      const client = getSupabaseClient();
+      if (!client) {
+        showToast('Feedback needs a connection right now - try again once you\u2019re back online.', null, 9000);
         return;
       }
       const btn = document.getElementById('btnFeedbackSubmit');
       const originalLabel = btn.textContent;
       btn.disabled = true;
       btn.textContent = 'SENDING...';
-      const fields = [
-        { name: 'User Agent', value: (navigator.userAgent || 'unknown').slice(0, 1024) },
-        { name: 'Catalogue', value: catalogVersionLabel().slice(0, 1024), inline: true },
-        { name: 'Tracked platforms', value: String(trackedGames.length), inline: true }
-      ];
-      if (recentAppErrors.length) {
-        fields.push({ name: 'Recent app errors', value: recentAppErrors.join('\n').slice(0, 1024) });
-      }
-      const payload = {
-        username: 'Daily Roll Over Feedback',
-        embeds: [{
-          title: `[${category}]`,
-          description: text.slice(0, 4000),
-          color: FEEDBACK_CATEGORY_COLORS[category] || 0x00e5ff,
-          fields,
-          timestamp: new Date().toISOString()
-        }]
-      };
       try {
-        const response = await fetch(FEEDBACK_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+        const { data, error } = await client.functions.invoke(FEEDBACK_FUNCTION, {
+          body: { category, text: text.slice(0, 4000), meta: feedbackMeta() }
         });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (error) {
+          // The function's own message (a rate limit, a validation miss)
+          // is more useful than supabase-js's generic wrapper.
+          const detail = await extractFunctionsErrorDetail(error);
+          throw new Error((detail.body && detail.body.error) || error.message || 'request failed');
+        }
+        if (!data || !data.ok) throw new Error((data && data.error) || 'no reply');
         closeModals();
         showToast('Thanks - feedback sent!', null);
       } catch (error) {
