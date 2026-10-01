@@ -63,6 +63,34 @@ export function clientAddress(req: Request): string {
   return forwarded[forwarded.length - 1] || "unknown";
 }
 
+// A small fixed-window limiter per key, the same shape as the `go`
+// function's RateLimiter (edge functions are bundled one directory at a
+// time, so it is repeated here rather than imported). It is only the
+// fallback for when allow_bug_report cannot be reached: a database hiccup
+// then degrades to per-isolate limiting rather than to none, and a report
+// is never dropped over the limiter's own failure.
+export class RateLimiter {
+  private hits = new Map<string, { count: number; windowStart: number }>();
+  constructor(private readonly limit: number, private readonly windowMs: number) {}
+
+  allow(key: string, now = Date.now()): boolean {
+    const entry = this.hits.get(key);
+    if (!entry || now - entry.windowStart >= this.windowMs) {
+      this.hits.set(key, { count: 1, windowStart: now });
+      if (this.hits.size > 5000) this.sweep(now);
+      return true;
+    }
+    entry.count += 1;
+    return entry.count <= this.limit;
+  }
+
+  private sweep(now: number) {
+    for (const [key, entry] of this.hits) {
+      if (now - entry.windowStart >= this.windowMs) this.hits.delete(key);
+    }
+  }
+}
+
 // What the limiter stores: a salted hash, never the address.
 export async function addressKey(address: string, salt: string): Promise<string> {
   const bytes = new TextEncoder().encode(`${salt}:${address}`);

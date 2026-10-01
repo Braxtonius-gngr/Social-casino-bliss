@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
-import { addressKey, buildEmbed, cleanErrors, clientAddress, EMBED_BUDGET, embedLength, MAX_TEXT, validate } from "./report.ts";
+import { addressKey, buildEmbed, cleanErrors, clientAddress, EMBED_BUDGET, embedLength, MAX_TEXT, RateLimiter, validate } from "./report.ts";
 
 Deno.test("validate takes a plain report and trims it", () => {
   const out = validate({ category: "Timer bug", text: "  Zula timer stuck at 0:00  " });
@@ -112,4 +112,13 @@ Deno.test("buildEmbed stays inside Discord's total budget on a maximum-size repo
   const short = validate({ category: "Other", text: "fine" });
   assert("report" in short, "refused");
   assertEquals(buildEmbed(short.report, 1).embeds[0].description, "fine");
+});
+
+Deno.test("RateLimiter allows up to the limit per key per window, then refuses until the window turns", () => {
+  const limiter = new RateLimiter(2, 1000);
+  assertEquals(limiter.allow("a", 0), true);
+  assertEquals(limiter.allow("a", 10), true);
+  assertEquals(limiter.allow("a", 20), false, "third hit in the window allowed");
+  assertEquals(limiter.allow("b", 20), true, "another key shares the count");
+  assertEquals(limiter.allow("a", 1000), true, "window did not turn");
 });

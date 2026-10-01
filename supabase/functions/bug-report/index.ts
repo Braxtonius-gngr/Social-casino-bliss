@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
-import { addressKey, buildEmbed, cleanErrors, clientAddress, type Report, validate } from "./report.ts";
+import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { addressKey, buildEmbed, cleanErrors, clientAddress, RateLimiter, type Report, validate } from "./report.ts";
 
 // POST { category, text, meta?: { userAgent, appBuild, catalogVersion, theme, trackedCount, recentErrors } }
 //   -> { ok: true, id, discord: 'sent' | 'failed' | 'skipped' }
@@ -18,9 +18,25 @@ const allowedOrigins = new Set([
   "http://localhost:5173",
 ]);
 // One address gets this many reports per hour before being asked to wait.
-// The count lives in the database (allow_bug_report), so a parallel burst
-// is counted, not raced.
+// The count lives in the database (allow_bug_report), shared by every
+// isolate and counted in one statement, so a parallel burst is counted,
+// not raced. The in-memory limiter is only the fallback if that call
+// fails, so a database hiccup degrades to per-isolate limiting rather
+// than to none.
 const RATE_LIMIT = 10;
+const RATE_WINDOW_MS = 60 * 60 * 1000;
+const localLimiter = new RateLimiter(RATE_LIMIT, RATE_WINDOW_MS);
+
+async function allowed(supabase: SupabaseClient, key: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc("allow_bug_report", { p_key_hash: key, p_limit: RATE_LIMIT });
+    if (error) throw error;
+    if (typeof data === "boolean") return data;
+  } catch (err) {
+    console.warn("allow_bug_report unavailable, limiting per isolate:", err);
+  }
+  return localLimiter.allow(key);
+}
 // Discord gets this long before the report is recorded as 'failed' and the
 // tester still sees a thank-you: the row is already saved.
 const DISCORD_TIMEOUT_MS = 8_000;
@@ -87,12 +103,9 @@ serve(async (req) => {
   const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", serviceKey);
 
   // Count the request before anything is written. The limiter never sees
-  // the address itself, only a salted hash; a limiter error lets the
-  // report through rather than losing it.
+  // the address itself, only a salted hash.
   const key = await addressKey(clientAddress(req), Deno.env.get("BUG_REPORT_SALT") ?? serviceKey);
-  const { data: allowed, error: rateError } = await supabase.rpc("allow_bug_report", { p_key_hash: key, p_limit: RATE_LIMIT });
-  if (rateError) console.error("allow_bug_report failed", rateError);
-  if (!rateError && allowed === false) {
+  if (!await allowed(supabase, key)) {
     return jsonResponse({ error: "That's plenty for one hour - thank you. Try again a little later." }, 429, cors);
   }
 
