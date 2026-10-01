@@ -5547,6 +5547,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       window.rollTable = null;
       if (s) {
         try { if (s.table) s.table.dispose(); } catch (e) { /* gone */ }
+        // (the homes' sets: the one you are at, and one you were drifting
+        // away from, if you leave before you land)
+        [s.prevPrep, s.prep].forEach(p => { try { if (p) p.dispose(); } catch (e) { /* gone */ } });
+        s.prep = s.prevPrep = null;
         try { if (s.world) s.world.dispose(); } catch (e) { /* gone */ }
         if (s.stage) s.stage.remove();
       }
@@ -5613,7 +5617,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // shows - while you are still in your chair)
         prep = await m.prepareTable({ scene: world.scene, dest, hooks: rollTableHooks(), warm: opts => world.warm(opts) });
         if (rollTableSession !== s) { prep.dispose(); return false; }
+        // (from here the session owns both sets: leaving mid-flight disposes
+        // them - see rollLeaveTable)
         const was = s.prep;
+        s.prevPrep = was; s.prep = prep; s.dest = dest;
         // (the chair lets go of the camera and the page; the room goes back
         // to how the shot left it, and the next home takes it from there)
         try { if (s.table) s.table.dispose(); } catch (e) { /* gone */ }
@@ -5622,7 +5629,6 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const back = document.getElementById('r3SheetBack');
         if (back) back.remove();
         rollRoomRestore(world, s.base);
-        s.prep = prep; s.dest = dest;
         const table = await prep.fly(world, {
           host: s.stage,
           reduced: motionOff(),
@@ -5631,6 +5637,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             // (the home you left stays in the room until you are down in
             // the new chair - you see it fall away behind you)
             try { if (was) was.dispose(); } catch (e) { /* gone */ }
+            if (s.prevPrep === was) s.prevPrep = null;
             document.body.classList.remove('r3-adrift');
             s.drifting = false;
             rollDriftUI(s);
@@ -5641,6 +5648,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         return true;
       } catch (e) {
         console.warn('drift', e);
+        // (a set built but never handed to the session is ours to free)
+        if (prep && s.prep !== prep) { try { prep.dispose(); } catch (e2) { /* gone */ } }
         // (lost on the way: the seat your skin gives you, the way you
         // always come in)
         s.drifting = false;
