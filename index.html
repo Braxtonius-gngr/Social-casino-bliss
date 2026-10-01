@@ -8584,6 +8584,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function shareTextFor(entry) {
       const name = entry.name.trim();
       if (entry.noGuaranteedDaily) return `${name} has no guaranteed daily bonus. Here's what it does have.`;
+      // A blocker means no day count applies, so share the warning instead of one.
+      if (entry.blocker) return `${name} is tier ${entry.tier}: ${blockerLabel(entry.blocker)}.`;
       if (/^[SABCDF]$/.test(entry.tier || '') && typeof entry.dailySC === 'number' && typeof entry.daysToRedeem === 'number') {
         return `${name} is tier ${entry.tier}: ${entry.dailySC} SC a day, about ${entry.daysToRedeem} days of free daily bonuses to the first cash-out.`;
       }
@@ -8627,10 +8629,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function shareTierList() {
-      const ranked = CATALOG_DATA.filter(e => e && /^[SABCDF]$/.test(e.tier || '')).length;
+      const tiered = CATALOG_DATA.filter(e => e && /^[SABCDF]$/.test(e.tier || ''));
+      const ruled = tiered.filter(e => e.blocker).length;
       shareLink({
         title: 'Sweepstakes casino daily bonus tier list',
-        text: `${ranked} sweepstakes casinos ranked by how many days of free daily bonuses it takes to reach the first cash-out.`,
+        text: `${tiered.length} sweepstakes casinos ranked by how many days of free daily bonuses it takes to reach the first cash-out${ruled ? ` (${ruled} placed by a platform rule instead)` : ''}.`,
         path: 'platforms/index.html',
         kind: 'tier_list'
       });
@@ -8762,7 +8765,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v84';
+    const APP_BUILD = 'almanac-v85';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
