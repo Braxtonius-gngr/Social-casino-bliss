@@ -2091,7 +2091,7 @@
   ],
   "Moon Spin": [
     {
-      "date": "2026-09-30",
+      "date": "2026-10-01",
       "changed": [
         "tier",
         "blocker"
@@ -2514,46 +2514,6 @@
   ],
   "ReBet": [
     {
-      "date": "2026-10-01",
-      "changed": [
-        "tier",
-        "blocker"
-      ],
-      "from": {
-        "tier": "D",
-        "dailySC": 1,
-        "cashFloor": 20,
-        "daysToRedeem": 20,
-        "blocker": "free-play-cannot-reach-floor"
-      },
-      "to": {
-        "tier": "S",
-        "dailySC": 1,
-        "cashFloor": 20,
-        "daysToRedeem": 20
-      }
-    },
-    {
-      "date": "2026-09-30",
-      "changed": [
-        "tier",
-        "blocker"
-      ],
-      "from": {
-        "tier": "S",
-        "dailySC": 1,
-        "cashFloor": 20,
-        "daysToRedeem": 20
-      },
-      "to": {
-        "tier": "D",
-        "dailySC": 1,
-        "cashFloor": 20,
-        "daysToRedeem": 20,
-        "blocker": "free-play-cannot-reach-floor"
-      }
-    },
-    {
       "date": "2026-09-21",
       "changed": [
         "cashFloor"
@@ -2798,7 +2758,7 @@
   ],
   "Shuffle": [
     {
-      "date": "2026-09-30",
+      "date": "2026-10-01",
       "changed": [
         "tier",
         "dailySC"

@@ -265,13 +265,17 @@ function historyLine(event) {
     }
   }
   if (to.blocker && to.blocker !== from.blocker) details.push(blockerText(to.blocker));
+  else if (from.blocker && !to.blocker) details.push('rule warning lifted');
   else if (RANKED.has(to.tier) && !to.blocker && typeof to.daysToRedeem === 'number') details.push(`about ${formatCount(to.daysToRedeem)} days to cash out`);
   const renamed = event.renamedFrom ? ` (listed as ${event.renamedFrom} before)` : '';
   if (to.tier === 'Not Rankable' && from.tier !== 'Not Rankable') {
     return `Marked not rankable${renamed}, as it has no guaranteed daily bonus.`;
   }
   let headline;
-  if (from.tier === to.tier) headline = RANKED.has(to.tier) ? `Numbers updated, still tier ${to.tier}` : 'Numbers updated';
+  // A change to the rule warning alone is not a numbers update.
+  const ruleOnly = Array.isArray(event.changed) && event.changed.length === 1 && event.changed[0] === 'blocker';
+  if (from.tier === to.tier && ruleOnly) headline = `Rule warning ${to.blocker ? 'added' : 'changed'}${RANKED.has(to.tier) ? `, still tier ${to.tier}` : ''}`;
+  else if (from.tier === to.tier) headline = RANKED.has(to.tier) ? `Numbers updated, still tier ${to.tier}` : 'Numbers updated';
   else if (to.tier === 'Unranked') headline = RANKED.has(from.tier) ? `Taken out of tier ${from.tier} until its numbers are confirmed` : 'Moved to not yet ranked';
   else if (!RANKED.has(from.tier)) headline = `Ranked tier ${to.tier}`;
   else headline = `Moved from tier ${from.tier} to ${to.tier}${RULE_CHANGES[event.date] ? ` ${RULE_CHANGES[event.date]}` : ''}`;

@@ -8629,10 +8629,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function shareTierList() {
-      const ranked = CATALOG_DATA.filter(e => e && /^[SABCDF]$/.test(e.tier || '')).length;
+      const tiered = CATALOG_DATA.filter(e => e && /^[SABCDF]$/.test(e.tier || ''));
+      const ruled = tiered.filter(e => e.blocker).length;
       shareLink({
         title: 'Sweepstakes casino daily bonus tier list',
-        text: `${ranked} sweepstakes casinos ranked by how many days of free daily bonuses it takes to reach the first cash-out.`,
+        text: `${tiered.length} sweepstakes casinos ranked by how many days of free daily bonuses it takes to reach the first cash-out${ruled ? ` (${ruled} placed by a platform rule instead)` : ''}.`,
         path: 'platforms/index.html',
         kind: 'tier_list'
       });
