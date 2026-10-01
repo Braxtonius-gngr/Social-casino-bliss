@@ -167,27 +167,27 @@
     }
 
     [data-theme="glitch"] {
-      --bg-base: #060806;
-      --accent-gold: #39FF14;
-      --accent-gold-hover: #5EFF42;
-      --accent-gold-dim: rgba(57, 255, 20, 0.16);
-      --accent-green: #00FFA0;
-      --accent-green-dim: rgba(0, 255, 160, 0.16);
-      --accent-pink: #FF2A2A;
-      --accent-pink-dim: rgba(255, 42, 42, 0.18);
-      --accent-orange: #FFB000;
-      --accent-orange-dim: rgba(255, 176, 0, 0.16);
-      --accent-cyan: #00E5FF;
-      --accent-cyan-dim: rgba(0, 229, 255, 0.16);
-      --glass-border: rgba(57, 255, 20, 0.18);
-      --glass-highlight: rgba(57, 255, 20, 0.08);
-      --text-main: #D6FFD6;
-      --text-muted: #7FAE7F;
-      --text-dim: #3F5C3F;
-      --tier-s: #FF2A2A;
-      --tier-a: #FFB000;
-      --tier-b: #00E5FF;
-      --tier-c: #3F5C3F;
+      --bg-base: #050608;
+      --accent-gold: #E9E4D8;
+      --accent-gold-hover: #FFFFFF;
+      --accent-gold-dim: rgba(233, 228, 216, 0.12);
+      --accent-green: #9ED8C4;
+      --accent-green-dim: rgba(158, 216, 196, 0.14);
+      --accent-pink: #E0242F;
+      --accent-pink-dim: rgba(224, 36, 47, 0.18);
+      --accent-orange: #F0703A;
+      --accent-orange-dim: rgba(240, 112, 58, 0.16);
+      --accent-cyan: #7DB6F0;
+      --accent-cyan-dim: rgba(125, 182, 240, 0.16);
+      --glass-border: rgba(233, 228, 216, 0.14);
+      --glass-highlight: rgba(233, 228, 216, 0.06);
+      --text-main: #E6E1D6;
+      --text-muted: #8E97A3;
+      --text-dim: #4E5661;
+      --tier-s: #E0242F;
+      --tier-a: #F0703A;
+      --tier-b: #7DB6F0;
+      --tier-c: #5A6270;
     }
 
     * {
@@ -3375,77 +3375,75 @@
 
 /* =========================================================
    THEME: Dead Channel ("glitch")
-   Broken-CRT / signal-corruption aesthetic, built around the
-   full-viewport static jolt that used to live exclusively in Boot
-   Hill (as "hellscape-static") - pulled out of that theme because
-   plenty of people never clocked it as an intentional effect there,
-   and it deserved to be the headline of its own theme rather than a
-   rare accent buried in a different one. Phosphor/acid green as the
-   primary accent (the "gold" role), alarm red for tier-S and the
-   danger/corruption palette, amber/cyan for A/B tiers. Sharp 4px
-   corners everywhere (no pill shapes, no soft glow-only outlines
-   pretending to be rounded) plus corner-bracket accents on cards,
-   mimicking a terminal readout rather than neon's soft light
-   sources. Chromatic-aberration titles use layered text-shadow
-   offsets, not a content:attr() duplicate-layer trick - simpler,
-   and it never risks the two copies of the text drifting out of
-   sync with real page content changes. This is a first pass: the
-   goal here is to get Dead Channel's identity right (the palette,
-   the terminal shapes, and - above all - the signal-corruption
-   jolt itself running more often since it's the reason this theme
-   exists), not to match Boot Hill's much more heavily-iterated
-   depth on day one.
+   A television left on a dead channel, and what comes through it (its
+   room: assets/rooms/glitch.js; its payout, the séance:
+   assets/rooms/seance.mjs; the spirit: assets/rooms/spirit.mjs). Black
+   glass, bone phosphor, a cold spirit blue and blood red. The
+   signal-corruption jolt further down is this skin's own and is kept
+   exactly as it was built - the red and green bands, the skew, the
+   blown-out peaks: the one place its old acid green still lives.
+   Hard 4px corners and corner brackets on the cards (a set's on-screen
+   display, not soft glass); IM Fell English SC for the wordmark, VT323
+   for the set's own numbers.
    ========================================================= */
 
-[data-theme="glitch"] body, [data-theme="glitch"] { background: #060806; }
+[data-theme="glitch"] body, [data-theme="glitch"] { background: #050608; --dc-bone: #E9E4D8; --dc-blood: #E0242F; --dc-spirit: #7DB6F0; --dc-fell: 'IM Fell English SC', Georgia, serif; --dc-osd: 'VT323', 'Courier New', monospace; }
 
-/* Ambient scanline sweep - a single soft highlight band drifting
-   down the screen on a slow loop, on top of the baked-in scanline
-   texture in the theme's bodyBg. Cheap, always-on CRT-refresh cue
-   that reads as "this is a screen" even in the long stretches
-   between corruption jolts. */
-[data-theme="glitch"] body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(180deg, transparent 0%, rgba(57, 255, 20, 0.05) 48%, transparent 100%);
-  background-size: 100% 220%;
-  animation: scanline-sweep 7s linear infinite;
-}
-@keyframes scanline-sweep {
-  0% { background-position: 0 -120%; }
-  100% { background-position: 0 120%; }
-}
+/* The hum bar: a soft band rolling slowly up the screen, as a set on a
+   mains-hum ripple shows (a 60 Hz field against a 59.94 Hz picture); over
+   the baked-in scanlines in the skin's background. */
+.dc-hum { display: none; }
+[data-theme="glitch"] .dc-hum { display: block; position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(0deg, transparent 0%, rgba(233, 228, 216, 0.028) 42%, rgba(233, 228, 216, 0.045) 50%, rgba(233, 228, 216, 0.028) 58%, transparent 100%);
+  background-size: 100% 60%; background-repeat: no-repeat; animation: dc-hum 11s linear infinite; }
+@keyframes dc-hum { 0% { background-position: 0 180%; } 100% { background-position: 0 -80%; } }
 [data-theme="glitch"] .app-container, [data-theme="glitch"] .docked-footer { position: relative; z-index: 2; }
-[data-motion="off"] [data-theme="glitch"] body::after { animation: none; background-position: 0 0; }
+html[data-motion="off"] .dc-hum { animation: none; background: none; }
 
-/* Typography: solid phosphor-green fill with a hard red/cyan
-   chromatic-aberration fringe instead of neon's outline-only
-   text-stroke look - reads as a mis-converged CRT signal rather
-   than a glow. */
+/* The glass round the picture (the room's edge light): drawn by the room -
+   the lamp caught top left on the curved face, a bone lip on a dark seam,
+   and the length of it that has tuned in with the day's run. The tube's
+   mask darkens the corners where the face curves away. Under every sheet,
+   the tour, the landing and the table, like the other rooms' edges. */
+.dc-glass { display: none; }
+[data-theme="glitch"] .dc-glass { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 95; pointer-events: none; overflow: visible; }
+.dc-glass path { fill: none; }
+.dc-seam { stroke: rgba(0, 0, 0, 0.9); stroke-width: 3.2; }
+.dc-lip { stroke: rgba(233, 228, 216, 0.1); stroke-width: 0.8; }
+.dc-run { stroke-linecap: round; }
+.dc-run-bloom { stroke: rgba(233, 228, 216, 0.75); stroke-width: 7; }
+.dc-run-line { stroke: #F4F0E8; stroke-width: 1.6; }
+.dc-head { fill: #fff; filter: drop-shadow(0 0 3px rgba(125, 182, 240, 0.9)) drop-shadow(0 0 7px rgba(233, 228, 216, 0.6)); }
+[data-theme="glitch"] body::before { content: ''; position: fixed; inset: 0; z-index: 94; pointer-events: none;
+  background: radial-gradient(130% 105% at 50% 50%, transparent 62%, rgba(0, 0, 0, 0.42) 88%, rgba(0, 0, 0, 0.7) 100%); }
+html[data-motion="off"] .dc-head { display: none; }
+
+/* Type: the wordmark cut in the Fell types, with the set's convergence a
+   hair out (red one way, blue the other); the set's numbers in VT323. */
 [data-theme="glitch"] .app-title,
 [data-theme="glitch"] .landing-title {
-  font-family: 'VT323', 'Courier New', monospace;
+  font-family: var(--dc-fell);
+  font-weight: 400;
   -webkit-text-stroke: 0;
-  color: var(--accent-gold);
-  text-shadow: -2px 0 0 rgba(255, 42, 42, 0.75), 2px 0 0 rgba(0, 229, 255, 0.6), 0 0 14px rgba(57, 255, 20, 0.5);
+  color: var(--dc-bone);
+  text-shadow: -1.5px 0 0 rgba(224, 36, 47, 0.7), 1.5px 0 0 rgba(125, 182, 240, 0.6), 0 0 16px rgba(233, 228, 216, 0.28);
   letter-spacing: 0.02em;
 }
 [data-theme="glitch"] .app-title span,
 [data-theme="glitch"] .landing-title span {
   -webkit-text-stroke: 0;
-  color: var(--accent-pink);
-  text-shadow: -2px 0 0 rgba(0, 229, 255, 0.6), 2px 0 0 rgba(57, 255, 20, 0.6), 0 0 14px rgba(255, 42, 42, 0.55);
+  color: var(--dc-blood);
+  text-shadow: -1.5px 0 0 rgba(125, 182, 240, 0.55), 1.5px 0 0 rgba(233, 228, 216, 0.35), 0 0 16px rgba(224, 36, 47, 0.45);
 }
+[data-theme="glitch"] .date-header { font-family: var(--dc-osd); font-size: 1.05rem; letter-spacing: 0.08em; }
+[data-theme="glitch"] .status-time, [data-theme="glitch"] .cooldown-chip, [data-theme="glitch"] .ready-at,
+[data-theme="glitch"] .hero-details p { font-family: var(--dc-osd); font-size: 1.12em; letter-spacing: 0.03em; }
 
-/* Cards: flat terminal-window panels with hairline green edges and
-   bracket accents at two opposite corners, standing in for a proper
-   CRT-bezel frame without needing four extra elements per panel. */
+/* Cards: the set's on-screen display - flat black panels with a hairline
+   bone edge and bracket corners at two opposite corners. */
 [data-theme="glitch"] .glass-panel {
   position: relative;
-  background: rgba(4, 10, 6, 0.72);
+  background: rgba(8, 10, 13, 0.78);
   border: 1px solid var(--glass-border);
   border-top-color: var(--glass-border);
   border-left-color: var(--glass-border);
@@ -3460,151 +3458,166 @@
   width: 10px;
   height: 10px;
   pointer-events: none;
-  opacity: 0.85;
+  opacity: 0.7;
 }
 [data-theme="glitch"] .glass-panel::before {
   top: -1px; left: -1px;
-  border-top: 2px solid var(--accent-gold);
-  border-left: 2px solid var(--accent-gold);
+  border-top: 1.5px solid var(--dc-bone);
+  border-left: 1.5px solid var(--dc-bone);
 }
 [data-theme="glitch"] .glass-panel::after {
   bottom: -1px; right: -1px;
-  border-bottom: 2px solid var(--accent-gold);
-  border-right: 2px solid var(--accent-gold);
+  border-bottom: 1.5px solid var(--dc-bone);
+  border-right: 1.5px solid var(--dc-bone);
 }
 
-/* Hero ring + Daily Run CTA: square terminal readout instead of a
-   soft radial glow circle. */
-[data-theme="glitch"] .hero-ring-circle {
-  border-radius: 4px;
-  border: 2px solid var(--accent-gold);
-  background: rgba(0, 0, 0, 0.55);
-  font-family: 'VT323', monospace;
-  font-size: 1.9rem;
-  color: var(--accent-gold);
-  text-shadow: 0 0 8px rgba(57, 255, 20, 0.75);
-  box-shadow: 0 0 14px rgba(57, 255, 20, 0.3), inset 0 0 10px rgba(57, 255, 20, 0.22);
-}
+/* The scope round the ready count: drawn by the room (SVG) - a knurled
+   bezel, a graticule, the run as a red phosphor trace with a white-hot head.
+   The count sits on the face in VT323. */
+.dc-scope { display: none; }
+[data-theme="glitch"] .hero-ring-wrapper { width: 112px; height: 112px; }
+[data-theme="glitch"] .dc-scope { display: block; position: absolute; inset: 0; pointer-events: none; filter: drop-shadow(2px 4px 5px rgba(0, 0, 0, 0.7)); }
+.dc-scope svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.dc-trace { fill: none; stroke-linecap: round; }
+.dc-trace-glow { stroke: #E0242F; stroke-width: 7; opacity: 0.6; }
+.dc-trace-tail { stroke: rgba(224, 36, 47, 0.42); stroke-width: 1.6; }
+.dc-trace-body { stroke: #F0313C; stroke-width: 1.8; }
+.dc-trace-core { stroke: #FFE9EA; stroke-width: 1.1; }
+.dc-dot { fill: #fff; filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 5px #E0242F); animation: dc-beam 1.7s steps(9, end) infinite; transform-box: fill-box; transform-origin: center; }
+.dc-dot.dc-parked { fill: rgba(233, 228, 216, 0.55); filter: drop-shadow(0 0 3px rgba(233, 228, 216, 0.4)); animation: none; }
+@keyframes dc-beam { 0% { transform: translate(0, 0); } 17% { transform: translate(0.25px, -0.15px); } 38% { transform: translate(-0.2px, 0.2px); } 61% { transform: translate(0.1px, 0.3px); } 80% { transform: translate(-0.3px, -0.1px); } 100% { transform: translate(0, 0); } }
+[data-theme="glitch"] .hero-ring-circle { position: absolute; inset: 24%; width: auto; height: auto; z-index: 1; border: 0; border-radius: 50%; background: transparent; box-shadow: none;
+  font-family: var(--dc-osd); font-weight: 400; font-size: 2.3rem; line-height: 1; color: #F4F0E8;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.6), 0 0 10px rgba(224, 36, 47, 0.55); }
+html[data-motion="off"] .dc-dot { animation: none; }
 [data-theme="glitch"] .hero-stat-card { border-radius: 4px; }
 [data-theme="glitch"] .btn-start-run {
   border-radius: 4px;
-  font-family: 'VT323', monospace;
+  color: var(--dc-bone);
+  border-color: rgba(233, 228, 216, 0.55);
+  font-family: var(--dc-osd);
   letter-spacing: 0.08em;
-  font-size: 1.05rem;
+  font-size: 1.15rem;
 }
 
-/* Nav / filter chips: hard corners, "channel select" underline glow
-   instead of a filled pill. */
+/* The face in the snow (a collect): the room's canvas over the card, its
+   grain two css pixels square, unsmoothed. */
+.dc-snow { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: inherit; pointer-events: none; z-index: 3; image-rendering: pixelated; mix-blend-mode: screen; }
+html[data-motion="off"] .dc-snow { display: none; }
+
+/* The séance (the payout: assets/rooms/seance.mjs): one canvas over the
+   app, under every sheet. */
+.dc-seance { position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 98; pointer-events: none; }
+html[data-motion="off"] .dc-seance { display: none; }
+
+/* Nav / filter chips: hard corners, a "channel select" underline. */
 [data-theme="glitch"] .nav-tab,
 [data-theme="glitch"] .filter-btn,
 [data-theme="glitch"] .sort-trigger-btn {
   border-radius: 4px;
 }
 [data-theme="glitch"] .nav-tab.active {
-  background: rgba(57, 255, 20, 0.12);
-  border-color: var(--accent-gold);
+  background: rgba(233, 228, 216, 0.08);
+  border-color: var(--dc-bone);
   color: var(--text-main);
-  text-shadow: 0 0 8px var(--accent-gold);
-  box-shadow: inset 0 -2px 0 var(--accent-gold);
+  box-shadow: inset 0 -2px 0 var(--dc-blood);
 }
 [data-theme="glitch"] .filter-btn.active {
   background: var(--accent-cyan-dim);
   border-color: var(--accent-cyan);
   color: var(--text-main);
-  text-shadow: 0 0 8px var(--accent-cyan);
   box-shadow: inset 0 -2px 0 var(--accent-cyan);
 }
 
-/* General buttons: black terminal fields, hairline border, no
-   gradient fills - hover inverts to filled instead of just glowing
-   harder, the classic "select this line" terminal cue. */
+/* Buttons: black fields with a hairline edge; hover fills, the classic
+   "select this line" cue of a set's menu. */
 [data-theme="glitch"] .btn-open {
   background: rgba(0, 0, 0, 0.55);
-  border: 1px solid var(--accent-pink);
-  color: var(--accent-pink);
+  border: 1px solid var(--dc-blood);
+  color: #FF6B72;
   border-radius: 4px;
-  text-shadow: 0 0 6px var(--accent-pink);
+  text-shadow: none;
   box-shadow: none;
 }
 [data-theme="glitch"] .btn-open:hover {
-  background: var(--accent-pink);
-  color: #060806;
-  text-shadow: none;
-  box-shadow: 0 0 18px rgba(255, 42, 42, 0.5);
+  background: var(--dc-blood);
+  color: #fff;
+  box-shadow: 0 0 16px rgba(224, 36, 47, 0.45);
   transform: none;
 }
 [data-theme="glitch"] .btn-open.cooldown { background: rgba(0,0,0,0.4); border-color: var(--glass-border); color: var(--text-dim); }
 [data-theme="glitch"] .btn-primary {
   background: rgba(0, 0, 0, 0.55);
-  border: 1px solid var(--accent-gold);
-  color: var(--accent-gold);
+  border: 1px solid var(--dc-bone);
+  color: var(--dc-bone);
   border-radius: 4px;
-  text-shadow: 0 0 6px var(--accent-gold);
+  text-shadow: none;
   box-shadow: none;
 }
-[data-theme="glitch"] .btn-primary:hover { background: var(--accent-gold); color: #060806; text-shadow: none; box-shadow: 0 0 18px rgba(57, 255, 20, 0.5); }
+[data-theme="glitch"] .btn-primary:hover { background: var(--dc-bone); color: #050608; box-shadow: 0 0 16px rgba(233, 228, 216, 0.3); }
 [data-theme="glitch"] .btn-run-collect {
   background: rgba(0, 0, 0, 0.55);
-  border: 1px solid var(--accent-pink);
-  color: var(--accent-pink);
+  border: 1px solid var(--dc-blood);
+  color: #FF6B72;
   border-radius: 4px;
-  text-shadow: 0 0 6px var(--accent-pink);
+  text-shadow: none;
   box-shadow: none;
 }
 [data-theme="glitch"] .btn-dock {
   background: rgba(0, 0, 0, 0.55);
-  border: 1px solid var(--accent-gold);
-  color: var(--accent-gold);
+  border: 1px solid rgba(233, 228, 216, 0.6);
+  color: var(--dc-bone);
   border-radius: 4px;
-  text-shadow: 0 0 6px var(--accent-gold);
+  text-shadow: none;
   box-shadow: none;
 }
-[data-theme="glitch"] .btn-dock:hover { background: var(--accent-gold-dim); box-shadow: 0 0 14px rgba(57, 255, 20, 0.35); }
+[data-theme="glitch"] .btn-dock:hover { background: rgba(233, 228, 216, 0.1); }
 [data-theme="glitch"] .btn-cancel { border-radius: 4px; }
 [data-theme="glitch"] .btn-danger { border-radius: 4px; }
 [data-theme="glitch"] .landing-btn {
   background: transparent;
   border-radius: 4px;
-  border: 2px solid var(--accent-gold);
-  color: var(--accent-gold);
+  border: 1.5px solid var(--dc-bone);
+  color: var(--dc-bone);
   box-shadow: none;
-  text-shadow: 0 0 8px var(--accent-gold);
+  text-shadow: none;
+  font-family: var(--dc-osd);
+  font-size: 1.25rem;
+  letter-spacing: 0.1em;
 }
-[data-theme="glitch"] .landing-btn:hover { background: var(--accent-gold-dim); box-shadow: 0 0 18px rgba(57, 255, 20, 0.35); }
+[data-theme="glitch"] .landing-btn:hover { background: rgba(233, 228, 216, 0.1); }
 
-/* Avatars + tier badges: square, monospace, no soft glow ring. */
+/* Avatars + tier badges: square, the set's numbers, no soft glow ring. */
 [data-theme="glitch"] .casino-avatar {
   border-radius: 4px;
-  border: 2px solid var(--accent-gold);
+  border: 1.5px solid rgba(233, 228, 216, 0.55);
   background: rgba(0, 0, 0, 0.6);
-  font-family: 'VT323', 'Courier New', monospace;
-  text-shadow: 0 0 5px var(--accent-gold);
-  box-shadow: inset 0 0 10px rgba(57, 255, 20, 0.25);
+  font-family: var(--dc-osd);
+  font-size: 1.15rem;
+  color: var(--dc-bone);
+  text-shadow: none;
+  box-shadow: inset 0 0 10px rgba(125, 182, 240, 0.12);
 }
-[data-theme="glitch"] .tier-badge { border-radius: 2px; font-family: 'VT323', monospace; letter-spacing: 0.06em; box-shadow: none; }
-[data-theme="glitch"] .tier-S { background: rgba(255, 42, 42, 0.18); }
-[data-theme="glitch"] .tier-A { background: rgba(255, 176, 0, 0.16); }
-[data-theme="glitch"] .tier-B { background: rgba(0, 229, 255, 0.16); }
-[data-theme="glitch"] .tier-C { background: rgba(63, 92, 63, 0.3); }
+[data-theme="glitch"] .tier-badge { border-radius: 2px; font-family: var(--dc-osd); letter-spacing: 0.06em; box-shadow: none; }
+[data-theme="glitch"] .tier-S { background: rgba(224, 36, 47, 0.2); }
+[data-theme="glitch"] .tier-A { background: rgba(240, 112, 58, 0.18); }
+[data-theme="glitch"] .tier-B { background: rgba(125, 182, 240, 0.16); }
+[data-theme="glitch"] .tier-C { background: rgba(90, 98, 112, 0.3); }
 [data-theme="glitch"] .tier-D { background: rgba(70, 70, 70, 0.3); }
 [data-theme="glitch"] .status-dot { border-radius: 2px; }
 
 [data-theme="glitch"] .docked-footer {
-  background: rgba(2, 4, 2, 0.82);
+  background: rgba(4, 5, 7, 0.88);
   border-top: 1px solid var(--glass-border);
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
 
-/* Landing screen: a plain "dead air" backdrop instead of Boot
-   Hill's bespoke burn-through - dismissLanding() already falls back
-   to a straight .hidden toggle for every non-western theme, so all
-   this theme needs is its own look for that toggle. A hard, stepped
-   cut instead of the default smooth fade sells "the channel just
-   changed" without any extra JS. */
+/* Landing screen: dead air, and a hard stepped cut when you enter (the
+   channel just changed). */
 [data-theme="glitch"] .landing-screen {
-  background: repeating-linear-gradient(0deg, rgba(57,255,20,0.05) 0px, rgba(57,255,20,0.05) 1px, transparent 1px, transparent 3px), radial-gradient(circle at center, #0a120a 0%, #020302 100%);
+  background: repeating-linear-gradient(0deg, rgba(233,228,216,0.035) 0px, rgba(233,228,216,0.035) 1px, transparent 1px, transparent 3px), radial-gradient(circle at center, #0d1014 0%, #030405 100%);
   transition: opacity 0.12s steps(4, end), visibility 0.12s;
 }
 [data-motion="off"] [data-theme="glitch"] .landing-screen { transition: opacity 0.3s ease, visibility 0.3s; }
@@ -3672,6 +3685,28 @@
 }
 [data-motion="off"] [data-theme="glitch"] .app-container::after { animation: none; opacity: 0; }
 [data-motion="off"] [data-theme="glitch"] .landing-screen::after { animation: none; opacity: 0; }
+/* (the séance fires the jolt once, now, as the channel goes) */
+html.dc-jolt-now[data-theme="glitch"] .app-container::after { animation: dc-jolt-now 0.62s steps(1, end) 1; }
+@keyframes dc-jolt-now {
+  0% { opacity: 0.6; transform: translate3d(-14px, 0, 0); filter: brightness(1); }
+  8% { opacity: 0.1; transform: translate3d(10px, 0, 0); }
+  16% { opacity: 1; transform: translate3d(0, -4px, 0) skewX(-3deg); filter: brightness(2.6) contrast(1.6) hue-rotate(15deg); }
+  24% { opacity: 0.15; transform: translate3d(-8px, 0, 0); filter: brightness(1); }
+  34% { opacity: 0.75; transform: translate3d(7px, 3px, 0) skewX(2deg); }
+  42% { opacity: 0.1; transform: translate3d(0, 0, 0); }
+  52% { opacity: 1; transform: translate3d(-6px, 2px, 0); filter: brightness(2.4) contrast(1.6) hue-rotate(-10deg); }
+  60% { opacity: 0.3; transform: translate3d(9px, -3px, 0) skewX(1deg); filter: brightness(1); }
+  72% { opacity: 0.65; transform: translate3d(-3px, 0, 0); }
+  84% { opacity: 0.15; transform: translate3d(0, 0, 0); }
+  100% { opacity: 0; transform: translate3d(0, 0, 0); filter: brightness(1); }
+}
+
+/* Quiet: the set held still and read more easily - larger numbers, the
+   small print lifted. */
+html[data-motion="off"][data-theme="glitch"] .hero-ring-circle { font-size: 2.6rem; }
+html[data-motion="off"][data-theme="glitch"] .casino-name { font-size: 1.12rem; }
+html[data-motion="off"][data-theme="glitch"] .card-status .ready-at,
+html[data-motion="off"][data-theme="glitch"] .cooldown-chip { color: #b7c0cc; }
 
 /* ==========================================================================
    Tabular figures on every ticking or tabulated number
