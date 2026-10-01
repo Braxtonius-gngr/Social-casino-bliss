@@ -47,7 +47,9 @@ ten reports an hour, counted in the database (`allow_bug_report`) from the
 trusted client address, which is stored only as a salted hash. Set the secret in the Supabase dashboard (Edge Functions
 → Secrets); without it reports are still saved and marked `skipped`. The
 table's `status` column (`new` → `triaged` / `fixed` / `wontfix` / `duplicate`)
-is what the daily brief reads alongside `catalog_sweep_findings`.
+is what the daily brief reads alongside `catalog_sweep_findings`. `user_id`
+references `auth.users` with `ON DELETE CASCADE`, so "Delete My Cloud Data"
+removes a tester's reports along with the rest of their account.
 
 ## Quality checks
 

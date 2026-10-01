@@ -17,7 +17,7 @@ create table if not exists public.bug_reports (
   theme            text,                                 -- the skin in effect (getActiveThemeId()), e.g. western
   tracked_count    integer,
   recent_errors    jsonb       not null default '[]'::jsonb, -- recentAppErrors, newest last
-  user_id          uuid,                                 -- the signed-in account (anonymous ones count), if any
+  user_id          uuid,                                 -- the signed-in account (anonymous ones count), if any; FK + cascade added in 20261001204500
   ip_hash          text,                                 -- sha-256 of the caller address + salt, for rate limiting only
   origin           text,
   -- Where the Discord copy got to. The row is kept either way.
