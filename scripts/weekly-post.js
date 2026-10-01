@@ -100,14 +100,20 @@ function classify(change) {
 }
 
 // A blocker entry has no day count that applies (validate-catalog.js), so the
-// post says that instead of quoting one.
-const BLOCKED = 'no free path to cash-out';
+// post names the rule instead of quoting one. Mirrors BLOCKER_LABELS in index.html.
+const BLOCKER_TEXT = {
+  'purchase-gated-daily': 'daily claim needs a purchase',
+  'free-play-cannot-reach-floor': 'no free path to cash-out',
+  '20x-promo-playthrough-last-in-queue': '20x promo playthrough first',
+  'lifetime-cap-one-redemption': 'lifetime cap of one redemption'
+};
+const blocked = (slug) => BLOCKER_TEXT[slug] || slug.replace(/-/g, ' ');
 
 function numbers(s) {
   const parts = [];
   if (typeof s.dailySC === 'number') parts.push(`${s.dailySC} SC/day`);
   if (typeof s.cashFloor === 'number') parts.push(`${s.cashFloor} SC to cash out`);
-  if (s.blocker) parts.push(BLOCKED);
+  if (s.blocker) parts.push(blocked(s.blocker));
   else if (typeof s.daysToRedeem === 'number') parts.push(`~${s.daysToRedeem} days`);
   return parts.join(' · ');
 }
@@ -121,7 +127,7 @@ function reason(from, to) {
   if (from.cashFloor !== to.cashFloor && typeof to.cashFloor === 'number') {
     parts.push(typeof from.cashFloor === 'number' ? `cash minimum ${from.cashFloor} → ${to.cashFloor}` : `cash minimum ${to.cashFloor}`);
   }
-  if (to.blocker) parts.push(BLOCKED);
+  if (to.blocker) parts.push(blocked(to.blocker));
   else if (typeof to.daysToRedeem === 'number') parts.push(`~${to.daysToRedeem} days`);
   return parts.join(', ');
 }

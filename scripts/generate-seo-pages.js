@@ -82,6 +82,14 @@ function formatDailyRate(entry) {
 // The same plain-English read the app's Keen Info summary gives. The raw
 // research notes stay in the catalog for the record; they are working
 // notes, not visitor-facing copy.
+// Short form for the hub's day column: what stands in for a day count.
+const BLOCKER_SHORT = {
+  'purchase-gated-daily': 'Purchase-gated',
+  'free-play-cannot-reach-floor': 'No free path',
+  '20x-promo-playthrough-last-in-queue': '20x playthrough first',
+  'lifetime-cap-one-redemption': 'One redemption only'
+};
+
 function blockerText(blocker) {
   const label = BLOCKER_LABELS[blocker] || blocker.replace(/-/g, ' ');
   return label.charAt(0).toLowerCase() + label.slice(1);
@@ -415,13 +423,13 @@ ${rows.map(({ entry, slug }) => `        <li><a href="${escapeHtml(slug)}.html">
     // A blocker entry sits in its tier by rule, not by the band's day range
     // (validate-catalog.js), so say so rather than let the heading imply it.
     const ruleNote = rows.some(({ entry }) => entry.blocker)
-      ? `\n      <p>Platforms marked "No free path" are placed in tier ${tier} by rule, not by the day range: a platform rule stops free daily bonuses alone from reaching the cash minimum.</p>`
+      ? `\n      <p>Platforms with a warning in place of a day count are placed in tier ${tier} by rule, not by the day range: a platform rule blocks or caps cashing out from free daily bonuses (see each platform's page).</p>`
       : '';
     return `${heading}${ruleNote}
       <table>
         <thead><tr><th>Platform</th><th>SC per day</th><th>Cash minimum</th><th>Days to cash out</th></tr></thead>
         <tbody>
-${rows.map(({ entry, slug }) => `          <tr><td><a href="${escapeHtml(slug)}.html">${escapeHtml(entry.name.trim())}</a></td><td>${escapeHtml(entry.dailySC)}</td><td>${escapeHtml(`${entry.cashFloor} SC`)}</td><td>${escapeHtml(entry.blocker ? 'No free path' : `~${entry.daysToRedeem}`)}</td></tr>`).join('\n')}
+${rows.map(({ entry, slug }) => `          <tr><td><a href="${escapeHtml(slug)}.html">${escapeHtml(entry.name.trim())}</a></td><td>${escapeHtml(entry.dailySC)}</td><td>${escapeHtml(`${entry.cashFloor} SC`)}</td><td>${escapeHtml(entry.blocker ? (BLOCKER_SHORT[entry.blocker] || blockerText(entry.blocker)) : `~${entry.daysToRedeem}`)}</td></tr>`).join('\n')}
         </tbody>
       </table>`;
   }).filter(Boolean).join('\n');
