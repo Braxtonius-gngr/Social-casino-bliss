@@ -5706,7 +5706,18 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           '<button type="button" class="r3-drift-close" onclick="rollDriftClose()">Stay put</button>' +
         '</div>';
       panel.addEventListener('pointerdown', e => { if (e.target === panel) rollDriftClose(); });
-      panel.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); rollDriftClose(); } });
+      panel.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { e.stopPropagation(); rollDriftClose(); return; }
+        // (a modal: Tab goes round its own buttons, never out to the home
+        // behind it)
+        if (e.key !== 'Tab') return;
+        const items = [...panel.querySelectorAll('button:not([disabled])')];
+        if (!items.length) return;
+        const first = items[0], last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        else if (!panel.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+      });
       document.body.appendChild(panel);
       const first = panel.querySelector('.r3-drift-place:not([disabled])') || panel.querySelector('.r3-drift-close');
       if (first) first.focus({ preventScroll: true });
@@ -5735,6 +5746,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       rollLeaveTable();
       const screen = document.getElementById('landingScreen');
       if (!screen) return;
+      // (the last landing's hand-off is spent: a skin with no home must be
+      // able to leave this one the plain way, and the button says so)
+      window.rollIntroEnter = null;
+      const btn = screen.querySelector('.landing-btn');
+      if (btn) { btn.innerHTML = 'ENTER DECK &rarr;'; btn.setAttribute('aria-label', 'Enter app'); }
       screen.classList.remove('hidden', 'roll-rest', 'roll-popped', 'r3-flying', 'r3-direct');
       screen.scrollTop = 0;
       appWhenCached(() => playRollIntro(), 'landing');
