@@ -301,7 +301,19 @@
   }
 
   // ---------- The levels' art ----------
+  // (Showroom's: the set on the séance table between two candles, its
+  // picture lit)
+  var MINI_SEANCE = '<svg class="show-mini" viewBox="0 0 56 56" aria-hidden="true"><rect width="56" height="56" rx="12" fill="#050608"/>' +
+    '<path d="M4 56V14C9 10 12 18 15 12S21 18 24 12" fill="none" stroke="#2a0508" stroke-width="5"/><path d="M52 56V14C47 10 44 18 41 12" fill="none" stroke="#2a0508" stroke-width="5"/>' +
+    '<ellipse cx="28" cy="45" rx="22" ry="5" fill="#0d0c0f"/>' +
+    '<path d="M27 21L20 9M29 21L37 10" stroke="#9aa0a8" stroke-width=".7"/>' +
+    '<rect x="15" y="20" width="26" height="21" rx="3" fill="#3a2416"/><rect x="17" y="22" width="17" height="14" rx="2.5" fill="#cfd9e6"/>' +
+    '<path d="M18 26H33M18 29.5H31M18 33H29" stroke="#050608" stroke-width=".8" opacity=".5"/>' +
+    '<circle cx="37.5" cy="25.5" r="1.6" fill="#c9ccd2"/><circle cx="37.5" cy="31" r="1.1" fill="#c9ccd2"/>' +
+    '<rect x="8" y="35" width="3" height="8" fill="#efe6d2"/><path d="M9.5 30.5c1.4 1.6 1.4 3.2 0 4.4c-1.4-1.2-1.4-2.8 0-4.4z" fill="#ffc46a"/>' +
+    '<rect x="45" y="37" width="3" height="6" fill="#efe6d2"/><path d="M46.5 32.5c1.4 1.6 1.4 3.2 0 4.4c-1.4-1.2-1.4-2.8 0-4.4z" fill="#ffc46a"/></svg>';
   function mini(level) {
+    if (level === 'showroom') return MINI_SEANCE;
     var lounge = level === 'lounge';
     return '<svg class="show-mini" viewBox="0 0 56 56" aria-hidden="true"><defs>' +
       '<radialGradient id="dcMiniFace" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#11151a"/><stop offset="1" stop-color="#050608"/></radialGradient></defs>' +
@@ -333,10 +345,11 @@
 
   window.showAddRoom('glitch', {
     name: 'Dead Channel',
-    lede: 'A television left on a dead channel, at two levels of show: the same set on each, with more or less of it moving.',
-    showroom: null,
+    lede: 'A television left on a dead channel, at three levels of show: the same set on each, with more or less of it moving. Showroom is all of it — the dice, then the séance room, its set and a way through the glass.',
+    showroom: 'seance',
     muted: 'glitch',
     copy: {
+      showroom: 'The séance room stays your home: a set on a dead channel among candles, your platforms tonight’s listings, and a way through the glass. Uses the most battery.',
       lounge: 'Your deck on the glass of an old set: a picture that tunes in with the day’s run, a scope tracing it, a face in the snow on every collect, and the séance when a run is done.',
       quiet: 'Your deck, held still. The same set, nothing moving, easiest on battery.'
     },
