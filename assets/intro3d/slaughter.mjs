@@ -60,8 +60,8 @@
 //     chain gone to ember from the hook up, blood red to white-hot at the
 //     head, its glow on the wall behind; the rest black iron.
 //   The slate - a kill-floor tally board: a slate in a pine frame, chalk
-//     lettering (Special Elite for the lines, Oswald for the numbers), a
-//     chalk ledge. Room: a dark board on the wall. Arm: the chalk's dust
+//     lettering (Special Elite for the labels, Oswald for the numbers), a
+//     chalk ledge; three things on it - the clock, what is ready, the hand. Room: a dark board on the wall. Arm: the chalk's dust
 //     on the slate, the frame's grain. 3x: the chalk's broken edges.
 //   The floor and the wall - concrete, stained, a drain in the floor; the
 //     wall's blocks painted once, a stencilled bay number. The lamp's cone
@@ -104,7 +104,7 @@ const DRAIN = [10, 36];
 // The run's chain: off the rail at the right, down to a hook.
 const CHAIN = { x: -86, z: RAIL.z - 2, links: 32, link: 3.0 };
 // The saw on the bench, right of the middle; the die left of it.
-const SAW = { at: [-30, 0, 32], yaw: -14 * DEG };
+const SAW = { at: [-12, 0, 16], yaw: -35 * DEG };
 const DIE = { at: [34, 0, 16], size: 5.2 };
 // The views: the stool, portrait and landscape.
 const VIEW = [{ eye: [0, 80, -140], aim: [0, 62, 40], fov: 60 }, { eye: [0, 76, -150], aim: [0, 62, 40], fov: 48 }];
@@ -382,37 +382,167 @@ function roundedBox(w, h, d, r, seg = 6) {
   p.needsUpdate = true; n.needsUpdate = true;
   return g;
 }
+// The saw's cowl: a rust-orange moulding years into its work - the colour
+// faded where the sun has had it, oil run down from the caps, dust packed
+// into the corners, scuffs to the grey plastic under the paint, and the
+// model band along its flank (a cream stripe with a black keyline, no
+// name on it).
+function cowlTex() {
+  return K.canvasTex(512, 512, (g, W, H) => {
+    const rnd = seeded(23);
+    const base = g.createLinearGradient(0, 0, 0, H);
+    base.addColorStop(0, '#b4501e'); base.addColorStop(0.55, '#9a3a14'); base.addColorStop(1, '#6e2a10');
+    g.fillStyle = base; g.fillRect(0, 0, W, H);
+    // the moulding's fine orange-peel, and the sun's fade in blotches
+    for (let i = 0; i < 9000; i++) { const v = rnd(); g.fillStyle = v > 0.5 ? `rgba(255,190,140,${((v - 0.5) * 0.08).toFixed(3)})` : `rgba(40,10,0,${((0.5 - v) * 0.1).toFixed(3)})`; g.fillRect(rnd() * W, rnd() * H, 1 + rnd() * 2, 1 + rnd() * 2); }
+    for (let i = 0; i < 10; i++) { const x = rnd() * W, y = rnd() * H * 0.5, r = 40 + rnd() * 90; const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(220,150,100,0.18)'); gr.addColorStop(1, 'rgba(220,150,100,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, 2 * r, 2 * r); }
+    // the model band: cream, a black keyline over it
+    g.fillStyle = 'rgba(232,222,196,0.85)'; g.fillRect(0, H * 0.62, W, H * 0.08);
+    g.fillStyle = 'rgba(18,16,14,0.9)'; g.fillRect(0, H * 0.6, W, H * 0.014); g.fillRect(0, H * 0.71, W, H * 0.01);
+    // the oil run down from the caps: dark streaks, glossy at their heads
+    for (let i = 0; i < 16; i++) { const x = rnd() * W, y0 = rnd() * H * 0.4, l = 60 + rnd() * 220, w = 2 + rnd() * 7; const gr = g.createLinearGradient(0, y0, 0, y0 + l); gr.addColorStop(0, 'rgba(25,14,6,0.55)'); gr.addColorStop(1, 'rgba(25,14,6,0)'); g.fillStyle = gr; g.fillRect(x, y0, w, l); }
+    // scuffs to the grey plastic, and the scratches of the job
+    for (let i = 0; i < 26; i++) { const x = rnd() * W, y = rnd() * H, r = 3 + rnd() * 12; g.fillStyle = `rgba(150,140,128,${(0.35 + rnd() * 0.3).toFixed(2)})`; g.beginPath(); g.ellipse(x, y, r, r * (0.3 + rnd() * 0.5), rnd() * 3, 0, Math.PI * 2); g.fill(); }
+    g.lineWidth = 1;
+    for (let i = 0; i < 90; i++) { const x = rnd() * W, y = rnd() * H, l = 8 + rnd() * 60, a = (rnd() - 0.5) * 1.4; g.strokeStyle = `rgba(${rnd() > 0.5 ? '230,200,170' : '30,12,4'},${(0.15 + rnd() * 0.3).toFixed(2)})`; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+    // sawdust packed into the foot of each face
+    const dust = g.createLinearGradient(0, H * 0.82, 0, H);
+    dust.addColorStop(0, 'rgba(196,160,110,0)'); dust.addColorStop(1, 'rgba(196,160,110,0.55)');
+    g.fillStyle = dust; g.fillRect(0, H * 0.82, W, H * 0.18);
+  });
+}
+// The saw: a professional chainsaw from a forestry dealer, years into its
+// work - the powerhead (cowl, recoil starter, caps, muffler), the wrap
+// handle and the chain brake's hand guard, the rear handle with its
+// trigger and lockout, the bumper spikes, the clutch cover with its two
+// bar nuts, the guide bar and the chain round it: drive links in the
+// groove, side straps, and the cutters, left and right in turn, each with
+// its top plate. Its left side - the starter's - is toward the stool, as
+// a saw put down on its right-handed owner's bench lies, the bar angled
+// away across the bench toward the wall.
+//   Room: an orange powerhead, a long dark bar. Arm: the louvres in the
+//   starter, the wrap handle's rubber, the spikes, the chain's teeth along
+//   the bar. 3x: each cutter's top plate catching the lamp, the bar's
+//   oiled sheen, the dust in the cowl's corners, the scuffs to grey.
 function buildSaw() {
   const g = new THREE.Group();
-  const cowl = new THREE.MeshStandardMaterial({ color: 0x9a3a14, roughness: 0.55, metalness: 0.1 });
-  const black = new THREE.MeshStandardMaterial({ color: 0x151412, roughness: 0.6, metalness: 0.3 });
-  const steel = steelMat(0x3a3733, 0.45);
-  // the body: the cowl over the engine, the fuel cap, the vents
-  const body = new THREE.Mesh(roundedBox(26, 18, 15, 3.2), cowl); body.position.set(0, 9, 0); body.castShadow = true; g.add(body);
-  const topC = new THREE.Mesh(roundedBox(20, 8, 13, 2.6), cowl); topC.position.set(-2, 21, 0); g.add(topC);
-  // the oil and dust of years on the cowl
+  const cowl = new THREE.MeshStandardMaterial({ map: cowlTex(), roughness: 0.58, metalness: 0.05 });
   K.finished(cowl, 'blast', 3, 3, 0.25);
-  for (let i = 0; i < 5; i++) { const v = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 0.6), black); v.position.set(-6 + i * 3, 9, -7.6); g.add(v); }
-  const cap = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 1.2, 16), black); cap.position.set(-9, 16.6, 4); g.add(cap);
-  const starter = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 5.5, 1.2, 24), black); starter.rotation.x = Math.PI / 2; starter.position.set(-4, 9, 8); g.add(starter);
-  const knob = new THREE.Mesh(new THREE.BoxGeometry(3, 1.6, 2.2), black); knob.position.set(-16, 11, 6); g.add(knob);
-  // the rear handle and the trigger; the top handle's bar
-  const rear = new THREE.Mesh(new THREE.TorusGeometry(6, 1.3, 10, 24, Math.PI * 1.2), black); rear.position.set(-18, 6, 0); rear.rotation.y = Math.PI / 2; rear.rotation.z = -0.3; g.add(rear);
-  const bar = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 22, 12), black); bar.rotation.x = Math.PI / 2; bar.position.set(4, 21, 0); g.add(bar);
-  const brake = new THREE.Mesh(new THREE.BoxGeometry(2, 9, 12), black); brake.position.set(13, 15, 0); g.add(brake);
-  // the guide bar and the chain's cutters
-  const gb = new THREE.Mesh(new THREE.BoxGeometry(58, 7.5, 0.9), steel); gb.position.set(42, 7, 0); gb.castShadow = true; g.add(gb);
-  const nose = new THREE.Mesh(new THREE.CylinderGeometry(3.75, 3.75, 0.9, 20), steel); nose.rotation.x = Math.PI / 2; nose.position.set(71, 7, 0); g.add(nose);
-  const slot = new THREE.Mesh(new THREE.BoxGeometry(30, 0.8, 1.0), black); slot.position.set(40, 7, 0); g.add(slot);
-  const cutter = new THREE.InstancedMesh(new THREE.BoxGeometry(1.3, 1.4, 0.8), K.polishedOf(steel, 0.3), 50);
-  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = V(0, 0, 0), s = V(1, 1, 1);
-  for (let i = 0; i < 50; i++) {
-    const top = i < 25, x = 15 + (i % 25) * 2.3;
-    q.setFromAxisAngle(V(0, 0, 1), top ? 0.25 : Math.PI - 0.25);
-    p.set(x, top ? 11.3 : 2.7, (i % 2 ? 0.35 : -0.35));
-    m4.compose(p, q, s); cutter.setMatrixAt(i, m4);
+  const black = new THREE.MeshStandardMaterial({ color: 0x151412, roughness: 0.62, metalness: 0.15 });
+  const rubber = new THREE.MeshStandardMaterial({ color: 0x0f0f0f, roughness: 0.85, metalness: 0 });
+  K.finished(rubber, 'pebble', 2, 6, 0.6);
+  const steel = steelMat(0x3a3733, 0.45);
+  const chrome = K.polishedOf(steelMat(0xd4d4d8, 0.25), 0.14);
+  const add = (m, cast = true) => { if (cast) m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
+  const tube = (pts, r, mat) => add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p => V(...p))), 48, r, 12, false), mat));
+
+  // the powerhead: the crankcase and its top cover, a seam between them
+  add(new THREE.Mesh(roundedBox(26, 15, 15, 3.2), cowl)).position.set(0, 7.6, 0);
+  add(new THREE.Mesh(roundedBox(22, 8, 13.4, 2.8), cowl)).position.set(-1.5, 18.2, 0);
+  add(new THREE.Mesh(new THREE.BoxGeometry(22.6, 0.45, 13.9), black), false).position.set(-1.5, 14.3, 0);
+  // the air filter cover's intake slots, the cover's thumb knob
+  for (let i = 0; i < 7; i++) add(new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.25, 8.5), black), false).position.set(-8 + i * 2.1, 22.27, 0);
+  const knob = add(new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.6, 1.1, 20), black)); knob.position.set(6, 22.6, 0);
+  for (let i = 0; i < 6; i++) { const r = add(new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.0, 0.5), black), false); const a = i / 6 * Math.PI * 2; r.position.set(6 + Math.cos(a) * 1.55, 22.6, Math.sin(a) * 1.55); r.rotation.y = -a; }
+
+  // the recoil starter on the left (toward the stool): a housing with its
+  // louvres round a hub, the pull handle on its cord
+  const sx = -4, sy = 8.5, sz = -7.9;
+  const housing = add(new THREE.Mesh(new THREE.CylinderGeometry(6.2, 6.4, 1.6, 40), black)); housing.rotation.x = Math.PI / 2; housing.position.set(sx, sy, sz);
+  for (let i = 0; i < 20; i++) {
+    const a = i / 20 * Math.PI * 2, l = add(new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.32, 0.4), new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.9 })), false);
+    l.position.set(sx + Math.cos(a) * 4.0, sy + Math.sin(a) * 4.0, sz - 0.75); l.rotation.z = a;
   }
-  g.add(cutter);
+  const hub = add(new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.6, 24), steel)); hub.rotation.x = Math.PI / 2; hub.position.set(sx, sy, sz - 0.95);
+  const grip = add(new THREE.Mesh(roundedBox(5, 1.6, 1.8, 0.7), rubber)); grip.position.set(-11, 16.4, -8.3); grip.rotation.z = 0.25;
+  const cord = add(new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 6.6, 8), new THREE.MeshStandardMaterial({ color: 0x3a3a34, roughness: 0.9 })), false);
+  cord.position.set(-8.3, 13, -8.3); cord.rotation.z = 0.68;
+  // the caps on the back: fuel (black) and bar oil (black, a ring on it),
+  // knurled for the thumb
+  [[-4, 0x151412], [4, 0x151412]].forEach(([z, c], k) => {
+    const cap = add(new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 1.3, 28), new THREE.MeshStandardMaterial({ color: c, roughness: 0.55 }))); cap.rotation.z = Math.PI / 2; cap.position.set(-13.7, 5.2, z);
+    for (let i = 0; i < 12; i++) { const n = add(new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.35, 0.35), black), false); const a = i / 12 * Math.PI * 2; n.position.set(-13.7, 5.2 + Math.sin(a) * 2.1, z + Math.cos(a) * 2.1); }
+    if (k) { const ring = add(new THREE.Mesh(new THREE.TorusGeometry(1.1, 0.15, 6, 24), chrome), false); ring.rotation.y = Math.PI / 2; ring.position.set(-14.4, 5.2, z); }
+  });
+  // the muffler at the front, low on the left: a pressed-steel can behind
+  // a slotted heat shield, gone brown with heat
+  const muff = add(new THREE.Mesh(roundedBox(4, 7, 5, 0.8), new THREE.MeshStandardMaterial({ color: 0x3a2a1e, metalness: 0.6, roughness: 0.65 }))); muff.position.set(12.4, 4.6, -4.6);
+  for (let i = 0; i < 4; i++) add(new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.4, 0.2), new THREE.MeshStandardMaterial({ color: 0x050505 })), false).position.set(12.4, 2.4 + i * 1.5, -7.15);
+
+  // the handles: the wrap handle over the top and down both sides, in
+  // black rubber; the chain brake's hand guard in front of it; the rear
+  // handle closing the loop behind, its trigger under and lockout over
+  tube([[7, 2, -9.2], [7.4, 13, -10.4], [8, 23.5, -7.5], [8.2, 26, 0], [8, 23.5, 7.5], [7.4, 13, 10.4], [7, 4, 9.6]], 1.15, rubber);
+  const guard = add(new THREE.Mesh(roundedBox(1.0, 13, 15, 0.45), black)); guard.position.set(13.2, 23.6, 0); guard.rotation.z = -0.38;
+  tube([[-11, 17.5, 0], [-19, 18.6, 0], [-27, 16.5, 0], [-30.5, 9.5, 0], [-27, 2.6, 0], [-18, 1.6, 0], [-12, 2.4, 0]], 1.35, rubber);
+  add(new THREE.Mesh(roundedBox(3.2, 1.6, 1.4, 0.5), black)).position.set(-19.5, 16.7, 0);
+  add(new THREE.Mesh(roundedBox(2.4, 1.2, 1.2, 0.45), black)).position.set(-18.5, 19.9, 0);
+
+  // the bumper spikes, either side of the bar at the powerhead's front
+  [-1, 1].forEach(sd => {
+    add(new THREE.Mesh(new THREE.BoxGeometry(0.7, 12, 3.2), steel)).position.set(13.4, 7.2, sd * 2.7);
+    [2.6, 6.6, 10.6].forEach(y => { const sp = add(new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.9, 4), steel)); sp.rotation.z = -Math.PI / 2; sp.position.set(14.6, y, sd * 2.7); });
+  });
+  // the clutch cover on the right, over the bar's root, its two bar nuts
+  add(new THREE.Mesh(roundedBox(15, 11, 3.2, 1.3), black)).position.set(15.5, 7, 3.4);
+  [13.2, 17.8].forEach(x => { const n = add(new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.9, 6), chrome)); n.rotation.x = Math.PI / 2; n.position.set(x, 7, 5.3); });
+
+  // the guide bar: a laminated steel bar, its nose round, oiled dark, three
+  // rivets in the nose sprocket and the oil hole at its root
+  const bs = new THREE.Shape();
+  bs.moveTo(10, 3.25); bs.lineTo(71, 3.25); bs.absarc(71, 7, 3.75, -Math.PI / 2, Math.PI / 2, false); bs.lineTo(10, 10.75); bs.lineTo(10, 3.25);
+  const bg = new THREE.ExtrudeGeometry(bs, { depth: 0.9, bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.08, bevelSegments: 1, curveSegments: 24 });
+  bg.translate(0, 0, -0.45);
+  const barMat = new THREE.MeshStandardMaterial({ color: 0x55565a, metalness: 0.9, roughness: 0.28 });
+  K.finished(barMat, 'brushed', 6, 1, 0.12);
+  add(new THREE.Mesh(bg, barMat));
+  [[70.2, 7.9], [71.8, 7.9], [71, 6.1]].forEach(([x, y]) => { const r = add(new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 1.2, 12), chrome), false); r.rotation.x = Math.PI / 2; r.position.set(x, y, 0); });
+  add(new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 1.0, 12), new THREE.MeshStandardMaterial({ color: 0x050505 })), false).rotation.x = Math.PI / 2;
+  g.children[g.children.length - 1].position.set(24, 7, 0);
+
+  // the chain, round the bar from the clutch cover to the nose and back:
+  // at each pitch a pair of side straps; every other pitch a cutter, left
+  // and right in turn - a side plate and its top plate leaning back
+  const R = 3.75 + 0.55, X0 = 14, X1 = 71, Y = 7, P = 0.95;
+  const L = 2 * (X1 - X0) + Math.PI * R, N = Math.floor(L / P);
+  const at = s => {
+    if (s < X1 - X0) return { p: V(X0 + s, Y + R, 0), t: V(1, 0, 0), n: V(0, 1, 0) };
+    s -= X1 - X0;
+    if (s < Math.PI * R) { const f = s / R; return { p: V(X1 + R * Math.sin(f), Y + R * Math.cos(f), 0), t: V(Math.cos(f), -Math.sin(f), 0), n: V(Math.sin(f), Math.cos(f), 0) }; }
+    s -= Math.PI * R;
+    return { p: V(X1 - s, Y - R, 0), t: V(-1, 0, 0), n: V(0, -1, 0) };
+  };
+  const strap = new THREE.InstancedMesh(new THREE.BoxGeometry(0.88, 0.52, 0.12), steelMat(0x9a9a9e, 0.3), N * 2);
+  const side = new THREE.InstancedMesh(new THREE.BoxGeometry(0.86, 0.95, 0.13), chrome, Math.ceil(N / 2));
+  const top = new THREE.InstancedMesh(new THREE.BoxGeometry(0.8, 0.12, 0.62), chrome, Math.ceil(N / 2));
+  const m4 = new THREE.Matrix4(), b = new THREE.Matrix4(), z = V(0, 0, 1), o = V(0, 0, 0), lean = new THREE.Matrix4();
+  let ci = 0;
+  for (let i = 0; i < N; i++) {
+    const { p, t, n } = at(i * P + P / 2);
+    b.makeBasis(t, n, z);
+    [-1, 1].forEach((sd, k) => { o.copy(p).addScaledVector(n, 0.12).addScaledVector(z, sd * 0.56); m4.copy(b).setPosition(o); strap.setMatrixAt(i * 2 + k, m4); });
+    if (i % 2 === 0) {
+      const sd = (ci % 2) ? 1 : -1;
+      o.copy(p).addScaledVector(n, 0.45).addScaledVector(z, sd * 0.58); m4.copy(b).setPosition(o); side.setMatrixAt(ci, m4);
+      // (the top plate: across the chain from its side plate, leaning back)
+      lean.makeRotationZ(0.18);
+      o.copy(p).addScaledVector(n, 0.9).addScaledVector(z, sd * 0.3); m4.copy(b).multiply(lean).setPosition(o); top.setMatrixAt(ci, m4);
+      ci++;
+    }
+  }
+  side.count = top.count = ci;
+  [strap, side, top].forEach(m => { m.castShadow = true; g.add(m); });
+
+  // the sawdust it has left on the bench round it: chips and a fine drift
+  const dust = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0xc8a46e, roughness: 0.95 }), 140);
+  const rnd = seeded(77), dq = new THREE.Quaternion(), ds = V(1, 1, 1);
+  for (let i = 0; i < 140; i++) {
+    const x = 18 + rnd() * 60, zz = (rnd() - 0.5) * 18 * (0.4 + rnd()), sz = 0.12 + rnd() * 0.45;
+    ds.set(sz * (1 + rnd()), 0.06 + rnd() * 0.1, sz); dq.setFromAxisAngle(V(0, 1, 0), rnd() * 6.28);
+    m4.compose(V(x, 0.05, zz), dq, ds); dust.setMatrixAt(i, m4);
+  }
+  dust.receiveShadow = true; g.add(dust);
+
   g.position.set(...SAW.at); g.rotation.y = SAW.yaw;
   return g;
 }
@@ -460,6 +590,11 @@ function buildSlateBody() {
   g.userData.print = { mesh: face, draw: v => { drawSlate(c.getContext('2d'), c.width, c.height, v); tex.needsUpdate = true; } };
   return g;
 }
+// The slate carries three things, big enough to read from the stool on a
+// phone: the clock, what is ready, and the hand to deal. (Laid out to the
+// pixel as the page's own slate is - app.css, .r3w-* - each line placed by
+// its baseline: top = baseline - 0.8 of its size.)
+const SL = { x: 70, rx: 1250, eyebrowY: 110, eyebrow: 48, numY: 600, now: 380, ampm: 60, ready: 460, runY: 790, runH: 240, run: 112 };
 function drawSlate(g, W, H, v) {
   const k = W / (SLATE.w * SLATE.px), P = n => n * k;
   g.fillStyle = '#1f2220'; g.fillRect(0, 0, W, H);
@@ -467,38 +602,25 @@ function drawSlate(g, W, H, v) {
   for (let i = 0; i < 2600; i++) { g.fillStyle = `rgba(230,226,214,${(rnd() * 0.08).toFixed(3)})`; g.fillRect(rnd() * W, rnd() * H, 1 + rnd() * 3, 1 + rnd() * 2); }
   const txt = (s, x, y, font, color, align = 'left') => { g.font = font; g.fillStyle = color; g.textAlign = align; g.fillText(s, x, y); };
   const chalk = '#e8e2d4', dim = 'rgba(232,226,212,0.72)', red = '#e0444e', gold = '#ffc107';
-  txt('THE FLOOR', P(70), P(104), `${P(42)}px "Special Elite", monospace`, dim);
-  txt(v.day.toUpperCase(), P(70), P(164), `${P(40)}px "Special Elite", monospace`, dim);
-  txt(v.now, P(70), P(360), `600 ${P(200)}px Oswald, Impact, sans-serif`, chalk);
-  g.font = `600 ${P(200)}px Oswald, Impact, sans-serif`;
-  txt(v.ampm, P(70) + g.measureText(v.now).width + P(14), P(360), `${P(44)}px "Special Elite", monospace`, dim);
-  txt(`NEXT READY  ${v.next}`, P(70), P(470), `${P(44)}px "Special Elite", monospace`, dim);
-  txt(`DONE TODAY  ${v.done}`, P(70), P(540), `${P(44)}px "Special Elite", monospace`, dim);
-  txt('TAP A TAG FOR ITS CARD · DRAG TO SWING THE HOOKS', P(70), H - P(60), `${P(32)}px "Special Elite", monospace`, 'rgba(232,226,212,0.5)');
-  const R = W * 0.6;
-  txt('READY', R, P(104), `${P(42)}px "Special Elite", monospace`, red);
-  txt(v.ready, R, P(360), `600 ${P(260)}px Oswald, Impact, sans-serif`, chalk);
-  txt(v.value, R, P(430), `${P(34)}px "Special Elite", monospace`, dim);
-  const bx = R, by = P(470), bw = W - P(70) - R, bh = P(110);
-  g.fillStyle = gold; g.fillRect(bx, by, bw, bh); g.fillStyle = '#0b0b0b'; g.fillRect(bx + P(6), by + P(6), bw, bh); g.fillStyle = gold; g.fillRect(bx, by, bw, bh);
-  txt('DEAL YOUR HAND', bx + bw / 2, by + bh / 2 + P(16), `600 ${P(46)}px Oswald, Impact, sans-serif`, '#0b0b0b', 'center');
+  txt('THE FLOOR', P(SL.x), P(SL.eyebrowY), `${P(SL.eyebrow)}px "Special Elite", monospace`, dim);
+  txt(v.now, P(SL.x), P(SL.numY), `600 ${P(SL.now)}px Oswald, Impact, sans-serif`, chalk);
+  g.font = `600 ${P(SL.now)}px Oswald, Impact, sans-serif`;
+  txt(v.ampm, P(SL.x) + g.measureText(v.now).width + P(14), P(SL.numY), `${P(SL.ampm)}px "Special Elite", monospace`, dim);
+  txt('READY', P(SL.rx), P(SL.eyebrowY), `${P(SL.eyebrow)}px "Special Elite", monospace`, red);
+  txt(v.ready, P(SL.rx), P(SL.numY), `600 ${P(SL.ready)}px Oswald, Impact, sans-serif`, chalk);
+  // the hand's plate, across the foot of the board, in the skin's action gold
+  const bx = P(SL.x), by = P(SL.runY), bw = W - 2 * P(SL.x), bh = P(SL.runH);
+  g.fillStyle = '#0b0b0b'; g.fillRect(bx + P(8), by + P(8), bw, bh);
+  g.fillStyle = gold; g.fillRect(bx, by, bw, bh);
+  txt('DEAL YOUR HAND', bx + bw / 2, by + bh / 2 + P(SL.run * 0.36), `600 ${P(SL.run)}px Oswald, Impact, sans-serif`, '#0b0b0b', 'center');
 }
 function slateHTML() {
   return `<div class="r3w-slate-in">
-    <div class="r3w-l">
-      <div class="r3w-eyebrow">THE FLOOR</div>
-      <div class="r3w-day"></div>
-      <div class="r3w-clock"><b class="r3w-now">--:--</b><small class="r3w-ampm"></small></div>
-      <div class="r3w-line r3w-l1">NEXT READY&nbsp;&nbsp;<b class="r3w-next">&mdash;</b></div>
-      <div class="r3w-line r3w-l2">DONE TODAY&nbsp;&nbsp;<b class="r3w-done">&mdash;</b></div>
-      <div class="r3w-foot">TAP A TAG FOR ITS CARD &middot; DRAG TO SWING THE HOOKS</div>
-    </div>
-    <div class="r3w-r">
-      <div class="r3w-eyebrow r3w-red">READY</div>
-      <div class="r3w-ready">&mdash;</div>
-      <div class="r3w-value"></div>
-      <button type="button" class="r3w-run">DEAL YOUR HAND</button>
-    </div>
+    <div class="r3w-eyebrow r3w-a">THE FLOOR</div>
+    <div class="r3w-clock"><b class="r3w-now">--:--</b><small class="r3w-ampm"></small></div>
+    <div class="r3w-eyebrow r3w-b r3w-red">READY</div>
+    <div class="r3w-ready">&mdash;</div>
+    <button type="button" class="r3w-run">DEAL YOUR HAND</button>
   </div>`;
 }
 
@@ -703,12 +825,8 @@ export async function prepareTable(opts) {
       const hm = `${((hh + 11) % 12) + 1}:${String(mm).padStart(2, '0')}`;
       put(q('.r3w-now'), hm);
       put(q('.r3w-ampm'), hh < 12 ? 'AM' : 'PM');
-      put(q('.r3w-day'), d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }));
       const st = (hand.length && hooks.status && hooks.status()) || sample();
       put(q('.r3w-ready'), String(st.ready));
-      put(q('.r3w-value'), st.value > 0 ? `ABOUT $${st.value.toFixed(2)} IN SWEEPS COINS` : '');
-      put(q('.r3w-next'), st.next ? K.fmtLeft(st.next).toUpperCase() : 'ALL CAUGHT UP');
-      put(q('.r3w-done'), String(st.done));
       phoneEl.querySelectorAll('.r3t-ph-clock, .r3t-ph-big').forEach(n => put(n, hm));
       put(phoneEl.querySelector('.r3t-ph-day'), d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }));
       put(phoneEl.querySelector('.r3t-ph-ready'), `${st.ready} ready${st.value > 0 ? ` · ~$${st.value.toFixed(2)}` : ''}`);
@@ -958,8 +1076,7 @@ export async function prepareTable(opts) {
     tick();
     const clock = setInterval(tick, 1000);
     const printSlate = () => slateBody.userData.print.draw({
-      day: q('.r3w-day').textContent, now: q('.r3w-now').textContent, ampm: q('.r3w-ampm').textContent,
-      next: q('.r3w-next').textContent, done: q('.r3w-done').textContent, ready: q('.r3w-ready').textContent, value: q('.r3w-value').textContent
+      now: q('.r3w-now').textContent, ampm: q('.r3w-ampm').textContent, ready: q('.r3w-ready').textContent
     });
     printSlate();
     update(0);
