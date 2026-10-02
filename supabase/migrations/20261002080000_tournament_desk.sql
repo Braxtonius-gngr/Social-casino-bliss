@@ -295,7 +295,7 @@ select
   round(p.prize_sweeps / ts.units_per_usd, 2)                                   as prize_usd,
   round(p.prize_sweeps / ts.units_per_usd * (1 - s.e1) / s.e1, 0)               as breakeven_wager_usd,
   round(p.prize_sweeps / ts.units_per_usd * (1 - s.e2) / s.e2, 0)               as breakeven_wager_usd_pessimistic,
-  coalesce((t.format_params ->> 'min_bet')::numeric / ts.units_per_usd, s.ref_bet) as bet_used_usd,
+  coalesce((t.format_params ->> 'min_bet')::numeric / ts.units_per_usd, s.ref_bet) as bet_used,
   round(p.prize_sweeps / ts.units_per_usd * (1 - s.e1) / s.e1
         / coalesce((t.format_params ->> 'min_bet')::numeric / ts.units_per_usd, s.ref_bet), 0) as breakeven_spins,
   round(p.prize_sweeps / ts.units_per_usd * (1 - s.e2) / s.e2
