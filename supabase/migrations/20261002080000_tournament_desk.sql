@@ -413,7 +413,7 @@ select
   ts.slug, ts.name, ts.status, ts.public_pages,
   coalesce(max(c.recent_same), 0)  as best_same_format_count,
   coalesce(a.recent_any, 0)        as any_format_count,
-  (ts.public_pages is not false
+  (ts.public_pages is true
    and (coalesce(max(c.recent_same), 0) >= (select (rule ->> 'same_format_events')::int from r)
         or coalesce(a.recent_any, 0)    >= (select (rule ->> 'any_events')::int from r))) as ready
 from public.tournament_sites ts
