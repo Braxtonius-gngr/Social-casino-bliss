@@ -32,7 +32,7 @@
         // stored lands on the default here, and getActiveThemeId() does the
         // same for the rest of the app, so the stale key never needs an
         // explicit migration step.
-        var look = { refinement: 'executive', executive: 'executive', prism: 'prism', neon: 'neon', obsidian: 'obsidian', glitch: 'glitch', western: 'western' };
+        var look = { refinement: 'executive', executive: 'executive', prism: 'prism', arcade: 'neon', neon: 'neon', orrery: 'obsidian', obsidian: 'obsidian', glitch: 'glitch', seance: 'glitch', western: 'western' };
         // Refinement x Realization became the default on 2026-09-28 and
         // everyone was moved onto it once, whatever they had picked - the
         // picker switches back, and the flag keeps that choice from then
@@ -765,9 +765,14 @@
         <span class="slc-net" id="settingsLedgerNet"></span>
       </button>
       <div class="toggle-row">
-        <span style="color:#fff;">Show Landing Page on Open<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Off: straight to your seat at the table, or to the Deck</span></span>
-        <input type="checkbox" id="settingLandingToggle" onchange="toggleLandingSetting()" checked />
+        <span style="color:#fff;">Landing on Open<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Once a day plays the shot on your first open; later opens go straight to your seat</span></span>
+        <select id="settingLandingMode" class="settings-select" onchange="setLandingMode(this.value)" aria-label="Landing on open">
+          <option value="daily">Once a day</option>
+          <option value="true">Every open</option>
+          <option value="false">Never</option>
+        </select>
       </div>
+      <button type="button" class="btn-dock settings-replay-landing" style="max-width:100%; width:100%; margin-bottom:12px;" onclick="replayLanding()">Play the Landing Now</button>
       <div class="toggle-row">
         <span style="color:#fff;">Hide platforms on cooldown<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Keeps your Deck to just what's ready</span></span>
         <input type="checkbox" id="settingHideCollected" onchange="toggleHideCollected()" />
@@ -839,6 +844,35 @@
           Android &mdash; browser menu &rarr; "Add to Home screen".<br>
           iPhone / iPad &mdash; Share button &rarr; "Add to Home Screen". On iPhone this is also what lets alerts reach you while the app is closed.
         </div>
+      </div>
+
+      <div class="theme-settings">
+        <h4 id="showLevelTitle">Refinement &times; Realization</h4>
+        <!-- One skin at its levels - Showroom / Lounge / Quiet, or the last
+             two for a room without a Showroom yet. One tap sets the skin and
+             the Motion setting below together (assets/show.js, which names
+             this block for the skin you are on); the Theme list shows the
+             skin once. -->
+        <div id="showLevelLede" class="backup-helper show-lede">One skin at three levels of show: the same deck and the same gold on each, with more or less of it moving. Showroom is all of it &mdash; the dice, the dealer, the card table as your home.</div>
+        <div id="showLevelList" class="show-levels" role="radiogroup" aria-label="Refinement &times; Realization: how much show"></div>
+        <div id="showLevelNote" class="backup-helper" style="text-align:left; margin-top:6px;"></div>
+        <button type="button" id="btnPlayPayout" class="btn-dock show-replay" onclick="playPayoutFromSettings()">PLAY THE PAYOUT</button>
+      </div>
+
+      <div class="theme-settings">
+        <h4>Table felt</h4>
+        <!-- The cloth on the card table (Showroom): the house's black, or a
+             lighter one. See FELT_CHOICES. -->
+        <div id="feltList" class="felt-list" role="radiogroup" aria-label="Table felt"></div>
+        <div class="backup-helper" style="text-align:left; margin-top:8px;">The cloth on the card table, at Showroom.</div>
+      </div>
+
+      <div class="theme-settings">
+        <h4>Table trim</h4>
+        <!-- The inlay round the felt: the filigree band and the fine lines
+             either side of it. See TRIM_CHOICES. -->
+        <div id="trimList" class="felt-list trim-list" role="radiogroup" aria-label="Table trim"></div>
+        <div class="backup-helper" style="text-align:left; margin-top:8px;">The inlay round the felt, at Showroom.</div>
       </div>
 
       <div class="theme-settings">
@@ -958,6 +992,17 @@
       <div class="modal-actions" style="flex-shrink:0; border-top:1px solid var(--glass-border); padding-top:14px;">
         <button class="btn-primary" onclick="closeModals()">DONE</button>
       </div>
+    </div>
+  </div>
+
+  <!-- The tour's last step: how much show (assets/show.js) -->
+  <div id="showLevelModal" class="sheet-backdrop show-sheet">
+    <div class="sheet-modal glass-panel">
+      <p class="show-eyebrow">Last step of the tour</p>
+      <h3>How much show?</h3>
+      <p class="show-sub">Same deck and the same gold on all three. You can change this later in Settings.</p>
+      <div id="showSheetList" class="show-levels" role="radiogroup" aria-label="How much show"></div>
+      <div class="modal-actions"><button type="button" class="btn-primary" id="showSheetDone" onclick="closeShowSheet()">DONE</button></div>
     </div>
   </div>
 
@@ -1437,6 +1482,11 @@
   <script src="utils/classifyDropText.js"></script>
   <script src="assets/accessibility.js"></script>
   <script src="assets/storage.js"></script>
+  <script src="assets/show.js"></script>
+  <!-- Each skin's room past the default's (assets/show.js, showAddRoom) -->
+  <script src="assets/rooms/obsidian.js"></script>
+  <script src="assets/rooms/neon.js"></script>
+  <script src="assets/rooms/glitch.js"></script>
   <!-- Cloud sync (optional, opt-in - see the "Cloud sync" block near the
        end of the inline script below). Loaded from a CDN rather than
        vendored, matching how Google Fonts is already loaded here - this
@@ -2665,6 +2715,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         `;
         container.appendChild(cardWrapper);
       });
+      if (window.showAfterRender) showAfterRender();
     }
 
     let heroCountDisplayed = null;
@@ -2736,6 +2787,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         el.textContent = ready;
       }
       heroCountDisplayed = ready;
+      // today's run, done / tracked: the watch-bezel ring and the gold edge
+      // light carry it (assets/show.js)
+      if (window.showRunProgress) showRunProgress(total > 0 ? (total - ready) / total : 0);
 
       document.getElementById('heroReadyText').textContent = `${ready} ready to collect`;
       document.getElementById('heroCooldownText').textContent = `${cooldown} on cooldown`;
@@ -3143,12 +3197,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     let settingsTitleTapTimer = null;
 
     function openSettingsModal() {
-      const isEnabled = localStorage.getItem('almanac_show_landing') !== 'false';
-      document.getElementById('settingLandingToggle').checked = isEnabled;
+      document.getElementById('settingLandingMode').value = rollLandingMode();
       document.getElementById('settingHideCollected').checked = localStorage.getItem('almanac_hide_collected') === 'true';
       document.getElementById('settingDenseToggle').checked = document.body.classList.contains('dense');
       renderThemeUI();
+      renderFeltUI();
+      renderTrimUI();
       refreshMotionUI();
+      if (window.renderShowLevelUI) renderShowLevelUI();
       refreshTZUI();
       refreshNotifyUI();
       refreshDropInboxUI();
@@ -3192,9 +3248,21 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderGames();
     }
 
-    function toggleLandingSetting() {
-      const checked = document.getElementById('settingLandingToggle').checked;
-      localStorage.setItem('almanac_show_landing', checked ? 'true' : 'false');
+    // The landing on open: 'daily' (the default - the shot on the first
+    // open of the day, the seat taken directly after), 'true' (every open)
+    // or 'false' (never). Stored under the old key: 'true' and 'false' are
+    // what the old toggle wrote, so a choice made before stands.
+    const LANDING_SEEN_KEY = 'almanac_landing_seen_v1';
+    function rollLandingMode() {
+      let v = null;
+      try { v = localStorage.getItem('almanac_show_landing'); } catch (e) { v = null; }
+      return v === 'true' || v === 'false' ? v : 'daily';
+    }
+    function rollLocalDay() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+    function rollLandingSeenToday() { try { return localStorage.getItem(LANDING_SEEN_KEY) === rollLocalDay(); } catch (e) { return false; } }
+    function rollLandingStamp() { try { localStorage.setItem(LANDING_SEEN_KEY, rollLocalDay()); } catch (e) { /* private mode */ } }
+    function setLandingMode(mode) {
+      localStorage.setItem('almanac_show_landing', mode === 'true' || mode === 'false' ? mode : 'daily');
     }
 
     function restartTourFromSettings() {
@@ -5269,6 +5337,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (fellBack) return;
       const tierQ = q.get('tier');
       const tier = mod.TIERS.includes(tierQ) ? tierQ : mod.pickTier(Math.random());
+      // The game the shot is: the dice, or one of the others (see GAMES in
+      // intro.mjs), each as likely each launch; ?game=dice / ?game=wheel
+      // fixes one. (Straight to the seat it is the dice: the frame the fly
+      // starts from is the shot's end, and that is the one every home's
+      // fly-in was laid out from.)
+      const gameQ = q.get('game');
+      const game = mod.GAMES.includes(gameQ) ? gameQ : direct ? 'dice' : mod.pickGame(Math.random());
       const seedQ = parseInt(q.get('seed'), 10);
       const seed = Number.isFinite(seedQ) ? seedQ >>> 0 : Math.floor(Math.random() * 4294967296);
       // Sound is on by default. It was made on for everyone once, on
@@ -5282,16 +5357,27 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         }
         soundPref = localStorage.getItem(ROLL_SOUND_KEY);
       } catch (e) { soundPref = null; }
-      // The table the landing flies into after the shot (table.mjs): the
-      // skin's own (see THEMES), or ?dest=card for it under any skin,
-      // ?dest=none for the landing as it always was.
+      // The home the landing flies into after the shot: the skin's own (see
+      // THEMES) - the card table (table.mjs), the study (study.mjs) or the
+      // arcade (arcade.mjs) - or ?dest=card / ?dest=study / ?dest=arcade / ?dest=seance for
+      // one under any skin, ?dest=none for the
+      // landing as it always was.
       const destQ = q.get('dest');
-      const tableDest = destQ === 'card' ? destQ : destQ === 'none' ? null : themeTable();
+      const tableDest = ROLL_DESTS[destQ] ? destQ : destQ === 'none' ? null : themeTable();
+      // (the felt and trim are the card table's: another home's shot keeps
+      // the house's black and gold)
+      const shotFelt = FELT_CHOICES[q.get('felt')] ? q.get('felt') : tableDest === 'card' ? getFelt() : 'black';
+      // (the trim the same way: ?trim= any, for the lab)
+      const shotTrim = TRIM_CHOICES[q.get('trim')] ? q.get('trim') : tableDest === 'card' ? getTrim() : 'gold';
+      // (the landing's copy is printed on a light felt: see app.css - on
+      // the dice's shot, where the cloth is what the copy lies over; another
+      // game's frames are its own, dark, so the copy keeps its veil)
+      document.documentElement.setAttribute('data-felt', game === 'dice' ? shotFelt : 'black');
       let tablePrep = null, flying = false;
       const prepTable = () => {
         if (!tableDest || tablePrep || !api) return tablePrep;
-        tablePrep = import('./assets/intro3d/table.mjs')
-          .then(m => m.prepareTable({ scene: api.peek().scene, dest: tableDest, hooks: rollTableHooks() }))
+        tablePrep = import(ROLL_DESTS[tableDest])
+          .then(m => m.prepareTable({ scene: api.peek().scene, dest: tableDest, hooks: rollTableHooks(), warm: opts => (api ? api.warm(opts) : null) }))
           .catch(e => { console.warn('table', e); disarmTable(); return null; });
         return tablePrep;
       };
@@ -5312,16 +5398,21 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const world = api.release();
         screen.classList.add('r3-flying');
         const seatcam = (q.get('seatcam') || '').split(',').map(Number);
-        const session = { world, table: null, stage: null };
+        // (prep: the home's set, kept to take it away when you drift to
+        // another; base: the room as the shot left it, handed back to each
+        // home you drift to - see rollDrift)
+        const session = { world, table: null, stage: null, dest: tableDest, prep, base: rollRoomState(world) };
         rollTableSession = session;
         let table = null;
         try {
         table = await prep.fly(world, Object.assign({
           host: world.host,
           reduced: motionOff(),
-          // (?deal=single|rows|columns|spread: the way the arm deals; by
+          // (?deal=single|rows|columns|spread: the way the dealer deals; by
           // default each deal picks one)
           dealStyle: q.get('deal'),
+          // (?cards=N: a hand of N cards at the table, for the lab)
+          cards: parseInt(q.get('cards'), 10) || 0,
           seatView: seatcam.length === 4 && seatcam.every(Number.isFinite) ? seatcam : null,
           onArrive: layer => {
             const stage = document.createElement('div');
@@ -5332,6 +5423,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             document.body.classList.add('r3-table-mode');
             screen.classList.add('hidden');
             screen.classList.remove('r3-flying', 'r3-direct', 'intro-play', 'roll-webgl', 'roll-popped', 'roll-rest');
+            rollDriftUI(session);
             kickSync();
           }
         }, flyOpts));
@@ -5389,11 +5481,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       };
       try {
         api = await mod.createIntro({
-          host, tier, seed,
+          host, tier, seed, game,
           controlsHost: screen,
           signal: building ? building.signal : null,
           motionOff,
           quality: q.get('quality') || 'auto',
+          // (the felt picked in Settings - the table's, so a skin without
+          // one keeps the house's black; ?felt= any, for the lab)
+          felt: shotFelt,
+          trim: shotTrim,
           sound: !direct && soundPref !== 'off',
           onReveal: () => screen.classList.add('roll-popped'),
           onEnd: end,
@@ -5408,7 +5504,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       clearTimeout(timer);
       screen.classList.remove('r3-loading');
       screen.removeEventListener('pointerdown', skipWhileLoading);
-      window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; };
+      window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; window.rollIntroSetFelt = null; window.rollIntroSetTrim = null; };
+      window.rollIntroSetFelt = id => { if (api && api.setFelt) { api.setFelt(id); if (game === 'dice') document.documentElement.setAttribute('data-felt', id); } };
+      window.rollIntroSetTrim = id => { if (api && api.setTrim) api.setTrim(id); };
       if (direct) {
         // Straight to the seat: the shot is over before it began - the
         // frame it ends on, with the table built into it - and the camera
@@ -5421,6 +5519,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
       if (q.has('lab')) {
         window.rollIntroPlan = api.plan;
+        window.rollIntroStill = t => { window.rollIntroSeek(t); api.still(t); };
         window.rollIntroSeek = t => {
           done = true;
           api.seek(t);
@@ -5431,7 +5530,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           const ms = Math.max(0, (t - api.plan.revealReal) * 1000);
           (screen.getAnimations ? screen.getAnimations({ subtree: true }) : []).forEach(a => { a.pause(); a.currentTime = ms; });
         };
-        rollLab3dPanel(screen, tier, mod.TIERS);
+        rollLab3dPanel(screen, tier, mod.TIERS, game, mod.GAMES);
       }
       if (q.has('lab') && tableDest) {
         // (lab: fly in by hand - rollTableFly({ manual: true }) then
@@ -5452,10 +5551,18 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // The table that is up, when one is: the intro's world (its renderer
     // and set), the table controller and the stage they were moved to.
     let rollTableSession = null;
+    // The homes a skin can fly into, and their modules (each exports
+    // prepareTable(): see assets/intro3d/table.mjs).
+    const ROLL_DESTS = { card: './assets/intro3d/table.mjs', study: './assets/intro3d/study.mjs', arcade: './assets/intro3d/arcade.mjs', seance: './assets/intro3d/seance-room.mjs' };
     // The home changes with the skin (selectTheme): a skin with a table
-    // takes the seat now, one without leaves it for the classic home.
+    // takes its seat now - leaving another home first - and one without
+    // leaves it for the classic home.
     function rollSetHome(table) {
-      if (table) { if (!rollTableSession) { closeModals(); rollEnterTable(); } return; }
+      if (table) {
+        if (rollTableSession && rollTableSession.dest !== table) rollLeaveTable();
+        if (!rollTableSession) { closeModals(); rollEnterTable(); }
+        return;
+      }
       rollLeaveTable();
     }
     // Out of the seat: the table and the intro's world go, the classic
@@ -5466,17 +5573,248 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       window.rollTable = null;
       if (s) {
         try { if (s.table) s.table.dispose(); } catch (e) { /* gone */ }
+        // (the homes' sets: the one you are at, and one you were drifting
+        // away from, if you leave before you land)
+        [s.prevPrep, s.prep].forEach(p => { try { if (p) p.dispose(); } catch (e) { /* gone */ } });
+        s.prep = s.prevPrep = null;
         try { if (s.world) s.world.dispose(); } catch (e) { /* gone */ }
         if (s.stage) s.stage.remove();
       }
       if (window.rollIntroDispose) window.rollIntroDispose();
-      document.body.classList.remove('r3-table-mode', 'r3-sheet-open');
+      document.body.classList.remove('r3-table-mode', 'r3-sheet-open', 'r3-adrift');
+      rollDriftClose();
+      const drift = document.getElementById('r3Drift');
+      if (drift) drift.remove();
       const back = document.getElementById('r3SheetBack');
       if (back) back.remove();
       const screen = document.getElementById('landingScreen');
       if (screen) { screen.classList.remove('intro-play', 'roll-webgl', 'r3-flying', 'r3-direct'); screen.classList.add('hidden'); }
       const main = document.getElementById('main-content');
       if (main) main.focus({ preventScroll: true });
+    }
+    // (replayLanding: the landing's button takes focus once the shot rests -
+    // the class every intro path ends on - or if the landing goes first,
+    // nothing; one watcher at a time)
+    let rollFocusWatch = null;
+    function rollFocusLandingWhenSettled(screen) {
+      if (rollFocusWatch) rollFocusWatch.disconnect();
+      const done = () => { if (rollFocusWatch) { rollFocusWatch.disconnect(); rollFocusWatch = null; } };
+      const check = () => {
+        if (screen.classList.contains('hidden')) { done(); return; }
+        if (!screen.classList.contains('roll-rest')) return;
+        done();
+        const btn = screen.querySelector('.landing-btn');
+        if (btn) setTimeout(() => btn.focus({ preventScroll: true }), 60);
+      };
+      rollFocusWatch = new MutationObserver(check);
+      rollFocusWatch.observe(screen, { attributes: true, attributeFilter: ['class'] });
+    }
+    // ---- Out of body: drifting from one home to another.
+    // The homes share one room (the craps table in the middle, the card
+    // table, the study, the arcade round it), and every home's fly-in starts
+    // wherever the camera is. So leaving your body is one unbroken flight:
+    // up out of the chair, over the floor and down into another seat. A
+    // visit changes nothing but where you are; "Sit here" takes that seat
+    // for good (its skin), and your own seat is always one drift away.
+    const ROLL_PLACES = { card: 'The card table', study: 'The study', arcade: 'The arcade', seance: 'The séance room' };
+    // the skin whose home a place is (its Showroom skin)
+    function rollSkinOf(dest) {
+      return Object.keys(THEMES).find(id => THEMES[id].table === dest) || null;
+    }
+    // The room as the shot left it: each home turns the house lights, the
+    // lens and the exposure to suit itself, and the next home must start
+    // from the room, not from the last home's mood.
+    function rollRoomState(world) {
+      const lights = [];
+      world.scene.traverse(o => { if (o.isLight) lights.push([o, o.intensity]); });
+      return {
+        lights,
+        env: world.scene.environmentIntensity,
+        fov: world.camera.fov, near: world.camera.near, far: world.camera.far,
+        bloom: world.bloom ? world.bloom.strength : null,
+        exposure: world.renderer.toneMappingExposure
+      };
+    }
+    function rollRoomRestore(world, b) {
+      if (!b) return;
+      b.lights.forEach(([l, i]) => { if (l.parent) l.intensity = i; });
+      if (b.env != null) world.scene.environmentIntensity = b.env;
+      world.camera.fov = b.fov; world.camera.near = b.near; world.camera.far = b.far;
+      world.camera.updateProjectionMatrix();
+      if (world.bloom && b.bloom != null) world.bloom.strength = b.bloom;
+      world.renderer.toneMappingExposure = b.exposure;
+    }
+    async function rollDrift(dest) {
+      const s = rollTableSession;
+      if (!s || !s.world || !s.stage || s.drifting || !ROLL_DESTS[dest] || dest === s.dest) return false;
+      s.drifting = true;
+      // (chosen from the keyboard: the keyboard lands with you - see onArrive)
+      const ae = document.activeElement;
+      const byKeyboard = !!(ae && ae.closest && ae.closest('#r3Drift, #r3DriftPanel'));
+      rollDriftClose();
+      const world = s.world;
+      const motionOff = () => document.documentElement.getAttribute('data-motion') === 'off';
+      document.body.classList.add('r3-adrift');
+      rollDriftUI(s);
+      let prep = null;
+      try {
+        const m = await import(ROLL_DESTS[dest]);
+        // (built into the same room, hidden, compiled and uploaded before it
+        // shows - while you are still in your chair)
+        prep = await m.prepareTable({ scene: world.scene, dest, hooks: rollTableHooks(), warm: opts => world.warm(opts) });
+        if (rollTableSession !== s) { prep.dispose(); return false; }
+        // (from here the session owns both sets: leaving mid-flight disposes
+        // them - see rollLeaveTable)
+        const was = s.prep;
+        s.prevPrep = was; s.prep = prep; s.dest = dest;
+        // (the chair lets go of the camera and the page; the room goes back
+        // to how the shot left it, and the next home takes it from there)
+        try { if (s.table) s.table.dispose(); } catch (e) { /* gone */ }
+        s.table = null; window.rollTable = null;
+        document.body.classList.remove('r3-sheet-open');
+        const back = document.getElementById('r3SheetBack');
+        if (back) back.remove();
+        rollRoomRestore(world, s.base);
+        const table = await prep.fly(world, {
+          host: s.stage,
+          reduced: motionOff(),
+          onArrive: layer => {
+            if (layer && layer.parentNode !== s.stage) s.stage.appendChild(layer);
+            // (the home you left stays in the room until you are down in
+            // the new chair - you see it fall away behind you)
+            try { if (was) was.dispose(); } catch (e) { /* gone */ }
+            if (s.prevPrep === was) s.prevPrep = null;
+            document.body.classList.remove('r3-adrift');
+            s.drifting = false;
+            rollDriftUI(s);
+            if (byKeyboard) {
+              const next = document.querySelector('#r3Drift .r3-drift-sit') || document.querySelector('#r3Drift .r3-drift-out');
+              if (next) next.focus({ preventScroll: true });
+            }
+          }
+        });
+        s.table = table;
+        window.rollTable = table;
+        return true;
+      } catch (e) {
+        console.warn('drift', e);
+        // (a set built but never handed to the session is ours to free)
+        if (prep && s.prep !== prep) { try { prep.dispose(); } catch (e2) { /* gone */ } }
+        // (and a drift the session has moved on from - a skin change, a
+        // replayed landing - must not tear down what replaced it)
+        if (rollTableSession !== s) return false;
+        // (lost on the way: the seat your skin gives you, the way you
+        // always come in)
+        s.drifting = false;
+        rollLeaveTable();
+        rollEnterTable();
+        return false;
+      }
+    }
+    // The way out of your body: a small button over the home, and the list
+    // of places it opens.
+    function rollDriftUI(s) {
+      if (!s || !s.stage || rollTableSession !== s) return;
+      let bar = document.getElementById('r3Drift');
+      if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'r3Drift';
+        bar.className = 'r3-drift';
+        document.body.appendChild(bar);
+      }
+      const own = themeTable();
+      // (any home but your skin's own is a visit - also under a skin with no
+      // home at all, as ?dest= allows)
+      const visiting = s.dest !== own;
+      const skin = rollSkinOf(s.dest);
+      bar.classList.toggle('visiting', !!visiting);
+      bar.innerHTML =
+        `<button type="button" class="r3-drift-out" onclick="rollDriftOpen()" aria-haspopup="dialog" aria-label="Leave your body: visit another room"${s.drifting ? ' disabled' : ''}>` +
+          '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c-3.6 0-6.2 2.8-6.2 6.4V20l2-1.6 2.1 1.6 2.1-1.6 2.1 1.6 2.1-1.6 2 1.6V9.4C18.2 5.8 15.6 3 12 3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="9.6" cy="10" r="1.1" fill="currentColor"/><circle cx="14.4" cy="10" r="1.1" fill="currentColor"/></svg>' +
+        '</button>' +
+        (visiting && !s.drifting && skin
+          ? `<button type="button" class="r3-drift-sit" onclick="rollDriftSit()">Sit here<span>${escHtml(THEMES[skin].name)}</span></button>`
+          : '');
+    }
+    function rollDriftOpen() {
+      const s = rollTableSession;
+      if (!s || s.drifting) return;
+      rollDriftClose();
+      const own = themeTable();
+      const panel = document.createElement('div');
+      panel.id = 'r3DriftPanel';
+      panel.className = 'r3-drift-panel';
+      panel.setAttribute('role', 'dialog');
+      panel.setAttribute('aria-modal', 'true');
+      panel.setAttribute('aria-labelledby', 'r3DriftTitle');
+      const rows = Object.keys(ROLL_PLACES).filter(d => rollSkinOf(d)).map(d => {
+        const here = d === s.dest, mine = d === own;
+        const note = here ? 'You are here' : mine ? 'Your seat' : 'Visit';
+        return `<li><button type="button" class="r3-drift-place${here ? ' here' : ''}${mine ? ' mine' : ''}" onclick="rollDrift('${d}')"${here ? ' disabled aria-current="location"' : ''}>` +
+          `<span class="r3-drift-name">${ROLL_PLACES[d]}</span><span class="r3-drift-skin">${escHtml(THEMES[rollSkinOf(d)].name)}</span><span class="r3-drift-note">${note}</span></button></li>`;
+      }).join('');
+      panel.innerHTML =
+        '<div class="r3-drift-card">' +
+          '<h2 id="r3DriftTitle">Out of body</h2>' +
+          '<p>Drift to another room and look around. Your skin stays yours until you sit.</p>' +
+          `<ul>${rows}</ul>` +
+          '<button type="button" class="r3-drift-close" onclick="rollDriftClose()">Stay put</button>' +
+        '</div>';
+      panel.addEventListener('pointerdown', e => { if (e.target === panel) rollDriftClose(); });
+      panel.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { e.stopPropagation(); rollDriftClose(); return; }
+        // (a modal: Tab goes round its own buttons, never out to the home
+        // behind it)
+        if (e.key !== 'Tab') return;
+        const items = [...panel.querySelectorAll('button:not([disabled])')];
+        if (!items.length) return;
+        const first = items[0], last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        else if (!panel.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+      });
+      document.body.appendChild(panel);
+      const first = panel.querySelector('.r3-drift-place:not([disabled])') || panel.querySelector('.r3-drift-close');
+      if (first) first.focus({ preventScroll: true });
+    }
+    function rollDriftClose() {
+      const panel = document.getElementById('r3DriftPanel');
+      if (!panel) return;
+      panel.remove();
+      const out = document.querySelector('#r3Drift .r3-drift-out');
+      if (out) out.focus({ preventScroll: true });
+    }
+    // Taking the seat you are visiting: its skin becomes yours (its
+    // Showroom level), and nothing moves - you are already in the chair.
+    function rollDriftSit() {
+      const s = rollTableSession;
+      const skin = s && rollSkinOf(s.dest);
+      if (!skin || s.drifting) return;
+      selectTheme(skin);
+      rollDriftUI(s);
+      showToast(`${THEMES[skin].name}: this seat is yours`, null);
+    }
+    // Settings: the landing once more, now - the dice, then the flight into
+    // your seat (or the Deck) - without reloading.
+    function replayLanding() {
+      closeModals();
+      rollLeaveTable();
+      const screen = document.getElementById('landingScreen');
+      if (!screen) return;
+      // (the last landing's hand-off is spent: a skin with no home must be
+      // able to leave this one the plain way, and the button says so)
+      window.rollIntroEnter = null;
+      const btn = screen.querySelector('.landing-btn');
+      if (btn) { btn.innerHTML = 'ENTER DECK &rarr;'; btn.setAttribute('aria-label', 'Enter app'); }
+      screen.classList.remove('hidden', 'roll-rest', 'roll-popped', 'r3-flying', 'r3-direct');
+      screen.scrollTop = 0;
+      // (the keyboard goes where the eye is: to the landing's button once
+      // the shot has settled - WebGL or CSS, played or held still)
+      rollFocusLandingWhenSettled(screen);
+      // (a startup hold still waiting gives way: its bar goes, its callback
+      // doesn't run, and this replay is what plays)
+      if (appUpdate.active) appUpdateEnd(false);
+      appWhenCached(() => playRollIntro(), 'landing');
     }
     // What the table deals and shows (assets/intro3d/table.mjs): the ready
     // platforms in the deck - best tier first, then the richest - or, with
@@ -5570,9 +5908,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     // The WebGL intro's lab switcher (?lab): force a tier, or throw again.
-    function rollLab3dPanel(screen, tier, tiers) {
+    function rollLab3dPanel(screen, tier, tiers, game, games) {
       if (screen.querySelector('.roll-lab')) return;
-      const names = { standard: 'Standard', hardways: 'Hardways', vault: 'Vault Pull', edge: 'Defiant Edge' };
+      // (the tiers' names are each game's own)
+      const tierNames = { dice: { standard: 'Standard', hardways: 'Hardways', vault: 'Vault Pull', edge: 'Defiant Edge' }, wheel: { standard: 'Standard Spin', hardways: 'The Twenty', vault: 'The Joker', edge: 'The Peg' }, plinko: { standard: 'Standard Drop', hardways: 'The Twenty', vault: 'The House', edge: 'The Pin' } };
+      const names = Object.assign({ dice: 'Dice', wheel: 'Wheel', plinko: 'Plinko' }, tierNames[game] || tierNames.dice);
       const link = (k, v) => {
         const p = new URLSearchParams(window.location.search);
         p.set('lab', '');
@@ -5580,9 +5920,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (k === 'tier') p.delete('seed');
         return `?${p.toString().replace('lab=&', 'lab&').replace(/lab=$/, 'lab')}`;
       };
-      screen.insertAdjacentHTML('beforeend', `<nav class="roll-lab" aria-label="Intro options"><div class="roll-lab-row"><span>Tier</span>${tiers.map(t => `<a data-v="${t}"${t === tier ? ' aria-current="true"' : ''}>${names[t]}</a>`).join('')}</div><div class="roll-lab-row"><a class="roll-lab-replay" data-new="1">&#8635; New throw</a><a class="roll-lab-replay" data-css="1">CSS intro</a></div></nav>`);
+      screen.insertAdjacentHTML('beforeend', `<nav class="roll-lab" aria-label="Intro options"><div class="roll-lab-row"><span>Game</span>${(games || ['dice']).map(g => `<a data-g="${g}"${g === game ? ' aria-current="true"' : ''}>${names[g] || g}</a>`).join('')}</div><div class="roll-lab-row"><span>Tier</span>${tiers.map(t => `<a data-v="${t}"${t === tier ? ' aria-current="true"' : ''}>${names[t]}</a>`).join('')}</div><div class="roll-lab-row"><a class="roll-lab-replay" data-new="1">&#8635; New throw</a><a class="roll-lab-replay" data-css="1">CSS intro</a></div></nav>`);
       const nav = screen.querySelector('.roll-lab');
       nav.querySelectorAll('a[data-v]').forEach(a => { a.href = link('tier', a.dataset.v); });
+      nav.querySelectorAll('a[data-g]').forEach(a => { a.href = link('game', a.dataset.g); });
       nav.querySelector('[data-new]').href = link('seed', String(Math.floor(Math.random() * 1e9)));
       nav.querySelector('[data-css]').href = link('intro', 'css');
       nav.addEventListener('pointerdown', e => e.stopPropagation());
@@ -5662,6 +6003,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         currentTourTarget = null;
         currentTourSecondary = null;
         tourStep = 0;
+        // (then its real last step: how much show - once, see assets/show.js)
+        if (window.openShowSheet) setTimeout(openShowSheet, 450);
         return;
       }
 
@@ -6489,6 +6832,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try { localStorage.setItem(MOTION_KEY, v); } catch (e) {}
       applyMotionPref();
       refreshMotionUI();
+      // (Lounge or Quiet: the Theme picker marks the level)
+      renderThemeUI();
+      if (window.showRefresh) showRefresh();
     }
 
     function setLockedTZ(v) {
@@ -6521,7 +6867,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     applyMotionPref();
     if (window.matchMedia) {
       const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-      const onChange = () => { applyMotionPref(); refreshMotionUI(); };
+      const onChange = () => { applyMotionPref(); refreshMotionUI(); if (window.showRefresh) showRefresh(); };
       if (mq.addEventListener) mq.addEventListener('change', onChange);
       else if (mq.addListener) mq.addListener(onChange);
     }
@@ -6533,8 +6879,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // Object.entries(THEMES) with no explicit sort. Refinement x
     // Realization is listed first because it is the default (see
     // getActiveThemeId() and the pre-paint bootstrap above), with
-    // Executive Lounge, its muted pairing, right after it; the renamed
+    // `executive`, its muted pairing, right after it; the renamed
     // western theme is last, demoted out of its old first-and-default slot.
+    //
+    // A pair is one skin to the person using it: the picker lists the
+    // visualized one only, lit while either half is on, and its levels -
+    // Showroom (the visualized skin), Lounge and Quiet (the muted pairing,
+    // motion on or off) - are chosen in Settings' levels block above the
+    // list (assets/show.js). The ids and the stored `almanac_theme_v1`
+    // values stay as they were.
     //
     // Skins come in pairs: a visualized skin and its muted pairing. The
     // visualized one has the effects - the WebGL landing shot, the fly-in
@@ -6550,7 +6903,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const THEMES = {
       refinement: {
         name: 'Refinement × Realization',
-        description: 'The visualized skin. A throw of the dice, then the card table as your home: the deck dealt to you by an arm that rises out of the table, the rail your clock, your phone for the rest.',
+        description: 'Gold on black at three levels of show, set above. At Showroom, a throw of the dice, then the card table as your home, the deck dealt to you by an arm that rises out of the table; at Lounge and Quiet, the same room with less moving.',
         look: 'executive',
         table: 'card',
         // (the palette, background and colour are Executive Lounge's - set
@@ -6570,9 +6923,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // and note this theme's vars are also the app's base :root now, so
       // most of what used to be a per-theme override for it has folded
       // into the base and this override block is comparatively small.
+      // (Refinement x Realization's Lounge and Quiet levels, once called
+      // Executive Lounge - the name the stylesheet's [data-theme="executive"]
+      // rules and AGENTS.md still use for its room; not listed on its own)
       executive: {
-        name: 'Executive Lounge',
-        description: 'The muted pairing of Refinement × Realization. Clean black cards on brushed obsidian, one warm light swaying slowly through the room, a little gold dust: no shot, no table - built for readability and easy eyes.',
+        name: 'Refinement × Realization',
+        description: 'Its Lounge and Quiet levels. Clean black cards on brushed obsidian, one warm light swaying slowly through the room, a little gold dust: no shot, no table - built for readability and easy eyes.',
         vars: {
           // The brief's obsidian: matte, not pure black.
           '--bg-base': '#0B0C10',
@@ -6669,9 +7025,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         bodyBg: 'radial-gradient(90% 60% at 8% -5%, rgba(255,138,31,0.10) 0%, transparent 55%), radial-gradient(90% 60% at 95% 25%, rgba(255,47,176,0.09) 0%, transparent 55%), radial-gradient(80% 55% at 50% 105%, rgba(164,92,255,0.10) 0%, transparent 60%), radial-gradient(120% 90% at 50% -10%, #16180f 0%, #0d0e0b 45%, #070807 100%)',
         metaColor: '#0a0b0a'
       },
+      // Neon Grid at Showroom: the arcade as home (assets/intro3d/
+      // arcade.mjs) - a cocktail-table cabinet by a rooftop bar's window,
+      // the deck's ready platforms its high-score table, and a way into the
+      // game along its grid. Wears the muted pairing's palette.
+      arcade: {
+        name: 'Neon Grid',
+        description: 'Synthwave night at three levels of show, set above. At Showroom, a throw of the dice, then the arcade as your home: a cocktail cabinet by a rooftop window, your platforms its high scores, and a way into the game; at Lounge and Quiet, the same neon with less moving.',
+        look: 'neon',
+        table: 'arcade',
+        vars: null,
+        bodyBg: null,
+        metaColor: null
+      },
+      // (Neon Grid's Lounge and Quiet levels: not listed on its own)
       neon: {
         name: 'Neon Grid',
-        description: 'High-contrast cyberpunk. Cyan and magenta on near-black, with glow.',
+        description: 'Its Lounge and Quiet levels. Cyan and magenta on near-black: a rainbow tube round the glass, a neon ring for the day\'s run, and the moon that rises when a run is done.',
         vars: {
           '--bg-base': '#070a10',
           '--accent-gold': '#ffcc00',
@@ -6698,9 +7068,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         bodyBg: 'radial-gradient(circle at 20% 30%, rgba(255, 0, 127, 0.18), transparent 45%), radial-gradient(circle at 80% 60%, rgba(0, 229, 255, 0.18), transparent 45%), radial-gradient(circle at 50% 100%, rgba(0, 255, 102, 0.15), transparent 50%), linear-gradient(135deg, #05070d 0%, #0a0612 50%, #030a14 100%)',
         metaColor: '#05070d'
       },
+      // Obsidian Ledger at Showroom: the study as home (assets/intro3d/
+      // study.mjs) - a grand orrery on a partners' desk, the deck's ready
+      // platforms its planets, and a way inside it. Wears the muted
+      // pairing's palette, set from it after this object.
+      orrery: {
+        name: 'Obsidian Ledger',
+        description: 'A celestial almanac at three levels of show, set above. At Showroom, a throw of the dice, then the study as your home: a grand orrery on the desk, your platforms its planets, and a way inside it; at Lounge and Quiet, the same brass and parchment with less moving.',
+        look: 'obsidian',
+        table: 'study',
+        vars: null,
+        bodyBg: null,
+        metaColor: null
+      },
+      // (Obsidian Ledger's Lounge and Quiet levels: not listed on its own)
       obsidian: {
         name: 'Obsidian Ledger',
-        description: 'Warm dark neutrals with aged brass and sage. Quiet, matte, print-like.',
+        description: 'Its Lounge and Quiet levels. Warm dark neutrals with aged brass and sage - quiet, matte, print-like - an orbit round the glass and the orrery that breaks out when a run is done.',
         vars: {
           '--bg-base': '#161514',
           '--accent-gold': '#b08d57',
@@ -6727,37 +7111,51 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         bodyBg: 'linear-gradient(170deg, #1b1917 0%, #161514 55%, #121110 100%)',
         metaColor: '#161514'
       },
+      // Dead Channel at Showroom: the séance room as home (assets/intro3d/
+      // seance-room.mjs) - a portable set on a dead channel at a round table
+      // among candles, the deck's ready platforms its listings, and a way
+      // through the glass. Wears the muted pairing's palette.
+      seance: {
+        name: 'Dead Channel',
+        description: 'A television left on a dead channel, at three levels of show. At Showroom, a throw of the dice, then the séance room as your home: a set among candles, your platforms tonight\'s listings, and a way through the glass; at Lounge and Quiet, the same set with less moving.',
+        look: 'glitch',
+        table: 'seance',
+        vars: null,
+        bodyBg: null,
+        metaColor: null
+      },
+      // (Dead Channel's Lounge and Quiet levels: not listed on its own)
       glitch: {
         name: 'Dead Channel',
-        description: 'Broken CRT signal. Acid green and alarm red on true black, with a static jolt that never quite settles.',
+        description: 'Its Lounge and Quiet levels. Bone phosphor and blood red on black glass: the picture tunes in with the day\'s run, a scope traces it, a face shows in the snow when you collect, and when a run is done, something comes through the glass.',
         vars: {
-          '--bg-base': '#060806',
-          '--accent-gold': '#39FF14',
-          '--accent-gold-hover': '#5EFF42',
-          '--accent-gold-dim': 'rgba(57, 255, 20, 0.16)',
-          '--accent-green': '#00FFA0',
-          '--accent-green-dim': 'rgba(0, 255, 160, 0.16)',
-          '--accent-pink': '#FF2A2A',
-          '--accent-pink-dim': 'rgba(255, 42, 42, 0.18)',
-          '--accent-orange': '#FFB000',
-          '--accent-orange-dim': 'rgba(255, 176, 0, 0.16)',
-          '--accent-cyan': '#00E5FF',
-          '--accent-cyan-dim': 'rgba(0, 229, 255, 0.16)',
-          '--glass-border': 'rgba(57, 255, 20, 0.18)',
-          '--glass-highlight': 'rgba(57, 255, 20, 0.08)',
-          '--text-main': '#D6FFD6',
-          '--text-muted': '#7FAE7F',
-          '--text-dim': '#3F5C3F',
-          '--tier-s': '#FF2A2A',
-          '--tier-a': '#FFB000',
-          '--tier-b': '#00E5FF',
-          '--tier-c': '#3F5C3F'
+          '--bg-base': '#050608',
+          '--accent-gold': '#E9E4D8',
+          '--accent-gold-hover': '#FFFFFF',
+          '--accent-gold-dim': 'rgba(233, 228, 216, 0.12)',
+          '--accent-green': '#9ED8C4',
+          '--accent-green-dim': 'rgba(158, 216, 196, 0.14)',
+          '--accent-pink': '#E0242F',
+          '--accent-pink-dim': 'rgba(224, 36, 47, 0.18)',
+          '--accent-orange': '#F0703A',
+          '--accent-orange-dim': 'rgba(240, 112, 58, 0.16)',
+          '--accent-cyan': '#7DB6F0',
+          '--accent-cyan-dim': 'rgba(125, 182, 240, 0.16)',
+          '--glass-border': 'rgba(233, 228, 216, 0.14)',
+          '--glass-highlight': 'rgba(233, 228, 216, 0.06)',
+          '--text-main': '#E6E1D6',
+          '--text-muted': '#8E97A3',
+          '--text-dim': '#4E5661',
+          '--tier-s': '#E0242F',
+          '--tier-a': '#F0703A',
+          '--tier-b': '#7DB6F0',
+          '--tier-c': '#5A6270'
         },
-        bodyBg: 'repeating-linear-gradient(0deg, rgba(57,255,20,0.035) 0px, rgba(57,255,20,0.035) 1px, transparent 1px, transparent 3px), radial-gradient(120% 90% at 50% 15%, rgba(57,255,20,0.09) 0%, transparent 55%), linear-gradient(180deg, #060806 0%, #020302 100%)',
-        metaColor: '#060806'
-      },
-      // Texas Chainsaw Massacre: the renamed, re-tinted Boot Hill. Display
-      // name and description only - the object key stays 'western' so the
+        bodyBg: 'repeating-linear-gradient(0deg, rgba(233,228,216,0.03) 0px, rgba(233,228,216,0.03) 1px, transparent 1px, transparent 3px), radial-gradient(120% 90% at 50% 15%, rgba(125,182,240,0.05) 0%, transparent 55%), linear-gradient(180deg, #07090c 0%, #030405 100%)',
+        metaColor: '#050608',      },
+      // West Texas Gore Fest: the renamed, re-tinted Boot Hill (briefly
+      // "Texas Chainsaw Massacre" - a film's name, dropped 2026-09-30).
+      // Display name and description only - the object key stays 'western' so the
       // 187 [data-theme="western"] selectors in app.css, isWesternTheme(),
       // and any localStorage value already saved as 'western' all keep
       // working with no migration. Demoted to the last picker slot, last in
@@ -6767,8 +7165,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // gore treatment (splatter, jagged torn edges, a rougher tearing
       // animation character) lives in assets/app.css.
       western: {
-        name: 'Texas Chainsaw Massacre',
-        description: 'Western Texas gore fest. Arterial red, bone, rust, oil-black - dark and jagged.',
+        name: 'West Texas Gore Fest',
+        description: 'Arterial red, bone, rust, oil-black - dark and jagged.',
         vars: {
           '--bg-base': '#0B0B0B',
           '--accent-gold': '#FFC107',
@@ -6840,9 +7238,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     // isWesternTheme() keeps its name - the object key never changed (see
-    // the Texas Chainsaw Massacre entry in THEMES above) - but only two of
+    // the West Texas Gore Fest entry in THEMES above) - but only two of
     // the three effects it gates are still theme-exclusive. screenShake()
-    // and collectFlash() stay Chainsaw-only: a screen shake and a red flash
+    // and collectFlash() stay Gore Fest-only: a screen shake and a red flash
     // are off-brand for a restrained default. hapticBuzz() is different -
     // a buzz on collect is feedback, not decoration, and gating it to one
     // theme meant switching to Executive Lounge silently lost it. It's
@@ -6874,6 +7272,64 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       setTimeout(() => document.body.classList.remove('collect-flash-active'), 500);
     }
 
+    // --- The table's felt (Showroom): the house's black baize, one of the
+    // light cloths - a camel tan, an ivory, a dove grey, a pastel lilac, a
+    // cream - or a dark dyed one - chocolate, mahogany, crimson. A look, kept like
+    // the theme (and carried by a backup); the table and the shot's own table
+    // are dressed with it, and the gold print on the felt takes a dark
+    // keyline on the light ones so it reads (assets/intro3d/intro.mjs FELTS,
+    // table.mjs). The swatch is the cloth as it looks under the lamp.
+    const FELT_KEY = 'almanac_felt_v1';
+    // (each swatch the cloth's colour as the table draws it, sampled)
+    const FELT_CHOICES = { black: ['Black', '#1a1612'], tan: ['Tan', '#c2945a'], ivory: ['Ivory', '#ded3bc'], dove: ['Dove grey', '#a49f99'], lilac: ['Pastel purple', '#c4aebc'], cream: ['Cream', '#dccda4'], chocolate: ['Chocolate', '#573e29'], mahogany: ['Mahogany', '#783b2a'], crimson: ['Crimson', '#9f2830'] };
+    function getFelt() {
+      let v = null;
+      try { v = localStorage.getItem(FELT_KEY); } catch (e) { v = null; }
+      return FELT_CHOICES[v] ? v : 'black';
+    }
+    function setFelt(id) {
+      if (!FELT_CHOICES[id]) return;
+      try { localStorage.setItem(FELT_KEY, id); } catch (e) {}
+      renderFeltUI();
+      // (the table's cloth, and its shot's: another skin's shot keeps the
+      // house's black)
+      if (themeTable() !== 'card') return;
+      if (window.rollTable && window.rollTable.setFelt) window.rollTable.setFelt(id);
+      else if (window.rollIntroSetFelt) window.rollIntroSetFelt(id);
+    }
+    // --- The trim round the felt (Showroom): the filigree band inlaid in it
+    // and the fine lines either side, in the house's gold or one of four
+    // other inlays (assets/intro3d/intro.mjs TRIMS). Kept and carried like
+    // the felt; the swatch is the inlay under the lamp.
+    const TRIM_KEY = 'almanac_trim_v1';
+    const TRIM_CHOICES = { gold: ['Gold', 'gold'], onyx: ['Shiny onyx', 'onyx'], silver: ['Luminous silver', 'silver'], crimson: ['Pooled crimson', 'crimson'], burgundy: ['Bronzed burgundy', 'burgundy'] };
+    function getTrim() {
+      let v = null;
+      try { v = localStorage.getItem(TRIM_KEY); } catch (e) { v = null; }
+      return TRIM_CHOICES[v] ? v : 'gold';
+    }
+    function setTableTrim(id) {
+      if (!TRIM_CHOICES[id]) return;
+      try { localStorage.setItem(TRIM_KEY, id); } catch (e) {}
+      renderTrimUI();
+      // (the card table's: another skin's shot keeps the house's gold)
+      if (themeTable() !== 'card') return;
+      if (window.rollTable && window.rollTable.setTrim) window.rollTable.setTrim(id);
+      else if (window.rollIntroSetTrim) window.rollIntroSetTrim(id);
+    }
+    function renderTrimUI() {
+      const list = document.getElementById('trimList');
+      if (!list) return;
+      const cur = getTrim();
+      list.innerHTML = Object.entries(TRIM_CHOICES).map(([id, [name, cls]]) => `<button type="button" class="felt-choice" role="radio" aria-checked="${id === cur}" onclick="setTableTrim('${id}')"><span class="trim-swatch trim-${cls}" aria-hidden="true"></span><span class="felt-name">${name}</span></button>`).join('');
+    }
+    function renderFeltUI() {
+      const list = document.getElementById('feltList');
+      if (!list) return;
+      const cur = getFelt();
+      list.innerHTML = Object.entries(FELT_CHOICES).map(([id, [name, hex]]) => `<button type="button" class="felt-choice" role="radio" aria-checked="${id === cur}" onclick="setFelt('${id}')"><span class="felt-swatch" style="--felt:${hex}" aria-hidden="true"></span><span class="felt-name">${name}</span></button>`).join('');
+    }
+
     function selectTheme(themeId) {
       if (!THEMES[themeId]) return;
       const was = getActiveThemeId();
@@ -6883,20 +7339,33 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // A skin with a table for a home, or without one: the home changes
       // with it (see rollSetHome).
       if (themeTable(was) !== themeTable(themeId)) rollSetHome(themeTable(themeId));
+      if (window.showRefresh) showRefresh();
+    }
+
+    // A skin picked from the list: onto it at its first level - or, already
+    // on it at any level, to its levels above the list.
+    function pickSkin(themeId) {
+      if (!THEMES[themeId]) return;
+      const cur = THEMES[getActiveThemeId()];
+      if (themeId !== getActiveThemeId() && !(cur && cur.visual === themeId)) { selectTheme(themeId); return; }
+      const levels = document.getElementById('showLevelList');
+      if (levels && window.showLevelNames && window.showLevelNames(themeId)) levels.scrollIntoView({ block: 'center', behavior: document.documentElement.getAttribute('data-motion') === 'off' ? 'auto' : 'smooth' });
     }
 
     function renderThemeUI() {
       const list = document.getElementById('themeList');
       if (!list) return;
       const active = getActiveThemeId();
-      list.innerHTML = Object.entries(THEMES).map(([id, t]) => {
-        const isActive = id === active;
+      // (a pair is listed once, as its visualized skin - see THEMES)
+      list.innerHTML = Object.entries(THEMES).filter(([, t]) => !t.visual).map(([id, t]) => {
+        const isActive = id === active || (!!t.look && THEMES[active].visual === id);
         const swatches = [t.vars['--accent-cyan'], t.vars['--accent-pink'], t.vars['--accent-gold'], t.vars['--accent-green']]
           .map(c => `<div class="theme-swatch" style="background:${c}"></div>`).join('');
-        // (the pair: a visualized skin and its muted take, each naming the other)
-        const pair = t.look ? `Visualized · muted take: ${escHtml(THEMES[t.look].name)}`
-          : t.visual ? `Muted · visualized take: ${escHtml(THEMES[t.visual].name)}` : '';
-        return `<div class="theme-card ${isActive ? 'active' : ''}${t.look ? ' theme-visual' : ''}" onclick="selectTheme('${id}')">
+        // (its levels, if it has a room, the one it is at marked)
+        const level = isActive && window.showLevel ? window.showLevel() : null;
+        const names = window.showLevelNames ? window.showLevelNames(id) : null;
+        const pair = names ? names.map(([lv, name]) => lv === level ? `<b>${escHtml(name)}</b>` : escHtml(name)).join(' · ') : '';
+        return `<div class="theme-card ${isActive ? 'active' : ''}${t.look ? ' theme-visual' : ''}" onclick="pickSkin('${id}')">
           <div class="theme-info">
             <span class="theme-name">${escHtml(t.name)}${isActive ? '<span class="active-tag">ACTIVE</span>' : ''}</span>
             <span class="theme-desc">${escHtml(t.description)}</span>
@@ -8157,6 +8626,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function shareTextFor(entry) {
       const name = entry.name.trim();
       if (entry.noGuaranteedDaily) return `${name} has no guaranteed daily bonus. Here's what it does have.`;
+      // A blocker means no day count applies, so share the warning instead of one.
+      if (entry.blocker) return `${name} is tier ${entry.tier}: ${blockerLabel(entry.blocker)}.`;
       if (/^[SABCDF]$/.test(entry.tier || '') && typeof entry.dailySC === 'number' && typeof entry.daysToRedeem === 'number') {
         return `${name} is tier ${entry.tier}: ${entry.dailySC} SC a day, about ${entry.daysToRedeem} days of free daily bonuses to the first cash-out.`;
       }
@@ -8200,10 +8671,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function shareTierList() {
-      const ranked = CATALOG_DATA.filter(e => e && /^[SABCDF]$/.test(e.tier || '')).length;
+      const tiered = CATALOG_DATA.filter(e => e && /^[SABCDF]$/.test(e.tier || ''));
+      const ruled = tiered.filter(e => e.blocker).length;
       shareLink({
         title: 'Sweepstakes casino daily bonus tier list',
-        text: `${ranked} sweepstakes casinos ranked by how many days of free daily bonuses it takes to reach the first cash-out.`,
+        text: `${tiered.length} sweepstakes casinos ranked by how many days of free daily bonuses it takes to reach the first cash-out${ruled ? ` (${ruled} placed by a platform rule instead)` : ''}.`,
         path: 'platforms/index.html',
         kind: 'tier_list'
       });
@@ -8335,7 +8807,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v67';
+    const APP_BUILD = 'almanac-v92';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
@@ -8365,16 +8837,26 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // go: what the page would have done (play the intro, or take the seat).
     // where: 'landing' (the bar under the landing's copy) or 'strip' (a
     // small pill at the top of the app, with the landing switched off).
-    function appWhenCached(go, where) {
+    // (each call supersedes the one before: only the latest one's go runs -
+    // a replayed landing must not be dropped for the seat an earlier call
+    // was waiting to take)
+    let appWhenCachedGen = 0;
+    function appWhenCached(goNow, where) {
+      const gen = ++appWhenCachedGen;
+      const go = () => { if (gen === appWhenCachedGen) goNow(); };
       // (?lab plays at once: the intro is being tuned, not shipped)
       if (!('serviceWorker' in navigator) || !window.MessageChannel || rollOptions().lab) { go(); return; }
       // (a whole build answers at once; anything slower shows the bar while
       // the answer comes, and a late "whole" takes it away again)
       let answered = false;
-      const early = setTimeout(() => { if (!answered) appHoldForUpdate(go, where, null); }, 350);
+      // (a call another has superseded touches nothing: not the bar, not the
+      // hold - the newer call owns them)
+      const current = () => gen === appWhenCachedGen;
+      const early = setTimeout(() => { if (!answered && current()) appHoldForUpdate(go, where, null); }, 350);
       appAskBuild(2500).then(st => {
         answered = true;
         clearTimeout(early);
+        if (!current()) return;
         // this build, whole, and already serving this page: play
         if (st && st.version === APP_BUILD && st.complete && navigator.serviceWorker.controller) {
           if (appUpdate.active) appUpdateEnd(true); else go();
@@ -8580,21 +9062,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const DECK_SYNC_BOOTSTRAPPED_UID_KEY = 'almanac_deck_sync_bootstrapped_uid_v1';
 
     // --- Tester feedback loop ---
-    // A Discord webhook URL, not a real secret - anyone who has it can
-    // post to the channel directly, bypassing this form entirely, the
-    // same way SUPABASE_ANON_KEY above is public-but-RLS-protected rather
-    // than secret. Treat it the same way: fine to ship in client code for
-    // a small trusted tester build, not something to publish widely, and
-    // not a substitute for real auth if this ever needs to resist abuse
-    // at scale. Get one from a Discord channel: Server/Channel Settings ->
-    // Integrations -> Webhooks -> New Webhook -> Copy URL.
-    const FEEDBACK_WEBHOOK_URL = 'https://discord.com/api/webhooks/1552848601137414294/4Tip5oaHSSZxVr7b3tJtxxeVWFbejkdGYAKS2O4IeatIBsaGamXMwIP4HE0c0L6KbDO-';
-    const FEEDBACK_CATEGORY_COLORS = {
-      'Timer bug': 0xff3b30,
-      'Catalogue/rule correction': 0xffcc00,
-      'Feature idea': 0x00e5ff,
-      'Other': 0x8e8e93
-    };
+    // Reports go to the bug-report edge function, which saves a row in
+    // public.bug_reports and forwards the embed to Discord from a project
+    // secret. The webhook URL used to live here in the page; now nothing
+    // about the channel reaches the browser, and a report is kept even
+    // when Discord is down.
+    const FEEDBACK_FUNCTION = 'bug-report';
 
     function openFeedbackModal() {
       closeModals();
@@ -8605,46 +9078,46 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('feedbackModal').classList.add('open');
     }
 
-    // Discord webhooks accept a browser POST with no auth beyond the URL
-    // itself and no preflight-blocking headers, so this goes straight from
-    // the client - no server of our own needed for a tester build.
+    // Diagnostics attached to every report so the tester need not describe
+    // their device: the same set the old direct-to-Discord post carried,
+    // plus the build and the skin in effect. The skin id, not data-theme:
+    // Executive Lounge and Refinement x Realization share a look but not
+    // their effects, so a bug must say which one it was seen on.
+    function feedbackMeta() {
+      return {
+        userAgent: (navigator.userAgent || 'unknown').slice(0, 1024),
+        appBuild: APP_BUILD,
+        catalogVersion: catalogVersionLabel().slice(0, 128),
+        theme: getActiveThemeId(),
+        trackedCount: trackedGames.length,
+        recentErrors: recentAppErrors.slice(-10)
+      };
+    }
+
     async function submitFeedback() {
       const category = document.getElementById('feedbackCategory').value;
       const text = document.getElementById('feedbackText').value.trim();
       if (!text) { showToast('Add a quick description first', null); return; }
-      if (!FEEDBACK_WEBHOOK_URL) {
-        showToast('Feedback isn\u2019t wired up yet on this build (no webhook configured).', null, 9000);
+      const client = getSupabaseClient();
+      if (!client) {
+        showToast('Feedback needs a connection right now - try again once you\u2019re back online.', null, 9000);
         return;
       }
       const btn = document.getElementById('btnFeedbackSubmit');
       const originalLabel = btn.textContent;
       btn.disabled = true;
       btn.textContent = 'SENDING...';
-      const fields = [
-        { name: 'User Agent', value: (navigator.userAgent || 'unknown').slice(0, 1024) },
-        { name: 'Catalogue', value: catalogVersionLabel().slice(0, 1024), inline: true },
-        { name: 'Tracked platforms', value: String(trackedGames.length), inline: true }
-      ];
-      if (recentAppErrors.length) {
-        fields.push({ name: 'Recent app errors', value: recentAppErrors.join('\n').slice(0, 1024) });
-      }
-      const payload = {
-        username: 'Daily Roll Over Feedback',
-        embeds: [{
-          title: `[${category}]`,
-          description: text.slice(0, 4000),
-          color: FEEDBACK_CATEGORY_COLORS[category] || 0x00e5ff,
-          fields,
-          timestamp: new Date().toISOString()
-        }]
-      };
       try {
-        const response = await fetch(FEEDBACK_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+        const { data, error } = await client.functions.invoke(FEEDBACK_FUNCTION, {
+          body: { category, text: text.slice(0, 4000), meta: feedbackMeta() }
         });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (error) {
+          // The function's own message (a rate limit, a validation miss)
+          // is more useful than supabase-js's generic wrapper.
+          const detail = await extractFunctionsErrorDetail(error);
+          throw new Error((detail.body && detail.body.error) || error.message || 'request failed');
+        }
+        if (!data || !data.ok) throw new Error((data && data.error) || 'no reply');
         closeModals();
         showToast('Thanks - feedback sent!', null);
       } catch (error) {
@@ -10610,6 +11083,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       saveIndexedState('the_casino_almanac_history_v1', collectionHistory);
       enqueueHistorySync(entry, false);
       collectFlash();
+      if (window.showCollected) showCollected(id);
     }
 
     // Removes the most recent collectionHistory entry for this platform
@@ -12331,7 +12805,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const ALL_APP_STORAGE_KEYS = [
       'the_casino_almanac_v7', 'the_casino_almanac_history_v1', 'the_casino_almanac_runs_v1',
       LEDGER_KEY, THEME_KEY, 'almanac_tz_v1', NOTIFY_KEY,
-      'almanac_hide_collected', 'almanac_show_landing', 'almanac_dense', VIEW_STATE_KEY
+      'almanac_hide_collected', 'almanac_show_landing', 'almanac_dense', VIEW_STATE_KEY, FELT_KEY, TRIM_KEY
     ];
 
     // WHY THE EXCLUSIONS ABOVE, so the next schema bump doesn't have to
@@ -12558,7 +13032,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           notify: sanitizeNotifyPrefs(p.notify),
           hideCollected: typeof p.hideCollected === 'boolean' ? p.hideCollected : null,
           showLanding: typeof p.showLanding === 'boolean' ? p.showLanding : null,
-          dense: typeof p.dense === 'boolean' ? p.dense : null
+          landingMode: p.landingMode === 'daily' || p.landingMode === 'true' || p.landingMode === 'false' ? p.landingMode : null,
+          dense: typeof p.dense === 'boolean' ? p.dense : null,
+          felt: typeof p.felt === 'string' && FELT_CHOICES[p.felt] ? p.felt : null,
+          trim: typeof p.trim === 'string' && TRIM_CHOICES[p.trim] ? p.trim : null
         };
       }
 
@@ -12624,7 +13101,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             },
             hideCollected: localStorage.getItem('almanac_hide_collected') === 'true',
             showLanding: localStorage.getItem('almanac_show_landing') !== 'false',
-            dense: localStorage.getItem('almanac_dense') === 'true'
+            landingMode: rollLandingMode(),
+            dense: localStorage.getItem('almanac_dense') === 'true',
+            felt: localStorage.getItem(FELT_KEY) || null,
+            trim: localStorage.getItem(TRIM_KEY) || null
           };
         })(),
         viewState: (() => {
@@ -12833,8 +13313,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           localStorage.setItem(NOTIFY_KEY, JSON.stringify({ ...getNotifyPrefs(), ...p.notify }));
         } catch (e) { prefsOk = false; }
         if (typeof p.hideCollected === 'boolean') writePref('almanac_hide_collected', String(p.hideCollected));
-        if (typeof p.showLanding === 'boolean') writePref('almanac_show_landing', String(p.showLanding));
+        if (p.landingMode) writePref('almanac_show_landing', p.landingMode);
+        else if (typeof p.showLanding === 'boolean') writePref('almanac_show_landing', String(p.showLanding));
         if (typeof p.dense === 'boolean') writePref('almanac_dense', String(p.dense));
+        if (typeof p.felt === 'string' && FELT_CHOICES[p.felt]) writePref(FELT_KEY, p.felt);
+        if (typeof p.trim === 'string' && TRIM_CHOICES[p.trim]) writePref(TRIM_KEY, p.trim);
         (prefsOk ? written : failed).push('preferences');
       }
 
@@ -12997,8 +13480,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       refreshTZUI();
       refreshNotifyUI();
       refreshRecoveryUI();
-      const landingToggle = document.getElementById('settingLandingToggle');
-      if (landingToggle) landingToggle.checked = localStorage.getItem('almanac_show_landing') !== 'false';
+      const landingMode = document.getElementById('settingLandingMode');
+      if (landingMode) landingMode.value = rollLandingMode();
       const hideToggle = document.getElementById('settingHideCollected');
       if (hideToggle) hideToggle.checked = localStorage.getItem('almanac_hide_collected') === 'true';
       const denseOn = localStorage.getItem('almanac_dense') === 'true';
@@ -13393,6 +13876,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     function exitDailyRun() {
+      const finishedRun = dailyRunIndex >= dailyRunQueue.length;
+      const collectedThisRun = dailyRunStats ? dailyRunStats.collected : 0;
       recordDailyRunEnd();
       hideRunUndoBar();
       dailyRunLaunchFallback = null;
@@ -13401,6 +13886,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderGames();
       updateHeroStats();
       updateDailyRunButton();
+      if (window.showOnRunExit) showOnRunExit(finishedRun, collectedThisRun);
     }
 
     const d = new Date();
@@ -13409,7 +13895,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     // ?lab always plays the intro, whatever the landing setting, so the
     // intro's options can be compared (see rollOptions).
-    const showLanding = localStorage.getItem('almanac_show_landing') !== 'false' || rollOptions().lab;
+    // (the landing on open: every open, once a day - the first open of the
+    // day - or never; see rollLandingMode)
+    const landingMode = rollLandingMode();
+    const showLanding = rollOptions().lab || landingMode === 'true' || (landingMode === 'daily' && !rollLandingSeenToday());
+    // (the day's shot claimed here, as the choice is made, not when the shot
+    // starts: two tabs opened together would otherwise both play it)
+    if (showLanding && landingMode === 'daily') rollLandingStamp();
     // (neither the shot nor the seat starts until this build's files are
     // all cached - see appWhenCached)
     if (!showLanding) {

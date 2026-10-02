@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v67';
+const CACHE_NAME = 'almanac-v92';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -29,7 +29,9 @@ const CACHE_NAME = 'almanac-v67';
 const PRECACHE_URLS = [
   // the shell
   './', './index.html', './manifest.json', './apple-touch-icon.png', './assets/icon-192.webp', './assets/icon-512.webp',
-  './assets/app.css', './assets/accessibility.css', './assets/accessibility.js', './assets/storage.js',
+  './assets/app.css', './assets/accessibility.css', './assets/accessibility.js', './assets/storage.js', './assets/show.js',
+  // each skin room past the default one (see show.js)
+  './assets/rooms/obsidian.js', './assets/rooms/neon.js', './assets/rooms/glitch.js', './assets/rooms/spirit.mjs', './assets/rooms/seance.mjs', './assets/intro3d/moonrise.mjs', './assets/intro3d/arcade.mjs', './assets/intro3d/seance-room.mjs',
   './data/catalog.js', './utils/cleanDropUrl.js', './utils/classifyDropText.js',
   // the Executive Lounge ground
   './assets/background.webp',
@@ -39,7 +41,10 @@ const PRECACHE_URLS = [
   './assets/intro/coin-gold.svg', './assets/intro/coin-gold-back.svg', './assets/intro/scorch.svg',
   // the WebGL intro: three.js, the modules and the set
   './assets/vendor/three/three.core.js', './assets/vendor/three/three.module.js', './assets/vendor/three/three.addons.js',
-  './assets/intro3d/intro.mjs', './assets/intro3d/physics.mjs', './assets/intro3d/table.mjs',
+  './assets/intro3d/intro.mjs', './assets/intro3d/physics.mjs', './assets/intro3d/wheel.mjs', './assets/intro3d/plinko.mjs', './assets/intro3d/table.mjs', './assets/intro3d/finish.mjs',
+  // Obsidian Ledger: the orrery (its Lounge payout, and the study - its
+  // Showroom home - where it stands on the desk)
+  './assets/intro3d/orrery.mjs', './assets/intro3d/study.mjs',
   './assets/intro3d/felt-normal.jpg', './assets/intro3d/rubber-normal.jpg', './assets/intro3d/leather-normal.jpg',
   './assets/intro3d/walnut.jpg', './assets/intro3d/gunmetal.jpg', './assets/intro3d/badge.png',
   './assets/intro3d/gold-trim-color.jpg', './assets/intro3d/gold-trim-alpha.png', './assets/intro3d/gold-trim-normal.jpg',

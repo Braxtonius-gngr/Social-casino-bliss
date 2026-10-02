@@ -78,7 +78,7 @@ function netChanges(history, since, until) {
     }
     const from = first.added ? null : first.from;
     const to = last.to;
-    if (from && from.tier === to.tier && from.dailySC === to.dailySC && from.cashFloor === to.cashFloor) continue;
+    if (from && from.tier === to.tier && from.dailySC === to.dailySC && from.cashFloor === to.cashFloor && from.blocker === to.blocker) continue;
     out.push({ name, from, to, added: !!first.added });
   }
   return out;
@@ -99,11 +99,22 @@ function classify(change) {
   return toRank ? 'corrected' : null;
 }
 
+// A blocker entry has no day count that applies (validate-catalog.js), so the
+// post names the rule instead of quoting one. Mirrors BLOCKER_LABELS in index.html.
+const BLOCKER_TEXT = {
+  'purchase-gated-daily': 'daily claim needs a purchase',
+  'free-play-cannot-reach-floor': 'no free path to cash-out',
+  '20x-promo-playthrough-last-in-queue': '20x promo playthrough first',
+  'lifetime-cap-one-redemption': 'lifetime cap of one redemption'
+};
+const blocked = (slug) => BLOCKER_TEXT[slug] || slug.replace(/-/g, ' ');
+
 function numbers(s) {
   const parts = [];
   if (typeof s.dailySC === 'number') parts.push(`${s.dailySC} SC/day`);
   if (typeof s.cashFloor === 'number') parts.push(`${s.cashFloor} SC to cash out`);
-  if (typeof s.daysToRedeem === 'number') parts.push(`~${s.daysToRedeem} days`);
+  if (s.blocker) parts.push(blocked(s.blocker));
+  else if (typeof s.daysToRedeem === 'number') parts.push(`~${s.daysToRedeem} days`);
   return parts.join(' · ');
 }
 
@@ -116,7 +127,8 @@ function reason(from, to) {
   if (from.cashFloor !== to.cashFloor && typeof to.cashFloor === 'number') {
     parts.push(typeof from.cashFloor === 'number' ? `cash minimum ${from.cashFloor} → ${to.cashFloor}` : `cash minimum ${to.cashFloor}`);
   }
-  if (typeof to.daysToRedeem === 'number') parts.push(`~${to.daysToRedeem} days`);
+  if (to.blocker) parts.push(blocked(to.blocker));
+  else if (typeof to.daysToRedeem === 'number') parts.push(`~${to.daysToRedeem} days`);
   return parts.join(', ');
 }
 
@@ -166,7 +178,7 @@ function buildPost({ history, since, until, format, baseUrl, slugs }) {
   const total = Object.values(groups).reduce((n, list) => n + list.length, 0);
 
   if (format === 'discord') {
-    const lines = [`**Sweeps tier list: what changed, ${range}**`, 'Tier = days of free daily bonuses to the site\'s own cash-out minimum, from screenshots of its claim and redeem screens.'];
+    const lines = [`**Sweeps tier list: what changed, ${range}**`, 'Tier = days of free daily bonuses to the site\'s own cash-out minimum, from the site\'s own pages and screenshots of its claim and redeem screens. A platform with a rule warning is placed by that rule, not by a day count.'];
     if (!total) lines.push('', 'No ranking changes this week.');
     for (const { key, title } of SECTIONS) {
       const list = sortChanges(groups[key] || []);
@@ -186,7 +198,7 @@ function buildPost({ history, since, until, format, baseUrl, slugs }) {
   const lines = [
     `Title: Sweepstakes daily bonus tier list: what changed ${range}`,
     '',
-    `Every tier is the number of days of free daily bonuses it takes to reach that site's own minimum cash redemption - no purchases, no wins counted. Each change below comes from screenshots of the site's daily-claim and redeem screens.`
+    `Every tier is the number of days of free daily bonuses it takes to reach that site's own minimum cash redemption - no purchases, no wins counted. Each change below comes from the site's own published pages or screenshots of its daily-claim and redeem screens. A platform with a rule warning (such as no free path to cash-out) is placed by that rule, not by a day count.`
   ];
   if (!total) lines.push('', 'No ranking changes this week.');
   for (const { key, title } of SECTIONS) {

@@ -167,27 +167,27 @@
     }
 
     [data-theme="glitch"] {
-      --bg-base: #060806;
-      --accent-gold: #39FF14;
-      --accent-gold-hover: #5EFF42;
-      --accent-gold-dim: rgba(57, 255, 20, 0.16);
-      --accent-green: #00FFA0;
-      --accent-green-dim: rgba(0, 255, 160, 0.16);
-      --accent-pink: #FF2A2A;
-      --accent-pink-dim: rgba(255, 42, 42, 0.18);
-      --accent-orange: #FFB000;
-      --accent-orange-dim: rgba(255, 176, 0, 0.16);
-      --accent-cyan: #00E5FF;
-      --accent-cyan-dim: rgba(0, 229, 255, 0.16);
-      --glass-border: rgba(57, 255, 20, 0.18);
-      --glass-highlight: rgba(57, 255, 20, 0.08);
-      --text-main: #D6FFD6;
-      --text-muted: #7FAE7F;
-      --text-dim: #3F5C3F;
-      --tier-s: #FF2A2A;
-      --tier-a: #FFB000;
-      --tier-b: #00E5FF;
-      --tier-c: #3F5C3F;
+      --bg-base: #050608;
+      --accent-gold: #E9E4D8;
+      --accent-gold-hover: #FFFFFF;
+      --accent-gold-dim: rgba(233, 228, 216, 0.12);
+      --accent-green: #9ED8C4;
+      --accent-green-dim: rgba(158, 216, 196, 0.14);
+      --accent-pink: #E0242F;
+      --accent-pink-dim: rgba(224, 36, 47, 0.18);
+      --accent-orange: #F0703A;
+      --accent-orange-dim: rgba(240, 112, 58, 0.16);
+      --accent-cyan: #7DB6F0;
+      --accent-cyan-dim: rgba(125, 182, 240, 0.16);
+      --glass-border: rgba(233, 228, 216, 0.14);
+      --glass-highlight: rgba(233, 228, 216, 0.06);
+      --text-main: #E6E1D6;
+      --text-muted: #8E97A3;
+      --text-dim: #4E5661;
+      --tier-s: #E0242F;
+      --tier-a: #F0703A;
+      --tier-b: #7DB6F0;
+      --tier-c: #5A6270;
     }
 
     * {
@@ -970,6 +970,10 @@
     .r3t-css { position: absolute; inset: 0; pointer-events: none; overflow: clip !important; }
     .r3t-css.r3t-hide { visibility: hidden; }
     .r3t-hand { position: absolute; inset: 0; width: 100% !important; height: 100% !important; pointer-events: none; }
+    /* (the dealer's canvas belongs to the room, not the page: it shows while
+       the page's parts are still hidden, so the machine is seen rising out of
+       its port as the camera settles into the seat) */
+    .r3t-css.r3t-hide .r3t-hand { visibility: visible; }
     .r3t-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .r3t-rail, .r3t-phone { opacity: var(--r3t-in, 1); }
     .r3t-rail, .r3t-card { pointer-events: auto; }
@@ -1012,13 +1016,42 @@
     /* The cards. A card is a button holding two faces back to back; the
        scene turns it, so its faces flip in 3D. */
     .r3t-card { width: 318px; height: 445px; transform-style: preserve-3d; cursor: pointer; outline: none; touch-action: none; }
-    .r3t-card:focus-visible .r3t-front { box-shadow: 0 0 0 8px #f0cf7f, 0 10px 24px rgba(0,0,0,0.35); }
+    /* (no ring of the page's own round a card or the phone's "Pick up" -
+       accessibility.css gives every :focus a cyan one, which here boxes a
+       card lifted by a tap; from the keyboard they take the gold ring on
+       their face instead) */
+    .r3t-card:focus, .r3t-ph-pickup:focus { outline: none; }
+    /* (on whichever face is toward you: a card turned over by hand shows its back) */
+    .r3t-card:focus-visible .r3t-face { box-shadow: 0 0 0 8px #f0cf7f, 0 10px 24px rgba(0,0,0,0.35); }
     .r3t-card-in { position: absolute; inset: 0; transform-style: preserve-3d; }
     /* (the scene says which face is up - .r3t-up once the turn passes edge
        on - rather than backface-visibility, which the CSS3D camera's
        mirrored axes defeat: the hidden face would otherwise paint over) */
     .r3t-card:not(.r3t-up) .r3t-front, .r3t-card.r3t-up .r3t-back { visibility: hidden; }
-    .r3t-face { position: absolute; inset: 0; border-radius: 18px; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 3px 5px rgba(0,0,0,0.45), 0 10px 24px rgba(0,0,0,0.35); }
+    /* (its shadow is the table's own - cast on the felt by the lamp, tight
+       under a card lying there, wider and softer as it is lifted: see
+       shadeCard in table.mjs - so the face keeps only its edge) */
+    .r3t-face { position: absolute; inset: 0; border-radius: 18px; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 0 0 1px rgba(0,0,0,0.3); transition: box-shadow .2s ease; }
+    /* (under a finger or the pointer once dealt, a card comes up to meet it
+       and its gilt edge catches the light) */
+    .r3t-card.r3t-hover .r3t-face { box-shadow: 0 0 0 2px rgba(240,207,127,0.85), 0 0 26px 2px rgba(255,215,0,0.42); }
+    /* (face up and still, a card takes one pass of the lamp down it, top to
+       bottom - a foil catching the light as the machine lets it go, once) */
+    .r3t-scan { position: absolute; inset: 0; pointer-events: none; }
+    .r3t-scan::before { content: ""; position: absolute; left: -10%; right: -10%; top: -46%; height: 42%; opacity: 0;
+      background: linear-gradient(180deg, rgba(255,232,178,0) 0%, rgba(255,232,178,0.18) 38%, rgba(255,246,222,0.62) 50%, rgba(255,232,178,0.18) 62%, rgba(255,232,178,0) 100%); }
+    .r3t-card.r3t-sync .r3t-scan::before { animation: r3t-scan 1.05s cubic-bezier(.35,.55,.25,1) 0.04s 1 both; }
+    @keyframes r3t-scan { 0% { opacity: 0; transform: translateY(0); } 14% { opacity: 1; } 80% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(365%); } }
+    .r3t-front.t-S .r3t-scan::before { background: linear-gradient(180deg, rgba(247,220,146,0) 0%, rgba(247,220,146,0.22) 38%, rgba(255,240,192,0.7) 50%, rgba(247,220,146,0.22) 62%, rgba(247,220,146,0) 100%); }
+    html[data-motion="off"] .r3t-card.r3t-sync .r3t-scan::before { animation: none; }
+    /* (a card up in front of you: the room behind it falls back - the table
+       and the dealer dim, the cards left lying shade - so the one in your
+       hand is the one thing in front) */
+    .r3-stage > canvas, .r3t-hand { transition: filter .4s ease; }
+    .r3-stage.r3t-focus > canvas, .r3-stage.r3t-focus .r3t-hand { filter: brightness(0.56) saturate(0.9); }
+    .r3t-shade { position: absolute; inset: 0; background: #050404; opacity: 0; transition: opacity .4s ease; pointer-events: none; }
+    .r3-stage.r3t-focus .r3t-card:not(.r3t-lifted) .r3t-shade { opacity: 0.46; }
+    html[data-motion="off"] :is(.r3-stage > canvas, .r3t-hand, .r3t-shade, .r3t-face) { transition: none; }
     /* The backs: the same way up (a dealt card is turned end over
        end), engraved like a banknote and finer with the tier - oxblood
        and gold for D and C, bronze foil for B, pearl and platinum for A,
@@ -1231,6 +1264,39 @@
     body.r3-table-mode.r3-sheet-open .r3-stage { display: none; }
     .r3-sheet-back { display: none; }
     body.r3-table-mode.r3-sheet-open .r3-sheet-back { display: block; position: fixed; top: max(12px, env(safe-area-inset-top)); left: 12px; z-index: 261; padding: 10px 16px; border-radius: 22px; border: 1px solid rgba(232,200,106,0.45); background: rgba(12,10,9,0.9); color: #f0dca6; font: 600 14px/1 Georgia, serif; letter-spacing: 0.04em; cursor: pointer; }
+    /* Out of body (index.html: rollDrift): a small ghost over the home that
+       lets you drift to another room, and "Sit here" while you visit one.
+       Held to a spirit photograph's double exposure: while you drift, the
+       room goes cold and pale, as if seen by something with no body. */
+    .r3-drift { display: none; }
+    body.r3-table-mode .r3-drift { display: flex; position: fixed; top: max(12px, env(safe-area-inset-top)); left: 12px; z-index: 262; gap: 8px; align-items: center; pointer-events: none; }
+    body.r3-table-mode.r3-sheet-open .r3-drift { display: none; }
+    .r3-drift button { pointer-events: auto; cursor: pointer; }
+    .r3-drift-out { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(214, 226, 240, 0.34); background: rgba(8, 10, 14, 0.62); color: #dfe8f2; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: border-color .3s ease, background .3s ease; }
+    .r3-drift-out svg { width: 22px; height: 22px; }
+    .r3-drift-out:hover, .r3-drift-out:focus-visible { border-color: rgba(214, 226, 240, 0.7); background: rgba(8, 10, 14, 0.82); }
+    .r3-drift-out:focus-visible, .r3-drift-sit:focus-visible, .r3-drift-panel button:focus-visible { outline: 2px solid #dfe8f2; outline-offset: 2px; }
+    .r3-drift-out[disabled] { opacity: 0.45; cursor: default; }
+    .r3-drift-sit { min-height: 44px; padding: 7px 16px 8px; border-radius: 22px; border: 1px solid rgba(214, 226, 240, 0.5); background: rgba(8, 10, 14, 0.78); color: #f1f5fa; font: 600 14px/1.15 system-ui, sans-serif; text-align: left; display: flex; flex-direction: column; }
+    .r3-drift-sit span { font-weight: 400; font-size: 11.5px; color: #aab6c4; }
+    body.r3-adrift .r3-stage > canvas { filter: saturate(0.42) brightness(1.06) contrast(0.94) hue-rotate(-8deg); transition: filter 1.2s ease; }
+    body.r3-adrift .r3-stage::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(150, 175, 205, 0.16) 100%); opacity: 1; transition: opacity 1.2s ease; }
+    .r3-stage::after { opacity: 0; }
+    .r3-stage > canvas { transition: filter 1.2s ease; }
+    .r3-drift-panel { position: fixed; inset: 0; z-index: 270; display: grid; place-items: end center; padding: 16px 16px max(16px, env(safe-area-inset-bottom)); background: rgba(4, 5, 8, 0.52); }
+    .r3-drift-card { width: min(440px, 100%); padding: 20px 18px 16px; border-radius: 18px; border: 1px solid rgba(214, 226, 240, 0.2); background: rgba(10, 12, 16, 0.94); color: #e8eef5; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6); }
+    .r3-drift-card h2 { margin: 0 0 4px; font: 600 19px/1.2 Georgia, serif; letter-spacing: 0.02em; }
+    .r3-drift-card p { margin: 0 0 14px; font: 400 13.5px/1.4 system-ui, sans-serif; color: #a9b4c1; }
+    .r3-drift-card ul { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+    .r3-drift-place { width: 100%; min-height: 56px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; column-gap: 12px; align-items: center; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(214, 226, 240, 0.16); background: rgba(255, 255, 255, 0.03); color: inherit; text-align: left; cursor: pointer; }
+    .r3-drift-place:hover { border-color: rgba(214, 226, 240, 0.42); }
+    .r3-drift-place[disabled] { cursor: default; opacity: 0.62; }
+    .r3-drift-name { font: 600 15px/1.25 system-ui, sans-serif; }
+    .r3-drift-skin { grid-row: 2; font: 400 12.5px/1.3 system-ui, sans-serif; color: #a9b4c1; }
+    .r3-drift-note { grid-row: 1 / span 2; grid-column: 2; font: 600 12px/1 system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; color: #cfd9e4; }
+    .r3-drift-place.mine .r3-drift-note { color: #e8c86a; }
+    .r3-drift-close { width: 100%; min-height: 44px; border-radius: 12px; border: 1px solid rgba(214, 226, 240, 0.2); background: transparent; color: #cfd9e4; font: 600 14px/1 system-ui, sans-serif; cursor: pointer; }
+    html[data-motion="off"] .r3-stage > canvas, html[data-motion="off"] .r3-stage::after { transition: none; }
     /* With the table up, the app's own layers - its modals (Settings, Add
        platform...), the docked footer and the feedback button - sit above
        the stage (250) and the sheet (260), where they were always meant
@@ -1272,6 +1338,21 @@
        to hold the text, with the table and the dice still there under it. */
     .landing-screen.roll-popped .landing-inner::before,
     .landing-screen.roll-rest .landing-inner::before { background: radial-gradient(ellipse 72% 56% at 50% 50%, rgba(6,7,5,0.6) 0%, rgba(6,7,5,0.5) 46%, rgba(6,7,5,0.26) 72%, transparent 90%); }
+    /* On a light felt (html[data-felt], the cloth the shot is dressed in -
+       see setFelt in index.html) the copy is printed on the cloth, as the
+       table's own print is: dark ink, the gold keylined in umber, the
+       button a disc of black lacquer. No veil: a dark veil on a light cloth
+       reads as a smudge, not a shade - just a breath of light under it. */
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl:is(.roll-popped, .roll-rest) .landing-inner::before { background: radial-gradient(ellipse 72% 56% at 50% 50%, rgba(255,250,238,0.2) 0%, rgba(255,250,238,0.1) 55%, transparent 88%); }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-title { color: #1c140c; text-shadow: none; }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-title span,
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-title::after { filter: drop-shadow(0 0 0.6px #1a1108) drop-shadow(0 0 0.6px #1a1108) drop-shadow(0 1px 1px rgba(26,17,8,0.5)); }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-tagline { color: #36281a; }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-subtitle { color: rgba(34,25,15,0.84); }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-btn { background: #16110b; border-color: #16110b; color: var(--accent-gold); box-shadow: 0 2px 10px rgba(26,17,8,0.35); }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-btn:hover { background: #231a10; }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-legal { color: #36281a; }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-legal a { color: #1c140c; }
     .landing-screen.intro-play.roll-popped .landing-title { animation: roll-title-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s both; }
     .landing-screen.intro-play.roll-popped .landing-tagline { animation: roll-rise 0.6s ease-out 0.95s both; }
     .landing-screen.intro-play.roll-popped .landing-subtitle { animation: roll-rise 0.6s ease-out 1.15s both; }
@@ -1301,6 +1382,7 @@
     .form-group input.locked { opacity: 0.55; cursor: not-allowed; }
     .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--glass-border); font-size: 0.9rem; font-weight: 600; }
     .toggle-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent-pink); }
+    .toggle-row .settings-select { flex: 0 0 auto; margin-left: 12px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: var(--text-main); font-size: 0.8rem; font-weight: 700; }
     .modal-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
     .btn-primary { flex: 1; padding: 12px; background: var(--accent-gold); color: #0a0a0a; border: none; border-radius: 10px; font-weight: 900; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
     .btn-primary:hover { background: var(--accent-gold-hover); }
@@ -1599,9 +1681,12 @@
     .theme-name { font-size: 0.9rem; color: var(--text-main); font-weight: 800; }
     .theme-name .active-tag { font-size: 0.6rem; color: var(--accent-green); margin-left: 8px; letter-spacing: 0.08em; }
     .theme-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
-    /* The pair a skin belongs to: a visualized skin and its muted take
-       (see THEMES in index.html), each card naming the other. */
+    /* A skin's levels (a visualized skin and its muted pairing are one
+       entry - see THEMES in index.html), the one it is at in white. */
     .theme-pair { font-size: 0.62rem; color: var(--accent-gold); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 2px; opacity: 0.85; }
+    .theme-pair b { color: var(--text-main); font-weight: 800; }
+    /* (the line that says what the levels are, over them in Settings) */
+    .show-lede { text-align: left; margin: -2px 0 8px; }
     .theme-swatches { display: flex; gap: 4px; flex-shrink: 0; }
     /* ---------- Refinement layer (applies to every theme) ---------- */
 
@@ -3324,77 +3409,75 @@
 
 /* =========================================================
    THEME: Dead Channel ("glitch")
-   Broken-CRT / signal-corruption aesthetic, built around the
-   full-viewport static jolt that used to live exclusively in Boot
-   Hill (as "hellscape-static") - pulled out of that theme because
-   plenty of people never clocked it as an intentional effect there,
-   and it deserved to be the headline of its own theme rather than a
-   rare accent buried in a different one. Phosphor/acid green as the
-   primary accent (the "gold" role), alarm red for tier-S and the
-   danger/corruption palette, amber/cyan for A/B tiers. Sharp 4px
-   corners everywhere (no pill shapes, no soft glow-only outlines
-   pretending to be rounded) plus corner-bracket accents on cards,
-   mimicking a terminal readout rather than neon's soft light
-   sources. Chromatic-aberration titles use layered text-shadow
-   offsets, not a content:attr() duplicate-layer trick - simpler,
-   and it never risks the two copies of the text drifting out of
-   sync with real page content changes. This is a first pass: the
-   goal here is to get Dead Channel's identity right (the palette,
-   the terminal shapes, and - above all - the signal-corruption
-   jolt itself running more often since it's the reason this theme
-   exists), not to match Boot Hill's much more heavily-iterated
-   depth on day one.
+   A television left on a dead channel, and what comes through it (its
+   room: assets/rooms/glitch.js; its payout, the séance:
+   assets/rooms/seance.mjs; the spirit: assets/rooms/spirit.mjs). Black
+   glass, bone phosphor, a cold spirit blue and blood red. The
+   signal-corruption jolt further down is this skin's own and is kept
+   exactly as it was built - the red and green bands, the skew, the
+   blown-out peaks: the one place its old acid green still lives.
+   Hard 4px corners and corner brackets on the cards (a set's on-screen
+   display, not soft glass); IM Fell English SC for the wordmark, VT323
+   for the set's own numbers.
    ========================================================= */
 
-[data-theme="glitch"] body, [data-theme="glitch"] { background: #060806; }
+[data-theme="glitch"] body, [data-theme="glitch"] { background: #050608; --dc-bone: #E9E4D8; --dc-blood: #E0242F; --dc-spirit: #7DB6F0; --dc-fell: 'IM Fell English SC', Georgia, serif; --dc-osd: 'VT323', 'Courier New', monospace; }
 
-/* Ambient scanline sweep - a single soft highlight band drifting
-   down the screen on a slow loop, on top of the baked-in scanline
-   texture in the theme's bodyBg. Cheap, always-on CRT-refresh cue
-   that reads as "this is a screen" even in the long stretches
-   between corruption jolts. */
-[data-theme="glitch"] body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(180deg, transparent 0%, rgba(57, 255, 20, 0.05) 48%, transparent 100%);
-  background-size: 100% 220%;
-  animation: scanline-sweep 7s linear infinite;
-}
-@keyframes scanline-sweep {
-  0% { background-position: 0 -120%; }
-  100% { background-position: 0 120%; }
-}
+/* The hum bar: a soft band rolling slowly up the screen, as a set on a
+   mains-hum ripple shows (a 60 Hz field against a 59.94 Hz picture); over
+   the baked-in scanlines in the skin's background. */
+.dc-hum { display: none; }
+[data-theme="glitch"] .dc-hum { display: block; position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(0deg, transparent 0%, rgba(233, 228, 216, 0.028) 42%, rgba(233, 228, 216, 0.045) 50%, rgba(233, 228, 216, 0.028) 58%, transparent 100%);
+  background-size: 100% 60%; background-repeat: no-repeat; animation: dc-hum 11s linear infinite; }
+@keyframes dc-hum { 0% { background-position: 0 180%; } 100% { background-position: 0 -80%; } }
 [data-theme="glitch"] .app-container, [data-theme="glitch"] .docked-footer { position: relative; z-index: 2; }
-[data-motion="off"] [data-theme="glitch"] body::after { animation: none; background-position: 0 0; }
+html[data-motion="off"] .dc-hum { animation: none; background: none; }
 
-/* Typography: solid phosphor-green fill with a hard red/cyan
-   chromatic-aberration fringe instead of neon's outline-only
-   text-stroke look - reads as a mis-converged CRT signal rather
-   than a glow. */
+/* The glass round the picture (the room's edge light): drawn by the room -
+   the lamp caught top left on the curved face, a bone lip on a dark seam,
+   and the length of it that has tuned in with the day's run. The tube's
+   mask darkens the corners where the face curves away. Under every sheet,
+   the tour, the landing and the table, like the other rooms' edges. */
+.dc-glass { display: none; }
+[data-theme="glitch"] .dc-glass { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 95; pointer-events: none; overflow: visible; }
+.dc-glass path { fill: none; }
+.dc-seam { stroke: rgba(0, 0, 0, 0.9); stroke-width: 3.2; }
+.dc-lip { stroke: rgba(233, 228, 216, 0.1); stroke-width: 0.8; }
+.dc-run { stroke-linecap: round; }
+.dc-run-bloom { stroke: rgba(233, 228, 216, 0.75); stroke-width: 7; }
+.dc-run-line { stroke: #F4F0E8; stroke-width: 1.6; }
+.dc-head { fill: #fff; filter: drop-shadow(0 0 3px rgba(125, 182, 240, 0.9)) drop-shadow(0 0 7px rgba(233, 228, 216, 0.6)); }
+[data-theme="glitch"] body::before { content: ''; position: fixed; inset: 0; z-index: 94; pointer-events: none;
+  background: radial-gradient(130% 105% at 50% 50%, transparent 62%, rgba(0, 0, 0, 0.42) 88%, rgba(0, 0, 0, 0.7) 100%); }
+html[data-motion="off"] .dc-head { display: none; }
+
+/* Type: the wordmark cut in the Fell types, with the set's convergence a
+   hair out (red one way, blue the other); the set's numbers in VT323. */
 [data-theme="glitch"] .app-title,
 [data-theme="glitch"] .landing-title {
-  font-family: 'VT323', 'Courier New', monospace;
+  font-family: var(--dc-fell);
+  font-weight: 400;
   -webkit-text-stroke: 0;
-  color: var(--accent-gold);
-  text-shadow: -2px 0 0 rgba(255, 42, 42, 0.75), 2px 0 0 rgba(0, 229, 255, 0.6), 0 0 14px rgba(57, 255, 20, 0.5);
+  color: var(--dc-bone);
+  text-shadow: -1.5px 0 0 rgba(224, 36, 47, 0.7), 1.5px 0 0 rgba(125, 182, 240, 0.6), 0 0 16px rgba(233, 228, 216, 0.28);
   letter-spacing: 0.02em;
 }
 [data-theme="glitch"] .app-title span,
 [data-theme="glitch"] .landing-title span {
   -webkit-text-stroke: 0;
-  color: var(--accent-pink);
-  text-shadow: -2px 0 0 rgba(0, 229, 255, 0.6), 2px 0 0 rgba(57, 255, 20, 0.6), 0 0 14px rgba(255, 42, 42, 0.55);
+  color: var(--dc-blood);
+  text-shadow: -1.5px 0 0 rgba(125, 182, 240, 0.55), 1.5px 0 0 rgba(233, 228, 216, 0.35), 0 0 16px rgba(224, 36, 47, 0.45);
 }
+[data-theme="glitch"] .date-header { font-family: var(--dc-osd); font-size: 1.05rem; letter-spacing: 0.08em; }
+[data-theme="glitch"] .status-time, [data-theme="glitch"] .cooldown-chip, [data-theme="glitch"] .ready-at,
+[data-theme="glitch"] .hero-details p { font-family: var(--dc-osd); font-size: 1.12em; letter-spacing: 0.03em; }
 
-/* Cards: flat terminal-window panels with hairline green edges and
-   bracket accents at two opposite corners, standing in for a proper
-   CRT-bezel frame without needing four extra elements per panel. */
+/* Cards: the set's on-screen display - flat black panels with a hairline
+   bone edge and bracket corners at two opposite corners. */
 [data-theme="glitch"] .glass-panel {
   position: relative;
-  background: rgba(4, 10, 6, 0.72);
+  background: rgba(8, 10, 13, 0.78);
   border: 1px solid var(--glass-border);
   border-top-color: var(--glass-border);
   border-left-color: var(--glass-border);
@@ -3409,151 +3492,166 @@
   width: 10px;
   height: 10px;
   pointer-events: none;
-  opacity: 0.85;
+  opacity: 0.7;
 }
 [data-theme="glitch"] .glass-panel::before {
   top: -1px; left: -1px;
-  border-top: 2px solid var(--accent-gold);
-  border-left: 2px solid var(--accent-gold);
+  border-top: 1.5px solid var(--dc-bone);
+  border-left: 1.5px solid var(--dc-bone);
 }
 [data-theme="glitch"] .glass-panel::after {
   bottom: -1px; right: -1px;
-  border-bottom: 2px solid var(--accent-gold);
-  border-right: 2px solid var(--accent-gold);
+  border-bottom: 1.5px solid var(--dc-bone);
+  border-right: 1.5px solid var(--dc-bone);
 }
 
-/* Hero ring + Daily Run CTA: square terminal readout instead of a
-   soft radial glow circle. */
-[data-theme="glitch"] .hero-ring-circle {
-  border-radius: 4px;
-  border: 2px solid var(--accent-gold);
-  background: rgba(0, 0, 0, 0.55);
-  font-family: 'VT323', monospace;
-  font-size: 1.9rem;
-  color: var(--accent-gold);
-  text-shadow: 0 0 8px rgba(57, 255, 20, 0.75);
-  box-shadow: 0 0 14px rgba(57, 255, 20, 0.3), inset 0 0 10px rgba(57, 255, 20, 0.22);
-}
+/* The scope round the ready count: drawn by the room (SVG) - a knurled
+   bezel, a graticule, the run as a red phosphor trace with a white-hot head.
+   The count sits on the face in VT323. */
+.dc-scope { display: none; }
+[data-theme="glitch"] .hero-ring-wrapper { width: 112px; height: 112px; }
+[data-theme="glitch"] .dc-scope { display: block; position: absolute; inset: 0; pointer-events: none; filter: drop-shadow(2px 4px 5px rgba(0, 0, 0, 0.7)); }
+.dc-scope svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.dc-trace { fill: none; stroke-linecap: round; }
+.dc-trace-glow { stroke: #E0242F; stroke-width: 7; opacity: 0.6; }
+.dc-trace-tail { stroke: rgba(224, 36, 47, 0.42); stroke-width: 1.6; }
+.dc-trace-body { stroke: #F0313C; stroke-width: 1.8; }
+.dc-trace-core { stroke: #FFE9EA; stroke-width: 1.1; }
+.dc-dot { fill: #fff; filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 5px #E0242F); animation: dc-beam 1.7s steps(9, end) infinite; transform-box: fill-box; transform-origin: center; }
+.dc-dot.dc-parked { fill: rgba(233, 228, 216, 0.55); filter: drop-shadow(0 0 3px rgba(233, 228, 216, 0.4)); animation: none; }
+@keyframes dc-beam { 0% { transform: translate(0, 0); } 17% { transform: translate(0.25px, -0.15px); } 38% { transform: translate(-0.2px, 0.2px); } 61% { transform: translate(0.1px, 0.3px); } 80% { transform: translate(-0.3px, -0.1px); } 100% { transform: translate(0, 0); } }
+[data-theme="glitch"] .hero-ring-circle { position: absolute; inset: 24%; width: auto; height: auto; z-index: 1; border: 0; border-radius: 50%; background: transparent; box-shadow: none;
+  font-family: var(--dc-osd); font-weight: 400; font-size: 2.3rem; line-height: 1; color: #F4F0E8;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.6), 0 0 10px rgba(224, 36, 47, 0.55); }
+html[data-motion="off"] .dc-dot { animation: none; }
 [data-theme="glitch"] .hero-stat-card { border-radius: 4px; }
 [data-theme="glitch"] .btn-start-run {
   border-radius: 4px;
-  font-family: 'VT323', monospace;
+  color: var(--dc-bone);
+  border-color: rgba(233, 228, 216, 0.55);
+  font-family: var(--dc-osd);
   letter-spacing: 0.08em;
-  font-size: 1.05rem;
+  font-size: 1.15rem;
 }
 
-/* Nav / filter chips: hard corners, "channel select" underline glow
-   instead of a filled pill. */
+/* The face in the snow (a collect): the room's canvas over the card, its
+   grain two css pixels square, unsmoothed. */
+.dc-snow { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: inherit; pointer-events: none; z-index: 3; image-rendering: pixelated; mix-blend-mode: screen; }
+html[data-motion="off"] .dc-snow { display: none; }
+
+/* The séance (the payout: assets/rooms/seance.mjs): one canvas over the
+   app, under every sheet. */
+.dc-seance { position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 98; pointer-events: none; }
+html[data-motion="off"] .dc-seance { display: none; }
+
+/* Nav / filter chips: hard corners, a "channel select" underline. */
 [data-theme="glitch"] .nav-tab,
 [data-theme="glitch"] .filter-btn,
 [data-theme="glitch"] .sort-trigger-btn {
   border-radius: 4px;
 }
 [data-theme="glitch"] .nav-tab.active {
-  background: rgba(57, 255, 20, 0.12);
-  border-color: var(--accent-gold);
+  background: rgba(233, 228, 216, 0.08);
+  border-color: var(--dc-bone);
   color: var(--text-main);
-  text-shadow: 0 0 8px var(--accent-gold);
-  box-shadow: inset 0 -2px 0 var(--accent-gold);
+  box-shadow: inset 0 -2px 0 var(--dc-blood);
 }
 [data-theme="glitch"] .filter-btn.active {
   background: var(--accent-cyan-dim);
   border-color: var(--accent-cyan);
   color: var(--text-main);
-  text-shadow: 0 0 8px var(--accent-cyan);
   box-shadow: inset 0 -2px 0 var(--accent-cyan);
 }
 
-/* General buttons: black terminal fields, hairline border, no
-   gradient fills - hover inverts to filled instead of just glowing
-   harder, the classic "select this line" terminal cue. */
+/* Buttons: black fields with a hairline edge; hover fills, the classic
+   "select this line" cue of a set's menu. */
 [data-theme="glitch"] .btn-open {
   background: rgba(0, 0, 0, 0.55);
-  border: 1px solid var(--accent-pink);
-  color: var(--accent-pink);
+  border: 1px solid var(--dc-blood);
+  color: #FF6B72;
   border-radius: 4px;
-  text-shadow: 0 0 6px var(--accent-pink);
+  text-shadow: none;
   box-shadow: none;
 }
 [data-theme="glitch"] .btn-open:hover {
-  background: var(--accent-pink);
-  color: #060806;
-  text-shadow: none;
-  box-shadow: 0 0 18px rgba(255, 42, 42, 0.5);
+  background: var(--dc-blood);
+  color: #fff;
+  box-shadow: 0 0 16px rgba(224, 36, 47, 0.45);
   transform: none;
 }
 [data-theme="glitch"] .btn-open.cooldown { background: rgba(0,0,0,0.4); border-color: var(--glass-border); color: var(--text-dim); }
 [data-theme="glitch"] .btn-primary {
   background: rgba(0, 0, 0, 0.55);
-  border: 1px solid var(--accent-gold);
-  color: var(--accent-gold);
+  border: 1px solid var(--dc-bone);
+  color: var(--dc-bone);
   border-radius: 4px;
-  text-shadow: 0 0 6px var(--accent-gold);
+  text-shadow: none;
   box-shadow: none;
 }
-[data-theme="glitch"] .btn-primary:hover { background: var(--accent-gold); color: #060806; text-shadow: none; box-shadow: 0 0 18px rgba(57, 255, 20, 0.5); }
+[data-theme="glitch"] .btn-primary:hover { background: var(--dc-bone); color: #050608; box-shadow: 0 0 16px rgba(233, 228, 216, 0.3); }
 [data-theme="glitch"] .btn-run-collect {
   background: rgba(0, 0, 0, 0.55);
-  border: 1px solid var(--accent-pink);
-  color: var(--accent-pink);
+  border: 1px solid var(--dc-blood);
+  color: #FF6B72;
   border-radius: 4px;
-  text-shadow: 0 0 6px var(--accent-pink);
+  text-shadow: none;
   box-shadow: none;
 }
 [data-theme="glitch"] .btn-dock {
   background: rgba(0, 0, 0, 0.55);
-  border: 1px solid var(--accent-gold);
-  color: var(--accent-gold);
+  border: 1px solid rgba(233, 228, 216, 0.6);
+  color: var(--dc-bone);
   border-radius: 4px;
-  text-shadow: 0 0 6px var(--accent-gold);
+  text-shadow: none;
   box-shadow: none;
 }
-[data-theme="glitch"] .btn-dock:hover { background: var(--accent-gold-dim); box-shadow: 0 0 14px rgba(57, 255, 20, 0.35); }
+[data-theme="glitch"] .btn-dock:hover { background: rgba(233, 228, 216, 0.1); }
 [data-theme="glitch"] .btn-cancel { border-radius: 4px; }
 [data-theme="glitch"] .btn-danger { border-radius: 4px; }
 [data-theme="glitch"] .landing-btn {
   background: transparent;
   border-radius: 4px;
-  border: 2px solid var(--accent-gold);
-  color: var(--accent-gold);
+  border: 1.5px solid var(--dc-bone);
+  color: var(--dc-bone);
   box-shadow: none;
-  text-shadow: 0 0 8px var(--accent-gold);
+  text-shadow: none;
+  font-family: var(--dc-osd);
+  font-size: 1.25rem;
+  letter-spacing: 0.1em;
 }
-[data-theme="glitch"] .landing-btn:hover { background: var(--accent-gold-dim); box-shadow: 0 0 18px rgba(57, 255, 20, 0.35); }
+[data-theme="glitch"] .landing-btn:hover { background: rgba(233, 228, 216, 0.1); }
 
-/* Avatars + tier badges: square, monospace, no soft glow ring. */
+/* Avatars + tier badges: square, the set's numbers, no soft glow ring. */
 [data-theme="glitch"] .casino-avatar {
   border-radius: 4px;
-  border: 2px solid var(--accent-gold);
+  border: 1.5px solid rgba(233, 228, 216, 0.55);
   background: rgba(0, 0, 0, 0.6);
-  font-family: 'VT323', 'Courier New', monospace;
-  text-shadow: 0 0 5px var(--accent-gold);
-  box-shadow: inset 0 0 10px rgba(57, 255, 20, 0.25);
+  font-family: var(--dc-osd);
+  font-size: 1.15rem;
+  color: var(--dc-bone);
+  text-shadow: none;
+  box-shadow: inset 0 0 10px rgba(125, 182, 240, 0.12);
 }
-[data-theme="glitch"] .tier-badge { border-radius: 2px; font-family: 'VT323', monospace; letter-spacing: 0.06em; box-shadow: none; }
-[data-theme="glitch"] .tier-S { background: rgba(255, 42, 42, 0.18); }
-[data-theme="glitch"] .tier-A { background: rgba(255, 176, 0, 0.16); }
-[data-theme="glitch"] .tier-B { background: rgba(0, 229, 255, 0.16); }
-[data-theme="glitch"] .tier-C { background: rgba(63, 92, 63, 0.3); }
+[data-theme="glitch"] .tier-badge { border-radius: 2px; font-family: var(--dc-osd); letter-spacing: 0.06em; box-shadow: none; }
+[data-theme="glitch"] .tier-S { background: rgba(224, 36, 47, 0.2); }
+[data-theme="glitch"] .tier-A { background: rgba(240, 112, 58, 0.18); }
+[data-theme="glitch"] .tier-B { background: rgba(125, 182, 240, 0.16); }
+[data-theme="glitch"] .tier-C { background: rgba(90, 98, 112, 0.3); }
 [data-theme="glitch"] .tier-D { background: rgba(70, 70, 70, 0.3); }
 [data-theme="glitch"] .status-dot { border-radius: 2px; }
 
 [data-theme="glitch"] .docked-footer {
-  background: rgba(2, 4, 2, 0.82);
+  background: rgba(4, 5, 7, 0.88);
   border-top: 1px solid var(--glass-border);
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
 
-/* Landing screen: a plain "dead air" backdrop instead of Boot
-   Hill's bespoke burn-through - dismissLanding() already falls back
-   to a straight .hidden toggle for every non-western theme, so all
-   this theme needs is its own look for that toggle. A hard, stepped
-   cut instead of the default smooth fade sells "the channel just
-   changed" without any extra JS. */
+/* Landing screen: dead air, and a hard stepped cut when you enter (the
+   channel just changed). */
 [data-theme="glitch"] .landing-screen {
-  background: repeating-linear-gradient(0deg, rgba(57,255,20,0.05) 0px, rgba(57,255,20,0.05) 1px, transparent 1px, transparent 3px), radial-gradient(circle at center, #0a120a 0%, #020302 100%);
+  background: repeating-linear-gradient(0deg, rgba(233,228,216,0.035) 0px, rgba(233,228,216,0.035) 1px, transparent 1px, transparent 3px), radial-gradient(circle at center, #0d1014 0%, #030405 100%);
   transition: opacity 0.12s steps(4, end), visibility 0.12s;
 }
 [data-motion="off"] [data-theme="glitch"] .landing-screen { transition: opacity 0.3s ease, visibility 0.3s; }
@@ -3621,6 +3719,28 @@
 }
 [data-motion="off"] [data-theme="glitch"] .app-container::after { animation: none; opacity: 0; }
 [data-motion="off"] [data-theme="glitch"] .landing-screen::after { animation: none; opacity: 0; }
+/* (the séance fires the jolt once, now, as the channel goes) */
+html.dc-jolt-now[data-theme="glitch"] .app-container::after { animation: dc-jolt-now 0.62s steps(1, end) 1; }
+@keyframes dc-jolt-now {
+  0% { opacity: 0.6; transform: translate3d(-14px, 0, 0); filter: brightness(1); }
+  8% { opacity: 0.1; transform: translate3d(10px, 0, 0); }
+  16% { opacity: 1; transform: translate3d(0, -4px, 0) skewX(-3deg); filter: brightness(2.6) contrast(1.6) hue-rotate(15deg); }
+  24% { opacity: 0.15; transform: translate3d(-8px, 0, 0); filter: brightness(1); }
+  34% { opacity: 0.75; transform: translate3d(7px, 3px, 0) skewX(2deg); }
+  42% { opacity: 0.1; transform: translate3d(0, 0, 0); }
+  52% { opacity: 1; transform: translate3d(-6px, 2px, 0); filter: brightness(2.4) contrast(1.6) hue-rotate(-10deg); }
+  60% { opacity: 0.3; transform: translate3d(9px, -3px, 0) skewX(1deg); filter: brightness(1); }
+  72% { opacity: 0.65; transform: translate3d(-3px, 0, 0); }
+  84% { opacity: 0.15; transform: translate3d(0, 0, 0); }
+  100% { opacity: 0; transform: translate3d(0, 0, 0); filter: brightness(1); }
+}
+
+/* Quiet: the set held still and read more easily - larger numbers, the
+   small print lifted. */
+html[data-motion="off"][data-theme="glitch"] .hero-ring-circle { font-size: 2.6rem; }
+html[data-motion="off"][data-theme="glitch"] .casino-name { font-size: 1.12rem; }
+html[data-motion="off"][data-theme="glitch"] .card-status .ready-at,
+html[data-motion="off"][data-theme="glitch"] .cooldown-chip { color: #b7c0cc; }
 
 /* ==========================================================================
    Tabular figures on every ticking or tabulated number
@@ -4453,3 +4573,623 @@ html[data-motion="off"][data-theme="executive"] #dailyRunOverlay::after { animat
   background: rgba(239, 68, 68, 0.1);
   color: #fca5a5;
 }
+
+/* ============================================================
+   HOW MUCH SHOW (assets/show.js)
+   Showroom / Lounge / Quiet, and the Executive room's lively pieces:
+   the gold edge light, the watch-bezel ring, the collect glint and the
+   payout. All of it is [data-theme="executive"], so the visualized
+   skin's pages wear it too, and with motion off both hold still (the
+   edge and the ring stay as a still picture of the run).
+   ============================================================ */
+
+/* The level rows: Settings and the tour's last step */
+.show-levels { display: grid; gap: 7px; }
+.show-level { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 10px; align-items: center; width: 100%; text-align: left; padding: 9px 10px 9px 9px; border-radius: 14px; cursor: pointer; font-family: inherit; color: var(--text-main); background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); box-shadow: inset 0 1px 2px rgba(0,0,0,0.5); }
+.show-level[aria-checked="true"] { border-color: color-mix(in srgb, var(--accent-gold) 60%, transparent); background: color-mix(in srgb, var(--accent-gold) 7%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-gold) 18%, transparent), 0 0 18px color-mix(in srgb, var(--accent-gold) 8%, transparent); }
+.show-level:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
+.show-mini { width: 48px; height: 48px; display: block; }
+.show-level-name { display: block; font-size: 0.9rem; font-weight: 800; margin-bottom: 2px; }
+.show-level-desc { display: block; font-size: 0.72rem; line-height: 1.35; color: var(--text-muted); }
+.show-level-meter { display: grid; justify-items: end; gap: 4px; }
+.show-bars { display: flex; gap: 2px; }
+.show-bars i { width: 4px; height: 10px; border-radius: 1px; background: rgba(255,255,255,0.12); }
+.show-bars i.on { background: var(--accent-gold); }
+.show-meter-cap { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
+.show-replay { width: 100%; max-width: 100%; margin-top: 10px; border-color: var(--accent-gold); color: var(--accent-gold); }
+.show-replay[hidden] { display: none; }
+.show-replay:disabled { border-color: var(--glass-border); color: var(--text-dim); cursor: default; }
+.show-replay:disabled:hover { background: rgba(0,0,0,0.6); border-color: var(--glass-border); color: var(--text-dim); }
+.show-sheet.sheet-backdrop { align-items: flex-end; }
+.show-sheet .sheet-modal { max-width: 460px; }
+.show-eyebrow { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+.show-sub { font-size: 0.8rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 12px; }
+
+/* The gold edge light: a hairline round the screen, lit for today's run
+   from the top centre clockwise (show.js sets the dash), under every sheet,
+   the tour, the landing and the table. The highlight is a comet riding the
+   same path (offset-path): a bright head and five fading segments, each
+   only 12px long so it bends round a corner instead of cutting across it,
+   and circling it moves layers rather than repainting the edge. 12 s a
+   lap. */
+.show-edge, .show-edge-hi { display: none; }
+[data-theme="executive"] .show-edge { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 95; pointer-events: none; overflow: visible; }
+.show-edge path { fill: none; }
+.show-edge-base { stroke: rgba(212,175,55,0.17); stroke-width: 1; }
+.show-edge-glow { stroke: #D4AF37; stroke-width: 3; opacity: 0.32; }
+.show-edge-lit { stroke: #DDBB4E; stroke-width: 1.5; stroke-linecap: round; }
+[data-theme="executive"] .show-edge-hi {
+  --k: 0;
+  display: block; position: fixed; left: 0; top: 0; z-index: 95; pointer-events: none;
+  width: 12px; height: 1.6px; border-radius: 1px;
+  /* each segment fades in and out along its length, so where neighbours
+     overlap they add up to an even streak instead of beads */
+  background: linear-gradient(90deg, rgba(255,241,204,0) 0%, rgba(255,241,204,0.92) 45%, rgba(255,241,204,0.92) 55%, rgba(255,241,204,0) 100%);
+  opacity: calc(1 - var(--k) * 0.17);
+  offset-rotate: auto; offset-distance: 0%;
+  /* the head leads: each segment behind it is 30 ms (about 6px) later on
+     the same path, so the segments overlap into one bending streak */
+  animation: show-edge-run 12s linear infinite;
+  animation-delay: calc((var(--k) - 5) * 30ms);
+}
+[data-theme="executive"] .show-edge-hi.head { filter: drop-shadow(0 0 2.5px rgba(232,200,96,0.9)); height: 2px; }
+@keyframes show-edge-run { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+html[data-motion="off"] .show-edge-hi { display: none !important; animation: none; }
+html[data-motion="off"] .show-edge-glow { display: none; }
+
+/* The watch-bezel ring: a circular-brushed bezel carrying 60 gold-filled
+   minute ticks, the run as a gold arc in a groove with a polished bead at
+   its head, and the dial the ready count sits on (which opens into the
+   payout's port). The count keeps its own element on top. */
+.show-bezel { display: none; }
+[data-theme="executive"] .hero-ring-wrapper { width: 88px; height: 88px; }
+[data-theme="executive"] .show-bezel { display: block; position: absolute; inset: 0; pointer-events: none; }
+[data-theme="executive"] .show-bezel::before { content: ''; position: absolute; inset: 4%; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.7), 0 1px 2px rgba(0,0,0,0.8); }
+.show-bezel-metal { position: absolute; inset: 0; border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 0deg, rgba(255,255,255,0.045) 0deg 0.35deg, transparent 0.35deg 1.1deg),
+    conic-gradient(from 0deg, #242320 0deg, #131314 70deg, #2e2b25 128deg, #151510 160deg, #0e0e0f 220deg, #534b36 296deg, #a8966a 317deg, #4a4432 340deg, #242320 360deg);
+  -webkit-mask: radial-gradient(circle, transparent 69.4%, #000 70%, #000 86.4%, transparent 87%);
+  mask: radial-gradient(circle, transparent 69.4%, #000 70%, #000 86.4%, transparent 87%); }
+.show-bezel svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.show-tick { stroke: #5b4a22; stroke-linecap: round; }
+.show-tick.lit { stroke: #E6C65E; }
+[data-theme="executive"] .hero-ring-circle { position: absolute; inset: 20.5%; width: auto; height: auto; z-index: 1; border: 0; background: transparent; box-shadow: none; font-size: 1.35rem; }
+
+/* One gold glint across a card when it is collected: a warm band, and a
+   spark running along the card's top hairline where the light lands. */
+.show-glint { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; z-index: 2; }
+.show-glint::before { content: ''; position: absolute; top: -30%; bottom: -30%; left: 0; width: 60%; opacity: 0; mix-blend-mode: screen;
+  background: linear-gradient(100deg, transparent 0%, rgba(255,236,196,0) 32%, rgba(255,236,196,0.16) 46%, rgba(255,248,226,0.3) 50%, rgba(255,236,196,0.16) 54%, transparent 68%);
+  transform: translateX(-120%) skewX(-10deg); animation: show-glint 1000ms cubic-bezier(.42,0,.2,1) forwards; }
+.show-glint::after { content: ''; position: absolute; top: 0; left: 0; width: 64px; height: 1px; opacity: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,243,208,0.95), transparent);
+  transform: translateX(-70px); animation: show-spark 1000ms cubic-bezier(.42,0,.2,1) forwards; }
+@keyframes show-glint { 0% { transform: translateX(-120%) skewX(-10deg); opacity: 0; } 14% { opacity: 1; } 86% { opacity: 1; } 100% { transform: translateX(230%) skewX(-10deg); opacity: 0; } }
+@keyframes show-spark { 0% { transform: translateX(-70px); opacity: 0; } 18% { opacity: 1; } 82% { opacity: 1; } 100% { transform: translateX(var(--show-w, 320px)); opacity: 0; } }
+html[data-motion="off"] .show-glint { display: none; }
+
+/* The payout: the port behind the glass (clipped to the dial), the
+   shadows the pieces drop on the glass, and the room in front of it.
+   Above the page, under every sheet and toast. */
+.show-fx { position: fixed; inset: 0; pointer-events: none; }
+.show-fx-back { z-index: 96; perspective: 1000px; transform-style: preserve-3d; }
+.show-fx-shadows { z-index: 97; overflow: hidden; }
+.show-fx-front { z-index: 98; perspective: 1000px; transform-style: preserve-3d; }
+.show-flash { position: fixed; left: -999px; top: -999px; width: 150px; height: 150px; margin: -75px 0 0 -75px; border-radius: 50%; z-index: 96; pointer-events: none; opacity: 0; mix-blend-mode: screen;
+  background: radial-gradient(circle, rgba(255,236,190,0.5) 0%, rgba(232,200,96,0.18) 32%, transparent 62%); }
+.show-shd { position: absolute; left: 0; top: 0; background: #000; }
+.show-piece { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
+.show-cl { position: absolute; inset: 0; border-radius: 50%; background-size: 100% 100%; }
+.show-cl.face { backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; }
+.show-cl .shade, .show-np-f .shade { position: absolute; inset: 0; background: #000; opacity: 0.3; border-radius: inherit; }
+.show-cl .spec { position: absolute; inset: 0; border-radius: 50%; opacity: 0; mix-blend-mode: screen;
+  background: radial-gradient(circle at 42% 38%, rgba(255,246,214,0.9) 0%, rgba(255,226,150,0.35) 22%, transparent 48%); }
+.show-np { position: absolute; top: 0; height: 100%; transform-style: preserve-3d; }
+.show-np.l { right: 100%; transform-origin: 100% 50%; }
+.show-np.r { left: 100%; transform-origin: 0 50%; }
+.show-np-f { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; background-repeat: no-repeat; }
+.show-np-f.b { transform: rotateY(180deg); }
+.show-np-f .sheen { position: absolute; inset: 0; opacity: 0; mix-blend-mode: screen; background: linear-gradient(115deg, transparent 20%, rgba(255,250,236,0.55) 50%, transparent 80%); }
+html[data-motion="off"] .show-fx, html[data-motion="off"] .show-flash { display: none; }
+
+/* Quiet: the room held still, and read more easily - larger numbers,
+   stronger contrast on the small print. (With motion off, the visualized
+   skin's pages are these too.) */
+html[data-motion="off"][data-theme="executive"] .hero-ring-circle { font-size: 1.6rem; }
+html[data-motion="off"][data-theme="executive"] .casino-name { font-size: 1.06rem; }
+html[data-motion="off"][data-theme="executive"] .card-status { opacity: 1; }
+html[data-motion="off"][data-theme="executive"] .status-time { font-size: 0.88rem; }
+html[data-motion="off"][data-theme="executive"] .card-status .ready-at,
+html[data-motion="off"][data-theme="executive"] .date-header,
+html[data-motion="off"][data-theme="executive"] .hero-details p,
+html[data-motion="off"][data-theme="executive"] .cooldown-chip { color: #AEB1B8; }
+
+/* =========================================================
+   OBSIDIAN LEDGER'S ROOM (assets/rooms/obsidian.js) - a celestial
+   almanac: quiet, matte and print-like, brass instruments and parchment
+   on warm black. Its Lounge and Quiet levels; the pieces' makers are in
+   the room's own header. The type: Cormorant Garamond for the wordmark,
+   the names and the status line, Cinzel for labels, tabs and buttons, IBM
+   Plex Mono for numbers and timers (the room fetches them when it is
+   first built - until then the fallbacks stand in).
+   ========================================================= */
+[data-theme="obsidian"] {
+  --ob-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --ob-caps: 'Cinzel', Georgia, serif;
+  --ob-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  --ob-brass: #B08D57;
+  --ob-brass-hi: #E6CC96;
+  --ob-brass-lo: #8C6A3A;
+  --ob-ink: rgba(236, 229, 217, 0.10);
+}
+/* The page: warm black, the grain of laid paper, and a star chart engraved
+   so faintly it reads as texture - a few dozen stars and three figures, at
+   a few per cent. Fixed behind the deck; the panels are near-opaque, so it
+   only shows between them. */
+[data-theme="obsidian"] body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='390' height='844' viewBox='0 0 390 844'%3E%3Cg fill='%23ECE5D9'%3E%3Ccircle cx='38' cy='92' r='1.1'/%3E%3Ccircle cx='71' cy='131' r='.6'/%3E%3Ccircle cx='112' cy='108' r='.8'/%3E%3Ccircle cx='150' cy='150' r='.5'/%3E%3Ccircle cx='331' cy='64' r='.9'/%3E%3Ccircle cx='356' cy='118' r='.6'/%3E%3Ccircle cx='302' cy='171' r='1.2'/%3E%3Ccircle cx='270' cy='128' r='.5'/%3E%3Ccircle cx='24' cy='388' r='.7'/%3E%3Ccircle cx='60' cy='446' r='1'/%3E%3Ccircle cx='96' cy='402' r='.6'/%3E%3Ccircle cx='365' cy='372' r='.8'/%3E%3Ccircle cx='338' cy='430' r='.5'/%3E%3Ccircle cx='372' cy='498' r='1.1'/%3E%3Ccircle cx='44' cy='640' r='.6'/%3E%3Ccircle cx='88' cy='700' r='.9'/%3E%3Ccircle cx='131' cy='662' r='.5'/%3E%3Ccircle cx='318' cy='690' r='.7'/%3E%3Ccircle cx='350' cy='742' r='1'/%3E%3Ccircle cx='280' cy='770' r='.5'/%3E%3Ccircle cx='205' cy='36' r='.6'/%3E%3Ccircle cx='190' cy='812' r='.7'/%3E%3C/g%3E%3Cg fill='none' stroke='%23ECE5D9' stroke-width='.35'%3E%3Cpath d='M38 92 71 131 112 108 150 150'/%3E%3Cpath d='M331 64 356 118 302 171 270 128'/%3E%3Cpath d='M24 388 60 446 96 402M338 430 365 372M338 430 372 498'/%3E%3Cpath d='M44 640 88 700 131 662M318 690 350 742 280 770'/%3E%3C/g%3E%3C/svg%3E") center top / 100% auto no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9 .6' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 .92 0 0 0 0 .89 0 0 0 0 .85 0 0 0 .5 -.18'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.07;
+}
+/* (the deck over the star chart and over the orrery's far half - see
+   .ob-orrery-back; the docked footer keeps its own z-index: 50, already
+   over both) */
+[data-theme="obsidian"] .app-container { position: relative; z-index: 2; }
+
+/* The masthead: the date in small capitals, the wordmark set in Cormorant
+   with "Roll Over" in brass italic, and under it a rule with a star cut in
+   its middle. */
+[data-theme="obsidian"] .date-header { font-family: var(--ob-caps); font-weight: 500; letter-spacing: 0.24em; color: var(--text-muted); font-size: 0.66rem; }
+[data-theme="obsidian"] .app-title { font-family: var(--ob-serif); font-weight: 500; font-size: 2.45rem; letter-spacing: 0; line-height: 1.05; margin-bottom: 20px; position: relative; padding-bottom: 14px; }
+[data-theme="obsidian"] .app-title span { font-style: italic; font-weight: 500; color: var(--ob-brass); }
+[data-theme="obsidian"] .landing-title { font-family: var(--ob-serif); font-weight: 500; }
+[data-theme="obsidian"] .landing-title span { font-style: italic; }
+[data-theme="obsidian"] .app-title::after {
+  content: ''; position: absolute; left: 50%; bottom: 0; width: 124px; height: 9px; transform: translateX(-50%);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 124 9'%3E%3Cpath d='M0 4.5h52M72 4.5h52' stroke='%23B08D57' stroke-width='.6' opacity='.7'/%3E%3Cpath d='M62 .6l1.1 2.8 2.8 1.1-2.8 1.1L62 8.4l-1.1-2.8-2.8-1.1 2.8-1.1z' fill='%23C29E63'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* Panels: matte paper-dark boards with a single hairline, no glow. */
+[data-theme="obsidian"] .glass-panel { background: rgba(27, 25, 22, 0.94); border: 1px solid var(--ob-ink); box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset, 0 6px 16px rgba(0,0,0,0.45); }
+[data-theme="obsidian"] .hero-stat-card { border-radius: 12px; background: rgba(27, 25, 22, 0.94); padding: 16px 18px; }
+[data-theme="obsidian"] .ledger-card { border-radius: 10px; }
+
+/* The orrery round the ready count: the plate is drawn by the room (SVG);
+   the count sits on it in Cormorant, READY cut small under it. */
+.ob-plate { display: none; }
+[data-theme="obsidian"] .hero-ring-wrapper { width: 112px; height: 112px; }
+[data-theme="obsidian"] .ob-plate { display: block; position: absolute; inset: 0; pointer-events: none; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.55)); }
+.ob-plate svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ob-cut { stroke: rgba(0,0,0,0.75); stroke-width: 0.55; fill: none; }
+.ob-wall { stroke: rgba(214, 190, 140, 0.32); stroke-width: 0.4; fill: none; }
+.ob-path { fill: none; stroke: #9A7B4C; stroke-width: 0.9; stroke-linecap: round; stroke-dasharray: 0.01 2.49; opacity: 0.75; }
+.ob-arc { fill: none; stroke: url(#obArc); stroke-width: 2.1; stroke-linecap: round; }
+.ob-star { fill: #C29E63; }
+[data-theme="obsidian"] .hero-ring-circle { position: absolute; inset: 22%; width: auto; height: auto; z-index: 1; border: 0; background: transparent; box-shadow: none;
+  flex-direction: column; gap: 0; font-family: var(--ob-serif); font-weight: 600; font-size: 2.15rem; line-height: 1; color: var(--text-main); font-variant-numeric: lining-nums; }
+[data-theme="obsidian"] .hero-ring-circle::after { content: 'READY'; font-family: var(--ob-caps); font-size: 0.42rem; font-weight: 600; letter-spacing: 0.26em; color: var(--text-muted); margin-top: 3px; padding-left: 0.26em; }
+
+/* The hand's button: brass, lettered in Cinzel; waiting, a hairline. */
+[data-theme="obsidian"] .btn-start-run.hero-run-btn { font-family: var(--ob-caps); font-weight: 600; letter-spacing: 0.11em; font-size: 0.74rem; line-height: 1.35; text-align: center; padding: 11px 14px; border-radius: 3px; border: 1px solid #C9A86B;
+  color: #1c1812; background: linear-gradient(180deg, #D8B983 0%, #B99664 52%, #A1804F 100%); box-shadow: inset 0 1px 0 rgba(255,244,214,0.45), 0 2px 6px rgba(0,0,0,0.4); }
+[data-theme="obsidian"] .btn-start-run.hero-run-btn:disabled { background: transparent; color: var(--text-dim); border-color: var(--ob-ink); box-shadow: none; }
+[data-theme="obsidian"] .hero-details p { font-family: var(--ob-mono); font-size: 0.7rem; }
+[data-theme="obsidian"] .hero-details h2 { font-family: var(--ob-serif); font-weight: 600; font-size: 1.3rem; }
+
+/* Tabs: set as a running head - small capitals, no pills, the one you are
+   on in brass with a rule under it. */
+[data-theme="obsidian"] .nav-pill-group { background: transparent; border: 0; border-top: 1px solid var(--ob-ink); border-bottom: 1px solid var(--ob-ink); border-radius: 0; box-shadow: none; padding: 2px 4px; gap: 2px; }
+[data-theme="obsidian"] .nav-tab { font-family: var(--ob-caps); font-weight: 600; font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; border-radius: 0; border: 0; padding: 12px 8px; color: var(--text-muted); }
+[data-theme="obsidian"] .nav-tab .tab-ico { display: none; }
+[data-theme="obsidian"] .nav-tab.active { background: transparent; border: 0; color: var(--ob-brass-hi); box-shadow: inset 0 -1px 0 var(--ob-brass); }
+
+/* The search line and the filters: a hairline field, italic placeholder;
+   chips as small-capital labels in a square hairline. */
+[data-theme="obsidian"] .catalog-search { border-radius: 4px; font-family: var(--ob-serif); font-size: 1.05rem; }
+[data-theme="obsidian"] .catalog-search::placeholder { font-style: italic; color: var(--text-dim); }
+[data-theme="obsidian"] .filter-btn, [data-theme="obsidian"] .sort-trigger-btn { font-family: var(--ob-caps); font-weight: 600; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; border-radius: 3px; background: transparent; }
+[data-theme="obsidian"] .filter-btn.active { background: rgba(176, 141, 87, 0.12); border-color: var(--ob-brass); color: var(--ob-brass-hi); }
+
+/* A card: the platform's planet, its name in Cormorant, a circled tier
+   letter, the status in italic (a cut star when ready), timers in Plex. */
+[data-theme="obsidian"] .casino-name { font-family: var(--ob-serif); font-weight: 600; font-size: 1.36rem; letter-spacing: 0; line-height: 1.1; }
+[data-theme="obsidian"] .card-title-row .tier-badge { display: inline-flex; align-items: center; justify-content: center; width: 19px; height: 19px; padding: 0; border-radius: 50%;
+  font-family: var(--ob-caps); font-size: 0.6rem; font-weight: 700; background: transparent; border: 1px solid currentColor; }
+[data-theme="obsidian"] .cooldown-chip { font-family: var(--ob-mono); font-weight: 400; border-radius: 3px; }
+[data-theme="obsidian"] .card-status { font-family: var(--ob-serif); font-style: italic; font-size: 1.02rem; opacity: 1; gap: 7px; }
+[data-theme="obsidian"] .status-time { display: inline-block; font-family: var(--ob-serif); font-weight: 600; text-transform: lowercase; color: var(--accent-green); }
+[data-theme="obsidian"] .status-time::first-letter { text-transform: uppercase; }
+[data-theme="obsidian"] .status-dot { width: auto; height: auto; background: none; border-radius: 0; box-shadow: none; }
+[data-theme="obsidian"] .status-dot::before { content: '\2726'; font-style: normal; font-size: 0.72rem; color: var(--accent-green); }
+[data-theme="obsidian"] .status-dot.cooldown::before { content: '\2727'; color: var(--ob-brass-lo); }
+[data-theme="obsidian"] .status-dot.cooldown + .status-time { font-family: var(--ob-mono); font-style: normal; font-weight: 500; font-size: 0.78rem; text-transform: none; color: var(--text-main); }
+[data-theme="obsidian"] .status-dot.cooldown + .status-time::first-letter { text-transform: none; }
+[data-theme="obsidian"] .card-status .ready-at { font-family: var(--ob-serif); font-style: italic; font-size: 0.9rem; color: var(--text-dim); }
+/* the cooldown as a planet's path: a brass hairline along the card's foot
+   with a bead at its head */
+[data-theme="obsidian"] .cd-fill { height: 1px; bottom: 7px; left: 14px; max-width: calc(100% - 28px); background: linear-gradient(90deg, rgba(176,141,87,0.25), rgba(194,158,99,0.85)); opacity: 1; overflow: visible; }
+[data-theme="obsidian"] .cd-fill::after { content: ''; position: absolute; right: -3px; top: -2.5px; width: 6px; height: 6px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 32%, #F4E6C4 0%, #C29E63 45%, #6f5430 100%); box-shadow: 1px 1.5px 2px rgba(0,0,0,0.6); }
+/* The buttons: OPEN is brass, lettered in Cinzel; WAIT a hairline; the
+   small ones square hairlines. */
+[data-theme="obsidian"] .btn-open { font-family: var(--ob-caps); font-weight: 700; letter-spacing: 0.14em; font-size: 0.66rem; border-radius: 3px; padding: 9px 14px;
+  background: linear-gradient(180deg, #D0B07A 0%, #B08D57 55%, #977543 100%); color: #1c1812; box-shadow: inset 0 1px 0 rgba(255,244,214,0.4), 0 1px 3px rgba(0,0,0,0.5); }
+[data-theme="obsidian"] .btn-open.cooldown { background: transparent; border: 1px solid var(--ob-ink); color: var(--text-dim); box-shadow: none; font-size: 0.62rem; }
+[data-theme="obsidian"] .btn-check, [data-theme="obsidian"] .btn-share { border-radius: 3px; border-color: var(--ob-ink); color: var(--text-muted); }
+[data-theme="obsidian"] .btn-snooze { font-family: var(--ob-caps); font-weight: 700; font-size: 0.72rem; }
+[data-theme="obsidian"] .btn-share { font-family: var(--ob-caps); font-weight: 600; letter-spacing: 0.1em; font-size: 0.58rem; }
+[data-theme="obsidian"] .btn-dock { font-family: var(--ob-caps); font-weight: 600; letter-spacing: 0.14em; font-size: 0.72rem; border-radius: 3px; background: transparent; border-color: var(--ob-brass); color: var(--ob-brass-hi); box-shadow: none; }
+/* (the footer's second button carries an orange glow inline) */
+[data-theme="obsidian"] .docked-footer .btn-dock { border-color: var(--ob-ink) !important; color: var(--text-muted) !important; text-shadow: none !important; box-shadow: none !important; }
+[data-theme="obsidian"] .docked-footer .btn-dock:first-child { border-color: var(--ob-brass) !important; color: var(--ob-brass-hi) !important; }
+[data-theme="obsidian"] .sort-stack-chip { font-family: var(--ob-caps); font-weight: 600; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 3px; background: transparent; border-color: rgba(176,141,87,0.45); color: var(--ob-brass-hi); }
+
+/* The planets: each platform a turned boxwood ball painted a flat earth
+   colour (its hue, greyed toward the almanac's palette) and varnished -
+   lit from above left, a soft terminator, a varnish spark - its initials
+   cut in and filled with parchment. A brass ring on two pins round it: the
+   far half passes behind the ball (in its shadow, darker), the near half
+   crosses in front and drops a thin shadow on it. */
+[data-theme="obsidian"] .card-left { gap: 20px; }
+[data-theme="obsidian"] .avatar-wrap { isolation: isolate; margin-left: 4px; }
+/* (the paint: the platform's own hue, greyed to a pigment, under a warm
+   varnish that yellows everything a little toward the brass) */
+[data-theme="obsidian"] .casino-avatar { position: relative; z-index: 1; width: 42px; height: 42px; border: 0;
+  background:
+    radial-gradient(circle at 34% 27%, rgba(255,250,236,0.5) 0%, rgba(255,250,236,0) 15%),
+    radial-gradient(circle at 40% 36%, rgba(214,178,118,0.26) 0%, rgba(176,141,87,0.1) 55%, rgba(0,0,0,0) 80%),
+    radial-gradient(circle at 36% 32%, hsl(var(--avatar-hue, 30) 20% 60%) 0%, hsl(var(--avatar-hue, 30) 17% 41%) 42%, hsl(var(--avatar-hue, 30) 20% 21%) 80%, hsl(var(--avatar-hue, 30) 24% 10%) 100%);
+  box-shadow: 2px 3px 5px rgba(0,0,0,0.55);
+  font-family: var(--ob-caps); font-weight: 700; font-size: 0.74rem; letter-spacing: 0.04em; color: rgba(242, 235, 222, 0.94);
+  text-shadow: 0 -0.5px 0 rgba(0,0,0,0.55), 0 0.6px 0 rgba(255,255,255,0.18) !important; }
+[data-theme="obsidian"] .avatar-wrap::before,
+[data-theme="obsidian"] .avatar-wrap::after {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 60px; height: 16px; margin: -8px 0 0 -30px; border-radius: 50%;
+  border: 1.2px solid #B99664; box-shadow: 0 0 0 0.4px rgba(0,0,0,0.55), inset 0 0 0 0.4px rgba(255,240,205,0.35);
+  transform: rotate(-17deg); pointer-events: none;
+}
+[data-theme="obsidian"] .avatar-wrap::before { z-index: 0; clip-path: inset(0 0 50% 0); border-color: #6f5a38; opacity: 0.9; }
+[data-theme="obsidian"] .avatar-wrap::after { z-index: 2; clip-path: inset(50% 0 0 0); filter: drop-shadow(0 1.2px 0.8px rgba(0,0,0,0.55)); }
+[data-theme="obsidian"] .streak-badge { z-index: 3; font-family: var(--ob-mono); font-weight: 500; border-radius: 3px; background: #2a2520; color: var(--ob-brass-hi); border: 1px solid var(--ob-brass); box-shadow: none; }
+
+/* A collect: a moon once round the card's planet's ring - out through the
+   near side (larger, in the lamp), round behind the ball (smaller, in its
+   shadow) and home, slow to leave and slow to arrive. */
+.ob-orbit { position: absolute; left: 50%; top: 50%; width: 60px; height: 16px; margin: -8px 0 0 -30px; transform: rotate(-17deg); pointer-events: none;
+  animation: ob-orbit-z 1.25s linear forwards; }
+.ob-moon { position: absolute; left: 0; top: 0; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #FFF8E6 0%, #E4D6B6 40%, #8f8266 100%); box-shadow: 1px 1.5px 2px rgba(0,0,0,0.55);
+  offset-path: path('M60 8 A30 8 0 1 1 0 8 A30 8 0 1 1 60 8'); offset-rotate: 0deg; offset-distance: 0%;
+  animation: ob-moon 1.25s cubic-bezier(.55,.05,.35,1) forwards; }
+@keyframes ob-orbit-z { 0% { z-index: 4; } 49% { z-index: 4; } 51% { z-index: 0; } 100% { z-index: 0; } }
+@keyframes ob-moon {
+  0% { offset-distance: 0%; transform: scale(1.05); filter: brightness(1.05); opacity: 0; }
+  6% { opacity: 1; }
+  25% { transform: scale(1.22); filter: brightness(1.15); }
+  50% { transform: scale(1); filter: brightness(0.9); }
+  75% { transform: scale(0.78); filter: brightness(0.55); }
+  94% { opacity: 1; }
+  100% { offset-distance: 100%; transform: scale(1.05); filter: brightness(1.05); opacity: 0; }
+}
+html[data-motion="off"] .ob-orbit { display: none; }
+
+/* Orbit: the almanac's double rule round the glass, hour ticks down its
+   long edges, today's run as the lit length of the outer rule, and the
+   brass ball riding the groove - a clock (see the room's header). Under
+   every sheet, the tour, the landing and the table, like the gold edge. */
+.ob-edge, .ob-body { display: none; }
+[data-theme="obsidian"] .ob-edge { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 95; pointer-events: none; overflow: visible; }
+.ob-edge path { fill: none; }
+.ob-rule { stroke: rgba(176, 141, 87, 0.30); stroke-width: 0.8; }
+.ob-rule-2 { stroke: rgba(236, 229, 217, 0.10); stroke-width: 0.5; }
+.ob-tick { stroke: rgba(0, 0, 0, 0.7); stroke-width: 0.6; }
+.ob-tick-lit { stroke: rgba(194, 158, 99, 0.55); stroke-width: 0.45; }
+.ob-edge-lit { stroke: #C29E63; stroke-width: 1.2; stroke-linecap: round; }
+[data-theme="obsidian"] .ob-body { display: block; position: fixed; left: 0; top: 0; width: 7.2px; height: 7.2px; border-radius: 50%; z-index: 95; pointer-events: none;
+  background: radial-gradient(circle at 34% 28%, #FFF6DC 0%, #E6CC96 22%, #B08D57 55%, #5e4726 100%);
+  box-shadow: 1.2px 1.8px 2.4px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(40,30,15,0.6); }
+
+/* The payout: the orrery out of the phone (assets/intro3d/orrery.mjs),
+   drawn twice - what is behind the glass under the app (between it and the
+   star chart), what is in front of it over the app, under every sheet. */
+.ob-orrery { position: fixed; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.ob-orrery-back { z-index: 1; }
+.ob-orrery-front { z-index: 98; }
+html[data-motion="off"] .ob-orrery { display: none; }
+
+/* The study (Showroom: assets/intro3d/study.mjs). The ledger's pages, laid
+   open on the desk: paper ruled in faint blue with the ledger's red double
+   margin, the gutter in shadow where the leaves go down into the binding;
+   set in Cormorant and Cinzel. Held at 30 page pixels to the centimetre
+   (a 38 x 25 cm folio: 1140 x 750) and scaled down in 3D, so the print is
+   rasterised sharp. Laid out to the pixel as drawPages() prints the same
+   spread onto the book for the dive, so the one hands over to the other
+   without a jump: each line placed by its baseline (top = baseline - 0.8
+   of its size). */
+.r3s-ledger { pointer-events: auto; color: #2b241a; font-family: 'Cormorant Garamond', Georgia, serif; line-height: 1; }
+.r3s-ledger-in { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr;
+  background: radial-gradient(62% 90% at 50% 40%, #efe7d3 0%, #e6dcc3 70%, #d9ccae 100%); border-radius: 6px; }
+.r3s-page { position: relative; background: repeating-linear-gradient(180deg, transparent 0 53px, rgba(70,95,140,0.16) 53px 54px); }
+.r3s-page::before { content: ''; position: absolute; top: 0; bottom: 0; left: 62px; width: 4.2px; border-left: 1.8px solid rgba(165,45,40,0.45); border-right: 1.8px solid rgba(165,45,40,0.45); }
+.r3s-right::before { left: 32px; }
+.r3s-left { box-shadow: inset -46px 0 40px -30px rgba(60,40,15,0.42); }
+.r3s-right { box-shadow: inset 46px 0 40px -30px rgba(60,40,15,0.42); }
+.r3s-page > * { position: absolute; margin: 0; white-space: nowrap; }
+.r3s-eyebrow { top: 76px; font-family: 'Cinzel', Georgia, serif; font-weight: 600; font-size: 25px; letter-spacing: 0; color: #6d5530; }
+.r3s-left > * { left: 88px; }
+.r3s-right > * { left: 60px; }
+.r3s-day { top: 120px; font-style: italic; font-weight: 500; font-size: 38px; color: #3b3122; }
+.r3s-clock { top: 183px; display: flex; align-items: baseline; gap: 14px; }
+.r3s-now { font-weight: 600; font-size: 146px; line-height: 1; color: #221c13; font-variant-numeric: lining-nums; }
+.r3s-ampm { font-family: 'Cinzel', Georgia, serif; font-weight: 500; font-size: 28px; color: #6d5530; }
+.r3s-line { right: 60px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.4px dotted rgba(90,70,40,0.35); padding-bottom: 8px; }
+.r3s-l1 { top: 391px; }
+.r3s-l2 { top: 461px; }
+.r3s-line span { font-style: italic; font-weight: 500; font-size: 36px; color: #5d4f3a; }
+.r3s-line b { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 500; font-size: 30px; color: #2b241a; }
+.r3s-hand { top: 169px; display: flex; align-items: baseline; gap: 16px; }
+.r3s-ready { font-weight: 600; font-size: 164px; line-height: 1; color: #221c13; font-variant-numeric: lining-nums; }
+.r3s-ready-k { font-style: italic; font-weight: 500; font-size: 50px; color: #5d4f3a; }
+.r3s-value { top: 333px; font-style: italic; font-weight: 500; font-size: 34px; color: #5d4f3a; }
+/* the hand's plate: brass, lettered in Cinzel - struck, not printed */
+.r3s-run { top: 420px; right: 60px; height: 92px; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; border: 2px solid #8c6a3a; border-radius: 0; cursor: pointer;
+  font-family: 'Cinzel', Georgia, serif; font-weight: 700; font-size: 32px; letter-spacing: 0; color: #1c1812;
+  background: linear-gradient(180deg, #dcbf8a 0%, #bd9a66 52%, #a2814f 100%); box-shadow: inset 0 1.5px 0 rgba(255,244,214,0.6), 0 3px 6px rgba(60,40,15,0.35); }
+.r3s-run i { font-style: normal; font-size: 50px; line-height: 0.6; }
+.r3s-run:active { transform: translateY(1px); box-shadow: inset 0 1px 0 rgba(255,244,214,0.4), 0 1px 2px rgba(60,40,15,0.35); }
+.r3s-dive { top: 646px; padding: 0; border: 0; background: none; cursor: pointer; font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-weight: 600; font-size: 42px; color: #7a4a22; }
+.r3s-foot { top: 658px; font-style: italic; font-weight: 500; font-size: 28px; color: #7d6d55; }
+.r3s-ledger :focus-visible { outline: 4px solid #6d5530; outline-offset: 6px; }
+/* Inside the orrery, the way out: a small brass-edged plate at the top. */
+.r3s-out { position: absolute; top: max(16px, env(safe-area-inset-top)); left: 50%; transform: translate(-50%, -12px); opacity: 0; visibility: hidden; pointer-events: auto;
+  padding: 10px 18px; border-radius: 3px; border: 1px solid rgba(201,164,94,0.7); background: rgba(18,16,14,0.78); color: #e6cc96; cursor: pointer;
+  font-family: 'Cinzel', Georgia, serif; font-weight: 600; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase;
+  transition: opacity .5s ease, transform .5s ease, visibility 0s linear .5s; }
+.r3s-out.r3s-on { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition: opacity .6s ease .1s, transform .6s ease .1s, visibility 0s; }
+.r3s-out:focus-visible { outline: 2px solid #e6cc96; outline-offset: 3px; }
+html[data-motion="off"] .r3s-out { transition: none; }
+
+/* Quiet: the room held still and read more easily - larger numbers and
+   stronger contrast on the small print. */
+html[data-motion="off"][data-theme="obsidian"] .hero-ring-circle { font-size: 2.35rem; }
+html[data-motion="off"][data-theme="obsidian"] .casino-name { font-size: 1.44rem; }
+html[data-motion="off"][data-theme="obsidian"] .card-status .ready-at,
+html[data-motion="off"][data-theme="obsidian"] .date-header,
+html[data-motion="off"][data-theme="obsidian"] .cooldown-chip { color: #B8AFA3; }
+
+/* ---- The table's felt (Settings): four cloths, each a swatch of the
+   cloth as it lies under the lamp - a disc of it with its nap and a gold
+   hairline, ringed in gold when picked. */
+.felt-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.felt-choice { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 10px 4px 9px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.02); color: var(--text-muted); font-family: inherit; font-size: 12px; font-weight: 600; line-height: 1.2; letter-spacing: 0.04em; cursor: pointer; }
+.felt-choice[aria-checked="true"] { border-color: var(--accent-gold); color: var(--text-main); background: var(--accent-gold-dim); }
+.felt-swatch { width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(90% 90% at 38% 30%, rgba(255,240,215,0.22), transparent 62%), repeating-linear-gradient(45deg, rgba(0,0,0,0.08) 0 1px, transparent 1px 3px), var(--felt); box-shadow: inset 0 0 0 1.5px rgba(212,175,55,0.55), inset 0 -6px 10px rgba(0,0,0,0.35), 0 2px 5px rgba(0,0,0,0.4); }
+.felt-choice[aria-checked="true"] .felt-swatch { box-shadow: inset 0 0 0 1.5px rgba(212,175,55,0.8), inset 0 -6px 10px rgba(0,0,0,0.35), 0 0 0 2px var(--accent-gold), 0 2px 8px rgba(212,175,55,0.35); }
+/* The trim picker: each swatch a short length of the inlay under the lamp -
+   the band's scroll suggested by a fine repeat, the metal's own highlight
+   across it (see TRIMS in assets/intro3d/intro.mjs). */
+.trim-list { grid-template-columns: repeat(3, 1fr); }
+.trim-swatch { width: 40px; height: 40px; border-radius: 50%; position: relative; overflow: hidden; background: var(--trim-metal); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.55), inset 0 -6px 10px rgba(0,0,0,0.35), 0 2px 5px rgba(0,0,0,0.4); }
+.trim-swatch::before { content: ""; position: absolute; inset: 0; background: repeating-radial-gradient(circle at 30% 70%, rgba(0,0,0,0.12) 0 1px, transparent 1.5px 4px), repeating-linear-gradient(90deg, rgba(0,0,0,0.1) 0 1px, transparent 1px 6px); mix-blend-mode: multiply; }
+.trim-swatch::after { content: ""; position: absolute; inset: 0; background: linear-gradient(125deg, transparent 30%, rgba(255,255,255,var(--trim-spec, 0.55)) 46%, transparent 58%); }
+.trim-gold { --trim-metal: linear-gradient(160deg, #f3da92 0%, #d4af37 45%, #8f6a1c 100%); }
+.trim-onyx { --trim-metal: radial-gradient(90% 90% at 35% 30%, #2a2a30 0%, #0c0c0f 55%, #030304 100%); --trim-spec: 0.8; }
+.trim-silver { --trim-metal: linear-gradient(160deg, #ffffff 0%, #d9dde3 45%, #8e949c 100%); --trim-spec: 0.7; }
+.trim-crimson { --trim-metal: radial-gradient(90% 90% at 35% 30%, #ff5068 0%, #c0162e 45%, #4e0410 100%); --trim-spec: 0.75; }
+.trim-burgundy { --trim-metal: linear-gradient(160deg, #c46a5c 0%, #86342f 45%, #3e1214 100%); --trim-spec: 0.35; }
+.felt-choice[aria-checked="true"] .trim-swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.55), inset 0 -6px 10px rgba(0,0,0,0.35), 0 0 0 2px var(--accent-gold), 0 2px 8px rgba(212,175,55,0.35); }
+
+/* =========================================================
+   NEON GRID'S ROOM (assets/rooms/neon.js) - synthwave night: real neon
+   round the glass, a red moon and a grid that runs out of the screen. Its
+   Lounge and Quiet levels; the pieces' makers are in the room's own header.
+   The type: Tilt Neon for the wordmark, Rajdhani for the UI, names and
+   buttons, Orbitron for numbers and timers (fetched when the room is first
+   built - until then the fallbacks stand in).
+   ========================================================= */
+[data-theme="neon"] {
+  --nn-sign: 'Tilt Neon', 'Rajdhani', system-ui, sans-serif;
+  --nn-ui: 'Rajdhani', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --nn-num: 'Orbitron', 'Rajdhani', ui-monospace, monospace;
+  --nn-night: #07060F;
+  --nn-red: #FF2D55;
+  --nn-magenta: #FF007F;
+  --nn-hot: #FF2D95;
+  --nn-violet: #8B5CF6;
+}
+[data-theme="neon"] .app-container, [data-theme="neon"] .docked-footer { position: relative; z-index: 2; }
+[data-theme="neon"] .docked-footer { position: fixed; }
+
+/* The wordmark: lettered in neon - a white-hot core in a coloured sheath,
+   its bloom thrown on the page. "Daily" in magenta, "Roll Over" in cyan, as
+   two tubes would be. */
+[data-theme="neon"] .app-title,
+[data-theme="neon"] .landing-title { font-family: var(--nn-sign); font-weight: 400; letter-spacing: 0.02em; -webkit-text-stroke: 0; color: #FFE9F3;
+  text-shadow: 0 0 1px #fff, 0 0 3px var(--nn-hot), 0 0 9px var(--nn-magenta), 0 0 22px rgba(255,0,127,0.65), 0 0 44px rgba(255,0,127,0.3); }
+[data-theme="neon"] .app-title span,
+[data-theme="neon"] .landing-title span { -webkit-text-stroke: 0; color: #E6FCFF;
+  text-shadow: 0 0 1px #fff, 0 0 3px #7ff3ff, 0 0 9px var(--accent-cyan), 0 0 22px rgba(0,229,255,0.6), 0 0 44px rgba(0,229,255,0.28); }
+[data-theme="neon"] .app-title { font-size: 2.2rem; }
+/* (a tube now and then stutters as a real sign does - the room sets this
+   for a moment at a random interval) */
+[data-theme="neon"] .app-title.nn-stutter span { animation: nn-stutter 0.34s steps(1, end); }
+@keyframes nn-stutter { 0% { opacity: 1; } 12% { opacity: 0.35; } 22% { opacity: 1; } 40% { opacity: 0.6; } 48% { opacity: 1; } 100% { opacity: 1; } }
+
+/* Type: the UI in Rajdhani, numbers and timers in Orbitron. */
+[data-theme="neon"] .date-header { font-family: var(--nn-ui); font-weight: 700; letter-spacing: 0.22em; }
+[data-theme="neon"] .casino-name { font-family: var(--nn-ui); font-weight: 700; font-size: 1.14rem; letter-spacing: 0.01em; }
+[data-theme="neon"] .nav-tab, [data-theme="neon"] .filter-btn, [data-theme="neon"] .sort-trigger-btn,
+[data-theme="neon"] .btn-open, [data-theme="neon"] .btn-dock, [data-theme="neon"] .btn-start-run,
+[data-theme="neon"] .btn-share, [data-theme="neon"] .sort-stack-chip { font-family: var(--nn-ui); font-weight: 700; letter-spacing: 0.06em; }
+[data-theme="neon"] .status-time, [data-theme="neon"] .cooldown-chip, [data-theme="neon"] .ready-at,
+[data-theme="neon"] .hero-details p { font-family: var(--nn-num); font-weight: 500; letter-spacing: 0.02em; }
+[data-theme="neon"] .hero-details h2 { font-family: var(--nn-ui); font-weight: 700; }
+
+/* The ring round the ready count: drawn by the room (SVG) - a hand-bent
+   neon circle on a spun-aluminium plate. The count sits on the plate in
+   Orbitron, lit by the tube round it. */
+.nn-ring { display: none; }
+[data-theme="neon"] .hero-ring-wrapper { width: 112px; height: 112px; }
+[data-theme="neon"] .nn-ring { display: block; position: absolute; inset: 0; pointer-events: none; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6)); transition: opacity 0.3s; }
+.nn-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.nn-rtube { fill: none; stroke: rgba(210, 220, 235, 0.13); stroke-width: 4.2; }
+.nn-rtube-in { fill: none; stroke: rgba(0, 0, 0, 0.35); stroke-width: 0.7; }
+.nn-rtube-hi { fill: none; stroke: rgba(255, 255, 255, 0.4); stroke-width: 0.5; stroke-dasharray: 18 100; stroke-dashoffset: -58; stroke-linecap: round; }
+.nn-rarc { fill: none; stroke-linecap: butt; }
+.nn-rarc-glow { stroke: #FF2D55; stroke-width: 9; opacity: 0.75; }
+.nn-rarc-sheath { stroke: #FF3B62; stroke-width: 3.6; }
+.nn-rarc-core { stroke: #FFE6EC; stroke-width: 1.3; }
+.nn-clip { fill: rgba(200, 215, 235, 0.18); stroke: rgba(255,255,255,0.35); stroke-width: 0.4; }
+.nn-clip-screw { fill: #8b919c; stroke: rgba(0,0,0,0.6); stroke-width: 0.25; }
+.nn-clip-slot { stroke: rgba(0,0,0,0.75); stroke-width: 0.3; }
+.nn-relec rect { fill: #1b1c22; stroke: rgba(0,0,0,0.8); stroke-width: 0.3; }
+.nn-relec rect.nn-relec-band { fill: #c7ccd6; stroke: none; }
+[data-theme="neon"] .hero-ring-circle { position: absolute; inset: 22%; width: auto; height: auto; z-index: 1; border: 0; background: transparent; box-shadow: none;
+  font-family: var(--nn-num); font-weight: 700; font-size: 1.85rem; line-height: 1; color: #FFF3F6;
+  text-shadow: 0 0 2px rgba(255,255,255,0.8), 0 0 10px rgba(255,45,85,0.75), 0 0 20px rgba(255,45,85,0.35); }
+/* (while the payout's ring is out of the plate, the plate's own tube is bare) */
+[data-theme="neon"] .hero-ring-wrapper.nn-out .nn-rarc { opacity: 0 !important; }
+[data-theme="neon"] .hero-ring-wrapper.nn-out .nn-rtube { stroke: rgba(210, 220, 235, 0.06); }
+
+/* The beads: clear glass rising into the ring - a spark top left, the far
+   rim bright where it bends the light, cyan from the ring above. */
+.nn-bead { position: absolute; z-index: 2; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 34% 30%, rgba(255,255,255,0.95) 0 10%, rgba(255,255,255,0) 20%),
+    radial-gradient(circle at 60% 66%, rgba(0,0,0,0) 45%, rgba(170, 250, 255, 0.9) 70%, rgba(0, 229, 255, 0.25) 84%, rgba(0,0,0,0) 100%),
+    radial-gradient(circle at 50% 50%, rgba(0, 229, 255, 0.12) 0 60%, rgba(0,0,0,0) 72%);
+  box-shadow: 0 0 5px rgba(0, 229, 255, 0.55); will-change: transform, opacity; }
+html[data-motion="off"] .nn-bead { display: none; }
+
+/* The tube round the glass: under every sheet, the tour, the landing and
+   the table, like the gold edge. Its gas colour flows once round in 8 s
+   (the hue turns; the bare glass and the metal are grey, so they don't). */
+.nn-edge { display: none; }
+[data-theme="neon"] .nn-edge { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 95; pointer-events: none; overflow: visible;
+  animation: nn-flow 8s linear infinite; will-change: filter; }
+@keyframes nn-flow { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(-360deg); } }
+.nn-edge path { fill: none; stroke-linecap: round; }
+.nn-bare { stroke: rgba(210, 220, 235, 0.12); stroke-width: 3.4; }
+.nn-bare-hi { stroke: url(#nnLamp); stroke-width: 0.55; }
+.nn-glow { stroke-width: 7px; opacity: 1; }
+.nn-glow path { stroke-width: inherit; }
+.nn-sheath path { stroke-width: 3.2; }
+.nn-core path { stroke-width: 1.15; }
+.nn-stud rect { fill: rgba(205, 225, 245, 0.2); stroke: rgba(255,255,255,0.4); stroke-width: 0.35; }
+.nn-stud path { stroke: rgba(170, 176, 188, 0.85); stroke-width: 0.35; }
+.nn-stud-hi { fill: #fff; opacity: 0.85; }
+.nn-elec-case { fill: #17181d; stroke: rgba(0,0,0,0.85); stroke-width: 0.35; }
+.nn-elec-band { fill: #c5cad4; }
+.nn-elec-hi { stroke: rgba(255,255,255,0.35); stroke-width: 0.4; }
+html[data-motion="off"] .nn-edge { animation: none; filter: none; }
+
+/* The payout: Moonrise out of the phone (assets/intro3d/moonrise.mjs),
+   drawn twice - what is behind the glass under the app, what is in front
+   of it over the app, under every sheet. */
+.nn-moon { position: fixed; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.nn-moon-back { z-index: 1; }
+.nn-moon-front { z-index: 98; }
+html[data-motion="off"] .nn-moon { display: none; }
+
+/* Quiet: the room held still and read more easily - larger numbers, the
+   small print lifted. */
+html[data-motion="off"][data-theme="neon"] .hero-ring-circle { font-size: 2.05rem; }
+html[data-motion="off"][data-theme="neon"] .casino-name { font-size: 1.22rem; }
+html[data-motion="off"][data-theme="neon"] .status-time { font-size: 0.95em; }
+html[data-motion="off"][data-theme="neon"] .card-status .ready-at,
+html[data-motion="off"][data-theme="neon"] .cooldown-chip { color: #b9c6db; }
+
+/* The arcade (Showroom: assets/intro3d/arcade.mjs). The CRT's high-score
+   table, laid on the tube under the glass: phosphor on black - each line
+   glowing in its own colour, the ranks cycling through them as an old
+   attract screen does - with the tube's scanlines and its dimming corners
+   over it all. Held at 30 page pixels to the centimetre (a 25-inch tube's
+   37 x 49 cm picture: 1110 x 1470) and scaled down in 3D, so it is
+   rasterised sharp. The two buttons are at the top, clear of the phone
+   lying in the corner; the rows start 420 px down, 145 px each: the card a
+   row gives up rises from there (arcade.mjs rowAt). */
+/* (no overflow clipping on the page itself: a clipped 3D-transformed
+   element stops taking taps) */
+.r3a-screen { pointer-events: auto; color: #e2f1ec; font-family: 'Rajdhani', 'Orbitron', sans-serif; line-height: 1; }
+.r3a-screen-in { position: absolute; inset: 0; border-radius: 26px; background: #04030a; }
+.r3a-screen.r3a-far { cursor: zoom-in; }
+.r3a-screen.r3a-far .r3a-screen-in > * { pointer-events: none; }
+.r3a-screen-in::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 26px;
+  background: repeating-linear-gradient(180deg, rgba(0,0,0,0.34) 0 2px, transparent 2px 5px), radial-gradient(120% 90% at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%); }
+.r3a-screen-in > * { position: absolute; left: 70px; right: 70px; margin: 0; }
+.r3a-top { top: 64px; display: flex; justify-content: space-between; align-items: baseline; }
+.r3a-title { font-family: 'Orbitron', 'Rajdhani', sans-serif; font-weight: 700; font-size: 64px; letter-spacing: 0.06em; color: #ff2d95; text-shadow: 0 0 10px rgba(255,45,149,0.8), 0 0 28px rgba(255,45,149,0.45); }
+.r3a-clock { font-family: 'Orbitron', 'Rajdhani', sans-serif; color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.8), 0 0 26px rgba(0,229,255,0.4); }
+.r3a-now { font-weight: 700; font-size: 76px; font-variant-numeric: tabular-nums; }
+.r3a-ampm { font-weight: 500; font-size: 34px; margin-left: 10px; }
+.r3a-sub { top: 176px; display: flex; justify-content: space-between; align-items: baseline; font-weight: 700; font-size: 54px; letter-spacing: 0.04em; }
+.r3a-ready { color: #00ff66; text-shadow: 0 0 10px rgba(0,255,102,0.7); }
+.r3a-value { color: #ffcc00; font-size: 50px; text-shadow: 0 0 10px rgba(255,204,0,0.6); }
+.r3a-rows { top: 420px; display: flex; flex-direction: column; }
+.r3a-row { position: relative; display: grid; grid-template-columns: 150px 1fr auto; align-items: center; height: 145px; width: 100%; padding: 0; margin: 0; border: 0; border-top: 2px dashed rgba(226,241,236,0.10); background: none; cursor: pointer; text-align: left;
+  font-family: 'Rajdhani', 'Orbitron', sans-serif; font-weight: 700; color: var(--r3a-c, #e2f1ec); text-shadow: 0 0 10px var(--r3a-g, rgba(226,241,236,0.5)); }
+.r3a-row:first-child { border-top: 0; }
+.r3a-rank { font-family: 'Orbitron', 'Rajdhani', sans-serif; font-size: 48px; opacity: 0.9; }
+.r3a-name { font-size: 70px; letter-spacing: 0.04em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.r3a-st { font-family: 'Orbitron', 'Rajdhani', sans-serif; font-size: 44px; padding-left: 20px; color: #00ff66; text-shadow: 0 0 10px rgba(0,255,102,0.6); }
+.r3a-st.r3a-wait { color: rgba(226,241,236,0.62); text-shadow: none; }
+.r3a-row:nth-child(1) { --r3a-c: #ff2d95; --r3a-g: rgba(255,45,149,0.7); }
+.r3a-row:nth-child(2) { --r3a-c: #ff8a1f; --r3a-g: rgba(255,138,31,0.7); }
+.r3a-row:nth-child(3) { --r3a-c: #ffcc00; --r3a-g: rgba(255,204,0,0.6); }
+.r3a-row:nth-child(4) { --r3a-c: #00ff66; --r3a-g: rgba(0,255,102,0.6); }
+.r3a-row:nth-child(5) { --r3a-c: #00e5ff; --r3a-g: rgba(0,229,255,0.6); }
+.r3a-row:nth-child(6) { --r3a-c: #b18cff; --r3a-g: rgba(139,92,246,0.7); }
+.r3a-row.r3a-empty { cursor: default; opacity: 0.32; }
+.r3a-row:active:not(.r3a-empty) { background: rgba(226,241,236,0.06); }
+.r3a-run { top: 262px; right: auto; width: 520px; height: 112px; border: 4px solid #ff2d95; border-radius: 14px; background: rgba(255,45,149,0.14); cursor: pointer;
+  font-family: 'Orbitron', 'Rajdhani', sans-serif; font-weight: 700; font-size: 50px; letter-spacing: 0.06em; color: #fff;
+  text-shadow: 0 0 10px rgba(255,45,149,0.9); box-shadow: 0 0 22px rgba(255,45,149,0.55), inset 0 0 22px rgba(255,45,149,0.35); }
+.r3a-run:active { background: rgba(255,45,149,0.3); }
+.r3a-dive { top: 262px; left: auto; width: 410px; height: 112px; border: 4px solid #00e5ff; border-radius: 14px; background: rgba(0,229,255,0.1); cursor: pointer; font-family: 'Orbitron', 'Rajdhani', sans-serif; font-weight: 700; font-size: 42px; letter-spacing: 0.04em; color: #fff; text-shadow: 0 0 10px rgba(0,229,255,0.9); box-shadow: 0 0 20px rgba(0,229,255,0.45), inset 0 0 20px rgba(0,229,255,0.3); }
+.r3a-dive:active { background: rgba(0,229,255,0.24); }
+.r3a-foot { top: 1338px; text-align: center; font-weight: 600; font-size: 36px; letter-spacing: 0.14em; color: #ffcc00; opacity: 0.85; animation: r3a-blink 1.6s steps(1, end) infinite; }
+@keyframes r3a-blink { 50% { opacity: 0.15; } }
+html[data-motion="off"] .r3a-foot { animation: none; }
+.r3a-screen :focus-visible { outline: 5px solid #00e5ff; outline-offset: 4px; }
+/* Inside the game, the way out: a neon-edged plate at the top. */
+.r3a-out { position: absolute; top: max(16px, env(safe-area-inset-top)); left: 50%; transform: translate(-50%, -12px); opacity: 0; visibility: hidden; pointer-events: auto;
+  padding: 11px 18px; border-radius: 10px; border: 1.5px solid #00e5ff; background: rgba(5,4,9,0.8); color: #e2f1ec; cursor: pointer;
+  font-family: 'Orbitron', 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+  box-shadow: 0 0 14px rgba(0,229,255,0.45); transition: opacity .5s ease, transform .5s ease, visibility 0s linear .5s; }
+.r3a-out.r3a-on { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition: opacity .6s ease .1s, transform .6s ease .1s, visibility 0s; }
+.r3a-out:focus-visible { outline: 2px solid #ff2d95; outline-offset: 3px; }
+html[data-motion="off"] .r3a-out { transition: none; }
+/* Leaning in, the way back to the seat: the same plate, in the corner,
+   clear of the tube's title. */
+.r3a-out.r3a-back { left: max(14px, env(safe-area-inset-left)); transform: translate(0, -12px); }
+.r3a-out.r3a-back.r3a-on { transform: translate(0, 0); }
+
+/* The séance room (Dead Channel's Showroom: assets/intro3d/seance-room.mjs).
+   The station card is drawn on the tube itself (drawGuide()), so it reads
+   as a picture on curved glass. These are the page's own buttons laid over
+   the same places on it - 960 x 720 px at 40 to the centimetre, scaled
+   down in 3D: clear, so the picture is what you see, but real buttons for
+   taps and the keyboard (GUIDE in seance-room.mjs: the listings from 108
+   px down, 118 each; the two buttons at 596). From the chair the whole
+   picture is one target that leans you in (.r3d-far). */
+.r3d-screen { pointer-events: auto; cursor: pointer; }
+.r3d-screen-in { position: absolute; inset: 0; }
+.r3d-screen button { position: absolute; left: 44px; right: 44px; margin: 0; padding: 0; border: 0; background: none; color: transparent; font-size: 40px; text-align: left; cursor: pointer; overflow: hidden; white-space: nowrap; border-radius: 6px; }
+.r3d-screen .r3d-run, .r3d-screen .r3d-look { right: auto; }
+.r3d-screen button:active { background: rgba(233,228,216,0.08); }
+.r3d-screen.r3d-far button:active { background: none; }
+.r3d-screen :focus-visible { outline: 6px solid #7DB6F0; outline-offset: 2px; }
+.r3d-st { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+/* In the signal, the way out: a bone-edged plate at the top. */
+.r3d-out { position: absolute; top: max(16px, env(safe-area-inset-top)); left: 50%; transform: translate(-50%, -12px); opacity: 0; visibility: hidden; pointer-events: auto;
+  padding: 11px 18px; border-radius: 8px; border: 1.5px solid #E9E4D8; background: rgba(3,4,5,0.82); color: #E9E4D8; cursor: pointer;
+  font-family: 'IM Fell English SC', Georgia, serif; font-size: 0.85rem; letter-spacing: 0.1em;
+  transition: opacity .5s ease, transform .5s ease, visibility 0s linear .5s; }
+.r3d-out.r3d-on { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition: opacity .6s ease .1s, transform .6s ease .1s, visibility 0s; }
+.r3d-out:focus-visible { outline: 2px solid #E0242F; outline-offset: 3px; }
+/* Leaning in over the set, the way back to the chair is the same plate
+   (.r3d-back): never shown with the way out. */
+html[data-motion="off"] .r3d-out { transition: none; }
