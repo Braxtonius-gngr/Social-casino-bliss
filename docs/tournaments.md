@@ -177,6 +177,11 @@ Site notes for the check (it reads this page first):
   column. That is what players actually got back over a period, not the
   game's RTP; never record it. Read RTP inside the game's own info or
   paytable.
+- **Stake.us, Twist Gaming games** (Star Wardens). The game's rules give the
+  RTP of every mode (normal, antes, bonus buys) and the max win. Star Wardens
+  pays clusters on a honeycomb, with no paylines.
+- **Cluster-pay games.** Log lines as `ways` (no number) and say "cluster" in
+  the note; the lines reachability test doesn't apply to them.
 - **Luck Party.** The lobby opens with a special-offer pop-up; close it with
   its X, never the buy button. The SC/GC toggle sits in the top bar. Games
   can take about a minute to load on the always-on laptop.
