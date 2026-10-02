@@ -5229,3 +5229,94 @@ html[data-motion="off"] .r3a-out { transition: none; }
 /* Leaning in over the set, the way back to the chair is the same plate
    (.r3d-back): never shown with the way out. */
 html[data-motion="off"] .r3d-out { transition: none; }
+
+/* =========================================================
+   WEST TEXAS GORE FEST'S ROOM (assets/rooms/western.js) - the gore fest
+   on fire: a fuse lit round the glass, a branding iron round the ready
+   count, short fuses under the cards' cooldowns, an ember burst off a
+   collect, and the fire out of the phone when a run is done. Its Lounge
+   and Quiet levels; the pieces' makers are in the room's own header. The
+   skin's own gore (above) stays as built. Type: Special Elite for the
+   wordmark and section labels, never under 13 px; Oswald for everything
+   smaller and for numbers.
+   ========================================================= */
+[data-theme="western"] {
+  --wt-type: 'Special Elite', 'Courier New', monospace;
+  --wt-ui: 'Oswald', 'Arial Narrow', Arial, sans-serif;
+  --wt-arterial: #C41E2E;
+  --wt-ember: #FF6A13;
+  --wt-molten: #FFB21A;
+  --wt-bone: #E3DAC9;
+  --wt-steel: #1A1512;
+}
+[data-theme="western"] .app-container { position: relative; z-index: 2; }
+/* (the small print in Oswald: the typewriter face drops out under 13 px) */
+[data-theme="western"] .ready-at, [data-theme="western"] .hero-details p, [data-theme="western"] .cooldown-chip,
+[data-theme="western"] .status-time { font-family: var(--wt-ui); font-weight: 500; letter-spacing: 0.04em; }
+[data-theme="western"] .date-header { font-family: var(--wt-type); font-size: 0.82rem; letter-spacing: 0.12em; font-weight: 400; color: var(--wt-bone); }
+
+/* The fuse round the glass: under every sheet, the tour, the landing and
+   the table. The cord is dark with a sheen along its twist; the burnt
+   length a thread of ash; the char behind the head red cooling to black;
+   the head a bead with its bloom and a spray of sparks. */
+.wt-fuse { display: none; }
+[data-theme="western"] .wt-fuse { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 95; pointer-events: none; overflow: visible; }
+.wt-fuse path { fill: none; }
+.wt-cord { stroke: #141210; stroke-width: 3.6; }
+.wt-cord-sheen { stroke: rgba(227, 218, 201, 0.16); stroke-width: 0.8; transform: translate(-0.8px, -0.8px); }
+.wt-cord-twist { stroke: rgba(0, 0, 0, 0.55); stroke-width: 3.6; stroke-dasharray: 1.2 4.2; }
+.wt-ash-under { stroke: #0B0B0B; stroke-width: 4.2; }
+.wt-ash { stroke: #5a544c; stroke-width: 1.5; stroke-dasharray: 2.2 1.6; }
+.wt-char { stroke: var(--wt-arterial); stroke-width: 3.2; stroke-linecap: round; }
+.wt-char-bloom { stroke: var(--wt-ember); stroke-width: 9; opacity: 0.7; }
+.wt-hot { stroke: #FFE2B0; stroke-width: 2.2; stroke-linecap: round; }
+.wt-head { fill: #FFF6E6; }
+.wt-head-bloom { fill: var(--wt-molten); opacity: 0.85; }
+.wt-spark { stroke: #FFE2B0; stroke-width: 1.1; stroke-linecap: round; stroke-dasharray: 14 14; opacity: 0.9; }
+html[data-motion="off"] .wt-spark { opacity: 0; }
+
+/* The branding iron round the ready count: drawn by the room (SVG). The
+   count sits inside in Oswald, stamped; READY under it. The skin's own
+   pulse on the count is off here: the iron carries the heat. */
+.wt-iron { display: none; }
+[data-theme="western"] .hero-ring-wrapper { width: 112px; height: 112px; }
+[data-theme="western"] .wt-iron { display: block; position: absolute; inset: 0; pointer-events: none; filter: drop-shadow(3px 4px 0 rgba(11,11,11,0.55)); overflow: visible; }
+.wt-iron svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.wt-heat { fill: none; stroke-linecap: butt; }
+.wt-heat-bloom { stroke: var(--wt-ember); stroke-width: 9; opacity: 0.7; }
+.wt-heat-body { stroke: url(#wtHeat); stroke-width: 4.2; }
+.wt-heat-core { stroke: #FFF4DC; stroke-width: 1.6; }
+.wt-iron-head { fill: #FFF8EC; filter: drop-shadow(0 0 3px #FFB21A); }
+.wt-ember { position: absolute; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px; border-radius: 0; background: var(--wt-molten); box-shadow: 0 0 3px 1px rgba(255, 178, 26, 0.8); pointer-events: none; }
+[data-theme="western"] .hero-ring-circle { position: absolute; inset: 22%; width: auto; height: auto; z-index: 1; border: 0; border-radius: 50%; background: transparent; box-shadow: none; text-shadow: none;
+  flex-direction: column; gap: 0; font-family: var(--wt-ui); font-weight: 600; font-size: 2.1rem; line-height: 1; color: var(--wt-bone); animation: none; }
+[data-theme="western"] .hero-ring-circle::after { content: 'READY'; font-family: var(--wt-ui); font-size: 0.5rem; font-weight: 600; letter-spacing: 0.3em; color: var(--wt-ember); margin-top: 3px; padding-left: 0.3em; }
+[data-theme="western"] .hero-ring-wrapper.wt-out .wt-heat, [data-theme="western"] .hero-ring-wrapper.wt-out .wt-iron-head { opacity: 0 !important; }
+
+/* The short fuses: a card's cooldown as a length of the same cord under
+   it, burnt from the left to the time left, its head glowing. */
+[data-theme="western"] .cd-fill { height: 2px; bottom: 5px; left: 12px; max-width: calc(100% - 24px); background: linear-gradient(90deg, #4a4440, #6b5a3c 70%, var(--wt-arterial)); opacity: 1; overflow: visible; }
+[data-theme="western"] .cd-fill::before { content: ''; position: absolute; left: 100%; top: 0; width: calc(100vw); height: 2px; background: #141210; opacity: 0.9; }
+[data-theme="western"] .cd-fill::after { content: ''; position: absolute; right: -2.5px; top: -1.5px; width: 5px; height: 5px; background: #FFE2B0; box-shadow: 0 0 4px 1.5px var(--wt-molten), 0 0 10px 3px rgba(255, 106, 19, 0.45); }
+[data-theme="western"] .ledger-card { overflow: hidden; }
+
+/* The ember burst off a collected card: hard-edged sparks, as the skin's
+   embers are, each on its own line (the room moves them). */
+.wt-burst { position: absolute; z-index: 3; width: 3px; height: 3px; background: var(--wt-molten); box-shadow: 0 0 3px 1px rgba(255, 178, 26, 0.85); pointer-events: none; will-change: transform, opacity; }
+.wt-burst.big { width: 4px; height: 4px; background: #FFE2B0; }
+html[data-motion="off"] .wt-burst, html[data-motion="off"] .wt-ember { display: none; }
+
+/* The payout: the fire out of the phone (assets/intro3d/inferno.mjs),
+   drawn twice - what is behind the glass under the app, what is in front
+   of it over the app, under every sheet. */
+.wt-fire { position: fixed; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.wt-fire-back { z-index: 1; }
+.wt-fire-front { z-index: 98; }
+html[data-motion="off"] .wt-fire { display: none; }
+
+/* Quiet: the room held still and read more easily - larger numbers, the
+   small print lifted; the fuse's head a bead, no sparks, no char glow. */
+html[data-motion="off"][data-theme="western"] .hero-ring-circle { font-size: 2.3rem; }
+html[data-motion="off"][data-theme="western"] .casino-name { font-size: 1.2rem; }
+html[data-motion="off"][data-theme="western"] .wt-char-bloom, html[data-motion="off"][data-theme="western"] .wt-heat-bloom { opacity: 0.3; }
+html[data-motion="off"][data-theme="western"] .ready-at, html[data-motion="off"][data-theme="western"] .hero-details p { color: var(--wt-bone); }
