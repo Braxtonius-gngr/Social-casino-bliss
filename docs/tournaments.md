@@ -91,7 +91,7 @@ Views:
 - `tournament_tier_math`: break-even wager and spins per paid rank, at 4% and 6% edge.
 - `tournament_event_math`: per-event lines for the other formats: Max Multiplier field size, raffle SC-ticket break-even ticket count, capped Hit the Multiplier cost.
 - `tournament_threshold_curve`: last-paid thresholds by hours-to-end bucket, with the median growth to the final.
-- `tournament_data_gaps`: what only the owner can collect, most urgent first, each with its command. Priority 0 rows are the game facts check's flags for 26 hours: `rtp_changed`, `no_rtp`, `facts_signin`, `facts_run` (didn't run, or couldn't reach Chrome). The brief's Collect section shows them first.
+- `tournament_data_gaps`: what only the owner can collect, most urgent first, each with its command. Priority 0 rows are the game facts check's flags for 26 hours: `rtp_changed`, `no_rtp`, `facts_signin`, `facts_run` (didn't run, or couldn't reach Chrome). The brief's Collect section shows them first. Ranked events get a `threshold` row (a leaderboard reading every 12 hours and one in the last 3). Even-split events, where everyone who qualifies shares the pool equally (`format_params.split_pool = true`, e.g. Stake's RNG Rush), have no leaderboard: they get a `qualifiers` row instead, asking once for how many players have qualified. A screenshot that shows no count settles it; one that shows a count is asked for again after 24 hours.
 - `tournament_fact_queue`: the game facts check's work list. Games in live or upcoming events that miss a fact, then games whose last in-game reading is over 30 days old, then lobby-tab gaps; Luck Party first, then `rotation_priority`.
 - `tournament_site_profile`: per site and format, the usual end day and time, average length and pool, and the share of wins taken by repeat winners.
 - `tournament_repeat_winners`
@@ -103,7 +103,9 @@ Views:
    `supabase/migrations/20261002100000_tournament_play_policy.sql`, then
    `supabase/migrations/20261002143000_tournament_game_facts_check.sql`. Its
    part A (four statements) needs the SQL editor; part B is connector-safe and
-   stops with an error if part A hasn't run.
+   stops with an error if part A hasn't run. Then
+   `supabase/migrations/20261002180000_tournament_split_pool_gaps.sql`
+   (connector-safe).
 2. Data: `supabase/seed/tournaments_luckparty.sql`. It loads Luck Party and 14
    candidate sites from the research pass, then the owner's 2026-10-02 site
    decisions. For Luck Party it has:
@@ -141,7 +143,7 @@ insert-only chunks.
 - `Apply tournament desk: run supabase/migrations/20261002080000_tournament_desk.sql, supabase/migrations/20261002100000_tournament_play_policy.sql, then supabase/seed/tournaments_luckparty.sql on Supabase project ewfvyrhlsanzkmozrmhs, then run get_advisors.`
 - `Tournament game facts <site> <game>: min <sc>, rtp <percent>, lines <n>, vol <label> (<scale>), max <x>`. Every part is optional; send what the game shows. Inserts one `tournament_game_observations` row per value: `min_bet`, `rtp`, `paylines` (`lines ways` → value null, `value_text` 'ways'), `volatility` (label in `value_text`, scale in `volatility_scale`), `max_win`, each with source `owner`, `source_tier` 'owner_screenshot', `coin_mode` 'SC' and `value_text` as typed. `rtp none` logs `rtp_not_shown` with `evidence` `{"screens_opened": [...]}` naming the screens the owner checked (ask if they didn't say). A row sent without `source_tier` gets one from `source` (`owner` → `owner_screenshot`, `desk` → `provider`), and an owner min bet without `coin_mode` is SC, so older phrasings of this command and `Tournament pace` still work. Read them from the game's info/paytable screen in SC mode; a screenshot instead of typed values works the same.
 - `Tournament pace <site> <game>: <spins> spins in <minutes> min`. Inserts a `pace` observation of `spins x 60 / minutes` spins per hour.
-- `Tournament leaderboard <site> <slug>: <paste or screenshot>`. Writes a `tournament_snapshots` row with source `screenshot`, the screenshot's time, `hours_to_end`, the values per rank in `leaderboard` and the last paid place's value in `threshold_last_paid`. For an in-app site with no event row yet, it first creates the event from the screenshot (`seen_by = 'screenshot'`).
+- `Tournament leaderboard <site> <slug>: <paste or screenshot>`. Writes a `tournament_snapshots` row with source `screenshot`, the screenshot's time, `hours_to_end`, the values per rank in `leaderboard` and the last paid place's value in `threshold_last_paid`. For an even-split event it records the number of players who have qualified so far in `winners_count`, or says in `raw_excerpt` that the page shows no count. For an in-app site with no event row yet, it first creates the event from the screenshot (`seen_by = 'screenshot'`).
 - `Log tournament entry <site> <slug> <end date>: spins <n>, wagered <sc>, best multiplier <x>, final rank <r>, prize <sc>, games <names>`. Writes `tournament_entries`.
 - `Set planned daily SC to <sc>`. Writes `tournament_settings.planned_daily_sc`, which sizes the "Today's play" routing line.
 - `Set tournament weekly loss limit to <sc>`. Writes `tournament_settings.weekly_loss_limit`.
