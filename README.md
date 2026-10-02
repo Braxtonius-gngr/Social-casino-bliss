@@ -51,6 +51,18 @@ is what the daily brief reads alongside `catalog_sweep_findings`. `user_id`
 references `auth.users` with `ON DELETE CASCADE`, so "Delete My Cloud Data"
 removes a tester's reports along with the rest of their account.
 
+## Tournament desk (owner-only)
+
+Leaderboard tournaments, races and raffles on sweepstakes casinos are tracked
+in their own `tournament_*` tables in Supabase. These cover the events and
+their payout tiers, eligible games, observations, the owner's entries and the
+per-site profiles. The tables are owner/service-role only, and the PWA never
+reads them. A daily scheduled task fills them after the catalogue sweep, and
+the daily brief reads `tournament_board`. See
+[docs/tournaments.md](docs/tournaments.md) for the data flow, tables and
+setup (`supabase/migrations/20261002080000_tournament_desk.sql` plus
+`supabase/seed/tournaments_luckparty.sql`).
+
 ## Quality checks
 
 Three dependency-free Node scripts catch the most common ways this kind of
