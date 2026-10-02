@@ -1100,6 +1100,9 @@
     .r3t-idx { position: absolute; width: 46px; display: flex; flex-direction: column; align-items: center; line-height: 0.92; }
     .r3t-idx b { font-size: 52px; font-weight: 700; }
     .r3t-ipip { width: 30px; height: 30px; margin-top: 4px; fill: currentColor; }
+    /* (an unranked card: no letter, its suit alone, larger) */
+    .r3t-front.t-U .r3t-idx b { display: none; }
+    .r3t-front.t-U .r3t-ipip { width: 40px; height: 40px; margin-top: 0; }
     .r3t-tl { top: 30px; left: 28px; }
     .r3t-br { bottom: 30px; right: 28px; transform: rotate(180deg); }
     /* the great pip, its open line and the knocked-out mark (an image:
@@ -1107,16 +1110,18 @@
     .r3t-pip { position: absolute; left: 50%; top: 74px; width: 178px; height: 178px; margin-left: -89px; pointer-events: none; }
     .r3t-name { position: absolute; left: 30px; right: 30px; top: 262px; color: var(--red); text-align: center; font-size: 40px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1.05; max-height: 86px; overflow: hidden; }
     /* (kept clear of the corner indexes) */
-    .r3t-meta { position: absolute; left: 60px; right: 60px; top: 352px; display: flex; justify-content: center; align-items: center; color: #17120e; font-size: 30px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.9; }
-    .r3t-meta::before, .r3t-meta::after { content: ""; flex: 0 1 16px; min-width: 6px; height: 2px; margin: 0 9px; background: currentColor; opacity: 0.45; }
-    .r3t-meta span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .r3t-meta { position: absolute; left: 80px; right: 80px; top: 352px; display: flex; justify-content: center; align-items: center; color: #17120e; font-size: 28px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.9; }
+    .r3t-meta::before, .r3t-meta::after { content: ""; flex: 0 1 14px; min-width: 4px; height: 2px; margin: 0 7px; background: currentColor; opacity: 0.45; }
+    .r3t-meta span { flex: 0 0 auto; max-width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     /* Linen finish: the board embossed with a fine crosshatch before it is
        cut - the weave catches the light along one way and shades along the
        other, over the print as well as the stock (it is pressed through
-       the ink). About two thirds of a millimetre a thread, at 50 px to the
-       cm: there when you hold the card, a tooth in the paper on the felt. */
+       the ink) - faint, as a weave is: the ink still reads solid; it is a
+       tooth you catch in the light of a card in your hand, and gone from
+       across the table. About half a millimetre a thread, at 50 px to the
+       cm. */
     .r3t-linen { position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
-      background: repeating-linear-gradient(0deg, rgba(255,252,244,0.13) 0 1px, transparent 1px 3.4px), repeating-linear-gradient(90deg, rgba(70,48,24,0.05) 0 1px, transparent 1px 3.4px); }
+      background: repeating-linear-gradient(0deg, rgba(255,252,244,0.06) 0 1px, transparent 1px 2.6px), repeating-linear-gradient(90deg, rgba(70,48,24,0.03) 0 1px, transparent 1px 2.6px); }
     /* The lamp's reflection: no sweep - it sits where the lamp over the
        table would put it on each card (--gx, from where the card lies:
        table.mjs), faint on paper and clearer on lacquer, and a card lifted
@@ -1127,15 +1132,17 @@
     .r3t-front { --r3t-sheen: 0.12; }
     .r3t-front.t-C { --r3t-sheen: 0.14; }
     .r3t-front.t-B { --r3t-sheen: 0.24; }
-    /* D and C: an oxblood double rule */
-    .r3t-front.t-D .r3t-frame, .r3t-front.t-C .r3t-frame { border-color: #7a1020; opacity: 0.9; box-shadow: 0 0 0 6px var(--stock), 0 0 0 8px #7a1020; }
+    /* D: a single oxblood rule; C: an oxblood double rule (weights you can
+       tell apart across the table, not hairlines) */
+    .r3t-front.t-D .r3t-frame { border: 4px solid #7a1020; opacity: 0.9; }
+    .r3t-front.t-C .r3t-frame { border: 4px solid #7a1020; opacity: 0.9; box-shadow: 0 0 0 6px var(--stock), 0 0 0 10px #7a1020; }
     /* (a foil frame: the foil only in the border - the face inside is the
        stock's own, linen and all, not a flat fill over it) */
     .r3t-front:is(.t-B, .t-A) .r3t-frame { opacity: 1; -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) padding-box exclude, linear-gradient(#000 0 0); }
     /* B: bronze foil */
-    .r3t-front.t-B .r3t-frame { inset: 18px; border: 6px solid transparent; background: linear-gradient(135deg, #6e3f1a, #d9a066 30%, #7a4a22 50%, #e8b77a 72%, #6e3f1a) border-box; }
+    .r3t-front.t-B .r3t-frame { inset: 18px; border: 9px solid transparent; background: linear-gradient(135deg, #6e3f1a, #d9a066 30%, #7a4a22 50%, #e8b77a 72%, #6e3f1a) border-box; }
     /* A: a platinum frame, a slow sheen */
-    .r3t-front.t-A .r3t-frame { inset: 17px; border: 7px solid transparent; background: linear-gradient(135deg, #8a8f98, #f5f7fa 28%, #9aa0aa 50%, #ffffff 70%, #7d838c) border-box; }
+    .r3t-front.t-A .r3t-frame { inset: 17px; border: 10px solid transparent; background: linear-gradient(135deg, #8a8f98, #f5f7fa 28%, #9aa0aa 50%, #ffffff 70%, #7d838c) border-box; }
     .r3t-front.t-A { --r3t-sheen: 0.4; }
     /* S: black stock - the red in red, the black suits in gold - gold foil
        and the table's filigree across it */
@@ -1143,17 +1150,17 @@
     .r3t-front.t-S.r3t-red { --ink: var(--red); }
     .r3t-front.t-S .r3t-frame { inset: 16px; border: 5px solid transparent; opacity: 1; border-radius: 10px; background: linear-gradient(#0e0b09, #0e0b09) padding-box, linear-gradient(135deg, #7a5a24, #f7dc92 25%, #9a7030 48%, #fff0c0 66%, #7a5a24) border-box; box-shadow: inset 0 0 0 10px #0e0b09, inset 0 0 0 12px rgba(233,201,120,0.7); }
     .r3t-front.t-S::before, .r3t-front.t-S::after { content: ""; position: absolute; left: 84px; right: 84px; height: 30px; background: linear-gradient(90deg, #8a6428, #f5d98f, #a57a34, #fbe7ae, #8a6428);
-      -webkit-mask: url(intro3d/gold-trim-alpha.png) 0 50% / 288px 100% repeat-x; mask: url(intro3d/gold-trim-alpha.png) 0 50% / 288px 100% repeat-x;
+      -webkit-mask: url(intro3d/gold-trim-alpha.png) 50% 50% / auto 100% repeat-x; mask: url(intro3d/gold-trim-alpha.png) 50% 50% / auto 100% repeat-x;
       /* (the filigree is a greyscale image - the intro's alpha map - so the
          mask reads its brightness; by default a mask reads alpha, and an
          image with none shows the whole bar) */
       -webkit-mask-source-type: luminance; mask-mode: luminance; }
     .r3t-front.t-S::before { top: 40px; z-index: 1; }
     .r3t-front.t-S::after { bottom: 40px; }
-    .r3t-front.t-S .r3t-pip { top: 96px; width: 150px; height: 150px; margin-left: -75px; filter: drop-shadow(0 0 10px rgba(240,207,127,0.22)); }
+    .r3t-front.t-S .r3t-pip { top: 96px; width: 150px; height: 150px; margin-left: -75px; }
     .r3t-front.t-S .r3t-name { color: #f6e2b0; top: 258px; }
     .r3t-front.t-S .r3t-meta { color: #d9b467; top: 336px; }
-    .r3t-front.t-S .r3t-linen { background: repeating-linear-gradient(0deg, rgba(255,236,190,0.05) 0 1px, transparent 1px 3.4px), repeating-linear-gradient(90deg, rgba(0,0,0,0.11) 0 1px, transparent 1px 3.4px); }
+    .r3t-front.t-S .r3t-linen { background: repeating-linear-gradient(0deg, rgba(255,236,190,0.025) 0 1px, transparent 1px 2.6px), repeating-linear-gradient(90deg, rgba(0,0,0,0.06) 0 1px, transparent 1px 2.6px); }
     .r3t-front.t-S { --r3t-sheen: 0.6; }
 
     /* Your phone: titanium and glass, in the corner of the view half out
