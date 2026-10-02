@@ -660,12 +660,18 @@ export async function makeGame(ctx) {
   const sTop = ((topY - ey) / wide + (lampY - ey) / (wide - 77)) / 2;
   const aimY = ey + (sTop - Math.tan(vfov / 2)) * wide;
   const Rslow = Rw(slowW), Rrest = Rw(restW), Rend = Rw(plan.endW);
+  // (the two whole-wheel keys sit between the pull and the slow moment,
+  // in order whatever the spin's length: a short spin brings them in,
+  // the slow moment's own key stays where it is)
+  // (and the lens has 1.2 s at least to come back in to the clapper)
+  const wide1 = Math.min(Rw(pullAt) + 1.9, Rslow - 1.9);
+  const wide2 = Math.max(wide1 + 0.4, Math.min(Rw(pullAt) + 3.2, Rslow - 1.3));
   const keys = [
     [0, X + 26, tipY + 10, tipZ + 52, X - 2, tipY + 2, tipZ],
     [0.9, X + 20, tipY + 8, tipZ + 46, X, tipY + 1, tipZ],
     [Rw(pullAt) + 0.5, X + 40, Y + 54, Z + 120, X, Y + 30, Z + FRONT],
-    [Rw(pullAt) + 1.9, wx(96), ey + 14, wd(200), X, aimY + 4, Z + FRONT],
-    [Math.max(Rw(pullAt) + 3.2, Rslow - 1.4), wx(34), ey, wd(212), X, aimY, Z + FRONT],
+    [wide1, wx(96), ey + 14, wd(200), X, aimY + 4, Z + FRONT],
+    [wide2, wx(34), ey, wd(212), X, aimY, Z + FRONT],
     [Rslow - 0.1, X + 22, tipY + 12, tipZ + 58, X, tipY - 1, tipZ],
     [Rslow + 0.9, X + 16, tipY + 9, tipZ + 50, X, tipY - 2, tipZ]
   ];
@@ -725,7 +731,9 @@ export async function makeGame(ctx) {
 
   // ---- Each frame.
   const key0 = key.intensity, pendant0 = lights.pendant.intensity;
-  const callPt = [X, Y + 22, Z + FRONT + 4];
+  // (the call sits on the pocket under the clapper, so the close-up on
+  // the result holds it too; the shot keeps it on screen either way)
+  const callPt = [X, tipY - 18, tipZ];
   const stage = (t, { w, gleam }) => {
     const th = thetaAt(w);
     wheel.rotation.z = -th;
