@@ -275,6 +275,20 @@ revoke all on function public.tournament_set_updated_at() from public, anon, aut
 --   wager line  W* = P(1-e)/e   (prize after its own 1x playthrough)
 --   spins line  S* = W* / bet
 -- Computed at the default and the pessimistic edge.
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'tournament_tier_math'
+      and column_name = 'bet_used_usd'
+  ) then
+    execute 'alter view public.tournament_tier_math rename column bet_used_usd to bet_used';
+  end if;
+end;
+$$;
+
 create or replace view public.tournament_tier_math
 with (security_invoker = true) as
 with s as (
