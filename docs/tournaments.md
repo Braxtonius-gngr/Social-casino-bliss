@@ -43,7 +43,8 @@ every `rotation_recheck_days`, in `rotation_priority` order) → `dedicated`
 Owner decisions, 2026-10-02: Luck Party graduated with its own task (8:15 AM
 CT). Zula and Fortune Wins (public operator tournament pages) went into
 rotation first, then Stake.us (public promo pages). McLuck, Pulsz, Spree and
-Crown Coins are in-app sites.
+Crown Coins are in-app sites. Later that day, from the owner's research
+report: High 5 Casino, MyPrize and Sweep Shark joined the candidates.
 
 ## Play policy (`tournament_settings.play_policy`)
 
@@ -58,6 +59,23 @@ Crown Coins are in-app sites.
 5. Max Multiplier is incidental unless the field's spins look under
    `pool x (1-e) / (e x bet)`: about 72,000 for a 300 SC pool at 0.10 SC and
    4% (the owner's round number is 75,000).
+
+Added the same day (part 5), from the owner's research report:
+
+6. **Bankroll.** Every `play_to_place` session is sized with
+   `tournament_session_bankroll()`: expected loss plus 3 SD. When
+   `weekly_loss_limit` is set and that is more than the room left this week
+   (`tournament_bankroll_status`), the verdict drops to incidental. Never buy
+   coins to climb a leaderboard.
+7. **Projection.** A volume race's or spin race's last-paid threshold is
+   projected to the end with `tournament_threshold_projection`. Only
+   `call = under_line`, with 3 readings for that site and format, can make it
+   `play_to_place`.
+8. **Game choice** comes from `tournament_game_picks`, the format's order over
+   the site's own facts.
+9. **Hit the Multiplier's closest places** stay incidental until Luck Party
+   support says whether "closest" counts both sides of the target (an open
+   question in `tournament_owner_questions`).
 
 Until a site has the three missing datasets, every EV figure on its cards is
 a template, and the cards say `data_status: template`:
@@ -83,7 +101,8 @@ leaves an existing row alone.
 | `tournament_eligible_games` | event ↔ game, with a shared `site_id` enforced by composite foreign keys |
 | `tournament_snapshots` | observation: leaderboard values, last-paid threshold, published winners |
 | `tournament_entries` | the owner's own entry and result |
-| `tournament_settings` | edges, reference bet, weekly loss limit, play policy, planned daily SC, recheck intervals, graduation rule |
+| `tournament_settings` | edges, reference bet, weekly loss limit, play policy, planned daily SC, recheck intervals, graduation rule, `bankroll_rule` (SDs to carry, assumed per-spin SD by volatility band), `threshold_projection` (late-surge buffer, finished events before the curve takes over) |
+| `tournament_owner_questions` | a question only a site's support can answer (topic, where to ask, status, answer). Open ones show in `tournament_data_gaps` as kind `question` |
 
 Views:
 
@@ -92,6 +111,37 @@ Views:
 - `tournament_event_math`: per-event lines for the other formats: Max Multiplier field size, raffle SC-ticket break-even ticket count, capped Hit the Multiplier cost.
 - `tournament_threshold_curve`: last-paid thresholds by hours-to-end bucket, with the median growth to the final.
 - `tournament_data_gaps`: what only the owner can collect, most urgent first, each with its command. Priority 0 rows are the game facts check's flags for 26 hours: `rtp_changed`, `no_rtp`, `facts_signin`, `facts_run` (didn't run, or couldn't reach Chrome). The brief's Collect section shows them first. Ranked events get a `threshold` row (a leaderboard reading every 12 hours and one in the last 3). Even-split events, where everyone who qualifies shares the pool equally (`format_params.split_pool = true`, e.g. Stake's RNG Rush), have no leaderboard: they get a `qualifiers` row instead, asking once for how many players have qualified. A screenshot that shows no count settles it; one that shows a count is asked for again after 24 hours.
+- `tournament_data_gaps` also lists open `tournament_owner_questions` (kind
+  `question`, priority 2), each with the command to answer it.
+- `tournament_threshold_projection`: each live volume, spin, total-win and
+  sum-of-multipliers race in sweeps mode (GC boards are left out), its latest
+  last-paid threshold projected to the end, against the break-even line of
+  the cheapest rank that pays sweeps coins. The projection is the learned
+  growth (final ÷ reading for the same site, format and hours-to-end bucket)
+  once 3 finished events are behind it, else straight-line pace to the end
+  × 1.3 (`threshold_projection`). A spin race's line uses `bet_used`: the
+  event's `min_bet`, else its games' lowest measured min bet, else
+  `reference_min_bet` (`bet_is_reference`). `call` is `under_line`,
+  `over_line`, `over_line_already`, `no_line` or `no_projection`;
+  `site_format_readings` counts every sweeps-mode threshold reading for that
+  site and format.
+- `tournament_game_picks`: every open event's eligible games ranked for its
+  format (`pick_rank`), with the facts used and what's missing
+  (`facts_status`). RTP, max win, min bet, lines and pace come only from
+  in-game and owner readings. Volatility is the provider's when the game's
+  own label hasn't been read (`vol_source`), and a provider band never
+  counts as measured. Volume races: highest RTP, lowest volatility, fastest.
+  Spin races: no bonus-only games, lowest min bet, lowest volatility,
+  fastest. Max Multiplier / Max Win: uncapped (1,000x or more) first, highest
+  max win, highest volatility. Hit the Multiplier: games that can land the
+  target exactly (target × lines is whole), then the cheapest bet (the
+  session is capped in spins), then most lines. Anything else: cheapest and
+  fastest spin.
+- `tournament_bankroll_status`: this week's loss from logged entries, the
+  weekly limit and the room left. Weeks start Monday CT, and an entry counts
+  in the week its event ended (or when it was logged, if earlier). An entry
+  logged without `net` counts its expected loss (wagered × default edge) and
+  shows in `entries_missing_net`. Prizes are left out, so it reads high.
 - `tournament_fact_queue`: the game facts check's work list. Games in live or upcoming events that miss a fact, then games whose last in-game reading is over 30 days old, then lobby-tab gaps; Luck Party first, then `rotation_priority`.
 - `tournament_site_profile`: per site and format, the usual end day and time, average length and pool, and the share of wins taken by repeat winners.
 - `tournament_repeat_winners`
@@ -104,8 +154,10 @@ Views:
    `supabase/migrations/20261002143000_tournament_game_facts_check.sql`. Its
    part A (four statements) needs the SQL editor; part B is connector-safe and
    stops with an error if part A hasn't run. Then
-   `supabase/migrations/20261002180000_tournament_split_pool_gaps.sql`
-   (connector-safe).
+   `supabase/migrations/20261002180000_tournament_split_pool_gaps.sql` and
+   `supabase/migrations/20261002200000_tournament_bankroll_picks.sql` (both
+   connector-safe). Run part 5 again after the seed on a new database: its
+   Luck Party support question needs the site row (it's re-runnable).
 2. Data: `supabase/seed/tournaments_luckparty.sql`. It loads Luck Party and 14
    candidate sites from the research pass, then the owner's 2026-10-02 site
    decisions. For Luck Party it has:
@@ -140,13 +192,19 @@ insert-only chunks.
 
 ## Commands the owner can paste into any session
 
-- `Apply tournament desk: run supabase/migrations/20261002080000_tournament_desk.sql, supabase/migrations/20261002100000_tournament_play_policy.sql, then supabase/seed/tournaments_luckparty.sql on Supabase project ewfvyrhlsanzkmozrmhs, then run get_advisors.`
+- `Apply tournament desk: run the supabase/migrations/20261002*_tournament_*.sql files in order (part 3's part A in the SQL editor), then supabase/seed/tournaments_luckparty.sql, then supabase/migrations/20261002200000_tournament_bankroll_picks.sql again, on Supabase project ewfvyrhlsanzkmozrmhs, then run get_advisors.`
 - `Tournament game facts <site> <game>: min <sc>, rtp <percent>, lines <n>, vol <label> (<scale>), max <x>`. Every part is optional; send what the game shows. Inserts one `tournament_game_observations` row per value: `min_bet`, `rtp`, `paylines` (`lines ways` → value null, `value_text` 'ways'), `volatility` (label in `value_text`, scale in `volatility_scale`), `max_win`, each with source `owner`, `source_tier` 'owner_screenshot', `coin_mode` 'SC' and `value_text` as typed. `rtp none` logs `rtp_not_shown` with `evidence` `{"screens_opened": [...]}` naming the screens the owner checked (ask if they didn't say). A row sent without `source_tier` gets one from `source` (`owner` → `owner_screenshot`, `desk` → `provider`), and an owner min bet without `coin_mode` is SC, so older phrasings of this command and `Tournament pace` still work. Read them from the game's info/paytable screen in SC mode; a screenshot instead of typed values works the same.
 - `Tournament pace <site> <game>: <spins> spins in <minutes> min`. Inserts a `pace` observation of `spins x 60 / minutes` spins per hour.
 - `Tournament leaderboard <site> <slug>: <paste or screenshot>`. Writes a `tournament_snapshots` row with source `screenshot`, the screenshot's time, `hours_to_end`, the values per rank in `leaderboard` and the last paid place's value in `threshold_last_paid`. For an even-split event it records the number of players who have qualified so far in `winners_count`, or says in `raw_excerpt` that the page shows no count. For an in-app site with no event row yet, it first creates the event from the screenshot (`seen_by = 'screenshot'`).
-- `Log tournament entry <site> <slug> <end date>: spins <n>, wagered <sc>, best multiplier <x>, final rank <r>, prize <sc>, games <names>`. Writes `tournament_entries`.
+- `Log tournament entry <site> <slug> <end date>: spins <n>, wagered <sc>, net <sc>, best multiplier <x>, final rank <r>, prize <sc>, games <names>`. Writes `tournament_entries`. `net` is the balance change from play, prize left out (negative for a loss); without it the weekly loss counts the expected loss of what was wagered.
 - `Set planned daily SC to <sc>`. Writes `tournament_settings.planned_daily_sc`, which sizes the "Today's play" routing line.
 - `Set tournament weekly loss limit to <sc>`. Writes `tournament_settings.weekly_loss_limit`.
+- `Tournament answer <site> <topic>: <what support said>`. Sets that
+  `tournament_owner_questions` row to `answered` with the answer and
+  `answered_at`, then writes the answer where it applies (for
+  `target_closest_rule`: `format_params.closest_rule` on the site's Hit the
+  Multiplier events, and the play policy's `rules.target_multiplier
+  .closest_rule`).
 - `Create site task <slug>`. Copies the Luck Party tournament desk scheduled task for that site, adapts its site section, and sets `tournament_sites.own_task`.
 
 ## Game facts check (8:20 AM CT)
@@ -228,6 +286,19 @@ limits. For example, 1st in Max Total
 Play (300 SC) breaks even at about 7,200 SC wagered at a 4% edge, or 4,700 SC
 at 6%. A rank is only worth chasing when the volume it takes is under its
 line.
+
+A session of `n` spins at bet `b` costs `n × b × e` in expectation, with a
+standard deviation of `√n × b × σ`, where σ is the per-spin SD in bets
+(`bankroll_rule.sigma_by_band`: low 4, mid 6, high 20, unknown 20; assumed,
+not measured). `tournament_session_bankroll(n, b, band)` returns the
+expected loss plus 3 SD in USD, capped at the session's total stake `n × b`:
+5,000 spins at 0.10 on a mid game needs about 147 SC, and a capped 200-spin
+Hit the Multiplier session at 0.20 needs at most 40 SC. A card's
+`bankroll_sweeps` is that × the site's `units_per_usd` (FC: × 100).
+
+On Oct 2, Fortune Wins' FC Tournament Zone showed 10th place at 202,030 FC
+($2,020) with 118 hours left. At that pace the end would be about $8,840,
+well over the $2,400 line for 9th–10th ($100 each), so it stays incidental.
 
 In a top-N multiplier race, S spins of your own against N field spins win
 about S/N of the pool, so they pay while N is under `pool x (1-e) / (e x bet)`.
