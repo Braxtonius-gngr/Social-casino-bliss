@@ -99,9 +99,9 @@ const lerp = (a, b, k) => a + (b - a) * k;
 
 // ---- The drop, simulated: a disc (the chip, between the board and its
 // glass) under gravity, meeting the pins, the fanned rails, the chute's
-// walls, the buckets' walls and their floor. Steps of 1/2400 s; the chip's
-// place recorded every step for the frame lookups, its hits for the
-// sounds; 1/1600 s steps. Deterministic in its inputs: the chip's place on the lever (x0)
+// walls, the buckets' walls and their floor, in steps of 1/1600 s; the
+// chip's place recorded every step for the frame lookups, its hits for
+// the sounds. Deterministic in its inputs: the chip's place on the lever (x0)
 // and the sideways nudge the lever's flick gives it (vx0).
 const DT = 1 / 1600, G = 981;
 const REST = { pin: 0.42, rail: 0.36, floor: 0.22 }, FRIC = 0.22, AIR = 0.25;
@@ -221,7 +221,9 @@ export async function makeGame(ctx) {
     if ((onPin && d.onPin) || (!onPin && d.bucket === target)) { drop = { x0, vx0 }; break; }
     if (score < bestScore) { bestScore = score; best = { x0, vx0 }; }
   }
-  if (!drop) drop = best;
+  // (never without a drop: a run that found nothing - every sample caught
+  // by chance - takes the lever's centre, and the shot plays what falls)
+  if (!drop) drop = best || { x0: 0, vx0: 0 };
   const sim = dropSim(drop.x0, drop.vx0, { pin: onPin, record: true });
   const pinned = onPin && sim.onPin ? sim.onPin : null;
   const bucket = pinned ? null : sim.bucket;
