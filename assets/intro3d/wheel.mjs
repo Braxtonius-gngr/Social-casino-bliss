@@ -93,7 +93,7 @@ const CLAP = { pivot: R + 11.5, len: 13.6, w: 1.4, th: 2.3, z: FRONT + 1.15, ben
 // peg's head and half the strap's width). The peg pushes the strap aside
 // as it goes - the strap rides on its side, bending - until the peg is
 // LET cm past the line, when the strap slips off it and swings back.
-const BAND = CLAP.pivot - R, GRIP = PEG.head + CLAP.w / 2 + 0.1, LET = 1.7;
+const BAND = CLAP.pivot - R, GRIP = PEG.head + CLAP.w / 2 + 0.45, LET = 1.9;
 
 const clamp01 = x => Math.min(Math.max(x, 0), 1);
 const smoother = x => { x = clamp01(x); return x * x * x * (x * (6 * x - 15) + 10); };
@@ -155,7 +155,7 @@ function integrate(omega0, pullAt, stopOnPeg) {
 // Peg: peg `pocket` under the clapper's tip). Found by bisection on the
 // pull's strength over the spins that last SPIN seconds or so.
 const SPIN = [3.9, 5.2];
-export function makeSpin(target, pullAt, onPeg) {
+export function makeSpin(target, pullAt, onPeg, rng = null) {
   // (the travel wanted, modulo a turn: the pegs move clockwise past the
   // clapper, so pocket p is under it once the wheel has turned N - p - u
   // spacings, u of the way across the pocket; peg p once N - p, less the
@@ -188,6 +188,16 @@ export function makeSpin(target, pullAt, onPeg) {
       const r = integrate(om, pullAt, true);
       if (Math.abs(r.theta - goal) > SEG * 0.01) break;
       best = Object.assign(r, { omega0: om });
+    }
+  } else if (rng) {
+    // (many pulls end in the same pocket - the clapper pushes the wheel
+    // back the same way from a range of them - so the pull is varied
+    // within those, and no two spins are alike)
+    const pocketOf = th => ((Math.floor(-th / SEG) % N) + N) % N;
+    for (let k = 0; k < 8; k++) {
+      const om = best.omega0 + (rng() - 0.5) * 0.5;
+      const r = integrate(om, pullAt, false);
+      if (pocketOf(r.theta) === target.pocket) { best = Object.assign(r, { omega0: om }); break; }
     }
   }
   return best;
@@ -316,10 +326,11 @@ function bendStrap(geo, rest, lean, bend) {
 export async function makeGame(ctx) {
   const { THREE, scene, set, lights, tier, seed, aspect, room, helpers: H } = ctx;
   const { makeWarp, spline, canvasTexture, finished, embossTex, scaleUV } = H;
-  const rng = (s => () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; })((seed ^ 0x5bd1e995) >>> 0);
+  // (the seed mixed first: neighbouring seeds would otherwise open alike)
+  const rng = (s => { for (let k = 0; k < 3; k++) { s = Math.imul(s ^ (s >>> 15), 0x2c1b3c6d) >>> 0; s = Math.imul(s ^ (s >>> 12), 0x297a2d39) >>> 0; } return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; s ^= s >>> 16; return (s >>> 0) / 4294967296; }; })((seed ^ 0x5bd1e995) >>> 0);
 
   // ---- The plan.
-  const pullAt = 0.92;
+  const pullAt = 0.86 + 0.12 * rng();
   let target, onPeg = false;
   if (tier === 'edge') {
     onPeg = true;
@@ -329,7 +340,7 @@ export async function makeGame(ctx) {
     const choices = POCKETS.map((v, i) => (want.includes(v) ? i : -1)).filter(i => i >= 0);
     target = { pocket: choices[Math.floor(rng() * choices.length)], u: 0.3 + 0.4 * rng() };
   }
-  const spin = makeSpin(target, pullAt, onPeg);
+  const spin = makeSpin(target, pullAt, onPeg, rng);
   const thetaAt = makeThetaAt(spin, pullAt);
   // the pocket under the clapper at rest, read off the wheel
   const thetaEnd = spin.theta;
