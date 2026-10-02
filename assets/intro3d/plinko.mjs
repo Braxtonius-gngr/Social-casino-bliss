@@ -496,7 +496,7 @@ export async function makeGame(ctx) {
     [Rgate - 0.1, X + 12, chuteY + 6, BZ + 40, X, chuteY - 3, BZ]
   ];
   const push = k => { const p = keys[keys.length - 1]; k[0] = Math.max(k[0], p[0] + 0.3); keys.push(k); };
-  push([Math.min(Rdrop + 0.45, Rslow - 0.5), X + 10, midY + 16, BZ + wide * 0.72, X, midY + 8, BZ]);
+  push([Math.min(Rdrop + 0.45, Rslow - 0.5), X + 8, midY + 14, BZ + wide * 0.52, X, midY + 8, BZ]);
   push([Rslow - 0.05, sx + 14, sy + 9, BZ + 50, sx, sy - 2, BZ]);
   push([Rslow + 0.9, sx + 10, sy + 6, BZ + 44, sx, sy - 3, BZ]);
   if (pinned) {
@@ -518,8 +518,11 @@ export async function makeGame(ctx) {
   // the float: up and away over the pit (to the left, where it lies), into
   // the ceiling
   {
+    // (the aim leaves the result gradually - held on it through the first
+    // key, then across the board, then over toward the pit - so the last
+    // close-up is not pulled off it before its time)
     const L = keys[keys.length - 1];
-    [[6, -60, 60, 130], [16, -90, 110, 240], [room.FLOAT - 2, -110, 140, 330]].forEach(([dt, dx, dy, dz]) => push([L[0] + dt, L[1] + dx * 0.4, Math.min(room.CEIL - 20, L[2] + dy), L[3] + dz, X - 30, midY, BZ]));
+    [[6, -60, 60, 130, L[4], L[5] + 8], [16, -90, 110, 240, X - 10, midY], [room.FLOAT - 2, -110, 140, 330, X - 30, midY]].forEach(([dt, dx, dy, dz, ax, ay]) => push([L[0] + dt, L[1] + dx * 0.4, Math.min(room.CEIL - 20, L[2] + dy), L[3] + dz, ax, ay, BZ]));
   }
   // (the ride: through the drop the aim leans toward the chip, a little
   // behind it, and the eye drops with it)
