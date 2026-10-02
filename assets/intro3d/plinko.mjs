@@ -311,7 +311,10 @@ export async function makeGame(ctx) {
     [-1, 1].forEach(s => { const m = new THREE.Mesh(bead, brass); m.position.set(s * (HALF + 0.3), (innerTop + innerBot) / 2, BODY.front - 0.6); group.add(m); });
     const beadX = new THREE.CylinderGeometry(0.45, 0.45, 2 * HALF, 10); beadX.rotateZ(Math.PI / 2); keep(beadX, null);
     [innerTop + 0.3, innerBot - 0.3].forEach(y => { const m = new THREE.Mesh(beadX, brass); m.position.set(0, y, BODY.front - 0.6); group.add(m); });
-    const plate = new THREE.Mesh(new THREE.BoxGeometry(2 * HALF, 2, BODY.front), brass); plate.position.set(0, BK.floor - 1, BODY.front / 2); plate.receiveShadow = true; group.add(plate); keep(plate.geometry, null);
+    // (The House: the plate stops either side of the centre bucket, whose
+    // floor is the trap)
+    const gap = tier === 'vault' ? PITCH - BK.wall : 0, half = HALF - gap / 2;
+    [-1, 1].forEach(s => { if (s > 0 && !gap) return; const w = gap ? half : 2 * HALF; const plate = new THREE.Mesh(new THREE.BoxGeometry(w, 2, BODY.front), brass); plate.position.set(gap ? s * (gap / 2 + w / 2) : 0, BK.floor - 1, BODY.front / 2); plate.receiveShadow = true; group.add(plate); keep(plate.geometry, null); });
     // a brass escutcheon and two drawer lines on the body
     const esc = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 0.5, 24), brass); esc.rotation.x = Math.PI / 2; esc.position.set(0, (innerBot - FRAME + BODY.floor) / 2 + 6, BODY.front + 0.25); group.add(esc); keep(esc.geometry, null);
   }
@@ -486,15 +489,16 @@ export async function makeGame(ctx) {
   // (the fall is short - a second and a bit - so the lens backs off to a
   // medium shot as the chip meets the first pins and rides down with it,
   // the whole board waiting for the call)
-  const wide1 = Math.min(Rdrop + 0.45, Rslow - 0.5);
+  // (every key after the gate's keeps 0.3 s behind the one before it,
+  // whatever the drop's length: The Pin can come down on the third row)
   const keys = [
     [0, X + 16, chuteY + 8, BZ + 42, X - 1, chuteY - 1, BZ],
-    [Rgate - 0.1, X + 12, chuteY + 6, BZ + 40, X, chuteY - 3, BZ],
-    [wide1, X + 10, midY + 16, BZ + wide * 0.72, X, midY + 8, BZ],
-    [Rslow - 0.05, sx + 14, sy + 9, BZ + 50, sx, sy - 2, BZ],
-    [Rslow + 0.9, sx + 10, sy + 6, BZ + 44, sx, sy - 3, BZ]
+    [Rgate - 0.1, X + 12, chuteY + 6, BZ + 40, X, chuteY - 3, BZ]
   ];
   const push = k => { const p = keys[keys.length - 1]; k[0] = Math.max(k[0], p[0] + 0.3); keys.push(k); };
+  push([Math.min(Rdrop + 0.45, Rslow - 0.5), X + 10, midY + 16, BZ + wide * 0.72, X, midY + 8, BZ]);
+  push([Rslow - 0.05, sx + 14, sy + 9, BZ + 50, sx, sy - 2, BZ]);
+  push([Rslow + 0.9, sx + 10, sy + 6, BZ + 44, sx, sy - 3, BZ]);
   if (pinned) {
     push([Rw(plan.silence[0]) + 0.4, sx + 9, sy + 5, BZ + 34, sx, sy - 1, BZ]);
     push([Rw(plan.silence[1]) + 0.5, sx + 5, sy + 2.5, BZ + 22, sx, sy - 1, BZ]);
@@ -551,7 +555,8 @@ export async function makeGame(ctx) {
     else if (h.kind === 'rail') sfx.push({ t, kind: 'clay', speed: h.speed, rate });
     else sfx.push({ t, kind: 'cup', speed: h.speed, rate });
   });
-  if (pinned) sfx.push({ t: Rw(dropAt + sim.t), kind: 'pin', speed: pinned.speed, rate: warp.rateAt(Rw(dropAt + sim.t)) }, { t: Rw(plan.silence[1]), kind: 'drop' });
+  // (The Pin's own hit is among the sim's hits already)
+  if (pinned) sfx.push({ t: Rw(plan.silence[1]), kind: 'drop' });
   if (tier === 'hardways') sfx.push({ t: Rw(plan.callW) + 0.1, kind: 'chime' });
   if (tier === 'vault') sfx.push({ t: Rw(plan.boom), kind: 'knock' }, { t: Rw(plan.boom) + 0.08, kind: 'bell' }, { t: Rw(plan.boom) + 0.1, kind: 'boom', soft: true });
 
