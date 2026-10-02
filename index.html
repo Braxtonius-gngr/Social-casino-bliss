@@ -5337,6 +5337,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (fellBack) return;
       const tierQ = q.get('tier');
       const tier = mod.TIERS.includes(tierQ) ? tierQ : mod.pickTier(Math.random());
+      // The game the shot is: the dice, or one of the others (see GAMES in
+      // intro.mjs), each as likely each launch; ?game=dice / ?game=wheel
+      // fixes one. (Straight to the seat it is the dice: the frame the fly
+      // starts from is the shot's end, and that is the one every home's
+      // fly-in was laid out from.)
+      const gameQ = q.get('game');
+      const game = mod.GAMES.includes(gameQ) ? gameQ : direct ? 'dice' : mod.pickGame(Math.random());
       const seedQ = parseInt(q.get('seed'), 10);
       const seed = Number.isFinite(seedQ) ? seedQ >>> 0 : Math.floor(Math.random() * 4294967296);
       // Sound is on by default. It was made on for everyone once, on
@@ -5362,8 +5369,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const shotFelt = FELT_CHOICES[q.get('felt')] ? q.get('felt') : tableDest === 'card' ? getFelt() : 'black';
       // (the trim the same way: ?trim= any, for the lab)
       const shotTrim = TRIM_CHOICES[q.get('trim')] ? q.get('trim') : tableDest === 'card' ? getTrim() : 'gold';
-      // (the landing's copy is printed on a light felt: see app.css)
-      document.documentElement.setAttribute('data-felt', shotFelt);
+      // (the landing's copy is printed on a light felt: see app.css - on
+      // the dice's shot, where the cloth is what the copy lies over; another
+      // game's frames are its own, dark, so the copy keeps its veil)
+      document.documentElement.setAttribute('data-felt', game === 'dice' ? shotFelt : 'black');
       let tablePrep = null, flying = false;
       const prepTable = () => {
         if (!tableDest || tablePrep || !api) return tablePrep;
@@ -5472,7 +5481,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       };
       try {
         api = await mod.createIntro({
-          host, tier, seed,
+          host, tier, seed, game,
           controlsHost: screen,
           signal: building ? building.signal : null,
           motionOff,
@@ -5496,7 +5505,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       screen.classList.remove('r3-loading');
       screen.removeEventListener('pointerdown', skipWhileLoading);
       window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; window.rollIntroSetFelt = null; window.rollIntroSetTrim = null; };
-      window.rollIntroSetFelt = id => { if (api && api.setFelt) { api.setFelt(id); document.documentElement.setAttribute('data-felt', id); } };
+      window.rollIntroSetFelt = id => { if (api && api.setFelt) { api.setFelt(id); if (game === 'dice') document.documentElement.setAttribute('data-felt', id); } };
       window.rollIntroSetTrim = id => { if (api && api.setTrim) api.setTrim(id); };
       if (direct) {
         // Straight to the seat: the shot is over before it began - the
@@ -5510,6 +5519,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
       if (q.has('lab')) {
         window.rollIntroPlan = api.plan;
+        window.rollIntroStill = t => { window.rollIntroSeek(t); api.still(t); };
         window.rollIntroSeek = t => {
           done = true;
           api.seek(t);
@@ -5520,7 +5530,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           const ms = Math.max(0, (t - api.plan.revealReal) * 1000);
           (screen.getAnimations ? screen.getAnimations({ subtree: true }) : []).forEach(a => { a.pause(); a.currentTime = ms; });
         };
-        rollLab3dPanel(screen, tier, mod.TIERS);
+        rollLab3dPanel(screen, tier, mod.TIERS, game, mod.GAMES);
       }
       if (q.has('lab') && tableDest) {
         // (lab: fly in by hand - rollTableFly({ manual: true }) then
@@ -5898,9 +5908,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     // The WebGL intro's lab switcher (?lab): force a tier, or throw again.
-    function rollLab3dPanel(screen, tier, tiers) {
+    function rollLab3dPanel(screen, tier, tiers, game, games) {
       if (screen.querySelector('.roll-lab')) return;
-      const names = { standard: 'Standard', hardways: 'Hardways', vault: 'Vault Pull', edge: 'Defiant Edge' };
+      const names = { standard: 'Standard', hardways: 'Hardways', vault: 'Vault Pull', edge: 'Defiant Edge', dice: 'Dice', wheel: 'Wheel' };
       const link = (k, v) => {
         const p = new URLSearchParams(window.location.search);
         p.set('lab', '');
@@ -5908,9 +5918,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (k === 'tier') p.delete('seed');
         return `?${p.toString().replace('lab=&', 'lab&').replace(/lab=$/, 'lab')}`;
       };
-      screen.insertAdjacentHTML('beforeend', `<nav class="roll-lab" aria-label="Intro options"><div class="roll-lab-row"><span>Tier</span>${tiers.map(t => `<a data-v="${t}"${t === tier ? ' aria-current="true"' : ''}>${names[t]}</a>`).join('')}</div><div class="roll-lab-row"><a class="roll-lab-replay" data-new="1">&#8635; New throw</a><a class="roll-lab-replay" data-css="1">CSS intro</a></div></nav>`);
+      screen.insertAdjacentHTML('beforeend', `<nav class="roll-lab" aria-label="Intro options"><div class="roll-lab-row"><span>Game</span>${(games || ['dice']).map(g => `<a data-g="${g}"${g === game ? ' aria-current="true"' : ''}>${names[g] || g}</a>`).join('')}</div><div class="roll-lab-row"><span>Tier</span>${tiers.map(t => `<a data-v="${t}"${t === tier ? ' aria-current="true"' : ''}>${names[t]}</a>`).join('')}</div><div class="roll-lab-row"><a class="roll-lab-replay" data-new="1">&#8635; New throw</a><a class="roll-lab-replay" data-css="1">CSS intro</a></div></nav>`);
       const nav = screen.querySelector('.roll-lab');
       nav.querySelectorAll('a[data-v]').forEach(a => { a.href = link('tier', a.dataset.v); });
+      nav.querySelectorAll('a[data-g]').forEach(a => { a.href = link('game', a.dataset.g); });
       nav.querySelector('[data-new]').href = link('seed', String(Math.floor(Math.random() * 1e9)));
       nav.querySelector('[data-css]').href = link('intro', 'css');
       nav.addEventListener('pointerdown', e => e.stopPropagation());
@@ -8780,7 +8791,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v89';
+    const APP_BUILD = 'almanac-v90';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
