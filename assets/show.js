@@ -960,10 +960,11 @@
     return true;
   }
   // The payout of the room the page is in, if it moves.
-  function playPayout() {
+  // (info: what the run paid out - { collected } - for a room that shows it)
+  function playPayout(info) {
     var r = room();
     if (!r || !r.payout || !lively()) return false;
-    return r.payout.play();
+    return r.payout.play(info || {});
   }
   function playPayoutFromSettings() {
     if (typeof closeModals === 'function') closeModals();
@@ -973,7 +974,7 @@
   // something collected is what the house pays out on.
   function showOnRunExit(finished, collected) {
     if (!finished || !(collected > 0)) return;
-    setTimeout(playPayout, 450);
+    setTimeout(function () { playPayout({ collected: collected }); }, 450);
   }
   // The first touch after it settles sends the tableau past you (the touch
   // still reaches whatever it lands on).
