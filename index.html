@@ -9264,7 +9264,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       scheduleNextNotification();
       if (document.getElementById('statsModal').classList.contains('open')) renderStats();
       if (document.getElementById('dailyRunOverlay').classList.contains('open')) {
-        renderDailyRunStep();
+        renderDailyRunStep(true);
         refreshRunCardBalance();
         refreshRunBalanceBar();
       }
@@ -13624,12 +13624,18 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return `Next reset ready: ${readyAtLabel(null, soonest.remainingMs)} (in ${formatTime(soonest.remainingMs)})`;
     }
 
-    function renderDailyRunStep() {
+    function renderDailyRunStep(preserveCardState = false) {
       const card = document.getElementById('runCardContent');
       const actions = document.getElementById('runActions');
       const progressText = document.getElementById('runProgressText');
       const progressFill = document.getElementById('runProgressFill');
       const total = dailyRunQueue.length;
+      const balanceInput = preserveCardState && document.getElementById('runCardBalanceInput');
+      const balanceDraft = balanceInput ? balanceInput.value : null;
+      const balanceFocused = balanceInput && document.activeElement === balanceInput;
+      const notesOpen = preserveCardState
+        ? Array.from(card.querySelectorAll('details')).map(details => details.open)
+        : [];
 
       if (dailyRunIndex >= total) {
         hapticBuzz([30, 40, 30, 40, 90]);
@@ -13692,6 +13698,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           : ''}
         ${goToGames ? `<div class="run-bestgames"><strong style="color:var(--accent-cyan); text-shadow:0 0 5px rgba(0,229,255,0.4);">PLAY PLAN:</strong>${goToGames}</div>` : ''}
       `;
+      if (balanceInput) {
+        const nextBalanceInput = document.getElementById('runCardBalanceInput');
+        nextBalanceInput.value = balanceDraft;
+        if (balanceFocused) nextBalanceInput.focus({ preventScroll: true });
+        card.querySelectorAll('details').forEach((details, i) => {
+          details.open = !!notesOpen[i];
+        });
+      }
       const confirmBtn = document.querySelector('#runActions .btn-run-collect');
       if (confirmBtn) confirmBtn.disabled = !readyState.isReady;
     }
