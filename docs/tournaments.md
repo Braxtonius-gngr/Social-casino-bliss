@@ -77,7 +77,7 @@ leaves an existing row alone.
 | `tournaments` | event instance, keyed `(site_id, slug, ends_at)`, with `format_params`, game scope, prize totals and the latest `decision` card |
 | `tournament_payout_tiers` | rank range and prize per place |
 | `tournament_games` | game on a site: categories seen, published and in-game RTP, volatility, max win, min SC bet, paylines, measured spins/hour |
-| `tournament_game_observations` | one owner reading (min bet, RTP, paylines, pace). A trigger copies it onto `tournament_games`: latest min bet, RTP and paylines, median pace |
+| `tournament_game_observations` | one owner reading (min bet, RTP, paylines, pace). The log is the source of truth: a trigger recomputes those `tournament_games` fields on every insert, correction or delete (latest reading by time for min bet, RTP and paylines; median pace) |
 | `tournament_eligible_games` | event ↔ game, with a shared `site_id` enforced by composite foreign keys |
 | `tournament_snapshots` | observation: leaderboard values, last-paid threshold, published winners |
 | `tournament_entries` | the owner's own entry and result |

@@ -22,9 +22,12 @@ comment on column public.tournament_sites.rotation_priority is
   'Desk check order for confirmed sites, 1 first. Null = after the numbered ones.';
 
 -- ---------------------------------------------------------------------
--- Owner-measured game facts. Each reading is kept; a trigger copies it onto
--- tournament_games (latest min bet / RTP / paylines, median pace), so cards
--- and views read one place while the raw readings stay for later checks.
+-- Owner-measured game facts. Each reading is kept, and the log is the source
+-- of truth for these four fields on tournament_games: a trigger recomputes
+-- them whenever a reading is added, corrected or deleted (latest reading by
+-- observed_at, then id, for min bet / RTP / paylines; the median for pace;
+-- NULL once no reading is left). A late-entered older reading never
+-- overwrites a newer one.
 --   min_bet   smallest SC-mode bet, in the site's sweeps unit
 --   rtp       the in-game paytable's RTP, percent
 --   paylines  fixed line count (decides whether a target like 9.1x can land)
@@ -44,38 +47,67 @@ create table if not exists public.tournament_game_observations (
 create index if not exists tournament_game_observations_game_kind
   on public.tournament_game_observations (game_id, kind, observed_at desc);
 
+-- Paylines are a count: refuse 20.5 rather than let the cast round it.
+do $$
+begin
+  if not exists (select 1 from pg_constraint
+                 where conname = 'tournament_game_observations_paylines_int'
+                   and conrelid = 'public.tournament_game_observations'::regclass) then
+    alter table public.tournament_game_observations
+      add constraint tournament_game_observations_paylines_int
+      check (kind <> 'paylines' or value = trunc(value));
+  end if;
+end;
+$$;
+
 create or replace function public.tournament_apply_game_observation()
 returns trigger
 language plpgsql
 set search_path = ''
 as $$
+declare
+  g bigint[] := '{}';
+  k text[]   := '{}';
+  i integer;
+  v numeric;
 begin
-  if new.kind = 'min_bet' then
-    update public.tournament_games set min_bet_sweeps = new.value where id = new.game_id;
-  elsif new.kind = 'rtp' then
-    update public.tournament_games set rtp_onsite = new.value where id = new.game_id;
-  elsif new.kind = 'paylines' then
-    update public.tournament_games set paylines = new.value::integer where id = new.game_id;
-  elsif new.kind = 'pace' then
-    update public.tournament_games g
-       set spins_per_hour = (
-             select round(percentile_cont(0.5) within group (order by o.value)::numeric, 0)
-             from public.tournament_game_observations o
-             where o.game_id = new.game_id and o.kind = 'pace')
-     where g.id = new.game_id;
-  end if;
-  return new;
+  if tg_op <> 'DELETE' then g := g || new.game_id; k := k || new.kind; end if;
+  if tg_op <> 'INSERT' then g := g || old.game_id; k := k || old.kind; end if;
+  for i in 1 .. coalesce(array_length(g, 1), 0) loop
+    v := null;
+    if k[i] = 'pace' then
+      select round(percentile_cont(0.5) within group (order by o.value)::numeric, 0) into v
+        from public.tournament_game_observations o
+       where o.game_id = g[i] and o.kind = 'pace';
+      update public.tournament_games set spins_per_hour = v where id = g[i];
+    else
+      select o.value into v
+        from public.tournament_game_observations o
+       where o.game_id = g[i] and o.kind = k[i]
+       order by o.observed_at desc, o.id desc
+       limit 1;
+      if k[i] = 'min_bet' then
+        update public.tournament_games set min_bet_sweeps = v where id = g[i];
+      elsif k[i] = 'rtp' then
+        update public.tournament_games set rtp_onsite = v where id = g[i];
+      elsif k[i] = 'paylines' then
+        update public.tournament_games set paylines = v::integer where id = g[i];
+      end if;
+    end if;
+  end loop;
+  return null;
 end;
 $$;
 
 create or replace trigger tournament_game_observations_apply
-  after insert on public.tournament_game_observations
+  after insert or update or delete on public.tournament_game_observations
   for each row execute function public.tournament_apply_game_observation();
 
 alter table public.tournament_game_observations enable row level security;
 revoke all on public.tournament_game_observations from anon, authenticated;
+revoke all on function public.tournament_apply_game_observation() from public;
 comment on table public.tournament_game_observations is
-  'Tournament desk: the owner''s in-game readings (min bet, RTP, paylines, pace). A trigger copies them onto tournament_games.';
+  'Tournament desk: the owner''s in-game readings (min bet, RTP, paylines, pace). A trigger keeps tournament_games in step: latest reading by time, median pace.';
 
 -- ---------------------------------------------------------------------
 -- tournament_eligible_games.site_id (part 1) is checked by composite keys
@@ -99,6 +131,8 @@ $$;
 create or replace trigger tournament_eligible_games_fill_site
   before insert on public.tournament_eligible_games
   for each row execute function public.tournament_eligible_games_fill_site();
+
+revoke all on function public.tournament_eligible_games_fill_site() from public;
 
 -- ---------------------------------------------------------------------
 -- Settings. play_policy is the owner's standing rule set; decision cards
@@ -212,7 +246,7 @@ select
   case when ev.format_code = 'raffle' and ev.format_params ? 'sc_spins' then
     round(ev.pool_usd / ((ev.format_params ->> 'sc_spins')::numeric * b.pos_bet * s.e1), 0) end as raffle_sc_ticket_breakeven_tickets,
   case when ev.format_code = 'target_multiplier' then
-    round(s.cap_spins * b.bet * s.e1, 2) end    as capped_session_cost,
+    round(s.cap_spins * b.pos_bet * s.e1, 2) end as capped_session_cost,
   ev.eligible_games,
   ev.games_with_facts
 from ev
