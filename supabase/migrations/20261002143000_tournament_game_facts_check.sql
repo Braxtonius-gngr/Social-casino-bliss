@@ -115,7 +115,23 @@ begin
           or coalesce(coin_mode is not null
               and jsonb_typeof(evidence) = 'object'
               and (kind = 'rtp_not_shown'
-                   or (value_text is not null and evidence ? 'screen' and evidence ? 'where')), false))$c$)
+                   or (value_text is not null and evidence ? 'screen' and evidence ? 'where')), false))$c$),
+      -- Added on top of the two above (adding a check needs no SQL editor):
+      -- a min bet must say it was read in SC mode, and evidence must carry
+      -- values, not just keys.
+      ('tournament_game_observations_min_bet_sc',
+       $c$check (kind <> 'min_bet' or coalesce(coin_mode = 'SC', false))$c$),
+      ('tournament_game_observations_evidence_values',
+       $c$check (coalesce(
+          (kind <> 'rtp_not_shown'
+           or (case when jsonb_typeof(evidence -> 'screens_opened') = 'array'
+                    then jsonb_array_length(evidence -> 'screens_opened') > 0
+                         and not jsonb_path_exists(evidence, '$.screens_opened[*] ? (@.type() != "string" || @ == "")')
+                    else false end))
+          and (source_tier <> 'in_game' or kind = 'rtp_not_shown'
+               or (nullif(btrim(evidence ->> 'screen'), '') is not null
+                   and nullif(btrim(evidence ->> 'where'), '') is not null)),
+          false))$c$)
     ) as v(name, def)
   loop
     if not exists (select 1 from pg_constraint
@@ -126,6 +142,34 @@ begin
   end loop;
 end;
 $$;
+
+-- Owner commands written before this part ("Tournament game facts",
+-- "Tournament pace") send neither source_tier nor coin_mode. Fill them the
+-- same way the backfill above does, so those commands keep working: a 'desk'
+-- row is provider context, anything else is the owner's own reading, and an
+-- owner min bet is SC by definition of the command ("min <sc>", read in SC
+-- mode). The check task always sets both itself.
+create or replace function public.tournament_game_observation_defaults()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.source_tier is null then
+    new.source_tier := case when new.source = 'desk' then 'provider' else 'owner_screenshot' end;
+  end if;
+  if new.coin_mode is null and new.kind = 'min_bet' and new.source in ('owner', 'screenshot') then
+    new.coin_mode := 'SC';
+  end if;
+  return new;
+end;
+$$;
+
+create or replace trigger tournament_game_observations_defaults
+  before insert on public.tournament_game_observations
+  for each row execute function public.tournament_game_observation_defaults();
+
+revoke all on function public.tournament_game_observation_defaults() from public;
 
 comment on table public.tournament_game_observations is
   'Tournament desk: in-game readings (min bet, RTP or none shown, lines, volatility, max win, hit frequency, pace), each with its source tier and evidence. A trigger keeps tournament_games in step from the in_game and owner_screenshot readings only: latest reading by time, median pace.';
