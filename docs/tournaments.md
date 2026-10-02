@@ -171,6 +171,13 @@ types a password or solves a CAPTCHA: a signed-out site is skipped with
 The SQL connector cancels any statement containing the word "drop", so the
 check refers to games by `game_id` and keeps that word out of notes.
 
+Site notes for the check (it reads this page first):
+
+- **Stake.us.** Under each game there's a "Game Statistics" table with an RTP
+  column. That is what players actually got back over a period, not the
+  game's RTP; never record it. Read RTP inside the game's own info or
+  paytable.
+
 ## What the numbers mean
 
 Every SC-staked format costs about `stake × house edge` in expectation. The
