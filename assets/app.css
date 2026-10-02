@@ -5320,3 +5320,35 @@ html[data-motion="off"][data-theme="western"] .hero-ring-circle { font-size: 2.3
 html[data-motion="off"][data-theme="western"] .casino-name { font-size: 1.2rem; }
 html[data-motion="off"][data-theme="western"] .wt-char-bloom, html[data-motion="off"][data-theme="western"] .wt-heat-bloom { opacity: 0.3; }
 html[data-motion="off"][data-theme="western"] .ready-at, html[data-motion="off"][data-theme="western"] .hero-details p { color: var(--wt-bone); }
+
+/* The slaughter floor (West Texas Gore Fest's Showroom: assets/intro3d/
+   slaughter.mjs). The slate on the wall: chalk on slate in a pine frame,
+   the lines in Special Elite, the numbers in Oswald, the hand's plate the
+   skin's action gold. Held at 30 page pixels to the centimetre (a 56 x 36
+   cm board: 1680 x 1080) and scaled down in 3D; laid out to the pixel as
+   drawSlate() prints the same board for the fly in, each line by its
+   baseline (top = baseline - 0.8 of its size). */
+.r3w-slate { pointer-events: auto; color: #e8e2d4; font-family: 'Special Elite', 'Courier New', monospace; line-height: 1; }
+.r3w-slate-in { position: absolute; inset: 0; background: #1f2220;
+  background-image: radial-gradient(circle at 20% 30%, rgba(232,226,212,0.05), transparent 40%), radial-gradient(circle at 70% 80%, rgba(232,226,212,0.04), transparent 45%); }
+.r3w-l, .r3w-r { position: absolute; top: 0; bottom: 0; }
+.r3w-l { left: 70px; right: 42%; }
+.r3w-r { left: 60%; right: 70px; }
+.r3w-slate-in > div > * { position: absolute; margin: 0; white-space: nowrap; left: 0; }
+.r3w-eyebrow { top: 76px; font-size: 30px; color: rgba(232,226,212,0.72); }
+.r3w-red { color: #e0444e; }
+.r3w-day { top: 126px; font-size: 30px; color: rgba(232,226,212,0.72); text-transform: uppercase; }
+.r3w-clock { top: 194px; display: flex; align-items: baseline; gap: 14px; }
+.r3w-now { font-family: 'Oswald', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 170px; line-height: 1; color: #e8e2d4; font-variant-numeric: tabular-nums; }
+.r3w-ampm { font-size: 34px; color: rgba(232,226,212,0.72); }
+.r3w-line { font-size: 32px; color: rgba(232,226,212,0.72); }
+.r3w-line b { font-weight: 400; color: #e8e2d4; }
+.r3w-l1 { top: 394px; }
+.r3w-l2 { top: 454px; }
+.r3w-foot { bottom: 41px; font-size: 24px; color: rgba(232,226,212,0.5); }
+.r3w-ready { top: 154px; font-family: 'Oswald', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 220px; line-height: 1; color: #e8e2d4; font-variant-numeric: tabular-nums; }
+.r3w-value { top: 368px; font-size: 28px; color: rgba(232,226,212,0.72); }
+.r3w-run { top: 430px; right: 0; height: 96px; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 0; cursor: pointer;
+  font-family: 'Oswald', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 40px; letter-spacing: 0.04em; color: #0b0b0b; background: #FFC107; box-shadow: 6px 6px 0 #0b0b0b; }
+.r3w-run:active { transform: translate(2px, 2px); box-shadow: 3px 3px 0 #0b0b0b; }
+.r3w-slate :focus-visible { outline: 4px solid #FFC107; outline-offset: 6px; }

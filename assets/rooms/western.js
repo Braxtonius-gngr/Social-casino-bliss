@@ -248,7 +248,18 @@
   }
 
   // ---------- The levels' art ----------
+  // (Showroom's: the bench under the rail, the tags on their hooks, the
+  // lamp over it)
+  var MINI_FLOOR = '<svg class="show-mini" viewBox="0 0 56 56" aria-hidden="true"><rect width="56" height="56" rx="12" fill="#0B0B0B"/>' +
+    '<rect x="4" y="10" width="48" height="3" fill="#3a3733"/>' +
+    '<path d="M14 13v9M26 13v11M38 13v8" stroke="#6b6560" stroke-width="1.2"/>' +
+    '<path d="M14 22a2 2 0 0 0 4 0M26 24a2 2 0 0 0 4 0M38 21a2 2 0 0 0 4 0" fill="none" stroke="#8a8073" stroke-width="1"/>' +
+    '<rect x="11" y="24" width="7" height="6" fill="#FFC107"/><rect x="23" y="26" width="7" height="6" fill="#FFC107"/><rect x="35" y="23" width="7" height="6" fill="#8a3b12"/>' +
+    '<ellipse cx="46" cy="16" rx="5" ry="2" fill="#c9a24c"/><path d="M41 16l5 14 5-14" fill="#FFB21A" opacity=".25"/>' +
+    '<rect x="6" y="38" width="44" height="4" fill="#8c8f8c"/><path d="M9 42v9M47 42v9" stroke="#2a2724" stroke-width="2"/>' +
+    '<rect x="30" y="34" width="14" height="4" rx="1" fill="#9a3a14"/><rect x="44" y="35" width="8" height="2" fill="#1a1512"/></svg>';
   function mini(level) {
+    if (level === 'showroom') return MINI_FLOOR;
     var lounge = level === 'lounge';
     return '<svg class="show-mini" viewBox="0 0 56 56" aria-hidden="true"><defs>' +
       '<linearGradient id="wtMiniHeat" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#C41E2E"/><stop offset=".6" stop-color="#FF6A13"/><stop offset="1" stop-color="#FFF4DC"/></linearGradient></defs>' +
@@ -283,10 +294,11 @@
 
   window.showAddRoom('western', {
     name: 'West Texas Gore Fest',
-    lede: 'The gore fest on fire, at two levels of show: the same deck on each, with more or less of it burning.',
-    showroom: null,
+    lede: 'The gore fest on fire, at three levels of show: the same deck on each, with more or less of it burning. Showroom is all of it — the dice, then the slaughter floor, your platforms on its hooks.',
+    showroom: 'slaughter',
     muted: 'western',
     copy: {
+      showroom: 'The slaughter floor stays your home: a steel bench under the hoist rail, your platforms hanging from its hooks as brass tags, the saw on the bench. Uses the most battery.',
       lounge: 'Your deck with a fuse lit round it that burns down with the day’s run, a branding iron heating round the ready count, embers off every collect, and fire out of the phone when a run is done.',
       quiet: 'Your deck, held still. The same fuse and iron, nothing burning, easiest on battery.'
     },

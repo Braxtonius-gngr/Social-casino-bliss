@@ -32,7 +32,7 @@
         // stored lands on the default here, and getActiveThemeId() does the
         // same for the rest of the app, so the stale key never needs an
         // explicit migration step.
-        var look = { refinement: 'executive', executive: 'executive', prism: 'prism', arcade: 'neon', neon: 'neon', orrery: 'obsidian', obsidian: 'obsidian', glitch: 'glitch', seance: 'glitch', western: 'western' };
+        var look = { refinement: 'executive', executive: 'executive', prism: 'prism', arcade: 'neon', neon: 'neon', orrery: 'obsidian', obsidian: 'obsidian', glitch: 'glitch', seance: 'glitch', western: 'western', slaughter: 'western' };
         // Refinement x Realization became the default on 2026-09-28 and
         // everyone was moved onto it once, whatever they had picked - the
         // picker switches back, and the flag keeps that choice from then
@@ -5554,7 +5554,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     let rollTableSession = null;
     // The homes a skin can fly into, and their modules (each exports
     // prepareTable(): see assets/intro3d/table.mjs).
-    const ROLL_DESTS = { card: './assets/intro3d/table.mjs', study: './assets/intro3d/study.mjs', arcade: './assets/intro3d/arcade.mjs', seance: './assets/intro3d/seance-room.mjs' };
+    const ROLL_DESTS = { card: './assets/intro3d/table.mjs', study: './assets/intro3d/study.mjs', arcade: './assets/intro3d/arcade.mjs', seance: './assets/intro3d/seance-room.mjs', slaughter: './assets/intro3d/slaughter.mjs' };
     // The home changes with the skin (selectTheme): a skin with a table
     // takes its seat now - leaving another home first - and one without
     // leaves it for the classic home.
@@ -7165,6 +7165,21 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // #810000 toward a fresh, saturated arterial red - the rest of the
       // gore treatment (splatter, jagged torn edges, a rougher tearing
       // animation character) lives in assets/app.css.
+      // West Texas Gore Fest at Showroom: the slaughter floor as home
+      // (assets/intro3d/slaughter.mjs) - a steel bench under a hoist rail,
+      // the deck's ready platforms hanging from its hooks as brass cattle
+      // tags, the saw on the bench. Wears the muted pairing's palette, set
+      // from it after this object.
+      slaughter: {
+        name: 'West Texas Gore Fest',
+        description: 'The gore fest at three levels of show. At Showroom, a throw of the dice, then the slaughter floor as your home: a steel bench under the hoist rail, your platforms on its hooks, the saw on the bench; at Lounge and Quiet, the same fuse and iron with less burning.',
+        look: 'western',
+        table: 'slaughter',
+        vars: null,
+        bodyBg: null,
+        metaColor: null
+      },
+      // (West Texas Gore Fest's Lounge and Quiet levels: not listed on its own)
       western: {
         name: 'West Texas Gore Fest',
         description: 'Arterial red, bone, rust, oil-black - dark and jagged.',
@@ -8808,7 +8823,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v96';
+    const APP_BUILD = 'almanac-v97';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
