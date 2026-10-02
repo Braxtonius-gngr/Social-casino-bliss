@@ -295,11 +295,11 @@ select
   round(p.prize_sweeps / ts.units_per_usd, 2)                                   as prize_usd,
   round(p.prize_sweeps / ts.units_per_usd * (1 - s.e1) / s.e1, 0)               as breakeven_wager_usd,
   round(p.prize_sweeps / ts.units_per_usd * (1 - s.e2) / s.e2, 0)               as breakeven_wager_usd_pessimistic,
-  coalesce((t.format_params ->> 'min_bet')::numeric, s.ref_bet)                  as bet_used,
+  coalesce((t.format_params ->> 'min_bet')::numeric / ts.units_per_usd, s.ref_bet) as bet_used_usd,
   round(p.prize_sweeps / ts.units_per_usd * (1 - s.e1) / s.e1
-        / coalesce((t.format_params ->> 'min_bet')::numeric, s.ref_bet), 0)     as breakeven_spins,
+        / coalesce((t.format_params ->> 'min_bet')::numeric / ts.units_per_usd, s.ref_bet), 0) as breakeven_spins,
   round(p.prize_sweeps / ts.units_per_usd * (1 - s.e2) / s.e2
-        / coalesce((t.format_params ->> 'min_bet')::numeric, s.ref_bet), 0)     as breakeven_spins_pessimistic
+        / coalesce((t.format_params ->> 'min_bet')::numeric / ts.units_per_usd, s.ref_bet), 0) as breakeven_spins_pessimistic
 from public.tournament_payout_tiers p
 join public.tournaments t       on t.id = p.tournament_id
 join public.tournament_sites ts on ts.id = t.site_id
@@ -331,8 +331,13 @@ select
   t.triage_status
 from public.tournaments t
 join public.tournament_sites ts on ts.id = t.site_id
-where t.status in ('upcoming','live')
-   or (t.ends_at is not null and t.ends_at > now() - interval '12 hours');
+where (
+    (t.status = 'upcoming' and t.ends_at > now())
+    or (t.status = 'live' and t.ends_at > now())
+  )
+   or (t.status in ('ended','results_posted')
+       and t.ends_at <= now()
+       and t.ends_at > now() - interval '12 hours');
 
 -- Per-site, per-format pattern profile: cadence, timing, pool size, field.
 create or replace view public.tournament_site_profile

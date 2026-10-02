@@ -65,7 +65,9 @@ Views:
    (115 games across the Hot, Featured, Party Time and Hit It tabs; the six
    events from the September and October pages; 40 Victory Vault events from
    May 11 to Jul 6 with their winners) and 14 candidate sites from the
-   research pass. It's safe to re-run.
+   research pass. It's safe to re-run. The seed is maintained directly; there
+   is no checked-in generator. Edit the seed itself, keeping its upserts and
+   delete-before-insert snapshot pattern idempotent.
 
 Both run through the Supabase connector or the SQL editor. CI doesn't apply
 migrations.
