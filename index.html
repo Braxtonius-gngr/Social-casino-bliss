@@ -5910,7 +5910,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // The WebGL intro's lab switcher (?lab): force a tier, or throw again.
     function rollLab3dPanel(screen, tier, tiers, game, games) {
       if (screen.querySelector('.roll-lab')) return;
-      const names = { standard: 'Standard', hardways: 'Hardways', vault: 'Vault Pull', edge: 'Defiant Edge', dice: 'Dice', wheel: 'Wheel' };
+      // (the tiers' names are each game's own)
+      const tierNames = { dice: { standard: 'Standard', hardways: 'Hardways', vault: 'Vault Pull', edge: 'Defiant Edge' }, wheel: { standard: 'Standard Spin', hardways: 'The Twenty', vault: 'The Joker', edge: 'The Peg' }, plinko: { standard: 'Standard Drop', hardways: 'The Twenty', vault: 'The House', edge: 'The Pin' } };
+      const names = Object.assign({ dice: 'Dice', wheel: 'Wheel', plinko: 'Plinko' }, tierNames[game] || tierNames.dice);
       const link = (k, v) => {
         const p = new URLSearchParams(window.location.search);
         p.set('lab', '');
@@ -8805,7 +8807,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v90';
+    const APP_BUILD = 'almanac-v91';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
