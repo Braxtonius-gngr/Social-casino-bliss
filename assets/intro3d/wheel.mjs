@@ -532,7 +532,8 @@ export async function makeGame(ctx) {
     // (the dome: black glass, seen by its Fresnel edge alone)
     const dg = new THREE.SphereGeometry(6.4, 48, 24, 0, TAU, 0, Math.PI / 2);
     const dm = new THREE.MeshPhysicalMaterial({ color: 0x000000, roughness: 0.04, metalness: 0, transmission: 0, transparent: true, opacity: 0.22, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.6, depthWrite: false });
-    const dome = new THREE.Mesh(dg, dm); dome.rotation.x = -Math.PI / 2; dome.position.z = FRONT + 1.6; dome.scale.z = 0.7; wheel.add(dome);
+    // (the +y hemisphere turned to stand out toward +z, over the badge)
+    const dome = new THREE.Mesh(dg, dm); dome.rotation.x = Math.PI / 2; dome.position.z = FRONT + 1.6; dome.scale.z = 0.7; wheel.add(dome);
     keep(dg, dm);
   }
   // the stand: a turned walnut pedestal on a round plinth, a brass collar,
@@ -613,7 +614,7 @@ export async function makeGame(ctx) {
   }
   // The wheel's lamp: a round bronze shade hung over it, and the light it
   // throws (the shadows of the pegs and the clapper onto the paint).
-  const key = new THREE.SpotLight(0xfff0e2, room.PENDANT * 0.95, 0, 0.5, 0.7, 0);
+  const key = new THREE.SpotLight(0xfff0e2, room.PENDANT * 1.2, 0, 0.5, 0.7, 0);
   key.position.set(HUB[0] + 14, room.lamp - 4, HUB[2] + 78);
   key.target.position.set(HUB[0], HUB[1] + 4, HUB[2] + FRONT);
   key.castShadow = true;
@@ -639,16 +640,32 @@ export async function makeGame(ctx) {
   // then the float up and away over the pit.
   const X = HUB[0], Y = HUB[1], Z = HUB[2];
   const tipY = Y + CLAP.pivot - CLAP.len + 1, tipZ = Z + CLAP.z;
-  // (a tall screen takes the whole wheel from further off)
-  const tall = aspect < 0.62;
-  const full = tall ? 1.0 : 0.72;
+  // The whole-wheel shots stand off by what this screen's lens needs
+  // (the same lens as the shot's: 42 degrees tall on a narrow screen, 34
+  // otherwise): the wheel and its clapper arm fitted top to bottom, and
+  // fitted side to side too where that costs no more than half as much
+  // again - on a tall phone a full fit would put the lens four metres back
+  // in the room's haze, so there the rim runs a little off both edges.
+  const vfov = (aspect < 0.62 ? 42 : 34) * DEG, hfov = 2 * Math.atan(Math.tan(vfov / 2) * aspect);
+  const dV = ((RIM[1] + 14) * 1.05) / Math.tan(vfov / 2), dH = (RIM[1] * 1.05) / Math.tan(hfov / 2);
+  const wide = Math.min(Math.max(dV, dH), dV * 1.5);
+  // (the keys below were laid out at 200 cm; `wd` scales a stand-off)
+  const wd = k => Z + (wide / 200) * k, wx = k => X + (wide / 200) * k;
+  // From that far back the lens looks under the dice table's lamp (its
+  // far end 77 cm in front of the wheel, its diffuser at the lamp's height
+  // less 4): the eye stays low and aims so the top of the frame passes
+  // between the clapper's arm and the lamp - the wheel sits high in the
+  // frame, the pit's rail and felt below it.
+  const ey = Y + 10, topY = Y + CLAP.pivot + 6, lampY = room.lamp - 4;
+  const sTop = ((topY - ey) / wide + (lampY - ey) / (wide - 77)) / 2;
+  const aimY = ey + (sTop - Math.tan(vfov / 2)) * wide;
   const Rslow = Rw(slowW), Rrest = Rw(restW), Rend = Rw(plan.endW);
   const keys = [
     [0, X + 26, tipY + 10, tipZ + 52, X - 2, tipY + 2, tipZ],
     [0.9, X + 20, tipY + 8, tipZ + 46, X, tipY + 1, tipZ],
     [Rw(pullAt) + 0.5, X + 40, Y + 54, Z + 120, X, Y + 30, Z + FRONT],
-    [Rw(pullAt) + 1.9, X + 96 * full, Y + 36, Z + 200 * full, X, Y + 8, Z + FRONT],
-    [Math.max(Rw(pullAt) + 3.2, Rslow - 1.4), X + 34 * full, Y + 22, Z + 212 * full, X, Y + 6, Z + FRONT],
+    [Rw(pullAt) + 1.9, wx(96), ey + 14, wd(200), X, aimY + 4, Z + FRONT],
+    [Math.max(Rw(pullAt) + 3.2, Rslow - 1.4), wx(34), ey, wd(212), X, aimY, Z + FRONT],
     [Rslow - 0.1, X + 22, tipY + 12, tipZ + 58, X, tipY - 1, tipZ],
     [Rslow + 0.9, X + 16, tipY + 9, tipZ + 50, X, tipY - 2, tipZ]
   ];
@@ -661,15 +678,15 @@ export async function makeGame(ctx) {
   } else if (tier === 'vault') {
     const Bm = Rw(plan.boom);
     push([Rrest + 0.4, X + 12, tipY - 8, tipZ + 70, X, tipY - 14, tipZ]);
-    push([Bm - 0.2, X + 30, Y + 30, Z + 150, X, Y + 10, Z + FRONT]);
-    push([Bm + 0.5, X + 34, Y + 32, Z + 156, X, Y + 10, Z + FRONT]);
-    push([Bm + 2.2, X + 44, Y + 44, Z + 190, X, Y + 12, Z + FRONT]);
-    push([Rend + 2, X + 50, Y + 60, Z + 220, X, Y + 14, Z + FRONT]);
+    push([Bm - 0.2, wx(30), ey + 6, wd(170), X, aimY + 12, Z + FRONT]);
+    push([Bm + 0.5, wx(34), ey + 6, wd(176), X, aimY + 12, Z + FRONT]);
+    push([Bm + 2.2, wx(44), ey + 4, wd(200), X, aimY + 4, Z + FRONT]);
+    push([Rend + 2, wx(50), ey + 2, wd(240), X, aimY - 6, Z + FRONT]);
   } else {
     // the pocket under the clapper, then the whole wheel with its call
     push([Rrest + 0.5, X + 12, tipY - 8, tipZ + 66, X, tipY - 14, tipZ]);
-    push([Rw(plan.revealW) + 0.2, X + 30, Y + 30, Z + 185 * full, X, Y + 10, Z + FRONT]);
-    push([Rend + 2, X + 44, Y + 50, Z + 240 * full, X, Y + 12, Z + FRONT]);
+    push([Rw(plan.revealW) + 0.2, wx(30), ey + 4, wd(200), X, aimY + 4, Z + FRONT]);
+    push([Rend + 2, wx(44), ey + 2, wd(240), X, aimY - 6, Z + FRONT]);
   }
   // the float: up and away over the pit, into the ceiling
   {
@@ -721,7 +738,10 @@ export async function makeGame(ctx) {
     // against the peg the wheel stopped on)
     const cl = strapShape(clapperAt(th, w, spin.ticks, om));
     bendStrap(strapGeo, strapRest, cl.lean, cl.bend);
-    // the house
+    // the house: the room's rim light stands at the shot's own each frame
+    // (a home fades it from there after each frame of the fly, so a frame
+    // that left it as it found it would dim it again and again)
+    lights.rim.intensity = room.RIM;
     let burst = -1, dust = 1;
     if (tier === 'vault') {
       burst = w - plan.boom;
