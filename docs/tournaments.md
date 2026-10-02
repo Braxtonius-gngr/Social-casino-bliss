@@ -185,6 +185,11 @@ Site notes for the check (it reads this page first):
   win table, Escape closes. Space spins, so never press it. As of Oct 2 the
   rules and win table show min play, max play and lines, but no RTP line was
   seen.
+- **Zula, 3 Oaks games** (Magic Clovers). The info pages (1/6 to 6/6) and
+  Common Rules give lines and jackpot multiples but no RTP (owner, Oct 2): log
+  `rtp_not_shown` after opening them. The win table shows pays at the current
+  spin value, so read the min bet from the bet selector, not the win table.
+  Enter and Space both spin.
 - **Revolver Gaming games** (Irish Coins). Menu tabs: play settings (bet),
   win table (i) and rules (page icon). The RTP and max multiplier are in the
   rules; min and max play are at the end of the win table's symbol pays.
