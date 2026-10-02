@@ -57,10 +57,13 @@ Leaderboard tournaments, races and raffles on sweepstakes casinos are tracked
 in their own `tournament_*` tables in Supabase. These cover the events and
 their payout tiers, eligible games, observations, the owner's entries and the
 per-site profiles. The tables are owner/service-role only, and the PWA never
-reads them. A daily scheduled task fills them after the catalogue sweep, and
-the daily brief reads `tournament_board`. See
-[docs/tournaments.md](docs/tournaments.md) for the data flow, tables and
-setup (`supabase/migrations/20261002080000_tournament_desk.sql` plus
+reads them. Scheduled tasks fill them after the catalogue sweep: one per
+graduated site (Luck Party so far) and a general desk for discovery and the
+rotation. The daily brief reads `tournament_board` and the owner's data-gap
+queue. See [docs/tournaments.md](docs/tournaments.md) for the data flow,
+play policy, tables and setup
+(`supabase/migrations/20261002080000_tournament_desk.sql`,
+`supabase/migrations/20261002100000_tournament_play_policy.sql`, then
 `supabase/seed/tournaments_luckparty.sql`).
 
 ## Quality checks
