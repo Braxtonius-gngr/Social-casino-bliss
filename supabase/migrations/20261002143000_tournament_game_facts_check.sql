@@ -5,11 +5,33 @@
 -- bet, RTP, lines or ways, volatility, max win, hit frequency. It never spins.
 -- This part lets the observation log say how each reading was taken, keeps
 -- provider and operator-page numbers out of the site's facts, and gives the
--- 8:44 brief three flags through tournament_data_gaps: changed RTPs, games
--- that show no RTP, and sites that need the owner signed in.
+-- 8:44 brief its flags through tournament_data_gaps: changed RTPs, games that
+-- show no RTP, and sites that need the owner signed in.
 --
--- Apply in the Supabase SQL editor. Widening two existing checks needs
--- `drop constraint`, which the connector refuses. Re-runnable.
+-- Two steps, both re-runnable:
+--   PART A (two statements) in the Supabase SQL editor: the connector refuses
+--     them, because they remove the old NOT NULL and the old kind check.
+--   PART B (the rest) through the connector or the SQL editor. It stops with
+--     an error if part A hasn't run.
+
+-- =====================================================================
+-- PART A: SQL editor only.
+-- =====================================================================
+alter table public.tournament_game_observations alter column value drop not null;
+alter table public.tournament_game_observations drop constraint if exists tournament_game_observations_kind_check;
+
+-- =====================================================================
+-- PART B: connector-safe from here on.
+-- =====================================================================
+do $$
+begin
+  if exists (select 1 from information_schema.columns
+              where table_schema = 'public' and table_name = 'tournament_game_observations'
+                and column_name = 'value' and is_nullable = 'NO') then
+    raise exception 'Tournament desk part 3: run part A (two statements) in the SQL editor first.';
+  end if;
+end;
+$$;
 
 -- ---------------------------------------------------------------------
 -- Observation log: one reading per row, now with its provenance.
@@ -46,8 +68,6 @@ alter table public.tournament_game_observations
   add column if not exists source_tier      text,
   add column if not exists evidence         jsonb;
 
-alter table public.tournament_game_observations alter column value drop not null;
-
 -- Readings logged before this part came from the owner's command. A 'desk'
 -- reading from before it was never read in-game, so it lands on the safe side.
 update public.tournament_game_observations
@@ -55,54 +75,54 @@ update public.tournament_game_observations
  where source_tier is null;
 alter table public.tournament_game_observations alter column source_tier set not null;
 
-alter table public.tournament_game_observations
-  drop constraint if exists tournament_game_observations_kind_check;
-alter table public.tournament_game_observations
-  add constraint tournament_game_observations_kind_check
-  check (kind in ('min_bet','rtp','rtp_not_shown','paylines','volatility','max_win','hit_freq','pace'));
-
-alter table public.tournament_game_observations
-  drop constraint if exists tournament_game_observations_tier_check;
-alter table public.tournament_game_observations
-  add constraint tournament_game_observations_tier_check
-  check (source_tier in ('in_game','owner_screenshot','provider','operator_page'));
-
-alter table public.tournament_game_observations
-  drop constraint if exists tournament_game_observations_coin_mode_check;
-alter table public.tournament_game_observations
-  add constraint tournament_game_observations_coin_mode_check
-  check (coin_mode in ('SC','GC'));
-
--- What each kind must carry. A min bet is an SC-mode bet by definition.
-alter table public.tournament_game_observations
-  drop constraint if exists tournament_game_observations_shape;
-alter table public.tournament_game_observations
-  add constraint tournament_game_observations_shape check (
-    case kind
-      when 'min_bet'       then value is not null and coin_mode is distinct from 'GC'
-      when 'rtp'           then value is not null and value between 50 and 100
-      when 'pace'          then value is not null
-      when 'paylines'      then (value is not null and value_text is distinct from 'ways')
-                             or (value is null and value_text = 'ways')
-      when 'volatility'    then value is null and value_text is not null
-      when 'max_win'       then value_text is not null
-      when 'hit_freq'      then value_text is not null
-      when 'rtp_not_shown' then value is null
-                            and source_tier in ('in_game','owner_screenshot')
-                            and jsonb_typeof(evidence -> 'screens_opened') = 'array'
-      else false
-    end);
-
--- A reading the check took itself has to say what it saw and where.
-alter table public.tournament_game_observations
-  drop constraint if exists tournament_game_observations_in_game_evidence;
-alter table public.tournament_game_observations
-  add constraint tournament_game_observations_in_game_evidence check (
-    source_tier <> 'in_game'
-    or (coin_mode is not null
-        and jsonb_typeof(evidence) = 'object'
-        and (kind = 'rtp_not_shown'
-             or (value_text is not null and evidence ? 'screen' and evidence ? 'where'))));
+-- New checks, added once (re-running leaves them as they are).
+do $$
+declare
+  c record;
+begin
+  for c in
+    select * from (values
+      ('tournament_game_observations_kind_check',
+       $c$check (kind in ('min_bet','rtp','rtp_not_shown','paylines','volatility','max_win','hit_freq','pace'))$c$),
+      ('tournament_game_observations_tier_check',
+       $c$check (source_tier in ('in_game','owner_screenshot','provider','operator_page'))$c$),
+      ('tournament_game_observations_coin_mode_check',
+       $c$check (coin_mode in ('SC','GC'))$c$),
+      -- What each kind must carry. A min bet is an SC-mode bet by definition.
+      ('tournament_game_observations_shape',
+       $c$check (
+          case kind
+            when 'min_bet'       then value is not null and coin_mode is distinct from 'GC'
+            when 'rtp'           then value is not null and value between 50 and 100
+            when 'pace'          then value is not null
+            when 'paylines'      then (value is not null and value_text is distinct from 'ways')
+                                   or (value is null and value_text = 'ways')
+            when 'volatility'    then value is null and value_text is not null
+            when 'max_win'       then value_text is not null
+            when 'hit_freq'      then value_text is not null
+            when 'rtp_not_shown' then value is null
+                                  and source_tier in ('in_game','owner_screenshot')
+                                  and jsonb_typeof(evidence -> 'screens_opened') = 'array'
+            else false
+          end)$c$),
+      -- A reading the check took itself has to say what it saw and where.
+      ('tournament_game_observations_in_game_evidence',
+       $c$check (
+          source_tier <> 'in_game'
+          or (coin_mode is not null
+              and jsonb_typeof(evidence) = 'object'
+              and (kind = 'rtp_not_shown'
+                   or (value_text is not null and evidence ? 'screen' and evidence ? 'where'))))$c$)
+    ) as v(name, def)
+  loop
+    if not exists (select 1 from pg_constraint
+                    where conname = c.name
+                      and conrelid = 'public.tournament_game_observations'::regclass) then
+      execute format('alter table public.tournament_game_observations add constraint %I %s', c.name, c.def);
+    end if;
+  end loop;
+end;
+$$;
 
 comment on table public.tournament_game_observations is
   'Tournament desk: in-game readings (min bet, RTP or none shown, lines, volatility, max win, hit frequency, pace), each with its source tier and evidence. A trigger keeps tournament_games in step from the in_game and owner_screenshot readings only: latest reading by time, median pace.';
@@ -224,7 +244,7 @@ comment on table public.tournament_fact_runs is
 -- Changes from part 2:
 --   * lines are known once the game states lines or ways;
 --   * a game whose screens show no RTP says so, and when that is all that is
---     missing it drops to priority 3 (nothing to collect in-game);
+--     missing it moves to priority 3 (nothing to collect in-game);
 --   * priority 0 flags from the last 26 hours: a changed RTP, games showing
 --     no RTP, sites that need the owner signed in, and a check that didn't
 --     run or couldn't reach Chrome. The brief's Collect section shows them.

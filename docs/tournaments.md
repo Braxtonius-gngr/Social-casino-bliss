@@ -101,8 +101,9 @@ Views:
 
 1. Migrations: `supabase/migrations/20261002080000_tournament_desk.sql`, then
    `supabase/migrations/20261002100000_tournament_play_policy.sql`, then
-   `supabase/migrations/20261002143000_tournament_game_facts_check.sql` (SQL
-   editor only: it widens two checks with `drop constraint`).
+   `supabase/migrations/20261002143000_tournament_game_facts_check.sql`. Its
+   part A (two statements) needs the SQL editor; part B is connector-safe and
+   stops with an error if part A hasn't run.
 2. Data: `supabase/seed/tournaments_luckparty.sql`. It loads Luck Party and 14
    candidate sites from the research pass, then the owner's 2026-10-02 site
    decisions. For Luck Party it has:
