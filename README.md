@@ -34,17 +34,34 @@ stays completely unblocked either way.
 A floating feedback button (bottom-right, above the docked footer) opens a
 small modal for structured bug reports and ideas - a category
 (timer bug / catalogue-rule correction / feature idea / other) plus a free-text
-description. Submitting posts a Discord embed via a webhook, with
-`navigator.userAgent`, the loaded catalogue version, and the last few
-in-memory app errors auto-attached so reports are debuggable without asking
-the tester follow-up questions. Configure it by setting
-`FEEDBACK_WEBHOOK_URL` in `index.html`'s inline script to a Discord channel
-webhook URL (Server/Channel Settings → Integrations → Webhooks); the button
-still opens with an empty value, it just tells the tester feedback isn't
-wired up yet instead of sending anything. Like `SUPABASE_ANON_KEY`, this URL
-is not a real secret once shipped client-side - anyone who extracts it can
-post to the channel directly - so treat it as fine for a small trusted
-tester build, not a substitute for real auth at wider scale.
+description. Submitting calls the `bug-report` edge function with
+`navigator.userAgent`, the app build, the loaded catalogue version, the skin
+in effect, and the last few in-memory app errors auto-attached, so reports are
+debuggable without asking the tester follow-up questions. The function saves
+the report to `public.bug_reports` (owner/service-role only; the PWA never
+reads it) and then forwards the same Discord embed the form used to post
+itself, from the `DISCORD_BUG_WEBHOOK` edge-function secret. Nothing about the
+channel reaches the browser, and a report is kept even when Discord is down
+(`discord_status` records whether the copy went out). One address is limited to
+ten reports an hour, counted in the database (`allow_bug_report`) from the
+trusted client address, which is stored only as a salted hash. Set the secret in the Supabase dashboard (Edge Functions
+→ Secrets); without it reports are still saved and marked `skipped`. The
+table's `status` column (`new` → `triaged` / `fixed` / `wontfix` / `duplicate`)
+is what the daily brief reads alongside `catalog_sweep_findings`. `user_id`
+references `auth.users` with `ON DELETE CASCADE`, so "Delete My Cloud Data"
+removes a tester's reports along with the rest of their account.
+
+## Tournament desk (owner-only)
+
+Leaderboard tournaments, races and raffles on sweepstakes casinos are tracked
+in their own `tournament_*` tables in Supabase. These cover the events and
+their payout tiers, eligible games, observations, the owner's entries and the
+per-site profiles. The tables are owner/service-role only, and the PWA never
+reads them. A daily scheduled task fills them after the catalogue sweep, and
+the daily brief reads `tournament_board`. See
+[docs/tournaments.md](docs/tournaments.md) for the data flow, tables and
+setup (`supabase/migrations/20261002080000_tournament_desk.sql` plus
+`supabase/seed/tournaments_luckparty.sql`).
 
 ## Quality checks
 
