@@ -9,8 +9,8 @@
 -- show no RTP, and sites that need the owner signed in.
 --
 -- Two steps, both re-runnable:
---   PART A (two statements) in the Supabase SQL editor: the connector refuses
---     them, because they remove the old NOT NULL and the old kind check.
+--   PART A (four statements) in the Supabase SQL editor: the connector refuses
+--     them. They lift the old NOT NULL and clear the checks part B (re)adds.
 --   PART B (the rest) through the connector or the SQL editor. It stops with
 --     an error if part A hasn't run.
 
@@ -19,6 +19,8 @@
 -- =====================================================================
 alter table public.tournament_game_observations alter column value drop not null;
 alter table public.tournament_game_observations drop constraint if exists tournament_game_observations_kind_check;
+alter table public.tournament_game_observations drop constraint if exists tournament_game_observations_shape;
+alter table public.tournament_game_observations drop constraint if exists tournament_game_observations_in_game_evidence;
 
 -- =====================================================================
 -- PART B: connector-safe from here on.
@@ -28,7 +30,7 @@ begin
   if exists (select 1 from information_schema.columns
               where table_schema = 'public' and table_name = 'tournament_game_observations'
                 and column_name = 'value' and is_nullable = 'NO') then
-    raise exception 'Tournament desk part 3: run part A (two statements) in the SQL editor first.';
+    raise exception 'Tournament desk part 3: run part A in the SQL editor first.';
   end if;
 end;
 $$;
@@ -89,8 +91,9 @@ begin
       ('tournament_game_observations_coin_mode_check',
        $c$check (coin_mode in ('SC','GC'))$c$),
       -- What each kind must carry. A min bet is an SC-mode bet by definition.
+      -- coalesce(..., false): a check passes on NULL, so a missing input must fail.
       ('tournament_game_observations_shape',
-       $c$check (
+       $c$check (coalesce(
           case kind
             when 'min_bet'       then value is not null and coin_mode is distinct from 'GC'
             when 'rtp'           then value is not null and value between 50 and 100
@@ -104,15 +107,15 @@ begin
                                   and source_tier in ('in_game','owner_screenshot')
                                   and jsonb_typeof(evidence -> 'screens_opened') = 'array'
             else false
-          end)$c$),
+          end, false))$c$),
       -- A reading the check took itself has to say what it saw and where.
       ('tournament_game_observations_in_game_evidence',
        $c$check (
           source_tier <> 'in_game'
-          or (coin_mode is not null
+          or coalesce(coin_mode is not null
               and jsonb_typeof(evidence) = 'object'
               and (kind = 'rtp_not_shown'
-                   or (value_text is not null and evidence ? 'screen' and evidence ? 'where'))))$c$)
+                   or (value_text is not null and evidence ? 'screen' and evidence ? 'where')), false))$c$)
     ) as v(name, def)
   loop
     if not exists (select 1 from pg_constraint
@@ -219,6 +222,13 @@ $$;
 
 revoke all on function public.tournament_apply_game_observation() from public;
 
+-- Recompute every game's facts once under these rules: fire the trigger for
+-- one row per (game, kind). A kind left with only provider or operator_page
+-- readings comes back null. Re-runnable.
+update public.tournament_game_observations o
+   set kind = o.kind
+ where o.id in (select min(x.id) from public.tournament_game_observations x group by x.game_id, x.kind);
+
 -- ---------------------------------------------------------------------
 -- One row per run of the game facts check, written at the end of the run.
 --   chrome_ok      false when Chrome couldn't be reached (nothing was read)
@@ -284,13 +294,19 @@ facts as (
   left join eligible_open eo on eo.game_id = g.id
 ),
 next_check as (
+  -- next_at: the next 8:20 AM CT check; prev_at: the latest one due by now.
   select case when n.today_check > now() then n.today_check
-              else ((n.d + 1) + time '08:20') at time zone 'America/Chicago' end as next_at
+              else ((n.d + 1) + time '08:20') at time zone 'America/Chicago' end as next_at,
+         case when n.today_check <= now() then n.today_check
+              else ((n.d - 1) + time '08:20') at time zone 'America/Chicago' end as prev_at
   from (select (now() at time zone 'America/Chicago')::date as d,
                (((now() at time zone 'America/Chicago')::date) + time '08:20') at time zone 'America/Chicago' as today_check) n
 ),
 last_run as (
-  select r.* from public.tournament_fact_runs r order by r.started_at desc limit 1
+  -- always one row; all nulls when no run has been logged yet
+  select r.*
+  from (select 1) one
+  left join lateral (select * from public.tournament_fact_runs order by started_at desc limit 1) r on true
 ),
 rtp_prev as (
   -- the latest RTP-or-none reading per game, with the last RTP number read before it
@@ -420,18 +436,22 @@ left join public.tournament_sites ts on ts.slug = s ->> 'site'
 where r.started_at > now() - interval '26 hours'
   and s ->> 'reason' = 'needs_signin'
 union all
+-- A run logs its start time; 30 minutes of slack covers an early start.
 select
   'all',
   'facts_run',
-  case when r.started_at <= now() - interval '26 hours'
-       then 'Game facts check hasn''t run since ' || to_char(r.started_at at time zone 'America/Chicago', 'Dy Mon DD HH12:MI AM') || ' CT'
+  case when r.id is null
+       then 'Game facts check has never logged a run'
+       when r.started_at < (select prev_at from next_check) - interval '30 minutes'
+       then 'No game facts check logged since ' || to_char(r.started_at at time zone 'America/Chicago', 'Dy Mon DD HH12:MI AM') || ' CT'
        else 'Game facts check couldn''t reach Chrome (' || to_char(r.started_at at time zone 'America/Chicago', 'HH12:MI AM') || ' CT)' end,
   'nothing read',
   0,
   (select next_at from next_check),
   'The check needs the always-on laptop awake, the Claude app open, and Chrome running with the Claude extension. It runs again at 8:20 AM CT.'
 from last_run r
-where r.started_at <= now() - interval '26 hours'
+where r.id is null
+   or r.started_at < (select prev_at from next_check) - interval '30 minutes'
    or not r.chrome_ok;
 
 revoke all on public.tournament_data_gaps from anon, authenticated;
