@@ -302,7 +302,7 @@ function bendStrap(geo, rest, lean, bend) {
     // (s: down the strap from the pin; the vertex's offset across it)
     const s = -y0, off = x0;
     let cx, cy, tx, ty;
-    if (s <= Lr || bend < 1e-4) {
+    if (s <= Lr || Math.abs(bend) < 1e-4) {
       // on the rigid part, or no bend: swung on the pin
       cx = sl * s; cy = -cl * s; tx = cl; ty = sl;
       if (s > Lr) { /* no bend: straight on */ }

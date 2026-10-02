@@ -5369,8 +5369,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const shotFelt = FELT_CHOICES[q.get('felt')] ? q.get('felt') : tableDest === 'card' ? getFelt() : 'black';
       // (the trim the same way: ?trim= any, for the lab)
       const shotTrim = TRIM_CHOICES[q.get('trim')] ? q.get('trim') : tableDest === 'card' ? getTrim() : 'gold';
-      // (the landing's copy is printed on a light felt: see app.css)
-      document.documentElement.setAttribute('data-felt', shotFelt);
+      // (the landing's copy is printed on a light felt: see app.css - on
+      // the dice's shot, where the cloth is what the copy lies over; another
+      // game's frames are its own, dark, so the copy keeps its veil)
+      document.documentElement.setAttribute('data-felt', game === 'dice' ? shotFelt : 'black');
       let tablePrep = null, flying = false;
       const prepTable = () => {
         if (!tableDest || tablePrep || !api) return tablePrep;
@@ -5503,7 +5505,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       screen.classList.remove('r3-loading');
       screen.removeEventListener('pointerdown', skipWhileLoading);
       window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; window.rollIntroSetFelt = null; window.rollIntroSetTrim = null; };
-      window.rollIntroSetFelt = id => { if (api && api.setFelt) { api.setFelt(id); document.documentElement.setAttribute('data-felt', id); } };
+      window.rollIntroSetFelt = id => { if (api && api.setFelt) { api.setFelt(id); if (game === 'dice') document.documentElement.setAttribute('data-felt', id); } };
       window.rollIntroSetTrim = id => { if (api && api.setTrim) api.setTrim(id); };
       if (direct) {
         // Straight to the seat: the shot is over before it began - the
