@@ -255,17 +255,15 @@ begin
 end;
 $$;
 
-drop trigger if exists tournament_sites_touch on public.tournament_sites;
-create trigger tournament_sites_touch before update on public.tournament_sites
+-- create or replace (PG14+) keeps this re-runnable without a separate
+-- drop statement, which some SQL connectors refuse to send.
+create or replace trigger tournament_sites_touch before update on public.tournament_sites
   for each row execute function public.tournament_set_updated_at();
-drop trigger if exists tournaments_touch on public.tournaments;
-create trigger tournaments_touch before update on public.tournaments
+create or replace trigger tournaments_touch before update on public.tournaments
   for each row execute function public.tournament_set_updated_at();
-drop trigger if exists tournament_games_touch on public.tournament_games;
-create trigger tournament_games_touch before update on public.tournament_games
+create or replace trigger tournament_games_touch before update on public.tournament_games
   for each row execute function public.tournament_set_updated_at();
-drop trigger if exists tournament_settings_touch on public.tournament_settings;
-create trigger tournament_settings_touch before update on public.tournament_settings
+create or replace trigger tournament_settings_touch before update on public.tournament_settings
   for each row execute function public.tournament_set_updated_at();
 
 revoke all on function public.tournament_set_updated_at() from public, anon, authenticated;
