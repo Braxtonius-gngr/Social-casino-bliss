@@ -19,6 +19,7 @@ reads the same ones. This page covers the moving parts.
 | 7:57 AM | Daily catalog sweep | platform pages | `catalog_sweep_findings` |
 | 8:15 AM | **Luck Party tournament desk** | Luck Party's promo pages, lobby tabs, Victory Vault | Luck Party's events, games, cards |
 | 8:17 AM | **Daily tournament desk** | rotation sites (by priority), the sites the sweep checked today, a few candidates, in-app sites now and then | every other site's events and cards; site statuses |
+| 8:20 AM | **Tournament game facts check** | games opened in the owner's Chrome (needs the always-on laptop), in `tournament_fact_queue` order | `tournament_game_observations`, one `tournament_fact_runs` row |
 | 8:44 AM | Daily way forward | sweep findings, bug reports, `tournament_board`, `tournament_data_gaps` | nothing (one brief file + push) |
 
 A site moves through these statuses:
@@ -77,7 +78,8 @@ leaves an existing row alone.
 | `tournaments` | event instance, keyed `(site_id, slug, ends_at)`, with `format_params`, game scope, prize totals and the latest `decision` card |
 | `tournament_payout_tiers` | rank range and prize per place |
 | `tournament_games` | game on a site: categories seen, published and in-game RTP, volatility, max win, min SC bet, paylines, measured spins/hour |
-| `tournament_game_observations` | one owner reading (min bet, RTP, paylines, pace). The log is the source of truth: a trigger recomputes those `tournament_games` fields on every insert, correction or delete (latest reading by time for min bet, RTP and paylines; median pace) |
+| `tournament_game_observations` | one reading: min bet, RTP or `rtp_not_shown`, paylines (or ways), volatility, max win, hit frequency, pace. Each carries `value_text` (as printed), `coin_mode`, `source_tier` and `evidence`. The log is the source of truth: a trigger recomputes the site's facts on `tournament_games` on every insert, correction or delete, from `in_game` and `owner_screenshot` readings only (latest by time; median pace) |
+| `tournament_fact_runs` | one run of the game facts check: Chrome reachable, games read, sites skipped and why |
 | `tournament_eligible_games` | event ↔ game, with a shared `site_id` enforced by composite foreign keys |
 | `tournament_snapshots` | observation: leaderboard values, last-paid threshold, published winners |
 | `tournament_entries` | the owner's own entry and result |
@@ -89,7 +91,8 @@ Views:
 - `tournament_tier_math`: break-even wager and spins per paid rank, at 4% and 6% edge.
 - `tournament_event_math`: per-event lines for the other formats: Max Multiplier field size, raffle SC-ticket break-even ticket count, capped Hit the Multiplier cost.
 - `tournament_threshold_curve`: last-paid thresholds by hours-to-end bucket, with the median growth to the final.
-- `tournament_data_gaps`: what only the owner can collect, most urgent first, each with its command.
+- `tournament_data_gaps`: what only the owner can collect, most urgent first, each with its command. Priority 0 rows are the game facts check's flags for 26 hours: `rtp_changed`, `no_rtp`, `facts_signin`, `facts_run` (didn't run, or couldn't reach Chrome). The brief's Collect section shows them first.
+- `tournament_fact_queue`: the game facts check's work list. Games in live or upcoming events that miss a fact, then games whose last in-game reading is over 30 days old, then lobby-tab gaps; Luck Party first, then `rotation_priority`.
 - `tournament_site_profile`: per site and format, the usual end day and time, average length and pool, and the share of wins taken by repeat winners.
 - `tournament_repeat_winners`
 - `tournament_graduation_candidates`
@@ -97,7 +100,10 @@ Views:
 ## Setup
 
 1. Migrations: `supabase/migrations/20261002080000_tournament_desk.sql`, then
-   `supabase/migrations/20261002100000_tournament_play_policy.sql`.
+   `supabase/migrations/20261002100000_tournament_play_policy.sql`, then
+   `supabase/migrations/20261002143000_tournament_game_facts_check.sql`. Its
+   part A (four statements) needs the SQL editor; part B is connector-safe and
+   stops with an error if part A hasn't run.
 2. Data: `supabase/seed/tournaments_luckparty.sql`. It loads Luck Party and 14
    candidate sites from the research pass, then the owner's 2026-10-02 site
    decisions. For Luck Party it has:
@@ -133,13 +139,80 @@ insert-only chunks.
 ## Commands the owner can paste into any session
 
 - `Apply tournament desk: run supabase/migrations/20261002080000_tournament_desk.sql, supabase/migrations/20261002100000_tournament_play_policy.sql, then supabase/seed/tournaments_luckparty.sql on Supabase project ewfvyrhlsanzkmozrmhs, then run get_advisors.`
-- `Tournament game facts <site> <game>: min <sc>, rtp <percent>[, lines <n>]`. Inserts `tournament_game_observations` rows (`min_bet`, `rtp`, `paylines`, source `owner`). Read them from the game's info/paytable screen in SC mode.
+- `Tournament game facts <site> <game>: min <sc>, rtp <percent>, lines <n>, vol <label> (<scale>), max <x>`. Every part is optional; send what the game shows. Inserts one `tournament_game_observations` row per value: `min_bet`, `rtp`, `paylines` (`lines ways` → value null, `value_text` 'ways'), `volatility` (label in `value_text`, scale in `volatility_scale`), `max_win`, each with source `owner`, `source_tier` 'owner_screenshot', `coin_mode` 'SC' and `value_text` as typed. `rtp none` logs `rtp_not_shown` with `evidence` `{"screens_opened": [...]}` naming the screens the owner checked (ask if they didn't say). A row sent without `source_tier` gets one from `source` (`owner` → `owner_screenshot`, `desk` → `provider`), and an owner min bet without `coin_mode` is SC, so older phrasings of this command and `Tournament pace` still work. Read them from the game's info/paytable screen in SC mode; a screenshot instead of typed values works the same.
 - `Tournament pace <site> <game>: <spins> spins in <minutes> min`. Inserts a `pace` observation of `spins x 60 / minutes` spins per hour.
 - `Tournament leaderboard <site> <slug>: <paste or screenshot>`. Writes a `tournament_snapshots` row with source `screenshot`, the screenshot's time, `hours_to_end`, the values per rank in `leaderboard` and the last paid place's value in `threshold_last_paid`. For an in-app site with no event row yet, it first creates the event from the screenshot (`seen_by = 'screenshot'`).
 - `Log tournament entry <site> <slug> <end date>: spins <n>, wagered <sc>, best multiplier <x>, final rank <r>, prize <sc>, games <names>`. Writes `tournament_entries`.
 - `Set planned daily SC to <sc>`. Writes `tournament_settings.planned_daily_sc`, which sizes the "Today's play" routing line.
 - `Set tournament weekly loss limit to <sc>`. Writes `tournament_settings.weekly_loss_limit`.
 - `Create site task <slug>`. Copies the Luck Party tournament desk scheduled task for that site, adapts its site section, and sets `tournament_sites.own_task`.
+
+## Game facts check (8:20 AM CT)
+
+A scheduled task in the owner's own Chrome (the always-on laptop, signed in).
+It opens up to 12 games from `tournament_fact_queue`, reads the info,
+paytable and rules screens and the bet selector, and closes them. It never
+spins, bets, buys a feature, claims, redeems or changes a setting, and never
+types a password or solves a CAPTCHA: a signed-out site is skipped with
+`needs_signin`. Its rule is that a blank beats a wrong number:
+
+- Only `in_game` and `owner_screenshot` readings become the site's facts.
+  `provider` numbers are context (studios ship several RTP versions and each
+  casino picks one); `operator_page` numbers wait for an in-game reading.
+- Values are copied as printed and read twice. A range, a blurred digit or
+  two reads that disagree means nothing is written and a screenshot is asked
+  for. Ways stay ways; volatility stays in the game's own scale.
+- A new RTP that differs from the last one still wins, and shows as
+  `rtp_changed`. A game whose screens show no RTP gets `rtp_not_shown`, its
+  RTP stays blank, and the check leaves its RTP alone for 30 days.
+- Each run ends with a `tournament_fact_runs` row, even when Chrome was
+  unreachable (then it writes nothing else).
+
+The SQL connector cancels any statement containing the word "drop", so the
+check refers to games by `game_id` and keeps that word out of notes.
+
+Site notes for the check (it reads this page first):
+
+- **Stake.us.** Under each game there's a "Game Statistics" table with an RTP
+  column. That is what players actually got back over a period, not the
+  game's RTP; never record it. Read RTP inside the game's own info or
+  paytable.
+- **Stake.us, Twist Gaming games** (Star Wardens). The game's rules give the
+  RTP of every mode (normal, antes, bonus buys) and the max win. Star Wardens
+  pays clusters on a honeycomb, with no paylines.
+- **Cluster-pay games.** Log lines as `ways` (no number) and say "cluster" in
+  the note; the lines reachability test doesn't apply to them.
+- **Luck Party.** The lobby opens with a special-offer pop-up; close it with
+  its X, never the buy button. The SC/GC toggle sits in the top bar. Games
+  can take about a minute to load on the always-on laptop.
+- **Expanse Studios games** (Icy Luck Party). If the menu button doesn't
+  respond, the game's own help page lists safe keys: I opens the rules, P the
+  win table, Escape closes. Space spins, so never press it. As of Oct 2 the
+  rules and win table show min play, max play and lines, but no RTP line was
+  seen.
+- **Zula, 3 Oaks games** (Magic Clovers). The info pages (1/6 to 6/6) and
+  Common Rules give lines and jackpot multiples but no RTP (owner, Oct 2): log
+  `rtp_not_shown` after opening them. The win table shows pays at the current
+  spin value, so read the min bet from the bet selector, not the win table.
+  Enter and Space both spin. In Coin UP Volcano the LINES selector sets how
+  many rows play, at 0.10 SC per row (LINES 1 is the middle row only); the
+  jackpots don't change with it. Read the min bet at LINES 1, and don't log
+  LINES as paylines.
+- **Revolver Gaming games** (Irish Coins). Menu tabs: play settings (bet),
+  win table (i) and rules (page icon). The RTP and max multiplier are in the
+  rules; min and max play are at the end of the win table's symbol pays.
+- **Fortune Wins.** Its sweeps coin is FC (`sweeps_unit` FC); switch the top
+  toggle to FC and log `coin_mode` SC.
+- **Fortune Wins, Evoplay games** (Fruit Nova, Fortune Sevens Hold & Win, Mega
+  Greatest Catch Blue Marlin). Menu tabs: Wintable, Rules, History, Settings.
+  The end of the Rules page gives the max win under MAX WIN RULES ("1040x
+  coin value") and "Min coin value: FC n" under ADDITIONAL INFORMATION. Coin
+  value is the whole play, so that is the min bet; the Coins Settings slider
+  shows the same Min. Close Coins Settings with its X, never Confirm. No RTP
+  anywhere in the rules (owner, Oct 2).
+- **Fortune Wins, Hacksaw games** (Le Bandit). At the lowest bet the label
+  under the spin button reads "PLAY MIN FC. n" and the minus button is
+  greyed. No RTP shown (owner, Oct 2).
 
 ## What the numbers mean
 
@@ -169,6 +242,8 @@ What the Apr 2 – Oct 2 history shows on Luck Party:
   Max Total Play wins, but 8% or less in the luck formats. One display name
   won 11 times across four formats.
 
-The desk does not log in, does not play, and does not automate anything on a
-casino. It reads public pages. Leaderboard values and in-game facts come from
-the owner's own screenshots and readings.
+The desks don't log in, don't play, and don't automate anything on a casino.
+They read public pages. Leaderboard values come from the owner's screenshots.
+In-game facts come from the owner's readings and from the game facts check,
+which opens games in the owner's own signed-in Chrome only to read their info
+screens and never plays.
