@@ -100,8 +100,8 @@ create table if not exists public.tournaments (
   slug_confirmed     boolean     not null default true,
   name               text        not null,
   format_code        text        not null references public.tournament_formats (code),
-  format_params      jsonb       not null default '{}'::jsonb, -- {"top_n":5} {"target_x":9.1,"first_n":5,"closest_n":5} {"gc_spins":5000,"sc_spins":200,"max_tickets":2}
-  currency_mode      text        check (currency_mode in ('SC','GC','both','other')),
+  format_params      jsonb       not null default '{}'::jsonb, -- {"top_n":5} {"target_x":9.1,"first_n":5,"closest_n":5} {"gc_spins":5000,"sc_spins":200,"max_tickets":2}; min_bet is in the site's sweeps unit; board ('FC'/'GC') when one page runs two boards (slug gets a --fc / --gc suffix)
+  currency_mode      text        check (currency_mode in ('SC','GC','both','other')), -- 'SC' = sweeps mode in the site's own unit (FC on Fortune Wins)
   game_scope         text,                                 -- 'category:Hot' | 'game:<name>' | 'provider:<name>' | 'all'
   starts_at          timestamptz,
   ends_at            timestamptz,
@@ -150,7 +150,8 @@ create table if not exists public.tournament_games (
   site_id          bigint      not null references public.tournament_sites (id) on delete cascade,
   name             text        not null,
   provider         text,
-  categories       text[]      not null default '{}',     -- lobby tabs it was seen under
+  categories       text[]      not null default '{}',     -- lobby tabs it is in as of categories_seen_on; a tab refresh replaces that tab's membership
+  categories_seen_on date,
   is_exclusive     boolean     not null default false,
   rtp_published    numeric     check (rtp_published between 50 and 100), -- provider default, percent
   rtp_onsite       numeric     check (rtp_onsite between 50 and 100),    -- read from the in-game paytable here
@@ -165,6 +166,9 @@ create table if not exists public.tournament_games (
   updated_at       timestamptz not null default now(),
   constraint tournament_games_site_name_key unique (site_id, name)
 );
+
+-- For a database created from an earlier draft of this file.
+alter table public.tournament_games add column if not exists categories_seen_on date;
 
 create table if not exists public.tournament_eligible_games (
   tournament_id  bigint not null references public.tournaments (id) on delete cascade,
@@ -274,7 +278,9 @@ revoke all on function public.tournament_set_updated_at() from public, anon, aut
 -- volume it takes is below its line:
 --   wager line  W* = P(1-e)/e   (prize after its own 1x playthrough)
 --   spins line  S* = W* / bet
--- Computed at the default and the pessimistic edge.
+-- Computed at the default and the pessimistic edge. format_params.min_bet is
+-- in the site's unit, so it is converted to USD before dividing (bet_used is
+-- in USD); without it the reference bet (0.10 SC = $0.10) is used.
 do $$
 begin
   if exists (
