@@ -19,6 +19,7 @@ reads the same ones. This page covers the moving parts.
 | 7:57 AM | Daily catalog sweep | platform pages | `catalog_sweep_findings` |
 | 8:15 AM | **Luck Party tournament desk** | Luck Party's promo pages, lobby tabs, Victory Vault | Luck Party's events, games, cards |
 | 8:17 AM | **Daily tournament desk** | rotation sites (by priority), the sites the sweep checked today, a few candidates, in-app sites now and then | every other site's events and cards; site statuses |
+| 8:20 AM | **Tournament game facts check** | games opened in the owner's Chrome (needs the always-on laptop), in `tournament_fact_queue` order | `tournament_game_observations`, one `tournament_fact_runs` row |
 | 8:44 AM | Daily way forward | sweep findings, bug reports, `tournament_board`, `tournament_data_gaps` | nothing (one brief file + push) |
 
 A site moves through these statuses:
@@ -77,7 +78,8 @@ leaves an existing row alone.
 | `tournaments` | event instance, keyed `(site_id, slug, ends_at)`, with `format_params`, game scope, prize totals and the latest `decision` card |
 | `tournament_payout_tiers` | rank range and prize per place |
 | `tournament_games` | game on a site: categories seen, published and in-game RTP, volatility, max win, min SC bet, paylines, measured spins/hour |
-| `tournament_game_observations` | one owner reading (min bet, RTP, paylines, pace). The log is the source of truth: a trigger recomputes those `tournament_games` fields on every insert, correction or delete (latest reading by time for min bet, RTP and paylines; median pace) |
+| `tournament_game_observations` | one reading: min bet, RTP or `rtp_not_shown`, paylines (or ways), volatility, max win, hit frequency, pace. Each carries `value_text` (as printed), `coin_mode`, `source_tier` and `evidence`. The log is the source of truth: a trigger recomputes the site's facts on `tournament_games` on every insert, correction or delete, from `in_game` and `owner_screenshot` readings only (latest by time; median pace) |
+| `tournament_fact_runs` | one run of the game facts check: Chrome reachable, games read, sites skipped and why |
 | `tournament_eligible_games` | event ↔ game, with a shared `site_id` enforced by composite foreign keys |
 | `tournament_snapshots` | observation: leaderboard values, last-paid threshold, published winners |
 | `tournament_entries` | the owner's own entry and result |
@@ -89,7 +91,8 @@ Views:
 - `tournament_tier_math`: break-even wager and spins per paid rank, at 4% and 6% edge.
 - `tournament_event_math`: per-event lines for the other formats: Max Multiplier field size, raffle SC-ticket break-even ticket count, capped Hit the Multiplier cost.
 - `tournament_threshold_curve`: last-paid thresholds by hours-to-end bucket, with the median growth to the final.
-- `tournament_data_gaps`: what only the owner can collect, most urgent first, each with its command.
+- `tournament_data_gaps`: what only the owner can collect, most urgent first, each with its command. Priority 0 rows are the game facts check's flags for 26 hours: `rtp_changed`, `no_rtp`, `facts_signin`, `facts_run` (didn't run, or couldn't reach Chrome). The brief's Collect section shows them first.
+- `tournament_fact_queue`: the game facts check's work list. Games in live or upcoming events that miss a fact, then games whose last in-game reading is over 30 days old, then lobby-tab gaps; Luck Party first, then `rotation_priority`.
 - `tournament_site_profile`: per site and format, the usual end day and time, average length and pool, and the share of wins taken by repeat winners.
 - `tournament_repeat_winners`
 - `tournament_graduation_candidates`
@@ -97,7 +100,9 @@ Views:
 ## Setup
 
 1. Migrations: `supabase/migrations/20261002080000_tournament_desk.sql`, then
-   `supabase/migrations/20261002100000_tournament_play_policy.sql`.
+   `supabase/migrations/20261002100000_tournament_play_policy.sql`, then
+   `supabase/migrations/20261002143000_tournament_game_facts_check.sql` (SQL
+   editor only: it widens two checks with `drop constraint`).
 2. Data: `supabase/seed/tournaments_luckparty.sql`. It loads Luck Party and 14
    candidate sites from the research pass, then the owner's 2026-10-02 site
    decisions. For Luck Party it has:
@@ -133,13 +138,37 @@ insert-only chunks.
 ## Commands the owner can paste into any session
 
 - `Apply tournament desk: run supabase/migrations/20261002080000_tournament_desk.sql, supabase/migrations/20261002100000_tournament_play_policy.sql, then supabase/seed/tournaments_luckparty.sql on Supabase project ewfvyrhlsanzkmozrmhs, then run get_advisors.`
-- `Tournament game facts <site> <game>: min <sc>, rtp <percent>[, lines <n>]`. Inserts `tournament_game_observations` rows (`min_bet`, `rtp`, `paylines`, source `owner`). Read them from the game's info/paytable screen in SC mode.
+- `Tournament game facts <site> <game>: min <sc>, rtp <percent>, lines <n>, vol <label> (<scale>), max <x>`. Every part is optional; send what the game shows. Inserts one `tournament_game_observations` row per value: `min_bet`, `rtp`, `paylines` (`lines ways` → value null, `value_text` 'ways'), `volatility` (label in `value_text`, scale in `volatility_scale`), `max_win`, each with source `owner`, `source_tier` 'owner_screenshot', `coin_mode` 'SC' and `value_text` as typed. `rtp none` logs `rtp_not_shown`. Read them from the game's info/paytable screen in SC mode; a screenshot instead of typed values works the same.
 - `Tournament pace <site> <game>: <spins> spins in <minutes> min`. Inserts a `pace` observation of `spins x 60 / minutes` spins per hour.
 - `Tournament leaderboard <site> <slug>: <paste or screenshot>`. Writes a `tournament_snapshots` row with source `screenshot`, the screenshot's time, `hours_to_end`, the values per rank in `leaderboard` and the last paid place's value in `threshold_last_paid`. For an in-app site with no event row yet, it first creates the event from the screenshot (`seen_by = 'screenshot'`).
 - `Log tournament entry <site> <slug> <end date>: spins <n>, wagered <sc>, best multiplier <x>, final rank <r>, prize <sc>, games <names>`. Writes `tournament_entries`.
 - `Set planned daily SC to <sc>`. Writes `tournament_settings.planned_daily_sc`, which sizes the "Today's play" routing line.
 - `Set tournament weekly loss limit to <sc>`. Writes `tournament_settings.weekly_loss_limit`.
 - `Create site task <slug>`. Copies the Luck Party tournament desk scheduled task for that site, adapts its site section, and sets `tournament_sites.own_task`.
+
+## Game facts check (8:20 AM CT)
+
+A scheduled task in the owner's own Chrome (the always-on laptop, signed in).
+It opens up to 12 games from `tournament_fact_queue`, reads the info,
+paytable and rules screens and the bet selector, and closes them. It never
+spins, bets, buys a feature, claims, redeems or changes a setting, and never
+types a password or solves a CAPTCHA: a signed-out site is skipped with
+`needs_signin`. Its rule is that a blank beats a wrong number:
+
+- Only `in_game` and `owner_screenshot` readings become the site's facts.
+  `provider` numbers are context (studios ship several RTP versions and each
+  casino picks one); `operator_page` numbers wait for an in-game reading.
+- Values are copied as printed and read twice. A range, a blurred digit or
+  two reads that disagree means nothing is written and a screenshot is asked
+  for. Ways stay ways; volatility stays in the game's own scale.
+- A new RTP that differs from the last one still wins, and shows as
+  `rtp_changed`. A game whose screens show no RTP gets `rtp_not_shown`, its
+  RTP stays blank, and the check leaves its RTP alone for 30 days.
+- Each run ends with a `tournament_fact_runs` row, even when Chrome was
+  unreachable (then it writes nothing else).
+
+The SQL connector cancels any statement containing the word "drop", so the
+check refers to games by `game_id` and keeps that word out of notes.
 
 ## What the numbers mean
 
@@ -169,6 +198,8 @@ What the Apr 2 – Oct 2 history shows on Luck Party:
   Max Total Play wins, but 8% or less in the luck formats. One display name
   won 11 times across four formats.
 
-The desk does not log in, does not play, and does not automate anything on a
-casino. It reads public pages. Leaderboard values and in-game facts come from
-the owner's own screenshots and readings.
+The desks don't log in, don't play, and don't automate anything on a casino.
+They read public pages. Leaderboard values come from the owner's screenshots.
+In-game facts come from the owner's readings and from the game facts check,
+which opens games in the owner's own signed-in Chrome only to read their info
+screens and never plays.
