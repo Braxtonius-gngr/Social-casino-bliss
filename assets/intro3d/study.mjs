@@ -742,7 +742,10 @@ export async function prepareTable(opts) {
       world.stage(introT0 + tt);
       const dim = 1 - 0.85 * smoother((dive - 0.45) / 0.5);
       house.forEach(([L, i0]) => { L.intensity = i0 * dim; });
-      world.scene.environmentIntensity = env0 * lerp(1, 0.55, 1 - dim);
+      // (the room's even light settling back as you sit - the desk lamp is
+      // what lights the desk, so its pool is what you see: see ROOM_ENV)
+      const sat = fo.reduced ? 1 : smoother((tt - FLY * 0.45) / (FLY * 0.55));
+      world.scene.environmentIntensity = env0 * lerp(1, K.ROOM_ENV, sat) * lerp(1, 0.55, 1 - dim);
       world.lights.pendant.intensity = pendant0 * dim;
       const lit = 1 - dim;
       sunLamp.intensity = 3.4 * lit;
@@ -958,6 +961,7 @@ export async function prepareTable(opts) {
         window.removeEventListener('pointermove', onMove, true);
         window.removeEventListener('pointerup', onUp, true);
         window.removeEventListener('pointercancel', onCancel, true);
+        world.scene.environmentIntensity = env0;
         camera.near = near0; camera.updateProjectionMatrix();
         css.domElement.remove();
       }

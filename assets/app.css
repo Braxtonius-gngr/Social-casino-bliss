@@ -1032,6 +1032,15 @@
        under a card lying there, wider and softer as it is lifted: see
        shadeCard in table.mjs - so the face keeps only its edge) */
     .r3t-face { position: absolute; inset: 0; border-radius: 18px; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 0 0 1px rgba(0,0,0,0.3); transition: box-shadow .2s ease; }
+    /* (lying flat, a card's contact is drawn in its own plane too: the
+       cards are page elements over the canvas, so the lamp's shadow on the
+       felt can never fall on a card underneath - this does. A black line
+       right at the edge, where no light gets under a card flat on cloth,
+       and a short soft falloff round it, a hair more on the side away from
+       the lamp. At 50 px to the cm: the line under half a millimetre, the
+       falloff about two. Gone as soon as the card lifts - the table's own
+       shadow takes over from there.) */
+    .r3t-card:not(.r3t-lifted):not(.r3t-hover):not(:focus-visible) .r3t-face { box-shadow: 0 0 0 1px rgba(0,0,0,0.55), 0 1px 2px 1px rgba(0,0,0,0.6), 0 4px 10px rgba(0,0,0,0.42); }
     /* (under a finger or the pointer once dealt, a card comes up to meet it
        and its gilt edge catches the light) */
     .r3t-card.r3t-hover .r3t-face { box-shadow: 0 0 0 2px rgba(240,207,127,0.85), 0 0 26px 2px rgba(255,215,0,0.42); }
@@ -1130,7 +1139,7 @@
     /* Your phone: titanium and glass, in the corner of the view half out
        of your pocket, up in front of you on a tap. Everything inside is
        sized to its width (cqw), so it scales with the screen. */
-    .r3t-phone { position: absolute; left: 50%; top: 50%; width: min(76vmin, 40vh); aspect-ratio: 300 / 640; transform: translate(-50%, -50%) perspective(1200px) translate(calc(50vw - 44px), calc(50vh + 8%)) rotate(-14deg) rotateX(34deg) scale(0.58); transform-origin: 50% 50%; transition: transform .6s cubic-bezier(.22,.9,.3,1); container-type: inline-size; pointer-events: auto; cursor: pointer; outline: none; z-index: 3; -webkit-tap-highlight-color: transparent; }
+    .r3t-phone { position: absolute; left: 50%; top: 50%; width: min(76vmin, 40vh); aspect-ratio: 300 / 640; transform: translate(-50%, -50%) perspective(1200px) translate(calc(50vw - 8px), calc(50vh + 17%)) rotate(-14deg) rotateX(34deg) scale(0.58); transform-origin: 50% 50%; transition: transform .6s cubic-bezier(.22,.9,.3,1); container-type: inline-size; pointer-events: auto; cursor: pointer; outline: none; z-index: 3; -webkit-tap-highlight-color: transparent; }
     .r3t-card, .r3t-rail, .r3t-phone * { -webkit-tap-highlight-color: transparent; }
     .r3t-phone.r3t-held { transform: translate(-50%, -50%) perspective(1200px) translate(0, 0) rotate(0) rotateX(0) scale(1); cursor: default; }
     .r3t-ph-pickup { position: absolute; left: 4cqw; top: -9cqw; padding: 2.4cqw 5cqw; border-radius: 6cqw; background: rgba(12,10,9,0.85); border: 1px solid rgba(232,200,106,0.5); color: #f0dca6; font: 600 4.4cqw/1 Georgia, serif; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; opacity: 0.9; transition: opacity .3s; cursor: pointer; z-index: 4; }

@@ -838,6 +838,7 @@ export async function prepareTable(opts) {
     const FLY = fo.reduced ? 0.01 : fo.duration > 0 ? fo.duration : T.fly;
     const UI_IN = fo.reduced ? 0.01 : T.uiIn;
     const fov0 = camera.fov, near0 = camera.near, far0 = camera.far;
+    const env0 = world.scene.environmentIntensity == null ? 1 : world.scene.environmentIntensity;
     const lens0 = world.lights.lensLight.intensity;
     const bloom0 = world.bloom ? world.bloom.strength : 0;
     const introT0 = world.t;
@@ -1117,6 +1118,9 @@ export async function prepareTable(opts) {
       }
       placeCamera(tt);
       world.stage(introT0 + tt);
+      // (the room's even light settling back as you sit: the track spot is
+      // what lights the cabinet, so its pool is what you see - see ROOM_ENV)
+      world.scene.environmentIntensity = env0 * lerp(1, K.ROOM_ENV, fo.reduced ? 1 : smoother((tt - FLY * 0.45) / (FLY * 0.55)));
       const kf = fo.reduced ? 1 : clamp01(tt / 0.9);
       world.lights.lensLight.intensity = lens0 * (1 - kf);
       world.lights.rim.intensity *= 1 - 0.6 * kf;
@@ -1143,7 +1147,7 @@ export async function prepareTable(opts) {
       backEl.classList.toggle('r3a-on', backOn);
       if (outOn && focusOut) { focusOut = false; outEl.focus({ preventScroll: true }); }
       if (backOn && focusBack) { focusBack = false; backEl.focus({ preventScroll: true }); }
-      put(q('.r3a-foot'), focusTo === 1 ? 'TAP A NAME FOR ITS CARD' : 'TAP THE SCREEN TO LEAN IN');
+      put(q('.r3a-foot'), focusTo === 1 ? 'TAP A NAME FOR ITS CARD' : 'TAP TO LEAN IN');
       screenEl.classList.toggle('r3a-far', focusTo !== 1);
       const stg = world.canvas.parentElement;
       if (stg && stg.classList.contains('r3t-focus') !== !!(cardId && liftTo)) stg.classList.toggle('r3t-focus', !!(cardId && liftTo));
@@ -1343,6 +1347,7 @@ export async function prepareTable(opts) {
         window.removeEventListener('pointermove', onMove, true);
         window.removeEventListener('pointerup', onUp, true);
         window.removeEventListener('pointercancel', onCancel, true);
+        world.scene.environmentIntensity = env0;
         camera.near = near0; camera.far = far0; camera.updateProjectionMatrix();
         css.domElement.remove();
       }
