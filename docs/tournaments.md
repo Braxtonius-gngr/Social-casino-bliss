@@ -63,9 +63,9 @@ Views:
 1. Migration: `supabase/migrations/20261002080000_tournament_desk.sql`.
 2. First data: `supabase/seed/tournaments_luckparty.sql`. It loads Luck Party
    and 14 candidate sites from the research pass. For Luck Party it has:
-   - 162 games. The Oct 2 Hot, Featured, Party Time and Hit It tabs were read
-     from the lobby pages' embedded data; the rest are games seen in the
-     September screenshots.
+   - 168 games. The Oct 2 Hot, Featured, Party Time and Hit It tabs were read
+     from the lobby pages' embedded data, taking the majority version across
+     repeated reads; the rest are games seen in the September screenshots.
    - The six events from the September and October pages, with payout tiers
      and the games each was open to.
    - 40 Victory Vault events from May 11 to Jul 6 with their winners.
@@ -78,8 +78,10 @@ Lobby tabs rotate hard. Party Time went from 24 gold-themed games in
 September to 12 Jili games on Oct 2. So the desk replaces a tab's
 membership each time it reads it, and freezes each event's eligible games
 while the event is live. Game lists come from the raw page data
-(`__NEXT_DATA__`), not from a summarising fetch, which merges and invents
-names.
+(`__NEXT_DATA__`), not from a summarising fetch. The site also serves two
+different cached versions of the lobby: on Oct 2, reads minutes apart shared
+only 25 of 48 Hot games and 15 of 55 Featured games. So the desk reads a tab
+more than once, takes the majority, and has the owner confirm in the app.
 
 Both run through the Supabase connector or the SQL editor. CI doesn't apply
 migrations.
