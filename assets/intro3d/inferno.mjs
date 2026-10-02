@@ -466,7 +466,7 @@ export function createBreakout() {
     die.mesh.position.y += Math.sin(Math.PI * du) * H * 0.1;
     tmpQ.setFromAxisAngle(tumbleAxis, du * Math.PI * 1.2);
     die.mesh.quaternion.copy(dieQ).premultiply(tmpQ);
-    die.mats.forEach(m => { m.emissiveIntensity *= (1 - du); });
+    die.mats.forEach((m, f) => { m.emissiveIntensity = FACE_PIPS[f] === pipsN ? 2.4 * (1 - du) : 0; });
     const ru = smoother(u / 0.55);
     ring.group.position.set(lerp(to.x, from.x, ru), lerp(to.y, from.y, ru), lerp(to.z, 0, ru));
     ring.group.rotation.set(lerp(20, 0, ru) * DEG, lerp(30, 0, ru) * DEG, lerp(-8, 0, ru) * DEG);
@@ -535,7 +535,8 @@ export function createBreakout() {
   }
   function foldAway(then) {
     if (state === 'idle') { if (then) then(); return; }
-    if (state === 'folding') return;
+    // (a play asked for mid-fold waits for the fold to finish)
+    if (state === 'folding') { if (then) afterFold = then; return; }
     if (state === 'starting') { afterFold = then || null; teardown(); return; }
     state = 'folding';
     foldT0 = performance.now();

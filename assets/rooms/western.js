@@ -16,7 +16,7 @@
      inside of the glass. It is lit at the top middle and burns clockwise;
      today's run is how much has burnt. Room: a dark cord round the screen,
      a white-hot spark where it is burning. Arm: the unburnt cord is black
-     with a dull sheen along its twist; behind the head the charP glows
+     with a dull sheen along its twist; behind the head the char glows
      blood red and cools to black; what has burnt is a thread of grey ash
      lying where the cord was. 3x: the cord's twist is a fine dash; the ash
      is broken into crumbs; the head is a bead with a short spray of
@@ -85,15 +85,15 @@
       '<path class="wt-cord" d="' + d + '"/><path class="wt-cord-sheen" d="' + d + '"/><path class="wt-cord-twist" d="' + d + '"/>' +
       // what has burnt: a thread of ash, broken into crumbs
       '<path class="wt-ash wt-ash-under" d="' + d + '" pathLength="1000"/><path class="wt-ash" d="' + d + '" pathLength="1000"/>' +
-      // the charP behind the head: blood red cooling to black, its bloom
-      '<path class="wt-charP wt-charP-bloom" d="' + d + '" pathLength="1000" filter="url(#wtBloom)"/>' +
-      '<path class="wt-charP" d="' + d + '" pathLength="1000"/>' +
+      // the char behind the head: blood red cooling to black, its bloom
+      '<path class="wt-char wt-char-bloom" d="' + d + '" pathLength="1000" filter="url(#wtBloom)"/>' +
+      '<path class="wt-char" d="' + d + '" pathLength="1000"/>' +
       '<path class="wt-hot" d="' + d + '" pathLength="1000"/>' +
       // the head: its bloom, the bead, its sparks
       '<circle class="wt-head-bloom" r="7" filter="url(#wtHeadBloom)"/><circle class="wt-head" r="2.1"/>' +
       '<g class="wt-sparks">' + [0, 1, 2, 3, 4].map(function () { return '<line class="wt-spark"/>'; }).join('') + '</g>';
     burnt = fuse.querySelectorAll('.wt-ash');
-    charP = fuse.querySelectorAll('.wt-charP');
+    charP = fuse.querySelectorAll('.wt-char');
     hot = fuse.querySelector('.wt-hot');
     head = fuse.querySelector('.wt-head');
     sparks = fuse.querySelectorAll('.wt-spark');
@@ -107,7 +107,7 @@
     var fc = Math.max(0, Math.min(f, 1.0));
     var len = fc * 1000;
     burnt.forEach(function (p) { p.setAttribute('stroke-dasharray', f2(len) + ' 1000'); p.style.opacity = fc > 0.004 ? '' : '0'; });
-    // (the charP and the white-hot length end at the head)
+    // (the char and the white-hot length end at the head)
     var cl = Math.min(len, CHAR), hl = Math.min(len, HOT);
     charP.forEach(function (p) { p.setAttribute('stroke-dasharray', f2(cl) + ' 1000'); p.setAttribute('stroke-dashoffset', f2(-(len - cl))); p.style.opacity = fc > 0.004 && fc < 0.998 ? '' : '0'; });
     hot.setAttribute('stroke-dasharray', f2(hl) + ' 1000'); hot.setAttribute('stroke-dashoffset', f2(-(len - hl)));
