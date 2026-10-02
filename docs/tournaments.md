@@ -45,7 +45,7 @@ daily cadence.
 | `tournaments` | event instance, keyed `(site_id, slug, ends_at)`, with `format_params`, game scope, prize totals and the latest `decision` card |
 | `tournament_payout_tiers` | rank range and prize per place |
 | `tournament_games` | game on a site: categories seen, published and on-site RTP, volatility, max win, min SC bet, measured spins/hour |
-| `tournament_eligible_games` | event ↔ game |
+| `tournament_eligible_games` | event ↔ game, with a shared `site_id` enforced by composite foreign keys |
 | `tournament_snapshots` | observation: leaderboard values, last-paid threshold, published winners |
 | `tournament_entries` | the owner's own entry and result |
 | `tournament_settings` | default/pessimistic edge, reference bet, weekly loss limit, rotation size, graduation rule |
@@ -70,7 +70,9 @@ Views:
      and the games each was open to.
    - 40 Victory Vault events from May 11 to Jul 6 with their winners.
 
-   It's safe to re-run. The seed is maintained directly; there is no
+   It's safe to re-run: dated observations are replaced, event status follows
+   the dates, and existing decision cards and newer site timestamps are retained.
+   The seed is maintained directly; there is no
    checked-in generator. Edit the seed itself, keeping its upserts and
    delete-before-insert snapshot pattern idempotent.
 
@@ -98,7 +100,10 @@ migrations.
 Every SC-staked format costs about `stake × house edge` in expectation. The
 break-even line for a paid rank is `P(1−e)/e` of wager, where `P` is the
 prize in USD and `e` the edge, net of the prize's own 1x playthrough. For
-spin counts it's that line divided by the bet. For example, 1st in Max Total
+spin counts it's that line divided by the bet in USD (`bet_used`): an event's
+`min_bet` is converted from the site's sweeps units, with `reference_min_bet`
+as a positive USD fallback. Nonpositive event bets have undefined (NULL) spin
+limits. For example, 1st in Max Total
 Play (300 SC) breaks even at about 7,200 SC wagered at a 4% edge, or 4,700 SC
 at 6%. A rank is only worth chasing when the volume it takes is under its
 line. The free GC raffle ticket is the one entry that is positive every week.

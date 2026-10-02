@@ -176,6 +176,27 @@ create table if not exists public.tournament_eligible_games (
   primary key (tournament_id, game_id)
 );
 
+-- Composite keys keep an event and its eligible games on the same site,
+-- including when a parent row's site changes. Backfill an existing desk.
+create unique index if not exists tournaments_id_site_key on public.tournaments (id, site_id);
+create unique index if not exists tournament_games_id_site_key on public.tournament_games (id, site_id);
+alter table public.tournament_eligible_games add column if not exists site_id bigint;
+update public.tournament_eligible_games eg
+  set site_id = t.site_id
+  from public.tournaments t
+  where t.id = eg.tournament_id and eg.site_id is null;
+alter table public.tournament_eligible_games alter column site_id set not null;
+alter table public.tournament_eligible_games
+  drop constraint if exists tournament_eligible_games_tournament_id_fkey,
+  drop constraint if exists tournament_eligible_games_game_id_fkey,
+  drop constraint if exists tournament_eligible_games_tournament_site_fkey,
+  drop constraint if exists tournament_eligible_games_game_site_fkey;
+alter table public.tournament_eligible_games
+  add constraint tournament_eligible_games_tournament_site_fkey
+    foreign key (tournament_id, site_id) references public.tournaments (id, site_id) on delete cascade,
+  add constraint tournament_eligible_games_game_site_fkey
+    foreign key (game_id, site_id) references public.tournament_games (id, site_id) on delete cascade;
+
 create index if not exists tournament_eligible_games_game_idx on public.tournament_eligible_games (game_id);
 
 -- ---------------------------------------------------------------------
@@ -230,10 +251,16 @@ create table if not exists public.tournament_settings (
   updated_at  timestamptz not null default now()
 );
 
+alter table public.tournament_settings drop constraint if exists tournament_settings_reference_bet_positive;
+alter table public.tournament_settings
+  add constraint tournament_settings_reference_bet_positive
+    check (key <> 'reference_min_bet'
+      or (jsonb_typeof(value) = 'number' and coalesce((value #>> '{}')::numeric > 0, false)));
+
 insert into public.tournament_settings (key, value, note) values
   ('default_edge',        '0.04'::jsonb, 'House edge when the in-game paytable has not been read (RTP 96%).'),
   ('pessimistic_edge',    '0.06'::jsonb, 'Second case for every break-even line (RTP 94%), for lower-RTP sweeps builds.'),
-  ('reference_min_bet',   '0.10'::jsonb, 'SC bet used for spin math when a game''s min_bet_sweeps is unknown.'),
+  ('reference_min_bet',   '0.10'::jsonb, 'USD (SC-equivalent) bet used for spin math when the event''s min_bet is unknown.'),
   ('weekly_loss_limit',   'null'::jsonb, 'Owner-set weekly SC loss limit. When set, the desk will not recommend play_to_place past it.'),
   ('sweep_candidates_per_day', '3'::jsonb, 'How many candidate sites the daily catalog sweep checks for tournaments each day, besides its own batch.'),
   ('graduation_rule',     '{"same_format_events":3,"same_format_days":21,"any_events":5,"any_days":30}'::jsonb,
@@ -313,15 +340,18 @@ select
   round(p.prize_sweeps / ts.units_per_usd, 2)                                   as prize_usd,
   round(p.prize_sweeps / ts.units_per_usd * (1 - s.e1) / s.e1, 0)               as breakeven_wager_usd,
   round(p.prize_sweeps / ts.units_per_usd * (1 - s.e2) / s.e2, 0)               as breakeven_wager_usd_pessimistic,
-  coalesce((t.format_params ->> 'min_bet')::numeric / ts.units_per_usd, s.ref_bet) as bet_used,
+  b.bet_usd                                                                  as bet_used,
   round(p.prize_sweeps / ts.units_per_usd * (1 - s.e1) / s.e1
-        / coalesce((t.format_params ->> 'min_bet')::numeric / ts.units_per_usd, s.ref_bet), 0) as breakeven_spins,
+        / case when b.bet_usd > 0 then b.bet_usd end, 0)                      as breakeven_spins,
   round(p.prize_sweeps / ts.units_per_usd * (1 - s.e2) / s.e2
-        / coalesce((t.format_params ->> 'min_bet')::numeric / ts.units_per_usd, s.ref_bet), 0) as breakeven_spins_pessimistic
+        / case when b.bet_usd > 0 then b.bet_usd end, 0)                      as breakeven_spins_pessimistic
 from public.tournament_payout_tiers p
 join public.tournaments t       on t.id = p.tournament_id
 join public.tournament_sites ts on ts.id = t.site_id
-cross join s;
+cross join s
+cross join lateral (
+  select coalesce((t.format_params ->> 'min_bet')::numeric / ts.units_per_usd, s.ref_bet) as bet_usd
+) b;
 
 -- Open and upcoming events with their top prize and latest decision card.
 create or replace view public.tournament_board
@@ -349,13 +379,9 @@ select
   t.triage_status
 from public.tournaments t
 join public.tournament_sites ts on ts.id = t.site_id
-where (
-    (t.status = 'upcoming' and t.ends_at > now())
-    or (t.status = 'live' and t.ends_at > now())
-  )
+where (t.status in ('upcoming','live') and t.ends_at > now())
    or (t.status in ('ended','results_posted')
-       and t.ends_at <= now()
-       and t.ends_at > now() - interval '12 hours');
+       and t.ends_at > now() - interval '12 hours' and t.ends_at <= now());
 
 -- Per-site, per-format pattern profile: cadence, timing, pool size, field.
 create or replace view public.tournament_site_profile
@@ -422,14 +448,12 @@ with r as (
 ),
 counts as (
   select t.site_id, t.format_code,
-         count(*) filter (where t.first_seen_at > now() - make_interval(days => (select (rule ->> 'same_format_days')::int from r))
-                             or t.ends_at      > now() - make_interval(days => (select (rule ->> 'same_format_days')::int from r))) as recent_same
+         count(*) filter (where t.ends_at > now() - make_interval(days => (select (rule ->> 'same_format_days')::int from r))) as recent_same
   from public.tournaments t group by t.site_id, t.format_code
 ),
 any_counts as (
   select t.site_id,
-         count(*) filter (where t.first_seen_at > now() - make_interval(days => (select (rule ->> 'any_days')::int from r))
-                             or t.ends_at      > now() - make_interval(days => (select (rule ->> 'any_days')::int from r))) as recent_any
+         count(*) filter (where t.ends_at > now() - make_interval(days => (select (rule ->> 'any_days')::int from r))) as recent_any
   from public.tournaments t group by t.site_id
 )
 select
