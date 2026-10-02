@@ -194,10 +194,25 @@ Site notes for the check (it reads this page first):
   Common Rules give lines and jackpot multiples but no RTP (owner, Oct 2): log
   `rtp_not_shown` after opening them. The win table shows pays at the current
   spin value, so read the min bet from the bet selector, not the win table.
-  Enter and Space both spin.
+  Enter and Space both spin. In Coin UP Volcano the LINES selector sets how
+  many rows play, at 0.10 SC per row (LINES 1 is the middle row only); the
+  jackpots don't change with it. Read the min bet at LINES 1, and don't log
+  LINES as paylines.
 - **Revolver Gaming games** (Irish Coins). Menu tabs: play settings (bet),
   win table (i) and rules (page icon). The RTP and max multiplier are in the
   rules; min and max play are at the end of the win table's symbol pays.
+- **Fortune Wins.** Its sweeps coin is FC (`sweeps_unit` FC); switch the top
+  toggle to FC and log `coin_mode` SC.
+- **Fortune Wins, Evoplay games** (Fruit Nova, Fortune Sevens Hold & Win, Mega
+  Greatest Catch Blue Marlin). Menu tabs: Wintable, Rules, History, Settings.
+  The end of the Rules page gives the max win under MAX WIN RULES ("1040x
+  coin value") and "Min coin value: FC n" under ADDITIONAL INFORMATION. Coin
+  value is the whole play, so that is the min bet; the Coins Settings slider
+  shows the same Min. Close Coins Settings with its X, never Confirm. No RTP
+  anywhere in the rules (owner, Oct 2).
+- **Fortune Wins, Hacksaw games** (Le Bandit). At the lowest bet the label
+  under the spin button reads "PLAY MIN FC. n" and the minus button is
+  greyed. No RTP shown (owner, Oct 2).
 
 ## What the numbers mean
 
