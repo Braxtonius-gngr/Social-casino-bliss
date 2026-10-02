@@ -151,6 +151,10 @@ const GUIDE = { W: 960, H: 720, head: 100, row0: 108, rowH: 118, foot: 596, foot
 // long the way back takes.
 const T = { fly: 4.8, tune: 1.4, uiIn: 0.6, focus: 1.1, lift: 0.55, back: 5.2 };
 const W = { rise: 0.6, per: 0.84, settle: 0.8, dial: 1.9, lean: 2.0, drift: 2.3 };
+// (the beats overlap on purpose, as two hands would: the dial starts as
+// the snuffer is being laid back down (W.settle runs on past W.tune0),
+// and you lean in while the last clicks are still going - each one would
+// read as a stall if it waited for the last to finish)
 W.out = W.rise + W.per * CUPS.length;          // the last light out
 W.tune0 = W.out + 0.1;                           // the dial starts
 W.lean0 = W.tune0 + W.dial * 0.55;               // the lean starts
@@ -1994,7 +1998,7 @@ export async function prepareTable(opts) {
         if (name === 'tube') tubeLight.intensity = 0;
         if (name === 'cups') cups.cups.forEach(c => { c.light.intensity = 0; });
         if (name === 'house') { house.forEach(([l]) => { l.intensity = 0; }); scene.traverse(x => { if (x.isSpotLight && !seat.getObjectById(x.id)) x.intensity = 0; }); }
-        if (name === 'env') scene.environment = null;
+        if (name === 'env') scene.environmentIntensity = 0;   // (the next frame puts it back)
         world.rest(draw);
       },
       layer(name, on) { const m = { set: tv.group, table: table.group, cups: cups.group, snuffer: snuffer.group, drapes: drapes.group, signal: signal.group, picture }[name]; if (m) { m.visible = !!on; show(); } },
