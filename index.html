@@ -5280,7 +5280,6 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function playRollIntro() {
       const screen = document.getElementById('landingScreen');
       if (!screen || screen.classList.contains('hidden')) return;
-      rollLandingStamp();
       let q = null;
       try { q = new URLSearchParams(window.location.search); } catch (e) { q = null; }
       if ((q && q.get('intro') === 'css') || !rollHasWebGL2()) { playRollIntroCss(themeMuted()); return; }
@@ -13873,6 +13872,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // day - or never; see rollLandingMode)
     const landingMode = rollLandingMode();
     const showLanding = rollOptions().lab || landingMode === 'true' || (landingMode === 'daily' && !rollLandingSeenToday());
+    // (the day's shot claimed here, as the choice is made, not when the shot
+    // starts: two tabs opened together would otherwise both play it)
+    if (showLanding && landingMode === 'daily') rollLandingStamp();
     // (neither the shot nor the seat starts until this build's files are
     // all cached - see appWhenCached)
     if (!showLanding) {
