@@ -100,8 +100,8 @@ create table if not exists public.tournaments (
   slug_confirmed     boolean     not null default true,
   name               text        not null,
   format_code        text        not null references public.tournament_formats (code),
-  format_params      jsonb       not null default '{}'::jsonb, -- {"top_n":5} {"target_x":9.1,"first_n":5,"closest_n":5} {"gc_spins":5000,"sc_spins":200,"max_tickets":2}
-  currency_mode      text        check (currency_mode in ('SC','GC','both','other')),
+  format_params      jsonb       not null default '{}'::jsonb, -- {"top_n":5} {"target_x":9.1,"first_n":5,"closest_n":5} {"gc_spins":5000,"sc_spins":200,"max_tickets":2}; min_bet is in the site's sweeps unit; board ('FC'/'GC') when one page runs two boards (slug gets a --fc / --gc suffix)
+  currency_mode      text        check (currency_mode in ('SC','GC','both','other')), -- 'SC' = sweeps mode in the site's own unit (FC on Fortune Wins)
   game_scope         text,                                 -- 'category:Hot' | 'game:<name>' | 'provider:<name>' | 'all'
   starts_at          timestamptz,
   ends_at            timestamptz,
@@ -150,7 +150,8 @@ create table if not exists public.tournament_games (
   site_id          bigint      not null references public.tournament_sites (id) on delete cascade,
   name             text        not null,
   provider         text,
-  categories       text[]      not null default '{}',     -- lobby tabs it was seen under
+  categories       text[]      not null default '{}',     -- lobby tabs it is in as of categories_seen_on; a tab refresh replaces that tab's membership
+  categories_seen_on date,
   is_exclusive     boolean     not null default false,
   rtp_published    numeric     check (rtp_published between 50 and 100), -- provider default, percent
   rtp_onsite       numeric     check (rtp_onsite between 50 and 100),    -- read from the in-game paytable here
@@ -165,6 +166,9 @@ create table if not exists public.tournament_games (
   updated_at       timestamptz not null default now(),
   constraint tournament_games_site_name_key unique (site_id, name)
 );
+
+-- For a database created from an earlier draft of this file.
+alter table public.tournament_games add column if not exists categories_seen_on date;
 
 create table if not exists public.tournament_eligible_games (
   tournament_id  bigint not null references public.tournaments (id) on delete cascade,
@@ -278,17 +282,15 @@ begin
 end;
 $$;
 
-drop trigger if exists tournament_sites_touch on public.tournament_sites;
-create trigger tournament_sites_touch before update on public.tournament_sites
+-- create or replace (PG14+) keeps this re-runnable without a separate
+-- drop statement, which some SQL connectors refuse to send.
+create or replace trigger tournament_sites_touch before update on public.tournament_sites
   for each row execute function public.tournament_set_updated_at();
-drop trigger if exists tournaments_touch on public.tournaments;
-create trigger tournaments_touch before update on public.tournaments
+create or replace trigger tournaments_touch before update on public.tournaments
   for each row execute function public.tournament_set_updated_at();
-drop trigger if exists tournament_games_touch on public.tournament_games;
-create trigger tournament_games_touch before update on public.tournament_games
+create or replace trigger tournament_games_touch before update on public.tournament_games
   for each row execute function public.tournament_set_updated_at();
-drop trigger if exists tournament_settings_touch on public.tournament_settings;
-create trigger tournament_settings_touch before update on public.tournament_settings
+create or replace trigger tournament_settings_touch before update on public.tournament_settings
   for each row execute function public.tournament_set_updated_at();
 
 revoke all on function public.tournament_set_updated_at() from public, anon, authenticated;
@@ -301,7 +303,23 @@ revoke all on function public.tournament_set_updated_at() from public, anon, aut
 -- volume it takes is below its line:
 --   wager line  W* = P(1-e)/e   (prize after its own 1x playthrough)
 --   spins line  S* = W* / bet
--- Computed at the default and the pessimistic edge.
+-- Computed at the default and the pessimistic edge. format_params.min_bet is
+-- in the site's unit, so it is converted to USD before dividing (bet_used is
+-- in USD); without it the reference bet (0.10 SC = $0.10) is used.
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'tournament_tier_math'
+      and column_name = 'bet_used_usd'
+  ) then
+    execute 'alter view public.tournament_tier_math rename column bet_used_usd to bet_used';
+  end if;
+end;
+$$;
+
 create or replace view public.tournament_tier_math
 with (security_invoker = true) as
 with s as (
@@ -361,7 +379,7 @@ select
   t.triage_status
 from public.tournaments t
 join public.tournament_sites ts on ts.id = t.site_id
-where (t.status in ('upcoming','live') and (t.ends_at is null or t.ends_at > now()))
+where (t.status in ('upcoming','live') and t.ends_at > now())
    or (t.status in ('ended','results_posted')
        and t.ends_at > now() - interval '12 hours' and t.ends_at <= now());
 
