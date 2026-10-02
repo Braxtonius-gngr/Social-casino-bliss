@@ -496,22 +496,25 @@ export async function makeGame(ctx) {
     [Rgate - 0.1, X + 12, chuteY + 6, BZ + 40, X, chuteY - 3, BZ]
   ];
   const push = k => { const p = keys[keys.length - 1]; k[0] = Math.max(k[0], p[0] + 0.3); keys.push(k); };
-  push([Math.min(Rdrop + 0.45, Rslow - 0.5), X + 8, midY + 14, BZ + wide * 0.52, X, midY + 8, BZ]);
-  push([Rslow - 0.05, sx + 14, sy + 9, BZ + 50, sx, sy - 2, BZ]);
-  push([Rslow + 0.9, sx + 10, sy + 6, BZ + 44, sx, sy - 3, BZ]);
+  // (the ride keeps most of the board in frame, and the last pin is seen
+  // with its neighbours about it: the fall reads as a fall down the board,
+  // not a chip against black)
+  push([Math.min(Rdrop + 0.45, Rslow - 0.5), X + 8, midY + 14, BZ + wide * 0.64, X, midY + 8, BZ]);
+  push([Rslow - 0.05, sx + 16, sy + 12, BZ + 72, sx, sy - 4, BZ]);
+  push([Rslow + 0.9, sx + 12, sy + 9, BZ + 64, sx, sy - 5, BZ]);
   if (pinned) {
     push([Rw(plan.silence[0]) + 0.4, sx + 9, sy + 5, BZ + 34, sx, sy - 1, BZ]);
     push([Rw(plan.silence[1]) + 0.5, sx + 5, sy + 2.5, BZ + 22, sx, sy - 1, BZ]);
     push([Rend + 2, sx + 12, sy + 2, BZ + 32, sx, sy - 2, BZ]);
   } else if (tier === 'vault') {
     const Bm = Rw(plan.boom);
-    push([Rrest + 0.4, rx + 10, ry + 8, BZ + 56, rx, ry + 2, BZ]);
-    push([Bm - 0.2, rx + 8, ry + 10, BZ + 60, rx, ry + 1, BZ]);
-    push([Bm + 0.6, rx + 6, ry + 12, BZ + 64, rx, ry - 2, BZ]);
+    push([Rrest + 0.4, rx + 12, ry + 10, BZ + 70, rx, ry + 3, BZ]);
+    push([Bm - 0.2, rx + 10, ry + 12, BZ + 74, rx, ry + 2, BZ]);
+    push([Bm + 0.6, rx + 8, ry + 14, BZ + 78, rx, ry - 1, BZ]);
     push([Bm + 2.2, X + 8, midY + 2, BZ + wide * 0.9, X, midY - 2, BZ]);
     push([Rend + 2, X + 14, midY + 4, BZ + wide * 1.1, X, midY - 6, BZ]);
   } else {
-    push([Rrest + 0.5, rx + 10, ry + 8, BZ + 56, rx, ry + 2, BZ]);
+    push([Rrest + 0.5, rx + 12, ry + 10, BZ + 70, rx, ry + 3, BZ]);
     push([Rw(plan.revealW) + 0.2, X + 8, midY + 2, BZ + wide * 0.95, X, midY - 2, BZ]);
     push([Rend + 2, X + 14, midY + 4, BZ + wide * 1.1, X, midY - 6, BZ]);
   }
@@ -535,8 +538,8 @@ export async function makeGame(ctx) {
       const f = ride(t);
       if (f > 0) {
         const p = wp(posAt(warp.world(Math.max(0, t - 0.06))));
-        v[4] = lerp(v[4], p[1] + 2, f); v[3] = lerp(v[3], X + (p[0] - X) * 0.5, 0.6 * f);
-        v[1] = lerp(v[1], p[1] + 12, 0.8 * f);
+        v[4] = lerp(v[4], p[1] + 4, 0.9 * f); v[3] = lerp(v[3], X + (p[0] - X) * 0.4, 0.5 * f);
+        v[1] = lerp(v[1], p[1] + 16, 0.7 * f);
       }
       last = last ? last.map((x, j) => lerp(x, v[j], 1 - Math.exp(-dt / 0.09))) : v;
       const e = last.slice(0, 3), a = last.slice(3, 6);
