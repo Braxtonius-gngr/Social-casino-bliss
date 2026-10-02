@@ -2244,14 +2244,27 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     // Fraction of the wait already elapsed, for the card fill.
-    // minRedeem is free text ("50 Cash", "10 GC / 100 Cash"). Pull the cash
-    // threshold out of it: the largest number, since GC minimums are lower
-    // and it's the cash one that gates a real redemption.
+    // The cashout bar's target, in the same units as the SC balance the
+    // player types in. An explicit catalogue "redeemTarget" wins, then the
+    // numeric "cashFloor" the tier math already uses. Only an entry with
+    // neither falls back to minRedeem's free text ("50 Cash", "10 GC / 100
+    // Cash"): the largest number, since GC minimums are lower and it's the
+    // cash one that gates a real redemption. The fallback reads "9,550" as
+    // one number, and it skips any clause that states a maximum ("9,550 SC
+    // max per day") and any percentage fee, so a cap or a fee can't become
+    // the target.
     function redeemTarget(game) {
       if (typeof game.redeemTarget === 'number' && game.redeemTarget > 0) return game.redeemTarget;
-      const nums = String(game.minRedeem || '').match(/\d+(?:\.\d+)?/g);
-      if (!nums || !nums.length) return null;
-      return Math.max(...nums.map(Number));
+      if (typeof game.cashFloor === 'number' && Number.isFinite(game.cashFloor) && game.cashFloor > 0) return game.cashFloor;
+      const nums = [];
+      String(game.minRedeem || '').split(/\s*\/\s*|,\s+|;\s*/).forEach(clause => {
+        if (/\bmax/i.test(clause)) return;
+        for (const m of clause.matchAll(/\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?/g)) {
+          if (/^\s*%/.test(clause.slice(m.index + m[0].length))) continue;
+          nums.push(Number(m[0].replace(/,/g, '')));
+        }
+      });
+      return nums.length ? Math.max(...nums) : null;
     }
 
     // Short, human phrases for the catalog's "blocker" slugs (a documented
@@ -6522,7 +6535,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const EXTERNAL_CATALOG_REFRESH_MS = 5 * 60 * 1000;
     const CATALOG_LIVE_FIELDS = [
       'tier', 'dailySC', 'scSource', 'scIsAveraged', 'scRange', 'speedHours',
-      'reliability', 'hasLive', 'minRedeem', 'cashFloor', 'daysToRedeem',
+      'reliability', 'hasLive', 'minRedeem', 'cashFloor', 'daysToRedeem', 'redeemTarget',
       'confidence', 'blocker', 'noGuaranteedDaily', 'notes', 'lastVerified', 'hasReferral'
     ];
     let catalogRefreshInFlight = false;
