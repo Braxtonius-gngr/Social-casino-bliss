@@ -517,6 +517,33 @@ const TESTS = [
     await page.goto('/');
     await signedIn(page);
     await page.evaluate(() => startDailyRun());
+    const focused = await page.evaluate(async () => {
+      dailyRunQueue[0].notes = 'Research notes';
+      renderDailyRunStep();
+      const input = document.getElementById('runCardBalanceInput');
+      input.value = '23.45';
+      input.focus();
+      document.querySelector('#runCardContent details').open = true;
+      window.dispatchEvent(new Event('focus'));
+      await new Promise(resolve => setTimeout(resolve, 0));
+      return {
+        value: document.getElementById('runCardBalanceInput').value,
+        focused: document.activeElement.id,
+        notesOpen: document.querySelector('#runCardContent details').open
+      };
+    });
+    expect(focused, { value: '23.45', focused: 'runCardBalanceInput', notesOpen: true }, 'focus resume preserves the card draft and open notes');
+    const visible = await page.evaluate(async () => {
+      document.getElementById('runCardBalanceInput').value = '67.89';
+      document.dispatchEvent(new Event('visibilitychange'));
+      await new Promise(resolve => setTimeout(resolve, 0));
+      return {
+        value: document.getElementById('runCardBalanceInput').value,
+        focused: document.activeElement.id,
+        notesOpen: document.querySelector('#runCardContent details').open
+      };
+    });
+    expect(visible, { value: '67.89', focused: 'runCardBalanceInput', notesOpen: true }, 'visibility resume preserves the card draft and open notes');
     expect(await page.evaluate(() => Array.from(document.querySelectorAll('#runActions button')).map(btn => btn.textContent.trim())), ['OPEN SITE', 'CONFIRM COLLECTED', 'Skip this one'], 'daily run labels separate open from confirm');
     const opened = await page.evaluate(() => {
       openCurrentDailyRun();
