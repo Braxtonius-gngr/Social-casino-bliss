@@ -5337,6 +5337,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (fellBack) return;
       const tierQ = q.get('tier');
       const tier = mod.TIERS.includes(tierQ) ? tierQ : mod.pickTier(Math.random());
+      // The game the shot is: the dice, or one of the others (see GAMES in
+      // intro.mjs), each as likely each launch; ?game=dice / ?game=wheel
+      // fixes one. (Straight to the seat it is the dice: the frame the fly
+      // starts from is the shot's end, and that is the one every home's
+      // fly-in was laid out from.)
+      const gameQ = q.get('game');
+      const game = mod.GAMES.includes(gameQ) ? gameQ : direct ? 'dice' : mod.pickGame(Math.random());
       const seedQ = parseInt(q.get('seed'), 10);
       const seed = Number.isFinite(seedQ) ? seedQ >>> 0 : Math.floor(Math.random() * 4294967296);
       // Sound is on by default. It was made on for everyone once, on
@@ -5472,7 +5479,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       };
       try {
         api = await mod.createIntro({
-          host, tier, seed,
+          host, tier, seed, game,
           controlsHost: screen,
           signal: building ? building.signal : null,
           motionOff,
@@ -5520,7 +5527,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           const ms = Math.max(0, (t - api.plan.revealReal) * 1000);
           (screen.getAnimations ? screen.getAnimations({ subtree: true }) : []).forEach(a => { a.pause(); a.currentTime = ms; });
         };
-        rollLab3dPanel(screen, tier, mod.TIERS);
+        rollLab3dPanel(screen, tier, mod.TIERS, game, mod.GAMES);
       }
       if (q.has('lab') && tableDest) {
         // (lab: fly in by hand - rollTableFly({ manual: true }) then
@@ -5898,9 +5905,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     // The WebGL intro's lab switcher (?lab): force a tier, or throw again.
-    function rollLab3dPanel(screen, tier, tiers) {
+    function rollLab3dPanel(screen, tier, tiers, game, games) {
       if (screen.querySelector('.roll-lab')) return;
-      const names = { standard: 'Standard', hardways: 'Hardways', vault: 'Vault Pull', edge: 'Defiant Edge' };
+      const names = { standard: 'Standard', hardways: 'Hardways', vault: 'Vault Pull', edge: 'Defiant Edge', dice: 'Dice', wheel: 'Wheel' };
       const link = (k, v) => {
         const p = new URLSearchParams(window.location.search);
         p.set('lab', '');
@@ -5908,9 +5915,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (k === 'tier') p.delete('seed');
         return `?${p.toString().replace('lab=&', 'lab&').replace(/lab=$/, 'lab')}`;
       };
-      screen.insertAdjacentHTML('beforeend', `<nav class="roll-lab" aria-label="Intro options"><div class="roll-lab-row"><span>Tier</span>${tiers.map(t => `<a data-v="${t}"${t === tier ? ' aria-current="true"' : ''}>${names[t]}</a>`).join('')}</div><div class="roll-lab-row"><a class="roll-lab-replay" data-new="1">&#8635; New throw</a><a class="roll-lab-replay" data-css="1">CSS intro</a></div></nav>`);
+      screen.insertAdjacentHTML('beforeend', `<nav class="roll-lab" aria-label="Intro options"><div class="roll-lab-row"><span>Game</span>${(games || ['dice']).map(g => `<a data-g="${g}"${g === game ? ' aria-current="true"' : ''}>${names[g] || g}</a>`).join('')}</div><div class="roll-lab-row"><span>Tier</span>${tiers.map(t => `<a data-v="${t}"${t === tier ? ' aria-current="true"' : ''}>${names[t]}</a>`).join('')}</div><div class="roll-lab-row"><a class="roll-lab-replay" data-new="1">&#8635; New throw</a><a class="roll-lab-replay" data-css="1">CSS intro</a></div></nav>`);
       const nav = screen.querySelector('.roll-lab');
       nav.querySelectorAll('a[data-v]').forEach(a => { a.href = link('tier', a.dataset.v); });
+      nav.querySelectorAll('a[data-g]').forEach(a => { a.href = link('game', a.dataset.g); });
       nav.querySelector('[data-new]').href = link('seed', String(Math.floor(Math.random() * 1e9)));
       nav.querySelector('[data-css]').href = link('intro', 'css');
       nav.addEventListener('pointerdown', e => e.stopPropagation());
