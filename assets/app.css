@@ -1036,11 +1036,12 @@
        cards are page elements over the canvas, so the lamp's shadow on the
        felt can never fall on a card underneath - this does. A black line
        right at the edge, where no light gets under a card flat on cloth,
-       and a short soft falloff round it, a hair more on the side away from
-       the lamp. At 50 px to the cm: the line under half a millimetre, the
-       falloff about two. Gone as soon as the card lifts - the table's own
+       and a short soft falloff thrown off the far edge, toward the dealer
+       (the lamp hangs over the near side of the cards, so their shadows
+       fall away from you - up the page, in the card's own plane). At 50 px to the cm: the line under a millimetre, the falloff
+       about three - a card's bow lifts its far edge that much. Gone as soon as the card lifts - the table's own
        shadow takes over from there.) */
-    .r3t-card:not(.r3t-lifted):not(.r3t-hover):not(:focus-visible) .r3t-face { box-shadow: 0 0 0 1px rgba(0,0,0,0.55), 0 1px 2px 1px rgba(0,0,0,0.6), 0 4px 10px rgba(0,0,0,0.42); }
+    .r3t-card:not(.r3t-lifted):not(.r3t-hover):not(:focus-visible) .r3t-face { box-shadow: 0 0 0 1px rgba(0,0,0,0.5), 0 -3px 3px 0 rgba(0,0,0,0.6), 0 -14px 22px -4px rgba(0,0,0,0.55); }
     /* (under a finger or the pointer once dealt, a card comes up to meet it
        and its gilt edge catches the light) */
     .r3t-card.r3t-hover .r3t-face { box-shadow: 0 0 0 2px rgba(240,207,127,0.85), 0 0 26px 2px rgba(255,215,0,0.42); }
