@@ -102,7 +102,7 @@ Views:
 1. Migrations: `supabase/migrations/20261002080000_tournament_desk.sql`, then
    `supabase/migrations/20261002100000_tournament_play_policy.sql`, then
    `supabase/migrations/20261002143000_tournament_game_facts_check.sql`. Its
-   part A (two statements) needs the SQL editor; part B is connector-safe and
+   part A (four statements) needs the SQL editor; part B is connector-safe and
    stops with an error if part A hasn't run.
 2. Data: `supabase/seed/tournaments_luckparty.sql`. It loads Luck Party and 14
    candidate sites from the research pass, then the owner's 2026-10-02 site
@@ -177,6 +177,17 @@ Site notes for the check (it reads this page first):
   column. That is what players actually got back over a period, not the
   game's RTP; never record it. Read RTP inside the game's own info or
   paytable.
+- **Luck Party.** The lobby opens with a special-offer pop-up; close it with
+  its X, never the buy button. The SC/GC toggle sits in the top bar. Games
+  can take about a minute to load on the always-on laptop.
+- **Expanse Studios games** (Icy Luck Party). If the menu button doesn't
+  respond, the game's own help page lists safe keys: I opens the rules, P the
+  win table, Escape closes. Space spins, so never press it. As of Oct 2 the
+  rules and win table show min play, max play and lines, but no RTP line was
+  seen.
+- **Revolver Gaming games** (Irish Coins). Menu tabs: play settings (bet),
+  win table (i) and rules (page icon). The RTP and max multiplier are in the
+  rules; min and max play are at the end of the win table's symbol pays.
 
 ## What the numbers mean
 
