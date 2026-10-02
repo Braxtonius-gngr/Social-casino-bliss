@@ -1382,6 +1382,7 @@
     .form-group input.locked { opacity: 0.55; cursor: not-allowed; }
     .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--glass-border); font-size: 0.9rem; font-weight: 600; }
     .toggle-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent-pink); }
+    .toggle-row .settings-select { flex: 0 0 auto; margin-left: 12px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: var(--text-main); font-size: 0.8rem; font-weight: 700; }
     .modal-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
     .btn-primary { flex: 1; padding: 12px; background: var(--accent-gold); color: #0a0a0a; border: none; border-radius: 10px; font-weight: 900; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
     .btn-primary:hover { background: var(--accent-gold-hover); }

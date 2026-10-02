@@ -765,8 +765,12 @@
         <span class="slc-net" id="settingsLedgerNet"></span>
       </button>
       <div class="toggle-row">
-        <span style="color:#fff;">Show Landing Page on Open<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Off: straight to your seat at the table, or to the Deck</span></span>
-        <input type="checkbox" id="settingLandingToggle" onchange="toggleLandingSetting()" checked />
+        <span style="color:#fff;">Landing on Open<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Once a day plays the shot on your first open; later opens go straight to your seat</span></span>
+        <select id="settingLandingMode" class="settings-select" onchange="setLandingMode(this.value)" aria-label="Landing on open">
+          <option value="daily">Once a day</option>
+          <option value="true">Every open</option>
+          <option value="false">Never</option>
+        </select>
       </div>
       <button type="button" class="btn-dock settings-replay-landing" style="max-width:100%; width:100%; margin-bottom:12px;" onclick="replayLanding()">Play the Landing Now</button>
       <div class="toggle-row">
@@ -3193,8 +3197,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     let settingsTitleTapTimer = null;
 
     function openSettingsModal() {
-      const isEnabled = localStorage.getItem('almanac_show_landing') !== 'false';
-      document.getElementById('settingLandingToggle').checked = isEnabled;
+      document.getElementById('settingLandingMode').value = rollLandingMode();
       document.getElementById('settingHideCollected').checked = localStorage.getItem('almanac_hide_collected') === 'true';
       document.getElementById('settingDenseToggle').checked = document.body.classList.contains('dense');
       renderThemeUI();
@@ -3245,9 +3248,21 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderGames();
     }
 
-    function toggleLandingSetting() {
-      const checked = document.getElementById('settingLandingToggle').checked;
-      localStorage.setItem('almanac_show_landing', checked ? 'true' : 'false');
+    // The landing on open: 'daily' (the default - the shot on the first
+    // open of the day, the seat taken directly after), 'true' (every open)
+    // or 'false' (never). Stored under the old key: 'true' and 'false' are
+    // what the old toggle wrote, so a choice made before stands.
+    const LANDING_SEEN_KEY = 'almanac_landing_seen_v1';
+    function rollLandingMode() {
+      let v = null;
+      try { v = localStorage.getItem('almanac_show_landing'); } catch (e) { v = null; }
+      return v === 'true' || v === 'false' ? v : 'daily';
+    }
+    function rollLocalDay() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+    function rollLandingSeenToday() { try { return localStorage.getItem(LANDING_SEEN_KEY) === rollLocalDay(); } catch (e) { return false; } }
+    function rollLandingStamp() { try { localStorage.setItem(LANDING_SEEN_KEY, rollLocalDay()); } catch (e) { /* private mode */ } }
+    function setLandingMode(mode) {
+      localStorage.setItem('almanac_show_landing', mode === 'true' || mode === 'false' ? mode : 'daily');
     }
 
     function restartTourFromSettings() {
@@ -5322,6 +5337,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (fellBack) return;
       const tierQ = q.get('tier');
       const tier = mod.TIERS.includes(tierQ) ? tierQ : mod.pickTier(Math.random());
+      // The game the shot is: the dice, or one of the others (see GAMES in
+      // intro.mjs), each as likely each launch; ?game=dice / ?game=wheel
+      // fixes one. (Straight to the seat it is the dice: the frame the fly
+      // starts from is the shot's end, and that is the one every home's
+      // fly-in was laid out from.)
+      const gameQ = q.get('game');
+      const game = mod.GAMES.includes(gameQ) ? gameQ : direct ? 'dice' : mod.pickGame(Math.random());
       const seedQ = parseInt(q.get('seed'), 10);
       const seed = Number.isFinite(seedQ) ? seedQ >>> 0 : Math.floor(Math.random() * 4294967296);
       // Sound is on by default. It was made on for everyone once, on
@@ -5347,8 +5369,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const shotFelt = FELT_CHOICES[q.get('felt')] ? q.get('felt') : tableDest === 'card' ? getFelt() : 'black';
       // (the trim the same way: ?trim= any, for the lab)
       const shotTrim = TRIM_CHOICES[q.get('trim')] ? q.get('trim') : tableDest === 'card' ? getTrim() : 'gold';
-      // (the landing's copy is printed on a light felt: see app.css)
-      document.documentElement.setAttribute('data-felt', shotFelt);
+      // (the landing's copy is printed on a light felt: see app.css - on
+      // the dice's shot, where the cloth is what the copy lies over; another
+      // game's frames are its own, dark, so the copy keeps its veil)
+      document.documentElement.setAttribute('data-felt', game === 'dice' ? shotFelt : 'black');
       let tablePrep = null, flying = false;
       const prepTable = () => {
         if (!tableDest || tablePrep || !api) return tablePrep;
@@ -5457,7 +5481,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       };
       try {
         api = await mod.createIntro({
-          host, tier, seed,
+          host, tier, seed, game,
           controlsHost: screen,
           signal: building ? building.signal : null,
           motionOff,
@@ -5481,7 +5505,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       screen.classList.remove('r3-loading');
       screen.removeEventListener('pointerdown', skipWhileLoading);
       window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; window.rollIntroSetFelt = null; window.rollIntroSetTrim = null; };
-      window.rollIntroSetFelt = id => { if (api && api.setFelt) { api.setFelt(id); document.documentElement.setAttribute('data-felt', id); } };
+      window.rollIntroSetFelt = id => { if (api && api.setFelt) { api.setFelt(id); if (game === 'dice') document.documentElement.setAttribute('data-felt', id); } };
       window.rollIntroSetTrim = id => { if (api && api.setTrim) api.setTrim(id); };
       if (direct) {
         // Straight to the seat: the shot is over before it began - the
@@ -5495,6 +5519,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
       if (q.has('lab')) {
         window.rollIntroPlan = api.plan;
+        window.rollIntroStill = t => { window.rollIntroSeek(t); api.still(t); };
         window.rollIntroSeek = t => {
           done = true;
           api.seek(t);
@@ -5505,7 +5530,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           const ms = Math.max(0, (t - api.plan.revealReal) * 1000);
           (screen.getAnimations ? screen.getAnimations({ subtree: true }) : []).forEach(a => { a.pause(); a.currentTime = ms; });
         };
-        rollLab3dPanel(screen, tier, mod.TIERS);
+        rollLab3dPanel(screen, tier, mod.TIERS, game, mod.GAMES);
       }
       if (q.has('lab') && tableDest) {
         // (lab: fly in by hand - rollTableFly({ manual: true }) then
@@ -5883,9 +5908,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     // The WebGL intro's lab switcher (?lab): force a tier, or throw again.
-    function rollLab3dPanel(screen, tier, tiers) {
+    function rollLab3dPanel(screen, tier, tiers, game, games) {
       if (screen.querySelector('.roll-lab')) return;
-      const names = { standard: 'Standard', hardways: 'Hardways', vault: 'Vault Pull', edge: 'Defiant Edge' };
+      const names = { standard: 'Standard', hardways: 'Hardways', vault: 'Vault Pull', edge: 'Defiant Edge', dice: 'Dice', wheel: 'Wheel' };
       const link = (k, v) => {
         const p = new URLSearchParams(window.location.search);
         p.set('lab', '');
@@ -5893,9 +5918,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (k === 'tier') p.delete('seed');
         return `?${p.toString().replace('lab=&', 'lab&').replace(/lab=$/, 'lab')}`;
       };
-      screen.insertAdjacentHTML('beforeend', `<nav class="roll-lab" aria-label="Intro options"><div class="roll-lab-row"><span>Tier</span>${tiers.map(t => `<a data-v="${t}"${t === tier ? ' aria-current="true"' : ''}>${names[t]}</a>`).join('')}</div><div class="roll-lab-row"><a class="roll-lab-replay" data-new="1">&#8635; New throw</a><a class="roll-lab-replay" data-css="1">CSS intro</a></div></nav>`);
+      screen.insertAdjacentHTML('beforeend', `<nav class="roll-lab" aria-label="Intro options"><div class="roll-lab-row"><span>Game</span>${(games || ['dice']).map(g => `<a data-g="${g}"${g === game ? ' aria-current="true"' : ''}>${names[g] || g}</a>`).join('')}</div><div class="roll-lab-row"><span>Tier</span>${tiers.map(t => `<a data-v="${t}"${t === tier ? ' aria-current="true"' : ''}>${names[t]}</a>`).join('')}</div><div class="roll-lab-row"><a class="roll-lab-replay" data-new="1">&#8635; New throw</a><a class="roll-lab-replay" data-css="1">CSS intro</a></div></nav>`);
       const nav = screen.querySelector('.roll-lab');
       nav.querySelectorAll('a[data-v]').forEach(a => { a.href = link('tier', a.dataset.v); });
+      nav.querySelectorAll('a[data-g]').forEach(a => { a.href = link('game', a.dataset.g); });
       nav.querySelector('[data-new]').href = link('seed', String(Math.floor(Math.random() * 1e9)));
       nav.querySelector('[data-css]').href = link('intro', 'css');
       nav.addEventListener('pointerdown', e => e.stopPropagation());
@@ -8779,7 +8805,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v85';
+    const APP_BUILD = 'almanac-v90';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
@@ -9034,21 +9060,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const DECK_SYNC_BOOTSTRAPPED_UID_KEY = 'almanac_deck_sync_bootstrapped_uid_v1';
 
     // --- Tester feedback loop ---
-    // A Discord webhook URL, not a real secret - anyone who has it can
-    // post to the channel directly, bypassing this form entirely, the
-    // same way SUPABASE_ANON_KEY above is public-but-RLS-protected rather
-    // than secret. Treat it the same way: fine to ship in client code for
-    // a small trusted tester build, not something to publish widely, and
-    // not a substitute for real auth if this ever needs to resist abuse
-    // at scale. Get one from a Discord channel: Server/Channel Settings ->
-    // Integrations -> Webhooks -> New Webhook -> Copy URL.
-    const FEEDBACK_WEBHOOK_URL = 'https://discord.com/api/webhooks/1552848601137414294/4Tip5oaHSSZxVr7b3tJtxxeVWFbejkdGYAKS2O4IeatIBsaGamXMwIP4HE0c0L6KbDO-';
-    const FEEDBACK_CATEGORY_COLORS = {
-      'Timer bug': 0xff3b30,
-      'Catalogue/rule correction': 0xffcc00,
-      'Feature idea': 0x00e5ff,
-      'Other': 0x8e8e93
-    };
+    // Reports go to the bug-report edge function, which saves a row in
+    // public.bug_reports and forwards the embed to Discord from a project
+    // secret. The webhook URL used to live here in the page; now nothing
+    // about the channel reaches the browser, and a report is kept even
+    // when Discord is down.
+    const FEEDBACK_FUNCTION = 'bug-report';
 
     function openFeedbackModal() {
       closeModals();
@@ -9059,46 +9076,46 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('feedbackModal').classList.add('open');
     }
 
-    // Discord webhooks accept a browser POST with no auth beyond the URL
-    // itself and no preflight-blocking headers, so this goes straight from
-    // the client - no server of our own needed for a tester build.
+    // Diagnostics attached to every report so the tester need not describe
+    // their device: the same set the old direct-to-Discord post carried,
+    // plus the build and the skin in effect. The skin id, not data-theme:
+    // Executive Lounge and Refinement x Realization share a look but not
+    // their effects, so a bug must say which one it was seen on.
+    function feedbackMeta() {
+      return {
+        userAgent: (navigator.userAgent || 'unknown').slice(0, 1024),
+        appBuild: APP_BUILD,
+        catalogVersion: catalogVersionLabel().slice(0, 128),
+        theme: getActiveThemeId(),
+        trackedCount: trackedGames.length,
+        recentErrors: recentAppErrors.slice(-10)
+      };
+    }
+
     async function submitFeedback() {
       const category = document.getElementById('feedbackCategory').value;
       const text = document.getElementById('feedbackText').value.trim();
       if (!text) { showToast('Add a quick description first', null); return; }
-      if (!FEEDBACK_WEBHOOK_URL) {
-        showToast('Feedback isn\u2019t wired up yet on this build (no webhook configured).', null, 9000);
+      const client = getSupabaseClient();
+      if (!client) {
+        showToast('Feedback needs a connection right now - try again once you\u2019re back online.', null, 9000);
         return;
       }
       const btn = document.getElementById('btnFeedbackSubmit');
       const originalLabel = btn.textContent;
       btn.disabled = true;
       btn.textContent = 'SENDING...';
-      const fields = [
-        { name: 'User Agent', value: (navigator.userAgent || 'unknown').slice(0, 1024) },
-        { name: 'Catalogue', value: catalogVersionLabel().slice(0, 1024), inline: true },
-        { name: 'Tracked platforms', value: String(trackedGames.length), inline: true }
-      ];
-      if (recentAppErrors.length) {
-        fields.push({ name: 'Recent app errors', value: recentAppErrors.join('\n').slice(0, 1024) });
-      }
-      const payload = {
-        username: 'Daily Roll Over Feedback',
-        embeds: [{
-          title: `[${category}]`,
-          description: text.slice(0, 4000),
-          color: FEEDBACK_CATEGORY_COLORS[category] || 0x00e5ff,
-          fields,
-          timestamp: new Date().toISOString()
-        }]
-      };
       try {
-        const response = await fetch(FEEDBACK_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+        const { data, error } = await client.functions.invoke(FEEDBACK_FUNCTION, {
+          body: { category, text: text.slice(0, 4000), meta: feedbackMeta() }
         });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (error) {
+          // The function's own message (a rate limit, a validation miss)
+          // is more useful than supabase-js's generic wrapper.
+          const detail = await extractFunctionsErrorDetail(error);
+          throw new Error((detail.body && detail.body.error) || error.message || 'request failed');
+        }
+        if (!data || !data.ok) throw new Error((data && data.error) || 'no reply');
         closeModals();
         showToast('Thanks - feedback sent!', null);
       } catch (error) {
@@ -13013,6 +13030,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           notify: sanitizeNotifyPrefs(p.notify),
           hideCollected: typeof p.hideCollected === 'boolean' ? p.hideCollected : null,
           showLanding: typeof p.showLanding === 'boolean' ? p.showLanding : null,
+          landingMode: p.landingMode === 'daily' || p.landingMode === 'true' || p.landingMode === 'false' ? p.landingMode : null,
           dense: typeof p.dense === 'boolean' ? p.dense : null,
           felt: typeof p.felt === 'string' && FELT_CHOICES[p.felt] ? p.felt : null,
           trim: typeof p.trim === 'string' && TRIM_CHOICES[p.trim] ? p.trim : null
@@ -13081,6 +13099,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             },
             hideCollected: localStorage.getItem('almanac_hide_collected') === 'true',
             showLanding: localStorage.getItem('almanac_show_landing') !== 'false',
+            landingMode: rollLandingMode(),
             dense: localStorage.getItem('almanac_dense') === 'true',
             felt: localStorage.getItem(FELT_KEY) || null,
             trim: localStorage.getItem(TRIM_KEY) || null
@@ -13292,7 +13311,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           localStorage.setItem(NOTIFY_KEY, JSON.stringify({ ...getNotifyPrefs(), ...p.notify }));
         } catch (e) { prefsOk = false; }
         if (typeof p.hideCollected === 'boolean') writePref('almanac_hide_collected', String(p.hideCollected));
-        if (typeof p.showLanding === 'boolean') writePref('almanac_show_landing', String(p.showLanding));
+        if (p.landingMode) writePref('almanac_show_landing', p.landingMode);
+        else if (typeof p.showLanding === 'boolean') writePref('almanac_show_landing', String(p.showLanding));
         if (typeof p.dense === 'boolean') writePref('almanac_dense', String(p.dense));
         if (typeof p.felt === 'string' && FELT_CHOICES[p.felt]) writePref(FELT_KEY, p.felt);
         if (typeof p.trim === 'string' && TRIM_CHOICES[p.trim]) writePref(TRIM_KEY, p.trim);
@@ -13458,8 +13478,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       refreshTZUI();
       refreshNotifyUI();
       refreshRecoveryUI();
-      const landingToggle = document.getElementById('settingLandingToggle');
-      if (landingToggle) landingToggle.checked = localStorage.getItem('almanac_show_landing') !== 'false';
+      const landingMode = document.getElementById('settingLandingMode');
+      if (landingMode) landingMode.value = rollLandingMode();
       const hideToggle = document.getElementById('settingHideCollected');
       if (hideToggle) hideToggle.checked = localStorage.getItem('almanac_hide_collected') === 'true';
       const denseOn = localStorage.getItem('almanac_dense') === 'true';
@@ -13873,7 +13893,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     // ?lab always plays the intro, whatever the landing setting, so the
     // intro's options can be compared (see rollOptions).
-    const showLanding = localStorage.getItem('almanac_show_landing') !== 'false' || rollOptions().lab;
+    // (the landing on open: every open, once a day - the first open of the
+    // day - or never; see rollLandingMode)
+    const landingMode = rollLandingMode();
+    const showLanding = rollOptions().lab || landingMode === 'true' || (landingMode === 'daily' && !rollLandingSeenToday());
+    // (the day's shot claimed here, as the choice is made, not when the shot
+    // starts: two tabs opened together would otherwise both play it)
+    if (showLanding && landingMode === 'daily') rollLandingStamp();
     // (neither the shot nor the seat starts until this build's files are
     // all cached - see appWhenCached)
     if (!showLanding) {
