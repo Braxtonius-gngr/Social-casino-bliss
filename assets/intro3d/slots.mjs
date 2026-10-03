@@ -825,7 +825,7 @@ export async function makeGame(ctx) {
       lid.add(new THREE.Mesh(marginG, marginM), new THREE.Mesh(lashG, lashM));
       if (tier === 'vault') {
         const sm = new THREE.SpriteMaterial({ map: glintTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }); keep(null, sm);
-        const gl = new THREE.Sprite(sm); gl.scale.set(0.26, 0.26, 1); gl.position.set(-0.3, 0.3, EYE.r + 0.04); socket.add(gl); glints.push(gl);
+        const gl = new THREE.Sprite(sm); gl.scale.set(0.5, 0.5, 1); gl.position.set(-0.32, 0.32, EYE.r + 0.06); socket.add(gl); glints.push(gl);
       }
     });
   }
@@ -1105,7 +1105,7 @@ export async function makeGame(ctx) {
     // segment meets the thing, then the next, then the last - each as far
     // as its cam asks, or as far as the thing lets it; a joint whose segment
     // is in the thing's way even straight opens back out of it)
-    const wrap = (base, chain, sg, targets, obj, open = [-0.4, -0.7, -0.7]) => {
+    const wrap = (base, chain, sg, targets, obj, open = [-0.22, -0.18, -0.12]) => {
       chain.forEach(j => { j.rotation.x = 0; });
       for (let k = 0; k < chain.length; k++) {
         chain[k].rotation.x = targets[k];
@@ -1118,7 +1118,7 @@ export async function makeGame(ctx) {
       }
     };
     const pose = (curl, spread = 0, thumbCurl = curl, obj = null) => {
-      fingers.forEach((ch, f) => { ch[0].rotation.z = (f - 1.5) * (spread + 0.3 * clamp01(1 - curl)) * 0.12 * side; wrap(bases[f], ch, segs[f], [1.0, 1.35, 1.0].map(m => curl * m * (1 + 0.04 * f)), obj); });
+      fingers.forEach((ch, f) => { ch[0].rotation.z = (f - 1.5) * (spread + 0.3 * clamp01(1 - 2.5 * curl)) * 0.12 * side; wrap(bases[f], ch, segs[f], [1.0, 1.35, 1.0].map(m => curl * m * (1 + 0.04 * f)), obj); });
       wrap(tBase, thumb, tsegs, [thumbCurl * 0.5, thumbCurl * 0.9], obj, [-1.1, -1.1]);
     };
     pose(0.2);
@@ -1165,12 +1165,12 @@ export async function makeGame(ctx) {
   };
   {
     const { w, d } = DESK;
-    [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach(([sx, sz]) => blob(sx * (w / 2 - 1.8) + 0.4 * sx, 0.04, sz * (d / 2 - 1.8) + 0.4 * sz, 7.5, 7.5, 0.7));
+    [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach(([sx, sz]) => blob(sx * (w / 2 - 1.8) + 0.4 * sx, 0.04, sz * (d / 2 - 1.8) + 0.4 * sz, 5.2, 5.2, 0.5));
     [-1, 1].forEach(sx => [-1, 1].forEach(sz => blob(sx * (STOOL.w / 2 - 1.5), 0.04, STOOL.z + sz * (STOOL.d / 2 - 1.5), 4.5, 4.5, 0.6)));
     [-1, 1].forEach(s => blob(s * 5.8, 0.04, -7.5, 9, 12, 0.32));
     blob(0, 0.04, -12, DESK.w + 14, DESK.d + 18, 0.28);
   }
-  const handBlobs = [-1, 1].map(() => blob(0, DESK.top + 0.06, 0, 6, 7.5, 0));
+  const handBlobs = [-1, 1].map(() => blob(0, DESK.top + 0.06, 0, 4.6, 8.5, 0));
 
   // ---- The lamp over him, and a rim from behind.
   const key = new THREE.SpotLight(0xffeedd, room.PENDANT * 1.2, 0, 0.5, 0.65, 0);
@@ -1208,7 +1208,7 @@ export async function makeGame(ctx) {
   }
   let pour = null, flood = null;
   if (tier === 'vault') {
-    flood = new THREE.PointLight(0xffc068, 0, 46, 1.2);
+    flood = new THREE.PointLight(0xffc068, 0, 70, 1.0);
     flood.position.set(0, WIN.y + 0.5, winZ + 2.6);
     body.add(flood);
     pour = new THREE.SpotLight(0xffc070, 0, 0, 0.75, 0.85, 0);
@@ -1348,7 +1348,7 @@ export async function makeGame(ctx) {
       const p = onTop(ballAt(leverAt(T.release))).lerp(restR.p, off); p.y += 3 * Math.sin(Math.PI * off);
       P.rh = { p, n: gN.clone().lerp(restR.n, off).normalize(), h: gH.clone().lerp(restR.h, off).normalize() };
     }
-    P.rcurl = lerp(0.12, HOLD.curl, smoother((grip - 0.75) / 0.25));
+    P.rcurl = lerp(0.12, HOLD.curl, smoother((grip - 0.35) / 0.6));
     // the left hand: round the bell's handle; The Jackpot lifts and rings
     // it, On a Tooth half-lifts it as the second badge stops
     P.bell = bellRest.clone(); P.bellTilt = 0;
@@ -1455,10 +1455,12 @@ export async function makeGame(ctx) {
       // (its shade on the leather, darker as it comes down)
       {
         a.hand.root.updateMatrixWorld(true);
-        const hb = handBlobs[right ? 0 : 1], pc = a.hand.root.localToWorld(V(0, PALM + 1, 0)).applyMatrix4(stageInv);
+        const hb = handBlobs[right ? 0 : 1], pc = a.hand.root.localToWorld(V(0, PALM + 1.6, 0)).applyMatrix4(stageInv);
+        const pw = a.hand.root.localToWorld(V(0, 0, 0)).applyMatrix4(stageInv);
         const over = Math.abs(pc.x) < DESK.w / 2 - 2 && Math.abs(pc.z) < DESK.d / 2 - 2, hgt = pc.y - DESK.top;
         hb.position.set(pc.x, DESK.top + 0.06, pc.z);
-        hb.material.opacity = over ? 0.55 * clamp01(1 - (hgt - 1) / 7) : 0;
+        hb.rotation.y = Math.atan2(pc.x - pw.x, pc.z - pw.z);
+        hb.material.opacity = over ? 0.42 * clamp01(1 - (hgt - 1) / 6) : 0;
       }
     });
   };
@@ -1573,7 +1575,7 @@ export async function makeGame(ctx) {
   push(Rw(T.stop[1]), WINV(V(0.06, 0.08, 1), 20, 22, 1.5));
   push(Rw(slowW) + 0.1, WINV(V(0.1, 0.06, 1), 15.5, 17.5, 0));
   // the call: his face and the line, the dark over his head for the title
-  const CALLV = tall ? fit(Bp([0, 40, 3]), V(0.12, 0.08, 1), 54, 34) : fit(Bp([0, 44, 3]), V(0.12, 0.08, 1), 70, 60);
+  const CALLV = tall ? fit(Bp([0, 40, 3]), V(0.12, 0.08, 1), 54, 34) : fit(Bp([0, 50, 3]), V(0.12, 0.08, 1), 78, 60);
   // (looking down into the open drawer: its floor, where the tokens lie)
   const TRAYV = tall ? fit(V(0, 48, 8), V(0.08, 1.25, 1), 40, 24) : fit(V(0, 48, 7), V(0.08, 1.2, 1), 52, 64);
   const WIDE = tall ? fit(V(0, 58, -6), V(0.24, 0.27, 1), 116, 92) : fit(V(0, 72, -6), V(0.24, 0.27, 1), 140, 92);
@@ -1581,8 +1583,9 @@ export async function makeGame(ctx) {
   if (tier === 'edge') {
     // (in on the third reel standing on its tooth; then back to him, still,
     // the bell half raised)
-    push(Rw(plan.silence[0]) + 0.5, WINV(V(0.08, 0.06, 1), 16, 18, 0));
-    push(Rw(plan.silence[1]) + 0.9, fit(Bp([6, 33, 2]), V(0.1, 0.1, 1), 50, 50));
+    push(Rw(plan.silence[0]) + 0.5, fit(WINC, V(0.08, 0.06, 1), 12, 17));
+    push(Rw(plan.silence[1]) + 0.6, fit(WINC, V(0.09, 0.06, 1), 12.5, 17.5));
+    push(Rw(plan.silence[1]) + 1.6, fit(Bp([6, 33, 2]), V(0.1, 0.1, 1), 50, 50));
     push(Rw(plan.endW) + 2, fit(Bp([6, 33, 2]), V(0.11, 0.1, 1), 54, 52));
   } else if (tier === 'vault') {
     push(Rw(restW) + 0.3, CALLV);
@@ -1664,7 +1667,7 @@ export async function makeGame(ctx) {
       inner.intensity = inner0 * (1 + 3.5 * k);
       if (windowGlow) windowGlow.material.opacity = k * (0.85 + 0.15 * Math.sin(burst * 9));
       if (pour) pour.intensity = room.PENDANT * 0.7 * k * (0.9 + 0.1 * Math.sin(burst * 9));
-      if (flood) flood.intensity = 30 * k * (0.9 + 0.1 * Math.sin(burst * 9));
+      if (flood) flood.intensity = 140 * k * (0.9 + 0.1 * Math.sin(burst * 9));
       glints.forEach(g => { g.material.opacity = 0.8 * k; });
     }
     if (tier === 'edge') {
@@ -1674,10 +1677,10 @@ export async function makeGame(ctx) {
       es.position.copy(toWorld(Bp([10, 70, 60])));
       es.target.position.copy(toWorld(Bp([4, 30, 4])));
       es.intensity = 3.0 * k;
-      key.intensity = key0 * (1 - 0.88 * k);
-      fill.intensity = fill0 * (1 - 0.8 * k);
+      key.intensity = key0 * (1 - 0.45 * k); key.color.setRGB(1, lerp(0.933, 0.96, k), lerp(0.867, 1, k));
+      fill.intensity = fill0 * (1 - 0.9 * k);
       lights.pendant.intensity = pendant0 * (1 - 0.88 * k);
-      scene.environmentIntensity = room.ENV_LEVEL * (1 - 0.75 * k);
+      scene.environmentIntensity = room.ENV_LEVEL * (1 - 0.6 * k);
       dust = 1 - 0.85 * k;
     }
     return { burst, dust };
