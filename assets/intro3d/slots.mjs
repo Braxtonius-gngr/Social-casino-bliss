@@ -64,6 +64,7 @@
 const DEG = Math.PI / 180;
 const TAU = Math.PI * 2;
 
+export const HOLD = { n: [0.3, -0.8, 0.5], hd: [-0.75, -0.35, 0.55], along: 1.8, out: 2.55, curl: 1.05, thumb: 1.2 };
 export const TIER_NAMES = { standard: 'Standard Pull', hardways: 'Three Sevens', vault: 'The Jackpot', edge: 'On a Tooth' };
 
 // The reels: twelve stops each, the strips the order of the symbols round
@@ -227,8 +228,11 @@ export async function makeGame(ctx) {
     const alpha = canvas(W, Hh, (g) => {
       g.fillStyle = '#fff'; g.fillRect(0, 0, W, Hh);
       g.fillStyle = '#000';
-      // (the scallops along the edge, and a few small eyelets in it)
-      for (let x = 0; x < W; x += 128) { g.beginPath(); g.moveTo(x, Hh + 1); g.bezierCurveTo(x + 20, Hh * 0.66, x + 108, Hh * 0.66, x + 128, Hh + 1); g.fill(); }
+      // (the scalloped edge: round lobes of cloth, the cut between them -
+      // arcs cut out of the edge would leave points, a paper cup's zigzag)
+      g.fillRect(0, Hh * 0.72, W, Hh * 0.28 + 1);
+      g.fillStyle = '#fff';
+      for (let x = 0; x < W; x += 128) { g.beginPath(); g.ellipse(x + 64, Hh * 0.72, 62, Hh * 0.24, 0, 0, Math.PI); g.fill(); }
     });
     const m = texOf(col, true), a = texOf(alpha, false); m.wrapS = a.wrapS = THREE.RepeatWrapping;
     return { map: m, alpha: a };
@@ -1009,7 +1013,7 @@ export async function makeGame(ctx) {
     const curve = new THREE.CatmullRomCurve3([A0, S0, E.clone().addScaledVector(u1, -1.8), E.clone().addScaledVector(u2, 1.8), W], false, 'centripetal');
     const pts = curve.getSpacedPoints(SLV.rings);
     const L0 = A0.distanceTo(S0), L1 = S0.distanceTo(E), L2 = E.distanceTo(W), Lt = L0 + L1 + L2;
-    const radAt = f => { const d = f * Lt; return d < L0 ? 3.9 : d < L0 + L1 ? lerp(3.9, 3.0, (d - L0) / L1) : lerp(3.0, 2.4, (d - L0 - L1) / L2); };
+    const radAt = f => { const d = f * Lt; return d < L0 ? 3.9 : d < L0 + L1 ? lerp(3.9, 3.0, (d - L0) / L1) : lerp(3.0, 2.4, (d - L0 - L1) / L2) * (1 - 0.3 * smoother((f - 0.9) / 0.1)); };
     const pos = g.attributes.position;
     let N = null;
     for (let i = 0; i <= SLV.rings; i++) {
@@ -1028,15 +1032,20 @@ export async function makeGame(ctx) {
   // each joint bent by a curl (0 open, 1 closed round a grip). Its frame:
   // the wrist at the origin, the fingers along y, the palm facing z.
   const FING = [[1.55, 1.0, 0.8], [1.7, 1.1, 0.85], [1.6, 1.05, 0.8], [1.25, 0.85, 0.7]];
-  const nailM = new THREE.MeshPhysicalMaterial({ color: 0xf1d2c4, roughness: 0.25, clearcoat: 0.8 }); keep(null, nailM);
+  const nailM = new THREE.MeshPhysicalMaterial({ color: 0xf0cfc0, roughness: 0.25, clearcoat: 0.8 }); keep(null, nailM);
   function makeHand(side) {
     const root = new THREE.Group();
-    const palmG = new THREE.SphereGeometry(1, 24, 16); palmG.scale(2.25, 2.55, 0.85); palmG.translate(0, PALM, 0); keep(palmG);
+    const palmG = new THREE.SphereGeometry(1, 28, 18); palmG.scale(2.25, 2.55, 0.95); palmG.translate(0, PALM, 0); keep(palmG);
     const palm = new THREE.Mesh(palmG, bisque); palm.castShadow = true; root.add(palm);
+    // (the ball of the thumb and the heel of the hand, on the palm's side)
+    const padG = new THREE.SphereGeometry(1, 20, 14); keep(padG);
+    const thenar = new THREE.Mesh(padG, bisque); thenar.position.set(-side * 1.1, 1.75, 0.42); thenar.scale.set(1.15, 1.6, 0.8); thenar.rotation.z = side * 0.35; root.add(thenar);
+    const heel = new THREE.Mesh(padG, bisque); heel.position.set(side * 0.85, 1.1, 0.3); heel.scale.set(1.05, 1.1, 0.7); root.add(heel);
+    const knuckG = new THREE.SphereGeometry(1, 14, 10); keep(knuckG);
+    const nailG = new THREE.SphereGeometry(1, 12, 8); keep(nailG);
     const wristG = new THREE.CylinderGeometry(1.5, 1.6, 2.4, 16); wristG.scale(1, 1, 0.7); keep(wristG);
     const wr = new THREE.Mesh(wristG, bisque); wr.position.y = -0.6; root.add(wr);
     const fingers = [], tips = [], segs = [], bases = [];
-    const nailG = new THREE.SphereGeometry(1, 12, 8); keep(nailG);
     for (let f = 0; f < 4; f++) {
       const chain = [], sg = [];
       const base = new THREE.Group(); bases.push(base); base.position.set((f - 1.5) * 1.12 * side, 4.55 - Math.abs(f - 1.2) * 0.32, 0.05); root.add(base);
@@ -1049,11 +1058,12 @@ export async function makeGame(ctx) {
         const g = new THREE.CapsuleGeometry(r, L, 4, 10); g.translate(0, L / 2 + r * 0.3, 0); keep(g);
         { const q = g.attributes.position; for (let i = 0; i < q.count; i++) { const k = lerp(1, 0.84, clamp01(q.getY(i) / (L + r))); q.setX(i, q.getX(i) * k); q.setZ(i, q.getZ(i) * k * 0.92); } g.computeVertexNormals(); }
         const m = new THREE.Mesh(g, bisque); m.castShadow = true; joint.add(m);
+        // (the knuckle at the joint, proud on the back of the hand)
+        const kn = new THREE.Mesh(knuckG, bisque); kn.scale.setScalar(r * (j ? 1.08 : 1.18)); kn.position.set(0, r * 0.15, -r * (j ? 0.05 : 0.18)); joint.add(kn);
         chain.push(joint); sg.push({ L, r }); parent = joint;
         if (j === 2) {
           tips.push({ joint, at: V(0, L + r * 1.3, 0), r });
-          // (a nail on the back of the tip, painted)
-          const nl = new THREE.Mesh(nailG, nailM); nl.position.set(0, L * 0.82 + r * 0.3, -r * 0.82); nl.scale.set(r * 0.78, L * 0.32, 0.1); joint.add(nl);
+          const nl = new THREE.Mesh(nailG, nailM); nl.position.set(0, L * 0.8 + r * 0.3, -r * 0.8); nl.scale.set(r * 0.74, L * 0.34, 0.09); joint.add(nl);
         }
       }
       fingers.push(chain); segs.push(sg);
@@ -1063,9 +1073,15 @@ export async function makeGame(ctx) {
     let tp = tBase;
     [1.5, 1.15].forEach((L, j) => {
       const joint = new THREE.Group(); if (j) joint.position.y = 1.5 + 0.5; tp.add(joint);
-      const r = 0.55 - j * 0.06, g = new THREE.CapsuleGeometry(r, L, 4, 10); g.translate(0, L / 2 + r * 0.3, 0); keep(g);
+      const r = 0.62 - j * 0.07, g = new THREE.CapsuleGeometry(r, L, 4, 10); g.translate(0, L / 2 + r * 0.3, 0);
+      { const q = g.attributes.position; for (let i = 0; i < q.count; i++) { const k = lerp(1, 0.86, clamp01(q.getY(i) / (L + r))); q.setX(i, q.getX(i) * k); q.setZ(i, q.getZ(i) * k * 0.9); } g.computeVertexNormals(); }
+      keep(g);
       const m = new THREE.Mesh(g, bisque); m.castShadow = true; joint.add(m); thumb.push(joint); tsegs.push({ L, r }); tp = joint;
-      if (j === 1) tips.push({ joint, at: V(0, L + r * 1.3, 0), r });
+      const kn = new THREE.Mesh(knuckG, bisque); kn.scale.setScalar(r * 1.1); kn.position.set(0, r * 0.15, -r * 0.08); joint.add(kn);
+      if (j === 1) {
+        tips.push({ joint, at: V(0, L + r * 1.3, 0), r });
+        const nl = new THREE.Mesh(nailG, nailM); nl.position.set(0, L * 0.78 + r * 0.3, -r * 0.8); nl.scale.set(r * 0.78, L * 0.36, 0.1); joint.add(nl);
+      }
     });
     // (a grasp: each finger closes on its cam until it meets what the hand
     // holds - a ball, or a handle's round - and no further: points along
@@ -1102,7 +1118,7 @@ export async function makeGame(ctx) {
       }
     };
     const pose = (curl, spread = 0, thumbCurl = curl, obj = null) => {
-      fingers.forEach((ch, f) => { ch[0].rotation.z = (f - 1.5) * spread * 0.12 * side; wrap(bases[f], ch, segs[f], [1.0, 1.35, 1.0].map(m => curl * m * (1 + 0.04 * f)), obj); });
+      fingers.forEach((ch, f) => { ch[0].rotation.z = (f - 1.5) * (spread + 0.3 * clamp01(1 - curl)) * 0.12 * side; wrap(bases[f], ch, segs[f], [1.0, 1.35, 1.0].map(m => curl * m * (1 + 0.04 * f)), obj); });
       wrap(tBase, thumb, tsegs, [thumbCurl * 0.5, thumbCurl * 0.9], obj, [-1.1, -1.1]);
     };
     pose(0.2);
@@ -1110,18 +1126,18 @@ export async function makeGame(ctx) {
   }
   // the cuff: turned back, flaring, a band of braid round its top; the
   // lace ruffle out of it
-  const cuffG = new THREE.CylinderGeometry(3.15, 2.65, 3.4, 28, 1, true); cuffG.translate(0, -1.4, 0); keep(cuffG);
-  const cuffBandG = new THREE.CylinderGeometry(3.2, 3.18, 0.8, 28, 1, true); keep(cuffBandG);
+  const cuffG = new THREE.CylinderGeometry(2.85, 2.6, 3.4, 28, 1, true); cuffG.translate(0, -2.0, 0); keep(cuffG);
+  const cuffBandG = new THREE.CylinderGeometry(2.9, 2.88, 0.8, 28, 1, true); cuffBandG.translate(0, -0.6, 0); keep(cuffBandG);
   // (gathered close: many small folds, the scalloped edge fine)
   // (a soft cone of lace out of the cuff, its mouth to the fingers: in the
   // cuff's frame +y runs down the arm and +z is the back of the hand, where
   // it is longest and lies down onto the hand)
-  const ruffG = new THREE.CylinderGeometry(2.4, 2.95, 2.4, 96, 8, true); ruffG.translate(0, 1.4, 0);
-  { const p = ruffG.attributes.position, uv = ruffG.attributes.uv; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), f = clamp01(y / 2.4), a = Math.atan2(x, z), hang = Math.max(0, Math.cos(a)) ** 1.5, k = 1 + 0.05 * f * Math.sin(a * 7); p.setXYZ(i, x * k, y + 1.5 * f * hang, z * k - 1.25 * f * f * hang); uv.setXY(i, uv.getX(i) * 3, 1 - uv.getY(i)); } ruffG.computeVertexNormals(); }
-  keep(ruffG);
-  const shirtG = new THREE.CylinderGeometry(1.45, 2.75, 1.8, 40, 3, true); shirtG.translate(0, 0.1, 0);
-  { const p = shirtG.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), k = 1 + 0.05 * Math.sin(Math.atan2(z, x) * 14); p.setX(i, x * k); p.setZ(i, z * k); } shirtG.computeVertexNormals(); }
+  const ruffG = new THREE.CylinderGeometry(2.3, 1.8, 1.5, 96, 8, true); ruffG.translate(0, 1.0, 0);
+  const shirtG = new THREE.CylinderGeometry(1.75, 2.45, 1.0, 56, 3, true); shirtG.translate(0, -0.15, 0);
+  { const p = shirtG.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), f = clamp01((0.35 - y) / 1.0), k = 1 + 0.1 * f * Math.sin(Math.atan2(z, x) * 16); p.setX(i, x * k); p.setZ(i, z * k); } shirtG.computeVertexNormals(); }
   keep(shirtG);
+  { const p = ruffG.attributes.position, uv = ruffG.attributes.uv; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), f = clamp01((y - 0.25) / 1.5), a = Math.atan2(x, z), hang = Math.max(0, Math.cos(a)) ** 1.5, k = 1 + 0.08 * f * Math.sin(a * 9); p.setXYZ(i, x * k, y + 0.8 * f * hang, z * k - 0.9 * f * f * hang); uv.setXY(i, uv.getX(i) * 3, 1 - uv.getY(i)); } ruffG.computeVertexNormals(); }
+  keep(ruffG);
   const arms = [-1, 1].map(side => {
     const a = { side };
     a.shoulder = V(side * SH.x, SH.y, 0);
@@ -1136,6 +1152,25 @@ export async function makeGame(ctx) {
     body.add(a.hand.root);
     return a;
   });
+
+  // ---- Contact: a soft shade under everything that rests on something (the
+  // lamp's shadow map is too soft to plant a foot): the desk's sabots, the
+  // stool's feet, under his dangling shoes, and under each hand as it comes
+  // down on the leather.
+  const blobTex = texOf(canvas(64, 64, (g, W) => { const r = g.createRadialGradient(W / 2, W / 2, 0, W / 2, W / 2, W / 2); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.45, 'rgba(255,255,255,0.55)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, W, W); }), false);
+  const blobG = new THREE.PlaneGeometry(1, 1); blobG.rotateX(-Math.PI / 2); keep(blobG);
+  const blob = (x, y, z, sx, sz, op, parent = stage) => {
+    const m = new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: blobTex, transparent: true, opacity: op, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }); keep(null, m);
+    const b = new THREE.Mesh(blobG, m); b.position.set(x, y, z); b.scale.set(sx, 1, sz); b.renderOrder = 1; parent.add(b); return b;
+  };
+  {
+    const { w, d } = DESK;
+    [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach(([sx, sz]) => blob(sx * (w / 2 - 1.8) + 0.4 * sx, 0.04, sz * (d / 2 - 1.8) + 0.4 * sz, 7.5, 7.5, 0.7));
+    [-1, 1].forEach(sx => [-1, 1].forEach(sz => blob(sx * (STOOL.w / 2 - 1.5), 0.04, STOOL.z + sz * (STOOL.d / 2 - 1.5), 4.5, 4.5, 0.6)));
+    [-1, 1].forEach(s => blob(s * 5.8, 0.04, -7.5, 9, 12, 0.32));
+    blob(0, 0.04, -12, DESK.w + 14, DESK.d + 18, 0.28);
+  }
+  const handBlobs = [-1, 1].map(() => blob(0, DESK.top + 0.06, 0, 6, 7.5, 0));
 
   // ---- The lamp over him, and a rim from behind.
   const key = new THREE.SpotLight(0xffeedd, room.PENDANT * 1.2, 0, 0.5, 0.65, 0);
@@ -1286,8 +1321,7 @@ export async function makeGame(ctx) {
   // hand lies (h); or a grip - the thing held (g), the palm off it by out,
   // the fingers' base along past it, round a handle's axis)
   const restH = V(0.12, -0.21, 1).normalize();
-  const restR = { p: V(-14.5, DESK.top + 3.2, -6.5), h: restH, n: restH.clone().cross(V(1, 0, 0)).normalize().negate() };
-  const overBall = V(-0.85, -0.25, 0.45).normalize();
+  const restR = { p: V(-14.5, DESK.top + 1.9, -6.5), h: restH, n: restH.clone().cross(V(1, 0, 0)).normalize().negate() };
   const poseAt = w0 => {
     const w = Math.min(w0, FREEZE);
     const P = { look: lookAt(w) };
@@ -1302,16 +1336,19 @@ export async function makeGame(ctx) {
     const ball = ballAt(leverAt(w));
     const toBall = ease(w, T.reach, T.grip), off = ease(w, T.release + 0.05, T.release + 0.75);
     const grip = toBall * (1 - off);
-    const onTop = b => b.clone().add(V(0, LEVER.ball + 0.85, 0)).addScaledVector(overBall, -0.6);
+    // (the grip, as the lens sees it: the palm over the ball's top and back,
+    // the fingers down round its outer side, the thumb across its front)
+    const gN = V(...HOLD.n).normalize(), gH = V(...HOLD.hd); gH.addScaledVector(gN, -gH.dot(gN)).normalize();
+    const onTop = b => b.clone().addScaledVector(gN, -HOLD.out).addScaledVector(gH, -HOLD.along);
     if (grip <= 0) P.rh = restR;
     else if (w < T.release + 0.05) {
       const p = restR.p.clone().lerp(onTop(ball), toBall); p.y += 3 * Math.sin(Math.PI * toBall);
-      P.rh = { p, n: restR.n.clone().lerp(V(0, -1, 0), toBall).normalize(), h: restR.h.clone().lerp(overBall, toBall).normalize() };
+      P.rh = { p, n: restR.n.clone().lerp(gN, toBall).normalize(), h: restR.h.clone().lerp(gH, toBall).normalize() };
     } else {
       const p = onTop(ballAt(leverAt(T.release))).lerp(restR.p, off); p.y += 3 * Math.sin(Math.PI * off);
-      P.rh = { p, n: V(0, -1, 0).lerp(restR.n, off).normalize(), h: overBall.clone().lerp(restR.h, off).normalize() };
+      P.rh = { p, n: gN.clone().lerp(restR.n, off).normalize(), h: gH.clone().lerp(restR.h, off).normalize() };
     }
-    P.rcurl = lerp(0.12, 1.05, smoother((grip - 0.75) / 0.25));
+    P.rcurl = lerp(0.12, HOLD.curl, smoother((grip - 0.75) / 0.25));
     // the left hand: round the bell's handle; The Jackpot lifts and rings
     // it, On a Tooth half-lifts it as the second badge stops
     P.bell = bellRest.clone(); P.bellTilt = 0;
@@ -1345,7 +1382,7 @@ export async function makeGame(ctx) {
     const n = pole.clone().sub(dir.clone().multiplyScalar(pole.dot(dir))).normalize();
     return S0.clone().addScaledVector(dir, x).addScaledVector(n, h);
   };
-  const bodyInv = new THREE.Matrix4(), headInv = new THREE.Matrix4(), basis = new THREE.Matrix4();
+  const bodyInv = new THREE.Matrix4(), headInv = new THREE.Matrix4(), basis = new THREE.Matrix4(), stageInv = new THREE.Matrix4();
   const toBody = p => p.clone().applyMatrix4(bodyInv);
   const dirBody = d => d.clone().transformDirection(bodyInv);
 
@@ -1362,6 +1399,7 @@ export async function makeGame(ctx) {
     neckPivot.rotation.set(pitch * 0.35, yaw * 0.3, 0, 'YXZ');
     headG.rotation.set(pitch * 0.65, yaw * 0.7, 0, 'YXZ');
     stage.updateMatrixWorld(true);
+    stageInv.copy(stage.matrixWorld).invert();
     headInv.copy(headG.matrixWorld).invert();
     const lw = toWorld(P.look);
     eyes.forEach(e => {
@@ -1413,7 +1451,15 @@ export async function makeGame(ctx) {
       const inv = a.hand.root.quaternion.clone().invert();
       const local = p => toBody(p).sub(wrist).applyQuaternion(inv);
       const obj = right ? { c: local(ballAt(leverAt(Math.min(w, FREEZE)))), r: LEVER.ball } : { c: local(P.bell), r: 0.68, axis: dirBody(tg.axis).applyQuaternion(inv) };
-      a.hand.pose(right ? P.rcurl : P.lcurl, 0.06, right ? P.rcurl * 0.8 : 0.7, obj);
+      a.hand.pose(right ? P.rcurl : P.lcurl, 0.06, right ? P.rcurl * HOLD.thumb : 0.7, obj);
+      // (its shade on the leather, darker as it comes down)
+      {
+        a.hand.root.updateMatrixWorld(true);
+        const hb = handBlobs[right ? 0 : 1], pc = a.hand.root.localToWorld(V(0, PALM + 1, 0)).applyMatrix4(stageInv);
+        const over = Math.abs(pc.x) < DESK.w / 2 - 2 && Math.abs(pc.z) < DESK.d / 2 - 2, hgt = pc.y - DESK.top;
+        hb.position.set(pc.x, DESK.top + 0.06, pc.z);
+        hb.material.opacity = over ? 0.55 * clamp01(1 - (hgt - 1) / 7) : 0;
+      }
     });
   };
 
