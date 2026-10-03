@@ -1320,8 +1320,8 @@ export async function makeGame(ctx) {
   // (each hand's target: its palm and the way the palm faces (n) and the
   // hand lies (h); or a grip - the thing held (g), the palm off it by out,
   // the fingers' base along past it, round a handle's axis)
-  const restH = V(0.12, -0.21, 1).normalize();
-  const restR = { p: V(-14.5, DESK.top + 1.9, -6.5), h: restH, n: restH.clone().cross(V(1, 0, 0)).normalize().negate() };
+  const restH = V(0.12, -0.05, 1).normalize();
+  const restR = { p: V(-14.5, DESK.top + 1.8, -6.5), h: restH, n: restH.clone().cross(V(1, 0, 0)).normalize().negate() };
   const poseAt = w0 => {
     const w = Math.min(w0, FREEZE);
     const P = { look: lookAt(w) };
