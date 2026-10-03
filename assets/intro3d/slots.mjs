@@ -488,7 +488,7 @@ export async function makeGame(ctx) {
   const winZ = frontZ(WIN.y, 0);
   const bend = (g, y0) => { const p = g.attributes.position; for (let i = 0; i < p.count; i++) p.setZ(i, p.getZ(i) + frontZ(y0 + p.getY(i), p.getX(i)) - winZ); g.computeVertexNormals(); return g; };
   const reels = [], reelMats = [];
-  let windowGlow = null;
+  let windowGlow = null, lineShade = null;
   {
     const rr = (w, h, r) => { const s = new THREE.Shape(); s.moveTo(-w + r, -h); s.lineTo(w - r, -h); s.quadraticCurveTo(w, -h, w, -h + r); s.lineTo(w, h - r); s.quadraticCurveTo(w, h, w - r, h); s.lineTo(-w + r, h); s.quadraticCurveTo(-w, h, -w, h - r); s.lineTo(-w, -h + r); s.quadraticCurveTo(-w, -h, -w + r, -h); return s; };
     // (the bezel: a flat gilt plate round the glass, a bead moulding at its
@@ -550,6 +550,11 @@ export async function makeGame(ctx) {
     }
     // the payline: a fine gilt wire across the window
     const wire = mesh(new THREE.CylinderGeometry(0.08, 0.08, WIN.w, 6), gilt, body, false); wire.rotation.z = Math.PI / 2; wire.position.set(0, WIN.y, winZ - 0.1);
+    {
+      const shade = texOf(canvas(8, 128, (g, W, Hh) => { const gr = g.createLinearGradient(0, 0, 0, Hh); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.36, 'rgba(0,0,0,0.85)'); gr.addColorStop(0.43, 'rgba(0,0,0,0)'); gr.addColorStop(0.57, 'rgba(0,0,0,0)'); gr.addColorStop(0.64, 'rgba(0,0,0,0.85)'); gr.addColorStop(1, 'rgba(0,0,0,1)'); g.fillStyle = gr; g.fillRect(0, 0, W, Hh); }), false);
+      lineShade = mesh(bend(new THREE.PlaneGeometry(WIN.w, WIN.h, 24, 1), WIN.y), new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: shade, transparent: true, opacity: 0, depthWrite: false }), body, false);
+      lineShade.position.set(0, WIN.y, winZ - 0.05); keep(null, lineShade.material);
+    }
     // The Jackpot's light out of the window: a glow on the glass (its pool
     // on the desk is a lamp, below)
     if (tier === 'vault') {
@@ -594,10 +599,11 @@ export async function makeGame(ctx) {
       g.fillStyle = gold; g.font = `700 ${h * 0.2}px Georgia, serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('DRO', 0, h * 0.01);
     } else if (s === 'die') {
       const w = h * 0.66;
-      g.fillStyle = '#f4ecdb'; g.strokeStyle = '#8a7a5a'; g.lineWidth = h * 0.025;
+      g.fillStyle = '#a3192b'; g.strokeStyle = '#4e0a14'; g.lineWidth = h * 0.03;
       g.beginPath(); g.roundRect(-w / 2, -w / 2, w, w, w * 0.18); g.fill(); g.stroke();
-      g.fillStyle = ox;
-      [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]].forEach(([a, b]) => { g.beginPath(); g.arc(a * w * 0.26, b * w * 0.26, w * 0.085, 0, TAU); g.fill(); });
+      g.fillStyle = 'rgba(255,255,255,0.18)'; g.beginPath(); g.roundRect(-w / 2 + w * 0.08, -w / 2 + w * 0.06, w * 0.84, w * 0.3, w * 0.12); g.fill();
+      g.fillStyle = '#fbf6ee';
+      [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]].forEach(([a, b]) => { g.beginPath(); g.arc(a * w * 0.26, b * w * 0.26, w * 0.1, 0, TAU); g.fill(); });
     }
     g.restore();
   }
@@ -1022,6 +1028,7 @@ export async function makeGame(ctx) {
   // each joint bent by a curl (0 open, 1 closed round a grip). Its frame:
   // the wrist at the origin, the fingers along y, the palm facing z.
   const FING = [[1.55, 1.0, 0.8], [1.7, 1.1, 0.85], [1.6, 1.05, 0.8], [1.25, 0.85, 0.7]];
+  const nailM = new THREE.MeshPhysicalMaterial({ color: 0xf1d2c4, roughness: 0.25, clearcoat: 0.8 }); keep(null, nailM);
   function makeHand(side) {
     const root = new THREE.Group();
     const palmG = new THREE.SphereGeometry(1, 24, 16); palmG.scale(2.25, 2.55, 0.85); palmG.translate(0, PALM, 0); keep(palmG);
@@ -1029,6 +1036,7 @@ export async function makeGame(ctx) {
     const wristG = new THREE.CylinderGeometry(1.5, 1.6, 2.4, 16); wristG.scale(1, 1, 0.7); keep(wristG);
     const wr = new THREE.Mesh(wristG, bisque); wr.position.y = -0.6; root.add(wr);
     const fingers = [], tips = [], segs = [], bases = [];
+    const nailG = new THREE.SphereGeometry(1, 12, 8); keep(nailG);
     for (let f = 0; f < 4; f++) {
       const chain = [], sg = [];
       const base = new THREE.Group(); bases.push(base); base.position.set((f - 1.5) * 1.12 * side, 4.55 - Math.abs(f - 1.2) * 0.32, 0.05); root.add(base);
@@ -1042,7 +1050,11 @@ export async function makeGame(ctx) {
         { const q = g.attributes.position; for (let i = 0; i < q.count; i++) { const k = lerp(1, 0.84, clamp01(q.getY(i) / (L + r))); q.setX(i, q.getX(i) * k); q.setZ(i, q.getZ(i) * k * 0.92); } g.computeVertexNormals(); }
         const m = new THREE.Mesh(g, bisque); m.castShadow = true; joint.add(m);
         chain.push(joint); sg.push({ L, r }); parent = joint;
-        if (j === 2) tips.push({ joint, at: V(0, L + r * 1.3, 0), r });
+        if (j === 2) {
+          tips.push({ joint, at: V(0, L + r * 1.3, 0), r });
+          // (a nail on the back of the tip, painted)
+          const nl = new THREE.Mesh(nailG, nailM); nl.position.set(0, L * 0.82 + r * 0.3, -r * 0.82); nl.scale.set(r * 0.78, L * 0.32, 0.1); joint.add(nl);
+        }
       }
       fingers.push(chain); segs.push(sg);
     }
@@ -1105,9 +1117,11 @@ export async function makeGame(ctx) {
   // cuff's frame +y runs down the arm and +z is the back of the hand, where
   // it is longest and lies down onto the hand)
   const ruffG = new THREE.CylinderGeometry(2.4, 2.95, 2.4, 96, 8, true); ruffG.translate(0, 1.4, 0);
-  const shirtG = new THREE.RingGeometry(1.5, 3.1, 40); shirtG.rotateX(-Math.PI / 2); shirtG.translate(0, 0.22, 0); keep(shirtG);
   { const p = ruffG.attributes.position, uv = ruffG.attributes.uv; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), f = clamp01(y / 2.4), a = Math.atan2(x, z), hang = Math.max(0, Math.cos(a)) ** 1.5, k = 1 + 0.05 * f * Math.sin(a * 7); p.setXYZ(i, x * k, y + 1.5 * f * hang, z * k - 1.25 * f * f * hang); uv.setXY(i, uv.getX(i) * 3, 1 - uv.getY(i)); } ruffG.computeVertexNormals(); }
   keep(ruffG);
+  const shirtG = new THREE.CylinderGeometry(1.45, 2.75, 1.8, 40, 3, true); shirtG.translate(0, 0.1, 0);
+  { const p = shirtG.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), k = 1 + 0.05 * Math.sin(Math.atan2(z, x) * 14); p.setX(i, x * k); p.setZ(i, z * k); } shirtG.computeVertexNormals(); }
+  keep(shirtG);
   const arms = [-1, 1].map(side => {
     const a = { side };
     a.shoulder = V(side * SH.x, SH.y, 0);
@@ -1130,7 +1144,7 @@ export async function makeGame(ctx) {
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
   key.shadow.camera.near = 80; key.shadow.camera.far = 320;
-  key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02; key.shadow.radius = 4;
+  key.shadow.bias = -0.0008; key.shadow.normalBias = 0.09; key.shadow.radius = 4;
   scene.add(key, key.target);
   const rimL = new THREE.SpotLight(0xcfdcff, room.PENDANT * 0.7, 0, 0.6, 0.8, 0);
   rimL.position.copy(toWorld(V(-70, 170, -150)));
@@ -1148,8 +1162,20 @@ export async function makeGame(ctx) {
   body.add(inner);
   // (The Jackpot: the gold out of the window, a lamp thrown forward and down
   // onto the desk and into the drawer)
-  let pour = null;
+  // (the payout's own lamp: down into the drawer as it runs out, held, so the
+  // tokens are still seen in the last frame)
+  let trayL = null;
+  if (tier !== 'edge') {
+    trayL = new THREE.SpotLight(0xfff0dc, 0, 0, 0.32, 0.8, 0);
+    trayL.position.set(0, DESK.top + 34, DESK.d / 2 + DRAWER.open + 26);
+    trayL.target.position.set(0, DRAWER.y, DESK.d / 2 + DRAWER.open * 0.6);
+    stage.add(trayL, trayL.target);
+  }
+  let pour = null, flood = null;
   if (tier === 'vault') {
+    flood = new THREE.PointLight(0xffc068, 0, 46, 1.2);
+    flood.position.set(0, WIN.y + 0.5, winZ + 2.6);
+    body.add(flood);
     pour = new THREE.SpotLight(0xffc070, 0, 0, 0.75, 0.85, 0);
     pour.position.set(0, WIN.y, winZ + 1.2);
     pour.target.position.set(0, WIN.y - 15, winZ + 24);
@@ -1260,8 +1286,8 @@ export async function makeGame(ctx) {
   // hand lies (h); or a grip - the thing held (g), the palm off it by out,
   // the fingers' base along past it, round a handle's axis)
   const restH = V(0.12, -0.21, 1).normalize();
-  const restR = { p: V(-12.5, DESK.top + 3.2, -5.5), h: restH, n: restH.clone().cross(V(1, 0, 0)).normalize().negate() };
-  const overBall = V(-0.4, -0.2, 0.9).normalize();
+  const restR = { p: V(-14.5, DESK.top + 3.2, -6.5), h: restH, n: restH.clone().cross(V(1, 0, 0)).normalize().negate() };
+  const overBall = V(-0.85, -0.25, 0.45).normalize();
   const poseAt = w0 => {
     const w = Math.min(w0, FREEZE);
     const P = { look: lookAt(w) };
@@ -1399,14 +1425,14 @@ export async function makeGame(ctx) {
   let tokMesh = null;
   if (nTok) {
     const stamp = ink => canvas(128, 128, (g, W) => {
-      g.fillStyle = ink ? '#000' : '#c9a04e'; g.fillRect(0, 0, W, W);
-      g.strokeStyle = ink ? '#fff' : '#8a6a2a'; g.lineWidth = 6; g.beginPath(); g.arc(W / 2, W / 2, W / 2 - 8, 0, TAU); g.stroke();
-      g.fillStyle = ink ? '#fff' : '#8a6a2a'; g.font = `700 ${W * 0.3}px Georgia, serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('DRO', W / 2, W / 2 + 2);
+      g.fillStyle = ink ? '#000' : '#b48a34'; g.fillRect(0, 0, W, W);
+      g.strokeStyle = ink ? '#fff' : '#6e4c16'; g.lineWidth = 6; g.beginPath(); g.arc(W / 2, W / 2, W / 2 - 8, 0, TAU); g.stroke();
+      g.fillStyle = ink ? '#fff' : '#6e4c16'; g.font = `700 ${W * 0.3}px Georgia, serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('DRO', W / 2, W / 2 + 2);
     });
     const fn = embossTex(stamp(true), 2, 1); keep(null, null, fn);
     const en = embossTex(canvas(256, 8, (g, W, Hh) => { g.fillStyle = '#000'; g.fillRect(0, 0, W, Hh); g.fillStyle = '#fff'; for (let x = 0; x < W; x += 4) g.fillRect(x, 0, 2, Hh); }), 3, 0); keep(null, null, en);
-    const faceM = new THREE.MeshStandardMaterial({ map: texOf(stamp(false), true), normalMap: fn, metalness: 1, roughness: 0.32 });
-    const edgeM = new THREE.MeshStandardMaterial({ color: 0xc9a04e, normalMap: en, metalness: 1, roughness: 0.3 });
+    const faceM = new THREE.MeshStandardMaterial({ map: texOf(stamp(false), true), normalMap: fn, normalScale: new THREE.Vector2(1.6, 1.6), metalness: 1, roughness: 0.22, envMapIntensity: 1.8 });
+    const edgeM = new THREE.MeshStandardMaterial({ color: 0xb48a34, normalMap: en, metalness: 1, roughness: 0.24, envMapIntensity: 1.8 });
     keep(null, faceM); keep(null, edgeM);
     const tg = new THREE.CylinderGeometry(TOKEN.r, TOKEN.r, TOKEN.th, 40); keep(tg);
     tokMesh = new THREE.InstancedMesh(tg, [edgeM, faceM, faceM], nTok); tokMesh.castShadow = true; tokMesh.receiveShadow = true; tokMesh.frustumCulled = false;
@@ -1424,29 +1450,34 @@ export async function makeGame(ctx) {
     // (they come out of the desk at the drawer's back and heap nearest
     // where they land)
     const landX = (rng() - 0.5) * 4;
-    const order = cells.map(c => ({ c, d: Math.hypot(c.x - landX, (c.z - DZ - 4) * 0.8) + rng() * 2.2 })).sort((a, b) => a.d - b.d).map(o => o.c);
-    const spill = tier === 'vault' ? 4 : 0;
+    const order = cells.map(c => ({ c, d: Math.hypot(c.x - landX, (c.z - DZ - DRAWER.open * 0.62) * 0.8) + rng() * 2.2 })).sort((a, b) => a.d - b.d).map(o => o.c);
+    const spill = tier === 'vault' ? 9 : 0;
+    // (a heap: only the cells nearest where they land, so they stack)
+    const heap = order.slice(0, Math.max(3, Math.ceil(nTok / 2.6)));
     const gap = TOKGAP[tier];
     for (let k = 0; k < nTok; k++) {
       const t = payAt + k * gap + rng() * 0.02;
       const start = V(landX + (rng() - 0.5) * 2.4, DRAWER.y + DRAWER.h - 0.6, DZ - 2.5);
-      let rest, spillTo = null;
+      let rest, spillTo = null, lean = 0;
       if (k >= nTok - spill) rest = spillTo = V((rng() - 0.5) * 18, 0.1, DZ + DRAWER.open + 6 + rng() * 10);
       else {
         // (the next cell out from where they land, one deep at first, then
         // stacked on the lowest near it)
-        let cell = order.find(c => c.n === 0) || order.reduce((m, c) => (c.n < m.n ? c : m), order[0]);
-        if (k >= order.length) cell = order.slice(0, Math.ceil(order.length * 0.6)).reduce((m, c) => (c.n < m.n ? c : m), order[0]);
-        rest = V(cell.x + (rng() - 0.5) * 0.06, floorY + cell.n * (TOKEN.th + 0.01), cell.z + (rng() - 0.5) * 0.06);
+        const cell = heap.reduce((m, c) => (c.n + rng() * 0.9 < m.n ? c : m), heap[0]);
+        // (each one a little off the one under it, and leaning on it)
+        const off = cell.n ? 0.55 : 0.06;
+        rest = V(cell.x + (rng() - 0.5) * off, floorY + cell.n * (TOKEN.th + 0.03) + (cell.n ? 0.05 : 0), cell.z + (rng() - 0.5) * off);
+        lean = cell.n ? (rng() * 2 - 1) * 0.22 : (rng() * 2 - 1) * 0.04;
         cell.n++;
       }
-      tokens.push({ t, start, rest, spill: spillTo, spin: (rng() * 2 - 1) * 24, yaw: rng() * TAU, tilt: (rng() * 2 - 1) * 0.04 });
+      tokens.push({ t, start, rest, spill: spillTo, spin: (rng() * 2 - 1) * 24, yaw: rng() * TAU, tilt: spillTo ? 0 : lean });
     }
   }
   const tokM = new THREE.Matrix4(), tokQ = new THREE.Quaternion(), tokE = new THREE.Euler(), ONE = V(1, 1, 1);
   const poseTokens = w => {
     // the drawer: out on its cam
     drawer.position.z = DRAWER.open * cam((w - drawerAt) / 0.45);
+    if (trayL) trayL.intensity = room.PENDANT * 0.6 * smoother((w - drawerAt) / 0.6);
     if (!tokMesh) return;
     tokens.forEach((c, k) => {
       let p;
@@ -1464,7 +1495,7 @@ export async function makeGame(ctx) {
         // out of the desk and down into the drawer, a slide and a settle
         const fl = 0.24;
         if (u < fl) { const k2 = u / fl; p = c.start.clone().lerp(c.rest, k2); p.y = lerp(c.start.y, c.rest.y, k2 * k2); tokE.set(0.6 * (1 - k2) + u * c.spin * 0.2, c.yaw, 0); }
-        else { const x = u - fl; p = c.rest.clone(); p.y += 0.35 * Math.abs(Math.sin(x * 26)) * Math.exp(-x * 10); tokE.set(c.tilt * Math.exp(-x * 6), c.yaw, c.tilt * Math.exp(-x * 6)); }
+        else { const x = u - fl; p = c.rest.clone(); p.y += 0.35 * Math.abs(Math.sin(x * 26)) * Math.exp(-x * 10); tokE.set(c.tilt * (1 + 1.5 * Math.exp(-x * 6)), c.yaw, 0.6 * c.tilt * (1 + 1.5 * Math.exp(-x * 6))); }
       }
       tokQ.setFromEuler(tokE);
       tokM.compose(p, tokQ, ONE); tokMesh.setMatrixAt(k, tokM);
@@ -1499,7 +1530,7 @@ export async function makeGame(ctx) {
   const CALLV = tall ? fit(Bp([0, 40, 3]), V(0.12, 0.08, 1), 54, 34) : fit(Bp([0, 44, 3]), V(0.12, 0.08, 1), 70, 60);
   // (looking down into the open drawer: its floor, where the tokens lie)
   const TRAYV = tall ? fit(V(0, 48, 8), V(0.08, 1.25, 1), 40, 24) : fit(V(0, 48, 7), V(0.08, 1.2, 1), 52, 64);
-  const WIDE = tall ? fit(V(0, 58, -6), V(0.24, 0.18, 1), 116, 92) : fit(V(0, 72, -6), V(0.24, 0.18, 1), 140, 92);
+  const WIDE = tall ? fit(V(0, 58, -6), V(0.24, 0.27, 1), 116, 92) : fit(V(0, 72, -6), V(0.24, 0.27, 1), 140, 92);
   let iTray = -1;
   if (tier === 'edge') {
     // (in on the third reel standing on its tooth; then back to him, still,
@@ -1566,7 +1597,7 @@ export async function makeGame(ctx) {
   // ---- Each frame.
   const key0 = key.intensity, fill0 = fill.intensity, pendant0 = lights.pendant.intensity, inner0 = inner.intensity;
   const callPt = toWorld(Bp([0, NECKY + HEAD.up + HEAD.ry + 3, 1]));
-  const spot0 = lights.edgeSpot.angle;
+  const spot0 = lights.edgeSpot.angle, spotC0 = lights.edgeSpot.color.getHex();
   const stageFn = (t, { w }) => {
     poseFigure(w);
     reels.forEach((r, i) => {
@@ -1575,24 +1606,25 @@ export async function makeGame(ctx) {
       r.uBlur.value = clamp01((s.v - 6) / 14);
     });
     poseTokens(w);
+    if (lineShade) lineShade.material.opacity = 0.5 * smoother((w - decided) / 0.4);
     lights.rim.intensity = room.RIM;
     let burst = -1, dust = 1;
     if (tier === 'vault') {
       burst = w - plan.boom;
-      const k = burst > 0 ? smoother(burst / 0.25) * Math.max(0, 1 - burst / 4.4) : 0;
+      const k = burst > 0 ? smoother(burst / 0.25) * Math.max(0.35, 1 - burst / 4.4) : 0;
       // (gold through his clockwork: the strips lit warm from inside, the
       // light out of the window into the room, a glint in his eyes)
       reelMats.forEach(m => { m.emissiveIntensity = 0.42 * k; m.color.setRGB(1, 1 - 0.08 * k, 1 - 0.25 * k); });
       inner.intensity = inner0 * (1 + 3.5 * k);
       if (windowGlow) windowGlow.material.opacity = k * (0.85 + 0.15 * Math.sin(burst * 9));
       if (pour) pour.intensity = room.PENDANT * 0.7 * k * (0.9 + 0.1 * Math.sin(burst * 9));
+      if (flood) flood.intensity = 30 * k * (0.9 + 0.1 * Math.sin(burst * 9));
       glints.forEach(g => { g.material.opacity = 0.8 * k; });
-      eyes[0].material.emissiveIntensity = 1.5 * k;
     }
     if (tier === 'edge') {
       const k = smoother((w - plan.silence[0]) / 0.6);
       const es = lights.edgeSpot;
-      es.angle = 0.18;
+      es.angle = 0.18; es.color.setHex(0xe4eaff);
       es.position.copy(toWorld(Bp([10, 70, 60])));
       es.target.position.copy(toWorld(Bp([4, 30, 4])));
       es.intensity = 3.0 * k;
@@ -1621,7 +1653,7 @@ export async function makeGame(ctx) {
   };
   // (the shade behind the title: wanted over his face and the window, not
   // over the plain leather of the payout shot, where it reads as a stain)
-  const callScrimAt = w => (nTok ? 1 - 0.8 * smoother((w - drawerAt) / 0.5) * (1 - smoother((w - (plan.revealW - 0.9)) / 0.5)) : 1);
+  const callScrimAt = w => (nTok ? 1 - 0.4 * smoother((w - drawerAt) / 0.5) * (1 - smoother((w - (plan.revealW - 0.9)) / 0.5)) : 1);
 
   const warmAt = [0.2, Rw(T.reach) + 0.3, Rw(T.spin) + 0.5, Rslow + 0.05, warp.slowHold[1], Rw(restW) + 0.3];
   if (nTok) warmAt.push(Rw(payAt) + 0.4);
@@ -1630,7 +1662,7 @@ export async function makeGame(ctx) {
 
   const dispose = () => {
     scene.remove(aut, key, key.target, rimL, rimL.target, fill, fill.target);
-    lights.edgeSpot.angle = spot0;
+    lights.edgeSpot.angle = spot0; lights.edgeSpot.color.setHex(spotC0);
     if (tokMesh) tokMesh.dispose();
     key.shadow.dispose();
     made.geos.forEach(g => g.dispose());
