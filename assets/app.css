@@ -331,7 +331,10 @@
        row while its neighbours kept theirs on the first, so no two cards
        agreed on where anything sat. Status takes the slack and truncates;
        the button cluster never moves. */
-    .card-bottom-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: nowrap; position: relative; z-index: 1; }
+    /* The status takes whatever the buttons leave but never less than its own
+       READY / time (min-content, with the "-> 8:00" tail free to ellipsize),
+       and the buttons drop under it only if even that will not fit. */
+    .card-bottom-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; row-gap: 8px; flex-wrap: wrap; position: relative; z-index: 1; }
     .casino-avatar { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; font-family: "Courier New", Courier, monospace; font-weight: 900; font-size: 1rem; color: var(--text-main); flex-shrink: 0; cursor: pointer; transition: all 0.2s; }
     .casino-avatar:active { transform: scale(0.9); }
 
@@ -393,9 +396,12 @@
        same badge at a glance. */
     .tier-Not-Rankable { background: color-mix(in srgb, var(--tier-notrankable) 14%, transparent); color: var(--tier-notrankable); border: 1px dotted var(--tier-notrankable); text-shadow: none; }
 
-    .card-status { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-main); opacity: 0.8; flex: 1; min-width: 0; overflow: hidden; }
+    .card-status { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-main); opacity: 0.8; flex: 1 1 0; min-width: min-content; }
     .status-time { font-family: monospace; font-weight: 600; flex-shrink: 0; }
-    .card-status .ready-at { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    /* contain: inline-size keeps the long "-> 8:00 AM" tail out of the status's
+       min-content, so only the dot and the time hold the room and the tail
+       takes what is left and ellipsizes. */
+    .card-status .ready-at { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 0; contain: inline-size; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); display: inline-block; }
     .status-dot.cooldown { background: var(--text-muted); box-shadow: none; }
 
@@ -405,7 +411,11 @@
     .verify-tag { font-size: 0.68rem; color: var(--text-dim); margin-top: 2px; }
     .verify-tag.stale { color: var(--accent-orange); font-weight: 600; }
 
-    .card-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .card-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto; }
+    @media (max-width: 430px) {
+      .card-actions { gap: 5px; }
+      .card-actions .btn-dots { padding-inline: 4px; }
+    }
     /* The primary action on every card. Executive Lounge reads it as solid
        metallic gold on near-black rather than a lit gradient - this is the
        one control that must look expensive. */
@@ -430,25 +440,28 @@
        screens. */
     .feedback-fab {
       position: fixed;
-      right: 16px;
-      bottom: calc(150px + env(safe-area-inset-bottom));
+      right: 8px;
+      /* --dock-h is kept current by trackDockHeight() in index.html */
+      bottom: calc(var(--dock-h, 84px) + 10px + env(safe-area-inset-bottom));
       z-index: 60;
-      width: 50px;
-      height: 50px;
+      width: 40px;
+      height: 40px;
+      opacity: 0.6;
       border-radius: 50%;
       border: 1px solid var(--glass-border);
       background: rgba(10, 10, 14, 0.85);
       color: var(--accent-cyan);
-      font-size: 1.3rem;
+      font-size: 1.1rem;
       line-height: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       box-shadow: 0 6px 20px rgba(0,0,0,0.6);
-      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s, opacity 0.2s;
     }
-    .feedback-fab:hover, .feedback-fab:focus-visible { border-color: var(--accent-cyan); box-shadow: 0 0 14px var(--accent-cyan); transform: scale(1.06); }
+    .feedback-fab:active { opacity: 1; }
+    .feedback-fab:hover, .feedback-fab:focus-visible { opacity: 1; border-color: var(--accent-cyan); box-shadow: 0 0 14px var(--accent-cyan); transform: scale(1.06); }
     /* Two rows: Start Daily Run (moved here from the Platforms tab so
        it's reachable from every tab) stacked above the existing
        Add/Import row, both centered and capped at the same max width
@@ -2135,6 +2148,12 @@
       background: transparent; border: 1px solid rgba(201,162,39,0.4);
       color: var(--accent-gold); box-shadow: none;
     }
+    /* Still hairline (OPEN is the one gold fill), but with the border and weight
+       of a button rather than a caption. */
+    [data-theme="prism"] .btn-start-run.hero-run-btn:not(:disabled) {
+      border-color: rgba(201,162,39,0.85); font-weight: 700; text-align: center; padding: 10px 14px;
+      background: rgba(201,162,39,0.09);
+    }
     [data-theme="prism"] .btn-start-run:hover:not(:disabled) { background: rgba(201,162,39,0.07); box-shadow: none; }
 
     /* Tooltip: engraved plate. Dark ink on gold leaf. */
@@ -2546,6 +2565,9 @@
   transform: translate(2px, 2px) scale(0.88);
   box-shadow: 1px 1px 0 #0B0B0B;
 }
+/* Sort is the quiet (.secondary) kind of trigger: the gold plate's black
+   lettering was landing on the dark glass, so it takes the inactive-key look. */
+[data-theme="western"] .sort-trigger-btn.secondary { background: #1E2126; color: var(--text-main); }
 [data-theme="western"] .btn-settings-gear { color: var(--text-main); }
 /* Same square-plate language as the tier badges and avatars. */
 [data-theme="western"] .btn-ledger-quick { color: var(--text-main); }
@@ -3569,6 +3591,13 @@ html[data-motion="off"] .dc-dot { animation: none; }
   letter-spacing: 0.08em;
   font-size: 1.15rem;
 }
+/* Ready, the hand's button is a lit red key (OPEN stays the outline), not a
+   readout box. */
+[data-theme="glitch"] .btn-start-run.hero-run-btn:not(:disabled) {
+  background: var(--dc-blood); border-color: var(--dc-blood); color: #14090A;
+  text-align: center; padding: 8px 10px; font-size: 1rem; letter-spacing: 0.05em; text-shadow: none;
+  box-shadow: 0 0 14px rgba(224, 36, 47, 0.45);
+}
 
 /* The face in the snow (a collect): the room's canvas over the card, its
    grain two css pixels square, unsmoothed. */
@@ -3924,7 +3953,7 @@ html[data-motion="off"][data-theme="glitch"] .cooldown-chip { color: #b7c0cc; }
 [data-theme="neon"] .sort-stack-chip { box-shadow: 0 0 8px rgba(255,102,0,0.2); }
 [data-theme="neon"] .sort-priority-num { box-shadow: 0 0 8px var(--accent-orange); }
 [data-theme="neon"] .sort-option-btn.active { text-shadow: 0 0 5px var(--accent-orange); box-shadow: inset 0 0 10px rgba(255,102,0,0.2); }
-[data-theme="neon"] .btn-dock { border-color: var(--accent-cyan); color: var(--text-main); text-shadow: 0 0 5px var(--accent-cyan); box-shadow: inset 0 0 10px rgba(0,229,255,0.2); }
+[data-theme="neon"] .btn-dock { white-space: nowrap; padding-inline: 10px; border-color: var(--accent-cyan); color: var(--text-main); text-shadow: 0 0 5px var(--accent-cyan); box-shadow: inset 0 0 10px rgba(0,229,255,0.2); }
 [data-theme="neon"] .btn-dock:hover { background: var(--accent-cyan-dim); box-shadow: 0 0 15px rgba(0,229,255,0.4), inset 0 0 15px rgba(0,229,255,0.4); }
 
 /* Gold-flat everywhere else in the base becomes each surface's original
@@ -4181,6 +4210,14 @@ html[data-motion="off"][data-theme="executive"] #main-content::after { animation
   box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset, 0 3px 10px rgba(0,0,0,0.5), 0 6px 24px rgba(212,175,55,0.28);
 }
 [data-theme="executive"] .btn-open { border: 1px solid rgba(255,255,255,0.18); font-weight: 800; }
+/* The hand's button is the screen's one main action, so it takes the same
+   metal as OPEN instead of a green outline that read weaker than the card
+   buttons below it. Waiting, it stays the quiet outline. */
+[data-theme="executive"] .btn-start-run.hero-run-btn:not(:disabled) {
+  background: var(--gold-metal); color: #14151A; border: 1px solid rgba(255,255,255,0.18);
+  text-align: center; padding: 10px 14px; font-weight: 900;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset, 0 3px 10px rgba(0,0,0,0.5), 0 6px 24px rgba(212,175,55,0.28);
+}
 [data-theme="executive"] .btn-open:hover,
 [data-theme="executive"] .btn-primary:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 5px 16px rgba(0,0,0,0.6), 0 8px 30px rgba(212,175,55,0.4); }
 /* (the sweep is the visualized skin's - Executive Lounge's gold holds

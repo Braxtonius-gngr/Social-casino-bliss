@@ -8836,7 +8836,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v98';
+    const APP_BUILD = 'almanac-v99';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
@@ -9097,6 +9097,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // about the channel reaches the browser, and a report is kept even
     // when Discord is down.
     const FEEDBACK_FUNCTION = 'bug-report';
+
+    // Keeps the feedback button just above the dock, whatever height the skin
+    // gives the dock.
+    (function trackDockHeight() {
+      const dock = document.querySelector('.docked-footer');
+      if (!dock || !window.ResizeObserver) return;
+      const set = () => document.documentElement.style.setProperty('--dock-h', dock.offsetHeight + 'px');
+      new ResizeObserver(set).observe(dock);
+      set();
+    })();
 
     function openFeedbackModal() {
       closeModals();
@@ -13548,10 +13558,15 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
       const readyCount = pool.length;
       if (readyCount > 0) {
-        btn.textContent = `DEAL YOUR HAND (${readyCount} READY)`;
+        // One line on a phone. The ring beside it already says how many are
+        // ready; only a tag filter makes this pool differ from that count,
+        // so only then does the number ride on the button.
+        btn.textContent = currentFilter.startsWith('tag:') ? `DEAL YOUR HAND (${readyCount})` : 'DEAL YOUR HAND';
+        btn.setAttribute('aria-label', `Deal your hand, ${readyCount} ready`);
         btn.disabled = false;
       } else {
         btn.textContent = 'NO CARDS READY';
+        btn.removeAttribute('aria-label');
         btn.disabled = true;
       }
     }
