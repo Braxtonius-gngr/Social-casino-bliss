@@ -668,7 +668,7 @@ const TESTS = [
       serverTimeMeasuredAt = readyNow;
       window.dispatchEvent(new Event('focus'));
     });
-    await page.waitFor(() => document.getElementById('btnStartDailyRun').textContent === 'DEAL YOUR HAND (1 READY)');
+    await page.waitFor(() => document.getElementById('btnStartDailyRun').textContent === 'DEAL YOUR HAND');
     const after = await page.evaluate(() => ({
       rollingReady: getCooldownState({ cooldownHours: 24, lastCollected: Date.parse('2026-03-07T09:00:00Z') }, Date.parse('2026-03-08T09:00:00Z')).isReady,
       fixedDstReady: getCooldownState({ resetHour: 5, resetTZ: 'America/New_York', lastCollected: Date.parse('2026-03-07T12:00:00Z') }, Date.parse('2026-03-08T09:00:00Z')).isReady
