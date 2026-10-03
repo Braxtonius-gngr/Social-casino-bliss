@@ -227,6 +227,13 @@ rate changes read from the catalog's git history (`npm run build:history`
 alone). That needs a full clone; in a shallow one it warns and keeps the
 committed file (`git fetch --unshallow` fixes it).
 
+A page's sitemap `<lastmod>` is the day its content last changed, not its
+entry's `lastVerified`: a rebuild that changes a page's markup dates it
+with the build's UTC day, and a page whose markup is unchanged keeps the
+date the committed sitemap already has (never earlier than its
+`lastVerified`). So rebuilding never moves a date, and `check:seo` passes
+on any later day. `SEO_BUILD_DATE=YYYY-MM-DD` pins the build day.
+
 `npm run post:weekly` drafts the weekly "what changed" post from that
 history: newly ranked platforms, tier moves, platforms found to have no
 guaranteed daily, and additions, each linked to its page with

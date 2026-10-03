@@ -467,11 +467,15 @@ ${sections}
 `;
 }
 
-function sitemapMarkup(entries, baseUrl, updated) {
+// lastmod is when the page's content last changed, not when its entry was
+// last verified: a corrected redeem floor changes the page without meeting
+// the lastVerified contract. lastmodFor(file) supplies the date (see
+// pageLastmods below); a page it has no date for gets no <lastmod>.
+function sitemapMarkup(entries, baseUrl, lastmodFor) {
   const url = (loc, lastmod) => `  <url><loc>${escapeHtml(loc)}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`;
   const urls = [
-    url(`${baseUrl}/platforms/index.html`, updated),
-    ...entries.map(({ entry, slug }) => url(`${baseUrl}/platforms/${slug}.html`, isIsoDate(entry.lastVerified) ? entry.lastVerified : null))
+    url(`${baseUrl}/platforms/index.html`, lastmodFor('platforms/index.html')),
+    ...entries.map(({ slug }) => url(`${baseUrl}/platforms/${slug}.html`, lastmodFor(`platforms/${slug}.html`)))
   ].join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -493,6 +497,40 @@ Sitemap: ${baseUrl}/platforms/sitemap.xml
 
 // Each entry's page slug, in catalog order with a "-2" suffix on a clash.
 // platformPageMap() in index.html and scripts/weekly-post.js follow the same rule.
+// The <lastmod> dates in the committed sitemap, keyed by page path
+// ("platforms/vega-win.html"). Empty when there is no sitemap yet.
+function committedLastmods() {
+  const dates = new Map();
+  const file = path.join(OUTPUT_DIR, 'sitemap.xml');
+  if (!fs.existsSync(file)) return dates;
+  const xml = fs.readFileSync(file, 'utf8');
+  for (const m of xml.matchAll(/<loc>[^<]*\/(platforms\/[^<\/]+)<\/loc><lastmod>(\d{4}-\d{2}-\d{2})<\/lastmod>/g)) {
+    dates.set(m[1], m[2]);
+  }
+  return dates;
+}
+
+// Each page's lastmod. A page whose generated markup differs from the
+// committed file (or that is new) changed today, the UTC build date. A page
+// that is unchanged keeps the date the committed sitemap already gives it,
+// so rebuilding never moves a date, and --check, which only passes when no
+// page differs, reproduces the committed sitemap exactly. Neither date is
+// allowed to sit before the entry's lastVerified, a floor that also seeds
+// unchanged pages the sitemap has no date for yet.
+function pageLastmods(expected, floors, today) {
+  const committed = committedLastmods();
+  const dates = new Map();
+  for (const [file, markup] of expected) {
+    if (!file.startsWith('platforms/') || !file.endsWith('.html')) continue;
+    const target = path.join(ROOT, file);
+    const changed = !fs.existsSync(target) || fs.readFileSync(target, 'utf8') !== markup;
+    const floor = floors.get(file) || null;
+    const date = changed ? today : (committed.get(file) || null);
+    dates.set(file, [date, floor].filter(isIsoDate).sort().pop() || null);
+  }
+  return dates;
+}
+
 function withSlugs(catalog) {
   const usedSlugs = new Set(['index']);
   return catalog.map(entry => {
@@ -522,7 +560,12 @@ function main() {
     expected.set(`platforms/${item.slug}.html`, pageMarkup(item.entry, item.slug, baseUrl, related, history[item.entry.name.trim()]));
   }
   expected.set('platforms/index.html', hubMarkup(entries, baseUrl, updated));
-  expected.set('platforms/sitemap.xml', sitemapMarkup(entries, baseUrl, updated));
+  const floors = new Map(entries.map(({ entry, slug }) => [`platforms/${slug}.html`, entry.lastVerified]));
+  floors.set('platforms/index.html', updated);
+  // SEO_BUILD_DATE (YYYY-MM-DD) pins "today" for a reproducible rebuild.
+  const today = isIsoDate(process.env.SEO_BUILD_DATE) ? process.env.SEO_BUILD_DATE : new Date().toISOString().slice(0, 10);
+  const lastmods = pageLastmods(expected, floors, today);
+  expected.set('platforms/sitemap.xml', sitemapMarkup(entries, baseUrl, file => lastmods.get(file) || null));
   expected.set('robots.txt', robotsMarkup(baseUrl));
 
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
