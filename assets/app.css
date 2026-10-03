@@ -3031,14 +3031,23 @@
      pulls the eye on its own rather than needing a box. Always on,
      ready-to-collect or not: this is a "go do this" cue that should
      never read as inert, even when nothing's ready yet. */
-  text-shadow: 1px 1px 0 #0B0B0B, 0 0 10px rgba(255, 193, 7, 0.8), 0 0 26px rgba(255, 140, 0, 0.5);
+  /* (as drop-shadows, not text-shadow: with the text itself clear and the gold
+     coming from background-clip, a text-shadow paints over the fill and the
+     letters came out black with only a gold rim) */
+  text-shadow: none;
+  filter: drop-shadow(1px 1px 0 #0B0B0B) drop-shadow(0 0 7px rgba(255, 193, 7, 0.7)) drop-shadow(0 0 18px rgba(255, 140, 0, 0.4));
+  /* The sweep rides over a solid gold layer. Alone, the sweep image only
+     covers part of the label for most of the loop, so the rest of the
+     letters went clear and showed the dark shadow through (the muddy,
+     half-lit look). */
   background-image: linear-gradient(115deg,
     #FFC107 0%, #FFC107 34%,
     #FFF6D6 50%,
-    #FFC107 66%, #FFC107 100%);
+    #FFC107 66%, #FFC107 100%),
+    linear-gradient(#FFC107, #FFC107);
   background-repeat: no-repeat;
-  background-size: 220% 100%;
-  background-position: 160% 0;
+  background-size: 220% 100%, 100% 100%;
+  background-position: 160% 0, 0 0;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
