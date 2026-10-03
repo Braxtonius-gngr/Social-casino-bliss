@@ -1450,7 +1450,7 @@ export async function makeGame(ctx) {
     // (they come out of the desk at the drawer's back and heap nearest
     // where they land)
     const landX = (rng() - 0.5) * 4;
-    const order = cells.map(c => ({ c, d: Math.hypot(c.x - landX, (c.z - DZ - DRAWER.open * 0.62) * 0.8) + rng() * 2.2 })).sort((a, b) => a.d - b.d).map(o => o.c);
+    const order = cells.map(c => ({ c, d: Math.hypot(c.x - landX, (c.z - DZ - 4) * 0.8) + rng() * 2.2 })).sort((a, b) => a.d - b.d).map(o => o.c);
     const spill = tier === 'vault' ? 9 : 0;
     // (a heap: only the cells nearest where they land, so they stack)
     const heap = order.slice(0, Math.max(3, Math.ceil(nTok / 2.6)));
