@@ -64,7 +64,7 @@
 const DEG = Math.PI / 180;
 const TAU = Math.PI * 2;
 
-export const HOLD = { n: [0.3, -0.8, 0.5], hd: [-0.75, -0.35, 0.55], along: 1.8, out: 2.55, curl: 1.05, thumb: 1.2 };
+export const HOLD = { n: [0, -1, 0.1], hd: [-0.8, -0.2, 0.55], along: 0.8, out: 2.65, curl: 1.1, thumb: 1.3 };
 export const TIER_NAMES = { standard: 'Standard Pull', hardways: 'Three Sevens', vault: 'The Jackpot', edge: 'On a Tooth' };
 
 // The reels: twelve stops each, the strips the order of the symbols round
@@ -825,7 +825,7 @@ export async function makeGame(ctx) {
       lid.add(new THREE.Mesh(marginG, marginM), new THREE.Mesh(lashG, lashM));
       if (tier === 'vault') {
         const sm = new THREE.SpriteMaterial({ map: glintTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }); keep(null, sm);
-        const gl = new THREE.Sprite(sm); gl.scale.set(0.5, 0.5, 1); gl.position.set(-0.32, 0.32, EYE.r + 0.06); socket.add(gl); glints.push(gl);
+        const gl = new THREE.Sprite(sm); gl.scale.set(0.62, 0.62, 1); gl.position.set(0.12, -0.42, EYE.r + 0.06); socket.add(gl); glints.push(gl);
       }
     });
   }
@@ -1031,11 +1031,11 @@ export async function makeGame(ctx) {
   // A bisque hand: the palm, four fingers of three joints and the thumb,
   // each joint bent by a curl (0 open, 1 closed round a grip). Its frame:
   // the wrist at the origin, the fingers along y, the palm facing z.
-  const FING = [[1.55, 1.0, 0.8], [1.7, 1.1, 0.85], [1.6, 1.05, 0.8], [1.25, 0.85, 0.7]];
+  const FING = [[1.35, 0.88, 0.7], [1.5, 0.95, 0.74], [1.4, 0.9, 0.7], [1.1, 0.74, 0.62]];
   const nailM = new THREE.MeshPhysicalMaterial({ color: 0xf0cfc0, roughness: 0.25, clearcoat: 0.8 }); keep(null, nailM);
   function makeHand(side) {
     const root = new THREE.Group();
-    const palmG = new THREE.SphereGeometry(1, 28, 18); palmG.scale(2.25, 2.55, 0.95); palmG.translate(0, PALM, 0); keep(palmG);
+    const palmG = new THREE.SphereGeometry(1, 28, 18); palmG.scale(2.5, 2.5, 1.0); palmG.translate(0, PALM, 0); keep(palmG);
     const palm = new THREE.Mesh(palmG, bisque); palm.castShadow = true; root.add(palm);
     // (the ball of the thumb and the heel of the hand, on the palm's side)
     const padG = new THREE.SphereGeometry(1, 20, 14); keep(padG);
@@ -1043,24 +1043,24 @@ export async function makeGame(ctx) {
     const heel = new THREE.Mesh(padG, bisque); heel.position.set(side * 0.85, 1.1, 0.3); heel.scale.set(1.05, 1.1, 0.7); root.add(heel);
     const knuckG = new THREE.SphereGeometry(1, 14, 10); keep(knuckG);
     const nailG = new THREE.SphereGeometry(1, 12, 8); keep(nailG);
-    const wristG = new THREE.CylinderGeometry(1.5, 1.6, 2.4, 16); wristG.scale(1, 1, 0.7); keep(wristG);
+    const wristG = new THREE.CylinderGeometry(1.65, 1.75, 2.4, 16); wristG.scale(1, 1, 0.7); keep(wristG);
     const wr = new THREE.Mesh(wristG, bisque); wr.position.y = -0.6; root.add(wr);
     const fingers = [], tips = [], segs = [], bases = [];
     for (let f = 0; f < 4; f++) {
       const chain = [], sg = [];
-      const base = new THREE.Group(); bases.push(base); base.position.set((f - 1.5) * 1.12 * side, 4.55 - Math.abs(f - 1.2) * 0.32, 0.05); root.add(base);
+      const base = new THREE.Group(); bases.push(base); base.position.set((f - 1.5) * 1.27 * side, 4.5 - Math.abs(f - 1.2) * 0.3, 0.05); root.add(base);
       let parent = base;
       for (let j = 0; j < 3; j++) {
-        const L = FING[f][j], r = 0.47 - j * 0.05 - (f === 3 ? 0.05 : 0);
+        const L = FING[f][j], r = 0.62 - j * 0.06 - (f === 3 ? 0.07 : 0);
         const joint = new THREE.Group();
-        if (j) joint.position.y = FING[f][j - 1] + 0.5;
+        if (j) joint.position.y = FING[f][j - 1] + 0.62;
         parent.add(joint);
         const g = new THREE.CapsuleGeometry(r, L, 4, 10); g.translate(0, L / 2 + r * 0.3, 0); keep(g);
         { const q = g.attributes.position; for (let i = 0; i < q.count; i++) { const k = lerp(1, 0.84, clamp01(q.getY(i) / (L + r))); q.setX(i, q.getX(i) * k); q.setZ(i, q.getZ(i) * k * 0.92); } g.computeVertexNormals(); }
         const m = new THREE.Mesh(g, bisque); m.castShadow = true; joint.add(m);
         // (the knuckle at the joint, proud on the back of the hand)
         const kn = new THREE.Mesh(knuckG, bisque); kn.scale.setScalar(r * (j ? 1.08 : 1.18)); kn.position.set(0, r * 0.15, -r * (j ? 0.05 : 0.18)); joint.add(kn);
-        chain.push(joint); sg.push({ L, r }); parent = joint;
+        chain.push(joint); sg.push({ L, r, gap: 0.62 }); parent = joint;
         if (j === 2) {
           tips.push({ joint, at: V(0, L + r * 1.3, 0), r });
           const nl = new THREE.Mesh(nailG, nailM); nl.position.set(0, L * 0.8 + r * 0.3, -r * 0.8); nl.scale.set(r * 0.74, L * 0.34, 0.09); joint.add(nl);
@@ -1068,15 +1068,15 @@ export async function makeGame(ctx) {
       }
       fingers.push(chain); segs.push(sg);
     }
-    const tBase = new THREE.Group(); tBase.position.set(-side * 1.95, 1.4, 0.45); tBase.rotation.z = -side * 0.75; tBase.rotation.y = -side * 0.4; root.add(tBase);
+    const tBase = new THREE.Group(); tBase.position.set(-side * 2.3, 1.5, 0.5); tBase.rotation.z = -side * 0.75; tBase.rotation.y = -side * 0.4; root.add(tBase);
     const thumb = [], tsegs = [];
     let tp = tBase;
     [1.5, 1.15].forEach((L, j) => {
       const joint = new THREE.Group(); if (j) joint.position.y = 1.5 + 0.5; tp.add(joint);
-      const r = 0.62 - j * 0.07, g = new THREE.CapsuleGeometry(r, L, 4, 10); g.translate(0, L / 2 + r * 0.3, 0);
+      const r = 0.74 - j * 0.07, g = new THREE.CapsuleGeometry(r, L, 4, 10); g.translate(0, L / 2 + r * 0.3, 0);
       { const q = g.attributes.position; for (let i = 0; i < q.count; i++) { const k = lerp(1, 0.86, clamp01(q.getY(i) / (L + r))); q.setX(i, q.getX(i) * k); q.setZ(i, q.getZ(i) * k * 0.9); } g.computeVertexNormals(); }
       keep(g);
-      const m = new THREE.Mesh(g, bisque); m.castShadow = true; joint.add(m); thumb.push(joint); tsegs.push({ L, r }); tp = joint;
+      const m = new THREE.Mesh(g, bisque); m.castShadow = true; joint.add(m); thumb.push(joint); tsegs.push({ L, r, gap: 0.5 }); tp = joint;
       const kn = new THREE.Mesh(knuckG, bisque); kn.scale.setScalar(r * 1.1); kn.position.set(0, r * 0.15, -r * 0.08); joint.add(kn);
       if (j === 1) {
         tips.push({ joint, at: V(0, L + r * 1.3, 0), r });
@@ -1092,10 +1092,14 @@ export async function makeGame(ctx) {
     const segClear = (base, chain, sg, k, obj) => {
       base.updateMatrix(); M.copy(base.matrix);
       for (let i = 0; i <= k; i++) { chain[i].updateMatrix(); M.multiply(chain[i].matrix); }
-      const { L, r } = sg[k];
-      for (const y of [0.3 * r, 0.3 * r + L / 2, L + 0.3 * r, L + 0.9 * r]) {
+      const { L, r, gap } = sg[k];
+      // (along the segment, and on to where the next joint sits - or the
+      // tip, on the last - so a segment can't set its successor down
+      // inside the thing)
+      for (const y of [0.3 * r, 0.3 * r + L / 2, L + 0.3 * r, L + 0.9 * r, k < sg.length - 1 ? L + gap : L + 1.3 * r]) {
         pt.set(0, y, 0).applyMatrix4(M);
         let d;
+        if (obj.pn) { if (obj.pn.dot(pt) - obj.pd < r * (y > L ? 0.75 : 0.95)) return false; continue; }
         if (obj.axis) { const v = pt.clone().sub(obj.c); d = v.addScaledVector(obj.axis, -v.dot(obj.axis)).length(); } else d = pt.distanceTo(obj.c);
         if (d < obj.r + r * (y > L ? 0.75 : 1)) return false;
       }
@@ -1116,9 +1120,21 @@ export async function makeGame(ctx) {
         for (let it = 0; it < 9; it++) { const m = (lo + hi) / 2; chain[k].rotation.x = m; if (segClear(base, chain, sg, k, obj)) lo = m; else hi = m; }
         chain[k].rotation.x = lo;
       }
+      // (a joint set early can leave no room for the ones after it - a
+      // finger bent straight down onto a table: then the whole finger closes
+      // only as far as all of it stays clear)
+      if (!obj) return;
+      const allClear = () => chain.every((_, i) => segClear(base, chain, sg, i, obj));
+      if (allClear()) return;
+      const kept = chain.map(j => j.rotation.x), set = f => chain.forEach((j, i) => { j.rotation.x = targets[i] * f; });
+      set(0);
+      if (!allClear()) { chain.forEach((j, i) => { j.rotation.x = kept[i]; }); return; }
+      let lo = 0, hi = 1;
+      for (let it = 0; it < 10; it++) { const m = (lo + hi) / 2; set(m); if (allClear()) lo = m; else hi = m; }
+      set(lo);
     };
     const pose = (curl, spread = 0, thumbCurl = curl, obj = null) => {
-      fingers.forEach((ch, f) => { ch[0].rotation.z = (f - 1.5) * (spread + 0.3 * clamp01(1 - 2.5 * curl)) * 0.12 * side; wrap(bases[f], ch, segs[f], [1.0, 1.35, 1.0].map(m => curl * m * (1 + 0.04 * f)), obj); });
+      fingers.forEach((ch, f) => { ch[0].rotation.z = (f - 1.5) * (spread + 0.3 * clamp01(1 - 2.5 * curl)) * 0.12 * side; wrap(bases[f], ch, segs[f], [1.0, 1.35, 1.0].map(m => curl * m * (1 + (obj && obj.pn ? 0.22 : 0.04) * f)), obj); });
       wrap(tBase, thumb, tsegs, [thumbCurl * 0.5, thumbCurl * 0.9], obj, [-1.1, -1.1]);
     };
     pose(0.2);
@@ -1132,11 +1148,11 @@ export async function makeGame(ctx) {
   // (a soft cone of lace out of the cuff, its mouth to the fingers: in the
   // cuff's frame +y runs down the arm and +z is the back of the hand, where
   // it is longest and lies down onto the hand)
-  const ruffG = new THREE.CylinderGeometry(2.3, 1.8, 1.5, 96, 8, true); ruffG.translate(0, 1.0, 0);
+  const ruffG = new THREE.CylinderGeometry(2.05, 1.85, 1.5, 120, 8, true); ruffG.translate(0, 1.0, 0);
   const shirtG = new THREE.CylinderGeometry(1.75, 2.45, 1.0, 56, 3, true); shirtG.translate(0, -0.15, 0);
   { const p = shirtG.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), f = clamp01((0.35 - y) / 1.0), k = 1 + 0.1 * f * Math.sin(Math.atan2(z, x) * 16); p.setX(i, x * k); p.setZ(i, z * k); } shirtG.computeVertexNormals(); }
   keep(shirtG);
-  { const p = ruffG.attributes.position, uv = ruffG.attributes.uv; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), f = clamp01((y - 0.25) / 1.5), a = Math.atan2(x, z), hang = Math.max(0, Math.cos(a)) ** 1.5, k = 1 + 0.08 * f * Math.sin(a * 9); p.setXYZ(i, x * k, y + 0.8 * f * hang, z * k - 0.9 * f * f * hang); uv.setXY(i, uv.getX(i) * 3, 1 - uv.getY(i)); } ruffG.computeVertexNormals(); }
+  { const p = ruffG.attributes.position, uv = ruffG.attributes.uv; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), f = clamp01((y - 0.25) / 1.5), a = Math.atan2(x, z), hang = Math.max(0, Math.cos(a)) ** 1.5, k = 1 + 0.035 * f * Math.sin(a * 15); p.setXYZ(i, x * k, y + 0.8 * f * hang, z * k - 0.9 * f * f * hang); uv.setXY(i, uv.getX(i) * 3, 1 - uv.getY(i)); } ruffG.computeVertexNormals(); }
   keep(ruffG);
   const arms = [-1, 1].map(side => {
     const a = { side };
@@ -1167,7 +1183,6 @@ export async function makeGame(ctx) {
     const { w, d } = DESK;
     [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach(([sx, sz]) => blob(sx * (w / 2 - 1.8) + 0.4 * sx, 0.04, sz * (d / 2 - 1.8) + 0.4 * sz, 5.2, 5.2, 0.5));
     [-1, 1].forEach(sx => [-1, 1].forEach(sz => blob(sx * (STOOL.w / 2 - 1.5), 0.04, STOOL.z + sz * (STOOL.d / 2 - 1.5), 4.5, 4.5, 0.6)));
-    [-1, 1].forEach(s => blob(s * 5.8, 0.04, -7.5, 9, 12, 0.32));
     blob(0, 0.04, -12, DESK.w + 14, DESK.d + 18, 0.28);
   }
   const handBlobs = [-1, 1].map(() => blob(0, DESK.top + 0.06, 0, 4.6, 8.5, 0));
@@ -1320,8 +1335,8 @@ export async function makeGame(ctx) {
   // (each hand's target: its palm and the way the palm faces (n) and the
   // hand lies (h); or a grip - the thing held (g), the palm off it by out,
   // the fingers' base along past it, round a handle's axis)
-  const restH = V(0.12, -0.05, 1).normalize();
-  const restR = { p: V(-14.5, DESK.top + 1.8, -6.5), h: restH, n: restH.clone().cross(V(1, 0, 0)).normalize().negate() };
+  const restH = V(0.12, 0.1, 1).normalize();
+  const restR = { p: V(-14.5, DESK.top + 1.75, -6.5), h: restH, n: restH.clone().cross(V(1, 0, 0)).normalize().negate() };
   const poseAt = w0 => {
     const w = Math.min(w0, FREEZE);
     const P = { look: lookAt(w) };
@@ -1348,7 +1363,7 @@ export async function makeGame(ctx) {
       const p = onTop(ballAt(leverAt(T.release))).lerp(restR.p, off); p.y += 3 * Math.sin(Math.PI * off);
       P.rh = { p, n: gN.clone().lerp(restR.n, off).normalize(), h: gH.clone().lerp(restR.h, off).normalize() };
     }
-    P.rcurl = lerp(0.12, HOLD.curl, smoother((grip - 0.35) / 0.6));
+    P.rcurl = lerp(0.45, HOLD.curl, smoother((grip - 0.35) / 0.6)); P.rgrip = grip;
     // the left hand: round the bell's handle; The Jackpot lifts and rings
     // it, On a Tooth half-lifts it as the second badge stops
     P.bell = bellRest.clone(); P.bellTilt = 0;
@@ -1450,8 +1465,13 @@ export async function makeGame(ctx) {
       // (what the hand holds, in its own frame)
       const inv = a.hand.root.quaternion.clone().invert();
       const local = p => toBody(p).sub(wrist).applyQuaternion(inv);
-      const obj = right ? { c: local(ballAt(leverAt(Math.min(w, FREEZE)))), r: LEVER.ball } : { c: local(P.bell), r: 0.68, axis: dirBody(tg.axis).applyQuaternion(inv) };
-      a.hand.pose(right ? P.rcurl : P.lcurl, 0.06, right ? P.rcurl * HOLD.thumb : 0.7, obj);
+      // (the right hand closes on the lever's ball, or at rest on the leather;
+      // the left round the bell's handle)
+      const onBall = right && P.rgrip > 0.5;
+      const obj = !right ? { c: local(P.bell), r: 0.68, axis: dirBody(tg.axis).applyQuaternion(inv) }
+        : onBall ? { c: local(ballAt(leverAt(Math.min(w, FREEZE)))), r: LEVER.ball }
+          : (() => { const pn = dirBody(V(0, 1, 0)).applyQuaternion(inv); return { pn, pd: pn.dot(local(V(0, DESK.top, 0))) }; })();
+      a.hand.pose(right ? P.rcurl : P.lcurl, 0.06, right ? lerp(0.15, P.rcurl * HOLD.thumb, smoother((P.rgrip - 0.3) / 0.5)) : 0.7, obj);
       // (its shade on the leather, darker as it comes down)
       {
         a.hand.root.updateMatrixWorld(true);
@@ -1731,7 +1751,7 @@ export async function makeGame(ctx) {
       const ball = ballAt(leverAt(Math.min(w, FREEZE)));
       arms.forEach(a => a.hand.tips.forEach(tp => {
         tip.copy(tp.at); tp.joint.localToWorld(tip); tip.applyMatrix4(sInv);
-        if (Math.abs(tip.x) < DESK.w / 2 + DESK.over && Math.abs(tip.z) < DESK.d / 2 + DESK.over) { const d = DESK.top - (tip.y - tp.r); if (d > out.desk.d) out.desk = { d: +d.toFixed(2), t: +w.toFixed(2) }; }
+        if (Math.abs(tip.x) < DESK.w / 2 + DESK.over && Math.abs(tip.z) < DESK.d / 2 + DESK.over) { const d = DESK.top - (tip.y - tp.r); if (d > out.desk.d) out.desk = { d: +d.toFixed(2), t: +w.toFixed(2), arm: a.side, tip: a.hand.tips.indexOf(tp), at: tip.toArray().map(v => +v.toFixed(1)), root: a.hand.root.getWorldPosition(V()).applyMatrix4(sInv).toArray().map(v => +v.toFixed(1)) }; }
         const db = LEVER.ball + tp.r - tip.distanceTo(ball); if (db > out.ball.d) out.ball = { d: +db.toFixed(2), t: +w.toFixed(2), arm: a.side, tip: a.hand.tips.indexOf(tp) };
         if (db > 0.3) out.into = (out.into || 0) + 1 / 60 / 5;
         if (w > T.grip && w < T.release && db > (out.held ? out.held.d : 0)) out.held = { d: +db.toFixed(2), t: +w.toFixed(2), tip: a.hand.tips.indexOf(tp) };
