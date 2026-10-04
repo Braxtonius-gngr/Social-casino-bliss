@@ -163,6 +163,18 @@ export async function makeGame(ctx) {
   // faint dewy specular, no glaze)
   const bisque = new THREE.MeshPhysicalMaterial({ color: 0xe9ba9c, roughness: 0.56, specularIntensity: 0.45, clearcoat: 0.04, clearcoatRoughness: 0.6, sheen: 0.5, sheenRoughness: 0.6, sheenColor: new THREE.Color(0xd2685a) });
   keep(null, bisque);
+  // (skin is not smooth: a fine pitting of pores, so the lamp breaks up on
+  // it as it does on a child's cheek and not as on glaze)
+  const poreTex = (rep) => {
+    const c = canvas(256, 256, (g, W) => {
+      g.fillStyle = 'rgb(128,128,128)'; g.fillRect(0, 0, W, W);
+      for (let k = 0; k < 1100; k++) { const v = 96 + rng() * 40; g.fillStyle = `rgba(${v},${v},${v},0.9)`; g.beginPath(); g.arc(rng() * W, rng() * W, 0.7 + rng() * 1.3, 0, TAU); g.fill(); }
+      g.filter = 'blur(0.8px)'; g.drawImage(g.canvas, 0, 0);
+    });
+    const n = embossTex(c, 0.9, 1); n.wrapS = n.wrapT = THREE.RepeatWrapping; n.repeat.set(rep, rep); keep(null, null, n);
+    return n;
+  };
+  bisque.sheen = 0.38;
   // a small woven silk: a pomegranate damask about two centimetres a
   // repeat, the ground a ribbed silk, the pattern in the thread's colour,
   // woven in relief
@@ -198,7 +210,7 @@ export async function makeGame(ctx) {
   };
   // (tone on tone, as a damask is: the pattern woven in the ground's own
   // colour and read by its sheen; the gold is in the braid alone)
-  const vestArt = damask('#06140a', '#0c2414', '#000');
+  const vestArt = damask('#08210f', '#12381f', '#000');
   // the coat: a fine silk velvet in the owner's money green - dark where
   // it faces the lamp, its pile catching light where the cloth turns away;
   // the waistcoat (a damask, its motif a little over two centimetres) and
@@ -208,17 +220,21 @@ export async function makeGame(ctx) {
     const n = embossTex(c, 0.6, 1); n.wrapS = n.wrapT = THREE.RepeatWrapping; n.repeat.set(24, 24); keep(null, null, n);
     return n;
   })();
+  // (a velvet's pile scatters the light broadly and soft, lit most where
+  // the cloth turns from the lamp - not a satin's bright, tight sheen)
   const velvet = (color, sheenColor) => {
-    const m = new THREE.MeshPhysicalMaterial({ color, roughness: 0.88, specularIntensity: 0.3, sheen: 1, sheenRoughness: 0.38, sheenColor: new THREE.Color(sheenColor), normalMap: pileTex, normalScale: new THREE.Vector2(0.25, 0.25) });
+    const m = new THREE.MeshPhysicalMaterial({ color, roughness: 0.94, specularIntensity: 0.1, sheen: 0.85, sheenRoughness: 0.62, sheenColor: new THREE.Color(sheenColor), normalMap: pileTex, normalScale: new THREE.Vector2(0.45, 0.45) });
     keep(null, m);
     return m;
   };
-  const coat = velvet(0x0a2414, 0x2f5c42);
-  const sleeveMat = velvet(0x0a2414, 0x2f5c42);
+  const coat = velvet(0x0b2c18, 0x2a5a3e);
+  const sleeveMat = velvet(0x0b2c18, 0x2a5a3e);
   sleeveMat.side = THREE.DoubleSide;
-  const cuffMat = velvet(0x061a0d, 0x244a33);
+  const cuffMat = velvet(0x072012, 0x1f4a31);
   cuffMat.side = THREE.DoubleSide;
-  const vest = silk(vestArt, [30, 20], 0.68, 0x1a3f28); vest.sheen = 0.32; vest.normalScale.set(0.28, 0.28);
+  // (the waistcoat: a darker green than the coat, but green - a silk
+  // damask whose sheen reads where it turns)
+  const vest = silk(vestArt, [30, 20], 0.64, 0x215a37); vest.sheen = 0.42; vest.normalScale.set(0.32, 0.32);
   // the braid: gold thread woven flat in a herringbone, along every edge
   const braidTex = (() => {
     const c = canvas(32, 128, (g, W, Hh) => {
@@ -235,28 +251,48 @@ export async function makeGame(ctx) {
   // pattern woven into it as a shade of white rather than as holes
   const linen = new THREE.MeshStandardMaterial({ color: 0xf3efe6, roughness: 0.85, side: THREE.DoubleSide });
   keep(null, linen);
-  const laceTex = (() => {
-    const W = 512, Hh = 128;
+  // (one builder, two weaves: the bold six-lobe lace for the jabot and the
+  // ruff, where it is seen large, and a fine picot edge for the cuffs, where
+  // six lobes read as a crown and black eyelets as polka dots)
+  const laceOf = (NL, EY, EX, ringR, holeR, lobeH, fine) => {
+    const W = 512, Hh = 128, LW = W / NL, edge = fine ? 0.9 : 0.74;
+    // (a real lace is mostly air: a net of small eyelets worked through a
+    // body of fine cloth, a scalloped edge with its own row of holes and a
+    // thread drawn round each lobe - so what shows through is the dark
+    // coat beneath, and it reads as lace, not as a paper tongue)
     const col = canvas(W, Hh, (g) => {
-      g.fillStyle = '#f4f0e7'; g.fillRect(0, 0, W, Hh);
-      g.strokeStyle = 'rgba(160,150,135,0.55)'; g.lineWidth = 1.5;
-      for (let x = 8; x < W; x += 16) { g.beginPath(); g.arc(x, Hh * 0.62, 5, 0, TAU); g.stroke(); g.beginPath(); g.moveTo(x, Hh * 0.62 - 5); g.lineTo(x, Hh * 0.35); g.stroke(); }
-      g.beginPath(); g.moveTo(0, Hh * 0.32); g.lineTo(W, Hh * 0.32); g.stroke();
+      g.fillStyle = '#f2ece0'; g.fillRect(0, 0, W, Hh);
+      // (a faint weave)
+      g.globalAlpha = 0.07; g.fillStyle = '#8c7e68'; for (let y = 0; y < Hh; y += 3) g.fillRect(0, y, W, 1); g.globalAlpha = 1;
+      g.strokeStyle = 'rgba(150,138,118,0.7)'; g.lineWidth = fine ? 1.2 : 1.6;
+      EY.forEach((ey, r) => { for (let i = 0; i < EX; i++) { const x = (i + (r % 2 ? 0.5 : 0)) * (W / EX) + W / EX / 2; g.beginPath(); g.arc(x, Hh * ey, ringR, 0, TAU); g.stroke(); } });
+      // (the thread round each scallop, and the line the lobes hang from)
+      g.lineWidth = fine ? 1.6 : 2.2;
+      if (lobeH > 0) for (let i = 0; i < NL; i++) { g.beginPath(); g.ellipse((i + 0.5) * LW, Hh * edge, LW * 0.5 - 2, Hh * (lobeH - 0.01), 0, 0, Math.PI); g.stroke(); }
+      g.beginPath(); g.moveTo(0, Hh * edge); g.lineTo(W, Hh * edge); g.stroke();
     });
     const alpha = canvas(W, Hh, (g) => {
       g.fillStyle = '#fff'; g.fillRect(0, 0, W, Hh);
       g.fillStyle = '#000';
       // (the scalloped edge: round lobes of cloth, the cut between them -
       // arcs cut out of the edge would leave points, a paper cup's zigzag)
-      g.fillRect(0, Hh * 0.72, W, Hh * 0.28 + 1);
+      if (lobeH > 0) { g.fillRect(0, Hh * edge, W, Hh * (1 - edge) + 1);
       g.fillStyle = '#fff';
-      for (let x = 0; x < W; x += 128) { g.beginPath(); g.ellipse(x + 64, Hh * 0.72, 62, Hh * 0.24, 0, 0, Math.PI); g.fill(); }
+      for (let i = 0; i < NL; i++) { g.beginPath(); g.ellipse((i + 0.5) * LW, Hh * edge, LW * 0.5 - 0.5, Hh * lobeH, 0, 0, Math.PI); g.fill(); } }
+      // (the eyelets - none on the fine weave: at that size a hole is a
+      // black dot, and the pattern is carried by shade alone)
+      if (holeR > 0) {
+        g.fillStyle = '#000';
+        EY.forEach((ey, r) => { for (let i = 0; i < EX; i++) { const x = (i + (r % 2 ? 0.5 : 0)) * (W / EX) + W / EX / 2; g.beginPath(); g.arc(x, Hh * ey, holeR, 0, TAU); g.fill(); } });
+        for (let i = 0; i < NL; i++) { g.beginPath(); g.arc((i + 0.5) * LW, Hh * 0.78, 5, 0, TAU); g.fill(); }
+      }
     });
     const m = texOf(col, true), a = texOf(alpha, false); m.wrapS = a.wrapS = THREE.RepeatWrapping;
-    return { map: m, alpha: a };
-  })();
-  const lace = new THREE.MeshStandardMaterial({ map: laceTex.map, alphaMap: laceTex.alpha, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.85 });
-  keep(null, lace);
+    return new THREE.MeshStandardMaterial({ map: m, alphaMap: a, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.85 });
+  };
+  const lace = laceOf(6, [0.16, 0.38, 0.6], 16, 8.2, 6, 0.13, false);
+  const laceFine = laceOf(9, [0.2, 0.46, 0.7], 18, 3.4, 0, 0, true);
+  keep(null, lace); keep(null, laceFine);
 
   // ---- The dais: walnut, a gilt bead round its top, the house badge on its
   // front.
@@ -451,11 +487,11 @@ export async function makeGame(ctx) {
   // His profile (radius, height above the hips), and the coat's section: a
   // superellipse in front (flat across the chest, where the window is), an
   // ellipse behind, 0.64 as deep as wide.
-  const PROF = [[13.0, -2], [12.6, 1], [11.6, 5], [11.2, 8], [11.6, 13], [12.2, 19], [12.5, 25], [12.3, 30], [11.6, 33.5], [9.6, 36.2], [6.8, 38.4], [4.4, 39.6], [3.6, 40.2]];
+  const PROF = [[13.0, -2], [12.4, 1], [11.0, 5], [10.2, 8], [10.7, 13], [11.6, 19], [12.0, 25], [11.8, 30], [11.2, 33.5], [9.4, 36.2], [6.8, 38.4], [4.4, 39.6], [3.6, 40.2]];
   const DEP = 0.64;
   // (the coat over it: a shell of its own, standing off the waistcoat, its
   // skirts flaring over the stool's cushion, open down the front)
-  const PROFC = [[14.6, -3.2], [13.9, -1], [12.9, 2], [12.1, 5], [11.8, 8], [12.2, 13], [12.8, 19], [13.1, 25], [12.9, 30], [12.2, 33.5], [10.2, 36.2], [7.4, 38.4], [5.6, 39.2], [4.5, 39.8]];
+  const PROFC = [[15.2, -3.2], [14.3, -1], [12.6, 2], [11.5, 5], [10.9, 8], [11.4, 13], [12.3, 19], [12.7, 25], [12.5, 30], [11.9, 33.5], [10.0, 36.2], [7.4, 38.4], [5.6, 39.2], [4.5, 39.8]];
   const radAt = (P, y) => {
     if (y <= P[0][1]) return P[0][0];
     for (let i = 0; i + 1 < P.length; i++) if (y <= P[i + 1][1]) return lerp(P[i][0], P[i + 1][0], clamp01((y - P[i][1]) / (P[i + 1][1] - P[i][1])));
@@ -467,6 +503,9 @@ export async function makeGame(ctx) {
     const s = Math.sin(a), c = Math.cos(a), n = c > 0 ? 3 : 2;
     return [r * Math.sign(s) * Math.abs(s) ** (2 / n), r * DEP * Math.sign(c) * Math.abs(c) ** (2 / n)];
   }
+  // (the coat's skirts do not hang as a cone: they fall in soft folds, deeper
+  // toward the hem, a coat's side pleats and the cloth's own weight)
+  const skirtFold = (a, y) => 1 + 0.05 * smoother((7 - y) / 11) * (Math.sin(a * 7 + 0.6) * 0.7 + Math.sin(a * 11 + 2.1) * 0.3);
   function angOf(x, z, r) { return z > 0 ? Math.atan2(Math.sign(x) * Math.min(1, Math.abs(x / r)) ** 1.5, Math.min(1, z / (DEP * r)) ** 1.5) : Math.atan2(x, z / DEP); }
   function frontZ(y, x) { const r = profR(y); return DEP * r * Math.max(0, 1 - Math.abs(x / r) ** 3) ** (1 / 3); }
   // the coat's opening, each side of the front: wide over the chest and the
@@ -475,7 +514,7 @@ export async function makeGame(ctx) {
   const lathe = (P, cut) => {
     const g = new THREE.LatheGeometry(P.map(([r, y]) => new THREE.Vector2(r, y)), 128);
     const p = g.attributes.position;
-    for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), r = Math.hypot(x, z), [sx, sz] = sup(Math.atan2(x, z), r); p.setX(i, sx); p.setZ(i, sz); }
+    for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), a = Math.atan2(x, z), f = cut ? skirtFold(a, p.getY(i)) : 1, [sx, sz] = sup(a, Math.hypot(x, z) * f); p.setX(i, sx); p.setZ(i, sz); }
     if (cut) {
       const idx = g.index, keepIdx = [];
       for (let i = 0; i < idx.count; i += 3) {
@@ -510,7 +549,7 @@ export async function makeGame(ctx) {
   { const g = lathe(PROFC, true); keep(g); const m = new THREE.Mesh(g, coatSide); m.castShadow = true; m.receiveShadow = true; body.add(m); }
   // (a point on the coat at angle a round, height y, off it by lift; and
   // the way out of it there)
-  const onCoat = (a, y, lift) => { const r = coatR(y), [x, z] = sup(a, r), n = V(x / (r * r), 0, z / (r * DEP) ** 2).normalize(); return { p: V(x, y, z).addScaledVector(n, lift), n }; };
+  const onCoat = (a, y, lift) => { const r = coatR(y), [x, z] = sup(a, r * skirtFold(a, y)), n = V(x / (r * r), 0, z / (r * DEP) ** 2).normalize(); return { p: V(x, y, z).addScaledVector(n, lift), n }; };
   // A ribbon laid on a surface: the points, the surface's normal at each,
   // the width.
   const ribbon = (pts, nrm, width, mat, parent) => {
@@ -622,16 +661,23 @@ export async function makeGame(ctx) {
     // The Jackpot's light out of the window: a glow on the glass (its pool
     // on the desk is a lamp, below)
     if (tier === 'vault') {
-      const gt = texOf(canvas(256, 256, (g, W, Hh) => {
-        // (a ring round the bezel - the window itself left clear - and a
-        // soft halo out from it)
-        const r = g.createRadialGradient(W / 2, Hh / 2, 0, W / 2, Hh / 2, W / 2); r.addColorStop(0, 'rgba(255,180,80,0)'); r.addColorStop(0.3, 'rgba(255,180,80,0)'); r.addColorStop(0.42, 'rgba(255,190,90,0.45)'); r.addColorStop(1, 'rgba(255,160,60,0)');
+      const gt = texOf(canvas(512, 512, (g, W, Hh) => {
+        // (a ring round the bezel - the window itself left clear - a soft
+        // halo out from it, and rays: the light of a lamp behind a pane)
+        const r = g.createRadialGradient(W / 2, Hh / 2, 0, W / 2, Hh / 2, W / 2); r.addColorStop(0, 'rgba(255,180,80,0)'); r.addColorStop(0.2, 'rgba(255,180,80,0)'); r.addColorStop(0.3, 'rgba(255,190,90,0.5)'); r.addColorStop(0.62, 'rgba(255,170,70,0.2)'); r.addColorStop(1, 'rgba(255,160,60,0)');
         g.fillStyle = r; g.fillRect(0, 0, W, Hh);
-        g.filter = 'blur(9px)'; g.strokeStyle = 'rgba(255,214,140,0.9)'; g.lineWidth = 14;
-        const w2 = W / 2.6 / 2 + 14, h2 = Hh / 3.2 / 2 + 14; g.beginPath(); g.roundRect(W / 2 - w2, Hh / 2 - h2, 2 * w2, 2 * h2, 18); g.stroke();
+        g.save(); g.translate(W / 2, Hh / 2); g.globalCompositeOperation = 'lighter';
+        for (let k = 0; k < 22; k++) {
+          const a = (k / 22) * TAU + 0.07 * Math.sin(k * 2.7), len = W * (0.34 + 0.12 * Math.sin(k * 1.9)), w0 = 0.032 + 0.018 * Math.abs(Math.sin(k * 3.3));
+          const rg = g.createLinearGradient(0, 0, Math.cos(a) * len, Math.sin(a) * len); rg.addColorStop(0, 'rgba(255,214,140,0)'); rg.addColorStop(0.18, 'rgba(255,214,140,0.5)'); rg.addColorStop(1, 'rgba(255,190,100,0)');
+          g.fillStyle = rg; g.beginPath(); g.moveTo(Math.cos(a - w0) * W * 0.1, Math.sin(a - w0) * W * 0.1); g.lineTo(Math.cos(a) * len, Math.sin(a) * len); g.lineTo(Math.cos(a + w0) * W * 0.1, Math.sin(a + w0) * W * 0.1); g.closePath(); g.fill();
+        }
+        g.restore();
+        g.filter = 'blur(14px)'; g.strokeStyle = 'rgba(255,214,140,0.9)'; g.lineWidth = 26;
+        const w2 = W / 2.6 / 2 + 24, h2 = Hh / 3.2 / 2 + 24; g.beginPath(); g.roundRect(W / 2 - w2, Hh / 2 - h2, 2 * w2, 2 * h2, 30); g.stroke();
       }), true);
       const gmat = new THREE.MeshBasicMaterial({ map: gt, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }); keep(null, gmat);
-      windowGlow = mesh(new THREE.PlaneGeometry(WIN.w * 2.6, WIN.h * 3.2), gmat, body, false); windowGlow.position.set(0, WIN.y, winZ + 0.6);
+      windowGlow = mesh(new THREE.PlaneGeometry(WIN.w * 4.4, WIN.h * 6.2), gmat, body, false); windowGlow.position.set(0, WIN.y, winZ + 0.6);
     }
   }
   function drawSymbol(g, s, cx, cy, h) {
@@ -685,17 +731,20 @@ export async function makeGame(ctx) {
       g.computeVertexNormals();
       const ruff = mesh(g, lace, body); ruff.scale.set(1, 1, 0.9); ruff.position.set(0, 40.5, 0.7);
     }
-    // (two tiers of lace, gathered at the throat and falling in pleats
-    // down the waistcoat, widening, to just over the window; the hem
-    // scalloped)
-    for (let k = 0; k < 2; k++) {
-      const top = 38.3 - k * 1.2, len = k ? 3.4 : 5.3, W0 = 2.4 - k * 0.2, W1 = 4.4 - k * 0.5;
-      const g = new THREE.PlaneGeometry(1, 1, 56, 10), p = g.attributes.position, uv = g.attributes.uv;
+    // (three tiers of lace, gathered at the throat and falling in deep
+    // pleats down the waistcoat, widening, to just over the window; each
+    // hem scalloped and rippling, each tier a little proud of the one
+    // behind it so the folds throw their shade on it)
+    for (let k = 0; k < 3; k++) {
+      const top = 38.6 - k * 1.1, len = [5.6, 4.4, 3.2][k], W0 = 2.5 - k * 0.2, W1 = 4.9 - k * 0.6, ph = k * 1.3;
+      const g = new THREE.PlaneGeometry(1, 1, 96, 14), p = g.attributes.position, uv = g.attributes.uv;
       for (let i = 0; i < p.count; i++) {
-        const u = p.getX(i) + 0.5, v = p.getY(i) + 0.5, f = 1 - v, wd = lerp(W0, W1, f), x = (u - 0.5) * wd, y = top - f * len;
-        const pleat = 0.32 * (0.5 - 0.5 * Math.cos(u * TAU * 3.5)) * (0.35 + 0.65 * f);
-        p.setXYZ(i, x, y, frontZ(y, x) + 0.3 + k * 0.35 + pleat + 0.35 * f * f);
-        uv.setXY(i, u * wd / 4.4, (v * len) / 2.2);
+        const u = p.getX(i) + 0.5, v = p.getY(i) + 0.5, f = 1 - v, wd = lerp(W0, W1, f), x = (u - 0.5) * wd;
+        // (the hem rides up and down on its pleats, and the pleats deepen toward it)
+        const wave = Math.sin(u * TAU * 4.5 + ph), y = top - f * len + 0.22 * f * f * wave;
+        const pleat = (0.2 + 0.34 * f) * (0.5 - 0.5 * Math.cos(u * TAU * 4.5 + ph)) * (0.4 + 0.6 * f);
+        p.setXYZ(i, x, y, frontZ(y, x) + 0.28 + k * 0.42 + pleat + 0.3 * f * f);
+        uv.setXY(i, u * wd / 3.2, (v * len) / 2.4);
       }
       g.computeVertexNormals();
       mesh(g, lace, body);
@@ -708,7 +757,7 @@ export async function makeGame(ctx) {
   // do; his own hair, a soft rounded crop of coils.
   const neckPivot = new THREE.Group(); neckPivot.position.set(0, NECKY, 0.8); body.add(neckPivot);
   const headG = new THREE.Group(); headG.position.set(0, HEAD.up, HEAD.fwd); headG.rotation.order = 'YXZ'; neckPivot.add(headG);
-  const EYE = { x: 0.3, y: -0.07, w: 0.16, h: 0.088, r: 1.5 };
+  const EYE = { x: 0.3, y: -0.07, w: 0.148, h: 0.08, r: 1.5 };
   const gauss = (x, y, cx, cy, sx, sy) => Math.exp(-(((x - cx) / sx) ** 2) - (((y - cy) / sy) ** 2));
   // (the face's relief, on the unit sphere, in front)
   const relief = (x, y) => {
@@ -740,7 +789,7 @@ export async function makeGame(ctx) {
   // lower's)
   const almondPts = s => {
     const [cx, cy] = P(s * EYE.x, EYE.y), rx = EYE.w * FS / 2, ry = EYE.h * FS / 2;
-    return { cx, cy, rx, ry, upper: [cx - rx, cy + ry * 0.1, cx - rx * 0.6, cy - ry * 1.35, cx + rx * 0.5, cy - ry * 1.4, cx + rx, cy - ry * 0.05], lower: [cx + rx, cy - ry * 0.05, cx + rx * 0.55, cy + ry * 1.1, cx - rx * 0.55, cy + ry * 1.15, cx - rx, cy + ry * 0.1] };
+    return { cx, cy, rx, ry, upper: [cx - rx, cy + ry * 0.1, cx - rx * 0.6, cy - ry * 1.25, cx + rx * 0.5, cy - ry * 1.3, cx + rx, cy - ry * 0.05], lower: [cx + rx, cy - ry * 0.05, cx + rx * 0.55, cy + ry * 1.0, cx - rx * 0.55, cy + ry * 1.05, cx - rx, cy + ry * 0.1] };
   };
   const almond = (c, s) => { const a = almondPts(s); c.beginPath(); c.moveTo(a.upper[0], a.upper[1]); c.bezierCurveTo(...a.upper.slice(2)); c.bezierCurveTo(...a.lower.slice(2)); c.closePath(); };
   {
@@ -759,13 +808,16 @@ export async function makeGame(ctx) {
     g.computeVertexNormals();
     // the face, painted
     const face = canvas(FS, FS, (c) => {
-      c.fillStyle = '#e8bc9d'; c.fillRect(0, 0, FS, FS);
+      c.fillStyle = '#e0b090'; c.fillRect(0, 0, FS, FS);
       const blob = (x, y, rx, ry, col) => { const [px, py] = P(x, y); const gr = c.createRadialGradient(px, py, 0, px, py, rx * FS / 2); gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(0,0,0,0)'); c.save(); c.translate(px, py); c.scale(1, ry / rx); c.translate(-px, -py); c.fillStyle = gr; c.beginPath(); c.arc(px, py, rx * FS / 2, 0, TAU); c.fill(); c.restore(); };
       // (a child's skin is not one flat tone: warm and a little uneven, a
       // fine speckle of pores and capillaries, shade in the hollows - the
       // eye sockets, beside the nose, under the lip and the chin, the
       // temples and the jaw's edge)
       for (let k = 0; k < 2600; k++) { const px = rng() * FS, py = rng() * FS; c.fillStyle = rng() < 0.5 ? 'rgba(190,120,100,0.07)' : 'rgba(120,80,60,0.05)'; c.beginPath(); c.arc(px, py, 0.8 + rng() * 1.6, 0, TAU); c.fill(); }
+      // (and the large, slow unevenness of living skin: a warmer patch, a
+      // cooler one, none of them anything a viewer could point at)
+      for (let k = 0; k < 46; k++) { const x = (rng() * 2 - 1) * 0.9, y = (rng() * 2 - 1) * 0.9; blob(x, y, 0.1 + rng() * 0.22, 0.08 + rng() * 0.2, rng() < 0.55 ? 'rgba(214,126,108,0.07)' : 'rgba(186,150,128,0.08)'); }
       [-1, 1].forEach(s => {
         blob(s * 0.3, -0.01, 0.36, 0.18, 'rgba(140,84,74,0.32)');
         blob(s * 0.68, 0.1, 0.3, 0.3, 'rgba(140,92,80,0.26)');
@@ -773,13 +825,28 @@ export async function makeGame(ctx) {
         blob(s * 0.095, -0.245, 0.05, 0.05, 'rgba(150,84,80,0.36)');
         blob(s * 0.62, -0.5, 0.2, 0.3, 'rgba(140,88,78,0.24)');
       });
-      blob(0, -0.28, 0.13, 0.045, 'rgba(130,72,68,0.42)');
+      blob(0, -0.28, 0.13, 0.045, 'rgba(130,72,68,0.26)');
       blob(0, -0.8, 0.24, 0.08, 'rgba(130,84,74,0.34)');
       blob(0, 0.45, 0.5, 0.12, 'rgba(150,100,88,0.1)');
       // (rosy: the cheeks high and strong, the tip of the nose, the chin,
       // the lids)
-      [-1, 1].forEach(s => { blob(s * 0.39, -0.21, 0.44, 0.3, 'rgba(226,112,108,0.3)'); blob(s * 0.38, -0.2, 0.22, 0.15, 'rgba(226,104,104,0.18)'); });
-      blob(0, -0.22, 0.08, 0.06, 'rgba(226,118,108,0.3)');
+      [-1, 1].forEach(s => { blob(s * 0.4, -0.2, 0.58, 0.34, 'rgba(222,118,108,0.2)'); blob(s * 0.38, -0.2, 0.24, 0.16, 'rgba(226,108,106,0.1)'); });
+      // (the nose: its sides in shade, the bridge and the tip catching the
+      // light, the wings creased, the nostrils dark, a shade under the tip)
+      [-1, 1].forEach(s => {
+        blob(s * 0.1, -0.1, 0.055, 0.2, 'rgba(150,92,80,0.3)');
+        blob(s * 0.115, -0.24, 0.035, 0.07, 'rgba(120,64,58,0.36)');
+        blob(s * 0.2, -0.3, 0.07, 0.06, 'rgba(150,90,80,0.2)');
+        blob(s * EYE.x, EYE.y - 0.115, 0.2, 0.05, 'rgba(150,104,116,0.16)');
+      });
+      blob(0, -0.12, 0.04, 0.18, 'rgba(255,238,222,0.2)');
+      blob(0, -0.205, 0.05, 0.035, 'rgba(255,240,228,0.24)');
+      blob(0, -0.305, 0.09, 0.026, 'rgba(116,64,60,0.14)');
+      // (the brim's shade on the forehead, painted in: the hat is always the
+      // same height over it, and the lamp comes from above it)
+      blob(0, 0.76, 1.0, 0.22, 'rgba(84,44,34,0.34)');
+      blob(0, 0.9, 1.0, 0.2, 'rgba(70,36,28,0.4)');
+      blob(0, -0.22, 0.08, 0.06, 'rgba(226,118,108,0.22)');
       blob(0, -0.7, 0.15, 0.09, 'rgba(226,118,108,0.22)');
       [-1, 1].forEach(s => blob(s * EYE.x, EYE.y + 0.07, 0.2, 0.08, 'rgba(214,132,124,0.22)'));
       // (each lid's crease, a soft shade over the opening; the opening's
@@ -791,60 +858,81 @@ export async function makeGame(ctx) {
         c.beginPath(); c.moveTo(a.upper[0], a.upper[1] - a.ry * 0.5); c.bezierCurveTo(a.upper[2], a.upper[3] - a.ry * 0.75, a.upper[4], a.upper[5] - a.ry * 0.75, a.upper[6], a.upper[7] - a.ry * 0.5); c.stroke();
       });
       c.restore();
-      [-1, 1].forEach(s => { c.strokeStyle = 'rgba(160,100,92,0.4)'; c.lineWidth = 5; almond(c, s); c.stroke(); });
+      [-1, 1].forEach(s => { c.strokeStyle = 'rgba(140,86,80,0.45)'; c.lineWidth = 5; almond(c, s); c.stroke(); });
       // (the nostrils)
-      [-1, 1].forEach(s => blob(s * 0.045, -0.255, 0.024, 0.016, 'rgba(116,48,48,0.6)'));
+      [-1, 1].forEach(s => blob(s * 0.058, -0.262, 0.024, 0.017, 'rgba(100,42,44,0.62)'));
       // the mouth: small, the upper lip a bow, the lower full
       const M = (x, y) => P(x, -0.435 + y), mw = 0.112;
-      c.fillStyle = '#9c5358';
+      { const g1 = c.createLinearGradient(0, M(0, 0.03)[1], 0, M(0, 0)[1]); g1.addColorStop(0, '#8c4a50'); g1.addColorStop(1, '#a45c60'); c.fillStyle = g1; }
       c.beginPath(); c.moveTo(...M(-mw, 0));
       c.quadraticCurveTo(...M(-0.055, 0.02), ...M(-0.024, 0.027)); c.quadraticCurveTo(...M(0, 0.017), ...M(0.024, 0.027));
       c.quadraticCurveTo(...M(0.055, 0.02), ...M(mw, 0)); c.quadraticCurveTo(...M(0, -0.006), ...M(-mw, 0));
       c.fill();
-      c.fillStyle = '#b4686a';
+      { const g2 = c.createLinearGradient(0, M(0, 0)[1], 0, M(0, -0.046)[1]); g2.addColorStop(0, '#a85e62'); g2.addColorStop(0.55, '#bc7070'); g2.addColorStop(1, '#c88282'); c.fillStyle = g2; }
       c.beginPath(); c.moveTo(...M(-mw * 0.85, -0.002)); c.quadraticCurveTo(...M(-0.05, -0.044), ...M(0, -0.046)); c.quadraticCurveTo(...M(0.05, -0.044), ...M(mw * 0.85, -0.002)); c.quadraticCurveTo(...M(0, -0.008), ...M(-mw * 0.88, -0.002));
       c.fill();
-      blob(0.01, -0.435 - 0.024, 0.04, 0.012, 'rgba(255,214,214,0.18)');
+      blob(0.01, -0.435 - 0.026, 0.05, 0.014, 'rgba(255,220,220,0.2)');
+      [-1, 1].forEach(s => blob(s * mw * 0.96, -0.435, 0.028, 0.02, 'rgba(110,58,58,0.4)'));
       c.strokeStyle = 'rgba(92,26,36,0.75)'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(...M(-mw, 0)); c.quadraticCurveTo(...M(0, -0.008), ...M(mw, 0)); c.stroke();
-      // the brows: fine strokes of light brown, arched
+      // the brows: a soft body of brown, and over it single hairs laid the way
+      // a brow grows - up and out from the nose, then along the arch, then
+      // down at the tail - thick at the middle, fine at the ends
       c.lineCap = 'round';
-      c.save(); c.filter = 'blur(5px)'; c.strokeStyle = 'rgba(70,44,30,0.42)'; c.lineWidth = 11;
-      [-1, 1].forEach(s => { c.beginPath(); for (let k = 0; k <= 12; k++) { const t = k / 12, [px, py] = P(s * (0.13 + 0.34 * t), 0.105 + 0.04 * Math.sin(t * Math.PI * 0.9) - 0.045 * t); if (k) c.lineTo(px, py); else c.moveTo(px, py); } c.stroke(); });
+      const bx = t => 0.13 + 0.34 * t, by = t => 0.105 + 0.04 * Math.sin(t * Math.PI * 0.9) - 0.045 * t;
+      c.save(); c.filter = 'blur(4px)'; c.strokeStyle = 'rgba(58,36,24,0.42)'; c.lineWidth = 11;
+      [-1, 1].forEach(s => { c.beginPath(); for (let k = 0; k <= 12; k++) { const t = k / 12, [px, py] = P(s * bx(t), by(t)); if (k) c.lineTo(px, py); else c.moveTo(px, py); } c.stroke(); });
       c.restore();
+      c.save();
       [-1, 1].forEach(s => {
-        for (let k = 0; k < 64; k++) {
-          const t = k / 63, x = s * (0.13 + 0.34 * t) + (rng() - 0.5) * 0.01, y = 0.105 + 0.04 * Math.sin(t * Math.PI * 0.9) - 0.045 * t + (rng() - 0.5) * 0.02 * (1 - t * 0.5);
-          const [px, py] = P(x, y);
-          c.strokeStyle = `rgba(${48 + Math.round(rng() * 22)},${30 + Math.round(rng() * 14)},20,${0.55 + 0.3 * (1 - t * 0.6)})`;
-          c.lineWidth = 3.4 - 1.9 * t; c.beginPath(); c.moveTo(px - s * 3, py + 5); c.lineTo(px + s * 9, py - 5); c.stroke();
+        for (let k = 0; k < 340; k++) {
+          const t = Math.min(0.995, Math.max(0.005, k / 339 + (rng() - 0.5) * 0.01));
+          const thick = 0.012 + 0.03 * Math.sin(Math.min(1, t * 1.15) * Math.PI) ** 0.7;
+          const [px, py] = P(s * bx(t) + (rng() - 0.5) * 0.006, by(t) + (rng() - 0.5) * thick);
+          const [qx, qy] = P(s * bx(Math.min(1, t + 0.01)), by(Math.min(1, t + 0.01)));
+          let dx = (qx - px) * s, dy = qy - py; const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
+          // (the hair's lie: up and out near the nose, level mid-brow, a little down at the tail)
+          const turn = (1 - t) * -0.6 + t * t * 0.5 + (rng() - 0.5) * 0.3, cs = Math.cos(turn), sn = Math.sin(turn);
+          const ex = dx * cs - dy * sn, ey = dx * sn + dy * cs, len = 13 + rng() * 9 - 6 * Math.abs(t - 0.45);
+          c.strokeStyle = `rgba(${34 + Math.round(rng() * 20)},${20 + Math.round(rng() * 12)},${12 + Math.round(rng() * 6)},${0.45 + 0.45 * rng()})`;
+          c.lineWidth = 1.1 + 0.9 * rng();
+          c.beginPath(); c.moveTo(px, py); c.quadraticCurveTo(px + s * ex * len * 0.5, py + ey * len * 0.5 - 1.5, px + s * ex * len, py + ey * len); c.stroke();
         }
       });
+      c.restore();
     });
     // (the openings: cut out of the bisque, the eyes behind them)
     const cut = canvas(FS, FS, (c) => { c.fillStyle = '#fff'; c.fillRect(0, 0, FS, FS); c.fillStyle = '#000'; [-1, 1].forEach(s => { almond(c, s); c.fill(); }); });
-    const skin = bisque.clone(); skin.color.setHex(0xffffff); skin.map = texOf(face, true); skin.alphaMap = texOf(cut, false); skin.alphaTest = 0.5; keep(null, skin);
+    const skin = bisque.clone(); skin.color.setHex(0xffffff); skin.map = texOf(face, true); skin.alphaMap = texOf(cut, false); skin.alphaTest = 0.5; skin.normalMap = poreTex(9); skin.normalScale = new THREE.Vector2(0.3, 0.3); keep(null, skin);
     mesh(g, skin, headG);
   }
   // the eyes: glass over a painted iris (brown, the fibres drawn in), each
   // in a socket lined dark; the upper lid a shell of bisque inside the
   // opening that closes down over the eye
   const eyes = [], lids = [], glints = [];
+  let eyeMatRef = null;
   {
     const TS = 512;
     const iris = texOf(canvas(TS, TS, (c) => {
-      c.fillStyle = '#ece4d8'; c.fillRect(0, 0, TS, TS);
-      const cx = TS * 0.25, cy = TS / 2, R = TS * 0.06;
+      c.fillStyle = '#e8dccb'; c.fillRect(0, 0, TS, TS);
+      const cx = TS * 0.25, cy = TS / 2, R = TS * 0.064;
       c.save(); c.translate(cx, cy); c.scale(1, 2); c.translate(-cx, -cy);
       const gr = c.createRadialGradient(cx, cy, 0, cx, cy, R);
-      gr.addColorStop(0, '#080504'); gr.addColorStop(0.36, '#080504'); gr.addColorStop(0.4, '#1c0f07'); gr.addColorStop(0.72, '#3e2410'); gr.addColorStop(0.9, '#1a0e07'); gr.addColorStop(1, '#ece4d8');
+      gr.addColorStop(0, '#080504'); gr.addColorStop(0.36, '#080504'); gr.addColorStop(0.4, '#1c0f07'); gr.addColorStop(0.72, '#3e2410'); gr.addColorStop(0.88, '#1a0e07'); gr.addColorStop(0.97, '#2a1a10'); gr.addColorStop(1, 'rgba(232,220,203,0)');
       c.fillStyle = gr; c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.fill();
       c.strokeStyle = 'rgba(190,140,86,0.28)'; c.lineWidth = 1;
       for (let k = 0; k < 48; k++) { const a = (k / 48) * TAU; c.beginPath(); c.moveTo(cx + Math.cos(a) * R * 0.42, cy + Math.sin(a) * R * 0.42); c.lineTo(cx + Math.cos(a) * R * 0.9, cy + Math.sin(a) * R * 0.9); c.stroke(); }
       c.restore();
+      // (the white is not white: it darkens toward the corners of the eye,
+      // where the lids close round the ball, and takes a little of the
+      // skin's warmth there)
+      { c.save(); c.translate(cx, cy); c.scale(1, 2); c.translate(-cx, -cy);
+        const wg = c.createRadialGradient(cx, cy, R * 1.05, cx, cy, R * 3.6);
+        wg.addColorStop(0, 'rgba(120,80,68,0)'); wg.addColorStop(0.45, 'rgba(120,80,68,0.16)'); wg.addColorStop(1, 'rgba(120,80,68,0.62)');
+        c.fillStyle = wg; c.beginPath(); c.arc(cx, cy, R * 3.6, 0, TAU); c.fill(); c.restore(); }
       // (the lids shade the eye: the white and the iris darker under the
       // upper lid, a little under the lower, not one flat white)
       const sg = c.createLinearGradient(0, TS * 0.41, 0, TS * 0.59);
-      sg.addColorStop(0, 'rgba(96,60,52,0.55)'); sg.addColorStop(0.35, 'rgba(96,60,52,0.14)'); sg.addColorStop(0.5, 'rgba(96,60,52,0)'); sg.addColorStop(1, 'rgba(96,60,52,0.28)');
+      sg.addColorStop(0, 'rgba(96,60,52,0.6)'); sg.addColorStop(0.35, 'rgba(96,60,52,0.18)'); sg.addColorStop(0.5, 'rgba(96,60,52,0)'); sg.addColorStop(1, 'rgba(96,60,52,0.3)');
       c.fillStyle = sg; c.fillRect(0, 0, TS, TS);
     }), true);
     // (the iris alone, to warm it from within on the jackpot)
@@ -858,26 +946,26 @@ export async function makeGame(ctx) {
       c.restore();
     }), true);
     const eyeMat = new THREE.MeshPhysicalMaterial({ map: iris, roughness: 0.04, clearcoat: 1, clearcoatRoughness: 0.02, emissiveMap: irisGlow, emissive: 0xffc070, emissiveIntensity: 0 });
-    keep(null, eyeMat);
+    keep(null, eyeMat); eyeMatRef = eyeMat;
     const eg = new THREE.SphereGeometry(EYE.r, 48, 32); keep(eg);
     const lidG = new THREE.SphereGeometry(EYE.r + 0.07, 48, 16, 0, TAU, 0, Math.PI / 2); keep(lidG);
     {
       // (the lid's edge painted umber: the lash line, as a doll's lid has)
       const p = lidG.attributes.position, col = new Float32Array(p.count * 3), R0 = EYE.r + 0.07;
-      for (let i = 0; i < p.count; i++) { const th = Math.acos(Math.max(-1, Math.min(1, p.getY(i) / R0))), k = clamp01((th - 1.47) / 0.08); col[i * 3] = lerp(1, 0.2, k); col[i * 3 + 1] = lerp(1, 0.13, k); col[i * 3 + 2] = lerp(1, 0.11, k); }
+      for (let i = 0; i < p.count; i++) { const th = Math.acos(Math.max(-1, Math.min(1, p.getY(i) / R0))), k = clamp01((th - 1.47) / 0.08), fold = lerp(0.8, 1, smoother((th - 0.85) / 0.6)); col[i * 3] = lerp(fold, 0.36, k); col[i * 3 + 1] = lerp(fold * 0.9, 0.22, k); col[i * 3 + 2] = lerp(fold * 0.88, 0.17, k); }
       lidG.setAttribute('color', new THREE.BufferAttribute(col, 3));
     }
-    const lidMat = bisque.clone(); lidMat.color.setHex(0xf2d4c6); lidMat.vertexColors = true; lidMat.side = THREE.DoubleSide; keep(null, lidMat);
+    const lidMat = bisque.clone(); lidMat.color.setHex(0xe0ae94); lidMat.vertexColors = true; lidMat.side = THREE.DoubleSide; keep(null, lidMat);
     // (the lid's margin: a dark rounded edge, and the lashes out of it -
     // long, dark, a doll's - which go with the lid as it closes)
-    const R0 = EYE.r + 0.07, LA = 0.55;
+    const R0 = EYE.r + 0.07, LA = 0.47;
     const arc = k => { const a = lerp(-LA, LA, k); return V(Math.sin(a) * R0, 0, Math.cos(a) * R0); };
-    const marginG = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 25 }, (_, k) => arc(k / 24))), 48, 0.07, 6, false); keep(marginG);
-    const marginM = new THREE.MeshStandardMaterial({ color: 0x4a2c20, roughness: 0.7 }); keep(null, marginM);
+    const marginG = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 25 }, (_, k) => arc(k / 24))), 48, 0.034, 6, false); keep(marginG);
+    const marginM = new THREE.MeshStandardMaterial({ color: 0x5a3626, roughness: 0.7 }); keep(null, marginM);
     const lashG = (() => {
       const g = new THREE.BufferGeometry(), pos = [], uv = [], idx = [], NA = 32, NS = 4;
       for (let i = 0; i <= NA; i++) {
-        const a = lerp(-LA, LA, i / NA), sa = Math.sin(a), ca = Math.cos(a), len = 0.4 * (0.35 + 0.65 * Math.cos((a / LA) * Math.PI * 0.45));
+        const a = lerp(-LA, LA, i / NA), sa = Math.sin(a), ca = Math.cos(a), len = 0.28 * (0.35 + 0.65 * Math.cos((a / LA) * Math.PI * 0.45));
         for (let j = 0; j <= NS; j++) { const t = j / NS, r = R0 + 0.03 + len * t; pos.push(sa * r, -0.1 * t + 0.13 * t * t, ca * r); uv.push(i / NA, t); }
       }
       for (let i = 0; i < NA; i++) for (let j = 0; j < NS; j++) { const q = i * (NS + 1) + j; idx.push(q, q + NS + 1, q + 1, q + 1, q + NS + 1, q + NS + 2); }
@@ -886,10 +974,10 @@ export async function makeGame(ctx) {
     })(); keep(lashG);
     const lashA = texOf(canvas(256, 64, (c, W, Hh) => {
       c.fillStyle = '#000'; c.fillRect(0, 0, W, Hh); c.strokeStyle = '#fff'; c.lineCap = 'round';
-      for (let k = 0; k < 70; k++) { const x = (k + 0.5) / 70 * W + (rng() - 0.5) * 2; c.lineWidth = 2.2; c.beginPath(); c.moveTo(x, 0); c.quadraticCurveTo(x + 2, Hh * 0.5, x + 4 * (rng() - 0.3), Hh * (0.65 + 0.35 * rng())); c.stroke(); }
+      for (let k = 0; k < 150; k++) { const x = (k + 0.5) / 150 * W + (rng() - 0.5) * 1.6; c.lineWidth = 1.3; c.beginPath(); c.moveTo(x, 0); c.quadraticCurveTo(x + 2, Hh * 0.5, x + 4 * (rng() - 0.3), Hh * (0.65 + 0.35 * rng())); c.stroke(); }
       c.fillStyle = '#fff'; c.fillRect(0, 0, W, 6);
     }), false);
-    const lashM = new THREE.MeshBasicMaterial({ color: 0x1e120e, alphaMap: lashA, alphaTest: 0.4, side: THREE.DoubleSide }); keep(null, lashM);
+    const lashM = new THREE.MeshBasicMaterial({ color: 0x2c1a12, alphaMap: lashA, alphaTest: 0.32, side: THREE.DoubleSide }); keep(null, lashM);
     const sockG = new THREE.SphereGeometry(EYE.r + 0.3, 24, 16); keep(sockG);
     // (the socket behind each opening: the bisque carved hollow, in its
     // own shade - never a hole into the dark)
@@ -923,13 +1011,14 @@ export async function makeGame(ctx) {
       return V(x * HEAD.rx, y * HEAD.ry, z * HEAD.rz).addScaledVector(n, out);
     };
     const bez = (q, t) => { const u = 1 - t; return [u * u * u * q[0] + 3 * u * u * t * q[2] + 3 * u * t * t * q[4] + t * t * t * q[6], u * u * u * q[1] + 3 * u * u * t * q[3] + 3 * u * t * t * q[5] + t * t * t * q[7]]; };
-    const lowRim = bisque.clone(); lowRim.color.setHex(0xe4b7a0); keep(null, lowRim);
+    const lowRim = bisque.clone(); lowRim.color.setHex(0xd9a48e); keep(null, lowRim);
+    const upRim = bisque.clone(); upRim.color.setHex(0xdba68f); keep(null, upRim);
     [-1, 1].forEach(s => {
       const a = almondPts(s);
       const up = Array.from({ length: 21 }, (_, k) => onFace(...bez(a.upper, k / 20), 0.02));
       const lo = Array.from({ length: 21 }, (_, k) => onFace(...bez(a.lower, k / 20), 0.0));
-      mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(up), 40, 0.13, 8, false), bisque, headG);
-      mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(lo), 40, 0.08, 8, false), lowRim, headG);
+      mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(up), 40, 0.1, 8, false), upRim, headG);
+      mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(lo), 40, 0.065, 8, false), lowRim, headG);
     });
   }
   const HAT = true;
@@ -1146,7 +1235,7 @@ export async function makeGame(ctx) {
     const curve = new THREE.CatmullRomCurve3([A0, S0, E.clone().addScaledVector(u1, -1.8), E.clone().addScaledVector(u2, 1.8), W], false, 'centripetal');
     const pts = curve.getSpacedPoints(SLV.rings);
     const L0 = A0.distanceTo(S0), L1 = S0.distanceTo(E), L2 = E.distanceTo(W), Lt = L0 + L1 + L2;
-    const radAt = f => { const d = f * Lt; return d < L0 ? 3.9 : d < L0 + L1 ? lerp(3.9, 3.0, (d - L0) / L1) : lerp(3.0, 2.4, (d - L0 - L1) / L2) * (1 - 0.3 * smoother((f - 0.9) / 0.1)); };
+    const radAt = f => { const d = f * Lt; return d < L0 ? 3.6 : d < L0 + L1 ? lerp(3.6, 2.8, (d - L0) / L1) : lerp(2.8, 2.35, (d - L0 - L1) / L2) * (1 - 0.3 * smoother((f - 0.9) / 0.1)); };
     const pos = g.attributes.position;
     let N = null;
     for (let i = 0; i <= SLV.rings; i++) {
@@ -1165,19 +1254,20 @@ export async function makeGame(ctx) {
   // each joint bent by a curl (0 open, 1 closed round a grip). Its frame:
   // the wrist at the origin, the fingers along y, the palm facing z.
   const FING = [[1.35, 0.88, 0.7], [1.5, 0.95, 0.74], [1.4, 0.9, 0.7], [1.1, 0.74, 0.62]];
-  const nailM = new THREE.MeshPhysicalMaterial({ color: 0xf0cfc0, roughness: 0.25, clearcoat: 0.8 }); keep(null, nailM);
+  const nailM = new THREE.MeshPhysicalMaterial({ color: 0xe6b9a6, roughness: 0.42, clearcoat: 0.45, clearcoatRoughness: 0.35 }); keep(null, nailM);
+  const skinH = bisque.clone(); skinH.color.setHex(0xdba98c); skinH.roughness = 0.6; skinH.sheen = 0.34; skinH.normalMap = poreTex(3); skinH.normalScale = new THREE.Vector2(0.35, 0.35); keep(null, skinH);
   function makeHand(side) {
     const root = new THREE.Group();
     const palmG = new THREE.SphereGeometry(1, 28, 18); palmG.scale(2.5, 2.5, 1.0); palmG.translate(0, PALM, 0); keep(palmG);
-    const palm = new THREE.Mesh(palmG, bisque); palm.castShadow = true; root.add(palm);
+    const palm = new THREE.Mesh(palmG, skinH); palm.castShadow = true; root.add(palm);
     // (the ball of the thumb and the heel of the hand, on the palm's side)
     const padG = new THREE.SphereGeometry(1, 20, 14); keep(padG);
-    const thenar = new THREE.Mesh(padG, bisque); thenar.position.set(-side * 1.1, 1.75, 0.42); thenar.scale.set(1.15, 1.6, 0.8); thenar.rotation.z = side * 0.35; root.add(thenar);
-    const heel = new THREE.Mesh(padG, bisque); heel.position.set(side * 0.85, 1.1, 0.3); heel.scale.set(1.05, 1.1, 0.7); root.add(heel);
+    const thenar = new THREE.Mesh(padG, skinH); thenar.position.set(-side * 1.1, 1.75, 0.42); thenar.scale.set(1.15, 1.6, 0.8); thenar.rotation.z = side * 0.35; root.add(thenar);
+    const heel = new THREE.Mesh(padG, skinH); heel.position.set(side * 0.85, 1.1, 0.3); heel.scale.set(1.05, 1.1, 0.7); root.add(heel);
     const knuckG = new THREE.SphereGeometry(1, 14, 10); keep(knuckG);
     const nailG = new THREE.SphereGeometry(1, 12, 8); keep(nailG);
     const wristG = new THREE.CylinderGeometry(1.65, 1.75, 2.4, 16); wristG.scale(1, 1, 0.7); keep(wristG);
-    const wr = new THREE.Mesh(wristG, bisque); wr.position.y = -0.6; root.add(wr);
+    const wr = new THREE.Mesh(wristG, skinH); wr.position.y = -0.6; root.add(wr);
     const fingers = [], tips = [], segs = [], bases = [];
     for (let f = 0; f < 4; f++) {
       const chain = [], sg = [];
@@ -1189,10 +1279,10 @@ export async function makeGame(ctx) {
         if (j) joint.position.y = FING[f][j - 1] + 0.62;
         parent.add(joint);
         const g = new THREE.CapsuleGeometry(r, L, 4, 10); g.translate(0, L / 2 + r * 0.3, 0); keep(g);
-        { const q = g.attributes.position; for (let i = 0; i < q.count; i++) { const k = lerp(1, 0.84, clamp01(q.getY(i) / (L + r))); q.setX(i, q.getX(i) * k); q.setZ(i, q.getZ(i) * k * 0.92); } g.computeVertexNormals(); }
-        const m = new THREE.Mesh(g, bisque); m.castShadow = true; joint.add(m);
+        { const q = g.attributes.position; for (let i = 0; i < q.count; i++) { const k = lerp(1.04, 0.78, clamp01(q.getY(i) / (L + r))); q.setX(i, q.getX(i) * k); q.setZ(i, q.getZ(i) * k * 0.92); } g.computeVertexNormals(); }
+        const m = new THREE.Mesh(g, skinH); m.castShadow = true; joint.add(m);
         // (the knuckle at the joint, proud on the back of the hand)
-        const kn = new THREE.Mesh(knuckG, bisque); kn.scale.setScalar(r * (j ? 1.08 : 1.18)); kn.position.set(0, r * 0.15, -r * (j ? 0.05 : 0.18)); joint.add(kn);
+        if (!j) { const kn = new THREE.Mesh(knuckG, skinH); kn.scale.setScalar(r * 1.06); kn.position.set(0, r * 0.1, -r * 0.14); joint.add(kn); }
         chain.push(joint); sg.push({ L, r, gap: 0.62 }); parent = joint;
         if (j === 2) {
           tips.push({ joint, at: V(0, L + r * 1.3, 0), r });
@@ -1209,8 +1299,8 @@ export async function makeGame(ctx) {
       const r = 0.74 - j * 0.07, g = new THREE.CapsuleGeometry(r, L, 4, 10); g.translate(0, L / 2 + r * 0.3, 0);
       { const q = g.attributes.position; for (let i = 0; i < q.count; i++) { const k = lerp(1, 0.86, clamp01(q.getY(i) / (L + r))); q.setX(i, q.getX(i) * k); q.setZ(i, q.getZ(i) * k * 0.9); } g.computeVertexNormals(); }
       keep(g);
-      const m = new THREE.Mesh(g, bisque); m.castShadow = true; joint.add(m); thumb.push(joint); tsegs.push({ L, r, gap: 0.5 }); tp = joint;
-      const kn = new THREE.Mesh(knuckG, bisque); kn.scale.setScalar(r * 1.1); kn.position.set(0, r * 0.15, -r * 0.08); joint.add(kn);
+      const m = new THREE.Mesh(g, skinH); m.castShadow = true; joint.add(m); thumb.push(joint); tsegs.push({ L, r, gap: 0.5 }); tp = joint;
+      if (!j) { const kn = new THREE.Mesh(knuckG, skinH); kn.scale.setScalar(r * 1.04); kn.position.set(0, r * 0.1, -r * 0.08); joint.add(kn); }
       if (j === 1) {
         tips.push({ joint, at: V(0, L + r * 1.3, 0), r });
         const nl = new THREE.Mesh(nailG, nailM); nl.position.set(0, L * 0.78 + r * 0.3, -r * 0.8); nl.scale.set(r * 0.78, L * 0.36, 0.1); joint.add(nl);
@@ -1281,11 +1371,22 @@ export async function makeGame(ctx) {
   // (a soft cone of lace out of the cuff, its mouth to the fingers: in the
   // cuff's frame +y runs down the arm and +z is the back of the hand, where
   // it is longest and lies down onto the hand)
-  const ruffG = new THREE.CylinderGeometry(2.05, 1.85, 1.5, 120, 8, true); ruffG.translate(0, 1.0, 0);
+  const ruffG = new THREE.CylinderGeometry(2.0, 1.85, 2.0, 144, 14, true); ruffG.translate(0, 1.25, 0);
   const shirtG = new THREE.CylinderGeometry(1.75, 2.45, 1.0, 56, 3, true); shirtG.translate(0, -0.15, 0);
   { const p = shirtG.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), f = clamp01((0.35 - y) / 1.0), k = 1 + 0.1 * f * Math.sin(Math.atan2(z, x) * 16); p.setX(i, x * k); p.setZ(i, z * k); } shirtG.computeVertexNormals(); }
   keep(shirtG);
-  { const p = ruffG.attributes.position, uv = ruffG.attributes.uv; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), f = clamp01((y - 0.25) / 1.5), a = Math.atan2(x, z), hang = Math.max(0, Math.cos(a)) ** 1.5, k = 1 + 0.035 * f * Math.sin(a * 15); p.setXYZ(i, x * k, y + 0.8 * f * hang, z * k - 0.9 * f * f * hang); uv.setXY(i, uv.getX(i) * 3, 1 - uv.getY(i)); } ruffG.computeVertexNormals(); }
+  // (the frill: gathered at the cuff, flaring out of it in soft rounded
+  // folds - nine to the round, no two the same - its hem rippling on them,
+  // and laid down over the back of the hand)
+  { const p = ruffG.attributes.position, uv = ruffG.attributes.uv;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y = p.getY(i), z = p.getZ(i), f = clamp01((y - 0.25) / 2.0), a = Math.atan2(x, z), hang = Math.max(0, Math.cos(a)) ** 1.4;
+      const ph = 11 * a + 0.8 * Math.sin(3 * a + 1.1) + 0.4 * Math.sin(5 * a + 0.3), fold = Math.sin(ph), flare = lerp(1, 1.13, f * f);
+      const k = flare * (1 + (0.015 + 0.07 * f) * fold);
+      p.setXYZ(i, x * k, y + 0.95 * f * hang + 0.05 * f * f * fold, z * k - 1.15 * f * f * hang);
+      uv.setXY(i, uv.getX(i) * 2, 1 - uv.getY(i));
+    }
+    ruffG.computeVertexNormals(); }
   keep(ruffG);
   const arms = [-1, 1].map(side => {
     const a = { side };
@@ -1296,7 +1397,7 @@ export async function makeGame(ctx) {
     a.cuff = new THREE.Group(); body.add(a.cuff);
     const cm = new THREE.Mesh(cuffG, cuffMat); cm.castShadow = true; a.cuff.add(cm);
     a.cuff.add(new THREE.Mesh(cuffBandG, braid));
-    a.cuff.add(new THREE.Mesh(ruffG, lace), new THREE.Mesh(shirtG, linen));
+    a.cuff.add(new THREE.Mesh(ruffG, laceFine), new THREE.Mesh(shirtG, linen));
     a.hand = makeHand(side);
     body.add(a.hand.root);
     return a;
@@ -1339,6 +1440,11 @@ export async function makeGame(ctx) {
   fill.position.copy(toWorld(V(10, 70, 110)));
   fill.target.position.copy(toWorld(V(0, 80, -24)));
   scene.add(fill, fill.target);
+  // (and a small warm light riding with his head, low and in front, so the
+  // face keeps its warmth under the brim when he bows it from the lamp)
+  const faceFill = new THREE.PointLight(0xffdcc0, 34, 70, 1.0);
+  faceFill.position.set(0, -3.5, 22);
+  headG.add(faceFill);
   // (a low warm wash down the drapes from above, raking their folds)
   const wash = new THREE.SpotLight(0xffd9a8, room.PENDANT * 0.26, 0, 0.9, 1, 0);
   wash.position.copy(toWorld(V(0, 238, -40)));
@@ -1359,11 +1465,18 @@ export async function makeGame(ctx) {
     trayL.target.position.set(0, DRAWER.y, DESK.d / 2 + DRAWER.open * 0.6);
     stage.add(trayL, trayL.target);
   }
-  let pour = null, flood = null;
+  let pour = null, flood = null, goldWash = null;
   if (tier === 'vault') {
-    flood = new THREE.PointLight(0xffc068, 0, 70, 1.0);
-    flood.position.set(0, WIN.y + 0.5, winZ + 2.6);
+    // (the light of the window, stood off the chest so it falls on the
+    // chin, the lace, the hat's underside and the desk - from a point on
+    // the waistcoat it would only graze them)
+    flood = new THREE.PointLight(0xffc068, 0, 150, 1.0);
+    flood.position.set(0, WIN.y - 2, winZ + 13);
     body.add(flood);
+    goldWash = new THREE.SpotLight(0xffbf5c, 0, 0, 0.85, 1, 0);
+    goldWash.position.set(0, WIN.y - 6, winZ + 70);
+    goldWash.target.position.set(0, WIN.y + 22, winZ - 70);
+    body.add(goldWash, goldWash.target);
     pour = new THREE.SpotLight(0xffc070, 0, 0, 0.75, 0.85, 0);
     pour.position.set(0, WIN.y, winZ + 1.2);
     pour.target.position.set(0, WIN.y - 15, winZ + 24);
@@ -1562,7 +1675,7 @@ export async function makeGame(ctx) {
     // (the lids: just over the top of the iris, lower as he looks down, shut
     // in a blink)
     const ep0 = eyes[0].rotation.x;
-    lids.forEach(l => { l.rotation.x = lerp(-0.3 - 0.17 * P.wide + 0.5 * Math.max(0, ep0), 1.25, P.blink); });
+    lids.forEach(l => { l.rotation.x = lerp(-0.27 - 0.17 * P.wide + 0.5 * Math.max(0, ep0), 1.25, P.blink); });
     // the lever and the bell
     lever.rotation.x = leverAt(Math.min(w, FREEZE));
     bell.position.copy(P.bell); bell.rotation.set(0, 0, P.bellTilt);
@@ -1802,7 +1915,7 @@ export async function makeGame(ctx) {
   if (tier === 'edge') at(plan.silence[1], 'drop');
 
   // ---- Each frame.
-  const key0 = key.intensity, fill0 = fill.intensity, wash0 = wash.intensity, pendant0 = lights.pendant.intensity, inner0 = inner.intensity;
+  const key0 = key.intensity, fill0 = fill.intensity, faceFill0 = faceFill.intensity, wash0 = wash.intensity, pendant0 = lights.pendant.intensity, inner0 = inner.intensity;
   const callPt = toWorld(Bp([0, NECKY + HEAD.up + HEAD.ry + 3, 1]));
   const spot0 = lights.edgeSpot.angle, spotC0 = lights.edgeSpot.color.getHex();
   const stageFn = (t, { w }) => {
@@ -1825,7 +1938,9 @@ export async function makeGame(ctx) {
       inner.intensity = inner0 * (1 + 3.5 * k);
       if (windowGlow) windowGlow.material.opacity = k * (0.85 + 0.15 * Math.sin(burst * 9));
       if (pour) pour.intensity = room.PENDANT * 0.7 * k * (0.9 + 0.1 * Math.sin(burst * 9));
-      if (flood) flood.intensity = 140 * k * (0.9 + 0.1 * Math.sin(burst * 9));
+      if (flood) flood.intensity = 300 * k * (0.9 + 0.1 * Math.sin(burst * 9));
+      if (goldWash) goldWash.intensity = room.PENDANT * 0.7 * k * (0.92 + 0.08 * Math.sin(burst * 9));
+      if (eyeMatRef) eyeMatRef.emissiveIntensity = 1.5 * k;
       glints.forEach(g => { g.material.opacity = 0.8 * k; });
     }
     if (tier === 'edge') {
@@ -1837,6 +1952,7 @@ export async function makeGame(ctx) {
       es.intensity = 3.0 * k;
       key.intensity = key0 * (1 - 0.45 * k); key.color.setRGB(1, lerp(0.933, 0.96, k), lerp(0.867, 1, k));
       fill.intensity = fill0 * (1 - 0.9 * k);
+      faceFill.intensity = faceFill0 * (1 - 0.85 * k);
       wash.intensity = wash0 * (1 - 0.85 * k);
       lights.pendant.intensity = pendant0 * (1 - 0.88 * k);
       scene.environmentIntensity = room.ENV_LEVEL * (1 - 0.6 * k);
