@@ -964,6 +964,7 @@
     .r3-tier small { font-size: 10px; letter-spacing: 0.2em; color: #b9ad8c; }
     .r3-tier-hardways { color: #e4e9f2; }
     .r3-tier-edge { color: #fff4d6; }
+    .r3-tier.r3-tier-odds small { font-size: 12px; letter-spacing: 0.24em; color: #e6cf92; }
     .landing-screen.roll-popped .r3-tier, .landing-screen.roll-rest .r3-tier { top: max(10px, env(safe-area-inset-top)); }
     .r3-sound { position: absolute; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: 3; width: 42px; height: 42px; padding: 10px; border-radius: 50%; border: 1px solid rgba(232,200,106,0.35); background: rgba(10,10,12,0.55); color: #e8dfc4; pointer-events: auto; cursor: pointer; }
     .r3-sound svg { display: block; width: 100%; height: 100%; }

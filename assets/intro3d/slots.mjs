@@ -2,9 +2,10 @@
 //
 // An automaton sits at his writing desk on a walnut dais out beyond the
 // plinko cabinet, under his own lamp: a child of the 1770s in the way of
-// the Neuchatel writers - a bisque face, glass eyes, his own brown curls,
-// an oxblood silk coat edged in gold braid - and in his black waistcoat a
-// window of glass, behind which three reels turn in his clockwork. The
+// the Neuchatel writers - a bisque face, glass eyes, a full rounded crop of
+// soft copper-brown coils, an oxblood silk coat edged in gold braid - and
+// in his black waistcoat a window of glass, behind which three reels turn
+// in his clockwork; green velvet drapes hang full behind his dais. The
 // shot opens close on his face; he turns his head to the brass lever at
 // the desk's side, reaches for it and pulls it, and as it springs back the
 // reels in his chest spin up; he bows his head to watch them. They stop one
@@ -15,7 +16,7 @@
 //
 // The tiers, drawn as the dice's are (TIERS / pickTier):
 //   standard  Standard Pull (90%)  three chips, dice, bells or crowns
-//   hardways  Three Sevens (8%)    called in platinum
+//   hardways  Three Sevens (8%)    called in gold, as every line is
 //   vault     The Jackpot (1.9%)   three house badges: gold light floods
 //                                  out of his clockwork, a glint catches in
 //                                  his eyes, he raises his hand bell and
@@ -39,19 +40,20 @@
 // and a clockwork in the body):
 //   Across the room: a small seated figure at a walnut desk with gilt-bronze
 //     mounts, on a dais; the brass lever at the desk's side; the glint of
-//     the window in his chest; the lamp on his curls and face.
+//     the window in his chest; the lamp on his hair and face.
 //   At arm's length: the bisque's satin and its painted face - rosy cheeks,
 //     a rosebud mouth, fine brows, the lash line along each lid; the glass
 //     eyes in their sockets, brown irises, the lids that close over them as
-//     a doll's do; the curls; the silk's small woven pattern and its gold
-//     thread, the braid along the coat's edges, the linen jabot with its
-//     lace edge; the reels' painted strips behind glass.
+//     a doll's do; the hair's coils and its soft edge; the silk's small
+//     woven pattern and its gold thread, the braid along the coat's edges,
+//     the linen jabot with its lace edge; the reels' painted strips behind
+//     glass; the drapes' deep folds and the pile of their velvet.
 //   Pinched in 3x: the silk's weave in relief, the braid's herringbone,
 //     the tokens' milled edges and their stamp, the leather on the desk
 //     with its tooled gold border.
 //   Light: his lamp from above and in front, a warm key; a cool rim from
-//     behind on the curls and shoulders; the reels lit from inside his
-//     chest.
+//     behind on the hair's halo and his shoulders; the reels lit from
+//     inside his chest; a low warm wash raking the drapes' folds.
 //   Contact: each hand holds what it holds - the lever's ball under the
 //     palm and the fingers round it, the bell's handle in the fist; the
 //     resting hand's fingertips above the leather, never through it; the
@@ -258,6 +260,48 @@ export async function makeGame(ctx) {
       const bm = new THREE.MeshPhysicalMaterial({ map: set.tex.badge, transparent: true, alphaTest: 0.4, metalness: 0.6, roughness: 0.3, clearcoat: 0.6 }); keep(null, bm);
       const ar = set.tex.badge.image ? set.tex.badge.image.height / set.tex.badge.image.width : 1;
       const m = mesh(new THREE.PlaneGeometry(11, 11 * ar), bm, stage, false); m.position.set(0, -DAIS.h / 2 - 0.5, DAIS.z + DAIS.d / 2 + 0.05);
+    }
+  }
+
+  // ---- The drapes: green silk velvet hung full behind the dais from a gilt
+  // pole on rings, to break on the floor - a backdrop for him, as a
+  // portrait painter hangs one (a Georgian upholsterer's: the heading
+  // pleated on its rings, the folds running down from them and opening
+  // into softer waves below, none quite like the next). Velvet: dark where
+  // it faces the lamp, its pile catching light where the folds turn away.
+  {
+    const DR = { z: -100, top: 222, floor: -DAIS.h, W: 500, pleats: 32 };
+    const velvet = new THREE.MeshPhysicalMaterial({ color: 0x0b231b, roughness: 0.94, sheen: 1, sheenColor: new THREE.Color(0x3f6e5a), sheenRoughness: 0.42, side: THREE.DoubleSide });
+    keep(null, velvet);
+    const p1 = rng() * TAU, p2 = rng() * TAU, p3 = rng() * TAU;
+    // (a pleat's phase across the cloth: a little uneven, as hung cloth is)
+    const phase = u => u * DR.pleats * TAU + 0.9 * Math.sin(u * 3.1 * TAU + p1) + 0.5 * Math.sin(u * 7.3 * TAU + p2);
+    const UN = 320, VN = 48, pos = [], ids = [];
+    for (let j = 0; j <= VN; j++) {
+      const y = lerp(DR.top, DR.floor, j / VN), down = (DR.top - y) / (DR.top - DR.floor);
+      const amp = 4.6 + 1.6 * down, brk = Math.max(0, DR.floor + 9 - y);
+      for (let i = 0; i <= UN; i++) {
+        const u = i / UN, sw = Math.sin(phase(u)), fold = Math.sign(sw) * Math.pow(Math.abs(sw), 0.75);
+        // (the folds widen a touch as they fall, the cloth bows gently,
+        // and the hem kicks forward where it breaks on the floor)
+        const x = (u - 0.5) * DR.W + 1.5 * down * Math.sin(phase(u) * 0.5);
+        pos.push(x, y, DR.z + amp * fold + 3 * Math.sin(u * 1.7 * TAU + p3) * down + brk * 0.8 * (0.6 + 0.4 * fold));
+      }
+    }
+    for (let j = 0; j < VN; j++) for (let i = 0; i < UN; i++) { const a = j * (UN + 1) + i, b = a + UN + 1; ids.push(a, b, a + 1, a + 1, b, b + 1); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(ids); g.computeVertexNormals();
+    mesh(g, velvet, stage, false);
+    // (the pole, its finials, and a ring at each pleat of the heading)
+    const poleL = DR.W + 30;
+    const pole = new THREE.CylinderGeometry(2.2, 2.2, poleL, 16); pole.rotateZ(Math.PI / 2); keep(pole);
+    mesh(pole, gilt, stage, false).position.set(0, DR.top + 7, DR.z + 1);
+    const fin = new THREE.SphereGeometry(4.2, 20, 14); keep(fin);
+    [-1, 1].forEach(sd => mesh(fin, gilt, stage, false).position.set(sd * poleL / 2, DR.top + 7, DR.z + 1));
+    const ring = new THREE.TorusGeometry(3.0, 0.45, 8, 20); ring.rotateY(Math.PI / 2); keep(ring);
+    for (let k = 0; k <= DR.pleats; k++) {
+      // (each ring on a crest of the heading: where the pleat's phase is a quarter turn)
+      let u = (k + 0.25) / DR.pleats; for (let it = 0; it < 6; it++) u -= (phase(u) - (k + 0.25) * TAU) / (DR.pleats * TAU);
+      if (u >= 0 && u <= 1) mesh(ring, gilt, stage, false).position.set((u - 0.5) * DR.W, DR.top + 7, DR.z + 1);
     }
   }
 
@@ -645,7 +689,7 @@ export async function makeGame(ctx) {
   // ---- The head: bisque, sculpted round (a child's - a high forehead,
   // full cheeks, a small nose and chin), the face painted; the eyes glass,
   // set behind almond openings with lids that close over them as a doll's
-  // do; his own brown curls.
+  // do; his own hair, a soft rounded crop of coils.
   const neckPivot = new THREE.Group(); neckPivot.position.set(0, NECKY, 0.8); body.add(neckPivot);
   const headG = new THREE.Group(); headG.position.set(0, HEAD.up, HEAD.fwd); headG.rotation.order = 'YXZ'; neckPivot.add(headG);
   const EYE = { x: 0.3, y: -0.07, w: 0.16, h: 0.088, r: 1.5 };
@@ -848,128 +892,158 @@ export async function makeGame(ctx) {
       mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(lo), 40, 0.08, 8, false), lowRim, headG);
     });
   }
-  // the curls: his own brown hair, short, in soft curls lying close to the
-  // skull (the Writer's) - locks swept out from the crown, each turning
-  // into a curl at its end; a few falling onto the brow; curls over the
-  // ears and at the nape. Under them the scalp, dark, so a gap between
-  // locks reads as depth.
+  let afroShells = null;
+  // the hair: his own, a full rounded crop of fine copper-brown coils (the
+  // owner's reference: a doll's soft afro) standing out from the scalp all
+  // round, lowest over the brow and fullest over the crown, its edge a
+  // haze of coils. Drawn the way fur is: an opaque core at the hair's depth
+  // (the dark of the hair seen into), and over it a stack of shells out to
+  // its edge, each keeping only the coils long enough to reach it - a coil
+  // map, each coil's length in red and its tone in green, the coils turned
+  // a little shell to shell so each one climbs as a helix. The deeper
+  // shells darker, the outer ones lighter, a sheen at the grazing edge for
+  // the halo the lamp and the rim put round it.
   {
-    // (the strands run along each lock: a chestnut ground, lighter strands
-    // where it crests, the same strokes raised for the relief)
-    const TS = 256, strands = [];
-    for (let k = 0; k < 420; k++) strands.push({ y: rng() * TS, ph: rng() * TAU, amp: 1 + rng() * 2.5, w: 0.6 + rng() * 1.0, l: 0.25 + 0.6 * rng() });
-    const combed = (c, relief) => {
-      strands.forEach(st => {
-        c.strokeStyle = relief ? '#fff' : `rgb(${Math.round(54 + 50 * st.l)},${Math.round(31 + 29 * st.l)},${Math.round(17 + 15 * st.l)})`;
-        c.globalAlpha = relief ? 0.35 : 0.7; c.lineWidth = st.w;
-        c.beginPath();
-        for (let x = -8; x <= TS + 8; x += 8) { const y = st.y + Math.sin((x / TS) * TAU * 2 + st.ph) * st.amp; if (x < 0) c.moveTo(x, y); else c.lineTo(x, y); }
-        c.stroke();
-      });
-      c.globalAlpha = 1;
-    };
-    const hn = embossTex(canvas(TS, TS, (c) => { c.fillStyle = '#000'; c.fillRect(0, 0, TS, TS); combed(c, true); }), 1.4, 1); hn.wrapS = hn.wrapT = THREE.RepeatWrapping; keep(null, null, hn);
-    const hc = texOf(canvas(TS, TS, (c) => { c.fillStyle = '#2e1a0e'; c.fillRect(0, 0, TS, TS); combed(c, false); }), true); hc.wrapS = hc.wrapT = THREE.RepeatWrapping;
-    const hair = new THREE.MeshPhysicalMaterial({ map: hc, normalMap: hn, normalScale: new THREE.Vector2(0.4, 0.4), roughness: 0.45, sheen: 0.6, sheenColor: new THREE.Color(0x6e4c34), sheenRoughness: 0.4 });
-    keep(null, hair);
-    // the scalp: the skull's shell to a child's hairline
     const RX = HEAD.rx * 1.03, RY = HEAD.ry * 1.02, RZ = HEAD.rz * 1.03, C0 = V(0, 0.2, -0.3);
-    const line = (x, z) => lerp(-0.85, 0.5 - 0.42 * x * x, clamp01((z + 0.1) / 0.7));
-    {
-      const g = new THREE.SphereGeometry(1, 72, 48), p = g.attributes.position, src = g.index, idx = [];
-      for (let i = 0; i < src.count; i += 3) {
-        const a = src.getX(i), b = src.getX(i + 1), c = src.getX(i + 2);
-        const cx = (p.getX(a) + p.getX(b) + p.getX(c)) / 3, cy = (p.getY(a) + p.getY(b) + p.getY(c)) / 3, cz = (p.getZ(a) + p.getZ(b) + p.getZ(c)) / 3;
-        if (cy > line(cx, cz)) idx.push(a, b, c);
-      }
-      g.setIndex(idx); g.scale(RX, RY, RZ);
-      const scalp = hair.clone(); scalp.color.setHex(0x6a5a50); scalp.sheen = 0.2; keep(null, scalp);
-      mesh(g, scalp, headG).position.copy(C0);
-    }
-    // (a point on the skull, at an angle round from the front and a height
-    // up it, lifted off it by a fraction; and the skull's normal there)
-    const S = (az, la, lift) => { const r = Math.sqrt(Math.max(0, 1 - la * la)), f = 1 + lift; return V(Math.sin(az) * r * RX * f, la * RY * f, Math.cos(az) * r * RZ * f).add(C0); };
-    const Nr = (az, la) => { const r = Math.sqrt(Math.max(0, 1 - la * la)); return V((Math.sin(az) * r) / RX, la / RY, (Math.cos(az) * r) / RZ).normalize(); };
-    // a lock: from its root over the skull to its end, lifted off it most
-    // at its middle, then on round into a curl - out from the head and
-    // back, tightening; flat in section, wide at the root, thinning into the
-    // curl. All of them one mesh.
-    const pos = [], uvs = [], ids = [];
-    const SEG = 10;
-    const lock = (az0, la0, az1, la1, o) => {
-      const P = [], Hn = [], Wn = [];
-      const N = 22;
-      for (let i = 0; i <= N; i++) {
-        const t = i / N, e = t * t * (3 - 2 * t);
-        const az = lerp(az0, az1, t), la = lerp(la0, la1, e);
-        P.push(S(az, la, o.base + o.lift * Math.sin(Math.PI * Math.min(1, t * 1.15)) ** 0.8)); Hn.push(Nr(az, la));
-      }
-      const E = P[N], T = E.clone().sub(P[N - 1]).normalize();
-      const Nn = Hn[N].clone().addScaledVector(T, -Hn[N].dot(T)).normalize().applyAxisAngle(T, o.tilt);
-      const B = T.clone().cross(Nn).normalize(), Cc = E.clone().addScaledVector(Nn, o.curl);
-      const M = 16;
-      for (let i = 1; i <= M; i++) {
-        const t = i / M, a = t * TAU * o.turns, R = o.curl * (1 - 0.5 * t);
-        const rad = Nn.clone().multiplyScalar(-Math.cos(a)).addScaledVector(T, Math.sin(a));
-        P.push(Cc.clone().addScaledVector(rad, R).addScaledVector(B, o.drift * t)); Hn.push(rad.clone().negate());
-      }
-      // (the frames: across the lock, and through it)
-      const L = P.length;
-      for (let i = 0; i < L; i++) {
-        const Tg = P[Math.min(L - 1, i + 1)].clone().sub(P[Math.max(0, i - 1)]).normalize();
-        const h = Hn[i].clone().addScaledVector(Tg, -Hn[i].dot(Tg)).normalize();
-        Wn.push(Tg.clone().cross(h).normalize()); Hn[i] = h;
-      }
-      const base = pos.length / 3;
-      let len = 0;
-      for (let i = 0; i < L; i++) {
-        if (i) len += P[i].distanceTo(P[i - 1]);
-        const t = i / (L - 1), root = 0.55 + 0.45 * smoother(t / 0.12);
-        const tip = 1 - smoother((t - 0.82) / 0.18);
-        const w = (o.w * root * (1 - 0.62 * smoother(t / 0.7)) + 0.1) * tip + 0.03, hh = (o.h * root * (1 - 0.45 * t) + 0.08) * tip + 0.03;
-        for (let j = 0; j <= SEG; j++) {
-          const a = (j / SEG) * TAU, q = P[i].clone().addScaledVector(Wn[i], Math.cos(a) * w).addScaledVector(Hn[i], Math.sin(a) * hh);
-          pos.push(q.x, q.y, q.z); uvs.push(len / 6, (j / SEG) * 1.5 + o.v);
+    // (the hairline: above this height, for a point round the skull - low
+    // at the nape, down the sides in front of the ears, so nothing shows
+    // through behind the jaw, then up round the brow)
+    const line = (x, z) => lerp(-0.92, 0.44 - 0.7 * x * x, smoother((z - 0.5) / 0.4));
+    const AFRO = { N: 22, H0: 0.55, H1: 1.1, TILE: 3.6 };
+    // (the coil map: a tile of coils, each a spiral of a few turns; its
+    // mips kept full - half the mean, half the longest - so the hair keeps
+    // its edge at a distance instead of thinning to nothing)
+    const TS = 512;
+    // (the coils grow in clumps: a soft field over the tile, tiling too,
+    // lengthens and lightens them together, so the hair's face is lumpy
+    // rather than a carpet's)
+    const waves = Array.from({ length: 5 }, () => ({ fx: 1 + Math.floor(rng() * 3), fy: 1 + Math.floor(rng() * 3), ph: rng() * TAU, a: 0.5 + rng() * 0.5 }));
+    const clump = (x, y) => 0.5 + 0.5 * waves.reduce((t, w) => t + w.a * Math.sin(((w.fx * x + w.fy * y) / TS) * TAU + w.ph), 0) / waves.reduce((t, w) => t + w.a, 0);
+    const cv = canvas(TS, TS, (c) => {
+      c.fillStyle = '#000'; c.fillRect(0, 0, TS, TS); c.lineCap = 'round';
+      // (ringlets about half a centimetre across, each drawn as a tube - a
+      // darker edge, a lighter core - so each curl reads as round)
+      for (let k = 0; k < 300; k++) {
+        const x = rng() * TS, y = rng() * TS, r = 30 + rng() * 25, cl = clump(x, y);
+        const L = clamp01(0.2 + 0.8 * (0.5 * Math.pow(rng(), 0.6) + 0.6 * cl)), tone = clamp01(0.55 * rng() + 0.5 * cl);
+        const a0 = rng() * TAU, turns = 1.1 + rng() * 0.6, dir = rng() < 0.5 ? -1 : 1, lw = 8 + rng() * 5;
+        const R8 = Math.round(L * 255);
+        for (const ox of [-TS, 0, TS]) for (const oy of [-TS, 0, TS]) {
+          if (x + ox + r + lw < 0 || x + ox - r - lw > TS || y + oy + r + lw < 0 || y + oy - r - lw > TS) continue;
+          [[lw, 0.55 * tone], [lw * 0.45, Math.min(1, 0.55 * tone + 0.45)]].forEach(([wd, tn]) => {
+            c.strokeStyle = `rgb(${R8},${Math.round(tn * 255)},0)`; c.lineWidth = wd;
+            c.beginPath();
+            for (let st = 0; st <= 36; st++) {
+              const t = st / 36, a = a0 + dir * t * turns * TAU, rr = r * (1 - 0.3 * t);
+              const px = x + ox + Math.cos(a) * rr, py = y + oy + Math.sin(a) * rr * 0.85;
+              if (st) c.lineTo(px, py); else c.moveTo(px, py);
+            }
+            c.stroke();
+          });
         }
       }
-      for (let i = 0; i < L - 1; i++) for (let j = 0; j < SEG; j++) { const q = base + i * (SEG + 1) + j; ids.push(q, q + SEG + 1, q + 1, q + 1, q + SEG + 1, q + SEG + 2); }
-    };
-    // (where a lock round the head ends: at the hairline in front, over the
-    // ears at the sides, at the nape behind)
-    const endAt = az => {
-      const f = Math.abs(Math.atan2(Math.sin(az), Math.cos(az)));
-      const front = line(Math.sin(az), Math.cos(az)) - 0.03;
-      return f < 0.75 ? front : f < 1.35 ? lerp(front, -0.2, smoother((f - 0.75) / 0.6)) : lerp(-0.2, -0.46, smoother((f - 1.35) / 1.4));
-    };
-    const jit = k => (rng() - 0.5) * k;
-    // the under layer: sixteen broad locks all round, from the crown
-    for (let k = 0; k < 16; k++) {
-      const az1 = (k / 16) * TAU + jit(0.12), la1 = endAt(az1);
-      lock(az1 + 0.45 + jit(0.2), 0.85 + jit(0.04), az1, la1, { w: 2.5 + jit(0.4), h: 0.85, base: 0.03, lift: 0.08, curl: 1.15 * (0.6 + 0.8 * rng()), turns: 1.0 + jit(0.4), tilt: jit(2.6), drift: jit(2.4), v: rng() });
-    }
-    // (the whorl at the crown, where they start: a low dome of hair over it)
-    {
-      const g = new THREE.SphereGeometry(1, 48, 14, 0, TAU, 0, 0.72); g.scale(RX * 1.085, RY * 1.085, RZ * 1.085);
-      const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 3, uv.getY(i) * 0.6);
-      mesh(g, hair, headG).position.copy(C0);
-    }
-    // over them: fourteen shorter, their curls in the body of the hair
-    for (let k = 0; k < 14; k++) {
-      const az1 = ((k + 0.5) / 14) * TAU + jit(0.15), la1 = Math.min(0.75, endAt(az1) + 0.2 + jit(0.08));
-      lock(az1 + 0.4 + jit(0.2), 0.88, az1, la1, { w: 2.1 + jit(0.4), h: 0.75, base: 0.07, lift: 0.08, curl: 1.05 * (0.6 + 0.8 * rng()), turns: 1.15 + jit(0.4), tilt: jit(1.3), drift: jit(2.4), v: rng() });
-    }
-    // onto the brow: a few small curls, from the front of the crown
-    [-0.5, -0.22, 0.08, 0.36].forEach(az => {
-      lock(az + 0.15, 0.7, az + jit(0.1), 0.4 + jit(0.05), { w: 1.5, h: 0.6, base: 0.05, lift: 0.07, curl: 0.72 * (0.7 + 0.6 * rng()), turns: 1.2 + jit(0.3), tilt: jit(1.4), drift: jit(1.2), v: rng() });
     });
-    // over the ears and at the nape: short curls, close
-    for (let k = 0; k < 12; k++) {
-      const side = k < 6 ? 1 : -1, az = side * lerp(1.15, 2.9, (k % 6) / 5) + jit(0.1);
-      lock(az + side * 0.1, 0.25 + jit(0.1), az, endAt(az) - 0.05 + jit(0.06), { w: 1.8, h: 0.65, base: 0.04, lift: 0.06, curl: 0.8 * (0.6 + 0.8 * rng()), turns: 1.15 + jit(0.4), tilt: jit(2.4), drift: jit(2.0), v: rng() });
+    const levels = [];
+    {
+      let cur = new Uint8Array(cv.getContext('2d').getImageData(0, 0, TS, TS).data), w = TS;
+      levels.push({ data: cur, width: w, height: w });
+      while (w > 1) {
+        const nw = w >> 1, nx = new Uint8Array(nw * nw * 4);
+        for (let y = 0; y < nw; y++) for (let x = 0; x < nw; x++) {
+          let mx = 0, sr = 0, sg = 0;
+          for (let d = 0; d < 4; d++) { const i = ((2 * y + (d >> 1)) * w + 2 * x + (d & 1)) * 4; sr += cur[i]; sg += cur[i + 1]; mx = Math.max(mx, cur[i]); }
+          const o = (y * nw + x) * 4; nx[o] = Math.round(0.5 * (sr / 4 + mx)); nx[o + 1] = Math.round(sg / 4); nx[o + 3] = 255;
+        }
+        levels.push({ data: nx, width: nw, height: nw }); cur = nx; w = nw;
+      }
     }
+    const coil = new THREE.DataTexture(levels[0].data, TS, TS, THREE.RGBAFormat);
+    coil.mipmaps = levels; coil.generateMipmaps = false; coil.minFilter = THREE.LinearMipmapLinearFilter; coil.magFilter = THREE.LinearFilter;
+    coil.wrapS = coil.wrapT = THREE.RepeatWrapping; coil.colorSpace = THREE.NoColorSpace; coil.anisotropy = 8; coil.needsUpdate = true; keep(null, null, coil);
+
+    // (the scalp under it: rows from the hairline up to the crown, each way
+    // round the head; at each point the hair's depth out along the skull's
+    // normal - fullest over the crown, a little less behind and at the
+    // sides, rising from the brow over the first few centimetres - and how
+    // thick its coils stand, thinning to a few at the brow itself, where
+    // the face is behind them; elsewhere nothing is, so they stay thick)
+    const edgeLa = az => { let lo = -0.95, hi = 0.99; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2, r = Math.sqrt(1 - m * m); if (m > line(Math.sin(az) * r, Math.cos(az) * r)) hi = m; else lo = m; } return hi; };
+    // (rounded in under the sides and the back, toward the jaw and the
+    // nape, as a full crop is, rather than standing out level from the
+    // hairline; lumps in its outline where its clumps stand)
+    const lumps = Array.from({ length: 6 }, () => ({ fa: 2 + Math.floor(rng() * 4), fl: 1.5 + rng() * 3, ph: rng() * TAU, ph2: rng() * TAU }));
+    const lumpy = (az, y) => lumps.reduce((t, l) => t + Math.sin(l.fa * az + l.ph) * Math.sin(l.fl * y * Math.PI + l.ph2), 0) / lumps.length;
+    const deep = (az, y, z, dl) => {
+      const T = lerp(4.1, 5.6, smoother((y + 0.2) / 1.1)) * (1 - 0.18 * clamp01(z) * clamp01(z)) * (1 + 0.32 * lumpy(az, y));
+      const front = clamp01((z + 0.1) / 0.7), reach = lerp(0.75, 0.42, front);
+      // (and at the brow a fringe of coils standing proud of the skin, so
+      // the face's edge is lost under them rather than drawn as a line)
+      return Math.max(lerp(0.3, 1.1, front * front), T * Math.pow(smoother(dl / reach), lerp(1.1, 0.6, front)));
+    };
+    const AZN = 80, LAN = 30, pos = [], nrm = [], th = [], den = [], ids = [];
+    for (let i = 0; i <= AZN; i++) {
+      const az = (i / AZN) * TAU, ph0 = Math.asin(edgeLa(az));
+      for (let j = 0; j <= LAN; j++) {
+        const ph = lerp(ph0, Math.PI / 2, j / LAN), y = Math.sin(ph), r = Math.cos(ph), x = Math.sin(az) * r, z = Math.cos(az) * r;
+        const p = V(x * RX, y * RY, z * RZ).add(C0), n = V(x / RX, y / RY, z / RZ).normalize(), dl = y - Math.sin(ph0);
+        pos.push(p.x, p.y, p.z); nrm.push(n.x, n.y, n.z); th.push(deep(az, y, z, dl)); den.push(lerp(1, 0.15 + 0.85 * smoother(dl / 0.2), clamp01((z - 0.55) / 0.3)));
+      }
+    }
+    for (let i = 0; i < AZN; i++) for (let j = 0; j < LAN; j++) { const a = i * (LAN + 1) + j, b = a + LAN + 1; ids.push(a, b, a + 1, a + 1, b, b + 1); }
     const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2)); g.setIndex(ids); g.computeVertexNormals();
-    mesh(g, hair, headG);
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
+    g.setAttribute('aTh', new THREE.Float32BufferAttribute(th, 1)); g.setAttribute('aDen', new THREE.Float32BufferAttribute(den, 1)); g.setIndex(ids);
+    g.boundingSphere = new THREE.Sphere(C0.clone(), 22); keep(g);
+
+    // (the material: the shells' height from the instance - the outermost
+    // drawn first, so the ones under it are mostly hidden early - and the
+    // core's from AFRO.H0; the coil map picked up off the face of the
+    // head's box that the point looks out of most, in patches where two
+    // meet, so no seam runs straight)
+    const cDark = new THREE.Color(0x26160d), cMid = new THREE.Color(0x5c361d), cLite = new THREE.Color(0x8e5a33);
+    const f = v => v.toFixed(4);
+    const afroMat = core => {
+      const m = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.86, specularIntensity: 0.35, sheen: core ? 0.2 : 0.6, sheenColor: new THREE.Color(0x8a5c40), sheenRoughness: 0.55 });
+      m.onBeforeCompile = sh => {
+        Object.assign(sh.uniforms, { coilMap: { value: coil }, cDark: { value: cDark }, cMid: { value: cMid }, cLite: { value: cLite } });
+        const hSh = core ? f(AFRO.H0) : `${f(AFRO.H1)} - ${f(AFRO.H1 - AFRO.H0 - (AFRO.H1 - AFRO.H0) / AFRO.N)} * float(gl_InstanceID) / ${f(AFRO.N - 1)}`;
+        sh.vertexShader = sh.vertexShader
+          .replace('#include <common>', '#include <common>\nattribute float aTh;\nattribute float aDen;\nvarying float vSh;\nvarying float vDen;\nvarying float vTh;\nvarying vec3 vHp;\nvarying vec3 vHn;')
+          .replace('#include <begin_vertex>', `#include <begin_vertex>\nfloat hSh = ${hSh};\ntransformed += normal * aTh * hSh;\nvSh = hSh; vDen = aDen; vTh = aTh; vHp = position; vHn = normal;`);
+        sh.fragmentShader = sh.fragmentShader
+          .replace('#include <common>', '#include <common>\nuniform sampler2D coilMap;\nuniform vec3 cDark;\nuniform vec3 cMid;\nuniform vec3 cLite;\nvarying float vSh;\nvarying float vDen;\nvarying float vTh;\nvarying vec3 vHp;\nvarying vec3 vHn;')
+          .replace('#include <map_fragment>', `#include <map_fragment>
+{
+  vec3 an = abs(vHn); an *= an; an *= an; an /= (an.x + an.y + an.z);
+  float hz = fract(sin(dot(floor(vHp * 2.5), vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+  vec2 q = hz < an.x ? vHp.zy + vec2(1.37, 0.41) : (hz < an.x + an.y ? vHp.xz + vec2(2.71, 1.53) : vHp.xy);
+  float tw = vSh * 9.0;
+  vec4 cm = texture2D(coilMap, q / ${f(AFRO.TILE)} + vec2(cos(tw), sin(tw)) * 0.035);
+  ${core
+    ? 'if (vDen < 0.98 && cm.r * vDen < 0.2) discard;'
+    : `float reach = cm.r > 0.03 ? ${f(AFRO.H0)} + ${f(AFRO.H1 - AFRO.H0)} * cm.r * (0.55 + 0.45 * vDen) : 0.0;\n  if (vSh > reach) discard;`}
+  vec3 hc = cm.g < 0.5 ? mix(cDark, cMid, cm.g * 2.0) : mix(cMid, cLite, cm.g * 2.0 - 1.0);
+  // (dark deep in it, where it is deep: thin hair at its edges is lit through)
+  hc *= mix(mix(0.85, 0.3, smoothstep(0.4, 2.5, vTh)), 1.0, smoothstep(${f(AFRO.H0)}, ${f(AFRO.H1)}, vSh));
+  diffuseColor.rgb *= hc;
+}`);
+      };
+      m.customProgramCacheKey = () => (core ? 'afro-core' : 'afro-shell');
+      keep(null, m);
+      return m;
+    };
+    // the core: casts the hair's shadow (from its own depth, not the bare
+    // skull's), and is the dark seen between the coils
+    const core = mesh(g, afroMat(true), headG); core.receiveShadow = false;
+    const depthM = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+    depthM.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aTh;').replace('#include <begin_vertex>', `#include <begin_vertex>\ntransformed += normal * aTh * ${f(AFRO.H0)};`); };
+    depthM.customProgramCacheKey = () => 'afro-depth'; keep(null, depthM);
+    core.customDepthMaterial = depthM;
+    // the shells: no shadows of their own (the core's stands for them), and
+    // none on them (an outer shell would put every inner one in the dark)
+    afroShells = new THREE.InstancedMesh(g, afroMat(false), AFRO.N);
+    afroShells.castShadow = false; afroShells.receiveShadow = false; afroShells.frustumCulled = false;
+    headG.add(afroShells);
   }
 
   // ---- The legs: black satin breeches, white silk stockings, black shoes
@@ -1206,6 +1280,11 @@ export async function makeGame(ctx) {
   fill.position.copy(toWorld(V(10, 70, 110)));
   fill.target.position.copy(toWorld(V(0, 80, -24)));
   scene.add(fill, fill.target);
+  // (a low warm wash down the drapes from above, raking their folds)
+  const wash = new THREE.SpotLight(0xffd9a8, room.PENDANT * 0.26, 0, 0.9, 1, 0);
+  wash.position.copy(toWorld(V(0, 238, -40)));
+  wash.target.position.copy(toWorld(V(0, 90, -100)));
+  scene.add(wash, wash.target);
   // (a lamp inside his chest, on the reels)
   const inner = new THREE.PointLight(0xffd59a, 1.6, 22, 1.4);
   inner.position.set(0, WIN.y + 3, winZ - 1.5);
@@ -1664,7 +1743,7 @@ export async function makeGame(ctx) {
   if (tier === 'edge') at(plan.silence[1], 'drop');
 
   // ---- Each frame.
-  const key0 = key.intensity, fill0 = fill.intensity, pendant0 = lights.pendant.intensity, inner0 = inner.intensity;
+  const key0 = key.intensity, fill0 = fill.intensity, wash0 = wash.intensity, pendant0 = lights.pendant.intensity, inner0 = inner.intensity;
   const callPt = toWorld(Bp([0, NECKY + HEAD.up + HEAD.ry + 3, 1]));
   const spot0 = lights.edgeSpot.angle, spotC0 = lights.edgeSpot.color.getHex();
   const stageFn = (t, { w }) => {
@@ -1699,6 +1778,7 @@ export async function makeGame(ctx) {
       es.intensity = 3.0 * k;
       key.intensity = key0 * (1 - 0.45 * k); key.color.setRGB(1, lerp(0.933, 0.96, k), lerp(0.867, 1, k));
       fill.intensity = fill0 * (1 - 0.9 * k);
+      wash.intensity = wash0 * (1 - 0.85 * k);
       lights.pendant.intensity = pendant0 * (1 - 0.88 * k);
       scene.environmentIntensity = room.ENV_LEVEL * (1 - 0.6 * k);
       dust = 1 - 0.85 * k;
@@ -1730,9 +1810,10 @@ export async function makeGame(ctx) {
   if (tier === 'edge') warmAt.push(Rw(plan.silence[1]) + 0.3);
 
   const dispose = () => {
-    scene.remove(aut, key, key.target, rimL, rimL.target, fill, fill.target);
+    scene.remove(aut, key, key.target, rimL, rimL.target, fill, fill.target, wash, wash.target);
     lights.edgeSpot.angle = spot0; lights.edgeSpot.color.setHex(spotC0);
     if (tokMesh) tokMesh.dispose();
+    if (afroShells) afroShells.dispose();
     key.shadow.dispose();
     made.geos.forEach(g => g.dispose());
     made.mats.forEach(m => m.dispose());
@@ -1763,7 +1844,7 @@ export async function makeGame(ctx) {
   return {
     plan, camera, gleamAt, stage: stageFn, callAt, sfx, warmAt, dispose,
     tierNames: TIER_NAMES,
-    callScrim: true, callScrimAt, callAlphaAt,
+    callScrim: true, callScrimAt, callAlphaAt, goldCall: true,
     silence: tier === 'edge' ? Rw(plan.silence[0]) : null,
     moments: { look: Rw(T.look), reach: Rw(T.reach), pull: Rw(T.pull), spin: Rw(T.spin), stop0: Rw(T.stop[0]), stop1: Rw(T.stop[1]), slow: Rslow, rest: Rw(restW), call: Rw(plan.callW), drawer: nTok ? Rw(drawerAt) : null, pay: nTok ? Rw(payAt) : null, reveal: plan.revealReal, end: plan.totalReal, boom: tier === 'vault' ? Rw(plan.boom) : null, line, stops, tokens: nTok, scan },
     pieces: { aut, body, headG, lever, bell, reels, drawer }
