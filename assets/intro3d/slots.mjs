@@ -157,8 +157,11 @@ export async function makeGame(ctx) {
   const gilt = new THREE.MeshStandardMaterial({ color: 0xe2b860, metalness: 1, roughness: 0.3, envMapIntensity: 1.1 });
   finished(gilt, 'brushed', 3, 3, 0.18); keep(null, gilt);
   const walnut = set.wood.clone(); walnut.color.setHex(0x8c6a52); walnut.normalScale = new THREE.Vector2(0.3, 0.3); keep(null, walnut);
-  // (bisque: unglazed porcelain, a soft satin, warm)
-  const bisque = new THREE.MeshPhysicalMaterial({ color: 0xecc6ab, roughness: 0.46, clearcoat: 0.15, clearcoatRoughness: 0.4, sheen: 0.18, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xffe0d0) });
+  // (skin: a child's, as the owner's references have him - warm, soft,
+  // the light under it showing as a redder warmth where it turns from the
+  // lamp (a sheen, standing for the light the skin carries under it), a
+  // faint dewy specular, no glaze)
+  const bisque = new THREE.MeshPhysicalMaterial({ color: 0xe9ba9c, roughness: 0.56, specularIntensity: 0.45, clearcoat: 0.04, clearcoatRoughness: 0.6, sheen: 0.5, sheenRoughness: 0.6, sheenColor: new THREE.Color(0xd2685a) });
   keep(null, bisque);
   // a small woven silk: a pomegranate damask about two centimetres a
   // repeat, the ground a ribbed silk, the pattern in the thread's colour,
@@ -195,14 +198,27 @@ export async function makeGame(ctx) {
   };
   // (tone on tone, as a damask is: the pattern woven in the ground's own
   // colour and read by its sheen; the gold is in the braid alone)
-  const coatArt = damask('#4a0d17', '#661826', '#000');
-  const vestArt = damask('#121011', '#262022', '#000');
-  // (one motif a little over two centimetres: round his chest (78 cm) and
-  // down it (45); round a sleeve (22) and along it (32))
-  const coat = silk(coatArt, [34, 20], 0.55, 0x7a3a34);
-  const sleeveMat = silk(coatArt, [10, 15], 0.55, 0x7a3a34);
+  const vestArt = damask('#06140a', '#0c2414', '#000');
+  // the coat: a fine silk velvet in the owner's money green - dark where
+  // it faces the lamp, its pile catching light where the cloth turns away;
+  // the waistcoat (a damask, its motif a little over two centimetres) and
+  // the cuffs a darker green
+  const pileTex = (() => {
+    const c = canvas(128, 128, (g, W) => { const im = g.createImageData(W, W); for (let i = 0; i < W * W; i++) { const v = 118 + rng() * 20; im.data[i * 4] = im.data[i * 4 + 1] = im.data[i * 4 + 2] = v; im.data[i * 4 + 3] = 255; } g.putImageData(im, 0, 0); });
+    const n = embossTex(c, 0.6, 1); n.wrapS = n.wrapT = THREE.RepeatWrapping; n.repeat.set(24, 24); keep(null, null, n);
+    return n;
+  })();
+  const velvet = (color, sheenColor) => {
+    const m = new THREE.MeshPhysicalMaterial({ color, roughness: 0.88, specularIntensity: 0.3, sheen: 1, sheenRoughness: 0.38, sheenColor: new THREE.Color(sheenColor), normalMap: pileTex, normalScale: new THREE.Vector2(0.25, 0.25) });
+    keep(null, m);
+    return m;
+  };
+  const coat = velvet(0x0a2414, 0x2f5c42);
+  const sleeveMat = velvet(0x0a2414, 0x2f5c42);
   sleeveMat.side = THREE.DoubleSide;
-  const vest = silk(vestArt, [30, 20], 0.5, 0x4a3c30);
+  const cuffMat = velvet(0x061a0d, 0x244a33);
+  cuffMat.side = THREE.DoubleSide;
+  const vest = silk(vestArt, [30, 20], 0.68, 0x1a3f28); vest.sheen = 0.32; vest.normalScale.set(0.28, 0.28);
   // the braid: gold thread woven flat in a herringbone, along every edge
   const braidTex = (() => {
     const c = canvas(32, 128, (g, W, Hh) => {
@@ -263,7 +279,7 @@ export async function makeGame(ctx) {
     }
   }
 
-  // ---- The drapes: green silk velvet hung full behind the dais from a gilt
+  // ---- The drapes: oxblood silk velvet hung full behind the dais from a gilt
   // pole on rings, to break on the floor - a backdrop for him, as a
   // portrait painter hangs one (a Georgian upholsterer's: the heading
   // pleated on its rings, the folds running down from them and opening
@@ -271,8 +287,8 @@ export async function makeGame(ctx) {
   // it faces the lamp, its pile catching light where the folds turn away.
   {
     const DR = { z: -100, top: 222, floor: -DAIS.h, W: 500, pleats: 32 };
-    const velvet = new THREE.MeshPhysicalMaterial({ color: 0x0b231b, roughness: 0.94, sheen: 1, sheenColor: new THREE.Color(0x3f6e5a), sheenRoughness: 0.42, side: THREE.DoubleSide });
-    keep(null, velvet);
+    const drapeM = new THREE.MeshPhysicalMaterial({ color: 0x2a0a10, roughness: 0.94, sheen: 1, sheenColor: new THREE.Color(0x8a3442), sheenRoughness: 0.42, side: THREE.DoubleSide });
+    keep(null, drapeM);
     const p1 = rng() * TAU, p2 = rng() * TAU, p3 = rng() * TAU;
     // (a pleat's phase across the cloth: a little uneven, as hung cloth is)
     const phase = u => u * DR.pleats * TAU + 0.9 * Math.sin(u * 3.1 * TAU + p1) + 0.5 * Math.sin(u * 7.3 * TAU + p2);
@@ -290,7 +306,7 @@ export async function makeGame(ctx) {
     }
     for (let j = 0; j < VN; j++) for (let i = 0; i < UN; i++) { const a = j * (UN + 1) + i, b = a + UN + 1; ids.push(a, b, a + 1, a + 1, b, b + 1); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(ids); g.computeVertexNormals();
-    mesh(g, velvet, stage, false);
+    mesh(g, drapeM, stage, false);
     // (the pole, its finials, and a ring at each pleat of the heading)
     const poleL = DR.W + 30;
     const pole = new THREE.CylinderGeometry(2.2, 2.2, poleL, 16); pole.rotateZ(Math.PI / 2); keep(pole);
@@ -698,20 +714,20 @@ export async function makeGame(ctx) {
   const relief = (x, y) => {
     let dz = 0;
     // the brow, rounded, and its soft ridge over each eye; the orbits
-    dz += 0.03 * gauss(x, y, 0, 0.3, 0.6, 0.12);
+    dz += 0.04 * gauss(x, y, 0, 0.3, 0.6, 0.12);
     dz += 0.02 * (gauss(x, y, 0.28, 0.1, 0.16, 0.05) + gauss(x, y, -0.28, 0.1, 0.16, 0.05));
-    dz -= 0.07 * (gauss(x, y, EYE.x, EYE.y, 0.17, 0.12) + gauss(x, y, -EYE.x, EYE.y, 0.17, 0.12));
+    dz -= 0.09 * (gauss(x, y, EYE.x, EYE.y, 0.17, 0.12) + gauss(x, y, -EYE.x, EYE.y, 0.17, 0.12));
     // the nose: a small bridge, a round tip turned up, its wings
-    dz += 0.07 * gauss(x, 0, 0, 0, 0.075, 1) * clamp01((0.02 - y) / 0.22) * clamp01((y + 0.27) / 0.08);
-    dz += 0.05 * gauss(x, y, 0, -0.215, 0.07, 0.055);
-    dz += 0.022 * (gauss(x, y, 0.065, -0.245, 0.04, 0.035) + gauss(x, y, -0.065, -0.245, 0.04, 0.035));
+    dz += 0.13 * gauss(x, 0, 0, 0, 0.065, 1) * clamp01((0.02 - y) / 0.22) * clamp01((y + 0.27) / 0.08);
+    dz += 0.12 * gauss(x, y, 0, -0.215, 0.065, 0.055);
+    dz += 0.055 * (gauss(x, y, 0.07, -0.245, 0.04, 0.035) + gauss(x, y, -0.07, -0.245, 0.04, 0.035));
     // the cheeks: full, low
-    dz += 0.075 * (gauss(x, y, 0.38, -0.2, 0.19, 0.16) + gauss(x, y, -0.38, -0.2, 0.19, 0.16));
+    dz += 0.09 * (gauss(x, y, 0.38, -0.2, 0.19, 0.16) + gauss(x, y, -0.38, -0.2, 0.19, 0.16));
     // the philtrum; the lips, the lower the fuller, parted by a line; the
     // groove under them; the chin, a small round
     dz -= 0.012 * gauss(x, y, 0, -0.33, 0.028, 0.035);
-    dz += 0.028 * gauss(x, y, 0, -0.405, 0.11, 0.028);
-    dz += 0.034 * gauss(x, y, 0, -0.47, 0.095, 0.03);
+    dz += 0.04 * gauss(x, y, 0, -0.405, 0.115, 0.03);
+    dz += 0.05 * gauss(x, y, 0, -0.47, 0.1, 0.032);
     dz -= 0.02 * gauss(x, y, 0, -0.435, 0.1, 0.009);
     dz -= 0.022 * gauss(x, y, 0, -0.56, 0.12, 0.03);
     dz += 0.05 * gauss(x, y, 0, -0.69, 0.13, 0.08);
@@ -735,16 +751,31 @@ export async function makeGame(ctx) {
       const y = p.getY(i), fr = clamp01(z * 1.6);
       // the jaw: a child's - only a little narrower below the cheeks
       const jaw = clamp01((-y - 0.12) / 0.8);
-      x *= 1 - 0.3 * jaw * jaw; z *= 1 - 0.08 * jaw;
+      x *= 1 - 0.56 * Math.pow(jaw, 1.7); z *= 1 - 0.1 * jaw;
       z += relief(x, y) * fr;
-      p.setXYZ(i, x * HEAD.rx, y * HEAD.ry, z * HEAD.rz);
+      p.setXYZ(i, x * HEAD.rx, (y > -0.52 ? y : -0.52 + (y + 0.52) * 0.78) * HEAD.ry, z * HEAD.rz);
       uv.setXY(i, 0.5 + x * 0.5, 0.5 + y * 0.5);
     }
     g.computeVertexNormals();
     // the face, painted
     const face = canvas(FS, FS, (c) => {
-      c.fillStyle = '#ecc6ab'; c.fillRect(0, 0, FS, FS);
+      c.fillStyle = '#e8bc9d'; c.fillRect(0, 0, FS, FS);
       const blob = (x, y, rx, ry, col) => { const [px, py] = P(x, y); const gr = c.createRadialGradient(px, py, 0, px, py, rx * FS / 2); gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(0,0,0,0)'); c.save(); c.translate(px, py); c.scale(1, ry / rx); c.translate(-px, -py); c.fillStyle = gr; c.beginPath(); c.arc(px, py, rx * FS / 2, 0, TAU); c.fill(); c.restore(); };
+      // (a child's skin is not one flat tone: warm and a little uneven, a
+      // fine speckle of pores and capillaries, shade in the hollows - the
+      // eye sockets, beside the nose, under the lip and the chin, the
+      // temples and the jaw's edge)
+      for (let k = 0; k < 2600; k++) { const px = rng() * FS, py = rng() * FS; c.fillStyle = rng() < 0.5 ? 'rgba(190,120,100,0.07)' : 'rgba(120,80,60,0.05)'; c.beginPath(); c.arc(px, py, 0.8 + rng() * 1.6, 0, TAU); c.fill(); }
+      [-1, 1].forEach(s => {
+        blob(s * 0.3, -0.01, 0.36, 0.18, 'rgba(140,84,74,0.32)');
+        blob(s * 0.68, 0.1, 0.3, 0.3, 'rgba(140,92,80,0.26)');
+        blob(s * 0.2, -0.34, 0.07, 0.14, 'rgba(140,84,78,0.2)');
+        blob(s * 0.095, -0.245, 0.05, 0.05, 'rgba(150,84,80,0.36)');
+        blob(s * 0.62, -0.5, 0.2, 0.3, 'rgba(140,88,78,0.24)');
+      });
+      blob(0, -0.28, 0.13, 0.045, 'rgba(130,72,68,0.42)');
+      blob(0, -0.8, 0.24, 0.08, 'rgba(130,84,74,0.34)');
+      blob(0, 0.45, 0.5, 0.12, 'rgba(150,100,88,0.1)');
       // (rosy: the cheeks high and strong, the tip of the nose, the chin,
       // the lids)
       [-1, 1].forEach(s => { blob(s * 0.39, -0.21, 0.44, 0.3, 'rgba(226,112,108,0.3)'); blob(s * 0.38, -0.2, 0.22, 0.15, 'rgba(226,104,104,0.18)'); });
@@ -760,28 +791,32 @@ export async function makeGame(ctx) {
         c.beginPath(); c.moveTo(a.upper[0], a.upper[1] - a.ry * 0.5); c.bezierCurveTo(a.upper[2], a.upper[3] - a.ry * 0.75, a.upper[4], a.upper[5] - a.ry * 0.75, a.upper[6], a.upper[7] - a.ry * 0.5); c.stroke();
       });
       c.restore();
-      [-1, 1].forEach(s => { c.strokeStyle = 'rgba(176,110,100,0.7)'; c.lineWidth = 8; almond(c, s); c.stroke(); });
+      [-1, 1].forEach(s => { c.strokeStyle = 'rgba(160,100,92,0.4)'; c.lineWidth = 5; almond(c, s); c.stroke(); });
       // (the nostrils)
       [-1, 1].forEach(s => blob(s * 0.045, -0.255, 0.024, 0.016, 'rgba(116,48,48,0.6)'));
       // the mouth: small, the upper lip a bow, the lower full
-      const M = (x, y) => P(x, -0.435 + y), mw = 0.1;
-      c.fillStyle = '#b3505a';
+      const M = (x, y) => P(x, -0.435 + y), mw = 0.112;
+      c.fillStyle = '#9c5358';
       c.beginPath(); c.moveTo(...M(-mw, 0));
       c.quadraticCurveTo(...M(-0.055, 0.02), ...M(-0.024, 0.027)); c.quadraticCurveTo(...M(0, 0.017), ...M(0.024, 0.027));
       c.quadraticCurveTo(...M(0.055, 0.02), ...M(mw, 0)); c.quadraticCurveTo(...M(0, -0.006), ...M(-mw, 0));
       c.fill();
-      c.fillStyle = '#c4646c';
+      c.fillStyle = '#b4686a';
       c.beginPath(); c.moveTo(...M(-mw * 0.85, -0.002)); c.quadraticCurveTo(...M(-0.05, -0.044), ...M(0, -0.046)); c.quadraticCurveTo(...M(0.05, -0.044), ...M(mw * 0.85, -0.002)); c.quadraticCurveTo(...M(0, -0.008), ...M(-mw * 0.88, -0.002));
       c.fill();
-      blob(0.01, -0.435 - 0.024, 0.04, 0.012, 'rgba(255,214,214,0.35)');
+      blob(0.01, -0.435 - 0.024, 0.04, 0.012, 'rgba(255,214,214,0.18)');
       c.strokeStyle = 'rgba(92,26,36,0.75)'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(...M(-mw, 0)); c.quadraticCurveTo(...M(0, -0.008), ...M(mw, 0)); c.stroke();
       // the brows: fine strokes of light brown, arched
-      c.strokeStyle = 'rgba(120,84,60,0.7)'; c.lineCap = 'round';
+      c.lineCap = 'round';
+      c.save(); c.filter = 'blur(5px)'; c.strokeStyle = 'rgba(70,44,30,0.42)'; c.lineWidth = 11;
+      [-1, 1].forEach(s => { c.beginPath(); for (let k = 0; k <= 12; k++) { const t = k / 12, [px, py] = P(s * (0.13 + 0.34 * t), 0.105 + 0.04 * Math.sin(t * Math.PI * 0.9) - 0.045 * t); if (k) c.lineTo(px, py); else c.moveTo(px, py); } c.stroke(); });
+      c.restore();
       [-1, 1].forEach(s => {
-        for (let k = 0; k < 20; k++) {
-          const t = k / 19, x = s * (0.15 + 0.3 * t), y = 0.19 + 0.04 * Math.sin(t * Math.PI * 0.9) - 0.045 * t;
+        for (let k = 0; k < 64; k++) {
+          const t = k / 63, x = s * (0.13 + 0.34 * t) + (rng() - 0.5) * 0.01, y = 0.105 + 0.04 * Math.sin(t * Math.PI * 0.9) - 0.045 * t + (rng() - 0.5) * 0.02 * (1 - t * 0.5);
           const [px, py] = P(x, y);
-          c.lineWidth = 3.2 - 1.8 * t; c.beginPath(); c.moveTo(px - s * 3, py + 5); c.lineTo(px + s * 8, py - 4); c.stroke();
+          c.strokeStyle = `rgba(${48 + Math.round(rng() * 22)},${30 + Math.round(rng() * 14)},20,${0.55 + 0.3 * (1 - t * 0.6)})`;
+          c.lineWidth = 3.4 - 1.9 * t; c.beginPath(); c.moveTo(px - s * 3, py + 5); c.lineTo(px + s * 9, py - 5); c.stroke();
         }
       });
     });
@@ -797,20 +832,25 @@ export async function makeGame(ctx) {
   {
     const TS = 512;
     const iris = texOf(canvas(TS, TS, (c) => {
-      c.fillStyle = '#f4f1ec'; c.fillRect(0, 0, TS, TS);
-      const cx = TS * 0.25, cy = TS / 2, R = TS * 0.062;
+      c.fillStyle = '#ece4d8'; c.fillRect(0, 0, TS, TS);
+      const cx = TS * 0.25, cy = TS / 2, R = TS * 0.06;
       c.save(); c.translate(cx, cy); c.scale(1, 2); c.translate(-cx, -cy);
       const gr = c.createRadialGradient(cx, cy, 0, cx, cy, R);
-      gr.addColorStop(0, '#0a0706'); gr.addColorStop(0.36, '#0a0706'); gr.addColorStop(0.4, '#4a2a14'); gr.addColorStop(0.75, '#7a4a22'); gr.addColorStop(0.92, '#3a2210'); gr.addColorStop(1, '#f4f1ec');
+      gr.addColorStop(0, '#080504'); gr.addColorStop(0.36, '#080504'); gr.addColorStop(0.4, '#1c0f07'); gr.addColorStop(0.72, '#3e2410'); gr.addColorStop(0.9, '#1a0e07'); gr.addColorStop(1, '#ece4d8');
       c.fillStyle = gr; c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.fill();
-      c.strokeStyle = 'rgba(200,150,90,0.35)'; c.lineWidth = 1;
+      c.strokeStyle = 'rgba(190,140,86,0.28)'; c.lineWidth = 1;
       for (let k = 0; k < 48; k++) { const a = (k / 48) * TAU; c.beginPath(); c.moveTo(cx + Math.cos(a) * R * 0.42, cy + Math.sin(a) * R * 0.42); c.lineTo(cx + Math.cos(a) * R * 0.9, cy + Math.sin(a) * R * 0.9); c.stroke(); }
       c.restore();
+      // (the lids shade the eye: the white and the iris darker under the
+      // upper lid, a little under the lower, not one flat white)
+      const sg = c.createLinearGradient(0, TS * 0.41, 0, TS * 0.59);
+      sg.addColorStop(0, 'rgba(96,60,52,0.55)'); sg.addColorStop(0.35, 'rgba(96,60,52,0.14)'); sg.addColorStop(0.5, 'rgba(96,60,52,0)'); sg.addColorStop(1, 'rgba(96,60,52,0.28)');
+      c.fillStyle = sg; c.fillRect(0, 0, TS, TS);
     }), true);
     // (the iris alone, to warm it from within on the jackpot)
     const irisGlow = texOf(canvas(TS, TS, (c) => {
       c.fillStyle = '#000'; c.fillRect(0, 0, TS, TS);
-      const cx = TS * 0.25, cy = TS / 2, R = TS * 0.062;
+      const cx = TS * 0.25, cy = TS / 2, R = TS * 0.06;
       c.save(); c.translate(cx, cy); c.scale(1, 2); c.translate(-cx, -cy);
       const gr = c.createRadialGradient(cx, cy, 0, cx, cy, R);
       gr.addColorStop(0, '#000'); gr.addColorStop(0.38, '#000'); gr.addColorStop(0.45, '#ffb040'); gr.addColorStop(0.85, '#ffd890'); gr.addColorStop(1, '#000');
@@ -833,7 +873,7 @@ export async function makeGame(ctx) {
     const R0 = EYE.r + 0.07, LA = 0.55;
     const arc = k => { const a = lerp(-LA, LA, k); return V(Math.sin(a) * R0, 0, Math.cos(a) * R0); };
     const marginG = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 25 }, (_, k) => arc(k / 24))), 48, 0.07, 6, false); keep(marginG);
-    const marginM = new THREE.MeshStandardMaterial({ color: 0x2a1812, roughness: 0.6 }); keep(null, marginM);
+    const marginM = new THREE.MeshStandardMaterial({ color: 0x4a2c20, roughness: 0.7 }); keep(null, marginM);
     const lashG = (() => {
       const g = new THREE.BufferGeometry(), pos = [], uv = [], idx = [], NA = 32, NS = 4;
       for (let i = 0; i <= NA; i++) {
@@ -883,7 +923,7 @@ export async function makeGame(ctx) {
       return V(x * HEAD.rx, y * HEAD.ry, z * HEAD.rz).addScaledVector(n, out);
     };
     const bez = (q, t) => { const u = 1 - t; return [u * u * u * q[0] + 3 * u * u * t * q[2] + 3 * u * t * t * q[4] + t * t * t * q[6], u * u * u * q[1] + 3 * u * u * t * q[3] + 3 * u * t * t * q[5] + t * t * t * q[7]]; };
-    const lowRim = bisque.clone(); lowRim.color.setHex(0xeccab6); keep(null, lowRim);
+    const lowRim = bisque.clone(); lowRim.color.setHex(0xe4b7a0); keep(null, lowRim);
     [-1, 1].forEach(s => {
       const a = almondPts(s);
       const up = Array.from({ length: 21 }, (_, k) => onFace(...bez(a.upper, k / 20), 0.02));
@@ -892,158 +932,113 @@ export async function makeGame(ctx) {
       mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(lo), 40, 0.08, 8, false), lowRim, headG);
     });
   }
-  let afroShells = null;
-  // the hair: his own, a full rounded crop of fine copper-brown coils (the
-  // owner's reference: a doll's soft afro) standing out from the scalp all
-  // round, lowest over the brow and fullest over the crown, its edge a
-  // haze of coils. Drawn the way fur is: an opaque core at the hair's depth
-  // (the dark of the hair seen into), and over it a stack of shells out to
-  // its edge, each keeping only the coils long enough to reach it - a coil
-  // map, each coil's length in red and its tone in green, the coils turned
-  // a little shell to shell so each one climbs as a helix. The deeper
-  // shells darker, the outer ones lighter, a sheen at the grazing edge for
-  // the halo the lamp and the rim put round it.
+  // the hair: his own, a mop of loose brown ringlets after the Writer's - a
+  // dark cap close over the skull (the hair seen into, and its shadow),
+  // and over it a few hundred curls, each a tapered tube wound as a spiral,
+  // rooted over the scalp and let fall the way the head slopes: lowest and
+  // shortest at the brow, where they hang over the forehead as a fringe,
+  // longest at the sides and crown, shortest at the nape. Dark at the root,
+  // lighter toward the tip, each curl its own shade of brown.
   {
-    const RX = HEAD.rx * 1.03, RY = HEAD.ry * 1.02, RZ = HEAD.rz * 1.03, C0 = V(0, 0.2, -0.3);
+    const RX = HEAD.rx * 1.03, RY = HEAD.ry * 1.02, RZ = HEAD.rz * 1.03, C0 = V(0, 0.2, -0.3), H0 = 0.55;
     // (the hairline: above this height, for a point round the skull - low
     // at the nape, down the sides in front of the ears, so nothing shows
     // through behind the jaw, then up round the brow)
-    const line = (x, z) => lerp(-0.92, 0.44 - 0.7 * x * x, smoother((z - 0.5) / 0.4));
-    const AFRO = { N: 22, H0: 0.55, H1: 1.1, TILE: 3.6 };
-    // (the coil map: a tile of coils, each a spiral of a few turns; its
-    // mips kept full - half the mean, half the longest - so the hair keeps
-    // its edge at a distance instead of thinning to nothing)
-    const TS = 512;
-    // (the coils grow in clumps: a soft field over the tile, tiling too,
-    // lengthens and lightens them together, so the hair's face is lumpy
-    // rather than a carpet's)
-    const waves = Array.from({ length: 5 }, () => ({ fx: 1 + Math.floor(rng() * 3), fy: 1 + Math.floor(rng() * 3), ph: rng() * TAU, a: 0.5 + rng() * 0.5 }));
-    const clump = (x, y) => 0.5 + 0.5 * waves.reduce((t, w) => t + w.a * Math.sin(((w.fx * x + w.fy * y) / TS) * TAU + w.ph), 0) / waves.reduce((t, w) => t + w.a, 0);
-    const cv = canvas(TS, TS, (c) => {
-      c.fillStyle = '#000'; c.fillRect(0, 0, TS, TS); c.lineCap = 'round';
-      // (ringlets about half a centimetre across, each drawn as a tube - a
-      // darker edge, a lighter core - so each curl reads as round)
-      for (let k = 0; k < 300; k++) {
-        const x = rng() * TS, y = rng() * TS, r = 30 + rng() * 25, cl = clump(x, y);
-        const L = clamp01(0.2 + 0.8 * (0.5 * Math.pow(rng(), 0.6) + 0.6 * cl)), tone = clamp01(0.55 * rng() + 0.5 * cl);
-        const a0 = rng() * TAU, turns = 1.1 + rng() * 0.6, dir = rng() < 0.5 ? -1 : 1, lw = 8 + rng() * 5;
-        const R8 = Math.round(L * 255);
-        for (const ox of [-TS, 0, TS]) for (const oy of [-TS, 0, TS]) {
-          if (x + ox + r + lw < 0 || x + ox - r - lw > TS || y + oy + r + lw < 0 || y + oy - r - lw > TS) continue;
-          [[lw, 0.55 * tone], [lw * 0.45, Math.min(1, 0.55 * tone + 0.45)]].forEach(([wd, tn]) => {
-            c.strokeStyle = `rgb(${R8},${Math.round(tn * 255)},0)`; c.lineWidth = wd;
-            c.beginPath();
-            for (let st = 0; st <= 36; st++) {
-              const t = st / 36, a = a0 + dir * t * turns * TAU, rr = r * (1 - 0.3 * t);
-              const px = x + ox + Math.cos(a) * rr, py = y + oy + Math.sin(a) * rr * 0.85;
-              if (st) c.lineTo(px, py); else c.moveTo(px, py);
-            }
-            c.stroke();
-          });
-        }
-      }
-    });
-    const levels = [];
-    {
-      let cur = new Uint8Array(cv.getContext('2d').getImageData(0, 0, TS, TS).data), w = TS;
-      levels.push({ data: cur, width: w, height: w });
-      while (w > 1) {
-        const nw = w >> 1, nx = new Uint8Array(nw * nw * 4);
-        for (let y = 0; y < nw; y++) for (let x = 0; x < nw; x++) {
-          let mx = 0, sr = 0, sg = 0;
-          for (let d = 0; d < 4; d++) { const i = ((2 * y + (d >> 1)) * w + 2 * x + (d & 1)) * 4; sr += cur[i]; sg += cur[i + 1]; mx = Math.max(mx, cur[i]); }
-          const o = (y * nw + x) * 4; nx[o] = Math.round(0.5 * (sr / 4 + mx)); nx[o + 1] = Math.round(sg / 4); nx[o + 3] = 255;
-        }
-        levels.push({ data: nx, width: nw, height: nw }); cur = nx; w = nw;
-      }
-    }
-    const coil = new THREE.DataTexture(levels[0].data, TS, TS, THREE.RGBAFormat);
-    coil.mipmaps = levels; coil.generateMipmaps = false; coil.minFilter = THREE.LinearMipmapLinearFilter; coil.magFilter = THREE.LinearFilter;
-    coil.wrapS = coil.wrapT = THREE.RepeatWrapping; coil.colorSpace = THREE.NoColorSpace; coil.anisotropy = 8; coil.needsUpdate = true; keep(null, null, coil);
-
-    // (the scalp under it: rows from the hairline up to the crown, each way
-    // round the head; at each point the hair's depth out along the skull's
-    // normal - fullest over the crown, a little less behind and at the
-    // sides, rising from the brow over the first few centimetres - and how
-    // thick its coils stand, thinning to a few at the brow itself, where
-    // the face is behind them; elsewhere nothing is, so they stay thick)
+    const line = (x, z) => lerp(-0.92, 0.33 - 0.6 * x * x, smoother((z - 0.5) / 0.4));
     const edgeLa = az => { let lo = -0.95, hi = 0.99; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2, r = Math.sqrt(1 - m * m); if (m > line(Math.sin(az) * r, Math.cos(az) * r)) hi = m; else lo = m; } return hi; };
-    // (rounded in under the sides and the back, toward the jaw and the
-    // nape, as a full crop is, rather than standing out level from the
-    // hairline; lumps in its outline where its clumps stand)
-    const lumps = Array.from({ length: 6 }, () => ({ fa: 2 + Math.floor(rng() * 4), fl: 1.5 + rng() * 3, ph: rng() * TAU, ph2: rng() * TAU }));
-    const lumpy = (az, y) => lumps.reduce((t, l) => t + Math.sin(l.fa * az + l.ph) * Math.sin(l.fl * y * Math.PI + l.ph2), 0) / lumps.length;
-    const deep = (az, y, z, dl) => {
-      const T = lerp(4.1, 5.6, smoother((y + 0.2) / 1.1)) * (1 - 0.18 * clamp01(z) * clamp01(z)) * (1 + 0.32 * lumpy(az, y));
-      const front = clamp01((z + 0.1) / 0.7), reach = lerp(0.75, 0.42, front);
-      // (and at the brow a fringe of coils standing proud of the skin, so
-      // the face's edge is lost under them rather than drawn as a line)
-      return Math.max(lerp(0.3, 1.1, front * front), T * Math.pow(smoother(dl / reach), lerp(1.1, 0.6, front)));
+    // (the cap's depth: a thin skin of hair rising from the hairline)
+    const deep = (y, z, dl) => {
+      const T = lerp(1.5, 2.1, smoother((y + 0.2) / 1.1)), front = clamp01((z + 0.1) / 0.7), reach = lerp(0.6, 0.3, front);
+      return Math.max(0.3, T * Math.pow(smoother(dl / reach), 0.8));
     };
-    const AZN = 80, LAN = 30, pos = [], nrm = [], th = [], den = [], ids = [];
-    for (let i = 0; i <= AZN; i++) {
-      const az = (i / AZN) * TAU, ph0 = Math.asin(edgeLa(az));
-      for (let j = 0; j <= LAN; j++) {
-        const ph = lerp(ph0, Math.PI / 2, j / LAN), y = Math.sin(ph), r = Math.cos(ph), x = Math.sin(az) * r, z = Math.cos(az) * r;
-        const p = V(x * RX, y * RY, z * RZ).add(C0), n = V(x / RX, y / RY, z / RZ).normalize(), dl = y - Math.sin(ph0);
-        pos.push(p.x, p.y, p.z); nrm.push(n.x, n.y, n.z); th.push(deep(az, y, z, dl)); den.push(lerp(1, 0.15 + 0.85 * smoother(dl / 0.2), clamp01((z - 0.55) / 0.3)));
+    {
+      const AZN = 80, LAN = 30, pos = [], nrm = [], th = [], den = [], ids = [];
+      for (let i = 0; i <= AZN; i++) {
+        const az = (i / AZN) * TAU, la0 = edgeLa(az), ph0 = Math.asin(la0);
+        for (let j = 0; j <= LAN; j++) {
+          const ph = lerp(ph0, Math.PI / 2, j / LAN), y = Math.sin(ph), r = Math.cos(ph), x = Math.sin(az) * r, z = Math.cos(az) * r;
+          const p = V(x * RX, y * RY, z * RZ).add(C0), n = V(x / RX, y / RY, z / RZ).normalize(), dl = y - la0;
+          pos.push(p.x, p.y, p.z); nrm.push(n.x, n.y, n.z); th.push(deep(y, z, dl)); den.push(lerp(1, 0.2 + 0.8 * smoother(dl / 0.16), clamp01((z - 0.5) / 0.3) * smoother(y / 0.25)));
+        }
       }
-    }
-    for (let i = 0; i < AZN; i++) for (let j = 0; j < LAN; j++) { const a = i * (LAN + 1) + j, b = a + LAN + 1; ids.push(a, b, a + 1, a + 1, b, b + 1); }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
-    g.setAttribute('aTh', new THREE.Float32BufferAttribute(th, 1)); g.setAttribute('aDen', new THREE.Float32BufferAttribute(den, 1)); g.setIndex(ids);
-    g.boundingSphere = new THREE.Sphere(C0.clone(), 22); keep(g);
-
-    // (the material: the shells' height from the instance - the outermost
-    // drawn first, so the ones under it are mostly hidden early - and the
-    // core's from AFRO.H0; the coil map picked up off the face of the
-    // head's box that the point looks out of most, in patches where two
-    // meet, so no seam runs straight)
-    const cDark = new THREE.Color(0x26160d), cMid = new THREE.Color(0x5c361d), cLite = new THREE.Color(0x8e5a33);
-    const f = v => v.toFixed(4);
-    const afroMat = core => {
-      const m = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.86, specularIntensity: 0.35, sheen: core ? 0.2 : 0.6, sheenColor: new THREE.Color(0x8a5c40), sheenRoughness: 0.55 });
-      m.onBeforeCompile = sh => {
-        Object.assign(sh.uniforms, { coilMap: { value: coil }, cDark: { value: cDark }, cMid: { value: cMid }, cLite: { value: cLite } });
-        const hSh = core ? f(AFRO.H0) : `${f(AFRO.H1)} - ${f(AFRO.H1 - AFRO.H0 - (AFRO.H1 - AFRO.H0) / AFRO.N)} * float(gl_InstanceID) / ${f(AFRO.N - 1)}`;
+      for (let i = 0; i < AZN; i++) for (let j = 0; j < LAN; j++) { const a = i * (LAN + 1) + j, b = a + LAN + 1; ids.push(a, b, a + 1, a + 1, b, b + 1); }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
+      g.setAttribute('aTh', new THREE.Float32BufferAttribute(th, 1)); g.setAttribute('aDen', new THREE.Float32BufferAttribute(den, 1)); g.setIndex(ids);
+      g.boundingSphere = new THREE.Sphere(C0.clone(), 22); keep(g);
+      const capM = new THREE.MeshPhysicalMaterial({ color: 0x2c1a0d, roughness: 0.9, specularIntensity: 0.1, sheen: 0.25, sheenColor: new THREE.Color(0x6a4a34), sheenRoughness: 0.7 });
+      capM.onBeforeCompile = sh => {
         sh.vertexShader = sh.vertexShader
-          .replace('#include <common>', '#include <common>\nattribute float aTh;\nattribute float aDen;\nvarying float vSh;\nvarying float vDen;\nvarying float vTh;\nvarying vec3 vHp;\nvarying vec3 vHn;')
-          .replace('#include <begin_vertex>', `#include <begin_vertex>\nfloat hSh = ${hSh};\ntransformed += normal * aTh * hSh;\nvSh = hSh; vDen = aDen; vTh = aTh; vHp = position; vHn = normal;`);
+          .replace('#include <common>', '#include <common>\nattribute float aTh;\nattribute float aDen;\nvarying float vDen;\nvarying vec3 vHp;')
+          .replace('#include <begin_vertex>', `#include <begin_vertex>\ntransformed += normal * aTh * ${H0.toFixed(3)};\nvDen = aDen; vHp = position;`);
         sh.fragmentShader = sh.fragmentShader
-          .replace('#include <common>', '#include <common>\nuniform sampler2D coilMap;\nuniform vec3 cDark;\nuniform vec3 cMid;\nuniform vec3 cLite;\nvarying float vSh;\nvarying float vDen;\nvarying float vTh;\nvarying vec3 vHp;\nvarying vec3 vHn;')
-          .replace('#include <map_fragment>', `#include <map_fragment>
-{
-  vec3 an = abs(vHn); an *= an; an *= an; an /= (an.x + an.y + an.z);
-  float hz = fract(sin(dot(floor(vHp * 2.5), vec3(12.9898, 78.233, 37.719))) * 43758.5453);
-  vec2 q = hz < an.x ? vHp.zy + vec2(1.37, 0.41) : (hz < an.x + an.y ? vHp.xz + vec2(2.71, 1.53) : vHp.xy);
-  float tw = vSh * 9.0;
-  vec4 cm = texture2D(coilMap, q / ${f(AFRO.TILE)} + vec2(cos(tw), sin(tw)) * 0.035);
-  ${core
-    ? 'if (vDen < 0.98 && cm.r * vDen < 0.2) discard;'
-    : `float reach = cm.r > 0.03 ? ${f(AFRO.H0)} + ${f(AFRO.H1 - AFRO.H0)} * cm.r * (0.55 + 0.45 * vDen) : 0.0;\n  if (vSh > reach) discard;`}
-  vec3 hc = cm.g < 0.5 ? mix(cDark, cMid, cm.g * 2.0) : mix(cMid, cLite, cm.g * 2.0 - 1.0);
-  // (dark deep in it, where it is deep: thin hair at its edges is lit through)
-  hc *= mix(mix(0.85, 0.3, smoothstep(0.4, 2.5, vTh)), 1.0, smoothstep(${f(AFRO.H0)}, ${f(AFRO.H1)}, vSh));
-  diffuseColor.rgb *= hc;
-}`);
+          .replace('#include <common>', '#include <common>\nvarying float vDen;\nvarying vec3 vHp;')
+          .replace('#include <map_fragment>', '#include <map_fragment>\n{ float hz = fract(sin(dot(floor(vHp * 7.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453); if (vDen < 0.98 && hz > vDen) discard; }');
       };
-      m.customProgramCacheKey = () => (core ? 'afro-core' : 'afro-shell');
-      keep(null, m);
-      return m;
-    };
-    // the core: casts the hair's shadow (from its own depth, not the bare
-    // skull's), and is the dark seen between the coils
-    const core = mesh(g, afroMat(true), headG); core.receiveShadow = false;
-    const depthM = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
-    depthM.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aTh;').replace('#include <begin_vertex>', `#include <begin_vertex>\ntransformed += normal * aTh * ${f(AFRO.H0)};`); };
-    depthM.customProgramCacheKey = () => 'afro-depth'; keep(null, depthM);
-    core.customDepthMaterial = depthM;
-    // the shells: no shadows of their own (the core's stands for them), and
-    // none on them (an outer shell would put every inner one in the dark)
-    afroShells = new THREE.InstancedMesh(g, afroMat(false), AFRO.N);
-    afroShells.castShadow = false; afroShells.receiveShadow = false; afroShells.frustumCulled = false;
-    headG.add(afroShells);
+      capM.customProgramCacheKey = () => 'ringlet-cap'; keep(null, capM);
+      const cap = mesh(g, capM, headG); cap.receiveShadow = false;
+      // (the cap's own shadow, from its depth and not the bare skull's)
+      const depthM = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+      depthM.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aTh;').replace('#include <begin_vertex>', `#include <begin_vertex>\ntransformed += normal * aTh * ${H0.toFixed(3)};`); };
+      depthM.customProgramCacheKey = () => 'ringlet-depth'; keep(null, depthM);
+      cap.customDepthMaterial = depthM;
+      // (the curls)
+      const cRoot = new THREE.Color(0x0c0603), cA = new THREE.Color(0x1f1209), cB = new THREE.Color(0x452a18), cc = new THREE.Color();
+      const NC = 760, M = 16, K = 5, DOWN = V(0, -1, 0);
+      const PP = [], NN = [], CC = [], II = [];
+      const P = V(0, 0, 0), T = V(0, 0, 0), Nn = V(0, 0, 0), Bb = V(0, 0, 0);
+      let made = 0, guard = 0;
+      while (made < NC && guard++ < 40000) {
+        const fringe = made > NC * 0.8, crown = !fringe && made > NC * 0.66, inner = !fringe && !crown && made > NC * 0.4;
+        let az, y;
+        if (crown) { az = rng() * TAU; y = lerp(0.55, 1, Math.sqrt(rng())); } else if (fringe) { az = (rng() - 0.5) * 2.3; const la = edgeLa(az); y = la + 0.02 + rng() * 0.1; } else { az = rng() * TAU; y = lerp(-0.8, 1, rng()); }
+        const r = Math.sqrt(1 - y * y), x = Math.sin(az) * r, z = Math.cos(az) * r, la0 = edgeLa(az);
+        if (y <= la0 + 0.02) continue;
+        const n = V(x / RX, y / RY, z / RZ).normalize();
+        const root = V(x * RX, y * RY, z * RZ).add(C0).addScaledVector(n, deep(y, z, y - la0) * H0 * 0.8);
+        // (the way down the surface, or any way round at the crown)
+        let t = DOWN.clone().addScaledVector(n, -DOWN.dot(n));
+        if (t.length() < 0.25) { t.set(rng() - 0.5, 0, rng() - 0.5); t.addScaledVector(n, -t.dot(n)); }
+        t.normalize();
+        const d = n.clone().multiplyScalar(lerp(0.28 + 0.2 * rng(), 0.1 + 0.08 * rng(), smoother((n.y - 0.55) / 0.4))).addScaledVector(t, 0.9).add(V(rng() - 0.5, rng() - 0.5, rng() - 0.5).multiplyScalar(0.7)).normalize();
+        const brow = smoother((z - 0.35) / 0.4) * smoother((y - 0.1) / 0.25) * (1 - smoother((y - 0.6) / 0.3));
+        const low = smoother((y + 0.85) / 0.7);
+        const L = lerp(lerp(1.1, 2.5, low) * (0.8 + 0.4 * rng()), 1.4 + 0.4 * rng(), brow) * (inner ? 0.6 : rng() < 0.35 ? 0.75 : 1);
+        const sm = inner ? 0.62 : rng() < 0.35 ? 0.7 : 1, Rh = (0.45 + 0.2 * rng()) * sm, turns = 1.5 + 0.8 * rng(), dir = rng() < 0.5 ? -1 : 1, ang0 = rng() * TAU, rt0 = (0.38 + 0.08 * rng()) * sm;
+        const ref = Math.abs(d.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0);
+        const u = V().crossVectors(d, ref).normalize(), w = V().crossVectors(d, u);
+        const tone = rng(), shade = 0.8 + 0.4 * rng();
+        // (a spine with a droop, a helix wound round it)
+        const pts = [];
+        for (let j = 0; j <= M; j++) {
+          const s = j / M, ang = ang0 + dir * s * turns * TAU, amp = Rh * (1 - 0.3 * s) * smoother(s / 0.2);
+          pts.push(root.clone().addScaledVector(d, L * s).addScaledVector(DOWN, 0.35 * L * s * s).addScaledVector(u, Math.cos(ang) * amp).addScaledVector(w, Math.sin(ang) * amp));
+        }
+        // (a tube about the points, carried along them, thinning to the tip)
+        const base = PP.length / 3;
+        for (let j = 0; j <= M; j++) {
+          P.copy(pts[j]); T.copy(pts[Math.min(M, j + 1)]).sub(pts[Math.max(0, j - 1)]).normalize();
+          if (j === 0) Nn.copy(Math.abs(T.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0)); Nn.addScaledVector(T, -Nn.dot(T)).normalize();
+          Bb.crossVectors(T, Nn);
+          const s = j / M, rad = rt0 * (0.7 + 0.3 * smoother(s / 0.2)) * (1 - 0.82 * Math.pow(s, 1.6));
+          cc.copy(cRoot).lerp(cc.copy(cA).lerp(cB, tone), smoother(s / 0.4)).lerp(cB, 0.25 * s * s).multiplyScalar(shade);
+          for (let k = 0; k < K; k++) {
+            const a = (k / K) * TAU, ca = Math.cos(a), sa = Math.sin(a), dx = Nn.x * ca + Bb.x * sa, dy = Nn.y * ca + Bb.y * sa, dz = Nn.z * ca + Bb.z * sa;
+            PP.push(P.x + dx * rad, P.y + dy * rad, P.z + dz * rad); NN.push(dx, dy, dz); CC.push(cc.r, cc.g, cc.b);
+          }
+        }
+        for (let j = 0; j < M; j++) for (let k = 0; k < K; k++) {
+          const a = base + j * K + k, b = base + j * K + (k + 1) % K, c = base + (j + 1) * K + k, e = base + (j + 1) * K + (k + 1) % K;
+          II.push(a, b, c, b, e, c);
+        }
+        made++;
+      }
+      const gc = new THREE.BufferGeometry();
+      gc.setAttribute('position', new THREE.Float32BufferAttribute(PP, 3)); gc.setAttribute('normal', new THREE.Float32BufferAttribute(NN, 3));
+      gc.setAttribute('color', new THREE.Float32BufferAttribute(CC, 3)); gc.setIndex(II); gc.computeBoundingSphere(); keep(gc);
+      const curlM = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.62, specularIntensity: 0.32, sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0x5a3e2c) }); keep(null, curlM);
+      const curls = mesh(gc, curlM, headG); curls.castShadow = true; curls.receiveShadow = true;
+    }
   }
 
   // ---- The legs: black satin breeches, white silk stockings, black shoes
@@ -1235,7 +1230,7 @@ export async function makeGame(ctx) {
     a.sleeveG = makeSleeve();
     a.sleeve = new THREE.Mesh(a.sleeveG, sleeveMat); a.sleeve.castShadow = true; a.sleeve.receiveShadow = true; a.sleeve.frustumCulled = false; body.add(a.sleeve);
     a.cuff = new THREE.Group(); body.add(a.cuff);
-    const cm = new THREE.Mesh(cuffG, sleeveMat); cm.castShadow = true; a.cuff.add(cm);
+    const cm = new THREE.Mesh(cuffG, cuffMat); cm.castShadow = true; a.cuff.add(cm);
     a.cuff.add(new THREE.Mesh(cuffBandG, braid));
     a.cuff.add(new THREE.Mesh(ruffG, lace), new THREE.Mesh(shirtG, linen));
     a.hand = makeHand(side);
@@ -1813,7 +1808,6 @@ export async function makeGame(ctx) {
     scene.remove(aut, key, key.target, rimL, rimL.target, fill, fill.target, wash, wash.target);
     lights.edgeSpot.angle = spot0; lights.edgeSpot.color.setHex(spotC0);
     if (tokMesh) tokMesh.dispose();
-    if (afroShells) afroShells.dispose();
     key.shadow.dispose();
     made.geos.forEach(g => g.dispose());
     made.mats.forEach(m => m.dispose());
