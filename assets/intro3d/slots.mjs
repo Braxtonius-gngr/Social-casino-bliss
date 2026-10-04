@@ -66,7 +66,7 @@
 const DEG = Math.PI / 180;
 const TAU = Math.PI * 2;
 
-export const HOLD = { n: [0, -1, 0.1], hd: [-0.8, -0.2, 0.55], along: 0.8, out: 2.65, curl: 1.1, thumb: 1.3 };
+export const HOLD = { n: [0, -1, 0.1], hd: [-0.8, -0.2, 0.55], along: 0.8, out: 3.15, curl: 1.1, thumb: 1.3 };
 export const TIER_NAMES = { standard: 'Standard Pull', hardways: 'Three Sevens', vault: 'The Jackpot', edge: 'On a Tooth' };
 
 // The reels: twelve stops each, the strips the order of the symbols round
@@ -106,7 +106,7 @@ const WIN = { y: 27, w: 12.4, h: 7.6 };
 const REEL = { r: 3.7, w: 3.5, gap: 0.55 };
 // The lever at the desk's right (his right: -x), clear of the top's
 // overhang; its ball; its swing (toward the lens is +).
-const LEVER = { x: -DESK.w / 2 - DESK.over - 2.4, y: 46, z: -11, len: 21, rest: 8 * DEG, pulled: -46 * DEG, ball: 1.7 };
+const LEVER = { x: -DESK.w / 2 - DESK.over - 2.4, y: 46, z: -11, len: 21, rest: 8 * DEG, pulled: -46 * DEG, ball: 2.2 };
 // The hand bell on the desk at his left.
 const BELL = { x: 15, z: -4, h: 5.0, r: 2.8, handle: 4.0 };
 const TOKEN = { r: 1.1, th: 0.2 };
@@ -210,7 +210,7 @@ export async function makeGame(ctx) {
   };
   // (tone on tone, as a damask is: the pattern woven in the ground's own
   // colour and read by its sheen; the gold is in the braid alone)
-  const vestArt = damask('#08210f', '#12381f', '#000');
+  const vestArt = damask('#0a2812', '#2c6e3e', '#000');
   // the coat: a fine silk velvet in the owner's money green - dark where
   // it faces the lamp, its pile catching light where the cloth turns away;
   // the waistcoat (a damask, its motif a little over two centimetres) and
@@ -223,18 +223,18 @@ export async function makeGame(ctx) {
   // (a velvet's pile scatters the light broadly and soft, lit most where
   // the cloth turns from the lamp - not a satin's bright, tight sheen)
   const velvet = (color, sheenColor) => {
-    const m = new THREE.MeshPhysicalMaterial({ color, roughness: 0.94, specularIntensity: 0.1, sheen: 0.85, sheenRoughness: 0.62, sheenColor: new THREE.Color(sheenColor), normalMap: pileTex, normalScale: new THREE.Vector2(0.45, 0.45) });
+    const m = new THREE.MeshPhysicalMaterial({ color, roughness: 0.94, specularIntensity: 0.1, sheen: 1, sheenRoughness: 0.5, sheenColor: new THREE.Color(sheenColor), normalMap: pileTex, normalScale: new THREE.Vector2(0.45, 0.45) });
     keep(null, m);
     return m;
   };
-  const coat = velvet(0x0b2c18, 0x2a5a3e);
-  const sleeveMat = velvet(0x0b2c18, 0x2a5a3e);
+  const coat = velvet(0x0b2c18, 0x3f8058);
+  const sleeveMat = velvet(0x0b2c18, 0x3f8058);
   sleeveMat.side = THREE.DoubleSide;
-  const cuffMat = velvet(0x072012, 0x1f4a31);
+  const cuffMat = velvet(0x072012, 0x2f6a46);
   cuffMat.side = THREE.DoubleSide;
   // (the waistcoat: a darker green than the coat, but green - a silk
   // damask whose sheen reads where it turns)
-  const vest = silk(vestArt, [30, 20], 0.64, 0x215a37); vest.sheen = 0.42; vest.normalScale.set(0.32, 0.32);
+  const vest = silk(vestArt, [30, 20], 0.64, 0x2f7a49); vest.sheen = 0.42; vest.normalScale.set(0.32, 0.32);
   // the braid: gold thread woven flat in a herringbone, along every edge
   const braidTex = (() => {
     const c = canvas(32, 128, (g, W, Hh) => {
@@ -321,14 +321,32 @@ export async function makeGame(ctx) {
   // pleated on its rings, the folds running down from them and opening
   // into softer waves below, none quite like the next). Velvet: dark where
   // it faces the lamp, its pile catching light where the folds turn away.
+  // The room's own back wall cuts across the line he sits on, so the drape
+  // does not run on into it (a hard edge beside a grey void): it turns the
+  // corner there and hangs along the wall, pole and all.
   {
-    const DR = { z: -100, top: 222, floor: -DAIS.h, W: 500, pleats: 32 };
+    const DR = { z: -100, top: 222, floor: -DAIS.h, R: 410, Lw: 330 };
+    const th = AUT.yaw, cth = Math.cos(th), sth = Math.sin(th);
+    const wallZ = (room.backdropZ === undefined ? -420 : room.backdropZ) + 16;
+    // (the corner: where his drape line meets the wall, in his frame)
+    const xL = (wallZ - AUT.z - DR.z * cth) / -sth;
+    const dL = [-cth, -sth], nL = [-sth, cth];
+    const L1 = DR.R - xL, Ltot = DR.Lw + L1, pleats = Math.round(Ltot / 15.6);
+    const BL = 30;
+    // (the path from the wall's far end to the right end: its point and the
+    // side the cloth hangs toward, turned smoothly through the corner)
+    const at = s => {
+      let x, z, a;
+      if (s < DR.Lw) { x = xL + dL[0] * (DR.Lw - s); z = DR.z + dL[1] * (DR.Lw - s); a = 0; } else { x = xL + (s - DR.Lw); z = DR.z; a = 1; }
+      const k = smoother((s - (DR.Lw - BL)) / (2 * BL)), nx = lerp(nL[0], 0, k), nz = lerp(nL[1], 1, k), nl = Math.hypot(nx, nz);
+      return { x, z, nx: nx / nl, nz: nz / nl };
+    };
     const drapeM = new THREE.MeshPhysicalMaterial({ color: 0x2a0a10, roughness: 0.94, sheen: 1, sheenColor: new THREE.Color(0x8a3442), sheenRoughness: 0.42, side: THREE.DoubleSide });
     keep(null, drapeM);
     const p1 = rng() * TAU, p2 = rng() * TAU, p3 = rng() * TAU;
-    // (a pleat's phase across the cloth: a little uneven, as hung cloth is)
-    const phase = u => u * DR.pleats * TAU + 0.9 * Math.sin(u * 3.1 * TAU + p1) + 0.5 * Math.sin(u * 7.3 * TAU + p2);
-    const UN = 320, VN = 48, pos = [], ids = [];
+    // (a pleat's phase along the cloth: a little uneven, as hung cloth is)
+    const phase = u => u * pleats * TAU + 0.9 * Math.sin(u * 3.1 * TAU * (Ltot / 500) + p1) + 0.5 * Math.sin(u * 7.3 * TAU * (Ltot / 500) + p2);
+    const UN = 600, VN = 48, pos = [], ids = [];
     for (let j = 0; j <= VN; j++) {
       const y = lerp(DR.top, DR.floor, j / VN), down = (DR.top - y) / (DR.top - DR.floor);
       const amp = 4.6 + 1.6 * down, brk = Math.max(0, DR.floor + 9 - y);
@@ -336,24 +354,31 @@ export async function makeGame(ctx) {
         const u = i / UN, sw = Math.sin(phase(u)), fold = Math.sign(sw) * Math.pow(Math.abs(sw), 0.75);
         // (the folds widen a touch as they fall, the cloth bows gently,
         // and the hem kicks forward where it breaks on the floor)
-        const x = (u - 0.5) * DR.W + 1.5 * down * Math.sin(phase(u) * 0.5);
-        pos.push(x, y, DR.z + amp * fold + 3 * Math.sin(u * 1.7 * TAU + p3) * down + brk * 0.8 * (0.6 + 0.4 * fold));
+        const q = at(Math.min(Ltot, Math.max(0, u * Ltot + 1.5 * down * Math.sin(phase(u) * 0.5))));
+        const off = amp * fold + 3 * Math.sin(u * 1.7 * TAU * (Ltot / 500) + p3) * down + brk * 0.8 * (0.6 + 0.4 * fold);
+        pos.push(q.x + q.nx * off, y, q.z + q.nz * off);
       }
     }
     for (let j = 0; j < VN; j++) for (let i = 0; i < UN; i++) { const a = j * (UN + 1) + i, b = a + UN + 1; ids.push(a, b, a + 1, a + 1, b, b + 1); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(ids); g.computeVertexNormals();
     mesh(g, drapeM, stage, false);
-    // (the pole, its finials, and a ring at each pleat of the heading)
-    const poleL = DR.W + 30;
-    const pole = new THREE.CylinderGeometry(2.2, 2.2, poleL, 16); pole.rotateZ(Math.PI / 2); keep(pole);
-    mesh(pole, gilt, stage, false).position.set(0, DR.top + 7, DR.z + 1);
+    // (the pole - along the line, then along the wall - its finials, and a
+    // ring at each pleat of the heading)
+    const py = DR.top + 7;
+    const pole = (len, x, z, rotY) => { const gg = new THREE.CylinderGeometry(2.2, 2.2, len, 16); gg.rotateZ(Math.PI / 2); keep(gg); const m = mesh(gg, gilt, stage, false); m.position.set(x, py, z); m.rotation.y = rotY; };
+    pole(L1 + 15, xL + (L1 + 15) / 2 - 0, DR.z + 1, 0);
+    { const e = at(0), mx = (e.x + xL) / 2, mz = (e.z + DR.z) / 2; pole(DR.Lw + 1, mx + nL[0], mz + nL[1], Math.PI - th); }
     const fin = new THREE.SphereGeometry(4.2, 20, 14); keep(fin);
-    [-1, 1].forEach(sd => mesh(fin, gilt, stage, false).position.set(sd * poleL / 2, DR.top + 7, DR.z + 1));
-    const ring = new THREE.TorusGeometry(3.0, 0.45, 8, 20); ring.rotateY(Math.PI / 2); keep(ring);
-    for (let k = 0; k <= DR.pleats; k++) {
+    [[xL + L1 + 15, DR.z + 1], [at(0).x, at(0).z + 1], [xL, DR.z + 1]].forEach(([x, z]) => mesh(fin, gilt, stage, false).position.set(x, py, z));
+    const ring = new THREE.TorusGeometry(3.0, 0.45, 8, 20); keep(ring);
+    for (let k = 0; k <= pleats; k++) {
       // (each ring on a crest of the heading: where the pleat's phase is a quarter turn)
-      let u = (k + 0.25) / DR.pleats; for (let it = 0; it < 6; it++) u -= (phase(u) - (k + 0.25) * TAU) / (DR.pleats * TAU);
-      if (u >= 0 && u <= 1) mesh(ring, gilt, stage, false).position.set((u - 0.5) * DR.W, DR.top + 7, DR.z + 1);
+      let u = (k + 0.25) / pleats; for (let it = 0; it < 6; it++) u -= (phase(u) - (k + 0.25) * TAU) / (pleats * TAU);
+      if (u < 0 || u > 1) continue;
+      const q = at(u * Ltot), r = mesh(ring, gilt, stage, false);
+      r.position.set(q.x + q.nx, py, q.z + q.nz);
+      // (its hoop opens along the pole: the main run's pole is the stage's x axis, the wall's is the leg's)
+      r.rotation.y = (u * Ltot < DR.Lw ? Math.PI - th : 0) + Math.PI / 2;
     }
   }
 
@@ -455,7 +480,11 @@ export async function makeGame(ctx) {
     const reach = -DESK.w / 2 - LEVER.x;          // (from the apron's side out)
     const boss = mesh(new THREE.CylinderGeometry(2.0, 2.4, reach, 24), gilt, lever);
     boss.rotation.z = Math.PI / 2; boss.position.x = reach / 2;
-    mesh(new THREE.CylinderGeometry(0.5, 0.7, LEVER.len, 14), brass, lever).position.y = LEVER.len / 2;
+    mesh(new THREE.CylinderGeometry(0.65, 0.9, LEVER.len, 16), brass, lever).position.y = LEVER.len / 2;
+    // (its mount: a gilt flange where the boss meets the apron, a hub at the pivot with its cap, so the arm is seen to hang from something)
+    const flange = mesh(new THREE.CylinderGeometry(3.5, 3.5, 0.8, 32), gilt, lever); flange.rotation.z = Math.PI / 2; flange.position.x = reach - 0.2;
+    mesh(new THREE.SphereGeometry(2.7, 24, 16), gilt, lever);
+    const cap = mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.5, 16), brass, lever); cap.rotation.z = Math.PI / 2; cap.position.x = -2.6;
     const ivory = new THREE.MeshPhysicalMaterial({ color: 0xf1e6c8, roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.1 }); keep(null, ivory);
     mesh(new THREE.SphereGeometry(LEVER.ball, 28, 20), ivory, lever).position.y = LEVER.len + LEVER.ball * 0.8;
     mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.8, 16), gilt, lever).position.y = LEVER.len;
@@ -487,11 +516,11 @@ export async function makeGame(ctx) {
   // His profile (radius, height above the hips), and the coat's section: a
   // superellipse in front (flat across the chest, where the window is), an
   // ellipse behind, 0.64 as deep as wide.
-  const PROF = [[13.0, -2], [12.4, 1], [11.0, 5], [10.2, 8], [10.7, 13], [11.6, 19], [12.0, 25], [11.8, 30], [11.2, 33.5], [9.4, 36.2], [6.8, 38.4], [4.4, 39.6], [3.6, 40.2]];
-  const DEP = 0.64;
+  const PROF = [[13.0, -2], [12.0, 1], [10.0, 5], [8.5, 10], [9.2, 15], [10.3, 21], [11.2, 27], [11.7, 31], [11.3, 33.5], [9.4, 36.2], [6.8, 38.4], [4.4, 39.6], [3.6, 40.2]];
+  const DEP = 0.6;
   // (the coat over it: a shell of its own, standing off the waistcoat, its
   // skirts flaring over the stool's cushion, open down the front)
-  const PROFC = [[15.2, -3.2], [14.3, -1], [12.6, 2], [11.5, 5], [10.9, 8], [11.4, 13], [12.3, 19], [12.7, 25], [12.5, 30], [11.9, 33.5], [10.0, 36.2], [7.4, 38.4], [5.6, 39.2], [4.5, 39.8]];
+  const PROFC = [[15.4, -3.2], [14.0, -1], [11.8, 2], [10.2, 6], [9.4, 10], [10.2, 15], [11.5, 21], [12.3, 27], [12.7, 31], [12.3, 33.5], [10.0, 36.2], [7.4, 38.4], [5.6, 39.2], [4.5, 39.8]];
   const radAt = (P, y) => {
     if (y <= P[0][1]) return P[0][0];
     for (let i = 0; i + 1 < P.length; i++) if (y <= P[i + 1][1]) return lerp(P[i][0], P[i + 1][0], clamp01((y - P[i][1]) / (P[i + 1][1] - P[i][1])));
@@ -523,6 +552,10 @@ export async function makeGame(ctx) {
         if (!(Math.abs(angOf(cx, cz, radAt(P, cy))) < openAt(cy))) keepIdx.push(a, b, c);
       }
       g.setIndex(keepIdx);
+      // (the cloth's own value: lit at the shoulders, deeper toward the hem, and a crease dark at the waist where it is gathered)
+      const col = new Float32Array(p.count * 3);
+      for (let i = 0; i < p.count; i++) { const y = p.getY(i), v = lerp(0.55, 1.0, smoother((y - 1) / 30)) * (1 - 0.22 * Math.exp(-(((y - 10.5) / 3.2) ** 2))); col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = v; }
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     }
     g.computeVertexNormals();
     return g;
@@ -544,7 +577,7 @@ export async function makeGame(ctx) {
   }), false);
   holeTex.channel = 1;
   const vestCut = vest.clone(); vestCut.alphaMap = holeTex; vestCut.alphaTest = 0.5; vestCut.side = THREE.DoubleSide; keep(null, vestCut);
-  const coatSide = coat.clone(); coatSide.side = THREE.DoubleSide; keep(null, coatSide);
+  const coatSide = coat.clone(); coatSide.side = THREE.DoubleSide; coatSide.vertexColors = true; keep(null, coatSide);
   { const m = new THREE.Mesh(torso, vestCut); m.castShadow = true; m.receiveShadow = true; body.add(m); }
   { const g = lathe(PROFC, true); keep(g); const m = new THREE.Mesh(g, coatSide); m.castShadow = true; m.receiveShadow = true; body.add(m); }
   // (a point on the coat at angle a round, height y, off it by lift; and
@@ -664,16 +697,18 @@ export async function makeGame(ctx) {
       const gt = texOf(canvas(512, 512, (g, W, Hh) => {
         // (a ring round the bezel - the window itself left clear - a soft
         // halo out from it, and rays: the light of a lamp behind a pane)
-        const r = g.createRadialGradient(W / 2, Hh / 2, 0, W / 2, Hh / 2, W / 2); r.addColorStop(0, 'rgba(255,180,80,0)'); r.addColorStop(0.2, 'rgba(255,180,80,0)'); r.addColorStop(0.3, 'rgba(255,190,90,0.5)'); r.addColorStop(0.62, 'rgba(255,170,70,0.2)'); r.addColorStop(1, 'rgba(255,160,60,0)');
+        const r = g.createRadialGradient(W / 2, Hh / 2, 0, W / 2, Hh / 2, W / 2); r.addColorStop(0, 'rgba(255,160,70,0)'); r.addColorStop(0.2, 'rgba(255,160,70,0)'); r.addColorStop(0.3, 'rgba(255,170,80,0.34)'); r.addColorStop(0.62, 'rgba(255,150,60,0.14)'); r.addColorStop(1, 'rgba(255,140,50,0)');
         g.fillStyle = r; g.fillRect(0, 0, W, Hh);
-        g.save(); g.translate(W / 2, Hh / 2); g.globalCompositeOperation = 'lighter';
-        for (let k = 0; k < 22; k++) {
-          const a = (k / 22) * TAU + 0.07 * Math.sin(k * 2.7), len = W * (0.34 + 0.12 * Math.sin(k * 1.9)), w0 = 0.032 + 0.018 * Math.abs(Math.sin(k * 3.3));
-          const rg = g.createLinearGradient(0, 0, Math.cos(a) * len, Math.sin(a) * len); rg.addColorStop(0, 'rgba(255,214,140,0)'); rg.addColorStop(0.18, 'rgba(255,214,140,0.5)'); rg.addColorStop(1, 'rgba(255,190,100,0)');
-          g.fillStyle = rg; g.beginPath(); g.moveTo(Math.cos(a - w0) * W * 0.1, Math.sin(a - w0) * W * 0.1); g.lineTo(Math.cos(a) * len, Math.sin(a) * len); g.lineTo(Math.cos(a + w0) * W * 0.1, Math.sin(a + w0) * W * 0.1); g.closePath(); g.fill();
+        // (the rays: a few broad shafts drawn on their own sheet and softened once - never a fan of thin lines)
+        const sheet = document.createElement('canvas'); sheet.width = W; sheet.height = Hh;
+        const sg = sheet.getContext('2d'); sg.translate(W / 2, Hh / 2); sg.globalCompositeOperation = 'lighter';
+        for (let k = 0; k < 13; k++) {
+          const a = (k / 13) * TAU + 0.12 * Math.sin(k * 2.7), len = W * (0.36 + 0.1 * Math.sin(k * 1.9)), w0 = 0.055 + 0.035 * Math.abs(Math.sin(k * 3.3));
+          const rg = sg.createLinearGradient(0, 0, Math.cos(a) * len, Math.sin(a) * len); rg.addColorStop(0, 'rgba(255,200,120,0)'); rg.addColorStop(0.2, 'rgba(255,200,120,0.3)'); rg.addColorStop(1, 'rgba(255,170,90,0)');
+          sg.fillStyle = rg; sg.beginPath(); sg.moveTo(Math.cos(a - w0) * W * 0.1, Math.sin(a - w0) * W * 0.1); sg.lineTo(Math.cos(a) * len, Math.sin(a) * len); sg.lineTo(Math.cos(a + w0) * W * 0.1, Math.sin(a + w0) * W * 0.1); sg.closePath(); sg.fill();
         }
-        g.restore();
-        g.filter = 'blur(14px)'; g.strokeStyle = 'rgba(255,214,140,0.9)'; g.lineWidth = 26;
+        g.save(); g.filter = 'blur(7px)'; g.drawImage(sheet, 0, 0); g.restore();
+        g.filter = 'blur(14px)'; g.strokeStyle = 'rgba(255,200,130,0.8)'; g.lineWidth = 26;
         const w2 = W / 2.6 / 2 + 24, h2 = Hh / 3.2 / 2 + 24; g.beginPath(); g.roundRect(W / 2 - w2, Hh / 2 - h2, 2 * w2, 2 * h2, 30); g.stroke();
       }), true);
       const gmat = new THREE.MeshBasicMaterial({ map: gt, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }); keep(null, gmat);
@@ -736,13 +771,15 @@ export async function makeGame(ctx) {
     // hem scalloped and rippling, each tier a little proud of the one
     // behind it so the folds throw their shade on it)
     for (let k = 0; k < 3; k++) {
-      const top = 38.6 - k * 1.1, len = [5.6, 4.4, 3.2][k], W0 = 2.5 - k * 0.2, W1 = 4.9 - k * 0.6, ph = k * 1.3;
+      const top = 38.6 - k * 1.1, len = [5.6, 4.4, 3.2][k], W0 = 2.5 - k * 0.2, W1 = 4.9 - k * 0.6, ph = k * 1.3, nP = [4.5, 3.6, 5.3][k];
       const g = new THREE.PlaneGeometry(1, 1, 96, 14), p = g.attributes.position, uv = g.attributes.uv;
       for (let i = 0; i < p.count; i++) {
         const u = p.getX(i) + 0.5, v = p.getY(i) + 0.5, f = 1 - v, wd = lerp(W0, W1, f), x = (u - 0.5) * wd;
         // (the hem rides up and down on its pleats, and the pleats deepen toward it)
-        const wave = Math.sin(u * TAU * 4.5 + ph), y = top - f * len + 0.22 * f * f * wave;
-        const pleat = (0.2 + 0.34 * f) * (0.5 - 0.5 * Math.cos(u * TAU * 4.5 + ph)) * (0.4 + 0.6 * f);
+        // (no two pleats alike: the count drifts across the width, a finer ripple rides on it, and the middle sags)
+        const warp = 0.9 * Math.sin(u * TAU * 1.3 + k * 2.1), wave = Math.sin(u * TAU * nP + ph + warp) + 0.35 * Math.sin(u * TAU * 8.3 + k), sag = 0.5 * f * f * (0.5 + 0.5 * Math.cos((u - 0.5) * TAU * 0.9));
+        const y = top - f * len + 0.22 * f * f * wave - sag;
+        const pleat = (0.2 + 0.34 * f) * (0.5 - 0.5 * Math.cos(u * TAU * nP + ph + warp)) * (0.4 + 0.6 * f) + 0.07 * f * Math.sin(u * TAU * 9.5 + ph * 2);
         p.setXYZ(i, x, y, frontZ(y, x) + 0.28 + k * 0.42 + pleat + 0.3 * f * f);
         uv.setXY(i, u * wd / 3.2, (v * len) / 2.4);
       }
@@ -767,19 +804,19 @@ export async function makeGame(ctx) {
     dz += 0.02 * (gauss(x, y, 0.28, 0.1, 0.16, 0.05) + gauss(x, y, -0.28, 0.1, 0.16, 0.05));
     dz -= 0.09 * (gauss(x, y, EYE.x, EYE.y, 0.17, 0.12) + gauss(x, y, -EYE.x, EYE.y, 0.17, 0.12));
     // the nose: a small bridge, a round tip turned up, its wings
-    dz += 0.13 * gauss(x, 0, 0, 0, 0.065, 1) * clamp01((0.02 - y) / 0.22) * clamp01((y + 0.27) / 0.08);
-    dz += 0.12 * gauss(x, y, 0, -0.215, 0.065, 0.055);
-    dz += 0.055 * (gauss(x, y, 0.07, -0.245, 0.04, 0.035) + gauss(x, y, -0.07, -0.245, 0.04, 0.035));
+    dz += 0.095 * gauss(x, 0, 0, 0, 0.07, 1) * clamp01((0.02 - y) / 0.22) * clamp01((y + 0.27) / 0.08);
+    dz += 0.085 * gauss(x, y, 0, -0.205, 0.075, 0.06);
+    dz += 0.04 * (gauss(x, y, 0.07, -0.24, 0.045, 0.038) + gauss(x, y, -0.07, -0.24, 0.045, 0.038));
     // the cheeks: full, low
-    dz += 0.09 * (gauss(x, y, 0.38, -0.2, 0.19, 0.16) + gauss(x, y, -0.38, -0.2, 0.19, 0.16));
+    dz += 0.125 * (gauss(x, y, 0.4, -0.2, 0.23, 0.2) + gauss(x, y, -0.4, -0.2, 0.23, 0.2));
     // the philtrum; the lips, the lower the fuller, parted by a line; the
     // groove under them; the chin, a small round
     dz -= 0.012 * gauss(x, y, 0, -0.33, 0.028, 0.035);
-    dz += 0.04 * gauss(x, y, 0, -0.405, 0.115, 0.03);
-    dz += 0.05 * gauss(x, y, 0, -0.47, 0.1, 0.032);
+    dz += 0.052 * gauss(x, y, 0, -0.405, 0.12, 0.034);
+    dz += 0.072 * gauss(x, y, 0, -0.475, 0.11, 0.038);
     dz -= 0.02 * gauss(x, y, 0, -0.435, 0.1, 0.009);
     dz -= 0.022 * gauss(x, y, 0, -0.56, 0.12, 0.03);
-    dz += 0.05 * gauss(x, y, 0, -0.69, 0.13, 0.08);
+    dz += 0.075 * gauss(x, y, 0, -0.68, 0.16, 0.1);
     return dz;
   };
   const unitZ = (x, y) => Math.sqrt(Math.max(0, 1 - x * x - y * y));
@@ -800,9 +837,9 @@ export async function makeGame(ctx) {
       const y = p.getY(i), fr = clamp01(z * 1.6);
       // the jaw: a child's - only a little narrower below the cheeks
       const jaw = clamp01((-y - 0.12) / 0.8);
-      x *= 1 - 0.56 * Math.pow(jaw, 1.7); z *= 1 - 0.1 * jaw;
+      x *= 1 - 0.5 * Math.pow(jaw, 2.1); z *= 1 - 0.1 * jaw;
       z += relief(x, y) * fr;
-      p.setXYZ(i, x * HEAD.rx, (y > -0.52 ? y : -0.52 + (y + 0.52) * 0.78) * HEAD.ry, z * HEAD.rz);
+      p.setXYZ(i, x * HEAD.rx, (y > -0.3 ? y : y > -0.52 ? -0.3 + (y + 0.3) * 0.86 : -0.489 + (y + 0.52) * 0.72) * HEAD.ry, z * HEAD.rz);
       uv.setXY(i, 0.5 + x * 0.5, 0.5 + y * 0.5);
     }
     g.computeVertexNormals();
@@ -830,7 +867,7 @@ export async function makeGame(ctx) {
       blob(0, 0.45, 0.5, 0.12, 'rgba(150,100,88,0.1)');
       // (rosy: the cheeks high and strong, the tip of the nose, the chin,
       // the lids)
-      [-1, 1].forEach(s => { blob(s * 0.4, -0.2, 0.58, 0.34, 'rgba(222,118,108,0.2)'); blob(s * 0.38, -0.2, 0.24, 0.16, 'rgba(226,108,106,0.1)'); });
+      [-1, 1].forEach(s => { blob(s * 0.42, -0.2, 0.62, 0.36, 'rgba(222,118,108,0.26)'); blob(s * 0.4, -0.2, 0.28, 0.19, 'rgba(228,104,104,0.16)'); blob(s * 0.8, -0.05, 0.22, 0.3, 'rgba(206,110,98,0.2)'); blob(s * EYE.x, EYE.y, 0.34, 0.2, 'rgba(112,66,62,0.2)'); blob(s * 0.13, EYE.y + 0.02, 0.07, 0.11, 'rgba(120,70,66,0.3)'); });
       // (the nose: its sides in shade, the bridge and the tip catching the
       // light, the wings creased, the nostrils dark, a shade under the tip)
       [-1, 1].forEach(s => {
@@ -844,9 +881,10 @@ export async function makeGame(ctx) {
       blob(0, -0.305, 0.09, 0.026, 'rgba(116,64,60,0.14)');
       // (the brim's shade on the forehead, painted in: the hat is always the
       // same height over it, and the lamp comes from above it)
-      blob(0, 0.76, 1.0, 0.22, 'rgba(84,44,34,0.34)');
-      blob(0, 0.9, 1.0, 0.2, 'rgba(70,36,28,0.4)');
-      blob(0, -0.22, 0.08, 0.06, 'rgba(226,118,108,0.22)');
+      blob(0, 0.74, 1.0, 0.24, 'rgba(84,44,34,0.46)');
+      blob(0, 0.9, 1.0, 0.22, 'rgba(70,36,28,0.56)');
+      blob(0, 0.58, 1.0, 0.14, 'rgba(96,52,42,0.24)');
+      blob(0, -0.21, 0.09, 0.07, 'rgba(228,112,104,0.32)');
       blob(0, -0.7, 0.15, 0.09, 'rgba(226,118,108,0.22)');
       [-1, 1].forEach(s => blob(s * EYE.x, EYE.y + 0.07, 0.2, 0.08, 'rgba(214,132,124,0.22)'));
       // (each lid's crease, a soft shade over the opening; the opening's
@@ -862,16 +900,16 @@ export async function makeGame(ctx) {
       // (the nostrils)
       [-1, 1].forEach(s => blob(s * 0.058, -0.262, 0.024, 0.017, 'rgba(100,42,44,0.62)'));
       // the mouth: small, the upper lip a bow, the lower full
-      const M = (x, y) => P(x, -0.435 + y), mw = 0.112;
+      const M = (x, y) => P(x, -0.435 + y), mw = 0.12;
       { const g1 = c.createLinearGradient(0, M(0, 0.03)[1], 0, M(0, 0)[1]); g1.addColorStop(0, '#8c4a50'); g1.addColorStop(1, '#a45c60'); c.fillStyle = g1; }
       c.beginPath(); c.moveTo(...M(-mw, 0));
-      c.quadraticCurveTo(...M(-0.055, 0.02), ...M(-0.024, 0.027)); c.quadraticCurveTo(...M(0, 0.017), ...M(0.024, 0.027));
-      c.quadraticCurveTo(...M(0.055, 0.02), ...M(mw, 0)); c.quadraticCurveTo(...M(0, -0.006), ...M(-mw, 0));
+      c.quadraticCurveTo(...M(-0.058, 0.024), ...M(-0.026, 0.033)); c.quadraticCurveTo(...M(0, 0.02), ...M(0.026, 0.033));
+      c.quadraticCurveTo(...M(0.058, 0.024), ...M(mw, 0)); c.quadraticCurveTo(...M(0, -0.006), ...M(-mw, 0));
       c.fill();
-      { const g2 = c.createLinearGradient(0, M(0, 0)[1], 0, M(0, -0.046)[1]); g2.addColorStop(0, '#a85e62'); g2.addColorStop(0.55, '#bc7070'); g2.addColorStop(1, '#c88282'); c.fillStyle = g2; }
-      c.beginPath(); c.moveTo(...M(-mw * 0.85, -0.002)); c.quadraticCurveTo(...M(-0.05, -0.044), ...M(0, -0.046)); c.quadraticCurveTo(...M(0.05, -0.044), ...M(mw * 0.85, -0.002)); c.quadraticCurveTo(...M(0, -0.008), ...M(-mw * 0.88, -0.002));
+      { const g2 = c.createLinearGradient(0, M(0, 0)[1], 0, M(0, -0.058)[1]); g2.addColorStop(0, '#a85e62'); g2.addColorStop(0.55, '#bc7070'); g2.addColorStop(1, '#c88282'); c.fillStyle = g2; }
+      c.beginPath(); c.moveTo(...M(-mw * 0.88, -0.002)); c.quadraticCurveTo(...M(-0.056, -0.054), ...M(0, -0.058)); c.quadraticCurveTo(...M(0.056, -0.054), ...M(mw * 0.88, -0.002)); c.quadraticCurveTo(...M(0, -0.008), ...M(-mw * 0.88, -0.002));
       c.fill();
-      blob(0.01, -0.435 - 0.026, 0.05, 0.014, 'rgba(255,220,220,0.2)');
+      blob(0.01, -0.435 - 0.034, 0.06, 0.016, 'rgba(255,222,222,0.24)');
       [-1, 1].forEach(s => blob(s * mw * 0.96, -0.435, 0.028, 0.02, 'rgba(110,58,58,0.4)'));
       c.strokeStyle = 'rgba(92,26,36,0.75)'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(...M(-mw, 0)); c.quadraticCurveTo(...M(0, -0.008), ...M(mw, 0)); c.stroke();
       // the brows: a soft body of brown, and over it single hairs laid the way
@@ -902,7 +940,7 @@ export async function makeGame(ctx) {
     });
     // (the openings: cut out of the bisque, the eyes behind them)
     const cut = canvas(FS, FS, (c) => { c.fillStyle = '#fff'; c.fillRect(0, 0, FS, FS); c.fillStyle = '#000'; [-1, 1].forEach(s => { almond(c, s); c.fill(); }); });
-    const skin = bisque.clone(); skin.color.setHex(0xffffff); skin.map = texOf(face, true); skin.alphaMap = texOf(cut, false); skin.alphaTest = 0.5; skin.normalMap = poreTex(9); skin.normalScale = new THREE.Vector2(0.3, 0.3); keep(null, skin);
+    const skin = bisque.clone(); skin.color.setHex(0xffffff); skin.map = texOf(face, true); skin.alphaMap = texOf(cut, false); skin.alphaTest = 0.5; skin.normalMap = poreTex(9); skin.normalScale = new THREE.Vector2(0.3, 0.3); skin.emissive = new THREE.Color(0xffffff); skin.emissiveMap = skin.map; skin.emissiveIntensity = 0.13; keep(null, skin);
     mesh(g, skin, headG);
   }
   // the eyes: glass over a painted iris (brown, the fibres drawn in), each
@@ -1056,7 +1094,7 @@ export async function makeGame(ctx) {
       g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
       g.setAttribute('aTh', new THREE.Float32BufferAttribute(th, 1)); g.setAttribute('aDen', new THREE.Float32BufferAttribute(den, 1)); g.setIndex(ids);
       g.boundingSphere = new THREE.Sphere(C0.clone(), 22); keep(g);
-      const capM = new THREE.MeshPhysicalMaterial({ color: 0x2c1a0d, roughness: 0.9, specularIntensity: 0.1, sheen: 0.25, sheenColor: new THREE.Color(0x6a4a34), sheenRoughness: 0.7 });
+      const capM = new THREE.MeshPhysicalMaterial({ color: 0x1b0f08, roughness: 0.9, specularIntensity: 0.1, sheen: 0.25, sheenColor: new THREE.Color(0x6a4a34), sheenRoughness: 0.7 });
       capM.onBeforeCompile = sh => {
         sh.vertexShader = sh.vertexShader
           .replace('#include <common>', '#include <common>\nattribute float aTh;\nattribute float aDen;\nvarying float vDen;\nvarying vec3 vHp;')
@@ -1073,17 +1111,17 @@ export async function makeGame(ctx) {
       depthM.customProgramCacheKey = () => 'ringlet-depth'; keep(null, depthM);
       cap.customDepthMaterial = depthM;
       // (the curls)
-      const cRoot = new THREE.Color(0x0c0603), cA = new THREE.Color(0x1f1209), cB = new THREE.Color(0x452a18), cc = new THREE.Color();
-      const NC = HAT ? 480 : 760, M = 16, K = 5, DOWN = V(0, -1, 0);
+      const cRoot = new THREE.Color(0x090402), cA = new THREE.Color(0x1a0f08), cB = new THREE.Color(0x3d2515), cc = new THREE.Color();
+      const NC = HAT ? 380 : 640, M = 16, K = 6, DOWN = V(0, -1, 0);
       const PP = [], NN = [], CC = [], II = [];
       const P = V(0, 0, 0), T = V(0, 0, 0), Nn = V(0, 0, 0), Bb = V(0, 0, 0);
       let made = 0, guard = 0;
       while (made < NC && guard++ < 40000) {
-        const fringe = made > NC * 0.8, crown = !HAT && !fringe && made > NC * 0.66, inner = !fringe && !crown && made > NC * 0.4;
+        const fringe = made > NC * 0.8, temple = !fringe && made > NC * 0.64, crown = !HAT && !fringe && !temple && made > NC * 0.5, inner = !fringe && !temple && !crown && made > NC * 0.36;
         let az, y;
-        if (crown) { az = rng() * TAU; y = lerp(0.55, 1, Math.sqrt(rng())); } else if (fringe) { az = (rng() - 0.5) * 2.3; const la = edgeLa(az); y = la + 0.02 + rng() * 0.1; } else { az = rng() * TAU; y = lerp(-0.8, 1, rng()); }
+        if (crown) { az = rng() * TAU; y = lerp(0.55, 1, Math.sqrt(rng())); } else if (temple) { az = (rng() < 0.5 ? -1 : 1) * (0.95 + 0.6 * rng()); y = edgeLa(az) + 0.02 + rng() * 0.38; } else if (fringe) { az = (rng() - 0.5) * 2.3; const la = edgeLa(az); y = la + 0.02 + rng() * 0.1; } else { az = rng() * TAU; y = lerp(-0.8, 1, rng()); }
         const r = Math.sqrt(1 - y * y), x = Math.sin(az) * r, z = Math.cos(az) * r, la0 = edgeLa(az);
-        if (y <= la0 + 0.02 || (HAT && y > 0.46)) continue;
+        if (y <= la0 + 0.02 || (HAT && y > 0.38)) continue;
         const n = V(x / RX, y / RY, z / RZ).normalize();
         const root = V(x * RX, y * RY, z * RZ).add(C0).addScaledVector(n, deep(y, z, y - la0) * H0 * 0.8);
         // (the way down the surface, or any way round at the crown)
@@ -1093,8 +1131,8 @@ export async function makeGame(ctx) {
         const d = n.clone().multiplyScalar(lerp(0.28 + 0.2 * rng(), 0.1 + 0.08 * rng(), smoother((n.y - 0.55) / 0.4))).addScaledVector(t, 0.9).add(V(rng() - 0.5, rng() - 0.5, rng() - 0.5).multiplyScalar(0.7)).normalize();
         const brow = smoother((z - 0.35) / 0.4) * smoother((y - 0.1) / 0.25) * (1 - smoother((y - 0.6) / 0.3));
         const low = smoother((y + 0.85) / 0.7);
-        const L = lerp(lerp(1.1, 2.5, low) * (0.8 + 0.4 * rng()), 1.4 + 0.4 * rng(), brow) * (inner ? 0.6 : rng() < 0.35 ? 0.75 : 1);
-        const sm = inner ? 0.62 : rng() < 0.35 ? 0.7 : 1, Rh = (0.45 + 0.2 * rng()) * sm, turns = 1.5 + 0.8 * rng(), dir = rng() < 0.5 ? -1 : 1, ang0 = rng() * TAU, rt0 = (0.38 + 0.08 * rng()) * sm;
+        const L = lerp(lerp(1.2, 2.7, low) * (0.85 + 0.4 * rng()), 1.5 + 0.4 * rng(), brow) * (inner ? 0.65 : rng() < 0.35 ? 0.78 : 1.08);
+        const sm = inner ? 0.62 : rng() < 0.35 ? 0.7 : 1, Rh = (0.52 + 0.2 * rng()) * sm, turns = 1.7 + 0.7 * rng(), dir = rng() < 0.5 ? -1 : 1, ang0 = rng() * TAU, rt0 = (0.5 + 0.1 * rng()) * sm;
         const ref = Math.abs(d.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0);
         const u = V().crossVectors(d, ref).normalize(), w = V().crossVectors(d, u);
         const tone = rng(), shade = 0.8 + 0.4 * rng();
@@ -1110,8 +1148,8 @@ export async function makeGame(ctx) {
           P.copy(pts[j]); T.copy(pts[Math.min(M, j + 1)]).sub(pts[Math.max(0, j - 1)]).normalize();
           if (j === 0) Nn.copy(Math.abs(T.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0)); Nn.addScaledVector(T, -Nn.dot(T)).normalize();
           Bb.crossVectors(T, Nn);
-          const s = j / M, rad = rt0 * (0.7 + 0.3 * smoother(s / 0.2)) * (1 - 0.82 * Math.pow(s, 1.6));
-          cc.copy(cRoot).lerp(cc.copy(cA).lerp(cB, tone), smoother(s / 0.4)).lerp(cB, 0.25 * s * s).multiplyScalar(shade);
+          const s = j / M, rad = rt0 * (0.7 + 0.3 * smoother(s / 0.2)) * (1 - 0.7 * Math.pow(s, 1.8));
+          cc.copy(cRoot).lerp(cc.copy(cA).lerp(cB, tone), smoother(s / (fringe ? 0.75 : 0.5))).lerp(cB, 0.22 * s * s).multiplyScalar(shade);
           for (let k = 0; k < K; k++) {
             const a = (k / K) * TAU, ca = Math.cos(a), sa = Math.sin(a), dx = Nn.x * ca + Bb.x * sa, dy = Nn.y * ca + Bb.y * sa, dz = Nn.z * ca + Bb.z * sa;
             PP.push(P.x + dx * rad, P.y + dy * rad, P.z + dz * rad); NN.push(dx, dy, dz); CC.push(cc.r, cc.g, cc.b);
@@ -1126,7 +1164,7 @@ export async function makeGame(ctx) {
       const gc = new THREE.BufferGeometry();
       gc.setAttribute('position', new THREE.Float32BufferAttribute(PP, 3)); gc.setAttribute('normal', new THREE.Float32BufferAttribute(NN, 3));
       gc.setAttribute('color', new THREE.Float32BufferAttribute(CC, 3)); gc.setIndex(II); gc.computeBoundingSphere(); keep(gc);
-      const curlM = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.62, specularIntensity: 0.32, sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0x5a3e2c) }); keep(null, curlM);
+      const curlM = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.66, specularIntensity: 0.22, sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0x5a3e2c) }); keep(null, curlM);
       const curls = mesh(gc, curlM, headG); curls.castShadow = true; curls.receiveShadow = true;
     }
   }
@@ -1139,26 +1177,34 @@ export async function makeGame(ctx) {
   if (HAT) {
     const hat = new THREE.Group(); hat.position.set(0, 3.5, -0.5); hat.rotation.set(0.04, 0, -0.07); headG.add(hat);
     const felt = new THREE.MeshPhysicalMaterial({ color: 0x17120f, roughness: 0.96, sheen: 0.6, sheenRoughness: 0.55, sheenColor: new THREE.Color(0x4a3f38), side: THREE.DoubleSide }); keep(null, felt);
+    // (felt has a nap: a fine fuzz the lamp breaks up on - bumped, never a flat plastic)
+    const nap = texOf(canvas(256, 256, (c) => {
+      c.fillStyle = '#808080'; c.fillRect(0, 0, 256, 256);
+      for (let k = 0; k < 14000; k++) { const v = Math.round(rng() * 255); c.fillStyle = `rgba(${v},${v},${v},0.35)`; c.beginPath(); c.arc(rng() * 256, rng() * 256, 0.6 + rng() * 1.1, 0, TAU); c.fill(); }
+    }), false, [18, 4]);
+    const nap2 = nap.clone(); nap2.needsUpdate = true; nap2.repeat.set(1, 1); keep(null, null, nap2);
+    const feltCrown = felt.clone(); feltCrown.bumpMap = nap; feltCrown.bumpScale = 0.12; keep(null, feltCrown);
+    const feltBrim = felt.clone(); feltBrim.bumpMap = nap2; feltBrim.bumpScale = 0.12; keep(null, feltBrim);
     // (the crown: a low rounded dome, a little wider front to back as the head is)
     const lathe = new THREE.LatheGeometry([[8.7, 0], [8.5, 3.2], [7.9, 6.2], [7.0, 7.7], [4.9, 8.2], [0, 8.35]].map(([r, y]) => new THREE.Vector2(r, y)), 48);
-    const crown = mesh(lathe, felt, hat); crown.scale.set(1, 1, 1.1);
+    const crown = mesh(lathe, feltCrown, hat); crown.scale.set(1, 1, 1.1);
     // (the brim: out from the crown to a rounded triangle, its sides turned
     // up the more the further out and the further from a corner)
     const AN = 120, RN = 8, rIn = 8.6, th0 = Math.PI;
     const corner = a => Math.pow(0.5 + 0.5 * Math.cos(3 * (a - th0)), 1.4);
-    const rOut = a => 11 + 4.2 * corner(a);
+    const rOut = a => 10.4 + 3.9 * corner(a);
     const lift = (a, s) => Math.pow(s, 2.2) * (0.9 + 5.2 * (1 - corner(a)));
-    const bp = [], bi = [];
+    const bp = [], bi = [], bu = [];
     for (let i = 0; i < AN; i++) {
       const a = (i / AN) * TAU;
-      for (let j = 0; j <= RN; j++) { const s = j / RN, r = lerp(rIn, rOut(a), s); bp.push(Math.sin(a) * r, lift(a, s), Math.cos(a) * r * 1.08); }
+      for (let j = 0; j <= RN; j++) { const s = j / RN, r = lerp(rIn, rOut(a), s); bp.push(Math.sin(a) * r, lift(a, s), Math.cos(a) * r * 1.08); bu.push(Math.sin(a) * r * 0.5, Math.cos(a) * r * 0.5); }
     }
     for (let i = 0; i < AN; i++) for (let j = 0; j < RN; j++) {
       const a = i * (RN + 1) + j, b = ((i + 1) % AN) * (RN + 1) + j;
       bi.push(a, a + 1, b, a + 1, b + 1, b);
     }
-    const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.Float32BufferAttribute(bp, 3)); bg.setIndex(bi); bg.computeVertexNormals();
-    mesh(bg, felt, hat);
+    const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.Float32BufferAttribute(bp, 3)); bg.setAttribute('uv', new THREE.Float32BufferAttribute(bu, 2)); bg.setIndex(bi); bg.computeVertexNormals();
+    mesh(bg, feltBrim, hat);
     // (the braid along the brim's edge, and the band round the crown)
     const edge = new THREE.CatmullRomCurve3(Array.from({ length: 96 }, (_, i) => { const a = (i / 96) * TAU; return V(Math.sin(a) * rOut(a), lift(a, 1), Math.cos(a) * rOut(a) * 1.08); }), true);
     mesh(new THREE.TubeGeometry(edge, 288, 0.26, 6, true), gilt, hat, false);
@@ -1178,20 +1224,27 @@ export async function makeGame(ctx) {
     }
     for (let k = 0; k < NS; k++) { const a = k * 2; fi.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
     const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute(fp, 3)); fg.setAttribute('uv', new THREE.Float32BufferAttribute(fu, 2)); fg.setIndex(fi); fg.computeVertexNormals();
-    const FW = 128, FH = 512;
+    const FW = 192, FH = 768;
     const fmap = texOf(canvas(FW, FH, (c) => {
-      c.fillStyle = '#f2ecdf'; c.fillRect(0, 0, FW, FH);
-      for (let y = 0; y < FH; y += 3) for (const sd of [-1, 1]) { c.strokeStyle = `rgba(${150 + Math.round(rng() * 60)},${140 + Math.round(rng() * 55)},${120 + Math.round(rng() * 50)},0.35)`; c.lineWidth = 1; c.beginPath(); c.moveTo(FW / 2, y); c.lineTo(FW / 2 + sd * FW * 0.5, y + 10); c.stroke(); }
+      c.fillStyle = '#f3ede1'; c.fillRect(0, 0, FW, FH);
+      for (let y = 0; y < FH; y += 3) for (const sd of [-1, 1]) { c.strokeStyle = `rgba(${150 + Math.round(rng() * 60)},${140 + Math.round(rng() * 55)},${120 + Math.round(rng() * 50)},0.3)`; c.lineWidth = 1; c.beginPath(); c.moveTo(FW / 2, y); c.lineTo(FW / 2 + sd * FW * 0.5, y + 14); c.stroke(); }
       c.fillStyle = '#d8cfbd'; c.fillRect(FW / 2 - 1.5, 0, 3, FH);
     }), true);
+    // (the vane: single barbs, each fading from the spine to a soft tip - no hard edge to saw on)
     const fa = texOf(canvas(FW, FH, (c) => {
-      c.fillStyle = '#000'; c.fillRect(0, 0, FW, FH); c.strokeStyle = '#fff'; c.lineWidth = 2.4;
-      for (let y = 0; y < FH; y += 2.6) for (const sd of [-1, 1]) { const len = FW * (0.34 + 0.16 * rng()); c.beginPath(); c.moveTo(FW / 2, y); c.lineTo(FW / 2 + sd * len, y + 9); c.stroke(); }
+      c.fillStyle = '#000'; c.fillRect(0, 0, FW, FH); c.lineCap = 'round';
+      for (let y = 0; y < FH; y += 1.7) for (const sd of [-1, 1]) {
+        const len = FW * (0.36 + 0.14 * rng()), x1 = FW / 2 + sd * len, y1 = y + 12 + rng() * 6;
+        const gr = c.createLinearGradient(FW / 2, 0, x1, 0); gr.addColorStop(0, 'rgba(255,255,255,0.95)'); gr.addColorStop(0.55, 'rgba(255,255,255,0.7)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+        c.strokeStyle = gr; c.lineWidth = 1.1 + rng() * 0.6;
+        c.beginPath(); c.moveTo(FW / 2, y); c.quadraticCurveTo(FW / 2 + sd * len * 0.55, y + 2 + rng() * 3, x1, y1); c.stroke();
+      }
       c.fillStyle = '#fff'; c.fillRect(FW / 2 - 2, 0, 4, FH);
     }), false);
-    const fm = new THREE.MeshStandardMaterial({ map: fmap, alphaMap: fa, alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.92 }); keep(null, fm);
-    const plume = new THREE.Mesh(fg, fm); plume.castShadow = false; plume.receiveShadow = true; keep(fg); hat.add(plume);
-    mesh(new THREE.TubeGeometry(spine, 48, 0.09, 5, false), fm, hat, false);
+    const fm = new THREE.MeshStandardMaterial({ map: fmap, alphaMap: fa, transparent: true, alphaTest: 0.03, depthWrite: false, side: THREE.DoubleSide, roughness: 0.92 }); keep(null, fm);
+    const plume = new THREE.Mesh(fg, fm); plume.castShadow = false; plume.receiveShadow = true; plume.renderOrder = 2; keep(fg); hat.add(plume);
+    const quill = new THREE.MeshStandardMaterial({ color: 0xd9d0bd, roughness: 0.7 }); keep(null, quill);
+    mesh(new THREE.TubeGeometry(spine, 48, 0.085, 5, false), quill, hat, false);
   }
 
   // ---- The legs: black satin breeches, white silk stockings, black shoes
@@ -1235,7 +1288,7 @@ export async function makeGame(ctx) {
     const curve = new THREE.CatmullRomCurve3([A0, S0, E.clone().addScaledVector(u1, -1.8), E.clone().addScaledVector(u2, 1.8), W], false, 'centripetal');
     const pts = curve.getSpacedPoints(SLV.rings);
     const L0 = A0.distanceTo(S0), L1 = S0.distanceTo(E), L2 = E.distanceTo(W), Lt = L0 + L1 + L2;
-    const radAt = f => { const d = f * Lt; return d < L0 ? 3.6 : d < L0 + L1 ? lerp(3.6, 2.8, (d - L0) / L1) : lerp(2.8, 2.35, (d - L0 - L1) / L2) * (1 - 0.3 * smoother((f - 0.9) / 0.1)); };
+    const radAt = f => { const d = f * Lt; return d < L0 ? 3.85 : d < L0 + L1 ? lerp(3.85, 2.8, (d - L0) / L1) : lerp(2.8, 2.35, (d - L0 - L1) / L2) * (1 - 0.3 * smoother((f - 0.9) / 0.1)); };
     const pos = g.attributes.position;
     let N = null;
     for (let i = 0; i <= SLV.rings; i++) {
@@ -1388,9 +1441,11 @@ export async function makeGame(ctx) {
     }
     ruffG.computeVertexNormals(); }
   keep(ruffG);
+  const shoulderCapG = new THREE.SphereGeometry(3.85, 28, 18); shoulderCapG.scale(1, 1.1, 1.02); keep(shoulderCapG);
   const arms = [-1, 1].map(side => {
     const a = { side };
     a.shoulder = V(side * SH.x, SH.y, 0);
+    { const cap = new THREE.Mesh(shoulderCapG, sleeveMat); cap.position.set(side * (SH.x + 0.5), SH.y + 0.3, 0); cap.castShadow = true; cap.receiveShadow = true; body.add(cap); }
     a.root = V(side * (SH.x - 3.6), SH.y + 0.6, 0);
     a.sleeveG = makeSleeve();
     a.sleeve = new THREE.Mesh(a.sleeveG, sleeveMat); a.sleeve.castShadow = true; a.sleeve.receiveShadow = true; a.sleeve.frustumCulled = false; body.add(a.sleeve);
@@ -1445,6 +1500,9 @@ export async function makeGame(ctx) {
   const faceFill = new THREE.PointLight(0xffdcc0, 34, 70, 1.0);
   faceFill.position.set(0, -3.5, 22);
   headG.add(faceFill);
+  // (The Jackpot's gold on his own face: a small warm lamp of its own, so the cloth is not the only thing the window lights)
+  let faceGold = null;
+  if (tier === 'vault') { faceGold = new THREE.PointLight(0xffb468, 0, 70, 1.0); faceGold.position.set(0, -4, 20); headG.add(faceGold); }
   // (a low warm wash down the drapes from above, raking their folds)
   const wash = new THREE.SpotLight(0xffd9a8, room.PENDANT * 0.26, 0, 0.9, 1, 0);
   wash.position.copy(toWorld(V(0, 238, -40)));
@@ -1470,14 +1528,14 @@ export async function makeGame(ctx) {
     // (the light of the window, stood off the chest so it falls on the
     // chin, the lace, the hat's underside and the desk - from a point on
     // the waistcoat it would only graze them)
-    flood = new THREE.PointLight(0xffc068, 0, 150, 1.0);
+    flood = new THREE.PointLight(0xffa050, 0, 150, 1.0);
     flood.position.set(0, WIN.y - 2, winZ + 13);
     body.add(flood);
-    goldWash = new THREE.SpotLight(0xffbf5c, 0, 0, 0.85, 1, 0);
+    goldWash = new THREE.SpotLight(0xffa850, 0, 0, 0.85, 1, 0);
     goldWash.position.set(0, WIN.y - 6, winZ + 70);
     goldWash.target.position.set(0, WIN.y + 22, winZ - 70);
     body.add(goldWash, goldWash.target);
-    pour = new THREE.SpotLight(0xffc070, 0, 0, 0.75, 0.85, 0);
+    pour = new THREE.SpotLight(0xffa858, 0, 0, 0.75, 0.85, 0);
     pour.position.set(0, WIN.y, winZ + 1.2);
     pour.target.position.set(0, WIN.y - 15, winZ + 24);
     body.add(pour, pour.target);
@@ -1509,7 +1567,7 @@ export async function makeGame(ctx) {
     plan.endW = plan.boom + 4.8;
   } else if (tier === 'edge') {
     plan.silence = [decided + 0.05, decided + 0.8];
-    plan.callW = plan.silence[1];
+    plan.callW = plan.silence[0] + 0.25;
     plan.revealW = plan.silence[1] + 0.2;
     plan.endW = plan.revealW + 2.4;
   } else {
@@ -1834,15 +1892,15 @@ export async function makeGame(ctx) {
   const WINC = Bp([0, WIN.y, winZ]);
   const keys = [];
   const push = (t, k) => { if (keys.length) t = Math.max(t, keys[keys.length - 1][0] + 0.3); keys.push([t, ...k]); };
-  push(0, fit(FACE.clone().add(V(0, -0.5, 0)), V(0.22, 0.1, 1), 31, 21));
-  push(Rw(T.look) + 0.35, fit(FACE.clone().add(V(-1.5, -1.5, 0)), V(0.3, 0.08, 1), 35, 24));
+  push(0, fit(FACE.clone().add(V(0, -1.5, 0)), V(0.22, 0.1, 1), 36, 28));
+  push(Rw(T.look) + 0.35, fit(FACE.clone().add(V(-1.5, -2.5, 0)), V(0.3, 0.08, 1), 38, 28));
   // (out to take in his head, the reaching arm and the lever's ball)
-  push(Rw(T.reach) + 0.45, fit(V(-15, 68.5, -14), V(-0.5, 0.14, 1), 51, 44));
-  push(Rw(T.pulled) + 0.1, fit(V(-15, 65.5, -16), V(-0.58, 0.16, 1), 52, 46));
+  push(Rw(T.reach) + 0.45, fit(V(-15, 69, -14), V(-0.5, 0.14, 1), 62, 50));
+  push(Rw(T.pulled) + 0.1, fit(V(-15, 66, -16), V(-0.58, 0.16, 1), 60, 50));
   // (round to his front: his face and the window as the reels spin; in on
   // the window as they stop; all three reels across the frame for the last)
   push(Rw(T.spin) + 0.7, fit(Bp([0, 37, 4]), V(0.1, 0.12, 1), 40, 30));
-  const WINV = (d, h, w, k) => (tall ? fit(Bp([0, 38 + k, winZ]), d, 46 + 2 * k, 21 + k) : fit(WINC, d, h, w));
+  const WINV = (d, h, w, k) => (tall ? fit(Bp([0, 40 + k, winZ]), d, 50 + 2 * k, 28 + k) : fit(WINC, d, h, w));
   push(Rw(T.stop[1]), WINV(V(0.06, 0.08, 1), 20, 22, 1.5));
   push(Rw(slowW) + 0.1, WINV(V(0.1, 0.06, 1), 15.5, 17.5, 0));
   // the call: his face and the line, the dark over his head for the title
@@ -1852,12 +1910,13 @@ export async function makeGame(ctx) {
   const WIDE = tall ? fit(V(0, 58, -6), V(0.24, 0.27, 1), 116, 92) : fit(V(0, 72, -6), V(0.24, 0.27, 1), 140, 92);
   let iTray = -1;
   if (tier === 'edge') {
-    // (in on the third reel standing on its tooth; then back to him, still,
-    // the bell half raised)
-    push(Rw(plan.silence[0]) + 0.5, fit(WINC, V(0.08, 0.06, 1), 12, 17));
-    push(Rw(plan.silence[1]) + 0.6, fit(WINC, V(0.09, 0.06, 1), 12.5, 17.5));
-    push(Rw(plan.silence[1]) + 1.6, fit(Bp([6, 33, 2]), V(0.1, 0.1, 1), 50, 50));
-    push(Rw(plan.endW) + 2, fit(Bp([6, 33, 2]), V(0.11, 0.1, 1), 54, 52));
+    // (the held beat: out to him whole - his face, the window with its
+    // third reel standing on its tooth, the shut drawer under it - and
+    // still; then in a little, as the bell is half raised)
+    const HELD = tall ? fit(Bp([0, 34.5, 3]), V(0.1, 0.08, 1), 74, 30) : fit(Bp([0, 37, 3]), V(0.1, 0.08, 1), 72, 56);
+    push(Rw(plan.silence[0]) + 0.4, HELD);
+    push(Rw(plan.silence[1]) + 1.0, HELD.map((v, i) => (i < 3 ? lerp(v, HELD[i + 3], 0.06) : v)));
+    push(Rw(plan.endW) + 2, HELD.map((v, i) => (i < 3 ? lerp(v, HELD[i + 3], 0.1) : v)));
   } else if (tier === 'vault') {
     push(Rw(restW) + 0.3, CALLV);
     // (out to take in the bell rung high and the gold out of his chest;
@@ -1936,9 +1995,10 @@ export async function makeGame(ctx) {
       // light out of the window into the room, a glint in his eyes)
       reelMats.forEach(m => { m.emissiveIntensity = 0.42 * k; m.color.setRGB(1, 1 - 0.08 * k, 1 - 0.25 * k); });
       inner.intensity = inner0 * (1 + 3.5 * k);
-      if (windowGlow) windowGlow.material.opacity = k * (0.85 + 0.15 * Math.sin(burst * 9));
+      if (windowGlow) windowGlow.material.opacity = k * 0.62 * (0.85 + 0.15 * Math.sin(burst * 9));
       if (pour) pour.intensity = room.PENDANT * 0.7 * k * (0.9 + 0.1 * Math.sin(burst * 9));
-      if (flood) flood.intensity = 300 * k * (0.9 + 0.1 * Math.sin(burst * 9));
+      if (flood) flood.intensity = 205 * k * (0.9 + 0.1 * Math.sin(burst * 9));
+      if (faceGold) faceGold.intensity = 150 * k * (0.9 + 0.1 * Math.sin(burst * 9));
       if (goldWash) goldWash.intensity = room.PENDANT * 0.7 * k * (0.92 + 0.08 * Math.sin(burst * 9));
       if (eyeMatRef) eyeMatRef.emissiveIntensity = 1.5 * k;
       glints.forEach(g => { g.material.opacity = 0.8 * k; });
@@ -1973,7 +2033,7 @@ export async function makeGame(ctx) {
   const callAlphaAt = w => {
     if (!panIn) return 1;
     const t = Rw(w), d = panIn[1] - panIn[0];
-    return 1 - smoother((t - panIn[0]) / (d * 0.33)) * (1 - smoother((t - (panIn[1] - d * 0.2)) / (d * 0.35)));
+    return 1 - smoother((t - panIn[0]) / (d * 0.33)) * (1 - smoother((t - trayK[2]) / (trayK[3] - trayK[2])));
   };
   // (the shade behind the title: wanted over his face and the window, not
   // over the plain leather of the payout shot, where it reads as a stain)
