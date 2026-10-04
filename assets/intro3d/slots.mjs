@@ -932,6 +932,7 @@ export async function makeGame(ctx) {
       mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(lo), 40, 0.08, 8, false), lowRim, headG);
     });
   }
+  const HAT = true;
   // the hair: his own, a mop of loose brown ringlets after the Writer's - a
   // dark cap close over the skull (the hair seen into, and its shadow),
   // and over it a few hundred curls, each a tapered tube wound as a spiral,
@@ -984,16 +985,16 @@ export async function makeGame(ctx) {
       cap.customDepthMaterial = depthM;
       // (the curls)
       const cRoot = new THREE.Color(0x0c0603), cA = new THREE.Color(0x1f1209), cB = new THREE.Color(0x452a18), cc = new THREE.Color();
-      const NC = 760, M = 16, K = 5, DOWN = V(0, -1, 0);
+      const NC = HAT ? 480 : 760, M = 16, K = 5, DOWN = V(0, -1, 0);
       const PP = [], NN = [], CC = [], II = [];
       const P = V(0, 0, 0), T = V(0, 0, 0), Nn = V(0, 0, 0), Bb = V(0, 0, 0);
       let made = 0, guard = 0;
       while (made < NC && guard++ < 40000) {
-        const fringe = made > NC * 0.8, crown = !fringe && made > NC * 0.66, inner = !fringe && !crown && made > NC * 0.4;
+        const fringe = made > NC * 0.8, crown = !HAT && !fringe && made > NC * 0.66, inner = !fringe && !crown && made > NC * 0.4;
         let az, y;
         if (crown) { az = rng() * TAU; y = lerp(0.55, 1, Math.sqrt(rng())); } else if (fringe) { az = (rng() - 0.5) * 2.3; const la = edgeLa(az); y = la + 0.02 + rng() * 0.1; } else { az = rng() * TAU; y = lerp(-0.8, 1, rng()); }
         const r = Math.sqrt(1 - y * y), x = Math.sin(az) * r, z = Math.cos(az) * r, la0 = edgeLa(az);
-        if (y <= la0 + 0.02) continue;
+        if (y <= la0 + 0.02 || (HAT && y > 0.46)) continue;
         const n = V(x / RX, y / RY, z / RZ).normalize();
         const root = V(x * RX, y * RY, z * RZ).add(C0).addScaledVector(n, deep(y, z, y - la0) * H0 * 0.8);
         // (the way down the surface, or any way round at the crown)
@@ -1039,6 +1040,69 @@ export async function makeGame(ctx) {
       const curlM = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.62, specularIntensity: 0.32, sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0x5a3e2c) }); keep(null, curlM);
       const curls = mesh(gc, curlM, headG); curls.castShadow = true; curls.receiveShadow = true;
     }
+  }
+
+  // ---- The hat: a black felt tricorn, cocked the way the 1770s wore one -
+  // a corner at the back and one to each front side, the front folded up
+  // against the crown so the brow shows - edged in gold braid, a gilt band
+  // and button, and a cream plume pinned at the right-front corner that
+  // arcs up and back over the crown and falls behind. It sits on the hair.
+  if (HAT) {
+    const hat = new THREE.Group(); hat.position.set(0, 3.5, -0.5); hat.rotation.set(0.04, 0, -0.07); headG.add(hat);
+    const felt = new THREE.MeshPhysicalMaterial({ color: 0x17120f, roughness: 0.96, sheen: 0.6, sheenRoughness: 0.55, sheenColor: new THREE.Color(0x4a3f38), side: THREE.DoubleSide }); keep(null, felt);
+    // (the crown: a low rounded dome, a little wider front to back as the head is)
+    const lathe = new THREE.LatheGeometry([[8.7, 0], [8.5, 3.2], [7.9, 6.2], [7.0, 7.7], [4.9, 8.2], [0, 8.35]].map(([r, y]) => new THREE.Vector2(r, y)), 48);
+    const crown = mesh(lathe, felt, hat); crown.scale.set(1, 1, 1.1);
+    // (the brim: out from the crown to a rounded triangle, its sides turned
+    // up the more the further out and the further from a corner)
+    const AN = 120, RN = 8, rIn = 8.6, th0 = Math.PI;
+    const corner = a => Math.pow(0.5 + 0.5 * Math.cos(3 * (a - th0)), 1.4);
+    const rOut = a => 11 + 4.2 * corner(a);
+    const lift = (a, s) => Math.pow(s, 2.2) * (0.9 + 5.2 * (1 - corner(a)));
+    const bp = [], bi = [];
+    for (let i = 0; i < AN; i++) {
+      const a = (i / AN) * TAU;
+      for (let j = 0; j <= RN; j++) { const s = j / RN, r = lerp(rIn, rOut(a), s); bp.push(Math.sin(a) * r, lift(a, s), Math.cos(a) * r * 1.08); }
+    }
+    for (let i = 0; i < AN; i++) for (let j = 0; j < RN; j++) {
+      const a = i * (RN + 1) + j, b = ((i + 1) % AN) * (RN + 1) + j;
+      bi.push(a, a + 1, b, a + 1, b + 1, b);
+    }
+    const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.Float32BufferAttribute(bp, 3)); bg.setIndex(bi); bg.computeVertexNormals();
+    mesh(bg, felt, hat);
+    // (the braid along the brim's edge, and the band round the crown)
+    const edge = new THREE.CatmullRomCurve3(Array.from({ length: 96 }, (_, i) => { const a = (i / 96) * TAU; return V(Math.sin(a) * rOut(a), lift(a, 1), Math.cos(a) * rOut(a) * 1.08); }), true);
+    mesh(new THREE.TubeGeometry(edge, 288, 0.26, 6, true), gilt, hat, false);
+    const band = mesh(new THREE.TorusGeometry(8.6, 0.3, 6, 72), gilt, hat, false); band.rotation.x = Math.PI / 2; band.position.y = 1.0; band.scale.set(1, 1.1, 1);
+    // (a button, and the plume's base, at the right-front corner)
+    const ca = Math.PI / 3, cr = 11.4, B = V(Math.sin(ca) * cr, lift(ca, (cr - rIn) / (rOut(ca) - rIn)) + 0.4, Math.cos(ca) * cr * 1.08);
+    mesh(new THREE.SphereGeometry(0.6, 12, 8), gilt, hat, false).position.copy(B);
+    // (the plume: a spine, and a vane that swells and tapers to a point,
+    // its barbs drawn on a card with a ragged edge)
+    const offs = [[0, 0, 0], [1, 3.5, -1.9], [0, 7.5, -4.9], [-3, 10.5, -9.4], [-7.5, 11, -14.4], [-12, 9, -17.9], [-14.5, 5.5, -19.4]];
+    const spine = new THREE.CatmullRomCurve3(offs.map(([x, y, z]) => V(B.x + x * 0.58, B.y + y * 0.58, B.z + z * 0.58)));
+    const NS = 28, fp = [], fu = [], fi = [], ref = V(0.5, 0, 1);
+    for (let k = 0; k <= NS; k++) {
+      const s = k / NS, c = spine.getPoint(s), tg = spine.getTangent(s), side = V().crossVectors(tg, ref).normalize();
+      const w = 1.55 * Math.pow(Math.sin(Math.PI * Math.pow(s, 0.8)), 0.9) + 0.12 * (1 - s);
+      fp.push(c.x - side.x * w, c.y - side.y * w, c.z - side.z * w, c.x + side.x * w, c.y + side.y * w, c.z + side.z * w); fu.push(0, s, 1, s);
+    }
+    for (let k = 0; k < NS; k++) { const a = k * 2; fi.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute(fp, 3)); fg.setAttribute('uv', new THREE.Float32BufferAttribute(fu, 2)); fg.setIndex(fi); fg.computeVertexNormals();
+    const FW = 128, FH = 512;
+    const fmap = texOf(canvas(FW, FH, (c) => {
+      c.fillStyle = '#f2ecdf'; c.fillRect(0, 0, FW, FH);
+      for (let y = 0; y < FH; y += 3) for (const sd of [-1, 1]) { c.strokeStyle = `rgba(${150 + Math.round(rng() * 60)},${140 + Math.round(rng() * 55)},${120 + Math.round(rng() * 50)},0.35)`; c.lineWidth = 1; c.beginPath(); c.moveTo(FW / 2, y); c.lineTo(FW / 2 + sd * FW * 0.5, y + 10); c.stroke(); }
+      c.fillStyle = '#d8cfbd'; c.fillRect(FW / 2 - 1.5, 0, 3, FH);
+    }), true);
+    const fa = texOf(canvas(FW, FH, (c) => {
+      c.fillStyle = '#000'; c.fillRect(0, 0, FW, FH); c.strokeStyle = '#fff'; c.lineWidth = 2.4;
+      for (let y = 0; y < FH; y += 2.6) for (const sd of [-1, 1]) { const len = FW * (0.34 + 0.16 * rng()); c.beginPath(); c.moveTo(FW / 2, y); c.lineTo(FW / 2 + sd * len, y + 9); c.stroke(); }
+      c.fillStyle = '#fff'; c.fillRect(FW / 2 - 2, 0, 4, FH);
+    }), false);
+    const fm = new THREE.MeshStandardMaterial({ map: fmap, alphaMap: fa, alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.92 }); keep(null, fm);
+    const plume = new THREE.Mesh(fg, fm); plume.castShadow = false; plume.receiveShadow = true; keep(fg); hat.add(plume);
+    mesh(new THREE.TubeGeometry(spine, 48, 0.09, 5, false), fm, hat, false);
   }
 
   // ---- The legs: black satin breeches, white silk stockings, black shoes
@@ -1657,11 +1721,11 @@ export async function makeGame(ctx) {
   const WINC = Bp([0, WIN.y, winZ]);
   const keys = [];
   const push = (t, k) => { if (keys.length) t = Math.max(t, keys[keys.length - 1][0] + 0.3); keys.push([t, ...k]); };
-  push(0, fit(FACE.clone().add(V(0, -1.5, 0)), V(0.22, 0.1, 1), 27, 21));
-  push(Rw(T.look) + 0.35, fit(FACE.clone().add(V(-1.5, -2.5, 0)), V(0.3, 0.08, 1), 31, 24));
+  push(0, fit(FACE.clone().add(V(0, -0.5, 0)), V(0.22, 0.1, 1), 31, 21));
+  push(Rw(T.look) + 0.35, fit(FACE.clone().add(V(-1.5, -1.5, 0)), V(0.3, 0.08, 1), 35, 24));
   // (out to take in his head, the reaching arm and the lever's ball)
-  push(Rw(T.reach) + 0.45, fit(V(-15, 66, -14), V(-0.5, 0.14, 1), 46, 44));
-  push(Rw(T.pulled) + 0.1, fit(V(-15, 63, -16), V(-0.58, 0.16, 1), 48, 46));
+  push(Rw(T.reach) + 0.45, fit(V(-15, 68.5, -14), V(-0.5, 0.14, 1), 51, 44));
+  push(Rw(T.pulled) + 0.1, fit(V(-15, 65.5, -16), V(-0.58, 0.16, 1), 52, 46));
   // (round to his front: his face and the window as the reels spin; in on
   // the window as they stop; all three reels across the frame for the last)
   push(Rw(T.spin) + 0.7, fit(Bp([0, 37, 4]), V(0.1, 0.12, 1), 40, 30));
