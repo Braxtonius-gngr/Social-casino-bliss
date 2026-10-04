@@ -17,10 +17,17 @@ reads the same ones. This page covers the moving parts.
 | When (CT) | Job | Reads | Writes |
 |---|---|---|---|
 | 7:57 AM | Daily catalog sweep | platform pages | `catalog_sweep_findings` |
-| 8:15 AM | **Luck Party tournament desk** | Luck Party's promo pages, lobby tabs, Victory Vault | Luck Party's events, games, cards |
-| 8:17 AM | **Daily tournament desk** | rotation sites (by priority), the sites the sweep checked today, a few candidates, in-app sites now and then | every other site's events and cards; site statuses |
-| 8:20 AM | **Tournament game facts check** | games opened in the owner's Chrome (needs the always-on laptop), in `tournament_fact_queue` order | `tournament_game_observations`, one `tournament_fact_runs` row |
-| 8:44 AM | Daily way forward | sweep findings, bug reports, `tournament_board`, `tournament_data_gaps` | nothing (one brief file + push) |
+| 8:15 AM | **Luck Party tournament desk** (35-minute limit) | Luck Party's promo pages, lobby tabs, Victory Vault | Luck Party's events, games, cards |
+| 8:17 AM | **Daily tournament desk** (45-minute limit) | rotation sites (by priority), the sites the sweep checked today, a few candidates, in-app sites now and then | every other site's events and cards; site statuses |
+| 9:08 AM | **Tournament game facts check** (20-minute limit) | games opened in the owner's Chrome (needs the always-on laptop), in `tournament_fact_queue` order | `tournament_game_observations`, one `tournament_fact_runs` row |
+| 9:37 AM | Daily way forward | sweep findings, bug reports, `tournament_board`, `tournament_data_gaps` | nothing (one brief file + push) |
+
+Each job starts after the ones it reads have finished. The two desks run side
+by side and their time limits have both done by 9:02 AM; a desk that runs out
+of time still writes its cards and file, and lists what it skipped for the
+next day. The facts check then has the desks' games to work from, and the
+brief reads everything. (Until 2026-10-03 the facts check started at 8:20 and
+the brief at 8:44, while the desks were often still running.)
 
 A site moves through these statuses:
 
@@ -205,9 +212,9 @@ insert-only chunks.
   `target_closest_rule`: `format_params.closest_rule` on the site's Hit the
   Multiplier events, and the play policy's `rules.target_multiplier
   .closest_rule`).
-- `Create site task <slug>`. Copies the Luck Party tournament desk scheduled task for that site, adapts its site section, and sets `tournament_sites.own_task`.
+- `Create site task <slug>`. Copies the Luck Party tournament desk scheduled task for that site (starting a few minutes before 8:17 AM CT, with a time limit that has it done by 9:02), adapts its site section, and sets `tournament_sites.own_task`.
 
-## Game facts check (8:20 AM CT)
+## Game facts check (9:08 AM CT)
 
 A scheduled task in the owner's own Chrome (the always-on laptop, signed in).
 It opens up to 12 games from `tournament_fact_queue`, reads the info,
