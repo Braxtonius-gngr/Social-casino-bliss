@@ -13081,7 +13081,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           notify: sanitizeNotifyPrefs(p.notify),
           hideCollected: typeof p.hideCollected === 'boolean' ? p.hideCollected : null,
           showLanding: typeof p.showLanding === 'boolean' ? p.showLanding : null,
-          landingMode: p.landingMode === 'daily' || p.landingMode === 'true' || p.landingMode === 'false' ? p.landingMode : null,
+          // (a backup from before every open became the default carries
+          // 'daily' for everyone who never chose, so it takes the same
+          // one-time move rollLandingMode() made; landingEvery marks a
+          // backup from after it, whose 'daily' was chosen)
+          landingMode: p.landingMode === 'daily' && p.landingEvery !== true ? 'true'
+            : p.landingMode === 'daily' || p.landingMode === 'true' || p.landingMode === 'false' ? p.landingMode : null,
           dense: typeof p.dense === 'boolean' ? p.dense : null,
           felt: typeof p.felt === 'string' && FELT_CHOICES[p.felt] ? p.felt : null,
           trim: typeof p.trim === 'string' && TRIM_CHOICES[p.trim] ? p.trim : null
@@ -13151,6 +13156,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             hideCollected: localStorage.getItem('almanac_hide_collected') === 'true',
             showLanding: localStorage.getItem('almanac_show_landing') !== 'false',
             landingMode: rollLandingMode(),
+            landingEvery: true,
             dense: localStorage.getItem('almanac_dense') === 'true',
             felt: localStorage.getItem(FELT_KEY) || null,
             trim: localStorage.getItem(TRIM_KEY) || null
@@ -13364,6 +13370,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (typeof p.hideCollected === 'boolean') writePref('almanac_hide_collected', String(p.hideCollected));
         if (p.landingMode) writePref('almanac_show_landing', p.landingMode);
         else if (typeof p.showLanding === 'boolean') writePref('almanac_show_landing', String(p.showLanding));
+        // (the restored choice stands: the one-time move to every open is
+        // never run over it - see rollLandingMode)
+        if (p.landingMode || typeof p.showLanding === 'boolean') writePref(LANDING_EVERY_KEY, 'done');
         if (typeof p.dense === 'boolean') writePref('almanac_dense', String(p.dense));
         if (typeof p.felt === 'string' && FELT_CHOICES[p.felt]) writePref(FELT_KEY, p.felt);
         if (typeof p.trim === 'string' && TRIM_CHOICES[p.trim]) writePref(TRIM_KEY, p.trim);
