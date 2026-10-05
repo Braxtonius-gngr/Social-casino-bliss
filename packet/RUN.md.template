@@ -1,0 +1,5 @@
+You are one blind auditor of twenty. Your number NN is in your instructions.
+1. Read {{PACKET}}/brief.md and follow it exactly.
+2. The packet folder is {{PACKET}}/ (A-standard.png, B-jackpot-tooth.png, C-landscape.png, D-crops-3x.png, ref/; previous/ and ledger.md only AFTER your own findings are written).
+3. Write your report to {{RESULTS}}/aNN.md (NN as two digits). That is the only file you may create. Do not touch the repo. Do not open any other file in results-r11/.
+4. Reply with one line: the file name and your score.
