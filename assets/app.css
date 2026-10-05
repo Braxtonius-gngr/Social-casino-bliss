@@ -1403,6 +1403,11 @@
     html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-btn:hover { background: #231a10; }
     html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-legal { color: #36281a; }
     html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-legal a { color: #1c140c; }
+    /* Over the set (dark cloth) the button is a backed pill and the small
+       print sits in a halo of shade, so neither dissolves into the chip rack
+       or the shoe behind them. Light felts keep their own printed look. */
+    html:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-btn { background: rgba(10,8,5,0.82); box-shadow: 0 0 18px 8px rgba(10,8,5,0.5); }
+    html:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-legal { text-shadow: 0 0 5px rgba(6,5,3,0.95), 0 0 14px rgba(6,5,3,0.85), 0 0 26px rgba(6,5,3,0.7); }
     .landing-screen.intro-play.roll-popped .landing-title { animation: roll-title-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s both; }
     .landing-screen.intro-play.roll-popped .landing-tagline { animation: roll-rise 0.6s ease-out 0.95s both; }
     .landing-screen.intro-play.roll-popped .landing-subtitle { animation: roll-rise 0.6s ease-out 1.15s both; }

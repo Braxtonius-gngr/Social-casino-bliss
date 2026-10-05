@@ -97,6 +97,9 @@ const SPOT = { you: [[-2.3, 18.0], [2.3, 20.6]], dealer: [[-3.4, 36.5], [3.4, 36
 // The shoe (the card table's place) and the discard rack, its mouth turned
 // to the middle of the table.
 const DISCARD = [28, 52];
+// The two drop slots (see SWP): their lip's x and the z each is centred on - the
+// dealer's cards, yours. A bust (a third card) keeps clear of the third place.
+const SLOT = { z: 30.5, zYou: 15.0 };
 // The lettering stamped into the cloth: the plane it is drawn on (centre z,
 // w x h cm, px a cm) and its two arcs, each round the table's own centre
 // (the middle of the dealer's edge) - a and b its half-width and depth.
@@ -414,15 +417,21 @@ export async function makeGame(ctx) {
   seat.add(shoe, discard);
   // the drop slot the machine clears its cards into (see SWP): a brass plate
   // let into the cloth, a black mouth along it
+  let slotG = null;
   if (tier !== 'edge' && tier !== 'vault') {
     const brass = new THREE.MeshStandardMaterial({ color: 0xc9a24a, metalness: 0.85, roughness: 0.32 });
+    const lipX = hand.dealer[2] ? 15.4 : 12.4;
     const plate = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.1, 12.2), brass);
-    plate.position.set(13.6 + 1.8, 0.05, 37.2); plate.castShadow = true; plate.receiveShadow = true;
+    plate.position.set(lipX - 1.8 + 1.8, 0.05, SLOT.z); plate.castShadow = true; plate.receiveShadow = true;
     const mouth = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 10.6), new THREE.MeshBasicMaterial({ color: 0x030303 }));
-    mouth.rotation.x = -Math.PI / 2; mouth.position.set(15.4 + 0.55, 0.102, 37.2);
-    const plate2 = plate.clone(), mouth2 = mouth.clone();
-    plate2.position.z = 19.8; mouth2.position.z = 19.8;
-    seat.add(plate, mouth, plate2, mouth2);
+    mouth.rotation.x = -Math.PI / 2; mouth.position.set(lipX + 0.55, 0.172, SLOT.z);
+    // (a raised brass lip round the mouth, stepped up from the plate)
+    const lipM = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.07, 11.2), brass);
+    lipM.position.set(lipX + 0.55, 0.135, SLOT.z); lipM.castShadow = true; lipM.receiveShadow = true;
+    const plate2 = plate.clone(), mouth2 = mouth.clone(), lip2 = lipM.clone();
+    lip2.position.z = SLOT.zYou;
+    plate2.position.z = SLOT.zYou; mouth2.position.z = SLOT.zYou;
+    slotG = new THREE.Group(); slotG.add(plate, lipM, mouth, plate2, lip2, mouth2); slotG.visible = false; seat.add(slotG);
   }
   const shoeMouth = V(0, 0.9, -11.6).applyAxisAngle(up, shoe.rotation.y).add(shoe.position);
   const mouthDir = V(0, 0, -1).applyAxisAngle(up, shoe.rotation.y);
@@ -679,7 +688,7 @@ export async function makeGame(ctx) {
   // lifted by its long edge, carried to the slot's lip and let go, and it
   // tips over the lip and goes in (m: the card's middle along it from the
   // lip, th: how far its leading edge has gone down).
-  const SWP = { lipX: 15.4, z: 37.2, zYou: 19.8, slide: 0.75, y: 0.1, m0: -2.2, th0: 0.15, th1: 1.35, drop: 0.34 };
+  const SWP = { lipX: hand.dealer[2] ? 15.4 : 12.4, z: SLOT.z, zYou: SLOT.zYou, slide: 0.75, y: 0.17, m0: -2.2, th0: 0.15, th1: 1.35, drop: 0.34 };
   const swPose = (m, th, qr, z = SWP.z) => {
     const lead = V(Math.cos(th), -Math.sin(th), 0);
     return pose(V(SWP.lipX, SWP.y, z).addScaledVector(lead, m), _q2.setFromAxisAngle(V(0, 0, -1), th).multiply(qr));
@@ -1224,7 +1233,7 @@ export async function makeGame(ctx) {
   // machine; a phone stands it further back)
   const SEATV = [0, 58 * W2, -22, 0, 6, 34];
   // (the lens drawn back and over toward the drop slot while it clears the cards)
-  const SWEEPV = [5, 78 * W2, -36, 5, 5, 34];
+  const SWEEPV = [5, 78 * W2, -36, 5, 5, 31];
   push([0, 6, 26, 20, 0, 0, 57.6]);
   push([Rw(dealAt - RISE.open) + 0.25, 5, 24, 23, 0, 0.5, 57.6]);
   push([Rw(dealAt - RISE.swing) - 0.05, 2, 34, -6, 0, 22, 57]);
@@ -1354,6 +1363,8 @@ export async function makeGame(ctx) {
   const stage = (t, { w }) => {
     poseRig(w);
     poseCards(w);
+    // (the slots rise out of the cloth just before the machine uses them)
+    if (slotG) { const k = smoother(clamp01((w - (plan.sweep[0] - 0.5)) / 0.45)); slotG.visible = k > 0; slotG.position.y = -0.5 * (1 - k); }
     // (the room's rim light stands at the shot's own each frame - see
     // wheel.mjs)
     lights.rim.intensity = room.RIM;
