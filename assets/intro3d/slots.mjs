@@ -79,9 +79,8 @@ const STRIPS = [
 const NS = 12, STEP = TAU / NS;
 const WORDS = { chip: ['Three Chips', 'Five to one'], die: ['Three Dice', 'Five to one'], bell: ['Three Bells', 'Ten to one'], crown: ['Three Crowns', 'Ten to one'], seven: ['Three Sevens', 'Twenty to one'], badge: ['The Jackpot', 'Forty to one'] };
 // (the payout, in tokens: the odds on one)
-// The Jackpot's gold, in one place: the glow plane's ring (its strength and where it peaks, as a fraction of the plane), the rays (strength, length),
-// the plane's opacity, the point lights on the cloth and on his face, and the reels' own light.
-const GLOW = { ring: 0.34, ringAt: 0.3, rays: 0.3, rayIn: 0.1, rayLen: 0.36, opacity: 0.62, flood: 205, face: 150, reels: 0.42 };
+// The Jackpot's gold: the point light on the cloth, the glow plane's opacity and the reels' own light (the plane's ring and rays are drawn in its texture).
+const GLOW = { flood: 300, opacity: 1, reels: 0.42 };
 const TOKGAP = { standard: 0.11, hardways: 0.07, vault: 0.04, edge: 0 };
 const PAY = { chip: 5, die: 5, bell: 10, crown: 10, seven: 20, badge: 40 };
 
@@ -700,18 +699,16 @@ export async function makeGame(ctx) {
       const gt = texOf(canvas(512, 512, (g, W, Hh) => {
         // (a ring round the bezel - the window itself left clear - a soft
         // halo out from it, and rays: the light of a lamp behind a pane)
-        const r = g.createRadialGradient(W / 2, Hh / 2, 0, W / 2, Hh / 2, W / 2); r.addColorStop(0, 'rgba(255,160,70,0)'); r.addColorStop(GLOW.ringAt - 0.1, 'rgba(255,160,70,0)'); r.addColorStop(GLOW.ringAt, `rgba(255,170,80,${GLOW.ring})`); r.addColorStop(GLOW.ringAt + 0.32, `rgba(255,150,60,${GLOW.ring * 0.42})`); r.addColorStop(1, 'rgba(255,140,50,0)');
+        const r = g.createRadialGradient(W / 2, Hh / 2, 0, W / 2, Hh / 2, W / 2); r.addColorStop(0, 'rgba(255,180,80,0)'); r.addColorStop(0.2, 'rgba(255,180,80,0)'); r.addColorStop(0.3, 'rgba(255,190,90,0.5)'); r.addColorStop(0.62, 'rgba(255,170,70,0.2)'); r.addColorStop(1, 'rgba(255,160,60,0)');
         g.fillStyle = r; g.fillRect(0, 0, W, Hh);
-        // (the rays: a few broad shafts drawn on their own sheet and softened once - never a fan of thin lines)
-        const sheet = document.createElement('canvas'); sheet.width = W; sheet.height = Hh;
-        const sg = sheet.getContext('2d'); sg.translate(W / 2, Hh / 2); sg.globalCompositeOperation = 'lighter';
-        for (let k = 0; k < 13; k++) {
-          const a = (k / 13) * TAU + 0.12 * Math.sin(k * 2.7), len = W * (GLOW.rayLen + 0.1 * Math.sin(k * 1.9)), w0 = 0.055 + 0.035 * Math.abs(Math.sin(k * 3.3));
-          const rg = sg.createLinearGradient(Math.cos(a) * W * GLOW.rayIn, Math.sin(a) * W * GLOW.rayIn, Math.cos(a) * len, Math.sin(a) * len); rg.addColorStop(0, 'rgba(255,200,120,0)'); rg.addColorStop(0.2, `rgba(255,200,120,${GLOW.rays})`); rg.addColorStop(1, 'rgba(255,170,90,0)');
-          sg.fillStyle = rg; sg.beginPath(); sg.moveTo(Math.cos(a - w0) * W * GLOW.rayIn, Math.sin(a - w0) * W * GLOW.rayIn); sg.lineTo(Math.cos(a) * len, Math.sin(a) * len); sg.lineTo(Math.cos(a + w0) * W * GLOW.rayIn, Math.sin(a + w0) * W * GLOW.rayIn); sg.closePath(); sg.fill();
+        g.save(); g.translate(W / 2, Hh / 2); g.globalCompositeOperation = 'lighter';
+        for (let k = 0; k < 22; k++) {
+          const a = (k / 22) * TAU + 0.07 * Math.sin(k * 2.7), len = W * (0.34 + 0.12 * Math.sin(k * 1.9)), w0 = 0.032 + 0.018 * Math.abs(Math.sin(k * 3.3));
+          const rg = g.createLinearGradient(0, 0, Math.cos(a) * len, Math.sin(a) * len); rg.addColorStop(0, 'rgba(255,214,140,0)'); rg.addColorStop(0.18, 'rgba(255,214,140,0.5)'); rg.addColorStop(1, 'rgba(255,190,100,0)');
+          g.fillStyle = rg; g.beginPath(); g.moveTo(Math.cos(a - w0) * W * 0.1, Math.sin(a - w0) * W * 0.1); g.lineTo(Math.cos(a) * len, Math.sin(a) * len); g.lineTo(Math.cos(a + w0) * W * 0.1, Math.sin(a + w0) * W * 0.1); g.closePath(); g.fill();
         }
-        g.save(); g.filter = 'blur(7px)'; g.drawImage(sheet, 0, 0); g.restore();
-        g.filter = 'blur(14px)'; g.strokeStyle = 'rgba(255,200,130,0.8)'; g.lineWidth = 26;
+        g.restore();
+        g.filter = 'blur(14px)'; g.strokeStyle = 'rgba(255,214,140,0.9)'; g.lineWidth = 26;
         const w2 = W / 2.6 / 2 + 24, h2 = Hh / 3.2 / 2 + 24; g.beginPath(); g.roundRect(W / 2 - w2, Hh / 2 - h2, 2 * w2, 2 * h2, 30); g.stroke();
       }), true);
       const gmat = new THREE.MeshBasicMaterial({ map: gt, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }); keep(null, gmat);
@@ -1503,9 +1500,6 @@ export async function makeGame(ctx) {
   const faceFill = new THREE.PointLight(0xffdcc0, 34, 70, 1.0);
   faceFill.position.set(0, -3.5, 22);
   headG.add(faceFill);
-  // (The Jackpot's gold on his own face: a small warm lamp of its own, so the cloth is not the only thing the window lights)
-  let faceGold = null;
-  if (tier === 'vault') { faceGold = new THREE.PointLight(0xffb468, 0, 70, 1.0); faceGold.position.set(0, -4, 20); headG.add(faceGold); }
   // (a low warm wash down the drapes from above, raking their folds)
   const wash = new THREE.SpotLight(0xffd9a8, room.PENDANT * 0.26, 0, 0.9, 1, 0);
   wash.position.copy(toWorld(V(0, 238, -40)));
@@ -1531,14 +1525,14 @@ export async function makeGame(ctx) {
     // (the light of the window, stood off the chest so it falls on the
     // chin, the lace, the hat's underside and the desk - from a point on
     // the waistcoat it would only graze them)
-    flood = new THREE.PointLight(0xffa050, 0, 150, 1.0);
+    flood = new THREE.PointLight(0xffc068, 0, 150, 1.0);
     flood.position.set(0, WIN.y - 2, winZ + 13);
     body.add(flood);
-    goldWash = new THREE.SpotLight(0xffa850, 0, 0, 0.85, 1, 0);
+    goldWash = new THREE.SpotLight(0xffbf5c, 0, 0, 0.85, 1, 0);
     goldWash.position.set(0, WIN.y - 6, winZ + 70);
     goldWash.target.position.set(0, WIN.y + 22, winZ - 70);
     body.add(goldWash, goldWash.target);
-    pour = new THREE.SpotLight(0xffa858, 0, 0, 0.75, 0.85, 0);
+    pour = new THREE.SpotLight(0xffc070, 0, 0, 0.75, 0.85, 0);
     pour.position.set(0, WIN.y, winZ + 1.2);
     pour.target.position.set(0, WIN.y - 15, winZ + 24);
     body.add(pour, pour.target);
@@ -2001,7 +1995,6 @@ export async function makeGame(ctx) {
       if (windowGlow) windowGlow.material.opacity = k * GLOW.opacity * (0.85 + 0.15 * Math.sin(burst * 9));
       if (pour) pour.intensity = room.PENDANT * 0.7 * k * (0.9 + 0.1 * Math.sin(burst * 9));
       if (flood) flood.intensity = GLOW.flood * k * (0.9 + 0.1 * Math.sin(burst * 9));
-      if (faceGold) faceGold.intensity = GLOW.face * k * (0.9 + 0.1 * Math.sin(burst * 9));
       if (goldWash) goldWash.intensity = room.PENDANT * 0.7 * k * (0.92 + 0.08 * Math.sin(burst * 9));
       if (eyeMatRef) eyeMatRef.emissiveIntensity = 1.5 * k;
       glints.forEach(g => { g.material.opacity = 0.8 * k; });
