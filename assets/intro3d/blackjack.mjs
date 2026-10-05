@@ -1072,9 +1072,12 @@ export async function makeGame(ctx) {
     // (the jackpot's light, a real one: a warm gold lamp over your two cards
     // that lights the cloth, the cards and the hands round them, and stays
     // up after the burst has gone)
-    goldLamp = new THREE.PointLight(0xffb347, 0, 70, 2);
-    goldLamp.position.copy(toWorld(V(0, 15, 24)));
-    scene.add(goldLamp);
+    // (a pool, not a tint: a cone with a soft edge, so the cloth is gold
+    // under your cards and falls back to black round them)
+    goldLamp = new THREE.SpotLight(0xffb347, 0, 130, 0.5, 1, 2);
+    goldLamp.position.copy(toWorld(V(0, 40, 22)));
+    goldLamp.target.position.copy(toWorld(V(0, 0, 19)));
+    scene.add(goldLamp, goldLamp.target);
   }
 
   // ---- The camera: keys in the seat's frame [t, eye xyz, aim xyz], real
@@ -1102,9 +1105,9 @@ export async function makeGame(ctx) {
   if (decide.pitch) {
     // (low over your cards as the deciding one comes skidding in)
     const s = decide.slot;
-    push([Rw(decide.pitch.t0) - 0.25, 0, 42 * W2, -10, s.x, 2, s.z + 6]);
-    push([Rw(decide.pitch.t0) + 0.1, s.x - 2, 30 * W2, s.z - 30, s.x, 1, s.z + 3]);
-    push([Rw(restW) + 0.5, s.x - 2, 33 * W2, s.z - 32, s.x - 1, 1, s.z + 2]);
+    push([Rw(decide.pitch.t0) - 0.25, 0, 48 * W2, -12, s.x, 2, s.z + 6]);
+    push([Rw(decide.pitch.t0) + 0.1, s.x - 2, 36 * W2, s.z - 36, s.x, 1, s.z + 3]);
+    push([Rw(restW) + 0.5, s.x - 2, 40 * W2, s.z - 38, s.x - 1, 1, s.z + 2]);
     if (tier === 'vault') {
       // (up over the felt as it lights: the whole lettered arc, your hand,
       // the machine)
@@ -1118,12 +1121,12 @@ export async function makeGame(ctx) {
     push([Rw(holeCard.turn) - 0.9, ...SEATV]);
     const s = holeCard.slot;
     if (tier === 'edge') {
-      push([Rw(holeCard.turn) - 0.1, s.x - 7, 34 * W2, s.z - 33, s.x, 2, s.z + 6]);
+      push([Rw(holeCard.turn) - 0.1, s.x - 8, 40 * W2, s.z - 40, s.x, 2, s.z + 6]);
       // the lens swings round to the hand's side and comes down, three
       // quarters on, so the lean, the fingertips and the edge on the cloth
       // all read
-      push([Rw(plan.silence[0]) + 0.5, s.x + 15, 13, s.z - 28, s.x + 1, 3.4, s.z + 3.5]);
-      push([Rw(plan.silence[1]) + 0.7, s.x + 13, 11, s.z - 24, s.x + 1, 3.4, s.z + 3.6]);
+      push([Rw(plan.silence[0]) + 0.5, s.x + 18, 15, s.z - 34, s.x + 1, 3.4, s.z + 3.5]);
+      push([Rw(plan.silence[1]) + 0.7, s.x + 16, 13, s.z - 30, s.x + 1, 3.4, s.z + 3.6]);
       // (and the card on its edge, still the hero, is set below the print: a
       // phone stands the lens back and aims it over the card; wide, it pans
       // the table off to the side)
@@ -1138,8 +1141,8 @@ export async function makeGame(ctx) {
       push(CALLV);
       push([Rw(plan.revealW) + 0.4, ...SEATV]);
     } else {
-      push([Rw(holeCard.turn) - 0.1, s.x - 3, 40 * W2, s.z - 22, s.x, 1, s.z + 3]);
-      push([Rw(restW) + 0.1, s.x - 3, 44 * W2, s.z - 32, s.x - 2, 1, s.z - 1]);
+      push([Rw(holeCard.turn) - 0.1, s.x - 3, 46 * W2, s.z - 28, s.x, 1, s.z + 3]);
+      push([Rw(restW) + 0.1, s.x - 3, 50 * W2, s.z - 38, s.x - 2, 1, s.z - 1]);
       push(CALLV);
       push([Rw(plan.revealW) + 0.4, ...SEATV]);
     }
@@ -1218,7 +1221,7 @@ export async function makeGame(ctx) {
       // (a flash, gone in a blink - the felt stays black; the gold is in
       // the letters and the machine)
       if (flash) flash.intensity = on ? 9 * Math.exp(-burst / 0.09) : 0;
-      if (goldLamp) goldLamp.intensity = on ? 4000 * smoother(burst / 0.5) * (0.45 + 0.55 * Math.exp(-burst / 2.2)) : 0;
+      if (goldLamp) goldLamp.intensity = on ? 9000 * smoother(burst / 0.5) * (0.45 + 0.55 * Math.exp(-burst / 2.2)) : 0;
       lit = on ? 3.2 * smoother(burst / 0.25) * Math.max(0, 1 - burst / 3.8) : 0;
     }
     // the light in the machine's circuits: up while it works, brighter as
@@ -1270,7 +1273,7 @@ export async function makeGame(ctx) {
   const dispose = () => {
     scene.remove(seat);
     if (flash) scene.remove(flash);
-    if (goldLamp) scene.remove(goldLamp);
+    if (goldLamp) scene.remove(goldLamp, goldLamp.target);
     Object.assign(lights.edgeSpot, { angle: es0.angle, penumbra: es0.penumbra, castShadow: es0.cast });
     K.freeTree(seat, set);
     linen.dispose();
