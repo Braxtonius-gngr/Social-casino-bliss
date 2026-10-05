@@ -13358,7 +13358,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const p = migrated.preferences;
         let prefsOk = true;
         function writePref(key, value) {
-          try { localStorage.setItem(key, value); } catch (e) { prefsOk = false; }
+          try { localStorage.setItem(key, value); return true; } catch (e) { prefsOk = false; return false; }
         }
         if (p.theme) writePref(THEME_KEY, p.theme);
         if (p.timezone !== null) writePref('almanac_tz_v1', p.timezone);
@@ -13368,11 +13368,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           localStorage.setItem(NOTIFY_KEY, JSON.stringify({ ...getNotifyPrefs(), ...p.notify }));
         } catch (e) { prefsOk = false; }
         if (typeof p.hideCollected === 'boolean') writePref('almanac_hide_collected', String(p.hideCollected));
-        if (p.landingMode) writePref('almanac_show_landing', p.landingMode);
-        else if (typeof p.showLanding === 'boolean') writePref('almanac_show_landing', String(p.showLanding));
         // (the restored choice stands: the one-time move to every open is
-        // never run over it - see rollLandingMode)
-        if (p.landingMode || typeof p.showLanding === 'boolean') writePref(LANDING_EVERY_KEY, 'done');
+        // never run over it - see rollLandingMode - but only once the choice
+        // is actually written)
+        let landingWritten = false;
+        if (p.landingMode) landingWritten = writePref('almanac_show_landing', p.landingMode);
+        else if (typeof p.showLanding === 'boolean') landingWritten = writePref('almanac_show_landing', String(p.showLanding));
+        if (landingWritten) writePref(LANDING_EVERY_KEY, 'done');
         if (typeof p.dense === 'boolean') writePref('almanac_dense', String(p.dense));
         if (typeof p.felt === 'string' && FELT_CHOICES[p.felt]) writePref(FELT_KEY, p.felt);
         if (typeof p.trim === 'string' && TRIM_CHOICES[p.trim]) writePref(TRIM_KEY, p.trim);
