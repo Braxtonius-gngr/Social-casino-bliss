@@ -100,7 +100,7 @@ const STOOL = { y: 31, z: -30, w: 26, d: 22 };
 const HIP = { y: 34.5, z: -28 };
 const SH = { x: 10.2, y: 32.5 };
 const NECKY = 41.5;
-const HEAD = { up: 7.6, fwd: 1.6, rx: 7.4, ry: 8.9, rz: 8.2 };
+const HEAD = { up: 6.3, fwd: 1.6, rx: 7.9, ry: 8.2, rz: 8.4 };
 const ARM = { upper: 16.5, fore: 14.2 };
 const PALM = 2.5;                              // the wrist to the palm's centre
 // The window in his chest (body frame) and the reels behind it.
@@ -838,11 +838,11 @@ export async function makeGame(ctx) {
     for (let i = 0; i < p.count; i++) {
       let x = p.getX(i), z = p.getZ(i);
       const y = p.getY(i), fr = clamp01(z * 1.6);
-      // the jaw: a child's - only a little narrower below the cheeks
+      // the jaw: a child's - wide and round, barely narrower below the cheeks
       const jaw = clamp01((-y - 0.12) / 0.8);
-      x *= 1 - 0.5 * Math.pow(jaw, 2.1); z *= 1 - 0.1 * jaw;
+      x *= 1 - 0.26 * Math.pow(jaw, 1.8); z *= 1 - 0.06 * jaw;
       z += relief(x, y) * fr;
-      p.setXYZ(i, x * HEAD.rx, (y > -0.3 ? y : y > -0.52 ? -0.3 + (y + 0.3) * 0.86 : -0.489 + (y + 0.52) * 0.72) * HEAD.ry, z * HEAD.rz);
+      p.setXYZ(i, x * HEAD.rx, (y > -0.3 ? y : y > -0.52 ? -0.3 + (y + 0.3) * 0.8 : -0.476 + (y + 0.52) * 0.62) * HEAD.ry, z * HEAD.rz);
       uv.setXY(i, 0.5 + x * 0.5, 0.5 + y * 0.5);
     }
     g.computeVertexNormals();
@@ -872,7 +872,7 @@ export async function makeGame(ctx) {
       blob(0, -0.19, 0.14, 0.1, 'rgba(226,116,106,0.2)');
       // (rosy: the cheeks high and strong, the tip of the nose, the chin,
       // the lids)
-      [-1, 1].forEach(s => { blob(s * 0.42, -0.2, 0.62, 0.36, 'rgba(222,112,104,0.34)'); blob(s * 0.4, -0.2, 0.28, 0.19, 'rgba(228,98,100,0.24)'); blob(s * 0.8, -0.05, 0.22, 0.3, 'rgba(206,110,98,0.2)'); blob(s * EYE.x, EYE.y, 0.34, 0.2, 'rgba(112,66,62,0.2)'); blob(s * 0.13, EYE.y + 0.02, 0.07, 0.11, 'rgba(120,70,66,0.3)'); });
+      [-1, 1].forEach(s => { blob(s * 0.5, -0.12, 0.9, 0.5, 'rgba(222,118,108,0.2)'); blob(s * 0.8, -0.05, 0.3, 0.34, 'rgba(206,114,102,0.12)'); blob(s * EYE.x, EYE.y, 0.34, 0.2, 'rgba(112,66,62,0.2)'); blob(s * 0.13, EYE.y + 0.02, 0.07, 0.11, 'rgba(120,70,66,0.3)'); });
       // (the nose: its sides in shade, the bridge and the tip catching the
       // light, the wings creased, the nostrils dark, a shade under the tip)
       [-1, 1].forEach(s => {
@@ -945,7 +945,7 @@ export async function makeGame(ctx) {
     });
     // (the openings: cut out of the bisque, the eyes behind them)
     const cut = canvas(FS, FS, (c) => { c.fillStyle = '#fff'; c.fillRect(0, 0, FS, FS); c.fillStyle = '#000'; [-1, 1].forEach(s => { almond(c, s); c.fill(); }); });
-    const skin = bisque.clone(); skin.color.setHex(0xffffff); skin.map = texOf(face, true); skin.alphaMap = texOf(cut, false); skin.alphaTest = 0.5; skin.normalMap = poreTex(9); skin.normalScale = new THREE.Vector2(0.3, 0.3); skin.emissive = new THREE.Color(0xffffff); skin.emissiveMap = skin.map; skin.emissiveIntensity = 0.13; keep(null, skin);
+    const skin = bisque.clone(); skin.color.setHex(0xffffff); skin.map = texOf(face, true); skin.alphaMap = texOf(cut, false); skin.alphaTest = 0.5; skin.normalMap = poreTex(9); skin.normalScale = new THREE.Vector2(0.3, 0.3); skin.emissive = new THREE.Color(0xffffff); skin.emissiveMap = skin.map; skin.emissiveIntensity = 0.17; keep(null, skin);
     mesh(g, skin, headG);
   }
   // the eyes: glass over a painted iris (brown, the fibres drawn in), each
@@ -1189,7 +1189,7 @@ export async function makeGame(ctx) {
   // and button, and a cream plume pinned at the right-front corner that
   // arcs up and back over the crown and falls behind. It sits on the hair.
   if (HAT) {
-    const hat = new THREE.Group(); hat.position.set(0, 3.5, -0.5); hat.rotation.set(0.04, 0, -0.07); headG.add(hat);
+    const hat = new THREE.Group(); hat.position.set(0, 2.8, -0.5); hat.rotation.set(0.04, 0, -0.07); headG.add(hat);
     const felt = new THREE.MeshPhysicalMaterial({ color: 0x17120f, roughness: 0.96, sheen: 0.6, sheenRoughness: 0.55, sheenColor: new THREE.Color(0x4a3f38), side: THREE.DoubleSide }); keep(null, felt);
     // (felt has a nap: a fine fuzz the lamp breaks up on - bumped, never a flat plastic)
     const nap = texOf(canvas(256, 256, (c) => {
