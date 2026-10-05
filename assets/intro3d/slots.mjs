@@ -757,7 +757,13 @@ export async function makeGame(ctx) {
   // the neck and the collar (a band of white linen), the lace ruff over it
   // and the lace jabot falling from it
   {
-    mesh(new THREE.CylinderGeometry(3.25, 3.3, 6.5, 28), bisque, body).position.set(0, NECKY + 0.6, 0.8);
+    // (the neck: in the shade of the jaw above, lighter toward the collar, so it
+    // never shows as a pale tube under the chin)
+    const neckG = new THREE.CylinderGeometry(3.25, 3.3, 6.5, 28), neckP = neckG.attributes.position, neckC = new Float32Array(neckP.count * 3);
+    for (let i = 0; i < neckP.count; i++) { const k = smoother(clamp01((0.7 - neckP.getY(i)) / 3)); neckC[i * 3] = lerp(0.6, 1, k); neckC[i * 3 + 1] = lerp(0.44, 1, k); neckC[i * 3 + 2] = lerp(0.4, 1, k); }
+    neckG.setAttribute('color', new THREE.BufferAttribute(neckC, 3));
+    const neckM = bisque.clone(); neckM.vertexColors = true; keep(null, neckM);
+    mesh(neckG, neckM, body).position.set(0, NECKY + 0.6, 0.8);
     const collar = mesh(new THREE.CylinderGeometry(3.7, 4.1, 2.6, 28, 1, true), linen, body); collar.scale.set(1, 1, 0.9); collar.position.set(0, 39.0, 0.6);
     // (the ruff: lace gathered round the throat, standing open under the
     // chin, its scalloped edge up)
@@ -805,24 +811,25 @@ export async function makeGame(ctx) {
     dz += 0.02 * (gauss(x, y, 0.28, 0.1, 0.16, 0.05) + gauss(x, y, -0.28, 0.1, 0.16, 0.05));
     dz -= 0.09 * (gauss(x, y, EYE.x, EYE.y, 0.17, 0.12) + gauss(x, y, -EYE.x, EYE.y, 0.17, 0.12));
     // the nose: a small bridge, a round tip turned up, its wings
-    dz += 0.115 * gauss(x, 0, 0, 0, 0.07, 1) * clamp01((0.02 - y) / 0.22) * clamp01((y + 0.27) / 0.08);
-    dz += 0.115 * gauss(x, y, 0, -0.205, 0.07, 0.055);
+    dz += 0.12 * gauss(x, 0, 0, 0, 0.05, 1) * clamp01((0.02 - y) / 0.22) * clamp01((y + 0.27) / 0.08);
+    dz += 0.1 * gauss(x, y, 0, -0.208, 0.055, 0.05);
     dz += 0.07 * (gauss(x, y, 0.078, -0.243, 0.05, 0.04) + gauss(x, y, -0.078, -0.243, 0.05, 0.04));
     // (the nostrils: two real pits under the tip, and the crease that parts each wing from the cheek)
-    dz -= 0.05 * (gauss(x, y, 0.055, -0.27, 0.022, 0.016) + gauss(x, y, -0.055, -0.27, 0.022, 0.016));
+    dz -= 0.075 * (gauss(x, y, 0.052, -0.268, 0.024, 0.017) + gauss(x, y, -0.052, -0.268, 0.024, 0.017));
+    // (the philtrum: a groove between two soft ridges, from the nose to the lip)
+    dz -= 0.03 * gauss(x, y, 0, -0.34, 0.016, 0.04);
+    dz += 0.02 * (gauss(x, y, 0.045, -0.345, 0.018, 0.04) + gauss(x, y, -0.045, -0.345, 0.018, 0.04));
     dz -= 0.035 * (gauss(x, y, 0.15, -0.265, 0.026, 0.06) + gauss(x, y, -0.15, -0.265, 0.026, 0.06));
     // the cheeks: full, low
     dz += 0.22 * (gauss(x, y, 0.4, -0.2, 0.29, 0.26) + gauss(x, y, -0.4, -0.2, 0.29, 0.26));
-    // (the fold from each wing of the nose down past the mouth's corner)
-    dz -= 0.018 * (gauss(x, y, 0.2, -0.38, 0.04, 0.09) + gauss(x, y, -0.2, -0.38, 0.03, 0.08));
     // the philtrum; the lips, the lower the fuller, parted by a line; the
     // groove under them; the chin, a small round
     dz -= 0.02 * gauss(x, y, 0, -0.33, 0.028, 0.035);
     dz += 0.09 * gauss(x, y, 0, -0.405, 0.17, 0.038);
-    dz += 0.115 * gauss(x, y, 0, -0.478, 0.16, 0.046);
+    dz += 0.1 * gauss(x, y, 0, -0.478, 0.16, 0.046);
     dz -= 0.032 * gauss(x, y, 0, -0.435, 0.105, 0.009);
-    dz -= 0.022 * gauss(x, y, 0, -0.56, 0.12, 0.03);
-    dz += 0.11 * gauss(x, y, 0, -0.68, 0.2, 0.11);
+    dz -= 0.014 * gauss(x, y, 0, -0.56, 0.09, 0.03);
+    dz += 0.09 * gauss(x, y, 0, -0.68, 0.2, 0.11);
     return dz;
   };
   const unitZ = (x, y) => Math.sqrt(Math.max(0, 1 - x * x - y * y));
@@ -836,7 +843,7 @@ export async function makeGame(ctx) {
   };
   const almond = (c, s) => { const a = almondPts(s); c.beginPath(); c.moveTo(a.upper[0], a.upper[1]); c.bezierCurveTo(...a.upper.slice(2)); c.bezierCurveTo(...a.lower.slice(2)); c.closePath(); };
   {
-    const g = new THREE.SphereGeometry(1, 160, 120);
+    const g = new THREE.SphereGeometry(1, 280, 200);
     const p = g.attributes.position, uv = g.attributes.uv;
     // (the lower face runs shorter than the upper, eased in with no crease: the
     // slope falls from 1 at the cheek to 0.62 at the chin)
@@ -869,12 +876,12 @@ export async function makeGame(ctx) {
       [-1, 1].forEach(s => {
         blob(s * 0.3, -0.01, 0.36, 0.18, 'rgba(140,84,74,0.32)');
         blob(s * 0.68, 0.1, 0.3, 0.3, 'rgba(140,92,80,0.26)');
-        blob(s * 0.2, -0.34, 0.07, 0.14, 'rgba(140,80,76,0.3)');
+        blob(s * 0.2, -0.34, 0.07, 0.14, 'rgba(140,80,76,0.14)');
         blob(s * 0.095, -0.245, 0.05, 0.05, 'rgba(150,84,80,0.36)');
-        blob(s * 0.62, -0.5, 0.2, 0.3, 'rgba(140,88,78,0.24)');
+        blob(s * 0.62, -0.5, 0.2, 0.3, 'rgba(140,88,78,0.14)');
       });
       blob(0, -0.28, 0.13, 0.045, 'rgba(130,72,68,0.26)');
-      blob(0, -0.8, 0.24, 0.08, 'rgba(130,84,74,0.34)');
+      blob(0, -0.8, 0.24, 0.08, 'rgba(130,84,74,0.2)');
       blob(0, 0.45, 0.5, 0.12, 'rgba(150,100,88,0.1)');
       [-1, 1].forEach(s => { blob(s * 0.78, 0.35, 0.22, 0.26, 'rgba(150,140,150,0.16)'); blob(s * 0.9, -0.15, 0.14, 0.2, 'rgba(226,120,106,0.22)'); });
       blob(0, -0.19, 0.14, 0.1, 'rgba(226,116,106,0.2)');
@@ -884,9 +891,9 @@ export async function makeGame(ctx) {
       // (the nose: its sides in shade, the bridge and the tip catching the
       // light, the wings creased, the nostrils dark, a shade under the tip)
       [-1, 1].forEach(s => {
-        blob(s * 0.1, -0.1, 0.055, 0.2, 'rgba(150,92,80,0.3)');
+        blob(s * 0.1, -0.1, 0.055, 0.2, 'rgba(150,92,80,0.2)');
         blob(s * 0.115, -0.24, 0.035, 0.07, 'rgba(120,64,58,0.36)');
-        blob(s * 0.2, -0.3, 0.07, 0.06, 'rgba(150,90,80,0.2)');
+        blob(s * 0.2, -0.3, 0.07, 0.06, 'rgba(150,90,80,0.08)');
         blob(s * EYE.x, EYE.y - 0.115, 0.2, 0.05, 'rgba(150,100,114,0.28)');
       });
       blob(0, -0.12, 0.04, 0.18, 'rgba(255,238,222,0.2)');
@@ -897,7 +904,6 @@ export async function makeGame(ctx) {
       [-1, 1].forEach(s => {
         blob(s * 0.36, -0.14, 0.2, 0.13, 'rgba(255,226,206,0.16)');
         blob(s * EYE.x, EYE.y - 0.14, 0.24, 0.06, 'rgba(110,100,150,0.17)');
-        blob(s * 0.2, -0.38, 0.05, 0.12, 'rgba(150,84,78,0.2)');
         blob(s * 0.1, -0.44, 0.07, 0.09, 'rgba(196,100,100,0.16)');
       });
       blob(0, -0.435, 0.26, 0.09, 'rgba(200,104,102,0.16)');
@@ -920,9 +926,9 @@ export async function makeGame(ctx) {
       c.restore();
       [-1, 1].forEach(s => { c.strokeStyle = 'rgba(140,86,80,0.45)'; c.lineWidth = 5; almond(c, s); c.stroke(); });
       // (the nostrils)
-      [-1, 1].forEach(s => { blob(s * 0.056, -0.268, 0.034, 0.022, 'rgba(84,34,38,0.8)'); blob(s * 0.058, -0.285, 0.05, 0.02, 'rgba(120,60,58,0.3)'); });
+      [-1, 1].forEach(s => { blob(s * 0.054, -0.268, 0.04, 0.026, 'rgba(70,28,32,0.9)'); blob(s * 0.058, -0.285, 0.05, 0.02, 'rgba(120,60,58,0.3)'); });
       // the mouth: small, the upper lip a bow, the lower full
-      const M = (x, y) => P(x, -0.435 + y * 1.35), mw = 0.18;
+      const M = (x, y) => P(x, -0.435 + y * 1.6), mw = 0.19;
       { const g1 = c.createLinearGradient(0, M(0, 0.03)[1], 0, M(0, 0)[1]); g1.addColorStop(0, '#8c4a50'); g1.addColorStop(1, '#a45c60'); c.fillStyle = g1; }
       c.beginPath(); c.moveTo(...M(-mw, 0));
       c.quadraticCurveTo(...M(-0.058, 0.024), ...M(-0.026, 0.033)); c.quadraticCurveTo(...M(0, 0.02), ...M(0.026, 0.033));
@@ -968,7 +974,7 @@ export async function makeGame(ctx) {
     // - the nose's edge, the rim of the cheek, the ears - the blood shows, a warm
     // red bleeding in at the grazing edge; and its value holds when the room
     // dims or warms, since a mood grades the light, never the skin itself)
-    const SSS = 0.6, LOCK = 0.1, FLOOR = 1.0;
+    const SSS = 0.6, LOCK = 0.1, FLOOR = 0.82;
     skin.customProgramCacheKey = () => 'slots-skin-sss';
     skin.onBeforeCompile = (sh) => {
       sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>', `
@@ -978,11 +984,11 @@ export async function makeGame(ctx) {
           float rim = pow(1.0 - ndv, 2.2);
           vec3 base = diffuseColor.rgb;
           outgoingLight += base * vec3(1.0, 0.30, 0.18) * rim * ${SSS.toFixed(2)};
-          float lit = dot(outgoingLight, vec3(0.3, 0.59, 0.11)) / max(dot(base, vec3(0.3, 0.59, 0.11)), 0.001);
-          float shade = 1.0 - smoothstep(0.3, 0.95, lit);
-          outgoingLight *= mix(vec3(1.0), vec3(1.14, 0.82, 0.7), shade * 0.85);
           vec3 held = base * (0.70 + 0.30 * ndv) * 0.98;
           outgoingLight = max(mix(outgoingLight, held, ${LOCK.toFixed(2)}), held * ${FLOOR.toFixed(2)});
+          float lit = dot(outgoingLight, vec3(0.3, 0.59, 0.11)) / max(dot(held, vec3(0.3, 0.59, 0.11)), 0.001);
+          float shade = 1.0 - smoothstep(0.55, 1.0, lit);
+          outgoingLight *= mix(vec3(1.0), vec3(1.1, 0.88, 0.8), shade * 0.6);
         }
         #include <opaque_fragment>`);
     };
@@ -1044,12 +1050,12 @@ export async function makeGame(ctx) {
     // long, dark, a doll's - which go with the lid as it closes)
     const R0 = EYE.r + 0.07, LA = 0.47;
     const arc = k => { const a = lerp(-LA, LA, k); return V(Math.sin(a) * R0, 0, Math.cos(a) * R0); };
-    const marginG = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 25 }, (_, k) => arc(k / 24))), 48, 0.034, 6, false); keep(marginG);
+    const marginG = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 25 }, (_, k) => arc(k / 24))), 48, 0.046, 6, false); keep(marginG);
     const marginM = new THREE.MeshStandardMaterial({ color: 0x5a3626, roughness: 0.7 }); keep(null, marginM);
     const lashG = (() => {
       const g = new THREE.BufferGeometry(), pos = [], uv = [], idx = [], NA = 32, NS = 4;
       for (let i = 0; i <= NA; i++) {
-        const a = lerp(-LA, LA, i / NA), sa = Math.sin(a), ca = Math.cos(a), len = 0.28 * (0.35 + 0.65 * Math.cos((a / LA) * Math.PI * 0.45));
+        const a = lerp(-LA, LA, i / NA), sa = Math.sin(a), ca = Math.cos(a), len = 0.4 * (0.35 + 0.65 * Math.cos((a / LA) * Math.PI * 0.45));
         for (let j = 0; j <= NS; j++) { const t = j / NS, r = R0 + 0.03 + len * t; pos.push(sa * r, -0.1 * t + 0.13 * t * t, ca * r); uv.push(i / NA, t); }
       }
       for (let i = 0; i < NA; i++) for (let j = 0; j < NS; j++) { const q = i * (NS + 1) + j; idx.push(q, q + NS + 1, q + 1, q + 1, q + NS + 1, q + NS + 2); }
