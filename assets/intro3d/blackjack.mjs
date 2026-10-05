@@ -412,6 +412,18 @@ export async function makeGame(ctx) {
   const discard = K.buildDiscard(set);
   faceToward(discard, DISCARD[0], DISCARD[1], 0, 20);
   seat.add(shoe, discard);
+  // the drop slot the machine clears its cards into (see SWP): a brass plate
+  // let into the cloth, a black mouth along it
+  if (tier !== 'edge' && tier !== 'vault') {
+    const brass = new THREE.MeshStandardMaterial({ color: 0xc9a24a, metalness: 0.85, roughness: 0.32 });
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.1, 12.2), brass);
+    plate.position.set(13.6 + 1.8, 0.05, 37.2); plate.castShadow = true; plate.receiveShadow = true;
+    const mouth = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 10.6), new THREE.MeshBasicMaterial({ color: 0x030303 }));
+    mouth.rotation.x = -Math.PI / 2; mouth.position.set(15.4 + 0.55, 0.102, 37.2);
+    const plate2 = plate.clone(), mouth2 = mouth.clone();
+    plate2.position.z = 19.8; mouth2.position.z = 19.8;
+    seat.add(plate, mouth, plate2, mouth2);
+  }
   const shoeMouth = V(0, 0.9, -11.6).applyAxisAngle(up, shoe.rotation.y).add(shoe.position);
   const mouthDir = V(0, 0, -1).applyAxisAngle(up, shoe.rotation.y);
   const yawShoe = Math.atan2(-mouthDir.x, -mouthDir.z);
@@ -663,7 +675,28 @@ export async function makeGame(ctx) {
   const bank = (a, b, k = 0.012) => { const d = b.p.clone().sub(a.p).applyQuaternion(a.q.clone().invert()); return THREE.MathUtils.clamp(-d.x * k, -0.3, 0.3); };
   const arm = k => ({ segs: [], t: dealAt - RISE.swing, at: upright(k, ARM.up), fin: FIN.rest, att: [0, 0], el: 0 });
   const A = arm(0), B = arm(1);
-  const grabAt = () => handFor(shoePose(inShoe)), outAt = () => handFor(shoePose(pulled));
+  // The drop slot: the machine clears its own cards at the end - each
+  // lifted by its long edge, carried to the slot's lip and let go, and it
+  // tips over the lip and goes in (m: the card's middle along it from the
+  // lip, th: how far its leading edge has gone down).
+  const SWP = { lipX: 15.4, z: 37.2, zYou: 19.8, slide: 0.75, y: 0.1, m0: -2.2, th0: 0.15, th1: 1.35, drop: 0.34 };
+  const swPose = (m, th, qr, z = SWP.z) => {
+    const lead = V(Math.cos(th), -Math.sin(th), 0);
+    return pose(V(SWP.lipX, SWP.y, z).addScaledVector(lead, m), _q2.setFromAxisAngle(V(0, 0, -1), th).multiply(qr));
+  };
+  const restOf = c => turned(c.slot, c.turn < Infinity ? Math.PI : 0, { p: V(0, 0, 0), q: new THREE.Quaternion() }, c.restY);
+  const sweepCard = c => {
+    const rest = restOf(c), gp = handFor(rest, 1);
+    addMove(B, pose(gp.p.clone().add(V(0, 3.4, 0)), gp.q), 0.34, { lift: 1.5, to: FIN.reach, lean: [0, 0], dip: [-0.1, 0] });
+    addMove(B, gp, 0.2, { settle: true, to: FIN.grip, lean: [0, 0] });
+    c.sw = { grab: B.t, qr: rest.q.clone(), rel: 0 };
+    hold(B, 0.07);
+    const end = handFor(swPose(SWP.m0, SWP.th0, c.sw.qr), 1);
+    addMove(B, end, 0.6, { lift: 3.4, to: FIN.grip, lean: [0, 0], dip: [-0.12, 0] });
+    c.sw.rel = B.t;
+    addMove(B, pose(end.p.clone().add(V(1.0, 2.6, 0.2)), end.q), 0.28, { to: FIN.open, lean: [0, 0] });
+  };
+  const grabAt =() => handFor(shoePose(inShoe)), outAt = () => handFor(shoePose(pulled));
   // (the shoe arm draws: down into the shoe, level at the grab; out by its
   // end, lifting it a little, on through)
   const drawOut = (c, first) => {
@@ -853,6 +886,24 @@ export async function makeGame(ctx) {
   }
   // (the deal goes on under a blackjack's call - the hole card is laid -
   // so the shot runs on until the machine is at rest)
+  // (the dealer's cards go into the drop slot after a beat to read the call)
+  plan.sweep = null;
+  if (tier !== 'edge' && tier !== 'vault') {
+    until(B, restW + 1.1);
+    plan.sweep = [B.t, 0];
+    cards.filter(c => c.who === 'dealer').sort((a, b) => b.slot.x - a.slot.x).forEach(sweepCard);
+    addMove(B, REST[1], DEAL.rest, { lift: 2.4, to: FIN.poise, lean: [0, 0], dip: [-0.15, 0], elbow: 1 });
+    // (and the table takes your cards itself: each slides across the cloth
+    // to the second slot, no hand on it, and tips in - the top one first)
+    let autoEnd = plan.sweep[0];
+    cards.filter(c => c.who === 'you').sort((a, b) => b.i - a.i).forEach((c, k) => {
+      const t0 = plan.sweep[0] + 0.5 + 0.55 * k;
+      c.sw = { auto: true, z: SWP.zYou, grab: t0, rel: t0 + SWP.slide, qr: lying(new THREE.Quaternion(), {}), p0: c.slot.clone().setY(c.restY) };
+      autoEnd = Math.max(autoEnd, c.sw.rel + SWP.drop);
+    });
+    until(B, autoEnd);
+    plan.sweep[1] = B.t;
+  }
   const lastMove = Math.max(A.t, B.t);
   if (tier !== 'edge') plan.endW = Math.max(plan.endW, lastMove + 0.6);
   // (then the machine folds in and sinks back through its port, the lid
@@ -1041,7 +1092,17 @@ export async function makeGame(ctx) {
       if (tt < c.pull) { g.visible = false; g.userData.contact.visible = false; return; }
       g.visible = true;
       const air = inAir(c, tt);
-      if (!air && tt < c.lay) {
+      if (c.sw && tt >= c.sw.grab) {
+        if (tt < c.sw.rel && c.sw.auto) {
+          const e = smoother(clamp01((tt - c.sw.grab) / SWP.slide)), E = swPose(SWP.m0, SWP.th0, c.sw.qr, c.sw.z);
+          cardPose.p.copy(c.sw.p0).lerp(E.p, e); cardPose.q.copy(c.sw.qr).slerp(E.q, e * e * e);
+        } else if (tt < c.sw.rel) cardIn(arms[1].now, cardPose, 1);
+        else {
+          const u = clamp01((tt - c.sw.rel) / SWP.drop), P = swPose(lerp(SWP.m0, CARD.w / 2 + 0.5, Math.pow(u, 1.7)), lerp(SWP.th0, SWP.th1, Math.pow(u, 1.2)), c.sw.qr, c.sw.z || SWP.z);
+          cardPose.p.copy(P.p); cardPose.q.copy(P.q);
+          if (u >= 1) { g.visible = false; g.userData.contact.visible = false; return; }
+        }
+      } else if (!air && tt < c.lay) {
         // (in the shoe arm's hand until it is flicked away; then in the
         // other's, its grip turning round to the side over the carry)
         if (!c.toss || tt < c.toss.t0) cardInShoeHand(arms[0].now, cardPose);
@@ -1162,6 +1223,8 @@ export async function makeGame(ctx) {
   // (the seat's view of the whole table: your cards, the dealer's, the
   // machine; a phone stands it further back)
   const SEATV = [0, 58 * W2, -22, 0, 6, 34];
+  // (the lens drawn back and over toward the drop slot while it clears the cards)
+  const SWEEPV = [5, 78 * W2, -36, 5, 5, 34];
   push([0, 6, 26, 20, 0, 0, 57.6]);
   push([Rw(dealAt - RISE.open) + 0.25, 5, 24, 23, 0, 0.5, 57.6]);
   push([Rw(dealAt - RISE.swing) - 0.05, 2, 34, -6, 0, 22, 57]);
@@ -1185,7 +1248,10 @@ export async function makeGame(ctx) {
       // the machine)
       push([Rw(plan.boom) + 0.35, 0, 84 * W2, 2, 0, 0, 33]);
       push([Rw(plan.boom) + 2.2, 0, 66 * W2, -6, 0, 0, 30]);
-    } else push([Rw(plan.revealW), ...SEATV]);
+    } else {
+      if (plan.sweep) push([Rw(plan.sweep[0]) + 0.2, ...SWEEPV]);
+      push([Rw(plan.revealW), ...SEATV]);
+    }
   } else {
     // (the wait, the table in frame; then in on the hole card; called with
     // both hands in frame)
@@ -1214,11 +1280,13 @@ export async function makeGame(ctx) {
       push([Rw(third.turn) - 0.1, t.x * 0.4, 58 * W2, -26, t.x * 0.55, 3, 31]);
       push([Rw(restW) + 0.15, t.x * 0.3, 62 * W2, -26, t.x * 0.4, 3, 30]);
       push(CALLV);
+      if (plan.sweep) push([Rw(plan.sweep[0]) + 0.2, ...SWEEPV]);
       push([Rw(plan.revealW) + 0.4, ...SEATV]);
     } else {
       push([Rw(holeCard.turn) - 0.1, s.x * 0.3, 60 * W2, -26, s.x * 0.5, 3, 30]);
       push([Rw(restW) + 0.1, s.x * 0.3, 62 * W2, -26, s.x * 0.4, 3, 30]);
       push(CALLV);
+      if (plan.sweep) push([Rw(plan.sweep[0]) + 0.2, ...SWEEPV]);
       push([Rw(plan.revealW) + 0.4, ...SEATV]);
     }
   }
@@ -1270,6 +1338,7 @@ export async function makeGame(ctx) {
     else if (c.lay < Infinity) at(c.lay, 'pat', { speed: 50 });
     if (c.turn < Infinity) { at(c.turn, 'snap', { soft: true }); if (!c.edge) at(turnEnd(c), 'pat', { speed: 90 }); }
   });
+  cards.forEach(c => { if (c.sw) { if (c.sw.auto) at(c.sw.grab, 'slide', { dur: SWP.slide }); else at(c.sw.grab, 'pat', { speed: 30 }); at(c.sw.rel, 'slide', { dur: SWP.drop }); } });
   if (tier === 'edge') { at(holeCard.turn + DEAL.push + EDGE, 'pat', { speed: 25 }); at(plan.silence[1], 'drop'); }
   at(plan.sinkW + SINK.lag, 'servo', { f0: 150, f1: 60, dur: SINK.down });
   if (tier === 'hardways') at(plan.callW + 0.1, 'chime');
