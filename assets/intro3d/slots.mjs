@@ -213,7 +213,7 @@ export async function makeGame(ctx) {
   };
   // (tone on tone, as a damask is: the pattern woven in the ground's own
   // colour and read by its sheen; the gold is in the braid alone)
-  const vestArt = damask('#0a2812', '#2c6e3e', '#000');
+  const vestArt = damask('#081f12', '#1f5232', '#000');
   // the coat: a fine silk velvet in the owner's money green - dark where
   // it faces the lamp, its pile catching light where the cloth turns away;
   // the waistcoat (a damask, its motif a little over two centimetres) and
@@ -226,18 +226,18 @@ export async function makeGame(ctx) {
   // (a velvet's pile scatters the light broadly and soft, lit most where
   // the cloth turns from the lamp - not a satin's bright, tight sheen)
   const velvet = (color, sheenColor) => {
-    const m = new THREE.MeshPhysicalMaterial({ color, roughness: 0.94, specularIntensity: 0.1, sheen: 1, sheenRoughness: 0.5, sheenColor: new THREE.Color(sheenColor), normalMap: pileTex, normalScale: new THREE.Vector2(0.45, 0.45) });
+    const m = new THREE.MeshPhysicalMaterial({ color, roughness: 0.96, specularIntensity: 0.06, sheen: 0.7, sheenRoughness: 0.72, sheenColor: new THREE.Color(sheenColor), normalMap: pileTex, normalScale: new THREE.Vector2(0.55, 0.55) });
     keep(null, m);
     return m;
   };
-  const coat = velvet(0x0b2c18, 0x3f8058);
-  const sleeveMat = velvet(0x0b2c18, 0x3f8058);
+  const coat = velvet(0x0a2e22, 0x1e5240);
+  const sleeveMat = velvet(0x0a2e22, 0x1e5240);
   sleeveMat.side = THREE.DoubleSide;
-  const cuffMat = velvet(0x072012, 0x2f6a46);
+  const cuffMat = velvet(0x072218, 0x184634);
   cuffMat.side = THREE.DoubleSide;
   // (the waistcoat: a darker green than the coat, but green - a silk
   // damask whose sheen reads where it turns)
-  const vest = silk(vestArt, [30, 20], 0.64, 0x2f7a49); vest.sheen = 0.42; vest.normalScale.set(0.32, 0.32);
+  const vest = silk(vestArt, [30, 20], 0.64, 0x24603a); vest.sheen = 0.36; vest.normalScale.set(0.32, 0.32);
   // the braid: gold thread woven flat in a herringbone, along every edge
   const braidTex = (() => {
     const c = canvas(32, 128, (g, W, Hh) => {
@@ -519,11 +519,11 @@ export async function makeGame(ctx) {
   // His profile (radius, height above the hips), and the coat's section: a
   // superellipse in front (flat across the chest, where the window is), an
   // ellipse behind, 0.64 as deep as wide.
-  const PROF = [[13.0, -2], [12.0, 1], [10.0, 5], [8.5, 10], [9.2, 15], [10.3, 21], [11.2, 27], [11.7, 31], [11.3, 33.5], [9.4, 36.2], [6.8, 38.4], [4.4, 39.6], [3.6, 40.2]];
+  const PROF = [[12.0, -2], [11.2, 1], [9.6, 5], [8.3, 10], [9.0, 15], [10.2, 21], [11.2, 27], [11.9, 31], [11.8, 33.5], [9.8, 36.2], [6.8, 38.4], [4.4, 39.6], [3.6, 40.2]];
   const DEP = 0.6;
   // (the coat over it: a shell of its own, standing off the waistcoat, its
   // skirts flaring over the stool's cushion, open down the front)
-  const PROFC = [[15.4, -3.2], [14.0, -1], [11.8, 2], [10.2, 6], [9.4, 10], [10.2, 15], [11.5, 21], [12.3, 27], [12.7, 31], [12.3, 33.5], [10.0, 36.2], [7.4, 38.4], [5.6, 39.2], [4.5, 39.8]];
+  const PROFC = [[13.8, -3.2], [12.8, -1], [11.2, 2], [9.9, 6], [9.1, 10], [9.9, 15], [11.3, 21], [12.2, 27], [13.0, 31], [13.3, 33.5], [11.6, 36.2], [8.0, 38.4], [5.8, 39.2], [4.5, 39.8]];
   const radAt = (P, y) => {
     if (y <= P[0][1]) return P[0][0];
     for (let i = 0; i + 1 < P.length; i++) if (y <= P[i + 1][1]) return lerp(P[i][0], P[i + 1][0], clamp01((y - P[i][1]) / (P[i + 1][1] - P[i][1])));
@@ -1188,11 +1188,13 @@ export async function makeGame(ctx) {
         const brow = smoother((z - 0.35) / 0.4) * smoother((y - 0.1) / 0.25) * (1 - smoother((y - 0.6) / 0.3));
         const low = smoother((y + 0.85) / 0.7);
         const L = lerp(lerp(1.2, 2.7, low) * (0.7 + 0.6 * rng()), 1.3 + 0.5 * rng(), brow) * (inner ? 0.65 : rng() < 0.35 ? 0.72 : 1.1);
-        const sm = fringe || temple ? 0.66 : inner ? 0.7 : rng() < 0.4 ? 0.75 : 1, Rh = (0.44 + 0.2 * rng()) * sm, turns = 1.8 + 0.9 * rng(), dir = rng() < 0.5 ? -1 : 1, ang0 = rng() * TAU, rt0 = (0.3 + 0.08 * rng()) * sm;
+        // (locks come in two scales: most fine, and among them a few wide ringlets, as a child's mop has)
+        const big = !fringe && !temple && !inner && rng() < 0.24;
+        const sm = fringe || temple ? 0.66 : inner ? 0.7 : big ? 1.9 : rng() < 0.4 ? 0.75 : 1, Rh = (0.44 + 0.2 * rng()) * sm, turns = big ? 1.3 + 0.6 * rng() : 1.8 + 0.9 * rng(), dir = rng() < 0.5 ? -1 : 1, ang0 = rng() * TAU, rt0 = (0.3 + 0.08 * rng()) * (big ? 1.45 : sm);
         const ref = Math.abs(d.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0);
         const u = V().crossVectors(d, ref).normalize(), w = V().crossVectors(d, u);
         const tone = rng(), shade = 0.8 + 0.35 * rng();
-        const S = fringe || temple ? 3 : 3; K = fringe || temple ? 7 : 5;
+        const S = big ? 4 : 3; K = 7;
         for (let si = 0; si < S; si++) {
           // (each strand: its own length, width, shade and a little phase and radius of its own)
           const Ls = L * (0.86 + 0.28 * rng()), Rs = Rh * (0.8 + 0.3 * rng()), rt = rt0 * (0.8 + 0.4 * rng()), ph = ang0 + si * 0.8 + (rng() - 0.5) * 0.3, tn = Math.min(1, Math.max(0, tone + (rng() - 0.5) * 0.35)), sh = shade * (0.92 + 0.16 * rng()), tu = turns * (0.94 + 0.12 * rng());
@@ -1972,8 +1974,13 @@ export async function makeGame(ctx) {
     // third reel standing on its tooth, the shut drawer under it - and
     // still; then in a little, as the bell is half raised)
     const HELD = tall ? fit(Bp([0, 34.5, 3]), V(0.1, 0.08, 1), 74, 30) : fit(Bp([0, 37, 3]), V(0.1, 0.08, 1), 72, 56);
-    push(Rw(plan.silence[0]) + 0.4, HELD);
-    push(Rw(plan.silence[1]) + 1.0, HELD.map((v, i) => (i < 3 ? lerp(v, HELD[i + 3], 0.06) : v)));
+    // (first in tight on the third reel alone, the payline wire across the
+    // seam between its two symbols, and held there until it has read)
+    const TOOTHV = tall ? fit(Bp([3.4, WIN.y, winZ]), V(0.05, 0.04, 1), 12, 7.5) : fit(Bp([3.4, WIN.y, winZ]), V(0.05, 0.04, 1), 7.5, 10);
+    push(Rw(plan.silence[0]) + 0.15, TOOTHV);
+    push(Rw(plan.silence[0]) + 0.5, TOOTHV);
+    push(Rw(plan.silence[1]) + 0.05, HELD);
+    push(Rw(plan.silence[1]) + 1.6, HELD.map((v, i) => (i < 3 ? lerp(v, HELD[i + 3], 0.06) : v)));
     push(Rw(plan.endW) + 2, HELD.map((v, i) => (i < 3 ? lerp(v, HELD[i + 3], 0.1) : v)));
   } else if (tier === 'vault') {
     push(Rw(restW) + 0.3, CALLV);
@@ -2043,7 +2050,7 @@ export async function makeGame(ctx) {
       r.uBlur.value = clamp01((s.v - 6) / 14);
     });
     poseTokens(w);
-    if (lineShade) lineShade.material.opacity = 0.5 * smoother((w - decided) / 0.4);
+    if (lineShade) lineShade.material.opacity = (tier === 'edge' ? 0.72 : 0.5) * smoother((w - decided) / 0.4);
     lights.rim.intensity = room.RIM;
     let burst = -1, dust = 1;
     if (tier === 'vault') {
@@ -2066,13 +2073,13 @@ export async function makeGame(ctx) {
       es.angle = 0.18; es.color.setHex(0xe4eaff);
       es.position.copy(toWorld(Bp([10, 70, 60])));
       es.target.position.copy(toWorld(Bp([4, 30, 4])));
-      es.intensity = 3.0 * k;
-      key.intensity = key0 * (1 - 0.45 * k); key.color.setRGB(1, lerp(0.933, 0.96, k), lerp(0.867, 1, k));
-      fill.intensity = fill0 * (1 - 0.9 * k);
-      faceFill.intensity = faceFill0 * (1 - 0.85 * k);
-      wash.intensity = wash0 * (1 - 0.85 * k);
-      lights.pendant.intensity = pendant0 * (1 - 0.88 * k);
-      scene.environmentIntensity = room.ENV_LEVEL * (1 - 0.6 * k);
+      es.intensity = 3.8 * k;
+      key.intensity = key0 * (1 - 0.62 * k); key.color.setRGB(lerp(1, 0.9, k), lerp(0.933, 0.93, k), lerp(0.867, 1, k));
+      fill.intensity = fill0 * (1 - 0.96 * k);
+      faceFill.intensity = faceFill0 * (1 - 0.9 * k);
+      wash.intensity = wash0 * (1 - 0.95 * k);
+      lights.pendant.intensity = pendant0 * (1 - 0.94 * k);
+      scene.environmentIntensity = room.ENV_LEVEL * (1 - 0.78 * k);
       dust = 1 - 0.85 * k;
     }
     return { burst, dust };
