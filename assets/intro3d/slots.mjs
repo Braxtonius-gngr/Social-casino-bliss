@@ -124,7 +124,8 @@ export async function makeGame(ctx) {
   const { THREE, scene, set, lights, tier, seed, aspect, room, helpers: H } = ctx;
   const { makeWarp, spline, finished, embossTex } = H;
   const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
-  const rng = (s => { for (let k = 0; k < 3; k++) { s = Math.imul(s ^ (s >>> 15), 0x2c1b3c6d) >>> 0; s = Math.imul(s ^ (s >>> 12), 0x297a2d39) >>> 0; } return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; s ^= s >>> 16; return (s >>> 0) / 4294967296; }; })((seed ^ 0x51a7c0de) >>> 0);
+  const mkRng = s => { for (let k = 0; k < 3; k++) { s = Math.imul(s ^ (s >>> 15), 0x2c1b3c6d) >>> 0; s = Math.imul(s ^ (s >>> 12), 0x297a2d39) >>> 0; } return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; s ^= s >>> 16; return (s >>> 0) / 4294967296; }; };
+  const rng = mkRng((seed ^ 0x51a7c0de) >>> 0);
   const pick = a => a[Math.floor(rng() * a.length)];
 
   // ---- The line each tier draws.
@@ -811,15 +812,17 @@ export async function makeGame(ctx) {
     dz -= 0.05 * (gauss(x, y, 0.055, -0.27, 0.022, 0.016) + gauss(x, y, -0.055, -0.27, 0.022, 0.016));
     dz -= 0.035 * (gauss(x, y, 0.15, -0.265, 0.026, 0.06) + gauss(x, y, -0.15, -0.265, 0.026, 0.06));
     // the cheeks: full, low
-    dz += 0.16 * (gauss(x, y, 0.4, -0.2, 0.25, 0.22) + gauss(x, y, -0.4, -0.2, 0.25, 0.22));
+    dz += 0.22 * (gauss(x, y, 0.4, -0.2, 0.29, 0.26) + gauss(x, y, -0.4, -0.2, 0.29, 0.26));
+    // (the fold from each wing of the nose down past the mouth's corner)
+    dz -= 0.018 * (gauss(x, y, 0.2, -0.38, 0.04, 0.09) + gauss(x, y, -0.2, -0.38, 0.03, 0.08));
     // the philtrum; the lips, the lower the fuller, parted by a line; the
     // groove under them; the chin, a small round
     dz -= 0.02 * gauss(x, y, 0, -0.33, 0.028, 0.035);
-    dz += 0.075 * gauss(x, y, 0, -0.405, 0.14, 0.036);
-    dz += 0.095 * gauss(x, y, 0, -0.478, 0.13, 0.042);
+    dz += 0.09 * gauss(x, y, 0, -0.405, 0.17, 0.038);
+    dz += 0.115 * gauss(x, y, 0, -0.478, 0.16, 0.046);
     dz -= 0.032 * gauss(x, y, 0, -0.435, 0.105, 0.009);
     dz -= 0.022 * gauss(x, y, 0, -0.56, 0.12, 0.03);
-    dz += 0.09 * gauss(x, y, 0, -0.68, 0.17, 0.1);
+    dz += 0.11 * gauss(x, y, 0, -0.68, 0.2, 0.11);
     return dz;
   };
   const unitZ = (x, y) => Math.sqrt(Math.max(0, 1 - x * x - y * y));
@@ -835,6 +838,9 @@ export async function makeGame(ctx) {
   {
     const g = new THREE.SphereGeometry(1, 160, 120);
     const p = g.attributes.position, uv = g.attributes.uv;
+    // (the lower face runs shorter than the upper, eased in with no crease: the
+    // slope falls from 1 at the cheek to 0.62 at the chin)
+    const lowerFace = t => { const k = Math.min(1, t / 0.3); return t - 0.38 * (0.3 * (k * k * k - k * k * k * k / 2) + Math.max(0, t - 0.3) * 1); };
     for (let i = 0; i < p.count; i++) {
       let x = p.getX(i), z = p.getZ(i);
       const y = p.getY(i), fr = clamp01(z * 1.6);
@@ -842,11 +848,13 @@ export async function makeGame(ctx) {
       const jaw = clamp01((-y - 0.12) / 0.8);
       x *= 1 - 0.26 * Math.pow(jaw, 1.8); z *= 1 - 0.06 * jaw;
       z += relief(x, y) * fr;
-      p.setXYZ(i, x * HEAD.rx, (y > -0.3 ? y : y > -0.52 ? -0.3 + (y + 0.3) * 0.8 : -0.476 + (y + 0.52) * 0.62) * HEAD.ry, z * HEAD.rz);
+      p.setXYZ(i, x * HEAD.rx, (y > -0.3 ? y : -0.3 - lowerFace(-0.3 - y)) * HEAD.ry, z * HEAD.rz);
       uv.setXY(i, 0.5 + x * 0.5, 0.5 + y * 0.5);
     }
     g.computeVertexNormals();
     // the face, painted
+    // (the skin paints from its own stream, so changing it never reshuffles the hair)
+    const rf = mkRng(0x5c1a0f);
     const face = canvas(FS, FS, (c) => {
       c.fillStyle = '#e0b090'; c.fillRect(0, 0, FS, FS);
       const blob = (x, y, rx, ry, col) => { const [px, py] = P(x, y); const gr = c.createRadialGradient(px, py, 0, px, py, rx * FS / 2); gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(0,0,0,0)'); c.save(); c.translate(px, py); c.scale(1, ry / rx); c.translate(-px, -py); c.fillStyle = gr; c.beginPath(); c.arc(px, py, rx * FS / 2, 0, TAU); c.fill(); c.restore(); };
@@ -854,10 +862,10 @@ export async function makeGame(ctx) {
       // fine speckle of pores and capillaries, shade in the hollows - the
       // eye sockets, beside the nose, under the lip and the chin, the
       // temples and the jaw's edge)
-      for (let k = 0; k < 2600; k++) { const px = rng() * FS, py = rng() * FS; c.fillStyle = rng() < 0.5 ? 'rgba(190,120,100,0.07)' : 'rgba(120,80,60,0.05)'; c.beginPath(); c.arc(px, py, 0.8 + rng() * 1.6, 0, TAU); c.fill(); }
+      for (let k = 0; k < 7000; k++) { const px = rf() * FS, py = rf() * FS; c.fillStyle = rf() < 0.5 ? 'rgba(190,110,96,0.08)' : rf() < 0.5 ? 'rgba(120,80,60,0.06)' : 'rgba(236,196,170,0.07)'; c.beginPath(); c.arc(px, py, 0.8 + rf() * 1.6, 0, TAU); c.fill(); }
       // (and the large, slow unevenness of living skin: a warmer patch, a
       // cooler one, none of them anything a viewer could point at)
-      for (let k = 0; k < 46; k++) { const x = (rng() * 2 - 1) * 0.9, y = (rng() * 2 - 1) * 0.9; blob(x, y, 0.1 + rng() * 0.22, 0.08 + rng() * 0.2, rng() < 0.55 ? 'rgba(214,126,108,0.07)' : 'rgba(186,150,128,0.08)'); }
+      for (let k = 0; k < 110; k++) { const x = (rf() * 2 - 1) * 0.9, y = (rf() * 2 - 1) * 0.9; blob(x, y, 0.07 + rf() * 0.2, 0.06 + rf() * 0.16, rf() < 0.5 ? 'rgba(214,112,98,0.11)' : rf() < 0.5 ? 'rgba(176,150,150,0.1)' : 'rgba(236,196,166,0.1)'); }
       [-1, 1].forEach(s => {
         blob(s * 0.3, -0.01, 0.36, 0.18, 'rgba(140,84,74,0.32)');
         blob(s * 0.68, 0.1, 0.3, 0.3, 'rgba(140,92,80,0.26)');
@@ -884,6 +892,15 @@ export async function makeGame(ctx) {
       blob(0, -0.12, 0.04, 0.18, 'rgba(255,238,222,0.2)');
       blob(0, -0.205, 0.05, 0.035, 'rgba(255,240,228,0.24)');
       blob(0, -0.305, 0.09, 0.026, 'rgba(116,64,60,0.14)');
+      // (the face's warm and cool: the apple of each cheek catching light, the
+      // lips ringed rosy, the under-eye cooler and bluer, the nose-fold shaded)
+      [-1, 1].forEach(s => {
+        blob(s * 0.36, -0.14, 0.2, 0.13, 'rgba(255,226,206,0.16)');
+        blob(s * EYE.x, EYE.y - 0.14, 0.24, 0.06, 'rgba(110,100,150,0.17)');
+        blob(s * 0.2, -0.38, 0.05, 0.12, 'rgba(150,84,78,0.2)');
+        blob(s * 0.1, -0.44, 0.07, 0.09, 'rgba(196,100,100,0.16)');
+      });
+      blob(0, -0.435, 0.26, 0.09, 'rgba(200,104,102,0.16)');
       // (the brim's shade on the forehead, painted in: the hat is always the
       // same height over it, and the lamp comes from above it)
       blob(0, 0.74, 1.0, 0.24, 'rgba(84,44,34,0.46)');
@@ -905,7 +922,7 @@ export async function makeGame(ctx) {
       // (the nostrils)
       [-1, 1].forEach(s => { blob(s * 0.056, -0.268, 0.034, 0.022, 'rgba(84,34,38,0.8)'); blob(s * 0.058, -0.285, 0.05, 0.02, 'rgba(120,60,58,0.3)'); });
       // the mouth: small, the upper lip a bow, the lower full
-      const M = (x, y) => P(x, -0.435 + y * 1.35), mw = 0.15;
+      const M = (x, y) => P(x, -0.435 + y * 1.35), mw = 0.18;
       { const g1 = c.createLinearGradient(0, M(0, 0.03)[1], 0, M(0, 0)[1]); g1.addColorStop(0, '#8c4a50'); g1.addColorStop(1, '#a45c60'); c.fillStyle = g1; }
       c.beginPath(); c.moveTo(...M(-mw, 0));
       c.quadraticCurveTo(...M(-0.058, 0.024), ...M(-0.026, 0.033)); c.quadraticCurveTo(...M(0, 0.02), ...M(0.026, 0.033));
@@ -928,24 +945,25 @@ export async function makeGame(ctx) {
       c.save();
       [-1, 1].forEach(s => {
         for (let k = 0; k < 340; k++) {
-          const t = Math.min(0.995, Math.max(0.005, k / 339 + (rng() - 0.5) * 0.01));
+          const t = Math.min(0.995, Math.max(0.005, k / 339 + (rf() - 0.5) * 0.01));
           const thick = 0.012 + 0.03 * Math.sin(Math.min(1, t * 1.15) * Math.PI) ** 0.7;
-          const [px, py] = P(s * bx(t) + (rng() - 0.5) * 0.006, by(t) + (rng() - 0.5) * thick);
+          const [px, py] = P(s * bx(t) + (rf() - 0.5) * 0.006, by(t) + (rf() - 0.5) * thick);
           const [qx, qy] = P(s * bx(Math.min(1, t + 0.01)), by(Math.min(1, t + 0.01)));
           let dx = (qx - px) * s, dy = qy - py; const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
           // (the hair's lie: up and out near the nose, level mid-brow, a little down at the tail)
-          const turn = (1 - t) * -0.6 + t * t * 0.5 + (rng() - 0.5) * 0.3, cs = Math.cos(turn), sn = Math.sin(turn);
-          const ex = dx * cs - dy * sn, ey = dx * sn + dy * cs, len = 13 + rng() * 9 - 6 * Math.abs(t - 0.45);
-          c.strokeStyle = `rgba(${34 + Math.round(rng() * 20)},${20 + Math.round(rng() * 12)},${12 + Math.round(rng() * 6)},${0.45 + 0.45 * rng()})`;
-          c.lineWidth = 1.1 + 0.9 * rng();
+          const turn = (1 - t) * -0.6 + t * t * 0.5 + (rf() - 0.5) * 0.3, cs = Math.cos(turn), sn = Math.sin(turn);
+          const ex = dx * cs - dy * sn, ey = dx * sn + dy * cs, len = 13 + rf() * 9 - 6 * Math.abs(t - 0.45);
+          c.strokeStyle = `rgba(${34 + Math.round(rf() * 20)},${20 + Math.round(rf() * 12)},${12 + Math.round(rf() * 6)},${0.45 + 0.45 * rf()})`;
+          c.lineWidth = 1.1 + 0.9 * rf();
           c.beginPath(); c.moveTo(px, py); c.quadraticCurveTo(px + s * ex * len * 0.5, py + ey * len * 0.5 - 1.5, px + s * ex * len, py + ey * len); c.stroke();
         }
       });
       c.restore();
     });
+    for (let k = 0; k < 17430; k++) rng();
     // (the openings: cut out of the bisque, the eyes behind them)
     const cut = canvas(FS, FS, (c) => { c.fillStyle = '#fff'; c.fillRect(0, 0, FS, FS); c.fillStyle = '#000'; [-1, 1].forEach(s => { almond(c, s); c.fill(); }); });
-    const skin = bisque.clone(); skin.color.setHex(0xffffff); skin.map = texOf(face, true); skin.alphaMap = texOf(cut, false); skin.alphaTest = 0.5; skin.normalMap = poreTex(9); skin.normalScale = new THREE.Vector2(0.3, 0.3); skin.emissive = new THREE.Color(0xffffff); skin.emissiveMap = skin.map; skin.emissiveIntensity = 0.17; keep(null, skin);
+    const skin = bisque.clone(); skin.color.setHex(0xffffff); skin.map = texOf(face, true); skin.alphaMap = texOf(cut, false); skin.alphaTest = 0.5; skin.normalMap = poreTex(9); skin.normalScale = new THREE.Vector2(0.45, 0.45); skin.specularIntensity = 0.3; skin.roughness = 0.62; skin.emissive = new THREE.Color(0xffffff); skin.emissiveMap = skin.map; skin.emissiveIntensity = 0.22; keep(null, skin);
     mesh(g, skin, headG);
   }
   // the eyes: glass over a painted iris (brown, the fibres drawn in), each
