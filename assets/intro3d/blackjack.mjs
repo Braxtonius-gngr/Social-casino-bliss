@@ -453,10 +453,10 @@ export async function makeGame(ctx) {
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
   key.shadow.camera.near = 50; key.shadow.camera.far = 200;
-  key.shadow.bias = -0.0004; key.shadow.normalBias = 0.03; key.shadow.radius = 4;
+  key.shadow.bias = -0.0004; key.shadow.normalBias = 0.03; key.shadow.radius = 7;
   // (the room's even light gets in under a card held up: its shadow is a
   // shade, not a hole)
-  key.shadow.intensity = 0.72;
+  key.shadow.intensity = 0.55;
   seat.add(key, key.target);
 
   // ---- The machine: the card table's (table.mjs), stowed under its port.
@@ -951,7 +951,7 @@ export async function makeGame(ctx) {
     if (tt > plan.sinkW) {
       // (the hand comes back up to the yoke's own pose as it folds, and goes
       // down with it)
-      const b = smoother(clamp01((tt - plan.sinkW) / 0.45)), up = upright(k, y, fold);
+      const b = smoother(clamp01((tt - plan.sinkW - 0.4 * k) / 0.5)), up = upright(k, y, fold);
       hp = { p: hp.p.clone().lerp(up.p, b), q: hp.q.clone().slerp(up.q, b) };
       f = [lerp(f[0], FIN.rest[0], b), lerp(f[1], FIN.rest[1], b)];
       el = lerp(el, 0, b); fade = 0; free = false;
@@ -979,7 +979,9 @@ export async function makeGame(ctx) {
     const shown = y > ARM.down + 1;
     const hs = arms.map((a, k) => planned(k, tt, y, fold));
     mid.copy(hs[0].hp.p).add(hs[1].hp.p).multiplyScalar(0.5);
-    const yaw = y < ARM.up - 0.5 ? 0 : THREE.MathUtils.clamp(0.3 * Math.atan2(-(mid.x - PORT.x), -(mid.z - PORT.z)), -0.22, 0.22);
+    const yaw0 = y < ARM.up - 0.5 && tt < plan.sinkW ? 0 : THREE.MathUtils.clamp(0.3 * Math.atan2(-(mid.x - PORT.x), -(mid.z - PORT.z)), -0.22, 0.22);
+    // (going down, the yoke turns a little as it folds)
+    const yaw = tt >= plan.sinkW ? lerp(yaw0, -0.2, smoother(clamp01((tt - plan.sinkW) / 0.7))) : yaw0;
     const tp = torso.pose(y, yaw, tt, shown ? 1 : 0, fold);
     const { shoulders, side, fwd } = tp;
     const house = houseOf(y, tp);
@@ -1200,7 +1202,9 @@ export async function makeGame(ctx) {
       // (and the card on its edge, still the hero, is set below the print: a
       // phone stands the lens back and aims it over the card; wide, it pans
       // the table off to the side)
-      push([Rw(plan.endW) + 0.3, ...(tall ? [s.x + 18, 16, s.z - 34, s.x + 1, 18, s.z + 3.6] : [s.x - 38, 10.5, s.z - 22.5, s.x - 49, 3.4, s.z + 3.6])]);
+      const EEND = tall ? [s.x + 24, 15.3, s.z - 47.2, s.x + 1, 18, s.z + 3.6] : [s.x - 38, 10.5, s.z - 22.5, s.x - 49, 3.4, s.z + 3.6];
+      push([Rw(plan.revealW) + 0.15, ...EEND]);
+      push([Rw(plan.endW) + 0.3, ...EEND]);
     } else if (decide === third) {
       push([Rw(holeCard.turn) - 0.1, s.x * 0.3, 60 * W2, -26, s.x * 0.5, 3, 30]);
       push([Rw(holeCard.turn) + 0.6, s.x * 0.3, 58 * W2, -26, s.x * 0.5, 3, 31]);
@@ -1323,10 +1327,10 @@ export async function makeGame(ctx) {
       es.position.copy(toWorld(V(s.x + 12, 26, s.z - 26)));
       es.target.position.copy(toWorld(V(s.x, 3.5, s.z + 4)));
       es.intensity = 4.6 * k;
-      key.intensity = key0 * (1 - 0.94 * k);
+      key.intensity = key0 * (1 - 0.88 * k);
       lights.pendant.intensity = pendant0 * (1 - 0.92 * k);
-      lights.rim.intensity = room.RIM * (1 - 0.85 * k);
-      scene.environmentIntensity = room.ENV_LEVEL * (1 - 0.85 * k);
+      lights.rim.intensity = room.RIM * (1 - 0.7 * k);
+      scene.environmentIntensity = room.ENV_LEVEL * (1 - 0.72 * k);
       dust = 1 - 0.9 * k;
       // (where its edge meets the cloth: the light cannot get under it)
       edgeShadow.material.opacity = 0.8 * smoother((w - holeCard.turn) / 0.15);
