@@ -1040,7 +1040,7 @@ export async function makeGame(ctx) {
 
   // ---- The Black Jack: gold through the table's print (a sweep along the
   // lettering), the machine's circuits lit, the flash in the room.
-  let printGlow = null, flash = null;
+  let printGlow = null, flash = null, goldLamp = null;
   if (tier === 'vault') {
     const mark = table.group.userData.mark;
     const gm = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.45, 0.98, 0.34), alphaMap: mark.material.alphaMap, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
@@ -1069,6 +1069,12 @@ export async function makeGame(ctx) {
     flash = new THREE.PointLight(0xffd9a8, 0, 0, 0);
     flash.position.copy(toWorld(V(4, 40, 30)));
     scene.add(flash);
+    // (the jackpot's light, a real one: a warm gold lamp over your two cards
+    // that lights the cloth, the cards and the hands round them, and stays
+    // up after the burst has gone)
+    goldLamp = new THREE.PointLight(0xffb347, 0, 70, 2);
+    goldLamp.position.copy(toWorld(V(0, 15, 24)));
+    scene.add(goldLamp);
   }
 
   // ---- The camera: keys in the seat's frame [t, eye xyz, aim xyz], real
@@ -1103,7 +1109,7 @@ export async function makeGame(ctx) {
       // (up over the felt as it lights: the whole lettered arc, your hand,
       // the machine)
       push([Rw(plan.boom) + 0.35, 0, 84 * W2, 2, 0, 0, 33]);
-      push([Rw(plan.boom) + 2.2, 0, 88 * W2, -2, 0, 0, 34]);
+      push([Rw(plan.boom) + 2.2, 0, 66 * W2, -6, 0, 0, 30]);
     } else push([Rw(plan.revealW), ...SEATV]);
   } else {
     // (the wait, the table in frame; then in on the hole card; called with
@@ -1212,6 +1218,7 @@ export async function makeGame(ctx) {
       // (a flash, gone in a blink - the felt stays black; the gold is in
       // the letters and the machine)
       if (flash) flash.intensity = on ? 9 * Math.exp(-burst / 0.09) : 0;
+      if (goldLamp) goldLamp.intensity = on ? 4000 * smoother(burst / 0.5) * (0.45 + 0.55 * Math.exp(-burst / 2.2)) : 0;
       lit = on ? 3.2 * smoother(burst / 0.25) * Math.max(0, 1 - burst / 3.8) : 0;
     }
     // the light in the machine's circuits: up while it works, brighter as
@@ -1263,6 +1270,7 @@ export async function makeGame(ctx) {
   const dispose = () => {
     scene.remove(seat);
     if (flash) scene.remove(flash);
+    if (goldLamp) scene.remove(goldLamp);
     Object.assign(lights.edgeSpot, { angle: es0.angle, penumbra: es0.penumbra, castShadow: es0.cast });
     K.freeTree(seat, set);
     linen.dispose();
