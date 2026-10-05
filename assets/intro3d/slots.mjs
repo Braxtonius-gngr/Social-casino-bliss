@@ -79,6 +79,9 @@ const STRIPS = [
 const NS = 12, STEP = TAU / NS;
 const WORDS = { chip: ['Three Chips', 'Five to one'], die: ['Three Dice', 'Five to one'], bell: ['Three Bells', 'Ten to one'], crown: ['Three Crowns', 'Ten to one'], seven: ['Three Sevens', 'Twenty to one'], badge: ['The Jackpot', 'Forty to one'] };
 // (the payout, in tokens: the odds on one)
+// The Jackpot's gold, in one place: the glow plane's ring (its strength and where it peaks, as a fraction of the plane), the rays (strength, length),
+// the plane's opacity, the point lights on the cloth and on his face, and the reels' own light.
+const GLOW = { ring: 0.34, ringAt: 0.3, rays: 0.3, rayIn: 0.1, rayLen: 0.36, opacity: 0.62, flood: 205, face: 150, reels: 0.42 };
 const TOKGAP = { standard: 0.11, hardways: 0.07, vault: 0.04, edge: 0 };
 const PAY = { chip: 5, die: 5, bell: 10, crown: 10, seven: 20, badge: 40 };
 
@@ -697,15 +700,15 @@ export async function makeGame(ctx) {
       const gt = texOf(canvas(512, 512, (g, W, Hh) => {
         // (a ring round the bezel - the window itself left clear - a soft
         // halo out from it, and rays: the light of a lamp behind a pane)
-        const r = g.createRadialGradient(W / 2, Hh / 2, 0, W / 2, Hh / 2, W / 2); r.addColorStop(0, 'rgba(255,160,70,0)'); r.addColorStop(0.2, 'rgba(255,160,70,0)'); r.addColorStop(0.3, 'rgba(255,170,80,0.34)'); r.addColorStop(0.62, 'rgba(255,150,60,0.14)'); r.addColorStop(1, 'rgba(255,140,50,0)');
+        const r = g.createRadialGradient(W / 2, Hh / 2, 0, W / 2, Hh / 2, W / 2); r.addColorStop(0, 'rgba(255,160,70,0)'); r.addColorStop(GLOW.ringAt - 0.1, 'rgba(255,160,70,0)'); r.addColorStop(GLOW.ringAt, `rgba(255,170,80,${GLOW.ring})`); r.addColorStop(GLOW.ringAt + 0.32, `rgba(255,150,60,${GLOW.ring * 0.42})`); r.addColorStop(1, 'rgba(255,140,50,0)');
         g.fillStyle = r; g.fillRect(0, 0, W, Hh);
         // (the rays: a few broad shafts drawn on their own sheet and softened once - never a fan of thin lines)
         const sheet = document.createElement('canvas'); sheet.width = W; sheet.height = Hh;
         const sg = sheet.getContext('2d'); sg.translate(W / 2, Hh / 2); sg.globalCompositeOperation = 'lighter';
         for (let k = 0; k < 13; k++) {
-          const a = (k / 13) * TAU + 0.12 * Math.sin(k * 2.7), len = W * (0.36 + 0.1 * Math.sin(k * 1.9)), w0 = 0.055 + 0.035 * Math.abs(Math.sin(k * 3.3));
-          const rg = sg.createLinearGradient(0, 0, Math.cos(a) * len, Math.sin(a) * len); rg.addColorStop(0, 'rgba(255,200,120,0)'); rg.addColorStop(0.2, 'rgba(255,200,120,0.3)'); rg.addColorStop(1, 'rgba(255,170,90,0)');
-          sg.fillStyle = rg; sg.beginPath(); sg.moveTo(Math.cos(a - w0) * W * 0.1, Math.sin(a - w0) * W * 0.1); sg.lineTo(Math.cos(a) * len, Math.sin(a) * len); sg.lineTo(Math.cos(a + w0) * W * 0.1, Math.sin(a + w0) * W * 0.1); sg.closePath(); sg.fill();
+          const a = (k / 13) * TAU + 0.12 * Math.sin(k * 2.7), len = W * (GLOW.rayLen + 0.1 * Math.sin(k * 1.9)), w0 = 0.055 + 0.035 * Math.abs(Math.sin(k * 3.3));
+          const rg = sg.createLinearGradient(Math.cos(a) * W * GLOW.rayIn, Math.sin(a) * W * GLOW.rayIn, Math.cos(a) * len, Math.sin(a) * len); rg.addColorStop(0, 'rgba(255,200,120,0)'); rg.addColorStop(0.2, `rgba(255,200,120,${GLOW.rays})`); rg.addColorStop(1, 'rgba(255,170,90,0)');
+          sg.fillStyle = rg; sg.beginPath(); sg.moveTo(Math.cos(a - w0) * W * GLOW.rayIn, Math.sin(a - w0) * W * GLOW.rayIn); sg.lineTo(Math.cos(a) * len, Math.sin(a) * len); sg.lineTo(Math.cos(a + w0) * W * GLOW.rayIn, Math.sin(a + w0) * W * GLOW.rayIn); sg.closePath(); sg.fill();
         }
         g.save(); g.filter = 'blur(7px)'; g.drawImage(sheet, 0, 0); g.restore();
         g.filter = 'blur(14px)'; g.strokeStyle = 'rgba(255,200,130,0.8)'; g.lineWidth = 26;
@@ -1993,12 +1996,12 @@ export async function makeGame(ctx) {
       const k = burst > 0 ? smoother(burst / 0.25) * Math.max(0.35, 1 - burst / 4.4) : 0;
       // (gold through his clockwork: the strips lit warm from inside, the
       // light out of the window into the room, a glint in his eyes)
-      reelMats.forEach(m => { m.emissiveIntensity = 0.42 * k; m.color.setRGB(1, 1 - 0.08 * k, 1 - 0.25 * k); });
+      reelMats.forEach(m => { m.emissiveIntensity = GLOW.reels * k; m.color.setRGB(1, 1 - 0.08 * k, 1 - 0.25 * k); });
       inner.intensity = inner0 * (1 + 3.5 * k);
-      if (windowGlow) windowGlow.material.opacity = k * 0.62 * (0.85 + 0.15 * Math.sin(burst * 9));
+      if (windowGlow) windowGlow.material.opacity = k * GLOW.opacity * (0.85 + 0.15 * Math.sin(burst * 9));
       if (pour) pour.intensity = room.PENDANT * 0.7 * k * (0.9 + 0.1 * Math.sin(burst * 9));
-      if (flood) flood.intensity = 205 * k * (0.9 + 0.1 * Math.sin(burst * 9));
-      if (faceGold) faceGold.intensity = 150 * k * (0.9 + 0.1 * Math.sin(burst * 9));
+      if (flood) flood.intensity = GLOW.flood * k * (0.9 + 0.1 * Math.sin(burst * 9));
+      if (faceGold) faceGold.intensity = GLOW.face * k * (0.9 + 0.1 * Math.sin(burst * 9));
       if (goldWash) goldWash.intensity = room.PENDANT * 0.7 * k * (0.92 + 0.08 * Math.sin(burst * 9));
       if (eyeMatRef) eyeMatRef.emissiveIntensity = 1.5 * k;
       glints.forEach(g => { g.material.opacity = 0.8 * k; });
