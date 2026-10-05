@@ -963,7 +963,30 @@ export async function makeGame(ctx) {
     for (let k = 0; k < 17430; k++) rng();
     // (the openings: cut out of the bisque, the eyes behind them)
     const cut = canvas(FS, FS, (c) => { c.fillStyle = '#fff'; c.fillRect(0, 0, FS, FS); c.fillStyle = '#000'; [-1, 1].forEach(s => { almond(c, s); c.fill(); }); });
-    const skin = bisque.clone(); skin.color.setHex(0xffffff); skin.map = texOf(face, true); skin.alphaMap = texOf(cut, false); skin.alphaTest = 0.5; skin.normalMap = poreTex(9); skin.normalScale = new THREE.Vector2(0.45, 0.45); skin.specularIntensity = 0.3; skin.roughness = 0.62; skin.emissive = new THREE.Color(0xffffff); skin.emissiveMap = skin.map; skin.emissiveIntensity = 0.22; keep(null, skin);
+    const skin = bisque.clone(); skin.color.setHex(0xffffff); skin.map = texOf(face, true); skin.alphaMap = texOf(cut, false); skin.alphaTest = 0.5; skin.normalMap = poreTex(9); skin.normalScale = new THREE.Vector2(0.45, 0.45); skin.specularIntensity = 0.3; skin.roughness = 0.62; skin.emissive = new THREE.Color(0xffffff); skin.emissiveMap = skin.map; skin.emissiveIntensity = 0.22;
+    // (a child's skin is lit through, not only from its face: where it is thin
+    // - the nose's edge, the rim of the cheek, the ears - the blood shows, a warm
+    // red bleeding in at the grazing edge; and its value holds when the room
+    // dims or warms, since a mood grades the light, never the skin itself)
+    const SSS = 0.6, LOCK = 0.1, FLOOR = 1.0;
+    skin.customProgramCacheKey = () => 'slots-skin-sss';
+    skin.onBeforeCompile = (sh) => {
+      sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>', `
+        {
+          vec3 vv = normalize(vViewPosition);
+          float ndv = clamp(dot(normal, vv), 0.0, 1.0);
+          float rim = pow(1.0 - ndv, 2.2);
+          vec3 base = diffuseColor.rgb;
+          outgoingLight += base * vec3(1.0, 0.30, 0.18) * rim * ${SSS.toFixed(2)};
+          float lit = dot(outgoingLight, vec3(0.3, 0.59, 0.11)) / max(dot(base, vec3(0.3, 0.59, 0.11)), 0.001);
+          float shade = 1.0 - smoothstep(0.3, 0.95, lit);
+          outgoingLight *= mix(vec3(1.0), vec3(1.14, 0.82, 0.7), shade * 0.85);
+          vec3 held = base * (0.70 + 0.30 * ndv) * 0.98;
+          outgoingLight = max(mix(outgoingLight, held, ${LOCK.toFixed(2)}), held * ${FLOOR.toFixed(2)});
+        }
+        #include <opaque_fragment>`);
+    };
+    keep(null, skin);
     mesh(g, skin, headG);
   }
   // the eyes: glass over a painted iris (brown, the fibres drawn in), each
