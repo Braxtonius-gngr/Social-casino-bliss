@@ -100,7 +100,7 @@ const STOOL = { y: 31, z: -30, w: 26, d: 22 };
 const HIP = { y: 34.5, z: -28 };
 const SH = { x: 10.2, y: 32.5 };
 const NECKY = 41.5;
-const HEAD = { up: 8.2, fwd: 1.6, rx: 7.4, ry: 8.9, rz: 8.2 };
+const HEAD = { up: 7.6, fwd: 1.6, rx: 7.4, ry: 8.9, rz: 8.2 };
 const ARM = { upper: 16.5, fore: 14.2 };
 const PALM = 2.5;                              // the wrist to the palm's centre
 // The window in his chest (body frame) and the reels behind it.
@@ -756,7 +756,7 @@ export async function makeGame(ctx) {
   // the neck and the collar (a band of white linen), the lace ruff over it
   // and the lace jabot falling from it
   {
-    mesh(new THREE.CylinderGeometry(2.9, 3.2, 6.5, 24), bisque, body).position.set(0, NECKY + 0.6, 0.8);
+    mesh(new THREE.CylinderGeometry(3.25, 3.3, 6.5, 28), bisque, body).position.set(0, NECKY + 0.6, 0.8);
     const collar = mesh(new THREE.CylinderGeometry(3.7, 4.1, 2.6, 28, 1, true), linen, body); collar.scale.set(1, 1, 0.9); collar.position.set(0, 39.0, 0.6);
     // (the ruff: lace gathered round the throat, standing open under the
     // chin, its scalloped edge up)
@@ -804,19 +804,22 @@ export async function makeGame(ctx) {
     dz += 0.02 * (gauss(x, y, 0.28, 0.1, 0.16, 0.05) + gauss(x, y, -0.28, 0.1, 0.16, 0.05));
     dz -= 0.09 * (gauss(x, y, EYE.x, EYE.y, 0.17, 0.12) + gauss(x, y, -EYE.x, EYE.y, 0.17, 0.12));
     // the nose: a small bridge, a round tip turned up, its wings
-    dz += 0.095 * gauss(x, 0, 0, 0, 0.07, 1) * clamp01((0.02 - y) / 0.22) * clamp01((y + 0.27) / 0.08);
-    dz += 0.085 * gauss(x, y, 0, -0.205, 0.075, 0.06);
-    dz += 0.04 * (gauss(x, y, 0.07, -0.24, 0.045, 0.038) + gauss(x, y, -0.07, -0.24, 0.045, 0.038));
+    dz += 0.115 * gauss(x, 0, 0, 0, 0.07, 1) * clamp01((0.02 - y) / 0.22) * clamp01((y + 0.27) / 0.08);
+    dz += 0.115 * gauss(x, y, 0, -0.205, 0.07, 0.055);
+    dz += 0.07 * (gauss(x, y, 0.078, -0.243, 0.05, 0.04) + gauss(x, y, -0.078, -0.243, 0.05, 0.04));
+    // (the nostrils: two real pits under the tip, and the crease that parts each wing from the cheek)
+    dz -= 0.05 * (gauss(x, y, 0.055, -0.27, 0.022, 0.016) + gauss(x, y, -0.055, -0.27, 0.022, 0.016));
+    dz -= 0.035 * (gauss(x, y, 0.15, -0.265, 0.026, 0.06) + gauss(x, y, -0.15, -0.265, 0.026, 0.06));
     // the cheeks: full, low
-    dz += 0.125 * (gauss(x, y, 0.4, -0.2, 0.23, 0.2) + gauss(x, y, -0.4, -0.2, 0.23, 0.2));
+    dz += 0.16 * (gauss(x, y, 0.4, -0.2, 0.25, 0.22) + gauss(x, y, -0.4, -0.2, 0.25, 0.22));
     // the philtrum; the lips, the lower the fuller, parted by a line; the
     // groove under them; the chin, a small round
-    dz -= 0.012 * gauss(x, y, 0, -0.33, 0.028, 0.035);
-    dz += 0.052 * gauss(x, y, 0, -0.405, 0.12, 0.034);
-    dz += 0.072 * gauss(x, y, 0, -0.475, 0.11, 0.038);
-    dz -= 0.02 * gauss(x, y, 0, -0.435, 0.1, 0.009);
+    dz -= 0.02 * gauss(x, y, 0, -0.33, 0.028, 0.035);
+    dz += 0.075 * gauss(x, y, 0, -0.405, 0.14, 0.036);
+    dz += 0.095 * gauss(x, y, 0, -0.478, 0.13, 0.042);
+    dz -= 0.032 * gauss(x, y, 0, -0.435, 0.105, 0.009);
     dz -= 0.022 * gauss(x, y, 0, -0.56, 0.12, 0.03);
-    dz += 0.075 * gauss(x, y, 0, -0.68, 0.16, 0.1);
+    dz += 0.09 * gauss(x, y, 0, -0.68, 0.17, 0.1);
     return dz;
   };
   const unitZ = (x, y) => Math.sqrt(Math.max(0, 1 - x * x - y * y));
@@ -858,23 +861,25 @@ export async function makeGame(ctx) {
       [-1, 1].forEach(s => {
         blob(s * 0.3, -0.01, 0.36, 0.18, 'rgba(140,84,74,0.32)');
         blob(s * 0.68, 0.1, 0.3, 0.3, 'rgba(140,92,80,0.26)');
-        blob(s * 0.2, -0.34, 0.07, 0.14, 'rgba(140,84,78,0.2)');
+        blob(s * 0.2, -0.34, 0.07, 0.14, 'rgba(140,80,76,0.3)');
         blob(s * 0.095, -0.245, 0.05, 0.05, 'rgba(150,84,80,0.36)');
         blob(s * 0.62, -0.5, 0.2, 0.3, 'rgba(140,88,78,0.24)');
       });
       blob(0, -0.28, 0.13, 0.045, 'rgba(130,72,68,0.26)');
       blob(0, -0.8, 0.24, 0.08, 'rgba(130,84,74,0.34)');
       blob(0, 0.45, 0.5, 0.12, 'rgba(150,100,88,0.1)');
+      [-1, 1].forEach(s => { blob(s * 0.78, 0.35, 0.22, 0.26, 'rgba(150,140,150,0.16)'); blob(s * 0.9, -0.15, 0.14, 0.2, 'rgba(226,120,106,0.22)'); });
+      blob(0, -0.19, 0.14, 0.1, 'rgba(226,116,106,0.2)');
       // (rosy: the cheeks high and strong, the tip of the nose, the chin,
       // the lids)
-      [-1, 1].forEach(s => { blob(s * 0.42, -0.2, 0.62, 0.36, 'rgba(222,118,108,0.26)'); blob(s * 0.4, -0.2, 0.28, 0.19, 'rgba(228,104,104,0.16)'); blob(s * 0.8, -0.05, 0.22, 0.3, 'rgba(206,110,98,0.2)'); blob(s * EYE.x, EYE.y, 0.34, 0.2, 'rgba(112,66,62,0.2)'); blob(s * 0.13, EYE.y + 0.02, 0.07, 0.11, 'rgba(120,70,66,0.3)'); });
+      [-1, 1].forEach(s => { blob(s * 0.42, -0.2, 0.62, 0.36, 'rgba(222,112,104,0.34)'); blob(s * 0.4, -0.2, 0.28, 0.19, 'rgba(228,98,100,0.24)'); blob(s * 0.8, -0.05, 0.22, 0.3, 'rgba(206,110,98,0.2)'); blob(s * EYE.x, EYE.y, 0.34, 0.2, 'rgba(112,66,62,0.2)'); blob(s * 0.13, EYE.y + 0.02, 0.07, 0.11, 'rgba(120,70,66,0.3)'); });
       // (the nose: its sides in shade, the bridge and the tip catching the
       // light, the wings creased, the nostrils dark, a shade under the tip)
       [-1, 1].forEach(s => {
         blob(s * 0.1, -0.1, 0.055, 0.2, 'rgba(150,92,80,0.3)');
         blob(s * 0.115, -0.24, 0.035, 0.07, 'rgba(120,64,58,0.36)');
         blob(s * 0.2, -0.3, 0.07, 0.06, 'rgba(150,90,80,0.2)');
-        blob(s * EYE.x, EYE.y - 0.115, 0.2, 0.05, 'rgba(150,104,116,0.16)');
+        blob(s * EYE.x, EYE.y - 0.115, 0.2, 0.05, 'rgba(150,100,114,0.28)');
       });
       blob(0, -0.12, 0.04, 0.18, 'rgba(255,238,222,0.2)');
       blob(0, -0.205, 0.05, 0.035, 'rgba(255,240,228,0.24)');
@@ -898,9 +903,9 @@ export async function makeGame(ctx) {
       c.restore();
       [-1, 1].forEach(s => { c.strokeStyle = 'rgba(140,86,80,0.45)'; c.lineWidth = 5; almond(c, s); c.stroke(); });
       // (the nostrils)
-      [-1, 1].forEach(s => blob(s * 0.058, -0.262, 0.024, 0.017, 'rgba(100,42,44,0.62)'));
+      [-1, 1].forEach(s => { blob(s * 0.056, -0.268, 0.034, 0.022, 'rgba(84,34,38,0.8)'); blob(s * 0.058, -0.285, 0.05, 0.02, 'rgba(120,60,58,0.3)'); });
       // the mouth: small, the upper lip a bow, the lower full
-      const M = (x, y) => P(x, -0.435 + y), mw = 0.12;
+      const M = (x, y) => P(x, -0.435 + y * 1.35), mw = 0.15;
       { const g1 = c.createLinearGradient(0, M(0, 0.03)[1], 0, M(0, 0)[1]); g1.addColorStop(0, '#8c4a50'); g1.addColorStop(1, '#a45c60'); c.fillStyle = g1; }
       c.beginPath(); c.moveTo(...M(-mw, 0));
       c.quadraticCurveTo(...M(-0.058, 0.024), ...M(-0.026, 0.033)); c.quadraticCurveTo(...M(0, 0.02), ...M(0.026, 0.033));
@@ -1086,7 +1091,7 @@ export async function makeGame(ctx) {
         for (let j = 0; j <= LAN; j++) {
           const ph = lerp(ph0, Math.PI / 2, j / LAN), y = Math.sin(ph), r = Math.cos(ph), x = Math.sin(az) * r, z = Math.cos(az) * r;
           const p = V(x * RX, y * RY, z * RZ).add(C0), n = V(x / RX, y / RY, z / RZ).normalize(), dl = y - la0;
-          pos.push(p.x, p.y, p.z); nrm.push(n.x, n.y, n.z); th.push(deep(y, z, dl)); den.push(lerp(1, 0.2 + 0.8 * smoother(dl / 0.16), clamp01((z - 0.5) / 0.3) * smoother(y / 0.25)));
+          pos.push(p.x, p.y, p.z); nrm.push(n.x, n.y, n.z); th.push(deep(y, z, dl)); den.push(lerp(1, 0.5 + 0.5 * smoother(dl / 0.12), clamp01((z - 0.5) / 0.3) * smoother(y / 0.25)));
         }
       }
       for (let i = 0; i < AZN; i++) for (let j = 0; j < LAN; j++) { const a = i * (LAN + 1) + j, b = a + LAN + 1; ids.push(a, b, a + 1, a + 1, b, b + 1); }
@@ -1111,15 +1116,17 @@ export async function makeGame(ctx) {
       depthM.customProgramCacheKey = () => 'ringlet-depth'; keep(null, depthM);
       cap.customDepthMaterial = depthM;
       // (the curls)
-      const cRoot = new THREE.Color(0x090402), cA = new THREE.Color(0x1a0f08), cB = new THREE.Color(0x3d2515), cc = new THREE.Color();
-      const NC = HAT ? 380 : 640, M = 16, K = 6, DOWN = V(0, -1, 0);
+      const cRoot = new THREE.Color(0x070302), cA = new THREE.Color(0x170c06), cB = new THREE.Color(0x34200f), cc = new THREE.Color();
+      // (locks: each ringlet is two or three fine strands wound together, so it reads as one
+      // curl made of hair, not one smooth tube; every strand tapers to a closed point)
+      const NL = HAT ? 300 : 460, M = 12, DOWN = V(0, -1, 0);
       const PP = [], NN = [], CC = [], II = [];
       const P = V(0, 0, 0), T = V(0, 0, 0), Nn = V(0, 0, 0), Bb = V(0, 0, 0);
-      let made = 0, guard = 0;
-      while (made < NC && guard++ < 40000) {
-        const fringe = made > NC * 0.8, temple = !fringe && made > NC * 0.64, crown = !HAT && !fringe && !temple && made > NC * 0.5, inner = !fringe && !temple && !crown && made > NC * 0.36;
+      let made = 0, guard = 0, K = 5;
+      while (made < NL && guard++ < 40000) {
+        const fringe = made > NL * 0.78, temple = !fringe && made > NL * 0.62, crown = !HAT && !fringe && !temple && made > NL * 0.5, inner = !fringe && !temple && !crown && made > NL * 0.36;
         let az, y;
-        if (crown) { az = rng() * TAU; y = lerp(0.55, 1, Math.sqrt(rng())); } else if (temple) { az = (rng() < 0.5 ? -1 : 1) * (0.95 + 0.6 * rng()); y = edgeLa(az) + 0.02 + rng() * 0.38; } else if (fringe) { az = (rng() - 0.5) * 2.3; const la = edgeLa(az); y = la + 0.02 + rng() * 0.1; } else { az = rng() * TAU; y = lerp(-0.8, 1, rng()); }
+        if (crown) { az = rng() * TAU; y = lerp(0.55, 1, Math.sqrt(rng())); } else if (temple) { az = (rng() < 0.5 ? -1 : 1) * (0.95 + 0.6 * rng()); y = edgeLa(az) + 0.02 + rng() * 0.38; } else if (fringe) { az = (rng() - 0.5) * 2.3; const la = edgeLa(az); y = la + 0.04 + rng() * 0.1; } else { az = rng() * TAU; y = lerp(-0.8, 1, rng()); }
         const r = Math.sqrt(1 - y * y), x = Math.sin(az) * r, z = Math.cos(az) * r, la0 = edgeLa(az);
         if (y <= la0 + 0.02 || (HAT && y > 0.38)) continue;
         const n = V(x / RX, y / RY, z / RZ).normalize();
@@ -1128,43 +1135,50 @@ export async function makeGame(ctx) {
         let t = DOWN.clone().addScaledVector(n, -DOWN.dot(n));
         if (t.length() < 0.25) { t.set(rng() - 0.5, 0, rng() - 0.5); t.addScaledVector(n, -t.dot(n)); }
         t.normalize();
-        const d = n.clone().multiplyScalar(lerp(0.28 + 0.2 * rng(), 0.1 + 0.08 * rng(), smoother((n.y - 0.55) / 0.4))).addScaledVector(t, 0.9).add(V(rng() - 0.5, rng() - 0.5, rng() - 0.5).multiplyScalar(0.7)).normalize();
+        // (a fringe lock sweeps a little to the side it grows on, so the brow is not a row of the same hook)
+        const sweep = fringe ? Math.sin(az) * (0.5 + 0.5 * rng()) : 0;
+        const d = n.clone().multiplyScalar(lerp((fringe ? 0.6 : 0.28) + 0.2 * rng(), 0.1 + 0.08 * rng(), smoother((n.y - 0.55) / 0.4))).addScaledVector(t, 0.9).add(V(rng() - 0.5, rng() - 0.5, rng() - 0.5).multiplyScalar(0.7)).add(V(sweep, 0, 0)).normalize();
         const brow = smoother((z - 0.35) / 0.4) * smoother((y - 0.1) / 0.25) * (1 - smoother((y - 0.6) / 0.3));
         const low = smoother((y + 0.85) / 0.7);
-        const L = lerp(lerp(1.2, 2.7, low) * (0.85 + 0.4 * rng()), 1.5 + 0.4 * rng(), brow) * (inner ? 0.65 : rng() < 0.35 ? 0.78 : 1.08);
-        const sm = inner ? 0.62 : rng() < 0.35 ? 0.7 : 1, Rh = (0.52 + 0.2 * rng()) * sm, turns = 1.7 + 0.7 * rng(), dir = rng() < 0.5 ? -1 : 1, ang0 = rng() * TAU, rt0 = (0.5 + 0.1 * rng()) * sm;
+        const L = lerp(lerp(1.2, 2.7, low) * (0.7 + 0.6 * rng()), 1.3 + 0.5 * rng(), brow) * (inner ? 0.65 : rng() < 0.35 ? 0.72 : 1.1);
+        const sm = fringe || temple ? 0.66 : inner ? 0.7 : rng() < 0.4 ? 0.75 : 1, Rh = (0.44 + 0.2 * rng()) * sm, turns = 1.8 + 0.9 * rng(), dir = rng() < 0.5 ? -1 : 1, ang0 = rng() * TAU, rt0 = (0.3 + 0.08 * rng()) * sm;
         const ref = Math.abs(d.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0);
         const u = V().crossVectors(d, ref).normalize(), w = V().crossVectors(d, u);
-        const tone = rng(), shade = 0.8 + 0.4 * rng();
-        // (a spine with a droop, a helix wound round it)
-        const pts = [];
-        for (let j = 0; j <= M; j++) {
-          const s = j / M, ang = ang0 + dir * s * turns * TAU, amp = Rh * (1 - 0.3 * s) * smoother(s / 0.2);
-          pts.push(root.clone().addScaledVector(d, L * s).addScaledVector(DOWN, 0.35 * L * s * s).addScaledVector(u, Math.cos(ang) * amp).addScaledVector(w, Math.sin(ang) * amp));
-        }
-        // (a tube about the points, carried along them, thinning to the tip)
-        const base = PP.length / 3;
-        for (let j = 0; j <= M; j++) {
-          P.copy(pts[j]); T.copy(pts[Math.min(M, j + 1)]).sub(pts[Math.max(0, j - 1)]).normalize();
-          if (j === 0) Nn.copy(Math.abs(T.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0)); Nn.addScaledVector(T, -Nn.dot(T)).normalize();
-          Bb.crossVectors(T, Nn);
-          const s = j / M, rad = rt0 * (0.7 + 0.3 * smoother(s / 0.2)) * (1 - 0.7 * Math.pow(s, 1.8));
-          cc.copy(cRoot).lerp(cc.copy(cA).lerp(cB, tone), smoother(s / (fringe ? 0.75 : 0.5))).lerp(cB, 0.22 * s * s).multiplyScalar(shade);
-          for (let k = 0; k < K; k++) {
-            const a = (k / K) * TAU, ca = Math.cos(a), sa = Math.sin(a), dx = Nn.x * ca + Bb.x * sa, dy = Nn.y * ca + Bb.y * sa, dz = Nn.z * ca + Bb.z * sa;
-            PP.push(P.x + dx * rad, P.y + dy * rad, P.z + dz * rad); NN.push(dx, dy, dz); CC.push(cc.r, cc.g, cc.b);
+        const tone = rng(), shade = 0.8 + 0.35 * rng();
+        const S = fringe || temple ? 3 : 3; K = fringe || temple ? 7 : 5;
+        for (let si = 0; si < S; si++) {
+          // (each strand: its own length, width, shade and a little phase and radius of its own)
+          const Ls = L * (0.86 + 0.28 * rng()), Rs = Rh * (0.8 + 0.3 * rng()), rt = rt0 * (0.8 + 0.4 * rng()), ph = ang0 + si * 0.8 + (rng() - 0.5) * 0.3, tn = Math.min(1, Math.max(0, tone + (rng() - 0.5) * 0.35)), sh = shade * (0.92 + 0.16 * rng()), tu = turns * (0.94 + 0.12 * rng());
+          // (a spine with a droop, a helix wound round it)
+          const pts = [];
+          for (let j = 0; j <= M; j++) {
+            const s = j / M, ang = ph + dir * s * tu * TAU, amp = Rs * (1 - 0.3 * s) * smoother(s / 0.2);
+            pts.push(root.clone().addScaledVector(d, Ls * s).addScaledVector(DOWN, 0.35 * Ls * s * s).addScaledVector(u, Math.cos(ang) * amp).addScaledVector(w, Math.sin(ang) * amp));
           }
-        }
-        for (let j = 0; j < M; j++) for (let k = 0; k < K; k++) {
-          const a = base + j * K + k, b = base + j * K + (k + 1) % K, c = base + (j + 1) * K + k, e = base + (j + 1) * K + (k + 1) % K;
-          II.push(a, b, c, b, e, c);
+          // (a tube about the points, carried along them, thinning to a closed point)
+          const base = PP.length / 3;
+          for (let j = 0; j <= M; j++) {
+            P.copy(pts[j]); T.copy(pts[Math.min(M, j + 1)]).sub(pts[Math.max(0, j - 1)]).normalize();
+            if (j === 0) Nn.copy(Math.abs(T.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0)); Nn.addScaledVector(T, -Nn.dot(T)).normalize();
+            Bb.crossVectors(T, Nn);
+            const s = j / M, rad = rt * (0.75 + 0.25 * smoother(s / 0.15)) * Math.pow(Math.max(0, 1 - Math.pow(s, 2.2)), 0.75);
+            cc.copy(fringe ? cA : cRoot).lerp(cc.copy(cA).lerp(cB, tn), smoother(s / (fringe ? 0.3 : 0.5))).lerp(cB, 0.18 * s * s).multiplyScalar(sh);
+            for (let k = 0; k < K; k++) {
+              const a = (k / K) * TAU, ca = Math.cos(a), sa = Math.sin(a), dx = Nn.x * ca + Bb.x * sa, dy = Nn.y * ca + Bb.y * sa, dz = Nn.z * ca + Bb.z * sa;
+              PP.push(P.x + dx * rad, P.y + dy * rad, P.z + dz * rad); NN.push(dx, dy, dz); CC.push(cc.r, cc.g, cc.b);
+            }
+          }
+          for (let j = 0; j < M; j++) for (let k = 0; k < K; k++) {
+            const a = base + j * K + k, b = base + j * K + (k + 1) % K, c = base + (j + 1) * K + k, e = base + (j + 1) * K + (k + 1) % K;
+            II.push(a, b, c, b, e, c);
+          }
         }
         made++;
       }
       const gc = new THREE.BufferGeometry();
       gc.setAttribute('position', new THREE.Float32BufferAttribute(PP, 3)); gc.setAttribute('normal', new THREE.Float32BufferAttribute(NN, 3));
       gc.setAttribute('color', new THREE.Float32BufferAttribute(CC, 3)); gc.setIndex(II); gc.computeBoundingSphere(); keep(gc);
-      const curlM = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.66, specularIntensity: 0.22, sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0x5a3e2c) }); keep(null, curlM);
+      const curlM = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.7, specularIntensity: 0.16, sheen: 0.1, sheenRoughness: 0.55, sheenColor: new THREE.Color(0x4a3322) }); keep(null, curlM);
       const curls = mesh(gc, curlM, headG); curls.castShadow = true; curls.receiveShadow = true;
     }
   }
