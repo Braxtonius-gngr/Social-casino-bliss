@@ -113,6 +113,8 @@ const TOSS = { T: 0.2, spin: TAU, g: 600, bow: 2.2 };
 // fold as it clears the felt (see table.mjs: RISE, FOLD).
 const RISE = { open: 1.5, up: 1.15, swing: 0.5 };
 const FOLD = { y: 2.6, out: 0.55 };
+// the machine's going down at the end: the yoke folds, then it sinks
+const SINK = { fold: 0.5, lag: 0.35, down: 1.05 };
 // A turned card: pushed up to PUSH on the fingers, then over on its own.
 // On Its Edge: it goes over onto the open fingers, which have gone on
 // ahead of it, and stands on them at LEAN, just past upright.
@@ -853,6 +855,15 @@ export async function makeGame(ctx) {
   // so the shot runs on until the machine is at rest)
   const lastMove = Math.max(A.t, B.t);
   if (tier !== 'edge') plan.endW = Math.max(plan.endW, lastMove + 0.6);
+  // (then the machine folds in and sinks back through its port, the lid
+  // shut over it, so the page's title and button stand over felt and the
+  // two hands of cards and nothing else)
+  // (the page's end card comes in with the reveal, so the reveal waits for
+  // the machine to be gone)
+  const dEnd = plan.endW - plan.revealW;
+  plan.sinkW = Math.max(lastMove, plan.revealW - 0.5);
+  plan.revealW = plan.sinkW + SINK.lag + SINK.down + 0.1;
+  plan.endW = plan.revealW + Math.max(dEnd, 1.1);
   plan.revealReal = warp.real(plan.revealW);
   plan.totalReal = warp.real(plan.endW);
   plan.restReal = warp.real(restW);
@@ -908,6 +919,11 @@ export async function makeGame(ctx) {
   const riseT0 = dealAt - RISE.up, riseT = RISE.up - RISE.swing;
   const riseClear = (() => { let lo = 0, hi = 1; for (let i = 0; i < 24; i++) { const m = (lo + hi) / 2; if (lerp(ARM.down, ARM.up, riseEase(m)) < FOLD.y) lo = m; else hi = m; } return hi; })();
   const rising = tt => {
+    if (tt >= plan.sinkW) {
+      const u = tt - plan.sinkW;
+      const k = clamp01((u - SINK.lag) / SINK.down);
+      return { y: lerp(ARM.up, ARM.down, smoother(k)), open: 1 - clamp01((u - SINK.lag - SINK.down) / 0.32), fold: 1 - smoother(clamp01(u / SINK.fold)) };
+    }
     if (tt < dealAt - RISE.open) return { y: ARM.down, open: 0, fold: 0 };
     const open = clamp01((tt - (dealAt - RISE.open)) / 0.32);
     const fold = foldOut((tt - (riseT0 + riseClear * riseT)) / FOLD.out);
@@ -930,8 +946,17 @@ export async function makeGame(ctx) {
       const dir = prev.b.p.clone().sub(prev.a.p); const L0 = dir.length();
       if (L0 > 0.5) { const b = tt - prev.t1, j = jitter(prev.t1, 2), j2 = jitter(prev.t1, 3); hp.p.addScaledVector(dir.multiplyScalar(1 / L0), (0.11 + 0.09 * j) * Math.sin(b * (60 + 20 * j2)) * Math.exp(-b * (28 + 8 * j))); }
     }
-    const fade = free && !sg.stiff ? (sg.s0 ? 1 : smoother(kk / 0.15)) * (sg.s1 ? 1 : smoother((1 - kk) / 0.15)) : 0;
-    return { hp, f: fingersAt(sg, kk), free, el: lerp(sg.el0, sg.el1, smoother(kk)), fade };
+    let fade = free && !sg.stiff ? (sg.s0 ? 1 : smoother(kk / 0.15)) * (sg.s1 ? 1 : smoother((1 - kk) / 0.15)) : 0;
+    let f = fingersAt(sg, kk), el = lerp(sg.el0, sg.el1, smoother(kk));
+    if (tt > plan.sinkW) {
+      // (the hand comes back up to the yoke's own pose as it folds, and goes
+      // down with it)
+      const b = smoother(clamp01((tt - plan.sinkW) / 0.45)), up = upright(k, y, fold);
+      hp = { p: hp.p.clone().lerp(up.p, b), q: hp.q.clone().slerp(up.q, b) };
+      f = [lerp(f[0], FIN.rest[0], b), lerp(f[1], FIN.rest[1], b)];
+      el = lerp(el, 0, b); fade = 0; free = false;
+    }
+    return { hp, f, free, el, fade };
   };
   // what the arms are steered clear of: the lift, the saddle, each half of
   // the yoke and its J1 drum, and (for the second arm) the first one
@@ -1040,7 +1065,7 @@ export async function makeGame(ctx) {
 
   // ---- The Black Jack: gold through the table's print (a sweep along the
   // lettering), the machine's circuits lit, the flash in the room.
-  let printGlow = null, flash = null, goldLamp = null;
+  let printGlow = null, flash = null, goldLamp = null, payout = null;
   if (tier === 'vault') {
     const mark = table.group.userData.mark;
     const gm = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.45, 0.98, 0.34), alphaMap: mark.material.alphaMap, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
@@ -1078,6 +1103,49 @@ export async function makeGame(ctx) {
     goldLamp.position.copy(toWorld(V(0, 40, 22)));
     goldLamp.target.position.copy(toWorld(V(0, 0, 19)));
     scene.add(goldLamp, goldLamp.target);
+    // (the winnings: seven chips poured on the cloth beside the bet, one
+    // after another, each dropping, bouncing short and settling with a
+    // little rock - drawn only once the lettering is lit)
+    const names = ['gold', 'ivory', 'oxblood', 'gold', 'ivory', 'oxblood', 'gold'];
+    const geoP = new THREE.CylinderGeometry(1.95, 1.95, 0.33, 48, 1);
+    const pg = new THREE.Group(); pg.visible = false; seat.add(pg);
+    const chips = names.map((n, i) => {
+      const m = new THREE.Mesh(geoP, K.chipMats(n));
+      m.castShadow = true; m.receiveShadow = true; m.visible = false;
+      const j = Math.sin(i * 2.7 + 1) * 0.06, j2 = Math.cos(i * 1.9) * 0.06;
+      m.userData = { rest: V(SPOT.bet[0] + 5.6 + j, 0.165 + i * 0.335, SPOT.bet[1] + j2), t0: 0.35 + 0.13 * i, spin: 1.3 * i + 0.2 };
+      pg.add(m);
+      return m;
+    });
+    const sh = K.contactShadow(3.9, 3.9, 1.95, 0.9);
+    sh.position.set(SPOT.bet[0] + 5.6, 0.02, SPOT.bet[1]); sh.visible = false; pg.add(sh);
+    const G = 760, DROP = 26;
+    payout = {
+      geo: geoP,
+      set(b) {
+        pg.visible = b > 0;
+        sh.visible = b > 0.35;
+        sh.material.opacity = Math.min(1, Math.max(0, (b - 0.35) / 0.3));
+        chips.forEach(m => {
+          const u = b - m.userData.t0, r = m.userData.rest;
+          if (u < 0) { m.visible = false; return; }
+          m.visible = true;
+          // the fall, then three shrinking bounces (a clay chip on cloth
+          // gives back little)
+          const fall = Math.sqrt(2 * (DROP) / G);
+          let y = r.y, tilt = 0;
+          if (u < fall) y = r.y + DROP - 0.5 * G * u * u;
+          else {
+            let v = G * fall * 0.26, tt = u - fall;
+            for (let n = 0; n < 4 && tt > 0; n++) { const air = 2 * v / G; if (tt < air) { y = r.y + v * tt - 0.5 * G * tt * tt; break; } tt -= air; v *= 0.3; }
+            tilt = 0.13 * Math.exp(-(u - fall) * 7) * Math.sin((u - fall) * 38 + i0(m));
+          }
+          m.position.set(r.x, y, r.z);
+          m.rotation.set(tilt, m.userData.spin + (u < fall ? u * 9 : 0), tilt * 0.6);
+        });
+      },
+    };
+    const i0 = m => m.userData.spin;
   }
 
   // ---- The camera: keys in the seat's frame [t, eye xyz, aim xyz], real
@@ -1099,15 +1167,17 @@ export async function makeGame(ctx) {
   // (a blackjack is called on your second card: the lens stays on it while
   // the hole card is laid behind the call)
   order.slice(0, decide.pitch ? order.indexOf(decide) : order.length).forEach(c => {
-    if (c.who === 'you') push([Rw(c.pitch.t0) - 0.1, 0, 48 * W2, -16, 0, 3, 27]);
-    else push([Rw(c.lay) - 0.05, 1, 50 * W2, -12, c.slot.x * 0.5, 4, 40]);
+    if (c.who === 'you') push([Rw(c.pitch.t0) - 0.1, 0, 62 * W2, -22, 0, 5, 32]);
+    else push([Rw(c.lay) - 0.05, 1, 64 * W2, -22, c.slot.x * 0.3, 6, 34]);
   });
   if (decide.pitch) {
     // (low over your cards as the deciding one comes skidding in)
     const s = decide.slot;
-    push([Rw(decide.pitch.t0) - 0.25, 0, 48 * W2, -12, s.x, 2, s.z + 6]);
-    push([Rw(decide.pitch.t0) + 0.1, s.x - 2, 36 * W2, s.z - 36, s.x, 1, s.z + 3]);
-    push([Rw(restW) + 0.5, s.x - 2, 40 * W2, s.z - 38, s.x - 1, 1, s.z + 2]);
+    // (the whole table stays in frame, the lens leaning a little toward the
+    // card)
+    push([Rw(decide.pitch.t0) - 0.25, 0, 62 * W2, -22, s.x * 0.4, 4, 31]);
+    push([Rw(decide.pitch.t0) + 0.1, s.x * 0.3, 60 * W2, -26, s.x * 0.5, 3, 30]);
+    push([Rw(restW) + 0.5, s.x * 0.3, 62 * W2, -24, s.x * 0.4, 3, 30]);
     if (tier === 'vault') {
       // (up over the felt as it lights: the whole lettered arc, your hand,
       // the machine)
@@ -1121,7 +1191,7 @@ export async function makeGame(ctx) {
     push([Rw(holeCard.turn) - 0.9, ...SEATV]);
     const s = holeCard.slot;
     if (tier === 'edge') {
-      push([Rw(holeCard.turn) - 0.1, s.x - 8, 40 * W2, s.z - 40, s.x, 2, s.z + 6]);
+      push([Rw(holeCard.turn) - 0.1, s.x * 0.3, 60 * W2, -26, s.x * 0.5, 3, 30]);
       // the lens swings round to the hand's side and comes down, three
       // quarters on, so the lean, the fingertips and the edge on the cloth
       // all read
@@ -1132,17 +1202,18 @@ export async function makeGame(ctx) {
       // the table off to the side)
       push([Rw(plan.endW) + 0.3, ...(tall ? [s.x + 18, 16, s.z - 34, s.x + 1, 18, s.z + 3.6] : [s.x - 38, 10.5, s.z - 22.5, s.x - 49, 3.4, s.z + 3.6])]);
     } else if (decide === third) {
-      push([Rw(holeCard.turn) - 0.1, s.x - 6, 27 * W2, s.z - 27, s.x, 2, s.z + 6]);
-      push([Rw(holeCard.turn) + 0.6, s.x - 2, 28 * W2, s.z - 22, s.x + 3, 1, s.z + 4]);
-      // (high over the card that busts it, so its face is seen coming down)
+      push([Rw(holeCard.turn) - 0.1, s.x * 0.3, 60 * W2, -26, s.x * 0.5, 3, 30]);
+      push([Rw(holeCard.turn) + 0.6, s.x * 0.3, 58 * W2, -26, s.x * 0.5, 3, 31]);
+      // (the card that busts it comes down with the whole table still in
+      // frame)
       const t = third.slot;
-      push([Rw(third.turn) - 0.1, t.x - 3, 31 * W2, t.z - 16, t.x, 1, t.z + 3]);
-      push([Rw(restW) + 0.15, t.x - 7, 41 * W2, t.z - 31, t.x - 6.8, 1, t.z - 1]);
+      push([Rw(third.turn) - 0.1, t.x * 0.4, 58 * W2, -26, t.x * 0.55, 3, 31]);
+      push([Rw(restW) + 0.15, t.x * 0.3, 62 * W2, -26, t.x * 0.4, 3, 30]);
       push(CALLV);
       push([Rw(plan.revealW) + 0.4, ...SEATV]);
     } else {
-      push([Rw(holeCard.turn) - 0.1, s.x - 3, 46 * W2, s.z - 28, s.x, 1, s.z + 3]);
-      push([Rw(restW) + 0.1, s.x - 3, 50 * W2, s.z - 38, s.x - 2, 1, s.z - 1]);
+      push([Rw(holeCard.turn) - 0.1, s.x * 0.3, 60 * W2, -26, s.x * 0.5, 3, 30]);
+      push([Rw(restW) + 0.1, s.x * 0.3, 62 * W2, -26, s.x * 0.4, 3, 30]);
       push(CALLV);
       push([Rw(plan.revealW) + 0.4, ...SEATV]);
     }
@@ -1152,7 +1223,12 @@ export async function makeGame(ctx) {
   // cards stand clear of them. A phone, tall: the table sits low and the
   // two hands lie below the print; wide: the whole table slides off to one
   // side, the hands left of the text)
-  if (tier !== 'edge') push([Rw(plan.endW) + 0.3, ...(tall ? [0, 70, -48, 0, 10, 63] : [-45, 54 * W2, -18, -45, 2, 32])]);
+  // (the table settles here as the end card comes in, and holds)
+  if (tier !== 'edge') {
+    const END = tall ? [0, 70, -48, 0, 10, 68.5] : [-45, 54 * W2, -18, -45, 2, 32];
+    push([Rw(plan.revealW) + 0.15, ...END]);
+    push([Rw(plan.endW) + 0.3, ...END]);
+  }
   // the float: up and away over the pit (the seat's -x and -z: the room's
   // +x, +z), into the ceiling
   {
@@ -1191,6 +1267,7 @@ export async function makeGame(ctx) {
     if (c.turn < Infinity) { at(c.turn, 'snap', { soft: true }); if (!c.edge) at(turnEnd(c), 'pat', { speed: 90 }); }
   });
   if (tier === 'edge') { at(holeCard.turn + DEAL.push + EDGE, 'pat', { speed: 25 }); at(plan.silence[1], 'drop'); }
+  at(plan.sinkW + SINK.lag, 'servo', { f0: 150, f1: 60, dur: SINK.down });
   if (tier === 'hardways') at(plan.callW + 0.1, 'chime');
   if (tier === 'vault') { at(plan.boom, 'bell'); at(plan.boom + 0.02, 'boom', { soft: true }); }
 
@@ -1221,7 +1298,15 @@ export async function makeGame(ctx) {
       // (a flash, gone in a blink - the felt stays black; the gold is in
       // the letters and the machine)
       if (flash) flash.intensity = on ? 9 * Math.exp(-burst / 0.09) : 0;
-      if (goldLamp) goldLamp.intensity = on ? 9000 * smoother(burst / 0.5) * (0.45 + 0.55 * Math.exp(-burst / 2.2)) : 0;
+      if (goldLamp) {
+        goldLamp.intensity = on ? 9000 * smoother(burst / 0.5) * (0.5 + 0.5 * Math.exp(-burst / 3)) : 0;
+        // (the pool of light travels the lettering once, left to right as
+        // you read it, then comes to rest on your cards)
+        const sx = burst < 0.2 ? -34 : burst < 2.6 ? lerp(-34, 34, smoother((burst - 0.2) / 2.4)) : lerp(34, 0, smoother((burst - 2.6) / 1.1));
+        goldLamp.position.copy(toWorld(V(-sx * 0.55, 40, 22)));
+        goldLamp.target.position.copy(toWorld(V(-sx, 0, burst < 2.6 ? 26 : 19)));
+      }
+      if (payout) payout.set(on ? burst : -1);
       lit = on ? 3.2 * smoother(burst / 0.25) * Math.max(0, 1 - burst / 3.8) : 0;
     }
     // the light in the machine's circuits: up while it works, brighter as
