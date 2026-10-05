@@ -519,6 +519,13 @@ export async function makeGame(ctx) {
     [front, back].forEach(m => { m.castShadow = true; m.receiveShadow = true; g.add(m); });
     g.visible = false;
     seat.add(g);
+    // (the dark line where it meets the cloth, and the soft spread round it:
+    // the shadow map alone leaves a card floating; laid on the felt under
+    // it, turned with it and fading as it lifts)
+    const sh = K.contactShadow(CARD.w, CARD.h, 0.3, 0.7, [], 0.75);
+    sh.position.y = 0.012; sh.material.polygonOffset = false;
+    const wrap = new THREE.Group(); wrap.add(sh); wrap.visible = false; seat.add(wrap);
+    g.userData.contact = wrap;
     return g;
   };
 
@@ -999,11 +1006,12 @@ export async function makeGame(ctx) {
   // ---- Every card, where it is at a world time: in the shoe (unseen), in
   // a hand, in the air, sliding, lying, turning.
   const cardPose = { p: V(0, 0, 0), q: new THREE.Quaternion() };
+  const _cy = V(0, 0, 0);
   const inAir = (c, tt) => (c.toss && tt >= c.toss.t0 && tt < c.toss.t1) || (c.pitch && tt >= c.pitch.t0 && tt < c.lay);
   const poseCards = tt => {
     cards.forEach(c => {
       const g = c.obj;
-      if (tt < c.pull) { g.visible = false; return; }
+      if (tt < c.pull) { g.visible = false; g.userData.contact.visible = false; return; }
       g.visible = true;
       const air = inAir(c, tt);
       if (!air && tt < c.lay) {
@@ -1022,6 +1030,11 @@ export async function makeGame(ctx) {
         if (!c.edge && c.turn < Infinity && tt >= te) { const b = tt - te; cardPose.p.y += Math.max(0, 0.9 * Math.sin(b * 22) * Math.exp(-b * 9)); }
       }
       g.position.copy(cardPose.p); g.quaternion.copy(cardPose.q);
+      // (its contact shadow: flat cards only - a card on its edge has its own)
+      const cs = g.userData.contact, dirY = _cy.set(0, 1, 0).applyQuaternion(cardPose.q);
+      const k = Math.abs(dirY.y) > 0.6 ? 0 : Math.exp(-Math.max(0, cardPose.p.y - 0.05) / 1.4);
+      cs.visible = k > 0.02;
+      if (cs.visible) { cs.position.set(cardPose.p.x, 0, cardPose.p.z); cs.rotation.y = Math.atan2(dirY.x, dirY.z); cs.children[0].material.opacity = 0.75 * k; }
     });
   };
 
@@ -1083,9 +1096,9 @@ export async function makeGame(ctx) {
   if (decide.pitch) {
     // (low over your cards as the deciding one comes skidding in)
     const s = decide.slot;
-    push([Rw(decide.pitch.t0) - 0.25, 0, 34 * W2, -8, s.x, 2, s.z + 6]);
-    push([Rw(decide.pitch.t0) + 0.1, s.x - 2, 23 * W2, s.z - 24, s.x, 1, s.z + 3]);
-    push([Rw(restW) + 0.5, s.x - 2, 25 * W2, s.z - 26, s.x - 1, 1, s.z + 2]);
+    push([Rw(decide.pitch.t0) - 0.25, 0, 42 * W2, -10, s.x, 2, s.z + 6]);
+    push([Rw(decide.pitch.t0) + 0.1, s.x - 2, 30 * W2, s.z - 30, s.x, 1, s.z + 3]);
+    push([Rw(restW) + 0.5, s.x - 2, 33 * W2, s.z - 32, s.x - 1, 1, s.z + 2]);
     if (tier === 'vault') {
       // (up over the felt as it lights: the whole lettered arc, your hand,
       // the machine)
@@ -1099,7 +1112,7 @@ export async function makeGame(ctx) {
     push([Rw(holeCard.turn) - 0.9, ...SEATV]);
     const s = holeCard.slot;
     if (tier === 'edge') {
-      push([Rw(holeCard.turn) - 0.1, s.x - 6, 27 * W2, s.z - 27, s.x, 2, s.z + 6]);
+      push([Rw(holeCard.turn) - 0.1, s.x - 7, 34 * W2, s.z - 33, s.x, 2, s.z + 6]);
       // the lens swings round to the hand's side and comes down, three
       // quarters on, so the lean, the fingertips and the edge on the cloth
       // all read
@@ -1119,8 +1132,8 @@ export async function makeGame(ctx) {
       push(CALLV);
       push([Rw(plan.revealW) + 0.4, ...SEATV]);
     } else {
-      push([Rw(holeCard.turn) - 0.1, s.x - 3, 31 * W2, s.z - 16, s.x, 1, s.z + 3]);
-      push([Rw(restW) + 0.1, s.x - 3, 36 * W2, s.z - 28, s.x - 2, 1, s.z - 1]);
+      push([Rw(holeCard.turn) - 0.1, s.x - 3, 40 * W2, s.z - 22, s.x, 1, s.z + 3]);
+      push([Rw(restW) + 0.1, s.x - 3, 44 * W2, s.z - 32, s.x - 2, 1, s.z - 1]);
       push(CALLV);
       push([Rw(plan.revealW) + 0.4, ...SEATV]);
     }
