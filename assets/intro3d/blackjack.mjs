@@ -93,7 +93,7 @@ const BJ = { at: [-215, 0, -95], yaw: 180 };
 // each the place a card lies face up, the face-down place a length beyond
 // it toward the machine (see turned), clear of the port's bezel. The bet's
 // circle, in front of your cards.
-const SPOT = { you: [[-1.6, 18.0], [1.7, 20.6]], dealer: [[-3.4, 36.5], [3.4, 36.5], [10.2, 36.5]], bet: [0, 8.5] };
+const SPOT = { you: [[-2.3, 18.0], [2.3, 20.6]], dealer: [[-3.4, 36.5], [3.4, 36.5], [10.2, 36.5]], bet: [0, 8.5] };
 // The shoe (the card table's place) and the discard rack, its mouth turned
 // to the middle of the table.
 const DISCARD = [28, 52];
@@ -1105,7 +1105,10 @@ export async function makeGame(ctx) {
       // all read
       push([Rw(plan.silence[0]) + 0.5, s.x + 15, 13, s.z - 28, s.x + 1, 3.4, s.z + 3.5]);
       push([Rw(plan.silence[1]) + 0.7, s.x + 13, 11, s.z - 24, s.x + 1, 3.4, s.z + 3.6]);
-      push([Rw(plan.endW) + 2, s.x + 12, 10.5, s.z - 22.5, s.x + 1, 3.4, s.z + 3.6]);
+      // (and the card on its edge, still the hero, is set below the print: a
+      // phone stands the lens back and aims it over the card; wide, it pans
+      // the table off to the side)
+      push([Rw(plan.endW) + 0.3, ...(tall ? [s.x + 18, 16, s.z - 34, s.x + 1, 18, s.z + 3.6] : [s.x - 38, 10.5, s.z - 22.5, s.x - 49, 3.4, s.z + 3.6])]);
     } else if (decide === third) {
       push([Rw(holeCard.turn) - 0.1, s.x - 6, 27 * W2, s.z - 27, s.x, 2, s.z + 6]);
       push([Rw(holeCard.turn) + 0.6, s.x - 2, 28 * W2, s.z - 22, s.x + 3, 1, s.z + 4]);
@@ -1122,7 +1125,12 @@ export async function makeGame(ctx) {
       push([Rw(plan.revealW) + 0.4, ...SEATV]);
     }
   }
-  if (tier !== 'edge') push([Rw(plan.endW) + 1.5, 0, 54 * W2, -18, 0, 2, 32]);
+  // (the end: the page's own title, tagline, button and small print take
+  // the middle of the screen from here on and all through the float, so the
+  // cards stand clear of them. A phone, tall: the table sits low and the
+  // two hands lie below the print; wide: the whole table slides off to one
+  // side, the hands left of the text)
+  if (tier !== 'edge') push([Rw(plan.endW) + 0.3, ...(tall ? [0, 70, -48, 0, 10, 63] : [-45, 54 * W2, -18, -45, 2, 32])]);
   // the float: up and away over the pit (the seat's -x and -z: the room's
   // +x, +z), into the ceiling
   {
