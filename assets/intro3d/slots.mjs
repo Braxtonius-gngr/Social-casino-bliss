@@ -835,18 +835,21 @@ export async function makeGame(ctx) {
   const skinDim = { value: 0 };
   const neckPivot = new THREE.Group(); neckPivot.position.set(0, NECKY, 0.8); body.add(neckPivot);
   const headG = new THREE.Group(); headG.position.set(0, HEAD.up, HEAD.fwd); headG.rotation.order = 'YXZ'; neckPivot.add(headG);
-  const EYE = { x: 0.3, y: -0.07, w: 0.148, h: 0.08, r: 1.5 };
+  const EYE = { x: 0.3, y: -0.07, w: 0.126, h: 0.068, r: 1.5 };
   const gauss = (x, y, cx, cy, sx, sy) => Math.exp(-(((x - cx) / sx) ** 2) - (((y - cy) / sy) ** 2));
   // (the face's relief, on the unit sphere, in front)
   const relief = (x, y) => {
     let dz = 0;
     // the brow, rounded, and its soft ridge over each eye; the orbits
     dz += 0.04 * gauss(x, y, 0, 0.3, 0.6, 0.12);
-    dz += 0.02 * (gauss(x, y, 0.28, 0.1, 0.16, 0.05) + gauss(x, y, -0.28, 0.1, 0.16, 0.05));
-    dz -= 0.09 * (gauss(x, y, EYE.x, EYE.y, 0.17, 0.12) + gauss(x, y, -EYE.x, EYE.y, 0.17, 0.12));
+    // (the brow bone: a ridge over each eye and a shelf along its lower edge,
+    // so the eye sits in a socket under a rim and not on the surface of an egg)
+    dz += 0.045 * (gauss(x, y, 0.28, 0.1, 0.17, 0.05) + gauss(x, y, -0.28, 0.1, 0.17, 0.05));
+    dz += 0.03 * (gauss(x, y, 0.3, 0.03, 0.2, 0.028) + gauss(x, y, -0.3, 0.03, 0.2, 0.028));
+    dz -= 0.1 * (gauss(x, y, EYE.x, EYE.y, 0.15, 0.11) + gauss(x, y, -EYE.x, EYE.y, 0.15, 0.11));
     // the nose: a small bridge, a round tip turned up, its wings
-    dz += 0.12 * gauss(x, 0, 0, 0, 0.05, 1) * clamp01((0.02 - y) / 0.22) * clamp01((y + 0.27) / 0.08);
-    dz += 0.1 * gauss(x, y, 0, -0.208, 0.055, 0.05);
+    dz += 0.16 * gauss(x, 0, 0, 0, 0.06, 1) * clamp01((0.02 - y) / 0.22) * clamp01((y + 0.27) / 0.08);
+    dz += 0.12 * gauss(x, y, 0, -0.212, 0.058, 0.05);
     dz += 0.07 * (gauss(x, y, 0.078, -0.243, 0.05, 0.04) + gauss(x, y, -0.078, -0.243, 0.05, 0.04));
     // (the nostrils: two real pits under the tip, and the crease that parts each wing from the cheek)
     dz -= 0.075 * (gauss(x, y, 0.052, -0.268, 0.024, 0.017) + gauss(x, y, -0.052, -0.268, 0.024, 0.017));
@@ -857,7 +860,12 @@ export async function makeGame(ctx) {
     // the cheeks: full, low
     dz += 0.24 * (gauss(x, y, 0.4, -0.17, 0.29, 0.26) + gauss(x, y, -0.4, -0.17, 0.29, 0.26));
     // (the cheekbone's plane, up and out from the apple toward the temple)
-    dz += 0.05 * (gauss(x, y, 0.56, -0.02, 0.14, 0.1) + gauss(x, y, -0.56, -0.02, 0.14, 0.1));
+    dz += 0.09 * (gauss(x, y, 0.56, -0.02, 0.16, 0.12) + gauss(x, y, -0.56, -0.02, 0.16, 0.12));
+    // (a soft hollow under the cheekbone, and the jaw's corners, so the lower
+    // face has planes; the undercut below the chin, where it turns to the neck)
+    dz -= 0.03 * (gauss(x, y, 0.5, -0.3, 0.14, 0.1) + gauss(x, y, -0.5, -0.3, 0.14, 0.1));
+    dz += 0.03 * (gauss(x, y, 0.5, -0.55, 0.14, 0.12) + gauss(x, y, -0.5, -0.55, 0.14, 0.12));
+    dz -= 0.05 * gauss(x, y, 0, -0.82, 0.25, 0.07);
     // the philtrum; the lips, the lower the fuller, parted by a line; the
     // groove under them; the chin, a small round
     dz -= 0.02 * gauss(x, y, 0, -0.33, 0.028, 0.035);
@@ -1085,9 +1093,9 @@ export async function makeGame(ctx) {
     const lidMat = bisque.clone(); lidMat.color.setHex(0xe0ae94); lidMat.vertexColors = true; lidMat.side = THREE.DoubleSide; keep(null, lidMat);
     // (the lid's margin: a dark rounded edge, and the lashes out of it -
     // long, dark, a doll's - which go with the lid as it closes)
-    const R0 = EYE.r + 0.07, LA = 0.47;
+    const R0 = EYE.r + 0.07, LA = 0.41;
     const arc = k => { const a = lerp(-LA, LA, k); return V(Math.sin(a) * R0, 0, Math.cos(a) * R0); };
-    const marginG = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 25 }, (_, k) => arc(k / 24))), 48, 0.046, 6, false); keep(marginG);
+    const marginG = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 25 }, (_, k) => arc(k / 24))), 48, 0.036, 6, false); keep(marginG);
     const marginM = new THREE.MeshStandardMaterial({ color: 0x5a3626, roughness: 0.7 }); keep(null, marginM);
     const lashG = (() => {
       const g = new THREE.BufferGeometry(), pos = [], uv = [], idx = [], NA = 32, NS = 4;
@@ -1101,10 +1109,10 @@ export async function makeGame(ctx) {
     })(); keep(lashG);
     const lashA = texOf(canvas(256, 64, (c, W, Hh) => {
       c.fillStyle = '#000'; c.fillRect(0, 0, W, Hh); c.strokeStyle = '#fff'; c.lineCap = 'round';
-      for (let k = 0; k < 150; k++) { const x = (k + 0.5) / 150 * W + (rng() - 0.5) * 1.6; c.lineWidth = 2.0; c.beginPath(); c.moveTo(x, 0); c.quadraticCurveTo(x + 2, Hh * 0.5, x + 4 * (rng() - 0.3), Hh * (0.65 + 0.35 * rng())); c.stroke(); }
+      for (let k = 0; k < 150; k++) { const x = (k + 0.5) / 150 * W + (rng() - 0.5) * 1.6; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x, 0); c.quadraticCurveTo(x + 2, Hh * 0.5, x + 4 * (rng() - 0.3), Hh * (0.65 + 0.35 * rng())); c.stroke(); }
       c.fillStyle = '#fff'; c.fillRect(0, 0, W, 6);
     }), false);
-    const lashM = new THREE.MeshBasicMaterial({ color: 0x2c1a12, alphaMap: lashA, alphaTest: 0.32, side: THREE.DoubleSide }); keep(null, lashM);
+    const lashM = new THREE.MeshBasicMaterial({ color: 0x3a241a, alphaMap: lashA, alphaTest: 0.32, side: THREE.DoubleSide }); keep(null, lashM);
     const sockG = new THREE.SphereGeometry(EYE.r + 0.3, 24, 16); keep(sockG);
     // (the socket behind each opening: the bisque carved hollow, in its
     // own shade - never a hole into the dark)
