@@ -1,0 +1,371 @@
+[
+ {
+  "id": "I1",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "COAT-TORSO"
+  ],
+  "idea": "Reshape the torso lathe profile toward shoulders, waist and flared hem",
+  "status": "passed",
+  "verdict": {}
+ },
+ {
+  "id": "I13",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "HAIR-CURLS",
+   "HAIR-LINE"
+  ],
+  "idea": "Each ringlet a lock of three fine strands wound together, tapering to a closed point; dark under-layer; outward fringe",
+  "status": "passed",
+  "verdict": {}
+ },
+ {
+  "id": "I14",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "FACE-FORM",
+   "FACE-NOSEMOUTH",
+   "FACE-SKIN"
+  ],
+  "idea": "Nose with pits and wings, fuller lips, cheeks and chin, richer skin paint, thicker neck, head lower",
+  "status": "partial",
+  "verdict": {}
+ },
+ {
+  "id": "I15",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "FACE-FORM"
+  ],
+  "idea": "Child proportion pass: rounder cranium, shorter lower face, wider jaw and chin, short wide neck",
+  "status": "partial",
+  "verdict": {}
+ },
+ {
+  "id": "I16",
+  "piece": "slots",
+  "route": "material",
+  "clusters": [
+   "FACE-SKIN"
+  ],
+  "idea": "Skin paint: warm colour zones, low-frequency flush instead of round blush patches",
+  "status": "partial",
+  "verdict": {}
+ },
+ {
+  "id": "I17",
+  "piece": "slots",
+  "route": "material",
+  "clusters": [
+   "FACE-SKIN"
+  ],
+  "idea": "Skin shader: SSS rim, value floor from the base colour, warm shadow tint, dim uniform so moods grade the light not the skin",
+  "status": "passed",
+  "verdict": {}
+ },
+ {
+  "id": "I18",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "FACE-FORM",
+   "FACE-NOSEMOUTH"
+  ],
+  "idea": "Whole-face pass: lower face easing, jaw taper, fold removal",
+  "status": "no-effect",
+  "verdict": {}
+ },
+ {
+  "id": "I19",
+  "piece": "slots",
+  "route": "material",
+  "clusters": [
+   "COAT-MATERIAL"
+  ],
+  "idea": "Velvet material: rough, low spec, sheen, pile normal, darker bottle green",
+  "status": "success",
+  "verdict": {}
+ },
+ {
+  "id": "I20",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "HAIR-CURLS"
+  ],
+  "idea": "Curl tube variants: scale mix, wider ringlets among fine ones",
+  "status": "no-effect",
+  "verdict": {}
+ },
+ {
+  "id": "I21",
+  "piece": "slots",
+  "route": "camera",
+  "clusters": [
+   "TOOTH"
+  ],
+  "idea": "Tooth beat: tight camera on the third reel, hold key, dims",
+  "status": "partial",
+  "verdict": {}
+ },
+ {
+  "id": "I22",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "COAT-TORSO"
+  ],
+  "idea": "Torso profile narrowed at the chest, superellipse front",
+  "status": "no-effect",
+  "verdict": {}
+ },
+ {
+  "id": "I23",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "HAIR-CURLS"
+  ],
+  "idea": "Hair as strand cards: ribbon geometry along helix spines with a strand alpha mask",
+  "status": "partial",
+  "verdict": {}
+ },
+ {
+  "id": "I24",
+  "piece": "slots",
+  "route": "camera",
+  "clusters": [
+   "TOOTH"
+  ],
+  "idea": "Tooth framing: B5 at call+0.2, HELD earlier, lids open",
+  "status": "partial",
+  "verdict": {}
+ },
+ {
+  "id": "I25",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "COAT-TORSO"
+  ],
+  "idea": "Torso profile pass two, collar lathe",
+  "status": "no-effect",
+  "verdict": {}
+ },
+ {
+  "id": "I26",
+  "piece": "slots",
+  "route": "material",
+  "clusters": [
+   "COAT-MATERIAL"
+  ],
+  "idea": "Coat rim term in the velvet shader (velvetize): dark facing the lens, sheen at the turn",
+  "status": "success",
+  "verdict": {}
+ },
+ {
+  "id": "I27",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "COAT-TORSO"
+  ],
+  "idea": "Body, waistcoat and reel window twelve percent narrower, shoulders set in",
+  "status": "success",
+  "verdict": {
+   "IMPROVED": 15,
+   "UNCHANGED": 5
+  },
+  "results": "results-r19"
+ },
+ {
+  "id": "I28",
+  "piece": "slots",
+  "route": "material",
+  "clusters": [
+   "COAT-MATERIAL"
+  ],
+  "idea": "Velvet pile response on coat, collar and cuffs; larger lower-contrast damask",
+  "status": "mixed",
+  "verdict": {
+   "IMPROVED": 7,
+   "UNCHANGED": 13
+  },
+  "results": "results-r19"
+ },
+ {
+  "id": "I29",
+  "piece": "slots",
+  "route": "material",
+  "clusters": [
+   "HAIR-CURLS"
+  ],
+  "idea": "Fewer, rounder strand cards: cross-width shading, feathered edge, warm sheen, sparse fringe",
+  "status": "regressed",
+  "verdict": {
+   "UNCHANGED": 10,
+   "REGRESSED": 10
+  },
+  "results": "results-r19"
+ },
+ {
+  "id": "I30",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "DESK-PROPS",
+   "CONTACT-SHADOW"
+  ],
+  "idea": "Lever hangs from a bolted brass plate on the desk rail, flattened hub",
+  "status": "mixed",
+  "verdict": {
+   "UNCHANGED": 14,
+   "IMPROVED": 6
+  },
+  "results": "results-r19"
+ },
+ {
+  "id": "I31",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "DRAPES"
+  ],
+  "idea": "Drapes carry on below the floor with a straight cut; run ends off-frame",
+  "status": "success",
+  "verdict": {
+   "RESOLVED": 11,
+   "IMPROVED": 8,
+   "UNCHANGED": 1
+  },
+  "results": "results-r19"
+ },
+ {
+  "id": "I32",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "HAT-FIT"
+  ],
+  "idea": "Tricorn lower and smaller; brim shadow on brow and eyes",
+  "status": "mixed",
+  "verdict": {
+   "IMPROVED": 7,
+   "UNCHANGED": 13
+  },
+  "results": "results-r19"
+ },
+ {
+  "id": "I33",
+  "piece": "slots",
+  "route": "motion",
+  "clusters": [
+   "MOTION"
+  ],
+  "idea": "Pull leans and twists the body; wider lever arc",
+  "status": "mixed",
+  "verdict": {
+   "IMPROVED": 8,
+   "UNCHANGED": 12
+  },
+  "results": "results-r19"
+ },
+ {
+  "id": "I34",
+  "piece": "slots",
+  "route": "light",
+  "clusters": [
+   "JACKPOT-LIGHT",
+   "JACKPOT-COLOUR"
+  ],
+  "idea": "Jackpot gold as a real light reaching face, hands, desk and drapes; quieter glass glow",
+  "status": "mixed",
+  "verdict": {
+   "UNCHANGED": 9,
+   "IMPROVED": 11
+  },
+  "results": "results-r19"
+ },
+ {
+  "id": "I35",
+  "piece": "slots",
+  "route": "camera",
+  "clusters": [
+   "TOOTH"
+  ],
+  "idea": "Tight beat frames the whole window, reels one and two dimmed, heavier payline wire; lids open in the freeze; held frame takes in the desk",
+  "status": "success",
+  "verdict": {
+   "IMPROVED": 19,
+   "REGRESSED": 1
+  },
+  "results": "results-r19"
+ },
+ {
+  "id": "I36",
+  "piece": "slots",
+  "route": "material",
+  "clusters": [
+   "HANDS-FORM"
+  ],
+  "idea": "Hands share the face skin tone; proud redder knuckles; nails; resting hand curls",
+  "status": "no-effect",
+  "verdict": {
+   "UNCHANGED": 15,
+   "IMPROVED": 5
+  },
+  "results": "results-r19"
+ },
+ {
+  "id": "I37",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "FACE-EYES",
+   "FACE-FORM"
+  ],
+  "idea": "Wet lower-lid line, longer lashes, warm sclera, cheekbone planed to the temple",
+  "status": "mixed",
+  "verdict": {
+   "UNCHANGED": 11,
+   "IMPROVED": 9
+  },
+  "results": "results-r19"
+ },
+ {
+  "id": "I38",
+  "piece": "slots",
+  "route": "overlay",
+  "clusters": [
+   "CAPTION-TIER"
+  ],
+  "idea": "Tier caption as gold small caps on a dark pill with the odds",
+  "status": "resolved",
+  "verdict": {
+   "RESOLVED": 20
+  },
+  "results": "results-r19"
+ },
+ {
+  "id": "I39",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "HAIR-CURLS",
+   "HAIR-LINE"
+  ],
+  "idea": "Hair returned to the I23 strand cards (I29 reverted)",
+  "status": "mixed",
+  "verdict": {
+   "UNCHANGED": 8,
+   "IMPROVED": 10,
+   "REGRESSED": 2
+  },
+  "results": "results-r20"
+ }
+]

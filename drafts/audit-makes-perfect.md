@@ -46,15 +46,18 @@ Defaults (the user may override any of them when invoking):
    the piece by following the B draft, and run the loop by following the A
    draft (re-read it at the start of every round).
 3. **Run log and ideas ledger.** Start `claude/skill-drafts/run-log.md`. Each
-   round gets the score, the top findings, and its [ideas] (below). Keep the
+   round gets the score, the top findings, and its [ideas] (below). The
+   machine copy of the ledger is the lab's idea bank (`lab/ideas.json`,
+   section 1b), read before every round; keep the readable
    **ideas ledger** as one table in the log, one row per [idea]:
    `id | round | finding ids | the idea | status | evidence`. Evidence is the
    auditors' verdict tally (resolved / improved / unchanged / regressed) and
    the finding's weight per auditor and SEV-3 share, before and after. A
    status changes in place; the row is never deleted, so reverted ideas stay
    on record and aren't tried twice.
-4. **Fix the frame set** once, and render exactly the same frames every round
-   so scores compare. Use phone portrait 390×844 and landscape 844×390, and
+4. **Fix the frame set** once, and render exactly the same frames for every
+   plateau check and the final so scores compare (rounds between them render
+   only their targets, section 1b). Use phone portrait 390×844 and landscape 844×390, and
    cover the open, every key beat, every tier's deciding moment, the payout,
    the wide, and two 3× crops. Write the list into the run log.
 5. **Task list.** One task per round and one for the report, so the user can
@@ -124,6 +127,59 @@ Defaults (the user may override any of them when invoking):
   - **execution:** fixable in the piece
   - **method:** a gap in how the build was done or checked
   - **direction:** needs the owner's taste or a reference
+
+## 1b. The efficient round (one auditor, targeted frames)
+
+Between the baseline and the plateau check, a round costs one targeted
+render, one pre-screen and one auditor. The tooling is in the lab branch
+(`lab/README.md`); the order is fixed:
+
+1. **Ask the bank before proposing.** Every [idea] has a *route*: geometry,
+   material, light, camera, overlay or motion. Run the form gate and the
+   dead-end check (`ideas.py check <route> <clusters>`) before writing the
+   [idea] down:
+   - a **form** finding (clusters.json kind `form`: head, hair, torso,
+     sleeves, hands, props) takes a geometry route only. A paint, shading or
+     light [idea] aimed at a form finding is refused: nine rounds of them
+     read "improved" and left every form finding at SEV 3.
+   - a route already *reverted*, *no-effect* or *regressed* on that cluster is
+     not retried as a variant; the next [idea] changes the construction.
+   Then `ideas.py add` logs it as *proposed*. The bank (`lab/ideas.json`)
+   outlives the piece: the next piece's builder reads it before its first
+   round, so a dead end costs one piece one round, not every piece one round.
+2. **Render the target only.** `render-targets.sh <out> CLUSTER...` renders
+   the frames that show the clusters being worked (two to five shots, two to
+   three minutes) instead of the full set (twenty-five shots, ten minutes).
+   The full frame set is rendered only for the plateau check and the final.
+3. **Pre-screen before spending an auditor.** `prescreen.py <prev> <cur>
+   CLUSTER...` prints, per cluster crop, the metric it is tagged with and the
+   direction an improving round should move it (skin: spread up and median
+   steady; hair: edge density down; torso: silhouette width down; jackpot:
+   green share held), plus the whole-frame change. Two reads:
+   - the targeted crop did not move, or moved against its direction: rework
+     within the same [idea] before any auditor;
+   - an untargeted frame moved more than the targeted crop: find out why
+     (a shared material, a reshuffled random stream) before any auditor.
+4. **One auditor, paired.** `pair.py make` builds blind left/right pairs of
+   the previous and current crop per cluster, in a random order whose key
+   sits outside the packet. The auditor (brief: `lab/brief-single.md`)
+   answers the pairs first (LEFT, RIGHT or SAME, and why), then writes
+   findings on the current frames, then one **TARGET** line: whether the
+   piece is closer to the owner's target than last round, and in what one
+   respect it most falls short. A paired "which is closer" is a far finer
+   instrument than a 1 to 10 score quantised to half points, and the TARGET
+   line shows direction drift a round earlier than the score does.
+5. **Decode and record.** `pair.py decode` turns the answers into
+   PREV-BETTER, CUR-BETTER or SAME per cluster; `ideas.py verdict` writes the
+   ledger verdicts into the bank and sets each [idea]'s status (resolved,
+   success, mixed, no-effect, regressed). Decide the [idea] by section 2 rule
+   5 with CUR-BETTER counting as improved and PREV-BETTER as regressed. A
+   regressed [idea] is reverted before the next render.
+6. **The score is for the plateau check and the final.** A single auditor's
+   score is recorded but does not decide a round; the pairs and the bank do.
+   Three kept rounds with no PREV-BETTER and no cluster leaving the SEV-3
+   list trigger the plateau check (rule 6), which runs the full frame set and
+   a panel of three.
 
 ## 2. The loop
 
