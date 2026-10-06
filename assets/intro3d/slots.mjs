@@ -536,11 +536,16 @@ export async function makeGame(ctx) {
   // His profile (radius, height above the hips), and the coat's section: a
   // superellipse in front (flat across the chest, where the window is), an
   // ellipse behind, 0.64 as deep as wide.
-  const PROF = [[10.6, -2], [9.9, 1], [8.5, 5], [7.3, 10], [7.9, 15], [9.0, 21], [9.9, 27], [10.5, 31], [10.4, 33.5], [8.7, 36.2], [6.2, 38.4], [4.2, 39.6], [3.6, 40.2]];
+  // (the top of both is a shoulder: the body holds its width to the yoke and
+  // then drops steeply to the collar, a shelf the sleeve heads sit on, not a
+  // dome that tapers into the neck)
+  const PROF = [[10.6, -2], [9.9, 1], [8.5, 5], [7.3, 10], [7.9, 15], [9.0, 21], [9.9, 27], [10.5, 31], [10.6, 34.0], [10.0, 35.4], [6.8, 36.6], [5.0, 37.6], [4.2, 39.0], [3.6, 40.2]];
   const DEP = 0.6;
   // (the coat over it: a shell of its own, standing off the waistcoat, its
   // skirts flaring over the stool's cushion, open down the front)
-  const PROFC = [[12.2, -3.2], [11.3, -1], [9.9, 2], [8.7, 6], [8.0, 10], [8.7, 15], [10.0, 21], [10.8, 27], [11.5, 31], [11.7, 33.5], [10.3, 36.2], [7.3, 38.4], [5.5, 39.2], [4.5, 39.8]];
+  // (and a waist seam at the hips, where the skirts begin and stand a little
+  // off the body of the coat)
+  const PROFC = [[12.2, -3.2], [11.3, -1], [9.9, 2], [9.3, 5.2], [9.1, 6.9], [8.4, 7.3], [8.0, 10], [8.7, 15], [10.0, 21], [10.8, 27], [11.5, 31], [11.8, 34.2], [11.3, 35.6], [8.4, 36.8], [6.0, 37.8], [5.0, 38.8], [4.5, 39.8]];
   const radAt = (P, y) => {
     if (y <= P[0][1]) return P[0][0];
     for (let i = 0; i + 1 < P.length; i++) if (y <= P[i + 1][1]) return lerp(P[i][0], P[i + 1][0], clamp01((y - P[i][1]) / (P[i + 1][1] - P[i][1])));
@@ -548,9 +553,12 @@ export async function makeGame(ctx) {
   };
   function profR(y) { return radAt(PROF, y); }
   function coatR(y) { return radAt(PROFC, y); }
-  function sup(a, r) {
-    const s = Math.sin(a), c = Math.cos(a), n = c > 0 ? 3 : 2;
-    return [r * Math.sign(s) * Math.abs(s) ** (2 / n), r * DEP * Math.sign(c) * Math.abs(c) ** (2 / n)];
+  // (the shoulders are wider than they are deep: at the yoke the section
+  // stretches across, so the figure has a shoulder line and not a round top)
+  const widen = y => 1 + 0.11 * Math.exp(-(((y - 34.6) / 2.4) ** 2));
+  function sup(a, r, y) {
+    const s = Math.sin(a), c = Math.cos(a), n = c > 0 ? 3 : 2, w = y === undefined ? 1 : widen(y);
+    return [r * w * Math.sign(s) * Math.abs(s) ** (2 / n), r * DEP * Math.sign(c) * Math.abs(c) ** (2 / n)];
   }
   // (the coat's skirts do not hang as a cone: they fall in soft folds, deeper
   // toward the hem, a coat's side pleats and the cloth's own weight)
@@ -560,10 +568,13 @@ export async function makeGame(ctx) {
   // the coat's opening, each side of the front: wide over the chest and the
   // waistcoat, closing toward the collar
   function openAt(y) { return y < 5 ? lerp(1.55, 0.95, (y + 3.2) / 8.2) : y < 30 ? 0.95 : y < 37 ? lerp(0.95, 0.45, (y - 30) / 7) : 0.45; }
+  // (the coat's front edge rolls outward: a facing's thickness, so the fronts
+  // hang over the waistcoat with a lip and a shadow, and not as a cut shell)
+  const roll = (a, y) => 1 + 0.055 * smoother((0.42 - (Math.abs(a) - openAt(y))) / 0.42) * (Math.abs(a) >= openAt(y) ? 1 : 0);
   const lathe = (P, cut) => {
     const g = new THREE.LatheGeometry(P.map(([r, y]) => new THREE.Vector2(r, y)), 128);
     const p = g.attributes.position;
-    for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), a = Math.atan2(x, z), f = cut ? skirtFold(a, p.getY(i)) : 1, [sx, sz] = sup(a, Math.hypot(x, z) * f); p.setX(i, sx); p.setZ(i, sz); }
+    for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), y = p.getY(i), a = Math.atan2(x, z), f = cut ? skirtFold(a, y) * roll(a, y) : 1, [sx, sz] = sup(a, Math.hypot(x, z) * f, y); p.setX(i, sx); p.setZ(i, sz); }
     if (cut) {
       const idx = g.index, keepIdx = [];
       for (let i = 0; i < idx.count; i += 3) {
@@ -603,10 +614,10 @@ export async function makeGame(ctx) {
   // (the collar: a band of the darker velvet standing round the neck of the
   // coat, proud of it, open at the front with it - the line that says where
   // the shoulders end and a coat begins)
-  { const collarM = velvetize(cuffMat.clone()); collarM.vertexColors = true; keep(null, collarM); const g = lathe([[8.1, 38.0], [7.3, 38.9], [6.5, 39.7], [6.0, 40.5], [5.8, 41.0]], true); keep(g); const m = new THREE.Mesh(g, collarM); m.castShadow = true; m.receiveShadow = true; body.add(m); }
+  { const collarM = velvetize(cuffMat.clone()); collarM.vertexColors = true; keep(null, collarM); const g = lathe([[6.8, 37.5], [6.3, 38.3], [6.0, 39.1], [5.8, 39.9], [5.7, 40.6]], true); keep(g); const m = new THREE.Mesh(g, collarM); m.castShadow = true; m.receiveShadow = true; body.add(m); }
   // (a point on the coat at angle a round, height y, off it by lift; and
   // the way out of it there)
-  const onCoat = (a, y, lift) => { const r = coatR(y), [x, z] = sup(a, r * skirtFold(a, y)), n = V(x / (r * r), 0, z / (r * DEP) ** 2).normalize(); return { p: V(x, y, z).addScaledVector(n, lift), n }; };
+  const onCoat = (a, y, lift) => { const r = coatR(y), [x, z] = sup(a, r * skirtFold(a, y) * roll(a, y), y), n = V(x / (r * r), 0, z / (r * DEP) ** 2).normalize(); return { p: V(x, y, z).addScaledVector(n, lift), n }; };
   // A ribbon laid on a surface: the points, the surface's normal at each,
   // the width.
   const ribbon = (pts, nrm, width, mat, parent) => {
