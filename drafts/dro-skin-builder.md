@@ -111,7 +111,15 @@ receives one: feet, legs, hands on a surface, props, coins.
 - A glow is a real light that lights its neighbours (the face, the cloth,
   the table), not just bloom on its source.
 - Never recolour a surface to say it is lit; give it a catchlight instead.
+- **Skin holds its value.** A mood (a dim, a silence, a gold flood) grades
+  the room's light, never the skin. Give skin a shader floor from its own
+  base colour so it cannot go grey under a dim or lime under a flood, and a
+  warm tint in its shadow side; then the face is the same face in every
+  frame. `[idea I17, slots r14]`
 - Money has mass: piles with height, overlap and tilt, spilling over a lip.
+- A backdrop runs past every edge of the frame: drapes carry on below the
+  floor line (cut straight by the floor, no hem in view) and their run ends
+  off-frame, so no frame shows where the set stops. `[idea I31, slots r19]`
 - Metal reads as metal: a dark gold base, strong environment reflection, an
   embossed stamp.
 
@@ -125,6 +133,16 @@ a collar) follows the profile.
   tapers to a waist and flares at the hem; squint at 1× to check.
 - Close each sleeve with a shoulder cap, so no open end shows.
 `[idea I1, slots r9]`
+- **A child's trunk is narrow.** Size the body from the head: a child's
+  shoulders are about two head-widths and the chest under them narrower
+  still, and anything set into the chest (a window, a plaque) is sized to
+  that chest, not the chest to it. A body twelve percent too wide reads as a
+  barrel at every distance, and shaving it is the one body change that read
+  for 15 of 20 auditors. `[idea I27, slots r19]`
+- **Profile tuning has a floor.** Once the profile is right, "an egg" that
+  remains is the lack of a shoulder line and a coat opening; those are their
+  own geometry (a yoke, two coat fronts over a waistcoat), not more profile
+  points. Three profile rounds moved nothing past that floor.
 
 **Thin organic parts are strands, not solids.** A plume, a frill, lace, a
 fringe or fur is many single fine strands, each tapering to nothing, on
@@ -299,10 +317,19 @@ adjustments for tests only:
     - A near miss, a tooth or an edge is framed so the deciding detail
       fills a good third of the screen at 1×, and the camera holds there
       until it has read.
+  - **A tight beat frames the whole mechanism.** For a deciding detail (a
+    reel on its tooth, a die on its edge), the tight frame shows the whole
+    window with the other parts dimmed and the deciding line heavier, so the
+    eye is told where to look; a held frame after it takes in what the figure
+    is looking at (the desk, the table), and the figure's eyes stay open
+    through a freeze. `[idea I35, slots r19]`
   - **the last-frame test.** Look at each tier's final frame on its own. The
     outcome (what was won, how much) must read in it without the frames
     before it: light inside containers, a held glow, the pile still in view.
   - **the readability pass.**
+    - The small tier caption sits on its own dark pill in gold small caps,
+      the tier's name and its odds, so it reads on any backdrop and never
+      as loose text. `[idea I38, slots r19]`
     - In every frame with a caption or title, check what is behind the
       letters in that exact frame: contrast, no hand or prop through them,
       and a soft backing wherever they cross gilt or mid-tones.

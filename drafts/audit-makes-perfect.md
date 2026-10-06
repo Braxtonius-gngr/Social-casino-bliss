@@ -23,7 +23,11 @@ Defaults (the user may override any of them when invoking):
 - target: **9/10**
 - cap: **2** rounds in a row of [ideas] for A itself without a rise
 - a rise: at least **+0.5** over the best score so far (fresh auditors vary
-  by about that much, so less is noise)
+  by about that much, so less is noise; a 20-auditor mean that rose +0.17
+  on a spread of four 5s fell back to a unanimous 4.5 the next round)
+- auditors: **one** fresh auditor per round; a **panel of three** only for
+  the plateau check and the final audit (below). Wider panels only when the
+  owner asks for one by name.
 - budget: **8** rounds, then stop as if capped
 
 ## 0. Set up
@@ -72,29 +76,39 @@ Defaults (the user may override any of them when invoking):
     finding (e.g. a catchlight in place of a recolour) unless the result is
     worse. Fresh auditors otherwise ask for opposite fixes and the loop
     chases noise.
-- **A panel, when the choice is big.** One fresh auditor is the floor. To
-  rank findings or to check a rework, run a **wave of up to 20 blind auditors
-  at once** (the platform loses subagents past 20 at once), and up to 100 in
-  waves of 20 only when a ranked cut is wanted.
-  - Every auditor gets the same packet and can't see the others. It writes its
-    score and findings first and opens the previous material after.
+- **One auditor, except at the plateau check and the final.** One fresh
+  auditor is the round's read. Judge the round by its **ledger verdicts and
+  the per-finding SEV**, not by the mean alone: one auditor's score is
+  quantised to half points, so the finding tags are the signal and the score
+  is the tie-break. For the **plateau check** (rule 6) and the **final audit**
+  (section 3), run a **panel of three** fresh auditors at once, same packet,
+  blind to each other; read the majority ledger verdict and the median score.
+  Twenty-auditor waves (up to 20 at once; the platform loses subagents past
+  that) are an owner's call, for a ranked cut of findings only; eleven such
+  waves on one piece showed the mean sitting at the mode and the extra eyes
+  adding spread, not information.
   - Findings use a **closed list of issue ids** (one per surface or defect
-    family, plus OTHER), so a script can tally them. A finding's weight is
-    the sum of its SEV over the panel; its SEV-3 share is how many put it
-    first. Cut by weighted votes. Anything under the cut is examined together
-    with the owner, not dropped.
+    family, plus OTHER), so a script can tally them (`lab/tally.py`). A
+    finding's weight is the sum of its SEV over the panel; its SEV-3 share is
+    how many put it first.
   - **Reading a tally.** Each auditor lists at most 12 findings, so the total
     weight per auditor stays roughly constant: when a finding is fixed it
     hands its slot to the next one, and a neighbour's weight can rise with no
-    change to the neighbour. Judge an [idea] by the auditors' ledger verdict,
-    by whether its finding left the list, and by its SEV-3 share, not by a
-    raw weight alone. The mean score also holds level while the same number of
-    SEV-3 findings remain, even as they change (a torso and a face one round, a
-    face and hair the next). A fall in the *count* of SEV-3s is not enough:
-    when SEV-3s per auditor fell by a third (2.55 to 1.6) with the face still
-    SEV 3 for 19 of 20, the mean did not move (4.78 to 4.80). Expect the step
-    when the finding every auditor names first goes (ask each for its single
-    biggest change, and read the majority).
+    change to the neighbour. Judge an [idea] by the ledger verdict, by whether
+    its finding left the list, and by its SEV-3 share, not by a raw weight
+    alone. The mean holds level while the same number of SEV-3 findings
+    remain, even as they change. A fall in the *count* of SEV-3s is not
+    enough: when SEV-3s per auditor fell by a third with the face still SEV 3
+    for 19 of 20, the mean did not move. Expect the step when the finding
+    every auditor names first goes (ask each for its single biggest change,
+    and read the majority).
+  - **Form holds the score; paint moves its own cluster.** Over nine rounds
+    on one piece, shader and material passes cleared their clusters (skin
+    SEV-3 14 to 3, coat 13 to 0) and the mean never left 4.5 to 4.85. The
+    findings that held it were form: head shape, hair as flat cards, a lathe
+    torso. When the top SEV-3s are form ids (FACE-FORM, HAIR-CURLS,
+    COAT-TORSO), the round's [ideas] must change geometry; a shading [idea]
+    aimed at a form finding is logged as *proposed* and skipped.
 - **Rubric.** Score 1-10, half points allowed, on set-baseline-intensive's
   checks: three distances (silhouette, arm's length, 3× pinch), light,
   contact, motion with weight, plus readability (titles, captions, overlays)
@@ -128,13 +142,19 @@ a missing decision don't move the score.
      in, times their severity. Aim the round's [ideas] at the top one or two,
      and rework them until they are gone, not merely improved. A round that
      answers eight findings shallowly moves the score less than one that
-     removes the worst. (The owner may widen the round, e.g. to the top cut of
+     removes the worst. A round that worked twelve small findings at once
+     (slots r19) read +0.17 and fell back to the mode the next round. (The owner may widen the round, e.g. to the top cut of
      a panel; then take the ones that cut names.)
    - **A blocker that survives gets a new route, not a repeat.** If the same
      finding is still on top after an [idea], the next [idea] changes the means
      (a different construction, not more of the same). Read the ledger first:
      a *reverted* row is not tried again, and a *partial* row continues by its
-     next route.
+     next route. Routes that plateaued on the slots piece and are not retried
+     as variants: hair as alpha strand cards (three variants, I23, I29, I39:
+     hair SEV-3 17 to 9 to 17 to 12, no score effect; the next route is tube
+     ringlets with roots and occlusion), and tuning a lathe torso's profile
+     (I22, I25, I27: still "an egg" for 17 of 20; the next route is a
+     shoulder line and a coat opening as their own geometry).
    - **Match the route to the kind of defect.** Read the auditors' own words
      for what is wrong: proportion (long, narrow, small, too big), detail (no
      nostrils, flat), material or light. A route of another kind does not move
@@ -181,8 +201,12 @@ a missing decision don't move the score.
    - **Partial** (rated improved, but its finding is still on the list at
      much the same weight): keep it in the piece, don't pass it, and write the
      **next route** in its row. The finding is next round's target.
-   - **No effect, or regressed:** revert it in the piece, set *reverted*, and
-     keep the evidence.
+   - **Mixed** (improved for 30 to 55%, regressed for none): keep it in the
+     piece and don't pass it. Eleven such ideas in one round were safe and
+     cheap and raised nothing; they are not a route to the step.
+   - **No effect, or regressed:** revert it in the piece **in the same round,
+     before the next audit**, set *reverted*, and keep the evidence. A
+     regressed idea is never carried into the next round's base.
 
    Then the round, by its score Sr:
    - **Sr ≥ target:** done. Go to the report.
@@ -211,15 +235,22 @@ a missing decision don't move the score.
         report.
      4. Otherwise retry the round under the amended A draft.
 6. **Plateau:** if the score holds level through three kept rounds in a row
-   while their ledgers show real gains, the rubric's half points can't see
-   what is left without a bigger change. Stop and report as capped, with the
-   ledger's evidence and the direction questions, rather than spend the
-   budget.
+   while their ledgers show real gains, run the **plateau check**: one round
+   that works every finding the last read raised (asking the owner where a
+   finding needs direction), then a **panel of three**. If the median rises
+   by the rise threshold, keep the round's non-regressed [ideas] and go on;
+   if not, the rubric's half points can't see what is left without a bigger
+   change. Stop and report as capped, with the ledger's evidence, the
+   direction questions, and the **single change the auditors name** (on the
+   slots piece, 20 of 20 named the head: a sculpted realistic face and real
+   ringlet hair), rather than spend the budget.
 7. **Budget:** at 8 rounds, stop and report as capped.
 
 ## 3. Stop and report
 
-At the target or capped, stop and show the user:
+At the target or capped, run the **final audit** as a panel of three fresh
+auditors on the piece as it stands (the kept rounds, regressed [ideas]
+reverted), then stop and show the user:
 
 1. **The workflow:**
    - a chart of the score per round
