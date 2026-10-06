@@ -858,7 +858,7 @@ export async function makeGame(ctx) {
     dz += 0.02 * (gauss(x, y, 0.045, -0.345, 0.018, 0.04) + gauss(x, y, -0.045, -0.345, 0.018, 0.04));
     dz -= 0.035 * (gauss(x, y, 0.15, -0.265, 0.026, 0.06) + gauss(x, y, -0.15, -0.265, 0.026, 0.06));
     // the cheeks: full, low
-    dz += 0.24 * (gauss(x, y, 0.4, -0.1, 0.29, 0.22) + gauss(x, y, -0.4, -0.1, 0.29, 0.22));
+    dz += 0.24 * (gauss(x, y, 0.4, -0.14, 0.29, 0.24) + gauss(x, y, -0.4, -0.14, 0.29, 0.24));
     // (the cheekbone's plane, up and out from the apple toward the temple)
     // (the lateral planes fade out where the hair begins, so the face never
     // stands out through the locks rooted beside it)
