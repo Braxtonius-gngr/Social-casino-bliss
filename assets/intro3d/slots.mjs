@@ -858,7 +858,7 @@ export async function makeGame(ctx) {
     dz += 0.02 * (gauss(x, y, 0.045, -0.345, 0.018, 0.04) + gauss(x, y, -0.045, -0.345, 0.018, 0.04));
     dz -= 0.035 * (gauss(x, y, 0.15, -0.265, 0.026, 0.06) + gauss(x, y, -0.15, -0.265, 0.026, 0.06));
     // the cheeks: full, low
-    dz += 0.24 * (gauss(x, y, 0.4, -0.14, 0.29, 0.24) + gauss(x, y, -0.4, -0.14, 0.29, 0.24));
+    dz += 0.24 * (gauss(x, y, 0.4, -0.17, 0.29, 0.26) + gauss(x, y, -0.4, -0.17, 0.29, 0.26));
     // (the cheekbone's plane, up and out from the apple toward the temple)
     // (the lateral planes fade out where the hair begins, so the face never
     // stands out through the locks rooted beside it)
@@ -867,6 +867,7 @@ export async function makeGame(ctx) {
     // (a soft hollow under the cheekbone, and the jaw's corners, so the lower
     // face has planes; the undercut below the chin, where it turns to the neck)
     dz -= 0.03 * side * (gauss(x, y, 0.5, -0.3, 0.14, 0.1) + gauss(x, y, -0.5, -0.3, 0.14, 0.1));
+    dz += 0.03 * side * (gauss(x, y, 0.5, -0.55, 0.14, 0.12) + gauss(x, y, -0.5, -0.55, 0.14, 0.12));
     dz -= 0.05 * gauss(x, y, 0, -0.82, 0.25, 0.07);
     // the philtrum; the lips, the lower the fuller, parted by a line; the
     // groove under them; the chin, a small round
@@ -875,13 +876,9 @@ export async function makeGame(ctx) {
     dz += 0.1 * gauss(x, y, 0, -0.478, 0.16, 0.046);
     dz -= 0.032 * gauss(x, y, 0, -0.435, 0.105, 0.009);
     dz -= 0.014 * gauss(x, y, 0, -0.56, 0.09, 0.03);
-    dz += 0.075 * gauss(x, y, 0, -0.66, 0.17, 0.1);
+    dz += 0.09 * gauss(x, y, 0, -0.68, 0.2, 0.11);
     return dz;
   };
-  // (the lower face's outline: half-width factor against depth below the eye
-  // line, read with radAt; wide at the cheekbones, a soft turn at the jaw,
-  // a small chin)
-  const JAWP = [[1.0, 0.0], [0.99, 0.12], [0.95, 0.3], [0.9, 0.45], [0.83, 0.6], [0.74, 0.75], [0.64, 0.9], [0.58, 1.0]];
   const unitZ = (x, y) => Math.sqrt(Math.max(0, 1 - x * x - y * y));
   const FS = 1024;
   const P = (x, y) => [(0.5 + x * 0.5) * FS, (0.5 - y * 0.5) * FS];
@@ -901,11 +898,9 @@ export async function makeGame(ctx) {
     for (let i = 0; i < p.count; i++) {
       let x = p.getX(i), z = p.getZ(i);
       const y = p.getY(i), fr = clamp01(z * 1.6);
-      // the jaw: the face's outline below the cheekbones follows a profile of
-      // its own (half-width against height, as the body's does), so the
-      // lower face narrows to a small round chin and is not a sphere scaled
+      // the jaw: a child's - wide and round, barely narrower below the cheeks
       const jaw = clamp01((-y - 0.12) / 0.8);
-      x *= radAt(JAWP, -y); z *= 1 - 0.06 * jaw;
+      x *= 1 - 0.26 * Math.pow(jaw, 1.8); z *= 1 - 0.06 * jaw;
       z += relief(x, y) * fr;
       p.setXYZ(i, x * HEAD.rx, (y > -0.3 ? y : -0.3 - lowerFace(-0.3 - y)) * HEAD.ry, z * HEAD.rz);
       uv.setXY(i, 0.5 + x * 0.5, 0.5 + y * 0.5);
