@@ -163,7 +163,10 @@ transparent cards, not one solid blade or an extruded tube.
   face, aim each lock outward from the skin and start it a little inside the
   hair edge. A lock aimed into the skin leaves only its dark root showing, and
   a dark stub on skin reads as a speck or a fly. Fade the root colour up to a
-  warm mid-tone quickly, so the part that shows is never near-black.
+  warm mid-tone quickly, so the part that shows is never near-black. When
+  the face gains relief (a cheekbone, a brow), move the hair's cap and every
+  root out with it, by the relief less the hair sphere's margin: a face that
+  stands out past the hair shows the roots beside it. `[idea I42, slots r23]`
 `[ideas I8, I12, I13, slots r9-r11]`
 
 The user's standing note: "fun, loose, less gravity" motion is fine; anything

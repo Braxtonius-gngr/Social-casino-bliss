@@ -483,3 +483,15 @@ Weight and SEV-3 across the last three 20-auditor rounds: 513/47, 509/50, 514/53
 **What it taught:** (1) the kind-of-difference field worked on first use: it separated two form verdicts from one light verdict and the decode flagged the odd one out; (2) width is the wrong axis for a child's torso: both rounds that added width (heads, flare) read as "wider shield", the one that removed it (I27) read as improved; the torso's remaining route is slope and taper; (3) the open-frame crop box began below the shoulders, so the pair showed the change at its top edge; the box now starts at y 380. A pre-check step is added to A: look at the pair image yourself and confirm the crop shows what the idea changed.
 
 Torso closed after two routes (I40 mixed, kept; I41 regressed, reverted). Next: the head, as the owner ordered.
+
+### Round 23: the head, route one, FACE-FORM and FACE-EYES (Oct 6)
+
+**[idea] I42** (geometry; form gate passed, I18 listed as the dead whole-face route): eye openings 15% smaller with a thinner lid margin and lighter lashes; a brow ridge and orbital shelf; a taller nose bridge; a stronger cheekbone plane with a hollow under it; jaw corners; a chin undercut. Two fixes before the audit: a lock root showed on the cheek where the new plane stood out past the hair's sphere, so hair roots and the cap now stand off the face's relief (v124), and the side planes fade toward the hairline (v125). Commits de85467, 0e2c6f0, 47240b7.
+
+**Pipeline:** the 3x crop boxes were wrong (the face sits at y 360-490 in the dpr-3 open shot; the boxes showed the hat) and the pre-screen caught it: FACE-EYES crop change 0.0 against a whole-frame 4.4. Boxes fixed; the pre-screen then read FACE-FORM 7.1 and FACE-EYES 9.1 against 4.8. Three pairs, one auditor.
+
+**Verdict:** FACE-FORM P1 and P2 CUR-BETTER FORM ("narrower jaw, modelled nose bridge and chin; left wider and flatter, more puppet-like", "fuller cheeks, more child-like"); FACE-EYES P3 PREV-BETTER FORM ("left lid a flat pale disc with a hard outline and glaring sclera"). Score 4.5. FACE-FORM SEV 2 (was 3): "wide heavy jaw and square lower face with puffed cheeks". HAIR-CURLS and FACE-SKIN SEV 3. TARGET: NOT CLOSER ("a flat-shaded toy doll: scribble hair, wax skin"). SINGLE-CHANGE: the hair as shaded curl tubes.
+
+**Decision:** the idea was two ideas. The face planes are **kept** (I42 = mixed, the form half a success); the eye change is split off as **I43 = regressed, reverted** in v126. Next face route: narrow the jaw, raise and soften the chin, carry cheek volume higher under the eye. Next eye route: lid thickness and crease depth, lid shadow on the sclera, individual lashes.
+
+**What it taught:** (1) an [idea] spans one cluster; two clusters in one [idea] cannot be decided when their pairs disagree, so the bank now takes them as two rows from the start (A, section 1b); (2) the pre-screen's crop-vs-whole comparison found a wrong crop box before any auditor was spent, which is exactly its job; (3) when the face gains relief, the hair must follow it: roots and cap stand off the relief (B rule, "a lock must clear the surface it grows from", now with the mechanism).

@@ -144,7 +144,10 @@ render, one pre-screen and one auditor. The tooling is in the lab branch
      read "improved" and left every form finding at SEV 3.
    - a route already *reverted*, *no-effect* or *regressed* on that cluster is
      not retried as a variant; the next [idea] changes the construction.
-   Then `ideas.py add` logs it as *proposed*. The bank (`lab/ideas.json`)
+   Then `ideas.py add` logs it as *proposed*. One [idea] spans one cluster:
+   a change that touches two (a face pass that also resizes the eyes) is
+   two rows, so that when their pairs disagree one can be kept and the
+   other reverted. The bank (`lab/ideas.json`)
    outlives the piece: the next piece's builder reads it before its first
    round, so a dead end costs one piece one round, not every piece one round.
 2. **Render the target only.** `render-targets.sh <out> CLUSTER...` renders

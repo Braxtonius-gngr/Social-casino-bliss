@@ -401,7 +401,20 @@
    "FACE-EYES"
   ],
   "idea": "Face form in geometry: eye openings 15% smaller with a thinner lid margin and shorter lashes, a brow ridge and orbital rim so the eye sits in a socket, a taller nose bridge, a cheekbone plane with a soft hollow under it, jaw corners and a chin undercut so the lower face is not a sphere",
-  "status": "proposed",
-  "verdict": {}
+  "status": "mixed",
+  "verdict": {},
+  "note": "r23, one auditor: FACE-FORM pairs 2 CUR-BETTER (FORM: 'narrower jaw, modelled nose bridge and chin; fuller cheeks, more child-like'); FACE-FORM fell SEV 3 -> 2 for this auditor. The idea also carried the eye change, which regressed (split off as I43 and reverted). Kept: brow ridge, orbital shelf, nose bridge, cheek plane with hollow, jaw corners, chin undercut, lateral fade toward the hairline, hair roots standing off the relief. Next route: 'wide heavy jaw, square lower face, puffed cheeks' - narrow the jaw, raise and soften the chin, carry cheek volume higher under the eye."
+ },
+ {
+  "id": "I43",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "FACE-EYES"
+  ],
+  "idea": "Eye openings 15% smaller with a thinner lid margin and shorter, lighter lashes",
+  "status": "regressed",
+  "verdict": {},
+  "note": "r23, one auditor: FACE-EYES pair PREV-BETTER (FORM): the smaller opening read as 'a flat pale disc with a hard outline and glaring sclera'; the lid rim tube is proportionally larger on a smaller opening. Reverted in v126. The eye route is lid thickness and crease depth, a lid shadow on the sclera and individual lashes, not a smaller opening."
  }
 ]
