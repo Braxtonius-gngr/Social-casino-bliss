@@ -1,5 +1,5 @@
 {
- "_doc": "One entry per issue id. frames: the lab.js shots that show it (tier, time, dpr, w/h) and the crop box in CSS px at dpr 1 (scaled by dpr when cut). kind: form | material | light | camera | overlay | motion. form ids need a geometry route (ideas.py check). metric: what prescreen.py measures on the crop and the direction an improving round should move it.",
+ "_doc": "One entry per issue id. frames: the lab.js shots that show it (tier, time, dpr, w/h) and the crop box in CSS px at dpr 1 (scaled by dpr when cut). kind: form | material | light | camera | overlay | motion. form ids need a geometry route (ideas.py check). metric: what prescreen.py measures on the crop and the direction an improving round should move it. Boxes for the slots piece at the open: the face sits at y 360-490 CSS px in the dpr-3 open shot.",
  "FACE-FORM": {
   "kind": "form",
   "frames": [
@@ -10,10 +10,10 @@
     390,
     844,
     [
-     122,
-     260,
-     252,
-     400
+     120,
+     360,
+     255,
+     490
     ]
    ],
    [
@@ -42,10 +42,10 @@
     390,
     844,
     [
-     122,
-     300,
-     252,
-     400
+     120,
+     380,
+     255,
+     480
     ]
    ],
    [
@@ -88,10 +88,10 @@
     390,
     844,
     [
-     140,
-     320,
-     240,
-     370
+     135,
+     395,
+     245,
+     430
     ]
    ]
   ],
@@ -107,10 +107,10 @@
     390,
     844,
     [
-     140,
-     310,
-     240,
-     360
+     135,
+     385,
+     245,
+     415
     ]
    ]
   ],
@@ -127,9 +127,9 @@
     844,
     [
      160,
-     350,
-     230,
-     400
+     415,
+     215,
+     470
     ]
    ]
   ],
@@ -145,10 +145,10 @@
     390,
     844,
     [
-     100,
-     260,
+     95,
+     330,
      290,
-     420
+     500
     ]
    ],
    [
@@ -179,9 +179,9 @@
     844,
     [
      120,
-     280,
+     360,
      260,
-     340
+     400
     ]
    ]
   ],
@@ -199,9 +199,9 @@
     844,
     [
      230,
-     230,
+     290,
      330,
-     330
+     380
     ]
    ]
   ],
@@ -218,9 +218,9 @@
     844,
     [
      60,
-     220,
+     260,
      330,
-     330
+     370
     ]
    ]
   ],
@@ -321,9 +321,9 @@
     844,
     [
      122,
-     400,
+     540,
      252,
-     541
+     700
     ]
    ],
    [
@@ -353,9 +353,9 @@
     844,
     [
      150,
-     400,
+     470,
      240,
-     500
+     560
     ]
    ]
   ],

@@ -391,5 +391,17 @@
   "status": "regressed",
   "verdict": {},
   "note": "r22, one auditor, pairs 2 PREV-BETTER (FORM) / 1 CUR-BETTER (LIGHT, not the route): 'left reads a flatter, wider shield', 'shoulder line sits further in on the previous'. Proud sleeve heads and a flared skirt widen the silhouette; a child's torso wants slope and taper, not width. Reverted in v122. Next route for the torso, if any: sloping shoulders (the yoke falling toward the sleeve) and a waist that reads above the desk, not more at the shoulders or hem."
+ },
+ {
+  "id": "I42",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "FACE-FORM",
+   "FACE-EYES"
+  ],
+  "idea": "Face form in geometry: eye openings 15% smaller with a thinner lid margin and shorter lashes, a brow ridge and orbital rim so the eye sits in a socket, a taller nose bridge, a cheekbone plane with a soft hollow under it, jaw corners and a chin undercut so the lower face is not a sphere",
+  "status": "proposed",
+  "verdict": {}
  }
 ]
