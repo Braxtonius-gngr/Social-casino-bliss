@@ -495,3 +495,13 @@ Torso closed after two routes (I40 mixed, kept; I41 regressed, reverted). Next: 
 **Decision:** the idea was two ideas. The face planes are **kept** (I42 = mixed, the form half a success); the eye change is split off as **I43 = regressed, reverted** in v126. Next face route: narrow the jaw, raise and soften the chin, carry cheek volume higher under the eye. Next eye route: lid thickness and crease depth, lid shadow on the sclera, individual lashes.
 
 **What it taught:** (1) an [idea] spans one cluster; two clusters in one [idea] cannot be decided when their pairs disagree, so the bank now takes them as two rows from the start (A, section 1b); (2) the pre-screen's crop-vs-whole comparison found a wrong crop box before any auditor was spent, which is exactly its job; (3) when the face gains relief, the hair must follow it: roots and cap stand off the relief (B rule, "a lock must clear the surface it grows from", now with the mechanism).
+
+### Round 24: the head, route two, FACE-FORM (Oct 6)
+
+**[idea] I44** (geometry): the lower face given its own outline profile (half-width against depth below the eye line, read like the body's), cheek volume higher, jaw corners dropped, chin raised and softened. One rework before the audit: the raised cheek apple puffed the under-eye, lowered a touch (v128). Commits a43df44, 40ecf4c.
+
+**Pipeline:** two targeted frames, pre-screen 5.3 / 3.2 against 0.5 whole-frame; three pairs; one auditor. Keys verified numerically against the pair images for rounds 22 to 24 (every left half matches the build the key names).
+
+**Verdict:** all three pairs PREV-BETTER; the two form pairs read the previous as "narrower cheeks and softer, less squared jaw" and "head slightly narrower". Score 4.5. FACE-FORM back at SEV 3 for this auditor: "a smooth egg: no brow ridge, no cheekbone, no jaw or chin plane" - every one of which is now in the geometry - "shade with subsurface scattering so the form shows under the light". **I44 = regressed, reverted in v129** (the I42 planes stay).
+
+**What it says:** the face's form is there and does not read, because the skin shader holds its value (I17's floor, which fixed the grey-in-the-dim and the lime-in-the-flood) and so flattens the light's modelling of the planes. Two geometry routes on the face (I42 kept, I44 reverted) have moved the SEV 3 for one auditor and not the other. The next face route is light on a form finding: let the key light model the planes while the floor holds the colour only. That is an exception to the form gate and is logged as one.

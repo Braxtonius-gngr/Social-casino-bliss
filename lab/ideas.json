@@ -416,5 +416,17 @@
   "status": "regressed",
   "verdict": {},
   "note": "r23, one auditor: FACE-EYES pair PREV-BETTER (FORM): the smaller opening read as 'a flat pale disc with a hard outline and glaring sclera'; the lid rim tube is proportionally larger on a smaller opening. Reverted in v126. The eye route is lid thickness and crease depth, a lid shadow on the sclera and individual lashes, not a smaller opening."
+ },
+ {
+  "id": "I44",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "FACE-FORM"
+  ],
+  "idea": "A child's lower face: the jaw narrowed harder below the cheeks, the jaw corners dropped, the chin raised and softened, and the cheek volume carried higher under the eye so the fullness sits in the cheek, not in a square lower face",
+  "status": "regressed",
+  "verdict": {},
+  "note": "r24, one auditor: FACE-FORM pairs 2 PREV-BETTER (FORM: the previous read as 'narrower cheeks and softer, less squared jaw', 'head slightly narrower'), FACE-EYES 1 PREV-BETTER (MATERIAL, not the route). Reverted in v129. The auditor's finding names the real block: 'no brow ridge, no cheekbone, no jaw or chin plane' although all are now in the geometry - 'shade with subsurface so the form shows under the light'. The skin's value floor (I17) holds the tone and flattens the form shading; the next face route is light, not more geometry: let the key light model the planes while the floor holds only the colour."
  }
 ]
