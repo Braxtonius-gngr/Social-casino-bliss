@@ -835,7 +835,7 @@ export async function makeGame(ctx) {
   const skinDim = { value: 0 };
   const neckPivot = new THREE.Group(); neckPivot.position.set(0, NECKY, 0.8); body.add(neckPivot);
   const headG = new THREE.Group(); headG.position.set(0, HEAD.up, HEAD.fwd); headG.rotation.order = 'YXZ'; neckPivot.add(headG);
-  const EYE = { x: 0.3, y: -0.07, w: 0.126, h: 0.068, r: 1.5 };
+  const EYE = { x: 0.3, y: -0.07, w: 0.148, h: 0.08, r: 1.5 };
   const gauss = (x, y, cx, cy, sx, sy) => Math.exp(-(((x - cx) / sx) ** 2) - (((y - cy) / sy) ** 2));
   // (the face's relief, on the unit sphere, in front)
   const relief = (x, y) => {
@@ -1096,9 +1096,9 @@ export async function makeGame(ctx) {
     const lidMat = bisque.clone(); lidMat.color.setHex(0xe0ae94); lidMat.vertexColors = true; lidMat.side = THREE.DoubleSide; keep(null, lidMat);
     // (the lid's margin: a dark rounded edge, and the lashes out of it -
     // long, dark, a doll's - which go with the lid as it closes)
-    const R0 = EYE.r + 0.07, LA = 0.41;
+    const R0 = EYE.r + 0.07, LA = 0.47;
     const arc = k => { const a = lerp(-LA, LA, k); return V(Math.sin(a) * R0, 0, Math.cos(a) * R0); };
-    const marginG = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 25 }, (_, k) => arc(k / 24))), 48, 0.036, 6, false); keep(marginG);
+    const marginG = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 25 }, (_, k) => arc(k / 24))), 48, 0.046, 6, false); keep(marginG);
     const marginM = new THREE.MeshStandardMaterial({ color: 0x5a3626, roughness: 0.7 }); keep(null, marginM);
     const lashG = (() => {
       const g = new THREE.BufferGeometry(), pos = [], uv = [], idx = [], NA = 32, NS = 4;
@@ -1112,10 +1112,10 @@ export async function makeGame(ctx) {
     })(); keep(lashG);
     const lashA = texOf(canvas(256, 64, (c, W, Hh) => {
       c.fillStyle = '#000'; c.fillRect(0, 0, W, Hh); c.strokeStyle = '#fff'; c.lineCap = 'round';
-      for (let k = 0; k < 150; k++) { const x = (k + 0.5) / 150 * W + (rng() - 0.5) * 1.6; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x, 0); c.quadraticCurveTo(x + 2, Hh * 0.5, x + 4 * (rng() - 0.3), Hh * (0.65 + 0.35 * rng())); c.stroke(); }
+      for (let k = 0; k < 150; k++) { const x = (k + 0.5) / 150 * W + (rng() - 0.5) * 1.6; c.lineWidth = 2.0; c.beginPath(); c.moveTo(x, 0); c.quadraticCurveTo(x + 2, Hh * 0.5, x + 4 * (rng() - 0.3), Hh * (0.65 + 0.35 * rng())); c.stroke(); }
       c.fillStyle = '#fff'; c.fillRect(0, 0, W, 6);
     }), false);
-    const lashM = new THREE.MeshBasicMaterial({ color: 0x3a241a, alphaMap: lashA, alphaTest: 0.32, side: THREE.DoubleSide }); keep(null, lashM);
+    const lashM = new THREE.MeshBasicMaterial({ color: 0x2c1a12, alphaMap: lashA, alphaTest: 0.32, side: THREE.DoubleSide }); keep(null, lashM);
     const sockG = new THREE.SphereGeometry(EYE.r + 0.3, 24, 16); keep(sockG);
     // (the socket behind each opening: the bisque carved hollow, in its
     // own shade - never a hole into the dark)
