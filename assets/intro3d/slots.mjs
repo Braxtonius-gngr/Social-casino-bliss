@@ -539,13 +539,13 @@ export async function makeGame(ctx) {
   // (the top of both is a shoulder: the body holds its width to the yoke and
   // then drops steeply to the collar, a shelf the sleeve heads sit on, not a
   // dome that tapers into the neck)
-  const PROF = [[10.6, -2], [9.9, 1], [8.5, 5], [7.3, 10], [7.9, 15], [9.0, 21], [9.9, 27], [10.5, 31], [10.6, 34.0], [10.0, 35.4], [6.8, 36.6], [5.0, 37.6], [4.2, 39.0], [3.6, 40.2]];
+  const PROF = [[10.6, -2], [9.9, 1], [8.5, 5], [7.0, 10], [7.5, 15], [8.5, 21], [9.3, 27], [10.0, 31], [10.6, 34.0], [10.0, 35.4], [6.8, 36.6], [5.0, 37.6], [4.2, 39.0], [3.6, 40.2]];
   const DEP = 0.6;
   // (the coat over it: a shell of its own, standing off the waistcoat, its
   // skirts flaring over the stool's cushion, open down the front)
   // (and a waist seam at the hips, where the skirts begin and stand a little
   // off the body of the coat)
-  const PROFC = [[12.2, -3.2], [11.3, -1], [9.9, 2], [9.3, 5.2], [9.1, 6.9], [8.4, 7.3], [8.0, 10], [8.7, 15], [10.0, 21], [10.8, 27], [11.5, 31], [11.8, 34.2], [11.3, 35.6], [8.4, 36.8], [6.0, 37.8], [5.0, 38.8], [4.5, 39.8]];
+  const PROFC = [[13.4, -3.2], [12.3, -1], [10.8, 2], [9.9, 5.2], [9.5, 6.9], [8.2, 7.3], [7.7, 10], [8.2, 15], [9.2, 21], [10.0, 27], [10.9, 31], [11.8, 34.2], [11.3, 35.6], [8.4, 36.8], [6.0, 37.8], [5.0, 38.8], [4.5, 39.8]];
   const radAt = (P, y) => {
     if (y <= P[0][1]) return P[0][0];
     for (let i = 0; i + 1 < P.length; i++) if (y <= P[i + 1][1]) return lerp(P[i][0], P[i + 1][0], clamp01((y - P[i][1]) / (P[i + 1][1] - P[i][1])));
@@ -648,6 +648,13 @@ export async function makeGame(ctx) {
       }
     });
   }
+  // (a side-body seam down each side, in the darker velvet: the line that
+  // says the coat is cut from panels and sewn, not turned in one piece)
+  [-1, 1].forEach(s => {
+    const pts = [], nrm = [];
+    for (let k = 0; k <= 48; k++) { const y = -3.0 + (k / 48) * 38.5, c = onCoat(s * 1.78, y, 0.1); pts.push(c.p); nrm.push(c.n); }
+    ribbon(pts, nrm, 0.36, cuffMat);
+  });
   // (the braid round the skirts' hem)
   {
     const pts = [], nrm = [], a0 = openAt(-3.2) + 0.035;
@@ -1555,11 +1562,16 @@ export async function makeGame(ctx) {
     }
     ruffG.computeVertexNormals(); }
   keep(ruffG);
-  const shoulderCapG = new THREE.SphereGeometry(3.85, 28, 18); shoulderCapG.scale(1, 1.1, 1.02); keep(shoulderCapG);
+  // (the sleeve head: set into the yoke's end and proud of it, an armhole
+  // seam of the darker velvet where it meets the body - a sleeve sewn into a
+  // coat, not a tube that grows from it)
+  const shoulderCapG = new THREE.SphereGeometry(3.85, 28, 18); shoulderCapG.scale(1.15, 1.1, 1.0); keep(shoulderCapG);
+  const armholeG = new THREE.TorusGeometry(3.6, 0.2, 10, 40); armholeG.rotateY(Math.PI / 2); keep(armholeG);
   const arms = [-1, 1].map(side => {
     const a = { side };
     a.shoulder = V(side * SH.x, SH.y, 0);
-    { const cap = new THREE.Mesh(shoulderCapG, sleeveMat); cap.position.set(side * (SH.x + 0.5), SH.y + 0.3, 0); cap.castShadow = true; cap.receiveShadow = true; body.add(cap); }
+    { const cap = new THREE.Mesh(shoulderCapG, sleeveMat); cap.position.set(side * (SH.x + 2.6), SH.y + 0.3, 0); cap.castShadow = true; cap.receiveShadow = true; body.add(cap); }
+    { const seam = new THREE.Mesh(armholeG, cuffMat); seam.position.set(side * (SH.x + 3.2), SH.y + 0.3, 0); seam.castShadow = true; body.add(seam); }
     a.root = V(side * (SH.x - 3.6), SH.y + 0.6, 0);
     a.sleeveG = makeSleeve();
     a.sleeve = new THREE.Mesh(a.sleeveG, sleeveMat); a.sleeve.castShadow = true; a.sleeve.receiveShadow = true; a.sleeve.frustumCulled = false; body.add(a.sleeve);
