@@ -1565,13 +1565,13 @@ export async function makeGame(ctx) {
   // (the sleeve head: set into the yoke's end and proud of it, an armhole
   // seam of the darker velvet where it meets the body - a sleeve sewn into a
   // coat, not a tube that grows from it)
-  const shoulderCapG = new THREE.SphereGeometry(3.85, 28, 18); shoulderCapG.scale(1.15, 1.1, 1.0); keep(shoulderCapG);
-  const armholeG = new THREE.TorusGeometry(3.6, 0.2, 10, 40); armholeG.rotateY(Math.PI / 2); keep(armholeG);
+  const shoulderCapG = new THREE.SphereGeometry(3.85, 28, 18); shoulderCapG.scale(1.0, 1.08, 0.98); keep(shoulderCapG);
+  const armholeG = new THREE.TorusGeometry(3.5, 0.18, 10, 40); armholeG.rotateY(Math.PI / 2); keep(armholeG);
   const arms = [-1, 1].map(side => {
     const a = { side };
     a.shoulder = V(side * SH.x, SH.y, 0);
-    { const cap = new THREE.Mesh(shoulderCapG, sleeveMat); cap.position.set(side * (SH.x + 2.6), SH.y + 0.3, 0); cap.castShadow = true; cap.receiveShadow = true; body.add(cap); }
-    { const seam = new THREE.Mesh(armholeG, cuffMat); seam.position.set(side * (SH.x + 3.2), SH.y + 0.3, 0); seam.castShadow = true; body.add(seam); }
+    { const cap = new THREE.Mesh(shoulderCapG, sleeveMat); cap.position.set(side * (SH.x + 1.5), SH.y + 0.3, 0); cap.castShadow = true; cap.receiveShadow = true; body.add(cap); }
+    { const seam = new THREE.Mesh(armholeG, cuffMat); seam.position.set(side * (SH.x + 2.3), SH.y + 0.3, 0); seam.castShadow = true; body.add(seam); }
     a.root = V(side * (SH.x - 3.6), SH.y + 0.6, 0);
     a.sleeveG = makeSleeve();
     a.sleeve = new THREE.Mesh(a.sleeveG, sleeveMat); a.sleeve.castShadow = true; a.sleeve.receiveShadow = true; a.sleeve.frustumCulled = false; body.add(a.sleeve);
