@@ -163,16 +163,19 @@ render, one pre-screen and one auditor. The tooling is in the lab branch
 4. **One auditor, paired.** `pair.py make` builds blind left/right pairs of
    the previous and current crop per cluster, in a random order whose key
    sits outside the packet. The auditor (brief: `lab/brief-single.md`)
-   answers the pairs first (LEFT, RIGHT or SAME, and why), then writes
-   findings on the current frames, then one **TARGET** line: whether the
+   answers the pairs first (LEFT, RIGHT or SAME; the KIND of difference,
+   form, material, light or none; and why), then writes findings on the
+   current frames, then one **TARGET** line: whether the
    piece is closer to the owner's target than last round, and in what one
    respect it most falls short. A paired "which is closer" is a far finer
    instrument than a 1 to 10 score quantised to half points, and the TARGET
    line shows direction drift a round earlier than the score does.
-5. **Decode and record.** `pair.py decode` turns the answers into
-   PREV-BETTER, CUR-BETTER or SAME per cluster; `ideas.py verdict` writes the
-   ledger verdicts into the bank and sets each [idea]'s status (resolved,
-   success, mixed, no-effect, regressed). Decide the [idea] by section 2 rule
+5. **Decode and record.** `pair.py decode <key> <report> <route>` turns the
+   answers into PREV-BETTER, CUR-BETTER or SAME per cluster and flags a
+   CUR-BETTER whose kind is not the [idea]'s route (a geometry [idea] praised
+   for its sheen has not moved its finding); `ideas.py set` records the
+   status with the auditor's words (the panel path uses `ideas.py verdict`
+   on the LEDGER lines). Decide the [idea] by section 2 rule
    5 with CUR-BETTER counting as improved and PREV-BETTER as regressed. A
    regressed [idea] is reverted before the next render.
 6. **The score is for the plateau check and the final.** A single auditor's

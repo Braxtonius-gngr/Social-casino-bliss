@@ -12,13 +12,13 @@ WHAT YOU GET
 
 ORDER OF WORK
 1. Read ref/ first.
-2. For each pair, decide which side is closer to the owner's target FOR THAT CLUSTER, or SAME if you cannot tell, and say in a few words what makes the difference. Judge the cluster named in the label; ignore everything else in the crop.
+2. For each pair, decide which side is closer to the owner's target FOR THAT CLUSTER, or SAME if you cannot tell. Then name the KIND of difference you see, one word: FORM (shape, silhouette, proportion, a seam or edge that was not there), MATERIAL (sheen, texture, pattern, colour of a surface), LIGHT (where the light falls, shadows), or NONE. Then a few words on what makes the difference. Judge the cluster named in the label; ignore everything else in the crop.
 3. Then look at frames/ and write findings as below, tagged with the closed id list.
 4. Last, the one line that matters most: is the piece as a whole closer to ref/owner-target.png than ref/sheet-rxr.png is to its own bar, yes or no, and in what one respect it most falls short.
 
 WHAT TO RETURN (exactly this layout; a script reads it)
 PAIRS:
-P1: LEFT|RIGHT|SAME | <why, a few words>
+P1: LEFT|RIGHT|SAME | FORM|MATERIAL|LIGHT|NONE | <why, a few words>
 P2: ...
 SCORE: <1-10, half points; the rubric scale below>
 FINDINGS (at most 8, most severe first):

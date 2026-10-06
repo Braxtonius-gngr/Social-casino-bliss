@@ -28,7 +28,7 @@ def hue(a):
     return f'green-share={green:.3f} yellow-share={yellow:.3f}'
 M = {'skin': skin, 'edges': edges, 'silhouette': silhouette, 'lum': lum, 'hue': hue, 'diff': lambda a: ''}
 for c in want:
-    e = C[c]; print(f'\n== {c} ({e["kind"]}; metric {e["metric"]}{"; want " + e["want"] if "want" in e else ""})')
+    e = C[c]; print(f'\n== {c} ({e["kind"]}; metric {e["metric"]}{"; usual direction " + e["want"] + " - the idea decides" if "want" in e else ""})')
     for tier, t, dpr, w, h, box in e['frames']:
         a, b = find(prev, tier, t, dpr, w, h), find(cur, tier, t, dpr, w, h)
         if not a or not b: print(f'  {tier} {t} @{dpr}x: frame missing ({"prev" if not a else "cur"})'); continue

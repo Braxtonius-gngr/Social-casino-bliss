@@ -367,5 +367,17 @@
    "REGRESSED": 2
   },
   "results": "results-r20"
+ },
+ {
+  "id": "I40",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "COAT-TORSO"
+  ],
+  "idea": "The coat hangs from a shoulder yoke (a shelf wider than the chest that the sleeve heads sit on, dropping steeply to the collar), breaks at a waist seam where the skirts stand off, and its front edges roll outward so the fronts read as cloth hanging over the waistcoat, not a shell",
+  "status": "mixed",
+  "verdict": {},
+  "note": "r21, one auditor, pairs 1 CUR-BETTER / 1 SAME; the CUR-BETTER credited to a form highlight and the damask scale, 'geometry itself looks identical'; torso still 'an egg, shoulders slope into it, sleeves with no shoulder seam' at SEV 2. Next route: the shoulder has to read at 1x - sleeve heads set into the yoke with a seam, the chest narrower against the shoulders, coat panels with a hip flare."
  }
 ]

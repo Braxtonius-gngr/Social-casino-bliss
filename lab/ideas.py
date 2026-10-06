@@ -1,5 +1,6 @@
 # The idea bank: ideas.py add <id> <piece> <route> <clusters,comma> "<one-line idea>"
 #                ideas.py verdict <results-dir> [piece]      (reads LEDGER lines, as tally.py does)
+#                ideas.py set <id> <status> "<note>"             (the one-auditor path: status from pair.py decode, with the auditor's words)
 #                ideas.py list [--cluster X] [--status S]    ideas.py dead-ends    ideas.py check <route> <clusters,comma>
 # ideas.json is the ledger every round reads before proposing: a *reverted* or *no-effect* row is a route not to
 # retry as a variant, a *passed* row is already in the builder. check is the form gate: a form cluster (clusters.json
@@ -35,6 +36,10 @@ elif cmd == 'verdict':
         if not rows: print(f'{k}: not in bank (add it first)'); continue
         r = rows[0]; r['verdict'] = dict(v); r['status'] = status_of(v); r['results'] = os.path.basename(res.rstrip('/')); print(f'{k:5} {r["status"]:10} {dict(v)}')
     save()
+elif cmd == 'set':
+    rows = [r for r in bank if r['id'] == sys.argv[2]]
+    if not rows: print('not in bank'); sys.exit(1)
+    rows[0]['status'] = sys.argv[3]; rows[0]['note'] = sys.argv[4] if len(sys.argv) > 4 else ''; save(); print('set', sys.argv[2], sys.argv[3])
 elif cmd == 'list':
     cl = sys.argv[sys.argv.index('--cluster') + 1] if '--cluster' in sys.argv else None; st = sys.argv[sys.argv.index('--status') + 1] if '--status' in sys.argv else None
     for r in bank:
