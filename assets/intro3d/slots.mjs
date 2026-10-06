@@ -1183,6 +1183,8 @@ export async function makeGame(ctx) {
         for (let j = 0; j <= LAN; j++) {
           const ph = lerp(ph0, Math.PI / 2, j / LAN), y = Math.sin(ph), r = Math.cos(ph), x = Math.sin(az) * r, z = Math.cos(az) * r;
           const p = V(x * RX, y * RY, z * RZ).add(C0), n = V(x / RX, y / RY, z / RZ).normalize(), dl = y - la0;
+          // (where the face's relief stands out past the hair's own sphere - a cheekbone, the brow - the cap stands off with it)
+          p.addScaledVector(n, Math.max(0, relief(x, y) * clamp01(z * 1.6) * HEAD.rz - 0.2));
           pos.push(p.x, p.y, p.z); nrm.push(n.x, n.y, n.z); th.push(deep(y, z, dl)); den.push(lerp(1, 0.5 + 0.5 * smoother(dl / 0.12), clamp01((z - 0.5) / 0.3) * smoother(y / 0.25)));
         }
       }
@@ -1223,7 +1225,7 @@ export async function makeGame(ctx) {
         const r = Math.sqrt(1 - y * y), x = Math.sin(az) * r, z = Math.cos(az) * r, la0 = edgeLa(az);
         if (y <= la0 + 0.02 || (HAT && y > 0.38)) continue;
         const n = V(x / RX, y / RY, z / RZ).normalize();
-        const root = V(x * RX, y * RY, z * RZ).add(C0).addScaledVector(n, deep(y, z, y - la0) * H0 * 0.8);
+        const root = V(x * RX, y * RY, z * RZ).add(C0).addScaledVector(n, deep(y, z, y - la0) * H0 * 0.8 + Math.max(0, relief(x, y) * clamp01(z * 1.6) * HEAD.rz - 0.2));
         // (the way down the surface, or any way round at the crown)
         let t = DOWN.clone().addScaledVector(n, -DOWN.dot(n));
         if (t.length() < 0.25) { t.set(rng() - 0.5, 0, rng() - 0.5); t.addScaledVector(n, -t.dot(n)); }
