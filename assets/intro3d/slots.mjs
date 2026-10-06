@@ -1192,13 +1192,13 @@ export async function makeGame(ctx) {
       const cRoot = new THREE.Color(0x070302), cA = new THREE.Color(0x170c06), cB = new THREE.Color(0x34200f), cc = new THREE.Color();
       // (locks: each ringlet is two or three fine strands wound together, so it reads as one
       // curl made of hair, not one smooth tube; every strand tapers to a closed point)
-      const NL = HAT ? 560 : 760, M = 12, DOWN = V(0, -1, 0);
+      const NL = HAT ? 720 : 900, M = 12, DOWN = V(0, -1, 0);
       const PP = [], NN = [], CC = [], II = [], UU = [];
       const SD = V(0, 0, 0);
       const P = V(0, 0, 0), T = V(0, 0, 0), Nn = V(0, 0, 0), Bb = V(0, 0, 0);
       let made = 0, guard = 0, K = 5;
       while (made < NL && guard++ < 40000) {
-        const fringe = made > NL * 0.86, temple = !fringe && made > NL * 0.62, crown = !HAT && !fringe && !temple && made > NL * 0.5, inner = !fringe && !temple && !crown && made > NL * 0.36;
+        const fringe = made > NL * 0.78, temple = !fringe && made > NL * 0.62, crown = !HAT && !fringe && !temple && made > NL * 0.5, inner = !fringe && !temple && !crown && made > NL * 0.36;
         let az, y;
         if (crown) { az = rng() * TAU; y = lerp(0.55, 1, Math.sqrt(rng())); } else if (temple) { az = (rng() < 0.5 ? -1 : 1) * (0.95 + 0.6 * rng()); y = edgeLa(az) + 0.02 + rng() * 0.38; } else if (fringe) { az = (rng() - 0.5) * 2.3; const la = edgeLa(az); y = la + 0.04 + rng() * 0.1; } else { az = rng() * TAU; y = lerp(-0.8, 1, rng()); }
         const r = Math.sqrt(1 - y * y), x = Math.sin(az) * r, z = Math.cos(az) * r, la0 = edgeLa(az);
@@ -1211,12 +1211,12 @@ export async function makeGame(ctx) {
         t.normalize();
         // (a fringe lock sweeps a little to the side it grows on, so the brow is not a row of the same hook)
         const sweep = fringe ? Math.sin(az) * (0.5 + 0.5 * rng()) : 0;
-        const d = n.clone().multiplyScalar(lerp((fringe ? 0.3 : 0.24) + 0.14 * rng(), 0.1 + 0.06 * rng(), smoother((n.y - 0.55) / 0.4))).addScaledVector(t, 0.9).add(V(rng() - 0.5, rng() - 0.5, rng() - 0.5).multiplyScalar(0.7)).add(V(sweep, 0, 0)).normalize();
+        const d = n.clone().multiplyScalar(lerp((fringe ? 0.5 : 0.24) + 0.14 * rng(), 0.1 + 0.06 * rng(), smoother((n.y - 0.55) / 0.4))).addScaledVector(t, 0.9).add(V(rng() - 0.5, rng() - 0.5, rng() - 0.5).multiplyScalar(0.7)).add(V(sweep, 0, 0)).normalize();
         const brow = smoother((z - 0.35) / 0.4) * smoother((y - 0.1) / 0.25) * (1 - smoother((y - 0.6) / 0.3));
         const low = smoother((y + 0.85) / 0.7);
         const L = lerp(lerp(1.2, 2.7, low) * (0.7 + 0.6 * rng()), 1.3 + 0.5 * rng(), brow) * (inner ? 0.65 : rng() < 0.35 ? 0.72 : 1.1);
         // (locks come in two scales: most fine, and among them a few wide ringlets, as a child's mop has)
-        const big = !fringe && !temple && !inner && rng() < 0.3;
+        const big = !fringe && !temple && !inner && rng() < 0.24;
         const sm = fringe || temple ? 0.66 : inner ? 0.7 : big ? 1.9 : rng() < 0.4 ? 0.75 : 1, Rh = (0.44 + 0.2 * rng()) * sm, turns = big ? 1.3 + 0.6 * rng() : 1.8 + 0.9 * rng(), dir = rng() < 0.5 ? -1 : 1, ang0 = rng() * TAU, rt0 = (0.3 + 0.08 * rng()) * (big ? 1.45 : sm);
         if (d.y > 0.05) d.y = 0.05;
         const droop = lerp(0.35, 0.6, low);
@@ -1241,11 +1241,10 @@ export async function makeGame(ctx) {
             P.copy(pts[j]); T.copy(pts[Math.min(M, j + 1)]).sub(pts[Math.max(0, j - 1)]).normalize();
             SD.crossVectors(T, n); if (SD.lengthSq() < 1e-4) SD.crossVectors(T, Math.abs(T.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0)); SD.normalize();
             Nn.crossVectors(SD, T).normalize();
-            const s = j / M, hw = rt * (fringe ? 1.3 : 2.1) * (0.8 + 0.2 * smoother(s / 0.15)) * (1 - 0.55 * s * s);
+            const s = j / M, hw = rt * 2.0 * (0.8 + 0.2 * smoother(s / 0.15)) * (1 - 0.55 * s * s);
             cc.copy(fringe ? cA : cRoot).lerp(cc.copy(cA).lerp(cB, tn), smoother(s / (fringe ? 0.3 : 0.5))).lerp(cB, 0.18 * s * s).multiplyScalar(sh);
             PP.push(P.x - SD.x * hw, P.y - SD.y * hw, P.z - SD.z * hw, P.x + SD.x * hw, P.y + SD.y * hw, P.z + SD.z * hw);
-            // (shaded across its width as a round lock is: one edge in its own shade, the other toward the light)
-            NN.push(Nn.x, Nn.y, Nn.z, Nn.x, Nn.y, Nn.z); CC.push(cc.r * 0.72, cc.g * 0.72, cc.b * 0.72, cc.r * 1.18, cc.g * 1.18, cc.b * 1.18);
+            NN.push(Nn.x, Nn.y, Nn.z, Nn.x, Nn.y, Nn.z); CC.push(cc.r, cc.g, cc.b, cc.r, cc.g, cc.b);
             UU.push(ph / TAU % 1, s, ph / TAU % 1 + 0.5, s);
           }
           for (let j = 0; j < M; j++) { const a = base + j * 2, b = a + 1, c = a + 2, e = a + 3; II.push(a, b, c, b, e, c); }
@@ -1258,7 +1257,7 @@ export async function makeGame(ctx) {
       // (the strands: a dozen fine hairs the length of the card, each ending
       // where it will, so the lock's tip is many points and not one)
       const strandA = texOf(canvas(128, 512, (c, W, Hh) => {
-        c.fillStyle = '#000'; c.fillRect(0, 0, W, Hh); c.lineCap = 'round'; c.filter = 'blur(1.2px)';
+        c.fillStyle = '#000'; c.fillRect(0, 0, W, Hh); c.lineCap = 'round';
         for (let k = 0; k < 19; k++) {
           const x0 = (k + 0.5) / 19 * W + (rng() - 0.5) * 4, end = 0.62 + 0.38 * rng(), wob = (rng() - 0.5) * 10;
           const gr = c.createLinearGradient(0, 0, 0, Hh); gr.addColorStop(0, '#fff'); gr.addColorStop(Math.max(0.05, end - 0.3), '#fff'); gr.addColorStop(end, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
@@ -1266,7 +1265,7 @@ export async function makeGame(ctx) {
           c.beginPath(); c.moveTo(x0, 0); c.bezierCurveTo(x0 + wob, Hh * 0.35, x0 - wob, Hh * 0.7, x0 + (rng() - 0.5) * 6, Hh * end); c.stroke();
         }
       }), false, [1, 1]);
-      const curlM = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.68, specularIntensity: 0.14, sheen: 0.32, sheenRoughness: 0.42, sheenColor: new THREE.Color(0x7a5636), alphaMap: strandA, alphaTest: 0.3, side: THREE.DoubleSide }); keep(null, curlM);
+      const curlM = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.72, specularIntensity: 0.1, sheen: 0.14, sheenRoughness: 0.5, sheenColor: new THREE.Color(0x4a3322), alphaMap: strandA, alphaTest: 0.36, side: THREE.DoubleSide }); keep(null, curlM);
       const curls = mesh(gc, curlM, headG); curls.castShadow = true; curls.receiveShadow = true;
     }
   }
