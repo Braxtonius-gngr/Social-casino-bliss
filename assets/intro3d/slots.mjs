@@ -860,11 +860,14 @@ export async function makeGame(ctx) {
     // the cheeks: full, low
     dz += 0.24 * (gauss(x, y, 0.4, -0.17, 0.29, 0.26) + gauss(x, y, -0.4, -0.17, 0.29, 0.26));
     // (the cheekbone's plane, up and out from the apple toward the temple)
-    dz += 0.09 * (gauss(x, y, 0.56, -0.02, 0.16, 0.12) + gauss(x, y, -0.56, -0.02, 0.16, 0.12));
+    // (the lateral planes fade out where the hair begins, so the face never
+    // stands out through the locks rooted beside it)
+    const side = 1 - smoother((Math.abs(x) - 0.52) / 0.2);
+    dz += 0.09 * side * (gauss(x, y, 0.54, -0.02, 0.15, 0.12) + gauss(x, y, -0.54, -0.02, 0.15, 0.12));
     // (a soft hollow under the cheekbone, and the jaw's corners, so the lower
     // face has planes; the undercut below the chin, where it turns to the neck)
-    dz -= 0.03 * (gauss(x, y, 0.5, -0.3, 0.14, 0.1) + gauss(x, y, -0.5, -0.3, 0.14, 0.1));
-    dz += 0.03 * (gauss(x, y, 0.5, -0.55, 0.14, 0.12) + gauss(x, y, -0.5, -0.55, 0.14, 0.12));
+    dz -= 0.03 * side * (gauss(x, y, 0.5, -0.3, 0.14, 0.1) + gauss(x, y, -0.5, -0.3, 0.14, 0.1));
+    dz += 0.03 * side * (gauss(x, y, 0.5, -0.55, 0.14, 0.12) + gauss(x, y, -0.5, -0.55, 0.14, 0.12));
     dz -= 0.05 * gauss(x, y, 0, -0.82, 0.25, 0.07);
     // the philtrum; the lips, the lower the fuller, parted by a line; the
     // groove under them; the chin, a small round
