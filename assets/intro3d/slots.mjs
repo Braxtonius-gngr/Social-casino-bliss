@@ -220,18 +220,18 @@ export async function makeGame(ctx) {
   // the cuffs a darker green
   const pileTex = (() => {
     const c = canvas(128, 128, (g, W) => { const im = g.createImageData(W, W); for (let i = 0; i < W * W; i++) { const v = 118 + rng() * 20; im.data[i * 4] = im.data[i * 4 + 1] = im.data[i * 4 + 2] = v; im.data[i * 4 + 3] = 255; } g.putImageData(im, 0, 0); });
-    const n = embossTex(c, 0.6, 1); n.wrapS = n.wrapT = THREE.RepeatWrapping; n.repeat.set(24, 24); keep(null, null, n);
+    const n = embossTex(c, 0.6, 1); n.wrapS = n.wrapT = THREE.RepeatWrapping; n.repeat.set(36, 36); keep(null, null, n);
     return n;
   })();
   // (a velvet's pile scatters the light broadly and soft, lit most where
   // the cloth turns from the lamp - not a satin's bright, tight sheen)
   const velvet = (color, sheenColor) => {
-    const m = new THREE.MeshPhysicalMaterial({ color, roughness: 0.96, specularIntensity: 0.06, sheen: 0.7, sheenRoughness: 0.72, sheenColor: new THREE.Color(sheenColor), normalMap: pileTex, normalScale: new THREE.Vector2(0.55, 0.55) });
+    const m = new THREE.MeshPhysicalMaterial({ color, roughness: 0.96, specularIntensity: 0.06, sheen: 0.6, sheenRoughness: 0.72, sheenColor: new THREE.Color(sheenColor), normalMap: pileTex, normalScale: new THREE.Vector2(0.8, 0.8) });
     keep(null, m);
     return m;
   };
-  const coat = velvet(0x0a2e22, 0x1e5240);
-  const sleeveMat = velvet(0x0a2e22, 0x1e5240);
+  const coat = velvet(0x08261c, 0x174632);
+  const sleeveMat = velvet(0x08261c, 0x174632);
   sleeveMat.side = THREE.DoubleSide;
   const cuffMat = velvet(0x072218, 0x184634);
   cuffMat.side = THREE.DoubleSide;
@@ -583,6 +583,10 @@ export async function makeGame(ctx) {
   const coatSide = coat.clone(); coatSide.side = THREE.DoubleSide; coatSide.vertexColors = true; keep(null, coatSide);
   { const m = new THREE.Mesh(torso, vestCut); m.castShadow = true; m.receiveShadow = true; body.add(m); }
   { const g = lathe(PROFC, true); keep(g); const m = new THREE.Mesh(g, coatSide); m.castShadow = true; m.receiveShadow = true; body.add(m); }
+  // (the collar: a band of the darker velvet standing round the neck of the
+  // coat, proud of it, open at the front with it - the line that says where
+  // the shoulders end and a coat begins)
+  { const collarM = cuffMat.clone(); collarM.vertexColors = true; keep(null, collarM); const g = lathe([[8.9, 38.0], [8.0, 38.9], [6.9, 39.7], [6.2, 40.5], [5.9, 41.0]], true); keep(g); const m = new THREE.Mesh(g, collarM); m.castShadow = true; m.receiveShadow = true; body.add(m); }
   // (a point on the coat at angle a round, height y, off it by lift; and
   // the way out of it there)
   const onCoat = (a, y, lift) => { const r = coatR(y), [x, z] = sup(a, r * skirtFold(a, y)), n = V(x / (r * r), 0, z / (r * DEP) ** 2).normalize(); return { p: V(x, y, z).addScaledVector(n, lift), n }; };
@@ -799,6 +803,8 @@ export async function makeGame(ctx) {
   // full cheeks, a small nose and chin), the face painted; the eyes glass,
   // set behind almond openings with lids that close over them as a doll's
   // do; his own hair, a soft rounded crop of coils.
+  // (On a Tooth lets the room's dim reach the skin, where every other beat holds it)
+  const skinDim = { value: 0 };
   const neckPivot = new THREE.Group(); neckPivot.position.set(0, NECKY, 0.8); body.add(neckPivot);
   const headG = new THREE.Group(); headG.position.set(0, HEAD.up, HEAD.fwd); headG.rotation.order = 'YXZ'; neckPivot.add(headG);
   const EYE = { x: 0.3, y: -0.07, w: 0.148, h: 0.08, r: 1.5 };
@@ -977,14 +983,15 @@ export async function makeGame(ctx) {
     const SSS = 0.6, LOCK = 0.1, FLOOR = 0.82;
     skin.customProgramCacheKey = () => 'slots-skin-sss';
     skin.onBeforeCompile = (sh) => {
-      sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>', `
+      sh.uniforms.uDim = skinDim;
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uDim;').replace('#include <opaque_fragment>', `
         {
           vec3 vv = normalize(vViewPosition);
           float ndv = clamp(dot(normal, vv), 0.0, 1.0);
           float rim = pow(1.0 - ndv, 2.2);
           vec3 base = diffuseColor.rgb;
           outgoingLight += base * vec3(1.0, 0.30, 0.18) * rim * ${SSS.toFixed(2)};
-          vec3 held = base * (0.70 + 0.30 * ndv) * 0.98;
+          vec3 held = base * (0.70 + 0.30 * ndv) * 0.98 * (1.0 - 0.62 * uDim);
           outgoingLight = max(mix(outgoingLight, held, ${LOCK.toFixed(2)}), held * ${FLOOR.toFixed(2)});
           float lit = dot(outgoingLight, vec3(0.3, 0.59, 0.11)) / max(dot(held, vec3(0.3, 0.59, 0.11)), 0.001);
           float shade = 1.0 - smoothstep(0.55, 1.0, lit);
@@ -1166,8 +1173,9 @@ export async function makeGame(ctx) {
       const cRoot = new THREE.Color(0x070302), cA = new THREE.Color(0x170c06), cB = new THREE.Color(0x34200f), cc = new THREE.Color();
       // (locks: each ringlet is two or three fine strands wound together, so it reads as one
       // curl made of hair, not one smooth tube; every strand tapers to a closed point)
-      const NL = HAT ? 300 : 460, M = 12, DOWN = V(0, -1, 0);
-      const PP = [], NN = [], CC = [], II = [];
+      const NL = HAT ? 720 : 900, M = 12, DOWN = V(0, -1, 0);
+      const PP = [], NN = [], CC = [], II = [], UU = [];
+      const SD = V(0, 0, 0);
       const P = V(0, 0, 0), T = V(0, 0, 0), Nn = V(0, 0, 0), Bb = V(0, 0, 0);
       let made = 0, guard = 0, K = 5;
       while (made < NL && guard++ < 40000) {
@@ -1184,13 +1192,15 @@ export async function makeGame(ctx) {
         t.normalize();
         // (a fringe lock sweeps a little to the side it grows on, so the brow is not a row of the same hook)
         const sweep = fringe ? Math.sin(az) * (0.5 + 0.5 * rng()) : 0;
-        const d = n.clone().multiplyScalar(lerp((fringe ? 0.6 : 0.28) + 0.2 * rng(), 0.1 + 0.08 * rng(), smoother((n.y - 0.55) / 0.4))).addScaledVector(t, 0.9).add(V(rng() - 0.5, rng() - 0.5, rng() - 0.5).multiplyScalar(0.7)).add(V(sweep, 0, 0)).normalize();
+        const d = n.clone().multiplyScalar(lerp((fringe ? 0.5 : 0.24) + 0.14 * rng(), 0.1 + 0.06 * rng(), smoother((n.y - 0.55) / 0.4))).addScaledVector(t, 0.9).add(V(rng() - 0.5, rng() - 0.5, rng() - 0.5).multiplyScalar(0.7)).add(V(sweep, 0, 0)).normalize();
         const brow = smoother((z - 0.35) / 0.4) * smoother((y - 0.1) / 0.25) * (1 - smoother((y - 0.6) / 0.3));
         const low = smoother((y + 0.85) / 0.7);
         const L = lerp(lerp(1.2, 2.7, low) * (0.7 + 0.6 * rng()), 1.3 + 0.5 * rng(), brow) * (inner ? 0.65 : rng() < 0.35 ? 0.72 : 1.1);
         // (locks come in two scales: most fine, and among them a few wide ringlets, as a child's mop has)
         const big = !fringe && !temple && !inner && rng() < 0.24;
         const sm = fringe || temple ? 0.66 : inner ? 0.7 : big ? 1.9 : rng() < 0.4 ? 0.75 : 1, Rh = (0.44 + 0.2 * rng()) * sm, turns = big ? 1.3 + 0.6 * rng() : 1.8 + 0.9 * rng(), dir = rng() < 0.5 ? -1 : 1, ang0 = rng() * TAU, rt0 = (0.3 + 0.08 * rng()) * (big ? 1.45 : sm);
+        if (d.y > 0.05) d.y = 0.05;
+        const droop = lerp(0.35, 0.6, low);
         const ref = Math.abs(d.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0);
         const u = V().crossVectors(d, ref).normalize(), w = V().crossVectors(d, u);
         const tone = rng(), shade = 0.8 + 0.35 * rng();
@@ -1202,32 +1212,41 @@ export async function makeGame(ctx) {
           const pts = [];
           for (let j = 0; j <= M; j++) {
             const s = j / M, ang = ph + dir * s * tu * TAU, amp = Rs * (1 - 0.3 * s) * smoother(s / 0.2);
-            pts.push(root.clone().addScaledVector(d, Ls * s).addScaledVector(DOWN, 0.35 * Ls * s * s).addScaledVector(u, Math.cos(ang) * amp).addScaledVector(w, Math.sin(ang) * amp));
+            pts.push(root.clone().addScaledVector(d, Ls * s).addScaledVector(DOWN, droop * Ls * s * s).addScaledVector(u, Math.cos(ang) * amp).addScaledVector(w, Math.sin(ang) * amp));
           }
-          // (a tube about the points, carried along them, thinning to a closed point)
+          // (a card along the points: a flat ribbon of fine strands lying against
+          // the head, its width thinning to the tip, the strands' own ends in
+          // its alpha - never a tube, never a blunt polygon end)
           const base = PP.length / 3;
           for (let j = 0; j <= M; j++) {
             P.copy(pts[j]); T.copy(pts[Math.min(M, j + 1)]).sub(pts[Math.max(0, j - 1)]).normalize();
-            if (j === 0) Nn.copy(Math.abs(T.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0)); Nn.addScaledVector(T, -Nn.dot(T)).normalize();
-            Bb.crossVectors(T, Nn);
-            const s = j / M, rad = rt * (0.75 + 0.25 * smoother(s / 0.15)) * Math.pow(Math.max(0, 1 - Math.pow(s, 2.2)), 0.75);
+            SD.crossVectors(T, n); if (SD.lengthSq() < 1e-4) SD.crossVectors(T, Math.abs(T.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0)); SD.normalize();
+            Nn.crossVectors(SD, T).normalize();
+            const s = j / M, hw = rt * 2.0 * (0.8 + 0.2 * smoother(s / 0.15)) * (1 - 0.55 * s * s);
             cc.copy(fringe ? cA : cRoot).lerp(cc.copy(cA).lerp(cB, tn), smoother(s / (fringe ? 0.3 : 0.5))).lerp(cB, 0.18 * s * s).multiplyScalar(sh);
-            for (let k = 0; k < K; k++) {
-              const a = (k / K) * TAU, ca = Math.cos(a), sa = Math.sin(a), dx = Nn.x * ca + Bb.x * sa, dy = Nn.y * ca + Bb.y * sa, dz = Nn.z * ca + Bb.z * sa;
-              PP.push(P.x + dx * rad, P.y + dy * rad, P.z + dz * rad); NN.push(dx, dy, dz); CC.push(cc.r, cc.g, cc.b);
-            }
+            PP.push(P.x - SD.x * hw, P.y - SD.y * hw, P.z - SD.z * hw, P.x + SD.x * hw, P.y + SD.y * hw, P.z + SD.z * hw);
+            NN.push(Nn.x, Nn.y, Nn.z, Nn.x, Nn.y, Nn.z); CC.push(cc.r, cc.g, cc.b, cc.r, cc.g, cc.b);
+            UU.push(ph / TAU % 1, s, ph / TAU % 1 + 0.5, s);
           }
-          for (let j = 0; j < M; j++) for (let k = 0; k < K; k++) {
-            const a = base + j * K + k, b = base + j * K + (k + 1) % K, c = base + (j + 1) * K + k, e = base + (j + 1) * K + (k + 1) % K;
-            II.push(a, b, c, b, e, c);
-          }
+          for (let j = 0; j < M; j++) { const a = base + j * 2, b = a + 1, c = a + 2, e = a + 3; II.push(a, b, c, b, e, c); }
         }
         made++;
       }
       const gc = new THREE.BufferGeometry();
       gc.setAttribute('position', new THREE.Float32BufferAttribute(PP, 3)); gc.setAttribute('normal', new THREE.Float32BufferAttribute(NN, 3));
-      gc.setAttribute('color', new THREE.Float32BufferAttribute(CC, 3)); gc.setIndex(II); gc.computeBoundingSphere(); keep(gc);
-      const curlM = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.7, specularIntensity: 0.16, sheen: 0.1, sheenRoughness: 0.55, sheenColor: new THREE.Color(0x4a3322) }); keep(null, curlM);
+      gc.setAttribute('color', new THREE.Float32BufferAttribute(CC, 3)); gc.setAttribute('uv', new THREE.Float32BufferAttribute(UU, 2)); gc.setIndex(II); gc.computeBoundingSphere(); keep(gc);
+      // (the strands: a dozen fine hairs the length of the card, each ending
+      // where it will, so the lock's tip is many points and not one)
+      const strandA = texOf(canvas(128, 512, (c, W, Hh) => {
+        c.fillStyle = '#000'; c.fillRect(0, 0, W, Hh); c.lineCap = 'round';
+        for (let k = 0; k < 19; k++) {
+          const x0 = (k + 0.5) / 19 * W + (rng() - 0.5) * 4, end = 0.62 + 0.38 * rng(), wob = (rng() - 0.5) * 10;
+          const gr = c.createLinearGradient(0, 0, 0, Hh); gr.addColorStop(0, '#fff'); gr.addColorStop(Math.max(0.05, end - 0.3), '#fff'); gr.addColorStop(end, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+          c.strokeStyle = gr; c.lineWidth = 1.8 + 2.4 * rng();
+          c.beginPath(); c.moveTo(x0, 0); c.bezierCurveTo(x0 + wob, Hh * 0.35, x0 - wob, Hh * 0.7, x0 + (rng() - 0.5) * 6, Hh * end); c.stroke();
+        }
+      }), false, [1, 1]);
+      const curlM = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.72, specularIntensity: 0.1, sheen: 0.14, sheenRoughness: 0.5, sheenColor: new THREE.Color(0x4a3322), alphaMap: strandA, alphaTest: 0.36, side: THREE.DoubleSide }); keep(null, curlM);
       const curls = mesh(gc, curlM, headG); curls.castShadow = true; curls.receiveShadow = true;
     }
   }
@@ -1694,7 +1713,7 @@ export async function makeGame(ctx) {
     { t: restW - 0.15, p: LENS, d: 0.6 }
   ];
   if (tier === 'vault') looks.push({ t: plan.boom - 0.2, p: V(BELL.x + 4, 76, 4), d: 0.45 }, { t: plan.boom + 1.6, p: LENS, d: 0.6 });
-  if (tier === 'edge') looks.push({ t: T.stop[1] + 0.3, p: LENS, d: 1.0 });
+  if (tier === 'edge') looks.push({ t: T.stop[1] + 0.2, p: V(4.5, 24, 14), d: 0.45 });
   looks.sort((a, b) => a.t - b.t);
   const lookAt = w => {
     const p = looks[0].p.clone();
@@ -1801,7 +1820,7 @@ export async function makeGame(ctx) {
     // faces; the wrist back from there along the hand; the elbow carried out
     arms.forEach(a => {
       const right = a.side < 0, tg = right ? P.rh : P.lh;
-      const S0 = a.shoulder, pole = right ? V(-0.75, -0.55, -0.4) : V(0.75, -0.55, -0.35);
+      const S0 = a.shoulder, pole = right ? V(-0.4, -0.85, -0.4) : V(0.4, -0.85, -0.35);
       let n = dirBody(tg.n), h = tg.h ? dirBody(tg.h).normalize() : null;
       let F = (tg.g ? toBody(tg.g) : toBody(tg.p)).sub(S0).normalize(), wrist = null, E = null;
       for (let it = 0; it < 5; it++) {
@@ -2074,6 +2093,7 @@ export async function makeGame(ctx) {
       es.position.copy(toWorld(Bp([10, 70, 60])));
       es.target.position.copy(toWorld(Bp([4, 30, 4])));
       es.intensity = 3.8 * k;
+      skinDim.value = k;
       key.intensity = key0 * (1 - 0.62 * k); key.color.setRGB(lerp(1, 0.9, k), lerp(0.933, 0.93, k), lerp(0.867, 1, k));
       fill.intensity = fill0 * (1 - 0.96 * k);
       faceFill.intensity = faceFill0 * (1 - 0.9 * k);
