@@ -162,7 +162,11 @@ render, one pre-screen and one auditor. The tooling is in the lab branch
      (a shared material, a reshuffled random stream) before any auditor.
 4. **One auditor, paired.** `pair.py make` builds blind left/right pairs of
    the previous and current crop per cluster, in a random order whose key
-   sits outside the packet. The auditor (brief: `lab/brief-single.md`)
+   sits outside the packet. Look at each pair image yourself before the
+   auditor does: if the crop does not plainly contain what the [idea]
+   changed, fix the cluster's box in `clusters.json` and rebuild the pairs
+   (a torso crop that began below the shoulders made a shoulder round
+   unjudgeable). The auditor (brief: `lab/brief-single.md`)
    answers the pairs first (LEFT, RIGHT or SAME; the KIND of difference,
    form, material, light or none; and why), then writes findings on the
    current frames, then one **TARGET** line: whether the

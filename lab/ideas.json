@@ -379,5 +379,17 @@
   "status": "mixed",
   "verdict": {},
   "note": "r21, one auditor, pairs 1 CUR-BETTER / 1 SAME; the CUR-BETTER credited to a form highlight and the damask scale, 'geometry itself looks identical'; torso still 'an egg, shoulders slope into it, sleeves with no shoulder seam' at SEV 2. Next route: the shoulder has to read at 1x - sleeve heads set into the yoke with a seam, the chest narrower against the shoulders, coat panels with a hip flare."
+ },
+ {
+  "id": "I41",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "COAT-TORSO"
+  ],
+  "idea": "Sleeve heads set into the yoke as proud ellipsoids with an armhole seam of the darker velvet, the chest and waist narrowed against the shoulders, the skirts flared from the waist seam, and a side-body seam down each side so the coat reads as panels",
+  "status": "regressed",
+  "verdict": {},
+  "note": "r22, one auditor, pairs 2 PREV-BETTER (FORM) / 1 CUR-BETTER (LIGHT, not the route): 'left reads a flatter, wider shield', 'shoulder line sits further in on the previous'. Proud sleeve heads and a flared skirt widen the silhouette; a child's torso wants slope and taper, not width. Reverted in v122. Next route for the torso, if any: sloping shoulders (the yoke falling toward the sleeve) and a waist that reads above the desk, not more at the shoulders or hem."
  }
 ]
