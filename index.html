@@ -765,10 +765,10 @@
         <span class="slc-net" id="settingsLedgerNet"></span>
       </button>
       <div class="toggle-row">
-        <span style="color:#fff;">Landing on Open<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Once a day plays the shot on your first open; later opens go straight to your seat</span></span>
+        <span style="color:#fff;">Landing on Open<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Every open plays the shot; Once a day plays it on your first open, then straight to your seat</span></span>
         <select id="settingLandingMode" class="settings-select" onchange="setLandingMode(this.value)" aria-label="Landing on open">
-          <option value="daily">Once a day</option>
           <option value="true">Every open</option>
+          <option value="daily">Once a day</option>
           <option value="false">Never</option>
         </select>
       </div>
@@ -3262,21 +3262,31 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderGames();
     }
 
-    // The landing on open: 'daily' (the default - the shot on the first
-    // open of the day, the seat taken directly after), 'true' (every open)
-    // or 'false' (never). Stored under the old key: 'true' and 'false' are
+    // The landing on open: 'true' (the default - every open), 'daily' (the
+    // shot on the first open of the day, the seat taken directly after) or
+    // 'false' (never). Stored under the old key: 'true' and 'false' are
     // what the old toggle wrote, so a choice made before stands.
+    // Every open became the default on 2026-10-05, and everyone on once a
+    // day was moved onto it once - Settings switches back, and the flag
+    // keeps that choice from then on. Never is left as it was.
     const LANDING_SEEN_KEY = 'almanac_landing_seen_v1';
+    const LANDING_EVERY_KEY = 'almanac_landing_every_v1';   // 'done': the one-time move to every open
     function rollLandingMode() {
       let v = null;
-      try { v = localStorage.getItem('almanac_show_landing'); } catch (e) { v = null; }
-      return v === 'true' || v === 'false' ? v : 'daily';
+      try {
+        v = localStorage.getItem('almanac_show_landing');
+        if (localStorage.getItem(LANDING_EVERY_KEY) !== 'done') {
+          if (v !== 'false') { v = 'true'; localStorage.setItem('almanac_show_landing', v); }
+          localStorage.setItem(LANDING_EVERY_KEY, 'done');
+        }
+      } catch (e) { /* private mode: the default below */ }
+      return v === 'daily' || v === 'false' ? v : 'true';
     }
     function rollLocalDay() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
     function rollLandingSeenToday() { try { return localStorage.getItem(LANDING_SEEN_KEY) === rollLocalDay(); } catch (e) { return false; } }
     function rollLandingStamp() { try { localStorage.setItem(LANDING_SEEN_KEY, rollLocalDay()); } catch (e) { /* private mode */ } }
     function setLandingMode(mode) {
-      localStorage.setItem('almanac_show_landing', mode === 'true' || mode === 'false' ? mode : 'daily');
+      localStorage.setItem('almanac_show_landing', mode === 'daily' || mode === 'false' ? mode : 'true');
     }
 
     function restartTourFromSettings() {
@@ -8841,7 +8851,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v103';
+    const APP_BUILD = 'almanac-v104';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
@@ -13076,7 +13086,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           notify: sanitizeNotifyPrefs(p.notify),
           hideCollected: typeof p.hideCollected === 'boolean' ? p.hideCollected : null,
           showLanding: typeof p.showLanding === 'boolean' ? p.showLanding : null,
-          landingMode: p.landingMode === 'daily' || p.landingMode === 'true' || p.landingMode === 'false' ? p.landingMode : null,
+          // (a backup from before every open became the default carries
+          // 'daily' for everyone who never chose, so it takes the same
+          // one-time move rollLandingMode() made; landingEvery marks a
+          // backup from after it, whose 'daily' was chosen)
+          landingMode: p.landingMode === 'daily' && p.landingEvery !== true ? 'true'
+            : p.landingMode === 'daily' || p.landingMode === 'true' || p.landingMode === 'false' ? p.landingMode : null,
           dense: typeof p.dense === 'boolean' ? p.dense : null,
           felt: typeof p.felt === 'string' && FELT_CHOICES[p.felt] ? p.felt : null,
           trim: typeof p.trim === 'string' && TRIM_CHOICES[p.trim] ? p.trim : null
@@ -13146,6 +13161,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             hideCollected: localStorage.getItem('almanac_hide_collected') === 'true',
             showLanding: localStorage.getItem('almanac_show_landing') !== 'false',
             landingMode: rollLandingMode(),
+            landingEvery: true,
             dense: localStorage.getItem('almanac_dense') === 'true',
             felt: localStorage.getItem(FELT_KEY) || null,
             trim: localStorage.getItem(TRIM_KEY) || null
@@ -13347,7 +13363,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const p = migrated.preferences;
         let prefsOk = true;
         function writePref(key, value) {
-          try { localStorage.setItem(key, value); } catch (e) { prefsOk = false; }
+          try { localStorage.setItem(key, value); return true; } catch (e) { prefsOk = false; return false; }
         }
         if (p.theme) writePref(THEME_KEY, p.theme);
         if (p.timezone !== null) writePref('almanac_tz_v1', p.timezone);
@@ -13357,8 +13373,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           localStorage.setItem(NOTIFY_KEY, JSON.stringify({ ...getNotifyPrefs(), ...p.notify }));
         } catch (e) { prefsOk = false; }
         if (typeof p.hideCollected === 'boolean') writePref('almanac_hide_collected', String(p.hideCollected));
-        if (p.landingMode) writePref('almanac_show_landing', p.landingMode);
-        else if (typeof p.showLanding === 'boolean') writePref('almanac_show_landing', String(p.showLanding));
+        // (the restored choice stands: the one-time move to every open is
+        // never run over it - see rollLandingMode - but only once the choice
+        // is actually written)
+        let landingWritten = false;
+        if (p.landingMode) landingWritten = writePref('almanac_show_landing', p.landingMode);
+        else if (typeof p.showLanding === 'boolean') landingWritten = writePref('almanac_show_landing', String(p.showLanding));
+        if (landingWritten) writePref(LANDING_EVERY_KEY, 'done');
         if (typeof p.dense === 'boolean') writePref('almanac_dense', String(p.dense));
         if (typeof p.felt === 'string' && FELT_CHOICES[p.felt]) writePref(FELT_KEY, p.felt);
         if (typeof p.trim === 'string' && TRIM_CHOICES[p.trim]) writePref(TRIM_KEY, p.trim);
@@ -13958,8 +13979,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
 
     // ?lab always plays the intro, whatever the landing setting, so the
     // intro's options can be compared (see rollOptions).
-    // (the landing on open: every open, once a day - the first open of the
-    // day - or never; see rollLandingMode)
+    // (the landing on open: every open - the default - once a day - the
+    // first open of the day - or never; see rollLandingMode)
     const landingMode = rollLandingMode();
     const showLanding = rollOptions().lab || landingMode === 'true' || (landingMode === 'daily' && !rollLandingSeenToday());
     // (the day's shot claimed here, as the choice is made, not when the shot
