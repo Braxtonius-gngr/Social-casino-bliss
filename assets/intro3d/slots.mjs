@@ -1240,7 +1240,7 @@ export async function makeGame(ctx) {
         const low = smoother((y + 0.85) / 0.7);
         const L = lerp(lerp(1.2, 2.7, low) * (0.7 + 0.6 * rng()), 1.3 + 0.5 * rng(), brow) * (inner ? 0.65 : rng() < 0.35 ? 0.72 : 1.1);
         // (locks come in two scales: most fine, and among them a few wide ringlets, as a child's mop has)
-        const big = !fringe && !temple && !inner && rng() < 0.24;
+        const bigR = rng() < 0.24, big = !fringe && !temple && !inner && brow < 0.2 && bigR;
         const sm = fringe || temple ? 0.85 : inner ? 0.7 : big ? 1.9 : rng() < 0.4 ? 0.75 : 1, Rh = (0.44 + 0.2 * rng()) * sm, turns = big ? 1.3 + 0.6 * rng() : 1.8 + 0.9 * rng(), dir = rng() < 0.5 ? -1 : 1, ang0 = rng() * TAU, rt0 = (0.3 + 0.08 * rng()) * (big ? 1.45 : sm);
         if (d.y > 0.05) d.y = 0.05;
         const droop = lerp(0.35, 0.6, low);
