@@ -428,5 +428,17 @@
   "status": "regressed",
   "verdict": {},
   "note": "r24, one auditor: FACE-FORM pairs 2 PREV-BETTER (FORM: the previous read as 'narrower cheeks and softer, less squared jaw', 'head slightly narrower'), FACE-EYES 1 PREV-BETTER (MATERIAL, not the route). Reverted in v129. The auditor's finding names the real block: 'no brow ridge, no cheekbone, no jaw or chin plane' although all are now in the geometry - 'shade with subsurface so the form shows under the light'. The skin's value floor (I17) holds the tone and flattens the form shading; the next face route is light, not more geometry: let the key light model the planes while the floor holds only the colour."
+ },
+ {
+  "id": "I45",
+  "piece": "slots",
+  "route": "light",
+  "clusters": [
+   "FACE-FORM"
+  ],
+  "idea": "The key light models the face: the frontal face fill moves off-axis to the upper left and drops by half so it rakes the brow shelf, nose bridge, cheek plane and chin undercut, and the skin's value floor lowers so the shadow side can carry the form while the warm shade tint holds the colour",
+  "status": "proposed",
+  "verdict": {},
+  "form_exception": "r24 auditor: brow ridge, cheekbone, jaw and chin planes are all in the geometry (I42 kept) and read as absent - 'shade with subsurface so the form shows under the light'"
  }
 ]

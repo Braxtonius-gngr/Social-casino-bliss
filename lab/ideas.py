@@ -20,11 +20,18 @@ cmd = sys.argv[1]
 if cmd == 'check' or cmd == 'add':
     route, clusters = (sys.argv[2], sys.argv[3]) if cmd == 'check' else (sys.argv[4], sys.argv[5])
     bad = [c for c in clusters.split(',') if C.get(c, {}).get('kind') == 'form' and route != 'geometry']
+    # (the one exception: geometry is in place on this cluster - a kept geometry row exists - and the auditor's own words say the
+    # form does not show under the light; then one light route is allowed, with the reason recorded on the row)
+    exc = sys.argv[sys.argv.index('--form-exception') + 1] if '--form-exception' in sys.argv else None
+    if bad and exc and route == 'light' and any(r['route'] == 'geometry' and r['status'] in ('mixed', 'success', 'partial', 'passed') and set(r['clusters']) & set(bad) for r in bank):
+        print(f'form gate: exception taken for {bad} - {exc}'); bad = []
     if bad: print(f'FORM GATE: {", ".join(bad)} are form findings and the route is "{route}". A form finding needs a geometry route; paint, shading and light passes on form findings read "improved" and left every one of them SEV 3 (slots r12-r20). Not added.' if cmd == 'add' else f'FORM GATE: {bad} need a geometry route.'); sys.exit(1 if cmd == 'add' else 0)
     dead = [r for r in bank if r['status'] in ('reverted', 'no-effect', 'regressed') and set(r['clusters']) & set(clusters.split(',')) and r['route'] == route]
     if dead: print('dead-end routes on these clusters, same route kind (do not retry as a variant):'); [print(f'  {r["id"]} {r["piece"]} {r["route"]:9} {r["status"]:9} {r["idea"][:90]}') for r in dead]
     if cmd == 'check': print('ok' if not dead else 'proceed only with a different construction'); sys.exit(0)
-    bank.append({'id': sys.argv[2], 'piece': sys.argv[3], 'route': route, 'clusters': clusters.split(','), 'idea': sys.argv[6], 'status': 'proposed', 'verdict': {}}); save(); print('added', sys.argv[2])
+    row = {'id': sys.argv[2], 'piece': sys.argv[3], 'route': route, 'clusters': clusters.split(','), 'idea': sys.argv[6], 'status': 'proposed', 'verdict': {}}
+    if exc: row['form_exception'] = exc
+    bank.append(row); save(); print('added', sys.argv[2])
 elif cmd == 'verdict':
     res = sys.argv[2]; piece = sys.argv[3] if len(sys.argv) > 3 else None; led = collections.defaultdict(collections.Counter)
     for f in glob.glob(os.path.join(res, 'a*.md')):

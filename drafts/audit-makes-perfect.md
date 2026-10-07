@@ -141,7 +141,14 @@ render, one pre-screen and one auditor. The tooling is in the lab branch
    - a **form** finding (clusters.json kind `form`: head, hair, torso,
      sleeves, hands, props) takes a geometry route only. A paint, shading or
      light [idea] aimed at a form finding is refused: nine rounds of them
-     read "improved" and left every form finding at SEV 3.
+     read "improved" and left every form finding at SEV 3. **The one
+     exception:** when a kept geometry [idea] already carries the planes the
+     finding names, and the auditor's own words say the form does not show
+     under the light, one **light** route is allowed on that cluster
+     (`ideas.py add ... --form-exception "<the auditor's words>"`), with the
+     reason on the row. Form that exists and does not read is a lighting
+     fault, not a geometry one: a frontal fill and a value floor wipe the
+     planes a face is read by.
    - a route already *reverted*, *no-effect* or *regressed* on that cluster is
      not retried as a variant; the next [idea] changes the construction.
    Then `ideas.py add` logs it as *proposed*. One [idea] spans one cluster:
