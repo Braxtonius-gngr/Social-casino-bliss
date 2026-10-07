@@ -463,6 +463,11 @@ export async function makeGame(ctx) {
     slotG.visible = false;
     seat.add(slotG);
     slotAnim = { goldM, leafM, wellM, well, leaves, glint, glintM };
+    // (the table's lettering fades as the end card arrives: transparent from
+    // the build, so warm() compiles its final state and nothing flips mid-shot)
+    const pm = table.group.userData.mark;
+    pm.material.transparent = true;
+    if (pm.children[0] && pm.children[0].material) pm.children[0].material.transparent = true;
   }
   const shoeMouth = V(0, 0.9, -11.6).applyAxisAngle(up, shoe.rotation.y).add(shoe.position);
   const mouthDir = V(0, 0, -1).applyAxisAngle(up, shoe.rotation.y);
@@ -1430,8 +1435,8 @@ export async function makeGame(ctx) {
     // own card takes the screen, so it does not run behind the button)
     if (plan.sweep) {
       const mk = table.group.userData.mark, q = 1 - 0.72 * smoother(clamp01((w - (plan.revealW - 0.5)) / 0.8));
-      mk.material.transparent = true; mk.material.opacity = q;
-      if (mk.children[0] && mk.children[0].material) { mk.children[0].material.transparent = true; mk.children[0].material.opacity = q; }
+      mk.material.opacity = q;
+      if (mk.children[0] && mk.children[0].material) mk.children[0].material.opacity = q;
     }
     // (the room's rim light stands at the shot's own each frame - see
     // wheel.mjs)
