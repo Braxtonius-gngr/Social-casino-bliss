@@ -638,6 +638,8 @@
     .landing-title { font-family: Georgia, "Times New Roman", serif; font-size: 2.6rem; font-weight: 700; color: var(--text-main); letter-spacing: 0.01em; margin-bottom: 12px; text-transform: none; }
     .landing-title span { color: var(--accent-gold); font-family: inherit; }
     .landing-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 40px; font-family: monospace; letter-spacing: 0.15em; font-weight: 700; }
+    /* (over the shot the line is set on one row, whatever the screen: it would otherwise wrap and leave a bullet at the end of the first) */
+    .landing-screen.roll-webgl .landing-subtitle { white-space: nowrap; letter-spacing: 0.08em; font-size: min(0.9rem, 3.1vw); }
     .landing-btn { padding: 14px 36px; background: var(--accent-gold); color: #0a0a0a; border: 1px solid var(--accent-gold); border-radius: 30px; font-size: 1rem; font-weight: 900; cursor: pointer; transition: all 0.2s; }
     .landing-legal { margin-top: 22px; max-width: 320px; font-size: 0.72rem; line-height: 1.5; color: var(--text-dim); text-align: center; }
     .landing-legal a { color: var(--text-muted); }
@@ -957,6 +959,7 @@
     .r3-call { position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; white-space: nowrap; display: flex; flex-direction: column; align-items: center; font: 700 36px/1.05 Georgia, "Times New Roman", serif; letter-spacing: 0.16em; text-indent: 0.16em; text-transform: uppercase; color: transparent; background: linear-gradient(180deg, rgba(255,255,255,0) 0 44%, rgba(150,90,10,0.3) 54%, rgba(255,255,255,0) 66%), linear-gradient(100deg, #e8bb52 0%, #ffe7a2 28%, #fff8de calc(var(--shine, -60%) - 7%), #ffffff var(--shine, -60%), #fff8de calc(var(--shine, -60%) + 7%), #ffdc7c 72%, #e0ae46 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.85)) drop-shadow(0 0 14px rgba(255,190,80,0.45)); }
     .r3-call small { font-size: 0.42em; letter-spacing: 0.42em; text-indent: 0.42em; margin-top: 4px; }
     .r3-call-scrim { position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; border-radius: 50%; background: radial-gradient(closest-side, rgba(8,7,10,0.78), rgba(8,7,10,0.5) 55%, rgba(8,7,10,0) 100%); }
+    .r3-call-scrim.r3-call-plate { border-radius: 12px; background: linear-gradient(180deg, rgba(20,16,11,0.93), rgba(6,5,4,0.92)); border: 1px solid rgba(224,174,70,0.62); box-shadow: 0 8px 26px rgba(0,0,0,0.6), inset 0 0 0 3px rgba(0,0,0,0.55), inset 0 0 0 4px rgba(224,174,70,0.2); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
     .r3-call-hardways { background: none; -webkit-text-fill-color: initial; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7)) drop-shadow(0 0 18px rgba(200,220,255,0.35)); }
     .r3-call-hardways img { display: block; width: min(80vw, 440px); height: auto; }
     .r3-call-hardways.r3-call-text { color: #e8edf4; -webkit-text-fill-color: #e8edf4; }
@@ -1404,6 +1407,23 @@
     html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-btn:hover { background: #231a10; }
     html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-legal { color: #36281a; }
     html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-legal a { color: #1c140c; }
+    /* Over the set (dark cloth) the button is a backed pill and the small
+       print sits in a halo of shade, so neither dissolves into the chip rack
+       or the shoe behind them. Light felts keep their own printed look. */
+    html:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-btn { background: rgba(10,8,5,0.82); box-shadow: 0 0 18px 8px rgba(10,8,5,0.5); }
+    html:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-legal { text-shadow: 0 0 5px rgba(6,5,3,0.95), 0 0 14px rgba(6,5,3,0.85), 0 0 26px rgba(6,5,3,0.7); }
+    /* The end card in the plates' type, for every game's shot in the house look (Refinement x Realization;
+       other skins keep their own title): wide-tracked capitals,
+       the title in the plates' gold, the tagline and legal line in a soft gold-cream. */
+    [data-theme="executive"] .landing-screen.roll-webgl .landing-title { font-size: min(1.85rem, 7vw); line-height: 1.18; letter-spacing: 0.13em; text-indent: 0.13em; text-transform: uppercase; }
+    [data-theme="executive"] .landing-screen.roll-webgl .landing-tagline { font-style: normal; font-size: min(0.8rem, 3vw); letter-spacing: 0.34em; text-indent: 0.34em; text-transform: uppercase; margin: 4px 0 14px; }
+    [data-theme="executive"] .landing-screen.roll-webgl .landing-subtitle { font-family: Georgia, "Times New Roman", serif; font-size: min(0.72rem, 2.6vw); letter-spacing: 0.16em; font-weight: 700; }
+    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-title { background: linear-gradient(180deg, #f8e7ab 0%, #e8bb52 52%, #b98a2c 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; text-shadow: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.85)) drop-shadow(0 0 14px rgba(255,190,80,0.32)); }
+    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-title span { -webkit-text-fill-color: transparent; color: transparent; }
+    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-tagline { color: #e2c987; text-shadow: 0 0 8px rgba(6,5,3,0.95), 0 1px 2px rgba(6,5,3,0.9); }
+    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-subtitle { color: rgba(236,222,180,0.86); text-shadow: 0 0 8px rgba(6,5,3,0.95), 0 1px 2px rgba(6,5,3,0.9); }
+    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-legal { color: rgba(232,218,178,0.82); }
+    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-legal a { color: #ecd9a0; }
     .landing-screen.intro-play.roll-popped .landing-title { animation: roll-title-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s both; }
     .landing-screen.intro-play.roll-popped .landing-tagline { animation: roll-rise 0.6s ease-out 0.95s both; }
     .landing-screen.intro-play.roll-popped .landing-subtitle { animation: roll-rise 0.6s ease-out 1.15s both; }

@@ -5350,10 +5350,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (direct) { screen.classList.remove('intro-play'); screen.classList.add('hidden'); return; }
         playRollIntroCss(still);
       };
-      // A tap before the shot has loaded: straight to the finished frame.
-      const skipWhileLoading = () => fallBack(true);
+      // A tap before the shot has loaded: it is the shot that is skipped (to
+      // its finished frame, as soon as it is built) - never swapped for the
+      // CSS intro. Nor does a slow load drop to the CSS intro: the shot is
+      // waited for. Only a shot that cannot be made (no WebGL 2, a module
+      // that fails to load, a build that throws) falls back.
+      let tappedEarly = false;
+      const skipWhileLoading = () => { tappedEarly = true; screen.removeEventListener('pointerdown', skipWhileLoading); };
       if (!direct) screen.addEventListener('pointerdown', skipWhileLoading);
-      timer = setTimeout(() => fallBack(false), direct ? 15000 : 6000);
       let mod;
       try {
         mod = await import('./assets/intro3d/intro.mjs');
@@ -5571,6 +5575,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       screen.addEventListener('focusin', skip);
       document.addEventListener('keydown', skip);
       api.play();
+      if (tappedEarly) skip();
     }
     // The table that is up, when one is: the intro's world (its renderer
     // and set), the table controller and the stage they were moved to.
@@ -8846,7 +8851,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v142';
+    const APP_BUILD = 'almanac-v143';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads

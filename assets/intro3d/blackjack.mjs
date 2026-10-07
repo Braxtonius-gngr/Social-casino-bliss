@@ -78,7 +78,7 @@ const smoother = x => { x = clamp01(x); return x * x * x * (x * (6 * x - 15) + 1
 const easeOut = (x, k = 3) => 1 - Math.pow(1 - clamp01(x), k);
 const lerp = (a, b, k) => a + (b - a) * k;
 
-export const TIER_NAMES = { standard: 'Standard Hand', hardways: 'Blackjack', vault: 'The Black Jack', edge: 'On Its Edge' };
+export const TIER_NAMES = { standard: 'Standard Hand', hardways: 'A Natural', vault: 'The Black Jack', edge: 'On Its Edge' };
 const NUM = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen', 'Twenty', 'Twenty-one', 'Twenty-two', 'Twenty-three', 'Twenty-four', 'Twenty-five', 'Twenty-six'];
 
 // Where the table stands, in the room's frame: its seat frame's origin (on
@@ -97,6 +97,23 @@ const SPOT = { you: [[-2.3, 18.0], [2.3, 20.6]], dealer: [[-3.4, 36.5], [3.4, 36
 // The shoe (the card table's place) and the discard rack, its mouth turned
 // to the middle of the table.
 const DISCARD = [28, 52];
+// The drop slot (see SWP): one, let into the cloth in front of the machine's
+// port, long across the table, its mouth to you. Flush with the felt when
+// shut - a hairline of gold and a glint - and open (its two leaves drawn
+// back) on a black well while the cards go in. x, z its middle, w across,
+// d deep (cm). A bust (a third card) keeps clear of it: the cards lie a
+// card's length short of it.
+const SLOT = { x: 0, z: 46.4, w: 10.4, d: 4.0 };
+// The slot's metal, in the trim the player chose in Settings (see TRIMS in
+// intro.mjs): the bezel and the seams `c`/`m`/`r`, their glow `e`, the glint
+// `g` (rgb), the leaves a dark shade of the same `l`.
+const SLOT_METAL = {
+  gold: { c: 0xd9ad4f, m: 0.9, r: 0.26, e: 0xffb23a, g: [255, 196, 86], l: 0x1a1308 },
+  onyx: { c: 0x2a2930, m: 0.35, r: 0.1, e: 0x8fa4ff, g: [190, 205, 255], l: 0x08080b },
+  silver: { c: 0xe3e6ec, m: 1, r: 0.16, e: 0xcfe0ff, g: [225, 236, 255], l: 0x101216 },
+  crimson: { c: 0xc2182f, m: 0.5, r: 0.12, e: 0xff5068, g: [255, 110, 128], l: 0x1c0409 },
+  burgundy: { c: 0xb4584c, m: 1, r: 0.3, e: 0xff8a70, g: [255, 150, 120], l: 0x180806 }
+};
 // The lettering stamped into the cloth: the plane it is drawn on (centre z,
 // w x h cm, px a cm) and its two arcs, each round the table's own centre
 // (the middle of the dealer's edge) - a and b its half-width and depth.
@@ -170,8 +187,10 @@ function dealFor(tier, rng) {
   } else if (tier === 'edge') {
     you = pair(18 + Math.floor(rng() * 3)).map(r => card(r));
     dealer = [card(pick(RANKS.slice(1))), card(pick(RANKS.slice(1)))];
+    // (called on the plate like the rest, once the card has stood: the
+    // tier's own name, so the caption under it gives the odds alone)
     play = 'edge';
-    call = null;
+    call = ['On Its Edge', 'One in a thousand'];
   } else if (rng() < 0.55) {
     // stands short of you: your nineteen or twenty, its seventeen or
     // eighteen
@@ -325,6 +344,7 @@ function paintFace(c, W, H, card, PIPS) {
 // ------------------------------------------------------------ the game
 export async function makeGame(ctx) {
   const { THREE, scene, set, lights, tier, seed, aspect, room, helpers: H } = ctx;
+  const trim = ctx.trim || 'gold';
   const { makeWarp, spline } = H;
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const up = V(0, 1, 0);
@@ -412,6 +432,76 @@ export async function makeGame(ctx) {
   const discard = K.buildDiscard(set);
   faceToward(discard, DISCARD[0], DISCARD[1], 0, 20);
   seat.add(shoe, discard);
+  // the drop slot the machine clears its cards into (see SWP): let into the
+  // cloth, black leaves over a black well and a hairline of brass round it
+  let slotG = null, slotAnim = null;
+  if (tier !== 'edge' && tier !== 'vault') {
+    const { x: sx, z: sz, w: sw, d: sd } = SLOT;
+    const goldM = new THREE.MeshStandardMaterial({ color: 0xd9ad4f, metalness: 0.9, roughness: 0.28, emissive: 0xffb23a, emissiveIntensity: 0.3, transparent: true, opacity: 0 });
+    const leafM = new THREE.MeshStandardMaterial({ color: 0x0a0908, roughness: 0.8, metalness: 0.1, transparent: true, opacity: 0 });
+    const wellM = new THREE.MeshBasicMaterial({ color: 0x010101 });
+    slotG = new THREE.Group();
+    slotG.position.set(sx, 0, sz);
+    // (the bezel: a raised, bevelled frame of metal on the far side and the
+    // two ends, with a low ramp for the near lip, which the cards tip over;
+    // inside it the walls drop to the well)
+    const bev = (bx, bh, bz, r) => {
+      const hx = bx / 2 - r, hz = bz / 2 - r, sh = new THREE.Shape();
+      sh.moveTo(-hx, -bz / 2); sh.lineTo(hx, -bz / 2); sh.absarc(hx, -hz, r, -Math.PI / 2, 0); sh.lineTo(bx / 2, hz); sh.absarc(hx, hz, r, 0, Math.PI / 2);
+      sh.lineTo(-hx, bz / 2); sh.absarc(-hx, hz, r, Math.PI / 2, Math.PI); sh.lineTo(-bx / 2, -hz); sh.absarc(-hx, -hz, r, Math.PI, 1.5 * Math.PI);
+      const g = new THREE.ExtrudeGeometry(sh, { depth: Math.max(0.01, bh - 0.16), bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.08, bevelSegments: 2, curveSegments: 6 });
+      g.rotateX(-Math.PI / 2);
+      return g;
+    };
+    const bw = 0.85, bh = 0.5;
+    [[0, sd / 2 + bw / 2, sw + 2 * bw, bw, bh], [-(sw / 2 + bw / 2), 0, bw, sd, bh], [sw / 2 + bw / 2, 0, bw, sd, bh], [0, -(sd / 2 + 0.3), sw + 2 * bw, 0.6, 0.14]].forEach(([px, pz, bx, bz, hh]) => {
+      const m = new THREE.Mesh(bev(bx, hh, bz, Math.min(0.3, bz / 2 - 0.01)), goldM);
+      m.position.set(px, 0, pz);
+      slotG.add(m);
+    });
+    // (the well: where the cards go)
+    const well = new THREE.Mesh(new THREE.PlaneGeometry(sw, sd), wellM);
+    well.rotation.x = -Math.PI / 2; well.position.y = 0.035; well.visible = false;
+    slotG.add(well);
+    // (the two leaves, each hinged on its own outer edge: they draw back
+    // under the frame by shrinking toward it; a gold seam along the inner
+    // edge of each)
+    const leaves = [-1, 1].map(side => {
+      const g = new THREE.Group();
+      g.position.set(0, 0, side * sd / 2);
+      const body = new THREE.Mesh(new THREE.BoxGeometry(sw, 0.05, sd / 2 + 0.02), leafM);
+      body.position.set(0, 0.045, -side * sd / 4);
+      const seam = new THREE.Mesh(new THREE.BoxGeometry(sw, 0.055, 0.12), goldM);
+      seam.position.set(0, 0.0475, -side * sd / 2);
+      g.add(body, seam);
+      slotG.add(g);
+      return g;
+    });
+    // (the glint: a small light that wanders the seam when it is shut)
+    const gc = document.createElement('canvas'); gc.width = gc.height = 64;
+    const gtex = new THREE.CanvasTexture(gc);
+    const paintGlint = ([r, g2, b2]) => { const c = gc.getContext('2d'), g = c.createRadialGradient(32, 32, 0, 32, 32, 32); c.clearRect(0, 0, 64, 64); g.addColorStop(0, `rgba(${Math.min(255, r + 40)},${Math.min(255, g2 + 44)},${Math.min(255, b2 + 104)},1)`); g.addColorStop(0.25, `rgba(${r},${g2},${b2},0.7)`); g.addColorStop(1, `rgba(${r},${g2},${b2},0)`); c.fillStyle = g; c.fillRect(0, 0, 64, 64); gtex.needsUpdate = true; };
+    const glintM = new THREE.MeshBasicMaterial({ map: gtex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+    const glint = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.1), glintM);
+    glint.rotation.x = -Math.PI / 2; glint.position.y = 0.1;
+    slotG.add(glint);
+    slotG.visible = false;
+    seat.add(slotG);
+    // (dressed as the trim chosen, now and when it is changed while the shot is up)
+    const dress = id => {
+      const t = SLOT_METAL[id] || SLOT_METAL.gold;
+      goldM.color.setHex(t.c); goldM.metalness = t.m; goldM.roughness = t.r; goldM.emissive.setHex(t.e);
+      leafM.color.setHex(t.l);
+      paintGlint(t.g);
+    };
+    dress(trim);
+    slotAnim = { goldM, leafM, wellM, well, leaves, glint, glintM, dress };
+    // (the table's lettering fades as the end card arrives: transparent from
+    // the build, so warm() compiles its final state and nothing flips mid-shot)
+    const pm = table.group.userData.mark;
+    pm.material.transparent = true;
+    if (pm.children[0] && pm.children[0].material) pm.children[0].material.transparent = true;
+  }
   const shoeMouth = V(0, 0.9, -11.6).applyAxisAngle(up, shoe.rotation.y).add(shoe.position);
   const mouthDir = V(0, 0, -1).applyAxisAngle(up, shoe.rotation.y);
   const yawShoe = Math.atan2(-mouthDir.x, -mouthDir.z);
@@ -453,10 +543,10 @@ export async function makeGame(ctx) {
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
   key.shadow.camera.near = 50; key.shadow.camera.far = 200;
-  key.shadow.bias = -0.0004; key.shadow.normalBias = 0.03; key.shadow.radius = 4;
+  key.shadow.bias = -0.0004; key.shadow.normalBias = 0.03; key.shadow.radius = 7;
   // (the room's even light gets in under a card held up: its shadow is a
   // shade, not a hole)
-  key.shadow.intensity = 0.72;
+  key.shadow.intensity = 0.55;
   seat.add(key, key.target);
 
   // ---- The machine: the card table's (table.mjs), stowed under its port.
@@ -663,7 +753,30 @@ export async function makeGame(ctx) {
   const bank = (a, b, k = 0.012) => { const d = b.p.clone().sub(a.p).applyQuaternion(a.q.clone().invert()); return THREE.MathUtils.clamp(-d.x * k, -0.3, 0.3); };
   const arm = k => ({ segs: [], t: dealAt - RISE.swing, at: upright(k, ARM.up), fin: FIN.rest, att: [0, 0], el: 0 });
   const A = arm(0), B = arm(1);
-  const grabAt = () => handFor(shoePose(inShoe)), outAt = () => handFor(shoePose(pulled));
+  // The drop slot: the machine gathers every card in to itself at the end -
+  // its own lifted by their long edges, carried to the slot's near lip and
+  // let go, and yours drawn across the cloth to it by the table - each goes
+  // in short edge first, tipping over the lip (m: the card's middle along
+  // its way from the lip, th: how far its leading end has gone down).
+  const SWP = { x: SLOT.x, z0: SLOT.z - SLOT.d / 2, slide: 0.8, y: 0.12, m0: -CARD.h / 2 + 0.9, th0: 0.15, th1: 1.35, drop: 0.34, gap: 0.46 };
+  const swPose = (m, th, qr) => {
+    const lead = V(0, -Math.sin(th), Math.cos(th));
+    return pose(V(SWP.x, SWP.y, SWP.z0).addScaledVector(lead, m), _q2.setFromAxisAngle(V(1, 0, 0), th).multiply(qr));
+  };
+  const restOf = c => turned(c.slot, c.turn < Infinity ? Math.PI : 0, { p: V(0, 0, 0), q: new THREE.Quaternion() }, c.restY);
+  const sweepCard = c => {
+    const rest = restOf(c), gp = handFor(rest, 1);
+    addMove(B, pose(gp.p.clone().add(V(0, 3.4, 0)), gp.q), 0.26, { lift: 1.5, to: FIN.reach, lean: [0, 0], dip: [-0.1, 0] });
+    addMove(B, gp, 0.15, { settle: true, to: FIN.grip, lean: [0, 0] });
+    c.sw = { grab: B.t, qr: rest.q.clone(), rel: 0 };
+    hold(B, 0.04);
+    c.sw.lift = B.t;
+    const end = handFor(swPose(SWP.m0, SWP.th0, c.sw.qr), 1);
+    addMove(B, end, 0.42, { lift: 3.0, to: FIN.grip, lean: [0, 0], dip: [-0.12, 0] });
+    c.sw.rel = B.t;
+    addMove(B, pose(end.p.clone().add(V(1.0, 2.6, 0.2)), end.q), 0.2, { to: FIN.open, lean: [0, 0] });
+  };
+  const grabAt =() => handFor(shoePose(inShoe)), outAt = () => handFor(shoePose(pulled));
   // (the shoe arm draws: down into the shoe, level at the grab; out by its
   // end, lifting it a little, on through)
   const drawOut = (c, first) => {
@@ -845,7 +958,7 @@ export async function makeGame(ctx) {
     const meet = holeCard.turn + DEAL.push + EDGE;
     plan.silence = [meet, meet + 0.7];
     plan.callW = plan.silence[1];
-    plan.revealW = plan.silence[1] + 0.2;
+    plan.revealW = plan.silence[1] + 1.7;
     plan.endW = plan.revealW + 2.4;
   } else {
     plan.revealW = restW + 1.6;
@@ -853,6 +966,31 @@ export async function makeGame(ctx) {
   }
   // (the deal goes on under a blackjack's call - the hole card is laid -
   // so the shot runs on until the machine is at rest)
+  // (the cards are gathered into the drop slot after a beat to read the
+  // call: the machine's own by its hand, one after another, and yours,
+  // which it cannot reach, drawn across the cloth to it by the table, each
+  // as the slot is clear of the one before)
+  plan.sweep = null;
+  plan.slot = null;
+  if (tier !== 'edge' && tier !== 'vault') {
+    until(B, restW + 1.1);
+    plan.sweep = [B.t, 0];
+    const mine = cards.filter(c => c.who === 'dealer').sort((a, b) => b.slot.x - a.slot.x);
+    mine.forEach(sweepCard);
+    addMove(B, REST[1], DEAL.rest, { lift: 2.4, to: FIN.poise, lean: [0, 0], dip: [-0.15, 0], elbow: 1 });
+    let prev = Math.max(...mine.map(c => c.sw.rel));
+    let k = 0;
+    cards.filter(c => c.who === 'you').sort((a, b) => b.i - a.i).forEach(c => {
+      // (set off as the machine lifts its last card from the cloth)
+      const rel = Math.max(prev + SWP.drop + 0.1, Math.max(...mine.map(m => m.sw.lift)) - 0.05 + SWP.slide + 0.2 * k);
+      c.sw = { auto: true, grab: rel - SWP.slide, rel, qr: lying(new THREE.Quaternion(), {}), p0: c.slot.clone().setY(c.restY) };
+      prev = rel; k++;
+    });
+    const rels = cards.filter(c => c.sw).map(c => c.sw.rel);
+    plan.slot = { wake: plan.sweep[0] - 0.7, open: Math.min(...rels) - 0.55, close: Math.max(...rels) + SWP.drop + 0.08 };
+    until(B, plan.slot.close + 0.7);
+    plan.sweep[1] = B.t;
+  }
   const lastMove = Math.max(A.t, B.t);
   if (tier !== 'edge') plan.endW = Math.max(plan.endW, lastMove + 0.6);
   // (then the machine folds in and sinks back through its port, the lid
@@ -951,7 +1089,7 @@ export async function makeGame(ctx) {
     if (tt > plan.sinkW) {
       // (the hand comes back up to the yoke's own pose as it folds, and goes
       // down with it)
-      const b = smoother(clamp01((tt - plan.sinkW) / 0.45)), up = upright(k, y, fold);
+      const b = smoother(clamp01((tt - plan.sinkW - 0.4 * k) / 0.5)), up = upright(k, y, fold);
       hp = { p: hp.p.clone().lerp(up.p, b), q: hp.q.clone().slerp(up.q, b) };
       f = [lerp(f[0], FIN.rest[0], b), lerp(f[1], FIN.rest[1], b)];
       el = lerp(el, 0, b); fade = 0; free = false;
@@ -979,7 +1117,9 @@ export async function makeGame(ctx) {
     const shown = y > ARM.down + 1;
     const hs = arms.map((a, k) => planned(k, tt, y, fold));
     mid.copy(hs[0].hp.p).add(hs[1].hp.p).multiplyScalar(0.5);
-    const yaw = y < ARM.up - 0.5 ? 0 : THREE.MathUtils.clamp(0.3 * Math.atan2(-(mid.x - PORT.x), -(mid.z - PORT.z)), -0.22, 0.22);
+    const yaw0 = y < ARM.up - 0.5 && tt < plan.sinkW ? 0 : THREE.MathUtils.clamp(0.3 * Math.atan2(-(mid.x - PORT.x), -(mid.z - PORT.z)), -0.22, 0.22);
+    // (going down, the yoke turns a little as it folds)
+    const yaw = tt >= plan.sinkW ? lerp(yaw0, -0.2, smoother(clamp01((tt - plan.sinkW) / 0.7))) : yaw0;
     const tp = torso.pose(y, yaw, tt, shown ? 1 : 0, fold);
     const { shoulders, side, fwd } = tp;
     const house = houseOf(y, tp);
@@ -1039,7 +1179,17 @@ export async function makeGame(ctx) {
       if (tt < c.pull) { g.visible = false; g.userData.contact.visible = false; return; }
       g.visible = true;
       const air = inAir(c, tt);
-      if (!air && tt < c.lay) {
+      if (c.sw && tt >= c.sw.grab) {
+        if (tt < c.sw.rel && c.sw.auto) {
+          const e = smoother(clamp01((tt - c.sw.grab) / SWP.slide)), E = swPose(SWP.m0, SWP.th0, c.sw.qr);
+          cardPose.p.copy(c.sw.p0).lerp(E.p, e); cardPose.q.copy(c.sw.qr).slerp(E.q, e * e * e);
+        } else if (tt < c.sw.rel) cardIn(arms[1].now, cardPose, 1);
+        else {
+          const u = clamp01((tt - c.sw.rel) / SWP.drop), P = swPose(lerp(SWP.m0, CARD.h / 2 + 0.5, Math.pow(u, 1.7)), lerp(SWP.th0, SWP.th1, Math.pow(u, 1.2)), c.sw.qr);
+          cardPose.p.copy(P.p); cardPose.q.copy(P.q);
+          if (u >= 1) { g.visible = false; g.userData.contact.visible = false; return; }
+        }
+      } else if (!air && tt < c.lay) {
         // (in the shoe arm's hand until it is flicked away; then in the
         // other's, its grip turning round to the side over the carry)
         if (!c.toss || tt < c.toss.t0) cardInShoeHand(arms[0].now, cardPose);
@@ -1160,6 +1310,8 @@ export async function makeGame(ctx) {
   // (the seat's view of the whole table: your cards, the dealer's, the
   // machine; a phone stands it further back)
   const SEATV = [0, 58 * W2, -22, 0, 6, 34];
+  // (the lens drawn back and over toward the drop slot while it clears the cards)
+  const SWEEPV = [0, 76 * W2, -34, 0, 5, 34];
   push([0, 6, 26, 20, 0, 0, 57.6]);
   push([Rw(dealAt - RISE.open) + 0.25, 5, 24, 23, 0, 0.5, 57.6]);
   push([Rw(dealAt - RISE.swing) - 0.05, 2, 34, -6, 0, 22, 57]);
@@ -1183,7 +1335,10 @@ export async function makeGame(ctx) {
       // the machine)
       push([Rw(plan.boom) + 0.35, 0, 84 * W2, 2, 0, 0, 33]);
       push([Rw(plan.boom) + 2.2, 0, 66 * W2, -6, 0, 0, 30]);
-    } else push([Rw(plan.revealW), ...SEATV]);
+    } else {
+      if (plan.sweep) push([Rw(plan.sweep[0]) + 0.2, ...SWEEPV]);
+      push([Rw(plan.revealW), ...SEATV]);
+    }
   } else {
     // (the wait, the table in frame; then in on the hole card; called with
     // both hands in frame)
@@ -1200,7 +1355,9 @@ export async function makeGame(ctx) {
       // (and the card on its edge, still the hero, is set below the print: a
       // phone stands the lens back and aims it over the card; wide, it pans
       // the table off to the side)
-      push([Rw(plan.endW) + 0.3, ...(tall ? [s.x + 18, 16, s.z - 34, s.x + 1, 18, s.z + 3.6] : [s.x - 38, 10.5, s.z - 22.5, s.x - 49, 3.4, s.z + 3.6])]);
+      const EEND = tall ? [s.x + 24, 15.3, s.z - 47.2, s.x + 1, 16.8, s.z + 3.6] : [s.x - 38, 10.5, s.z - 22.5, s.x - 49, 3.4, s.z + 3.6];
+      push([Rw(plan.revealW) + 0.15, ...EEND]);
+      push([Rw(plan.endW) + 0.3, ...EEND]);
     } else if (decide === third) {
       push([Rw(holeCard.turn) - 0.1, s.x * 0.3, 60 * W2, -26, s.x * 0.5, 3, 30]);
       push([Rw(holeCard.turn) + 0.6, s.x * 0.3, 58 * W2, -26, s.x * 0.5, 3, 31]);
@@ -1210,11 +1367,13 @@ export async function makeGame(ctx) {
       push([Rw(third.turn) - 0.1, t.x * 0.4, 58 * W2, -26, t.x * 0.55, 3, 31]);
       push([Rw(restW) + 0.15, t.x * 0.3, 62 * W2, -26, t.x * 0.4, 3, 30]);
       push(CALLV);
+      if (plan.sweep) push([Rw(plan.sweep[0]) + 0.2, ...SWEEPV]);
       push([Rw(plan.revealW) + 0.4, ...SEATV]);
     } else {
       push([Rw(holeCard.turn) - 0.1, s.x * 0.3, 60 * W2, -26, s.x * 0.5, 3, 30]);
       push([Rw(restW) + 0.1, s.x * 0.3, 62 * W2, -26, s.x * 0.4, 3, 30]);
       push(CALLV);
+      if (plan.sweep) push([Rw(plan.sweep[0]) + 0.2, ...SWEEPV]);
       push([Rw(plan.revealW) + 0.4, ...SEATV]);
     }
   }
@@ -1225,7 +1384,11 @@ export async function makeGame(ctx) {
   // side, the hands left of the text)
   // (the table settles here as the end card comes in, and holds)
   if (tier !== 'edge') {
-    const END = tall ? [0, 70, -48, 0, 10, 68.5] : [-45, 54 * W2, -18, -45, 2, 32];
+    // (a table cleared of its cards is seen from high and steep: the rail and
+    // its chips take the top of the screen, above the page's card, and
+    // the felt's bet and its rim the bottom. One that still has its cards
+    // - the vault's - keeps them below the card's print, as before)
+    const END = tall ? (plan.sweep ? [0, 100, -26, 0, 0, 40] : [0, 70, -48, 0, 10, 68.5]) : [-45, 54 * W2, -18, -45, 2, 32];
     push([Rw(plan.revealW) + 0.15, ...END]);
     push([Rw(plan.endW) + 0.3, ...END]);
   }
@@ -1266,7 +1429,9 @@ export async function makeGame(ctx) {
     else if (c.lay < Infinity) at(c.lay, 'pat', { speed: 50 });
     if (c.turn < Infinity) { at(c.turn, 'snap', { soft: true }); if (!c.edge) at(turnEnd(c), 'pat', { speed: 90 }); }
   });
+  cards.forEach(c => { if (c.sw) { if (c.sw.auto) at(c.sw.grab, 'slide', { dur: SWP.slide }); else at(c.sw.grab, 'pat', { speed: 30 }); at(c.sw.rel, 'slide', { dur: SWP.drop }); } });
   if (tier === 'edge') { at(holeCard.turn + DEAL.push + EDGE, 'pat', { speed: 25 }); at(plan.silence[1], 'drop'); }
+  if (plan.slot) { at(plan.slot.open, 'servo', { f0: 220, f1: 340, dur: 0.32 }); at(plan.slot.close, 'servo', { f0: 340, f1: 200, dur: 0.36 }); at(plan.slot.close + 0.34, 'knock', { soft: true }); }
   at(plan.sinkW + SINK.lag, 'servo', { f0: 150, f1: 60, dur: SINK.down });
   if (tier === 'hardways') at(plan.callW + 0.1, 'chime');
   if (tier === 'vault') { at(plan.boom, 'bell'); at(plan.boom + 0.02, 'boom', { soft: true }); }
@@ -1281,6 +1446,33 @@ export async function makeGame(ctx) {
   const stage = (t, { w }) => {
     poseRig(w);
     poseCards(w);
+    // (the port melts away as the page's card takes the screen, so it is not
+    // behind its title; before that it wakes in the cloth a little before the
+    // machine uses it: its
+    // seam lit and a glint on it; the leaves draw back while the cards go
+    // in, and close on a seam that glimmers)
+    if (slotAnim) {
+      const S = plan.slot, k = smoother(clamp01((w - S.wake) / 0.5)) * (1 - smoother(clamp01((w - (plan.revealW - 0.45)) / 0.75))), o = smoother(clamp01((w - S.open) / 0.32)) * (1 - smoother(clamp01((w - S.close) / 0.36)));
+      slotG.visible = k > 0.001;
+      // (lit while it works, then it sinks to a hairline: shut, only a gold
+      // seam and a glint wandering it say it is there)
+      const act = smoother(clamp01((w - (S.open - 0.3)) / 0.3)) * (1 - smoother(clamp01((w - (S.close + 0.5)) / 0.9)));
+      slotAnim.goldM.opacity = k * (0.82 + 0.18 * act); slotAnim.leafM.opacity = k;
+      slotAnim.well.visible = o > 0.01;
+      slotAnim.leaves.forEach(g => { g.scale.z = Math.max(0.001, 1 - o); });
+      // (lit while it works, a low glow when it is done)
+      slotAnim.goldM.emissiveIntensity = 0.3 + 0.9 * o + 0.3 * act * Math.max(0, Math.sin(w * 2.4));
+      const shut = k * (1 - o);
+      slotAnim.glintM.opacity = shut * (0.45 + 0.45 * Math.sin(w * 3.1));
+      slotAnim.glint.position.x = Math.sin(w * 1.1) * (SLOT.w / 2 - 0.6);
+    }
+    // (the table is cleared: its lettering is let go quiet as the page's
+    // own card takes the screen, so it does not run behind the button)
+    if (plan.sweep) {
+      const mk = table.group.userData.mark, q = 1 - 0.72 * smoother(clamp01((w - (plan.revealW - 0.5)) / 0.8));
+      mk.material.opacity = q;
+      if (mk.children[0] && mk.children[0].material) mk.children[0].material.opacity = q;
+    }
     // (the room's rim light stands at the shot's own each frame - see
     // wheel.mjs)
     lights.rim.intensity = room.RIM;
@@ -1323,20 +1515,25 @@ export async function makeGame(ctx) {
       es.position.copy(toWorld(V(s.x + 12, 26, s.z - 26)));
       es.target.position.copy(toWorld(V(s.x, 3.5, s.z + 4)));
       es.intensity = 4.6 * k;
-      key.intensity = key0 * (1 - 0.94 * k);
+      key.intensity = key0 * (1 - 0.88 * k);
       lights.pendant.intensity = pendant0 * (1 - 0.92 * k);
-      lights.rim.intensity = room.RIM * (1 - 0.85 * k);
-      scene.environmentIntensity = room.ENV_LEVEL * (1 - 0.85 * k);
+      lights.rim.intensity = room.RIM * (1 - 0.7 * k);
+      scene.environmentIntensity = room.ENV_LEVEL * (1 - 0.72 * k);
       dust = 1 - 0.9 * k;
       // (where its edge meets the cloth: the light cannot get under it)
       edgeShadow.material.opacity = 0.8 * smoother((w - holeCard.turn) / 0.15);
+      const pay = smoother(clamp01((w - plan.silence[1]) / 1.4));
+      if (backdrop) backdrop.material.color.copy(bd0).multiplyScalar(1 - 0.84 * pay);
+      es.color.setRGB(1, 1 - 0.14 * pay, 1 - 0.42 * pay);
+      haloM.opacity = 0.62 * pay;
     }
     return { burst, dust };
   };
   const callAt = () => [callPt.x, callPt.y, callPt.z];
   // (On Its Edge: the pool's spot casts, a little wider than the dice's)
   const es0 = { angle: lights.edgeSpot.angle, penumbra: lights.edgeSpot.penumbra, cast: lights.edgeSpot.castShadow };
-  let edgeShadow = null;
+  let edgeShadow = null, halo = null, haloM = null, backdrop = null, bd0 = null;
+  const spot0 = lights.edgeSpot.color.clone();
   if (tier === 'edge') {
     const es = lights.edgeSpot;
     es.angle = 0.25; es.penumbra = 0.6; es.castShadow = true;
@@ -1346,12 +1543,26 @@ export async function makeGame(ctx) {
     edgeShadow = K.contactShadow(CARD.w, 0.1, 0.05, 0.7, [], 0);
     edgeShadow.position.set(s.x, 0.031, s.z + CARD.h / 2 + 0.04);
     seat.add(edgeShadow);
+    // (the payoff: once the card has stood, the room's grey wall goes down
+    // to a warm dark, the pool of light turns gold, and a halo of gold
+    // stands behind the card, so the end card is set on it rather than on a
+    // flat grey)
+    const hc = document.createElement('canvas'); hc.width = hc.height = 128;
+    { const c = hc.getContext('2d'), g = c.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, 'rgba(255,214,128,0.95)'); g.addColorStop(0.3, 'rgba(255,170,64,0.5)'); g.addColorStop(0.7, 'rgba(200,110,30,0.14)'); g.addColorStop(1, 'rgba(160,80,10,0)'); c.fillStyle = g; c.fillRect(0, 0, 128, 128); }
+    haloM = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(hc), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, fog: false, toneMapped: false });
+    halo = new THREE.Sprite(haloM);
+    halo.position.set(s.x, 9, s.z + 7); halo.scale.set(70, 70, 1);
+    seat.add(halo);
+    backdrop = scene.children.find(o => o.isMesh && o.position.z === room.backdropZ && o.material && o.material.color) || null;
+    if (backdrop) bd0 = backdrop.material.color.clone();
   }
 
   // (the shot's turns, drawn once unseen before it plays: see warm())
   const warmAt = [Rw(riseT0) + 0.3, Rw(order[0].toss.t0) + 0.05, Rw(order[0].pitch.t0) + 0.1, Rw(order[1].turn) + 0.1, Rslow + 0.05, warp.slowHold[1], Rw(restW) + 0.3];
   if (tier === 'vault') warmAt.push(Rw(plan.boom) + 0.05, Rw(plan.boom) + 0.8);
   if (tier === 'edge') warmAt.push(Rw(plan.silence[1]) + 0.3);
+  // (the slot, drawn once while it is up and its leaves are open: its metal and glint compile before it is seen)
+  if (plan.slot) warmAt.push(Rw(plan.slot.open) + 0.3);
   // (the chips' faces are loaded before the first frame)
   await K.chipsReady();
 
@@ -1360,18 +1571,22 @@ export async function makeGame(ctx) {
     if (flash) scene.remove(flash);
     if (goldLamp) scene.remove(goldLamp, goldLamp.target);
     Object.assign(lights.edgeSpot, { angle: es0.angle, penumbra: es0.penumbra, castShadow: es0.cast });
+    lights.edgeSpot.color.copy(spot0);
+    if (backdrop) backdrop.material.color.copy(bd0);
     K.freeTree(seat, set);
     linen.dispose();
   };
 
   return {
     plan, camera, gleamAt, stage, callAt, sfx, warmAt, dispose,
+    // (a trim picked in Settings while the shot is up)
+    setTrim(id) { if (slotAnim) slotAnim.dress(id); },
     tierNames: TIER_NAMES,
-    // (its call can land over the white machine or the cards: shaded)
-    callScrim: true,
+    // (its call is set on a plate at the top of the screen: the white machine and the cards are never behind it)
+    callScrim: true, callPlate: true, badgeFades: true,
     silence: tier === 'edge' ? Rw(plan.silence[0]) : null,
     // (for the lab: the moments, in real seconds, and the hand)
-    moments: { rise: Rw(riseT0), deal: Rw(dealAt), slow: Rslow, rest: Rw(restW), call: Rw(plan.callW), reveal: plan.revealReal, end: plan.totalReal, boom: tier === 'vault' ? Rw(plan.boom) : null, play: hand.play, you: plan.cards.you, dealer: plan.cards.dealer, totals: plan.values, cards: cards.map(c => ({ who: c.who, card: c.rank + c.suit, pull: Rw(c.pull), lay: c.lay < Infinity ? Rw(c.lay) : null, turn: c.turn < Infinity ? Rw(c.turn) : null })), get reach() { return +reach.toFixed(2); }, get reachAt() { return reachAt; },
+    moments: { rise: Rw(riseT0), deal: Rw(dealAt), slow: Rslow, rest: Rw(restW), call: Rw(plan.callW), reveal: plan.revealReal, end: plan.totalReal, boom: tier === 'vault' ? Rw(plan.boom) : null, sweepStart: plan.sweep ? Rw(plan.sweep[0]) : null, sweepEnd: plan.sweep ? Rw(plan.sweep[1]) : null, slotOpen: plan.slot ? Rw(plan.slot.open) : null, slotClose: plan.slot ? Rw(plan.slot.close) : null, sink: Rw(plan.sinkW), play: hand.play, you: plan.cards.you, dealer: plan.cards.dealer, totals: plan.values, cards: cards.map(c => ({ who: c.who, card: c.rank + c.suit, pull: Rw(c.pull), lay: c.lay < Infinity ? Rw(c.lay) : null, turn: c.turn < Infinity ? Rw(c.turn) : null })), get reach() { return +reach.toFixed(2); }, get reachAt() { return reachAt; },
       // (lab: the machine swept through the whole shot at 120 Hz - its
       // farthest reach from J2 to the wrist, which must stay under
       // ARM.upper + ARM.fore, where it was, and the deepest the steering
