@@ -1561,6 +1561,8 @@ export async function makeGame(ctx) {
   const warmAt = [Rw(riseT0) + 0.3, Rw(order[0].toss.t0) + 0.05, Rw(order[0].pitch.t0) + 0.1, Rw(order[1].turn) + 0.1, Rslow + 0.05, warp.slowHold[1], Rw(restW) + 0.3];
   if (tier === 'vault') warmAt.push(Rw(plan.boom) + 0.05, Rw(plan.boom) + 0.8);
   if (tier === 'edge') warmAt.push(Rw(plan.silence[1]) + 0.3);
+  // (the slot, drawn once while it is up and its leaves are open: its metal and glint compile before it is seen)
+  if (plan.slot) warmAt.push(Rw(plan.slot.open) + 0.3);
   // (the chips' faces are loaded before the first frame)
   await K.chipsReady();
 
