@@ -1260,7 +1260,7 @@ export async function makeGame(ctx) {
           // (a tube along the points: its section three-lobed and twisting along
           // the length, so it reads as fine strands wound together and not as a
           // smooth worm; wider just off the root, closing to a point at the tip)
-          const base = PP.length / 3, KR = 8, tw0 = rng() * TAU, lobe = 0.07 + 0.05 * rng(), slim = (fringe ? 0.72 : 1) * (0.72 + 0.28 * low);
+          const base = PP.length / 3, KR = 8, tw0 = rng() * TAU, lobe = 0.07 + 0.05 * rng(), slim = 1;
           for (let j = 0; j <= M; j++) {
             P.copy(pts[j]); T.copy(pts[Math.min(M, j + 1)]).sub(pts[Math.max(0, j - 1)]).normalize();
             SD.crossVectors(T, n); if (SD.lengthSq() < 1e-4) SD.crossVectors(T, Math.abs(T.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0)); SD.normalize();
