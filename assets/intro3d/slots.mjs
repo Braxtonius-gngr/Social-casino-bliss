@@ -1021,7 +1021,7 @@ export async function makeGame(ctx) {
     // - the nose's edge, the rim of the cheek, the ears - the blood shows, a warm
     // red bleeding in at the grazing edge; and its value holds when the room
     // dims or warms, since a mood grades the light, never the skin itself)
-    const SSS = 0.6, LOCK = 0.1, FLOOR = 0.42;
+    const SSS = 0.6, LOCK = 0.1, FLOOR = 0.6;
     skin.customProgramCacheKey = () => 'slots-skin-sss';
     skin.onBeforeCompile = (sh) => {
       sh.uniforms.uDim = skinDim;
@@ -1036,7 +1036,7 @@ export async function makeGame(ctx) {
           outgoingLight = max(mix(outgoingLight, held, ${LOCK.toFixed(2)}), held * ${FLOOR.toFixed(2)});
           float lit = dot(outgoingLight, vec3(0.3, 0.59, 0.11)) / max(dot(held, vec3(0.3, 0.59, 0.11)), 0.001);
           float shade = 1.0 - smoothstep(0.55, 1.0, lit);
-          outgoingLight *= mix(vec3(1.0), vec3(1.12, 0.86, 0.78), shade * 0.75);
+          outgoingLight *= mix(vec3(1.0), vec3(1.1, 0.88, 0.8), shade * 0.6);
         }
         #include <opaque_fragment>`);
     };
@@ -1624,10 +1624,8 @@ export async function makeGame(ctx) {
   scene.add(fill, fill.target);
   // (and a small warm light riding with his head, low and in front, so the
   // face keeps its warmth under the brim when he bows it from the lamp)
-  // (the face's fill sits off the lens axis, up and to the left, and is
-  // half what it was: a frontal fill wipes the planes a face is read by)
-  const faceFill = new THREE.PointLight(0xffdcc0, 17, 70, 1.0);
-  faceFill.position.set(-11, 7, 19);
+  const faceFill = new THREE.PointLight(0xffdcc0, 34, 70, 1.0);
+  faceFill.position.set(0, -3.5, 22);
   headG.add(faceFill);
   // (a low warm wash down the drapes from above, raking their folds)
   const wash = new THREE.SpotLight(0xffd9a8, room.PENDANT * 0.26, 0, 0.9, 1, 0);
