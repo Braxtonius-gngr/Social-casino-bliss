@@ -1260,12 +1260,12 @@ export async function makeGame(ctx) {
           // (a tube along the points: its section three-lobed and twisting along
           // the length, so it reads as fine strands wound together and not as a
           // smooth worm; wider just off the root, closing to a point at the tip)
-          const base = PP.length / 3, KR = 5, tw0 = rng() * TAU, lobe = 0.22 + 0.1 * rng();
+          const base = PP.length / 3, KR = 8, tw0 = rng() * TAU, lobe = 0.07 + 0.05 * rng(), slim = (fringe ? 0.72 : 1) * (0.72 + 0.28 * low);
           for (let j = 0; j <= M; j++) {
             P.copy(pts[j]); T.copy(pts[Math.min(M, j + 1)]).sub(pts[Math.max(0, j - 1)]).normalize();
             SD.crossVectors(T, n); if (SD.lengthSq() < 1e-4) SD.crossVectors(T, Math.abs(T.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0)); SD.normalize();
             Nn.crossVectors(SD, T).normalize();
-            const s = j / M, rr0 = rt * 1.35 * (0.55 + 0.45 * smoother(s / 0.12)) * (1 - 0.97 * s * s) + 0.01, tw = tw0 + s * tu * TAU * 0.6;
+            const s = j / M, rr0 = rt * 1.35 * slim * (0.55 + 0.45 * smoother(s / 0.12)) * (1 - 0.97 * s * s) + 0.01, tw = tw0 + s * tu * TAU * 0.6;
             cc.copy(fringe ? cA : cRoot).lerp(cc.copy(cA).lerp(cB, tn), smoother(s / (fringe ? 0.3 : 0.5))).lerp(cB, 0.18 * s * s).multiplyScalar(sh);
             for (let k = 0; k < KR; k++) {
               const th = (k / KR) * TAU, rr = rr0 * (1 + lobe * Math.cos(3 * th + tw)), cx = Math.cos(th), sx = Math.sin(th);
