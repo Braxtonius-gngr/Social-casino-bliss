@@ -1216,7 +1216,7 @@ export async function makeGame(ctx) {
       const cRoot = new THREE.Color(0x070302), cA = new THREE.Color(0x170c06), cB = new THREE.Color(0x34200f), cc = new THREE.Color();
       // (locks: each ringlet is two or three fine strands wound together, so it reads as one
       // curl made of hair, not one smooth tube; every strand tapers to a closed point)
-      const NL = HAT ? 520 : 660, M = 12, DOWN = V(0, -1, 0);
+      const NL = HAT ? 640 : 800, M = 12, DOWN = V(0, -1, 0);
       const PP = [], NN = [], CC = [], II = [], UU = [];
       const SD = V(0, 0, 0);
       const P = V(0, 0, 0), T = V(0, 0, 0), Nn = V(0, 0, 0), Bb = V(0, 0, 0);
@@ -1241,7 +1241,7 @@ export async function makeGame(ctx) {
         const L = lerp(lerp(1.2, 2.7, low) * (0.7 + 0.6 * rng()), 1.3 + 0.5 * rng(), brow) * (inner ? 0.65 : rng() < 0.35 ? 0.72 : 1.1);
         // (locks come in two scales: most fine, and among them a few wide ringlets, as a child's mop has)
         const big = !fringe && !temple && !inner && rng() < 0.24;
-        const sm = fringe || temple ? 0.66 : inner ? 0.7 : big ? 1.9 : rng() < 0.4 ? 0.75 : 1, Rh = (0.44 + 0.2 * rng()) * sm, turns = big ? 1.3 + 0.6 * rng() : 1.8 + 0.9 * rng(), dir = rng() < 0.5 ? -1 : 1, ang0 = rng() * TAU, rt0 = (0.3 + 0.08 * rng()) * (big ? 1.45 : sm);
+        const sm = fringe || temple ? 0.85 : inner ? 0.7 : big ? 1.9 : rng() < 0.4 ? 0.75 : 1, Rh = (0.44 + 0.2 * rng()) * sm, turns = big ? 1.3 + 0.6 * rng() : 1.8 + 0.9 * rng(), dir = rng() < 0.5 ? -1 : 1, ang0 = rng() * TAU, rt0 = (0.3 + 0.08 * rng()) * (big ? 1.45 : sm);
         if (d.y > 0.05) d.y = 0.05;
         const droop = lerp(0.35, 0.6, low);
         const ref = Math.abs(d.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0);
@@ -1265,7 +1265,7 @@ export async function makeGame(ctx) {
             P.copy(pts[j]); T.copy(pts[Math.min(M, j + 1)]).sub(pts[Math.max(0, j - 1)]).normalize();
             SD.crossVectors(T, n); if (SD.lengthSq() < 1e-4) SD.crossVectors(T, Math.abs(T.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0)); SD.normalize();
             Nn.crossVectors(SD, T).normalize();
-            const s = j / M, rr0 = rt * 1.05 * (0.55 + 0.45 * smoother(s / 0.12)) * (1 - 0.97 * s * s) + 0.01, tw = tw0 + s * tu * TAU * 0.6;
+            const s = j / M, rr0 = rt * 1.35 * (0.55 + 0.45 * smoother(s / 0.12)) * (1 - 0.97 * s * s) + 0.01, tw = tw0 + s * tu * TAU * 0.6;
             cc.copy(fringe ? cA : cRoot).lerp(cc.copy(cA).lerp(cB, tn), smoother(s / (fringe ? 0.3 : 0.5))).lerp(cB, 0.18 * s * s).multiplyScalar(sh);
             for (let k = 0; k < KR; k++) {
               const th = (k / KR) * TAU, rr = rr0 * (1 + lobe * Math.cos(3 * th + tw)), cx = Math.cos(th), sx = Math.sin(th);
