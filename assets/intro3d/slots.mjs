@@ -1216,7 +1216,7 @@ export async function makeGame(ctx) {
       const cRoot = new THREE.Color(0x070302), cA = new THREE.Color(0x170c06), cB = new THREE.Color(0x34200f), cc = new THREE.Color();
       // (locks: each ringlet is two or three fine strands wound together, so it reads as one
       // curl made of hair, not one smooth tube; every strand tapers to a closed point)
-      const NL = HAT ? 720 : 900, M = 12, DOWN = V(0, -1, 0);
+      const NL = HAT ? 520 : 660, M = 12, DOWN = V(0, -1, 0);
       const PP = [], NN = [], CC = [], II = [], UU = [];
       const SD = V(0, 0, 0);
       const P = V(0, 0, 0), T = V(0, 0, 0), Nn = V(0, 0, 0), Bb = V(0, 0, 0);
@@ -1247,49 +1247,50 @@ export async function makeGame(ctx) {
         const ref = Math.abs(d.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0);
         const u = V().crossVectors(d, ref).normalize(), w = V().crossVectors(d, u);
         const tone = rng(), shade = 0.8 + 0.35 * rng();
-        const S = big ? 4 : 3; K = 7;
+        const fly = !fringe && rng() < 0.25, S = (big ? 4 : 3) + (fly ? 1 : 0); K = 7;
         for (let si = 0; si < S; si++) {
           // (each strand: its own length, width, shade and a little phase and radius of its own)
-          const Ls = L * (0.86 + 0.28 * rng()), Rs = Rh * (0.8 + 0.3 * rng()), rt = rt0 * (0.8 + 0.4 * rng()), ph = ang0 + si * 0.8 + (rng() - 0.5) * 0.3, tn = Math.min(1, Math.max(0, tone + (rng() - 0.5) * 0.35)), sh = shade * (0.92 + 0.16 * rng()), tu = turns * (0.94 + 0.12 * rng());
+          const isFly = fly && si === S - 1, Ls = L * (isFly ? 1.15 : 0.86 + 0.28 * rng()), Rs = Rh * (isFly ? 1.35 : 0.8 + 0.3 * rng()), rt = rt0 * (isFly ? 0.28 : 0.8 + 0.4 * rng()), ph = ang0 + si * 0.8 + (rng() - 0.5) * 0.3, tn = Math.min(1, Math.max(0, tone + (rng() - 0.5) * 0.35)), sh = shade * (0.92 + 0.16 * rng()), tu = turns * (0.94 + 0.12 * rng());
           // (a spine with a droop, a helix wound round it)
           const pts = [];
           for (let j = 0; j <= M; j++) {
             const s = j / M, ang = ph + dir * s * tu * TAU, amp = Rs * (1 - 0.3 * s) * smoother(s / 0.2);
             pts.push(root.clone().addScaledVector(d, Ls * s).addScaledVector(DOWN, droop * Ls * s * s).addScaledVector(u, Math.cos(ang) * amp).addScaledVector(w, Math.sin(ang) * amp));
           }
-          // (a card along the points: a flat ribbon of fine strands lying against
-          // the head, its width thinning to the tip, the strands' own ends in
-          // its alpha - never a tube, never a blunt polygon end)
-          const base = PP.length / 3;
+          // (a tube along the points: its section three-lobed and twisting along
+          // the length, so it reads as fine strands wound together and not as a
+          // smooth worm; wider just off the root, closing to a point at the tip)
+          const base = PP.length / 3, KR = 5, tw0 = rng() * TAU, lobe = 0.22 + 0.1 * rng();
           for (let j = 0; j <= M; j++) {
             P.copy(pts[j]); T.copy(pts[Math.min(M, j + 1)]).sub(pts[Math.max(0, j - 1)]).normalize();
             SD.crossVectors(T, n); if (SD.lengthSq() < 1e-4) SD.crossVectors(T, Math.abs(T.y) < 0.9 ? V(0, 1, 0) : V(1, 0, 0)); SD.normalize();
             Nn.crossVectors(SD, T).normalize();
-            const s = j / M, hw = rt * 2.0 * (0.8 + 0.2 * smoother(s / 0.15)) * (1 - 0.55 * s * s);
+            const s = j / M, rr0 = rt * 1.05 * (0.55 + 0.45 * smoother(s / 0.12)) * (1 - 0.97 * s * s) + 0.01, tw = tw0 + s * tu * TAU * 0.6;
             cc.copy(fringe ? cA : cRoot).lerp(cc.copy(cA).lerp(cB, tn), smoother(s / (fringe ? 0.3 : 0.5))).lerp(cB, 0.18 * s * s).multiplyScalar(sh);
-            PP.push(P.x - SD.x * hw, P.y - SD.y * hw, P.z - SD.z * hw, P.x + SD.x * hw, P.y + SD.y * hw, P.z + SD.z * hw);
-            NN.push(Nn.x, Nn.y, Nn.z, Nn.x, Nn.y, Nn.z); CC.push(cc.r, cc.g, cc.b, cc.r, cc.g, cc.b);
-            UU.push(ph / TAU % 1, s, ph / TAU % 1 + 0.5, s);
+            for (let k = 0; k < KR; k++) {
+              const th = (k / KR) * TAU, rr = rr0 * (1 + lobe * Math.cos(3 * th + tw)), cx = Math.cos(th), sx = Math.sin(th);
+              PP.push(P.x + (SD.x * cx + Nn.x * sx) * rr, P.y + (SD.y * cx + Nn.y * sx) * rr, P.z + (SD.z * cx + Nn.z * sx) * rr);
+              NN.push(SD.x * cx + Nn.x * sx, SD.y * cx + Nn.y * sx, SD.z * cx + Nn.z * sx);
+              // (each strand of the lock a shade of its own round the section)
+              const sv = 0.86 + 0.28 * Math.abs(Math.cos(1.5 * th + tw * 0.5));
+              CC.push(cc.r * sv, cc.g * sv, cc.b * sv);
+              UU.push(k / KR * 3, s * Ls * 1.6);
+            }
           }
-          for (let j = 0; j < M; j++) { const a = base + j * 2, b = a + 1, c = a + 2, e = a + 3; II.push(a, b, c, b, e, c); }
+          for (let j = 0; j < M; j++) for (let k = 0; k < KR; k++) { const a = base + j * KR + k, b = base + j * KR + (k + 1) % KR, c = a + KR, e = b + KR; II.push(a, c, b, b, c, e); }
         }
         made++;
       }
       const gc = new THREE.BufferGeometry();
       gc.setAttribute('position', new THREE.Float32BufferAttribute(PP, 3)); gc.setAttribute('normal', new THREE.Float32BufferAttribute(NN, 3));
       gc.setAttribute('color', new THREE.Float32BufferAttribute(CC, 3)); gc.setAttribute('uv', new THREE.Float32BufferAttribute(UU, 2)); gc.setIndex(II); gc.computeBoundingSphere(); keep(gc);
-      // (the strands: a dozen fine hairs the length of the card, each ending
-      // where it will, so the lock's tip is many points and not one)
-      const strandA = texOf(canvas(128, 512, (c, W, Hh) => {
-        c.fillStyle = '#000'; c.fillRect(0, 0, W, Hh); c.lineCap = 'round';
-        for (let k = 0; k < 19; k++) {
-          const x0 = (k + 0.5) / 19 * W + (rng() - 0.5) * 4, end = 0.62 + 0.38 * rng(), wob = (rng() - 0.5) * 10;
-          const gr = c.createLinearGradient(0, 0, 0, Hh); gr.addColorStop(0, '#fff'); gr.addColorStop(Math.max(0.05, end - 0.3), '#fff'); gr.addColorStop(end, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-          c.strokeStyle = gr; c.lineWidth = 1.8 + 2.4 * rng();
-          c.beginPath(); c.moveTo(x0, 0); c.bezierCurveTo(x0 + wob, Hh * 0.35, x0 - wob, Hh * 0.7, x0 + (rng() - 0.5) * 6, Hh * end); c.stroke();
-        }
+      // (the grooves of the strands, along the hair: a normal map, so the
+      // sheen breaks along the lock the way light runs down hair)
+      const grooveN = texOf(canvas(64, 64, (c, W, Hh) => {
+        c.fillStyle = '#8080ff'; c.fillRect(0, 0, W, Hh);
+        for (let k = 0; k < 10; k++) { const x0 = (k + 0.5) / 10 * W; c.fillStyle = '#a080ff'; c.fillRect(x0 - 2, 0, 2, Hh); c.fillStyle = '#6080ff'; c.fillRect(x0 + 0.5, 0, 2, Hh); }
       }), false, [1, 1]);
-      const curlM = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.72, specularIntensity: 0.1, sheen: 0.14, sheenRoughness: 0.5, sheenColor: new THREE.Color(0x4a3322), alphaMap: strandA, alphaTest: 0.36, side: THREE.DoubleSide }); keep(null, curlM);
+      const curlM = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.52, specularIntensity: 0.32, sheen: 0.55, sheenRoughness: 0.38, sheenColor: new THREE.Color(0x8a6038), normalMap: grooveN, normalScale: new THREE.Vector2(0.6, 0.6), side: THREE.DoubleSide }); keep(null, curlM);
       const curls = mesh(gc, curlM, headG); curls.castShadow = true; curls.receiveShadow = true;
     }
   }
