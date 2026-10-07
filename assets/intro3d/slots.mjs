@@ -1226,7 +1226,7 @@ export async function makeGame(ctx) {
         let az, y;
         if (crown) { az = rng() * TAU; y = lerp(0.55, 1, Math.sqrt(rng())); } else if (temple) { az = (rng() < 0.5 ? -1 : 1) * (0.95 + 0.6 * rng()); y = edgeLa(az) + 0.02 + rng() * 0.38; } else if (fringe) { az = (rng() - 0.5) * 2.3; const la = edgeLa(az); y = la + 0.04 + rng() * 0.1; } else { az = rng() * TAU; y = lerp(-0.8, 1, rng()); }
         const r = Math.sqrt(1 - y * y), x = Math.sin(az) * r, z = Math.cos(az) * r, la0 = edgeLa(az);
-        if (y <= la0 + 0.02 || (HAT && y > 0.24 + 0.14 * Math.max(0, 1 - Math.abs(x) * 2))) continue;
+        if (y <= la0 + 0.02 || (HAT && y > Math.min(0.38, la0 + 0.2 + 0.4 * Math.max(0, 0.7 - Math.abs(x))))) continue;
         const n = V(x / RX, y / RY, z / RZ).normalize();
         const root = V(x * RX, y * RY, z * RZ).add(C0).addScaledVector(n, deep(y, z, y - la0) * H0 * 0.8 + Math.max(0, relief(x, y) * clamp01(z * 1.6) * HEAD.rz - 0.2));
         // (the way down the surface, or any way round at the crown)
