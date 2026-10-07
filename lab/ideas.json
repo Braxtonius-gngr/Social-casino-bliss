@@ -437,8 +437,9 @@
    "FACE-FORM"
   ],
   "idea": "The key light models the face: the frontal face fill moves off-axis to the upper left and drops by half so it rakes the brow shelf, nose bridge, cheek plane and chin undercut, and the skin's value floor lowers so the shadow side can carry the form while the warm shade tint holds the colour",
-  "status": "proposed",
+  "status": "regressed",
   "verdict": {},
-  "form_exception": "r24 auditor: brow ridge, cheekbone, jaw and chin planes are all in the geometry (I42 kept) and read as absent - 'shade with subsurface so the form shows under the light'"
+  "form_exception": "r24 auditor: brow ridge, cheekbone, jaw and chin planes are all in the geometry (I42 kept) and read as absent - 'shade with subsurface so the form shows under the light'",
+  "note": "r25, one auditor: FACE-FORM 2 PREV-BETTER (FORM: the lit face read as 'a hard carved crease down the nose bridge', 'nose sharper, more doll-like'; the softer previous as 'rounder cheeks, more like a child'); FACE-SKIN 2 CUR-BETTER / 1 PREV-BETTER (more tonal variation, redness at the nose; but 'orange plastic tint' in the dim). Reverted in v131. The form-gate exception was taken and did not hold: making the sphere's relief read harder made it read as carved, not as a child. Three face routes (I42 weak keep, I44 and I45 regressed) and every auditor's SINGLE-CHANGE is still 'rebuild the head as a sculpted child head'. The face has left the reach of relief-on-a-sphere plus shader; the next class of idea is a rebuild: a real head mesh with sockets, zygomatic and jaw as structure."
  }
 ]

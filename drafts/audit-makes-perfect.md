@@ -192,7 +192,14 @@ render, one pre-screen and one auditor. The tooling is in the lab branch
    on the LEDGER lines). Decide the [idea] by section 2 rule
    5 with CUR-BETTER counting as improved and PREV-BETTER as regressed. A
    regressed [idea] is reverted before the next render.
-6. **The score is for the plateau check and the final.** A single auditor's
+6. **Three routes and out.** When three routes on one cluster end with at
+   most one weak keep (a 2-to-0 pair read that the next auditor does not
+   confirm) and the auditors' single change for the piece has not changed,
+   the cluster has left the round's reach. Stop proposing variants on it,
+   write the rebuild it needs into the ledger as its own idea class
+   (a sculpted head, tube hair, a sewn coat: a project, not a round), and
+   move the rounds to another cluster or stop and report.
+7. **The score is for the plateau check and the final.** A single auditor's
    score is recorded but does not decide a round; the pairs and the bank do.
    Three kept rounds with no PREV-BETTER and no cluster leaving the SEV-3
    list trigger the plateau check (rule 6), which runs the full frame set and
