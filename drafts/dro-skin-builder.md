@@ -159,6 +159,13 @@ transparent cards, not one solid blade or an extruded tube.
   tapering to a closed point; a single smooth tube with a blunt end reads as a
   worm or a spring. Lay a dark, dense under-layer beneath the locks so a gap
   shows hair, not scalp.
+- **Cards plateau; tubes read.** Alpha strand cards, however shaded, read
+  as striped, aliased paper at 3x and moire at 1x. Build each strand as a
+  closed tube with a lobed, twisting cross-section that closes to a point,
+  and carry the sheen with a groove normal map, so the hair is geometry with
+  a lit side. Cap the hair's height under a hat per region, not by one
+  slope: a cap tied to a hairline value is wrong where that value is a
+  nape's. `[idea I46, slots r26, partial]`
 - **A lock must clear the surface it grows from.** At a hairline or over a
   face, aim each lock outward from the skin and start it a little inside the
   hair edge. A lock aimed into the skin leaves only its dark root showing, and
