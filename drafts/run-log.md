@@ -529,3 +529,13 @@ Torso closed after two routes (I40 mixed, kept; I41 regressed, reverted). Next: 
 ### Round 28: the v141 sanity look, and the close of the trial (Oct 7)
 
 The fringe and nape slimming undone (v141); a 1x look frame and a 3x face against v140 show full hair, no bare patch, no slab, no brim clipping. No auditor spent on v141: it returns the fringe to the width the round-26 auditor already preferred. The closing report is `drafts/closing-report-pipeline-trial.md`.
+
+### Round 29: the new baseline under the crafted-figure rubric (Oct 7)
+
+**Rubric:** drafts/rubric-crafted-draft.md (the figure is judged as a well-made automaton of a child: detail, theme, proportion, plus the old light, contact, motion, readability and tier checks). **Calibration:** one blind auditor scored the photo of the real Writer on it: **9.5**, above the 8 threshold, so the rubric can recognise a made object as excellent.
+
+**Baseline on v141, panel of three:** 5, 5, 5 (mean 5.0, spread zero). Weight leaders: HAIR-CURLS 9 (SEV 3 for all three), FACE-FORM 9 (SEV 3 for all three), HANDS-FORM 7, LACE-JABOT 6, FACE-SKIN 6, FACE-EYES 6, CONTACT-SHADOW 6, COAT-TORSO 6, HAT-FIT 5. Under the old rubric the same figure read 4.5.
+
+**What changed in the findings:** "doll-like" is gone as a defect. The SEV 3s are craft defects: the curls "read as clumps of blunt, worm-like and shard-like tubes with a hard line where they meet the hat", and, new, **the face distorts in the turned-head frame (A2 look): "the nose is a long wedge, the far-side eye is stretched, the cheek and jaw are lumpy; warped rather than carved"**, all three auditors. Best parts named by all three: the gilt reel window, the oxblood drapes, the walnut-and-gilt desk with its drawer, the gold braid. Single changes: rebuild the hair as clean tapered ringlets (all three), with the face and hand modelling.
+
+**What it taught:** (1) the rubric change moved the findings from "not a real child" to craft defects that can be fixed; the score did not move, and a 3-auditor spread of zero means a big ranking panel would add nothing yet; (2) the off-angle face warp was invisible to every pair so far, because the pairs for the face used the front-facing open frame; the face pairs must also include the turned-head frame (A2 look) and a profile-ish frame, since a head built as relief on a sphere distorts as it turns; (3) I42's taller nose bridge is the likely cause and goes on the list to test at the turned view.
