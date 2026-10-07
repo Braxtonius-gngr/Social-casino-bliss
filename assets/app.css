@@ -960,10 +960,11 @@
     .r3-call-hardways { background: none; -webkit-text-fill-color: initial; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7)) drop-shadow(0 0 18px rgba(200,220,255,0.35)); }
     .r3-call-hardways img { display: block; width: min(80vw, 440px); height: auto; }
     .r3-call-hardways.r3-call-text { color: #e8edf4; -webkit-text-fill-color: #e8edf4; }
-    .r3-tier { position: absolute; left: 50%; top: max(22px, env(safe-area-inset-top)); transform: translateX(-50%); opacity: 0; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 2px; font: 600 12px/1.2 system-ui, sans-serif; letter-spacing: 0.28em; text-transform: uppercase; color: #f0dca0; text-shadow: 0 1px 3px rgba(0,0,0,0.9); white-space: nowrap; padding: 6px 24px 7px; background: radial-gradient(closest-side, rgba(6,4,3,0.6), rgba(6,4,3,0.36) 62%, rgba(6,4,3,0)); }
-    .r3-tier small { font-size: 10px; letter-spacing: 0.2em; color: #b9ad8c; }
+    .r3-tier { position: absolute; left: 50%; top: max(22px, env(safe-area-inset-top)); transform: translateX(-50%); opacity: 0; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 2px; font: 600 12px/1.2 system-ui, sans-serif; letter-spacing: 0.28em; text-transform: uppercase; color: #f0dca0; text-shadow: 0 1px 3px rgba(0,0,0,0.9); white-space: nowrap; padding: 6px 16px 7px; border-radius: 999px; background: rgba(6,4,3,0.55); box-shadow: 0 0 0 1px rgba(240,220,160,0.14); }
+    .r3-tier small { font-size: 11px; letter-spacing: 0.2em; color: #d2c49e; }
     .r3-tier-hardways { color: #e4e9f2; }
     .r3-tier-edge { color: #fff4d6; }
+    .r3-tier.r3-tier-odds small { font-size: 13px; letter-spacing: 0.22em; color: #e6cf92; }
     .landing-screen.roll-popped .r3-tier, .landing-screen.roll-rest .r3-tier { top: max(10px, env(safe-area-inset-top)); }
     .r3-sound { position: absolute; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: 3; width: 42px; height: 42px; padding: 10px; border-radius: 50%; border: 1px solid rgba(232,200,106,0.35); background: rgba(10,10,12,0.55); color: #e8dfc4; pointer-events: auto; cursor: pointer; }
     .r3-sound svg { display: block; width: 100%; height: 100%; }
