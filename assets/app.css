@@ -638,6 +638,8 @@
     .landing-title { font-family: Georgia, "Times New Roman", serif; font-size: 2.6rem; font-weight: 700; color: var(--text-main); letter-spacing: 0.01em; margin-bottom: 12px; text-transform: none; }
     .landing-title span { color: var(--accent-gold); font-family: inherit; }
     .landing-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 40px; font-family: monospace; letter-spacing: 0.15em; font-weight: 700; }
+    /* (over the shot the line is set on one row, whatever the screen: it would otherwise wrap and leave a bullet at the end of the first) */
+    .landing-screen.roll-webgl .landing-subtitle { white-space: nowrap; letter-spacing: 0.08em; font-size: min(0.9rem, 3.1vw); }
     .landing-btn { padding: 14px 36px; background: var(--accent-gold); color: #0a0a0a; border: 1px solid var(--accent-gold); border-radius: 30px; font-size: 1rem; font-weight: 900; cursor: pointer; transition: all 0.2s; }
     .landing-legal { margin-top: 22px; max-width: 320px; font-size: 0.72rem; line-height: 1.5; color: var(--text-dim); text-align: center; }
     .landing-legal a { color: var(--text-muted); }
@@ -957,6 +959,7 @@
     .r3-call { position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; white-space: nowrap; display: flex; flex-direction: column; align-items: center; font: 700 36px/1.05 Georgia, "Times New Roman", serif; letter-spacing: 0.16em; text-indent: 0.16em; text-transform: uppercase; color: transparent; background: linear-gradient(180deg, rgba(255,255,255,0) 0 44%, rgba(150,90,10,0.3) 54%, rgba(255,255,255,0) 66%), linear-gradient(100deg, #e8bb52 0%, #ffe7a2 28%, #fff8de calc(var(--shine, -60%) - 7%), #ffffff var(--shine, -60%), #fff8de calc(var(--shine, -60%) + 7%), #ffdc7c 72%, #e0ae46 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.85)) drop-shadow(0 0 14px rgba(255,190,80,0.45)); }
     .r3-call small { font-size: 0.42em; letter-spacing: 0.42em; text-indent: 0.42em; margin-top: 4px; }
     .r3-call-scrim { position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; border-radius: 50%; background: radial-gradient(closest-side, rgba(8,7,10,0.78), rgba(8,7,10,0.5) 55%, rgba(8,7,10,0) 100%); }
+    .r3-call-scrim.r3-call-plate { border-radius: 12px; background: linear-gradient(180deg, rgba(20,16,11,0.93), rgba(6,5,4,0.92)); border: 1px solid rgba(224,174,70,0.62); box-shadow: 0 8px 26px rgba(0,0,0,0.6), inset 0 0 0 3px rgba(0,0,0,0.55), inset 0 0 0 4px rgba(224,174,70,0.2); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
     .r3-call-hardways { background: none; -webkit-text-fill-color: initial; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7)) drop-shadow(0 0 18px rgba(200,220,255,0.35)); }
     .r3-call-hardways img { display: block; width: min(80vw, 440px); height: auto; }
     .r3-call-hardways.r3-call-text { color: #e8edf4; -webkit-text-fill-color: #e8edf4; }
