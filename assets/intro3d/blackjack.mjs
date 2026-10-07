@@ -103,7 +103,17 @@ const DISCARD = [28, 52];
 // back) on a black well while the cards go in. x, z its middle, w across,
 // d deep (cm). A bust (a third card) keeps clear of it: the cards lie a
 // card's length short of it.
-const SLOT = { x: 0, z: 46.4, w: 8.6, d: 3.3 };
+const SLOT = { x: 0, z: 46.4, w: 10.4, d: 4.0 };
+// The slot's metal, in the trim the player chose in Settings (see TRIMS in
+// intro.mjs): the bezel and the seams `c`/`m`/`r`, their glow `e`, the glint
+// `g` (rgb), the leaves a dark shade of the same `l`.
+const SLOT_METAL = {
+  gold: { c: 0xd9ad4f, m: 0.9, r: 0.26, e: 0xffb23a, g: [255, 196, 86], l: 0x1a1308 },
+  onyx: { c: 0x2a2930, m: 0.35, r: 0.1, e: 0x8fa4ff, g: [190, 205, 255], l: 0x08080b },
+  silver: { c: 0xe3e6ec, m: 1, r: 0.16, e: 0xcfe0ff, g: [225, 236, 255], l: 0x101216 },
+  crimson: { c: 0xc2182f, m: 0.5, r: 0.12, e: 0xff5068, g: [255, 110, 128], l: 0x1c0409 },
+  burgundy: { c: 0xb4584c, m: 1, r: 0.3, e: 0xff8a70, g: [255, 150, 120], l: 0x180806 }
+};
 // The lettering stamped into the cloth: the plane it is drawn on (centre z,
 // w x h cm, px a cm) and its two arcs, each round the table's own centre
 // (the middle of the dealer's edge) - a and b its half-width and depth.
@@ -177,8 +187,10 @@ function dealFor(tier, rng) {
   } else if (tier === 'edge') {
     you = pair(18 + Math.floor(rng() * 3)).map(r => card(r));
     dealer = [card(pick(RANKS.slice(1))), card(pick(RANKS.slice(1)))];
+    // (called on the plate like the rest, once the card has stood: the
+    // tier's own name, so the caption under it gives the odds alone)
     play = 'edge';
-    call = null;
+    call = ['On Its Edge', 'One in a thousand'];
   } else if (rng() < 0.55) {
     // stands short of you: your nineteen or twenty, its seventeen or
     // eighteen
@@ -332,6 +344,7 @@ function paintFace(c, W, H, card, PIPS) {
 // ------------------------------------------------------------ the game
 export async function makeGame(ctx) {
   const { THREE, scene, set, lights, tier, seed, aspect, room, helpers: H } = ctx;
+  const trim = ctx.trim || 'gold';
   const { makeWarp, spline } = H;
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const up = V(0, 1, 0);
@@ -429,10 +442,21 @@ export async function makeGame(ctx) {
     const wellM = new THREE.MeshBasicMaterial({ color: 0x010101 });
     slotG = new THREE.Group();
     slotG.position.set(sx, 0, sz);
-    const ft = 0.3, fh = 0.07;
-    [[0, -(sd / 2 + ft / 2), sw + 2 * ft, ft], [0, sd / 2 + ft / 2, sw + 2 * ft, ft], [-(sw / 2 + ft / 2), 0, ft, sd], [sw / 2 + ft / 2, 0, ft, sd]].forEach(([px, pz, bx, bz]) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(bx, fh, bz), goldM);
-      m.position.set(px, fh / 2, pz);
+    // (the bezel: a raised, bevelled frame of metal on the far side and the
+    // two ends, with a low ramp for the near lip, which the cards tip over;
+    // inside it the walls drop to the well)
+    const bev = (bx, bh, bz, r) => {
+      const hx = bx / 2 - r, hz = bz / 2 - r, sh = new THREE.Shape();
+      sh.moveTo(-hx, -bz / 2); sh.lineTo(hx, -bz / 2); sh.absarc(hx, -hz, r, -Math.PI / 2, 0); sh.lineTo(bx / 2, hz); sh.absarc(hx, hz, r, 0, Math.PI / 2);
+      sh.lineTo(-hx, bz / 2); sh.absarc(-hx, hz, r, Math.PI / 2, Math.PI); sh.lineTo(-bx / 2, -hz); sh.absarc(-hx, -hz, r, Math.PI, 1.5 * Math.PI);
+      const g = new THREE.ExtrudeGeometry(sh, { depth: Math.max(0.01, bh - 0.16), bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.08, bevelSegments: 2, curveSegments: 6 });
+      g.rotateX(-Math.PI / 2);
+      return g;
+    };
+    const bw = 0.85, bh = 0.5;
+    [[0, sd / 2 + bw / 2, sw + 2 * bw, bw, bh], [-(sw / 2 + bw / 2), 0, bw, sd, bh], [sw / 2 + bw / 2, 0, bw, sd, bh], [0, -(sd / 2 + 0.3), sw + 2 * bw, 0.6, 0.14]].forEach(([px, pz, bx, bz, hh]) => {
+      const m = new THREE.Mesh(bev(bx, hh, bz, Math.min(0.3, bz / 2 - 0.01)), goldM);
+      m.position.set(px, 0, pz);
       slotG.add(m);
     });
     // (the well: where the cards go)
@@ -447,7 +471,7 @@ export async function makeGame(ctx) {
       g.position.set(0, 0, side * sd / 2);
       const body = new THREE.Mesh(new THREE.BoxGeometry(sw, 0.05, sd / 2 + 0.02), leafM);
       body.position.set(0, 0.045, -side * sd / 4);
-      const seam = new THREE.Mesh(new THREE.BoxGeometry(sw, 0.055, 0.1), goldM);
+      const seam = new THREE.Mesh(new THREE.BoxGeometry(sw, 0.055, 0.12), goldM);
       seam.position.set(0, 0.0475, -side * sd / 2);
       g.add(body, seam);
       slotG.add(g);
@@ -455,14 +479,23 @@ export async function makeGame(ctx) {
     });
     // (the glint: a small light that wanders the seam when it is shut)
     const gc = document.createElement('canvas'); gc.width = gc.height = 64;
-    { const c = gc.getContext('2d'), g = c.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,240,190,1)'); g.addColorStop(0.25, 'rgba(255,196,86,0.7)'); g.addColorStop(1, 'rgba(255,170,40,0)'); c.fillStyle = g; c.fillRect(0, 0, 64, 64); }
-    const glintM = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(gc), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+    const gtex = new THREE.CanvasTexture(gc);
+    const paintGlint = ([r, g2, b2]) => { const c = gc.getContext('2d'), g = c.createRadialGradient(32, 32, 0, 32, 32, 32); c.clearRect(0, 0, 64, 64); g.addColorStop(0, `rgba(${Math.min(255, r + 40)},${Math.min(255, g2 + 44)},${Math.min(255, b2 + 104)},1)`); g.addColorStop(0.25, `rgba(${r},${g2},${b2},0.7)`); g.addColorStop(1, `rgba(${r},${g2},${b2},0)`); c.fillStyle = g; c.fillRect(0, 0, 64, 64); gtex.needsUpdate = true; };
+    const glintM = new THREE.MeshBasicMaterial({ map: gtex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
     const glint = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.1), glintM);
     glint.rotation.x = -Math.PI / 2; glint.position.y = 0.1;
     slotG.add(glint);
     slotG.visible = false;
     seat.add(slotG);
-    slotAnim = { goldM, leafM, wellM, well, leaves, glint, glintM };
+    // (dressed as the trim chosen, now and when it is changed while the shot is up)
+    const dress = id => {
+      const t = SLOT_METAL[id] || SLOT_METAL.gold;
+      goldM.color.setHex(t.c); goldM.metalness = t.m; goldM.roughness = t.r; goldM.emissive.setHex(t.e);
+      leafM.color.setHex(t.l);
+      paintGlint(t.g);
+    };
+    dress(trim);
+    slotAnim = { goldM, leafM, wellM, well, leaves, glint, glintM, dress };
     // (the table's lettering fades as the end card arrives: transparent from
     // the build, so warm() compiles its final state and nothing flips mid-shot)
     const pm = table.group.userData.mark;
@@ -925,7 +958,7 @@ export async function makeGame(ctx) {
     const meet = holeCard.turn + DEAL.push + EDGE;
     plan.silence = [meet, meet + 0.7];
     plan.callW = plan.silence[1];
-    plan.revealW = plan.silence[1] + 0.2;
+    plan.revealW = plan.silence[1] + 1.7;
     plan.endW = plan.revealW + 2.4;
   } else {
     plan.revealW = restW + 1.6;
@@ -1322,7 +1355,7 @@ export async function makeGame(ctx) {
       // (and the card on its edge, still the hero, is set below the print: a
       // phone stands the lens back and aims it over the card; wide, it pans
       // the table off to the side)
-      const EEND = tall ? [s.x + 24, 15.3, s.z - 47.2, s.x + 1, 18, s.z + 3.6] : [s.x - 38, 10.5, s.z - 22.5, s.x - 49, 3.4, s.z + 3.6];
+      const EEND = tall ? [s.x + 24, 15.3, s.z - 47.2, s.x + 1, 16.8, s.z + 3.6] : [s.x - 38, 10.5, s.z - 22.5, s.x - 49, 3.4, s.z + 3.6];
       push([Rw(plan.revealW) + 0.15, ...EEND]);
       push([Rw(plan.endW) + 0.3, ...EEND]);
     } else if (decide === third) {
@@ -1413,16 +1446,18 @@ export async function makeGame(ctx) {
   const stage = (t, { w }) => {
     poseRig(w);
     poseCards(w);
-    // (the slot wakes in the cloth a little before the machine uses it: its
+    // (the port melts away as the page's card takes the screen, so it is not
+    // behind its title; before that it wakes in the cloth a little before the
+    // machine uses it: its
     // seam lit and a glint on it; the leaves draw back while the cards go
     // in, and close on a seam that glimmers)
     if (slotAnim) {
-      const S = plan.slot, k = smoother(clamp01((w - S.wake) / 0.5)), o = smoother(clamp01((w - S.open) / 0.32)) * (1 - smoother(clamp01((w - S.close) / 0.36)));
+      const S = plan.slot, k = smoother(clamp01((w - S.wake) / 0.5)) * (1 - smoother(clamp01((w - (plan.revealW - 0.45)) / 0.75))), o = smoother(clamp01((w - S.open) / 0.32)) * (1 - smoother(clamp01((w - S.close) / 0.36)));
       slotG.visible = k > 0.001;
       // (lit while it works, then it sinks to a hairline: shut, only a gold
       // seam and a glint wandering it say it is there)
       const act = smoother(clamp01((w - (S.open - 0.3)) / 0.3)) * (1 - smoother(clamp01((w - (S.close + 0.5)) / 0.9)));
-      slotAnim.goldM.opacity = k * (0.36 + 0.64 * act); slotAnim.leafM.opacity = k;
+      slotAnim.goldM.opacity = k * (0.82 + 0.18 * act); slotAnim.leafM.opacity = k;
       slotAnim.well.visible = o > 0.01;
       slotAnim.leaves.forEach(g => { g.scale.z = Math.max(0.001, 1 - o); });
       // (lit while it works, a low glow when it is done)
@@ -1487,13 +1522,18 @@ export async function makeGame(ctx) {
       dust = 1 - 0.9 * k;
       // (where its edge meets the cloth: the light cannot get under it)
       edgeShadow.material.opacity = 0.8 * smoother((w - holeCard.turn) / 0.15);
+      const pay = smoother(clamp01((w - plan.silence[1]) / 1.4));
+      if (backdrop) backdrop.material.color.copy(bd0).multiplyScalar(1 - 0.84 * pay);
+      es.color.setRGB(1, 1 - 0.14 * pay, 1 - 0.42 * pay);
+      haloM.opacity = 0.62 * pay;
     }
     return { burst, dust };
   };
   const callAt = () => [callPt.x, callPt.y, callPt.z];
   // (On Its Edge: the pool's spot casts, a little wider than the dice's)
   const es0 = { angle: lights.edgeSpot.angle, penumbra: lights.edgeSpot.penumbra, cast: lights.edgeSpot.castShadow };
-  let edgeShadow = null;
+  let edgeShadow = null, halo = null, haloM = null, backdrop = null, bd0 = null;
+  const spot0 = lights.edgeSpot.color.clone();
   if (tier === 'edge') {
     const es = lights.edgeSpot;
     es.angle = 0.25; es.penumbra = 0.6; es.castShadow = true;
@@ -1503,6 +1543,18 @@ export async function makeGame(ctx) {
     edgeShadow = K.contactShadow(CARD.w, 0.1, 0.05, 0.7, [], 0);
     edgeShadow.position.set(s.x, 0.031, s.z + CARD.h / 2 + 0.04);
     seat.add(edgeShadow);
+    // (the payoff: once the card has stood, the room's grey wall goes down
+    // to a warm dark, the pool of light turns gold, and a halo of gold
+    // stands behind the card, so the end card is set on it rather than on a
+    // flat grey)
+    const hc = document.createElement('canvas'); hc.width = hc.height = 128;
+    { const c = hc.getContext('2d'), g = c.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, 'rgba(255,214,128,0.95)'); g.addColorStop(0.3, 'rgba(255,170,64,0.5)'); g.addColorStop(0.7, 'rgba(200,110,30,0.14)'); g.addColorStop(1, 'rgba(160,80,10,0)'); c.fillStyle = g; c.fillRect(0, 0, 128, 128); }
+    haloM = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(hc), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, fog: false, toneMapped: false });
+    halo = new THREE.Sprite(haloM);
+    halo.position.set(s.x, 9, s.z + 7); halo.scale.set(70, 70, 1);
+    seat.add(halo);
+    backdrop = scene.children.find(o => o.isMesh && o.position.z === room.backdropZ && o.material && o.material.color) || null;
+    if (backdrop) bd0 = backdrop.material.color.clone();
   }
 
   // (the shot's turns, drawn once unseen before it plays: see warm())
@@ -1517,12 +1569,16 @@ export async function makeGame(ctx) {
     if (flash) scene.remove(flash);
     if (goldLamp) scene.remove(goldLamp, goldLamp.target);
     Object.assign(lights.edgeSpot, { angle: es0.angle, penumbra: es0.penumbra, castShadow: es0.cast });
+    lights.edgeSpot.color.copy(spot0);
+    if (backdrop) backdrop.material.color.copy(bd0);
     K.freeTree(seat, set);
     linen.dispose();
   };
 
   return {
     plan, camera, gleamAt, stage, callAt, sfx, warmAt, dispose,
+    // (a trim picked in Settings while the shot is up)
+    setTrim(id) { if (slotAnim) slotAnim.dress(id); },
     tierNames: TIER_NAMES,
     // (its call is set on a plate at the top of the screen: the white machine and the cards are never behind it)
     callScrim: true, callPlate: true, badgeFades: true,
