@@ -454,5 +454,18 @@
   "status": "partial",
   "verdict": {},
   "note": "r26, one auditor: HAIR-CURLS P1 CUR-BETTER (FORM: 'real curl tubes with volume; left is striped, aliased cards'), P2 SAME, HAIR-LINE P3 CUR-BETTER (FORM: 'reads as hair locks; left shows moire striping'). 2 of 3 improved, none regressed. HAIR-CURLS stays SEV 3 ('blunt shard-like ribbon strips with hard edges, pinecone clumps by the neck'), HAIR-LINE SEV 2 ('a flat brown slab at the centre of the forehead'). The auditor's SINGLE-CHANGE moved off the hair for the first time in this loop: it is now the face form. Kept at v138. Next route for the hair: round-section tapered ringlets with a consistent spiral and soft ends; remove the slab tuft (a fringe lock whose tube is too wide for its length) and the neck clumps (locks root-clustered where the nape locks overlap)."
+ },
+ {
+  "id": "I47",
+  "piece": "slots",
+  "route": "geometry",
+  "clusters": [
+   "HAIR-CURLS",
+   "HAIR-LINE"
+  ],
+  "idea": "Rounder, softer ringlets: eight-sided tube sections with a shallow lobe (about a third of the first), the fringe locks slimmer so no slab tuft stands at the brow, and the nape locks thinner so they do not clump",
+  "status": "partial",
+  "verdict": {},
+  "note": "r27, one auditor: HAIR-CURLS 2 CUR-BETTER (FORM: the brow slab and a stray block under the brim are gone), HAIR-LINE 1 PREV-BETTER (low confidence; the slimmer fringe read as 'spiky claw-like shards'). The slab was a wide lock rooted at the brow (fixed by keeping wide locks off the brow); the slimmer fringe and nape did not help and were undone in v141. HAIR-CURLS stays SEV 3 ('jagged shard/claw ribbons, not soft ringlet tubes'); SINGLE-CHANGE 'rebuild the curls as soft, thick, rounded ringlet tubes and give the head real child volume'. Kept at v141. Next route: fewer, thicker, rounder ringlets with rounded ends and a softer material, not thinner ones."
  }
 ]
