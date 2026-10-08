@@ -5577,6 +5577,28 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // Motion off - or a muted skin, the still take of a visualized one
       // (see THEMES): the finished frame, held, and no shot.
       if (motionOff() || themeMuted()) { api.finish(); end(); return; }
+      // Sound on, but held by the browser until a first tap (no page may
+      // start sound by itself): the first frame waits under "Tap to roll",
+      // and that tap - which unlocks the sound - starts the shot, so it plays
+      // with its music from the first beat.
+      if (!q.has('lab') && !tappedEarly && api.soundWaiting && api.soundWaiting()) {
+        const gate = document.createElement('button');
+        gate.type = 'button';
+        gate.className = 'r3-tap';
+        gate.textContent = 'Tap to roll';
+        screen.appendChild(gate);
+        await new Promise(res => {
+          const go = e => {
+            if (e.target && e.target.closest && e.target.closest('.r3-sound')) return;
+            ['pointerup', 'keydown'].forEach(type => window.removeEventListener(type, go, true));
+            api.unlockSound();
+            res();
+          };
+          ['pointerup', 'keydown'].forEach(type => window.addEventListener(type, go, true));
+        });
+        gate.remove();
+        if (!api) return;
+      }
       // Any tap, key press, or focus arriving on the screen skips straight
       // to the end of the shot (as in the CSS intro).
       screen.addEventListener('pointerdown', skip);
@@ -8869,7 +8891,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v156';
+    const APP_BUILD = 'almanac-v157';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads

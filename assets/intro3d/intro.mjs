@@ -1912,7 +1912,7 @@ async function buildIntro(opts, undo, teardown) {
   undo.push(() => { if (sound && sound.ctx) sound.ctx.close().catch(() => {}); });
   if (sound && sound.ctx) {
     if (rare.clackBytes) sound.ctx.decodeAudioData(rare.clackBytes.slice(0)).then(b => { sound.clack = b; }).catch(() => {});
-    try { sound.ctx.resume(); } catch (e) { /* needs a tap */ }
+    try { sound.ctx.resume().catch(() => { /* needs a tap */ }); } catch (e) { /* needs a tap */ }
   }
 
   // ---- Overlays: the call, the tier's name.
@@ -2661,6 +2661,10 @@ async function buildIntro(opts, undo, teardown) {
   render(0);
   return {
     music,
+    // (sound wanted but held by the browser until a gesture - its autoplay
+    // rule - and that gesture's resume; see the landing's tap to roll)
+    soundWaiting() { return !!(sound && sound.ctx && !sound.muted && sound.ctx.state !== 'running'); },
+    unlockSound() { return sound && sound.ctx ? sound.ctx.resume().catch(() => {}) : Promise.resolve(); },
     plan: { game: gameId, tier, seed: o.seed, revealReal: plan.revealReal, totalReal: plan.totalReal, floatEnd, restReal: plan.restReal, wallReal: plan.wallReal, values: plan.values, call: plan.call, throwOk: plan.throwOk, why: plan.why, moments: game ? game.moments : null, sfx: () => sfx, groove: groove || null },
     play() { playing = true; last = 0; pacer.reset(); move(); raf = requestAnimationFrame(loop); },
     seek(time) { playing = false; cancelAnimationFrame(raf); t = Math.max(0, Math.min(floatEnd, time)); render(t); },

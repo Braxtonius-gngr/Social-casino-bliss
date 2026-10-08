@@ -971,6 +971,10 @@
     .landing-screen.roll-popped .r3-tier, .landing-screen.roll-rest .r3-tier { top: max(10px, env(safe-area-inset-top)); }
     .r3-sound { position: absolute; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: 3; width: 42px; height: 42px; padding: 10px; border-radius: 50%; border: 1px solid rgba(232,200,106,0.35); background: rgba(10,10,12,0.55); color: #e8dfc4; pointer-events: auto; cursor: pointer; }
     .r3-sound svg { display: block; width: 100%; height: 100%; }
+    /* (the sound held by the browser until a first tap: the first frame waits on this, and the tap that unlocks the sound starts the shot) */
+    .r3-tap { position: absolute; left: 50%; bottom: max(64px, calc(env(safe-area-inset-bottom) + 48px)); transform: translateX(-50%); z-index: 3; padding: 14px 30px; border-radius: 999px; border: 1px solid rgba(232,200,106,0.7); background: rgba(10,10,12,0.62); color: #e8c86a; font: 600 0.95rem/1 Georgia, 'Times New Roman', serif; letter-spacing: 0.32em; text-transform: uppercase; white-space: nowrap; pointer-events: auto; cursor: pointer; box-shadow: 0 0 24px rgba(232,200,106,0.18); animation: r3-tap-pulse 1.8s ease-in-out infinite; }
+    @keyframes r3-tap-pulse { 50% { box-shadow: 0 0 36px rgba(232,200,106,0.42); } }
+    @media (prefers-reduced-motion: reduce) { .r3-tap { animation: none; } }
     .r3-sound[aria-pressed="false"] { color: #9d967f; }
     /* (the speaker stays through the float after the shot; the intro hides
        it itself when the frame is held still or handed on) */
