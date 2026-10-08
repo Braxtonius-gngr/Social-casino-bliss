@@ -413,9 +413,9 @@ export async function makeGame(ctx) {
     let st = 90210; const r = () => (st = (st * 1664525 + 1013904223) >>> 0) / 4294967296;
     // (fibres: short, every way, crossing - a pile, not a grain - drawn
     // over the edges too so the tile wraps)
-    for (let k = 0; k < 9000; k++) {
-      const x = r() * S, y = r() * S, l = 4 + r() * 20, th = r() * Math.PI, a = 0.03 + r() * 0.07;
-      c.strokeStyle = `rgba(0,0,0,${a})`; c.lineWidth = 0.8 + r() * 1.2;
+    for (let k = 0; k < 16000; k++) {
+      const x = r() * S, y = r() * S, l = 2 + r() * 6, th = r() * Math.PI, a = 0.015 + r() * 0.04;
+      c.strokeStyle = `rgba(0,0,0,${a})`; c.lineWidth = 0.7 + r() * 0.8;
       for (let wx = -S; wx <= S; wx += S) for (let wy = -S; wy <= S; wy += S) { if (Math.abs(wx) + Math.abs(wy) && (x + wx < -30 || x + wx > S + 30 || y + wy < -30 || y + wy > S + 30)) continue; c.beginPath(); c.moveTo(x + wx, y + wy); c.lineTo(x + wx + Math.cos(th) * l, y + wy + Math.sin(th) * l); c.stroke(); }
     }
     // (the worn paths: broad, faint, a little off the nap's line)
@@ -637,7 +637,7 @@ export async function makeGame(ctx) {
   })();
   // (satin stock: one broad soft sheen, its specular held down so the ink
   // stays ink under the lamp rather than greying over)
-  const stock = map => new THREE.MeshPhysicalMaterial({ map, roughness: 0.6, specularIntensity: 0.35, sheen: 0.08, sheenRoughness: 0.6, sheenColor: new THREE.Color(0xfff6e6), normalMap: linen, normalScale: new THREE.Vector2(0.12, 0.12), envMapIntensity: 0.3 });
+  const stock = map => new THREE.MeshPhysicalMaterial({ map, roughness: 0.6, specularIntensity: 0.35, sheen: 0.08, sheenRoughness: 0.6, sheenColor: new THREE.Color(0xfff6e6), normalMap: linen, normalScale: new THREE.Vector2(0.12, 0.12), envMapIntensity: 0.3, transparent: tier === 'vault' });
   const backMat = stock(backTex);
   const dealt = [];
   const makeCard = c => {
@@ -1257,12 +1257,12 @@ export async function makeGame(ctx) {
   let printGlow = null, flash = null, goldLamp = null, payout = null;
   if (tier === 'vault') {
     const mark = table.group.userData.mark;
-    const gm = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.45, 0.98, 0.34), alphaMap: mark.material.alphaMap, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
+    const gm = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.2, 0.74, 0.2), alphaMap: mark.material.alphaMap, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
     const sweep = { value: -1 };
     gm.onBeforeCompile = sh => {
       sh.uniforms.uSweep = sweep;
       sh.fragmentShader = 'uniform float uSweep;\n' + sh.fragmentShader.replace('#include <alphamap_fragment>', `#include <alphamap_fragment>
-        diffuseColor.a *= 0.45 + 2.4 * exp(-pow((vAlphaMapUv.x - uSweep) * 4.0, 2.0));`);
+        diffuseColor.a *= 0.35 + 1.7 * exp(-pow((vAlphaMapUv.x - uSweep) * 4.0, 2.0));`);
     };
     gm.customProgramCacheKey = () => 'bj-print-sweep';
     printGlow = new THREE.Mesh(mark.geometry, gm);
@@ -1276,7 +1276,7 @@ export async function makeGame(ctx) {
     const bx = bc.getContext('2d'); bx.filter = `blur(${Math.round(LETTERS.px * 0.45)}px)`;
     bx.drawImage(src, 0, 0); bx.drawImage(src, 0, 0);
     const haloTex = new THREE.CanvasTexture(bc); haloTex.colorSpace = THREE.NoColorSpace;
-    const halo = new THREE.Mesh(mark.geometry, new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 0.95, 0.28), alphaMap: haloTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+    const halo = new THREE.Mesh(mark.geometry, new THREE.MeshBasicMaterial({ color: new THREE.Color(1.15, 0.66, 0.16), alphaMap: haloTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
     halo.position.copy(mark.position).add(V(0, 0.006, 0)); halo.rotation.copy(mark.rotation); halo.renderOrder = 1.5;
     printGlow.userData.halo = halo;
     table.group.add(halo);
@@ -1444,7 +1444,11 @@ export async function makeGame(ctx) {
     // its chips take the top of the screen, above the page's card, and
     // the felt's bet and its rim the bottom. One that still has its cards
     // - the vault's - keeps them below the card's print, as before)
-    const END = tall ? (plan.sweep ? [0, 100, -26, 0, 0, 40] : [0, 70, -48, 0, 10, 68.5]) : [-45, 54 * W2, -18, -45, 2, 32];
+    const END = tall ? (plan.sweep || tier === 'vault' ? [0, 100, -26, 0, 0, 40] : [0, 70, -48, 0, 10, 68.5]) : [-45, 54 * W2, -18, -45, 2, 32];
+    // (The Black Jack holds its own close framing, over the cards and the
+    // gold, until the end card is about to come up, then draws back to the
+    // high one)
+    if (tier === 'vault' && tall) push([Rw(plan.revealW) - 0.7, 0, 70, -48, 0, 10, 68.5]);
     push([Rw(plan.revealW) + 0.15, ...END]);
     push([Rw(plan.endW) + 0.3, ...END]);
   }
@@ -1524,10 +1528,17 @@ export async function makeGame(ctx) {
     }
     // (the table is cleared: its lettering is let go quiet as the page's
     // own card takes the screen, so it does not run behind the button)
-    if (plan.sweep) {
-      const mk = table.group.userData.mark, q = 1 - 0.72 * smoother(clamp01((w - (plan.revealW - 0.5)) / 0.8));
+    if (plan.sweep || tier === 'vault') {
+      const mk = table.group.userData.mark, q = 1 - (tier === 'vault' ? 0.9 : 0.72) * smoother(clamp01((w - (plan.revealW - 0.5)) / 0.8));
       mk.material.opacity = q;
       if (mk.children[0] && mk.children[0].material) mk.children[0].material.opacity = q;
+    }
+    // (The Black Jack keeps its cards on the cloth, so under the page's card
+    // they are let go dark with the lettering - the hand is told, the text
+    // has the screen. Their colour only: nothing compiles.)
+    if (tier === 'vault') {
+      const dk = 1 - 0.93 * smoother(clamp01((w - (plan.revealW - 0.5)) / 0.8));
+      cards.forEach(o => o.obj.children.forEach(m => { if (m.material && m.material.color) { m.material.color.setScalar(dk); m.material.opacity = 0.04 + 0.96 * dk; } }));
     }
     // (the room's rim light stands at the shot's own each frame - see
     // wheel.mjs)
@@ -1537,7 +1548,7 @@ export async function makeGame(ctx) {
       burst = w - plan.boom;
       const on = burst > 0;
       if (printGlow) {
-        printGlow.material.opacity = on ? Math.min(1, 1.6 * Math.max(0, 1 - burst / 3.4)) * (0.8 + 0.2 * Math.sin(burst * 7)) : 0;
+        printGlow.material.opacity = on ? Math.min(1, 1.1 * Math.max(0, 1 - burst / 3.4)) * (0.8 + 0.2 * Math.sin(burst * 7)) : 0;
         // (the light runs along the lettering, left to right as you read it,
         // twice)
         printGlow.userData.sweep.value = on ? -0.2 + ((burst * 0.7) % 1.4) : -1;
@@ -1547,7 +1558,7 @@ export async function makeGame(ctx) {
       // the letters and the machine)
       if (flash) flash.intensity = on ? 9 * Math.exp(-burst / 0.09) : 0;
       if (goldLamp) {
-        goldLamp.intensity = on ? 9000 * smoother(burst / 0.5) * (0.5 + 0.5 * Math.exp(-burst / 3)) : 0;
+        goldLamp.intensity = on ? 9000 * smoother(burst / 0.5) * (0.5 + 0.5 * Math.exp(-burst / 3)) * (1 - 0.7 * smoother(clamp01((w - (plan.revealW - 0.5)) / 0.8))) : 0;
         // (the pool of light travels the lettering once, left to right as
         // you read it, then comes to rest on your cards)
         const sx = burst < 0.2 ? -34 : burst < 2.6 ? lerp(-34, 34, smoother((burst - 0.2) / 2.4)) : lerp(34, 0, smoother((burst - 2.6) / 1.1));
