@@ -1049,18 +1049,6 @@ class Sound {
         });
         break;
       }
-      case 'stab': {
-        // (a short chord, plucked: squares through a closing lowpass - the skank on the offbeat)
-        const l = ev.lvl == null ? 1 : ev.lvl, c = this.ctx;
-        this.wet(0.3, () => ev.f.forEach((f, i) => {
-          const o = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain(), t0 = when + i * 0.004;
-          o.type = 'square'; o.frequency.value = f; lp.type = 'lowpass'; lp.Q.value = 2;
-          lp.frequency.setValueAtTime(ev.cut || 2000, t0); lp.frequency.exponentialRampToValueAtTime(Math.max(200, (ev.cut || 2000) * 0.25), t0 + 0.14);
-          g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.13 * l, t0 + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
-          o.connect(lp); lp.connect(g); g.connect(this.out || this.master); o.start(t0); o.stop(t0 + 0.2);
-        }));
-        break;
-      }
       case 'riser': {
         // (a build's riser: noise through a band swept up, and a saw climbing two octaves, both swelling to the top and cut)
         const l = ev.lvl == null ? 1 : ev.lvl, c = this.ctx, d = ev.dur, end = when + d;

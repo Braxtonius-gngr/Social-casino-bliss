@@ -74,14 +74,13 @@ export function hazeBeat({ at, BEAT, first, drop: D, title: nb, end }) {
 
 // "Wild": cool, dark, popping - rap meeting EDM - in E minor with the
 // flattened second (Em, Em, F, Dm), near 150 with the drums in half time.
-// Over the photograph a dark chord skanking on the offbeat over a light
-// kick and a shaker. From `build` (the throw) the build: the snare rolling
-// faster and faster, a riser sweeping up, the chord's filter opening, the
-// kick on every beat - through the sky's opening to half a beat of silence
+// Under it all, set back, a bed: a dark wide pad and a low choir, a bar
+// each. Over the photograph that bed, a light kick and a shaker. From
+// `build` (the throw) the build: the snare rolling faster and faster, a
+// riser sweeping up, the bed's filter opening, the kick on every beat - through the sky's opening to half a beat of silence
 // and a shout, and the drop: the 808's long boom... a tap, and a second
 // boom... the hats' "teh top ti top" - over and over, until it opens into
-// the EDM: the kick on every beat, a wide saw chord pumping on the offbeat,
-// open hats. A shorter build again under the dive, the same silence, and
+// the EDM: the kick on every beat, the bed opened wide, open hats. A shorter build again under the dive, the same silence, and
 // the biggest boom on the title; then the EDM rides it out.
 export function wildBeat({ at, BEAT, first, drop: D, title: nb, end, build }) {
   const evs = [], S16 = BEAT / 4, Rd = at(D), Rc = at(nb);
@@ -90,12 +89,22 @@ export function wildBeat({ at, BEAT, first, drop: D, title: nb, end, build }) {
   const gaps = [[Rd - BEAT * 0.5, Rd - 0.005], [Rc - BEAT * 0.5, Rc - 0.005]];
   const push = (t, kind, extra, loud) => { if (t > 0.01 && t < end && (loud || !gaps.some(([a, b]) => t > a && t < b))) evs.push(Object.assign({ t, kind }, extra)); };
   const B0 = Math.max(first + 1, Math.ceil((build - at(0)) / BEAT));
+  // the bed, set back under it all: a dark wide pad and a low choir under
+  // it, a bar each, its filter opening from cut0 to cut1 across [b0, b1)
+  const bed = (b0, b1, cut0, cut1, lvl0, lvl1) => {
+    for (let b = D + 4 * Math.floor((b0 - D) / 4); b < b1; b += 4) {
+      const s0 = Math.max(b, b0), u = (s0 - b0) / Math.max(1, b1 - b0), c = ci(b), len = Math.min(b + 4, b1) - s0;
+      if (len <= 0 || at(s0) + 0.05 > end) continue;
+      const t = Math.max(0.05, at(s0)), cut = cut0 + (cut1 - cut0) * u * u, lv = lvl0 + (lvl1 - lvl0) * u, dur = len * BEAT - 0.02;
+      push(t, 'pad', { f: chords[c].map(m => n(m - 12)).concat(chords[c].map(n)), dur, cut, lvl: lv }, true);
+      chords[c].forEach(m => push(t, 'vox', { f: n(m - 12), v: (b - D) % 8 ? 'oh' : 'ah', v2: 'ah', dur, cut: cut * 0.8, lvl: lv * 0.3 }, true));
+    }
+  };
   // (the trap's bars after the drop, before the EDM opens up)
   const TRAP = 8;
   // the intro: the skank - the chord on each offbeat - over a kick on one and three and a shaker
   for (let b = first; b < B0; b++) {
     const t = at(b), beat = (((b - D) % 4) + 4) % 4;
-    push(t + BEAT / 2, 'stab', { f: chords[ci(b)].map(n), cut: 1100, lvl: 0.6 });
     if (beat === 0 || beat === 2) push(t, 'kick', { lvl: 0.55 });
     for (let k = 0; k < 4; k++) push(t + k * S16, 'hat', { lvl: [0.25, 0.12, 0.2, 0.12][k] });
   }
@@ -108,8 +117,15 @@ export function wildBeat({ at, BEAT, first, drop: D, title: nb, end, build }) {
     }
   };
   roll(B0, D, 0.9);
-  for (let b = B0; b < D - 1; b++) { const u = (b - B0) / (D - B0); push(at(b) + BEAT / 2, 'stab', { f: chords[ci(b)].map(n), cut: 1100 + 4000 * u * u, lvl: 0.6 + 0.25 * u }); }
   push(at(B0), 'riser', { dur: Rd - at(B0) - BEAT * 0.5, lvl: 1 });
+  // (the bed: dark over the photograph, opening through the build; low and
+  // cool under the trap; wide under the EDM and the dive's build; huge on the title)
+  bed(first, B0, 650, 800, 0.6, 0.6);
+  bed(B0, D, 800, 2400, 0.6, 0.9);
+  bed(D, D + TRAP, 700, 700, 0.55, 0.55);
+  bed(D + TRAP, nb - 4, 1600, 1600, 0.8, 0.8);
+  bed(nb - 4, nb, 1200, 3000, 0.8, 1);
+  bed(nb + 1, Math.ceil((end - at(0)) / BEAT), 1800, 1800, 0.85, 0.85);
   push(at(0), 'crash', { lvl: 0.45 });
   // the drop's shout, alone in the gap
   push(Rd - BEAT * 0.5, 'vox', { f: n(52), f2: n(55), v: 'ah', dur: BEAT * 0.4, cut: 2600, lvl: 1 }, true);
@@ -117,13 +133,12 @@ export function wildBeat({ at, BEAT, first, drop: D, title: nb, end, build }) {
   for (let b = D; at(b) < end; b++) {
     const t = at(b), beat = (b - D) % 4, bar = Math.floor((b - D) / 4), c = ci(b), L = 0.85 + 0.15 * smoother((t - Rd) / (Rc - Rd));
     const edm = b - D >= TRAP && b > nb - 4 || b > nb;
-    // (under the dive's build: the kick on every beat, the hats running, the chord's filter opening)
+    // (under the dive's build: the kick on every beat, the hats running)
     if (b >= nb - 4 && b <= nb) {
       if (b < nb) {
         const u = (b - nb + 4) / 4;
         push(t, 'kick', { lvl: L * (0.8 + 0.3 * u) });
         for (let k = 0; k < 4; k++) push(t + k * S16, 'hat', { lvl: L * (0.3 + 0.3 * u) });
-        push(t + BEAT / 2, 'stab', { f: chords[c].map(n), cut: 1500 + 4500 * u * u, lvl: 0.7 + 0.3 * u });
       }
       continue;
     }
@@ -134,12 +149,11 @@ export function wildBeat({ at, BEAT, first, drop: D, title: nb, end, build }) {
       if (beat === 3) [0, 1, 2, 3].forEach(k => push(t + k * S16, 'hat', { lvl: L * [0.7, 0.4, 0.6, 0.45][k] }));
       if (beat === 1) push(t + 2 * S16, 'hat', { lvl: L * 0.35 });
     } else {
-      // (the EDM: four on the floor, a clap on two and four, open hats on the offbeat, the saw chord pumping between the kicks, the 808 on the bar)
+      // (the EDM: four on the floor, a clap on two and four, open hats on the offbeat, the 808 on the bar)
       push(t, 'kick', { lvl: L });
       if (beat === 1 || beat === 3) push(t, 'clap', { lvl: L * 0.9 });
       push(t + 2 * S16, 'hat', { lvl: L * 0.55, open: true });
       push(t + S16, 'hat', { lvl: L * 0.25 }); push(t + 3 * S16, 'hat', { lvl: L * 0.25 });
-      push(t + 2 * S16, 'pad', { f: chords[c].map(m => n(m + 12)), dur: BEAT * 0.42, att: 0.03, rel: 0.12, cut: 3200, lvl: L * 1.6 });
       if (beat === 0) push(t, 'b808', { f: n(roots[c]), dur: BEAT * 3.6, lvl: L, long: true });
     }
   }
@@ -150,6 +164,7 @@ export function wildBeat({ at, BEAT, first, drop: D, title: nb, end, build }) {
   push(Rc - BEAT * 0.5, 'vox', { f: n(52), f2: n(55), v: 'ah', dur: BEAT * 0.4, cut: 2600, lvl: 1 }, true);
   push(Rc, 'crash', { lvl: 1.1 }, true); push(Rc, 'kick', { lvl: 1.1 }, true);
   push(Rc, 'b808', { f: n(28), f2: n(28) * 0.9, dur: BEAT * 4, lvl: 1.3, long: true }, true);
-  push(Rc, 'pad', { f: [40, 52, 55, 59, 64].map(n), dur: BEAT * 4, lvl: 1 }, true);
+  push(Rc, 'pad', { f: [40, 52, 55, 59, 64].map(n), dur: BEAT * 4, cut: 2200, lvl: 1.1 }, true);
+  [40, 47, 52, 55].forEach(m => push(Rc, 'vox', { f: n(m), v: 'ah', v2: 'oh', dur: BEAT * 4, cut: 1800, lvl: 0.35 }, true));
   return glue(evs);
 }
