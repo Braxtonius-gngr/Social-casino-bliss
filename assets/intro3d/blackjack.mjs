@@ -411,11 +411,12 @@ export async function makeGame(ctx) {
     const S = 512, cv = document.createElement('canvas'); cv.width = cv.height = S;
     const c = cv.getContext('2d'); c.fillStyle = '#fff'; c.fillRect(0, 0, S, S);
     let st = 90210; const r = () => (st = (st * 1664525 + 1013904223) >>> 0) / 4294967296;
-    // (strokes along the table's depth, drawn three times over so they wrap)
-    for (let k = 0; k < 520; k++) {
-      const x = r() * S, y = r() * S, w = 2 + r() * 7, l = 60 + r() * 200, a = 0.012 + r() * 0.045;
-      c.fillStyle = `rgba(0,0,0,${a})`;
-      for (let wx = -S; wx <= S; wx += S) for (let wy = -S; wy <= S; wy += S) c.fillRect(x + wx, y + wy, w, l);
+    // (fibres: short, every way, crossing - a pile, not a grain - drawn
+    // over the edges too so the tile wraps)
+    for (let k = 0; k < 9000; k++) {
+      const x = r() * S, y = r() * S, l = 4 + r() * 20, th = r() * Math.PI, a = 0.03 + r() * 0.07;
+      c.strokeStyle = `rgba(0,0,0,${a})`; c.lineWidth = 0.8 + r() * 1.2;
+      for (let wx = -S; wx <= S; wx += S) for (let wy = -S; wy <= S; wy += S) { if (Math.abs(wx) + Math.abs(wy) && (x + wx < -30 || x + wx > S + 30 || y + wy < -30 || y + wy > S + 30)) continue; c.beginPath(); c.moveTo(x + wx, y + wy); c.lineTo(x + wx + Math.cos(th) * l, y + wy + Math.sin(th) * l); c.stroke(); }
     }
     // (the worn paths: broad, faint, a little off the nap's line)
     for (let k = 0; k < 9; k++) {
@@ -557,6 +558,10 @@ export async function makeGame(ctx) {
     });
     const sh = K.contactShadow(3.9, 3.9, 1.95, 0.9);
     sh.position.set(SPOT.bet[0], 0.02, SPOT.bet[1]); seat.add(sh);
+    // (the coin's gold face is already pale: under the pendant it clips to
+    // cream, so the stake sits a little under full exposure and a touch
+    // satin, in every tier)
+    betChips.forEach(m => m.material.forEach(mm => { mm.color.setRGB(0.8, 0.72, 0.6); mm.roughness = Math.max(mm.roughness, 0.62); }));
   }
   // the lamp: a low bronze pendant over the cloth, its light a pool
   const bronze = new THREE.MeshStandardMaterial({ color: 0x2a1c12, metalness: 0.85, roughness: 0.35 });
@@ -1315,9 +1320,9 @@ export async function makeGame(ctx) {
     // hundred times the room's light on a glossy face. It is taken off the
     // chip while the lamp is up - the face matte, the colour carrying it -
     // and handed back after)
-    chipMs.forEach(mm => { mm.userData.r0 = mm.roughness; mm.userData.m0 = mm.metalness; });
+    chipMs.forEach(mm => { mm.userData.r0 = mm.roughness; mm.userData.m0 = mm.metalness; mm.userData.c0 = mm.color.clone(); });
     const expose = k => chipMs.forEach(mm => {
-      mm.color.setRGB(lerp(1, 0.3, k), lerp(1, 0.22, k), lerp(1, 0.1, k));
+      mm.color.setRGB(lerp(mm.userData.c0.r, 0.3, k), lerp(mm.userData.c0.g, 0.22, k), lerp(mm.userData.c0.b, 0.1, k));
       mm.roughness = lerp(mm.userData.r0, 1, k); mm.metalness = lerp(mm.userData.m0, 0, k);
     });
     payout = {
