@@ -1,5 +1,5 @@
 // The Flyover: a cold open. It starts on the photograph - the maker at a
-// craps table, mid-throw - and pushes in; a whip, and the lens is low at
+// craps table, mid-throw - close on the face, pulling back to the throw; a whip, and the lens is low at
 // the side of the table, running alongside the dice down the felt to the
 // back wall. They strike it, and a gold gleam takes the frame. Out of it,
 // open sky: a gold-liveried jet comes over low and loud - the lens snatches
@@ -9,7 +9,9 @@
 //
 // The table and its room are the intro's; the photograph is rare/thrower.jpg
 // (fetched the first time this plays); everything after the gleam is built
-// here.
+// here; the music is tracks.mjs's.
+
+import { wildBeat } from './tracks.mjs';
 
 const TAU = Math.PI * 2, DEG = Math.PI / 180;
 const clamp01 = x => Math.min(Math.max(x, 0), 1);
@@ -66,15 +68,17 @@ export async function makeGame(ctx) {
   const warp = makeWarp(T.over);
   const Rw = w => warp.real(w);
   // (the music's grid, real seconds: beat 0 on the sky's opening, the tempo
-  // near 92; the crash zoom put on it - in on one beat, held to the next, out
-  // - the belly's bay sliding shut while it's held, the beat dropping as the
-  // doors meet; and the title a whole number of bars after the drop)
-  const Rs = Rw(T.swap), Rc = Rw(T.call);
+  // near 150; the drop and the crash zoom on one beat - in, held two beats
+  // while the belly's bay slides shut, out - and the title two bars, or a
+  // whole number of them, after it)
+  const Rs = Rw(T.swap), Rc = Rw(T.call), HOLD = 2;
   const grid = nb => { const BEAT = (Rc - Rs) / nb, bz = Math.max(1, Math.round((Rw(T.zoom[0]) - Rs) / BEAT)); return { nb, BEAT, bz }; };
-  const { nb, BEAT, bz } = [8, 9, 10, 11, 12, 13, 14, 15, 16].map(grid).filter(g => (g.nb - g.bz - 1) % 4 === 0)
-    .sort((a, b) => Math.abs(a.BEAT - 60 / 92) - Math.abs(b.BEAT - 60 / 92))[0] || grid(8);
+  const fits = [];
+  for (let k = 8; k <= 24; k++) fits.push(grid(k));
+  const near = gs => gs.sort((a, b) => Math.abs(a.BEAT - 0.4) - Math.abs(b.BEAT - 0.4))[0];
+  const { nb, BEAT, bz } = near(fits.filter(g => (g.nb - g.bz) % 8 === 0)) || near(fits.filter(g => (g.nb - g.bz) % 4 === 0)) || grid(16);
   const at = beat => Rs + beat * BEAT;
-  const ZOOM = [warp.world(at(bz)), warp.world(at(bz)) + 0.12, warp.world(at(bz + 1)), warp.world(at(bz + 1)) + 0.3];
+  const ZOOM = [warp.world(at(bz)), warp.world(at(bz)) + 0.12, warp.world(at(bz + HOLD)), warp.world(at(bz + HOLD)) + 0.3];
   const BAY = [Math.max(ZOOM[1] + 0.02, ZOOM[2] - 0.45), ZOOM[2] - 0.03];
   const bayAt = w => 0.85 * (1 - smoother((w - BAY[0]) / (BAY[1] - BAY[0])));
   const plan = { tier, seed, warp, wallW: T.over, values: [], call: ['Daily Roll Over', 'Roll in. Cash out.'], throwOk: true, why: [] };
@@ -435,18 +439,22 @@ export async function makeGame(ctx) {
     seeds.forEach(sd => { const x = seaU.uT.value - sd.z; if (x <= 0) return; const R = ringR(x), soft = 40 + 0.1 * R, d = Math.hypot(p.x - sd.x, p.z - sd.y); g = Math.max(g, 1 - smoother((d - (R - soft)) / soft)); });
     return g;
   };
+  // (worked out per vertex and handed on: sixteen seeds as uniforms in the
+  // sea's fragment shader were more than a phone's GPU allows beside the
+  // physical material's own, and the sea failed to draw at all)
   const FIELD = `
     uniform vec4 uS[${GS}];
-    float gfield(vec2 q, out float edge){
-      float g = 0.0; edge = 0.0;
+    // (x: the gold, y: its bright spreading seam)
+    vec2 gfield(vec2 q){
+      float g = 0.0, edge = 0.0;
       for (int i = 0; i < ${GS}; i++){
-        float x = uT - uS[i].z; if (x <= 0.0) continue;
-        float R = 40.0 * x + 950.0 * x * x, soft = 40.0 + 0.1 * R, d = length(q - uS[i].xy);
-        g = max(g, 1.0 - smoothstep(R - soft, R, d));
-        float k = (d - R + soft * 0.5) / (soft * 0.5); edge = max(edge, exp(-k * k));
+        vec4 sd = uS[i];
+        float x = max(uT - sd.z, 0.0), on = step(0.0001, x);
+        float R = 40.0 * x + 950.0 * x * x, soft = 40.0 + 0.1 * R, d = length(q - sd.xy);
+        g = max(g, on * (1.0 - smoothstep(R - soft, R, d)));
+        float k = (d - R + soft * 0.5) / (soft * 0.5); edge = max(edge, on * exp(-min(k * k, 30.0)));
       }
-      edge *= clamp(2.0 * (1.0 - g), 0.0, 1.0);
-      return g;
+      return vec2(g, edge * clamp(2.0 * (1.0 - g), 0.0, 1.0));
     }`;
   const seaM = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0.08, clearcoat: 0, envMapIntensity: 1.2 });
   const WAVES = `
@@ -459,19 +467,20 @@ export async function makeGame(ctx) {
   seaM.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, seaU);
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float uT; varying vec3 vW; varying float vH;' + WAVES + FIELD + `
-    float calm(vec2 q){ float e; return 1.0 - 0.35 * gfield(q, e); }`)
+      .replace('#include <common>', '#include <common>\nuniform float uT; varying vec3 vW; varying float vH; varying float vG; varying float vE;' + WAVES + FIELD + `
+    float calm(vec2 q){ return 1.0 - 0.35 * gfield(q).x; }`)
       .replace('#include <beginnormal_vertex>', `#include <beginnormal_vertex>
         { vec2 q = vec2(position.x, -position.y); float e = 3.0;
           vec3 a = vec3(q.x, 0.0, q.y) + sw(q), bx = vec3(q.x + e, 0.0, q.y) + sw(q + vec2(e, 0.0)), bz = vec3(q.x, 0.0, q.y + e) + sw(q + vec2(0.0, e));
           vec3 n = normalize(cross(bz - a, bx - a)); n.xz *= calm(q); n = normalize(n); objectNormal = vec3(n.x, -n.z, n.y); }`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
         { vec2 q = vec2(position.x, -position.y); vec3 d = sw(q) * calm(q); transformed += vec3(d.x, -d.z, d.y); vH = d.y; }
-        vW = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
+        vW = (modelMatrix * vec4(transformed, 1.0)).xyz;
+        { vec2 gf = gfield(vec2(position.x, -position.y)); vG = gf.x; vE = gf.y; }`);
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-        uniform float uT; varying vec3 vW; varying float vH;` + FIELD + `
-        float gmask(){ float e; return gfield(vW.xz, e); }
+        uniform float uT; varying vec3 vW; varying float vH; varying float vG; varying float vE;
+        float gmask(){ return vG; }
         // (the chop: fine ripples on the normal, never in the geometry)
         vec3 chop(vec2 p){
           vec2 g = vec2(0.0);
@@ -498,7 +507,7 @@ export async function makeGame(ctx) {
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
         { float g = gmask();
           // (molten: lit from within, brightest at the swell's crests, a bright seam at the spreading edge)
-          float edge; gfield(vW.xz, edge);
+          float edge = vE;
           totalEmissiveRadiance += vec3(0.8, 0.36, 0.03) * (g * (0.1 + 0.02 * max(vH, 0.0)) + edge * 0.9); }`);
   };
   seaM.customProgramCacheKey = () => 'flyover-sea'; keep(null, seaM);
@@ -695,71 +704,12 @@ export async function makeGame(ctx) {
   sfx.push({ t: 0.0, kind: 'jet', dur: Rw(T.end) + 1, peak: Rw(T.jet) });
   sfx.push({ t: Rw(T.whip - 0.05), kind: 'whoosh' });
   [[1.42, 150], [1.72, 110], [2.0, 200]].forEach(([w, sp]) => sfx.push({ t: Rw(w), kind: w === 2.0 ? 'wall' : 'felt', speed: sp, rate: warp.rateAt(Rw(w)) }));
-  // The music: an original beat in F minor (Fm, Db, Ab, Eb) - slow, heavy,
-  // hazy. Over the photograph and the sky, only a voice far off - a woman
-  // singing "ahh... ahh... ohh", muffled as if through a wall - and a pad
-  // under it, a muted kick joining in with the jet. The crash zoom draws a
-  // reverse cymbal up while the belly's doors slide shut, and as they meet
-  // on the DRO the beat drops: an 808 under everything, the kick, a clap
-  // and snare on two and four, hats with rolls, the voice still singing
-  // over it, clearer now, and chopped into stabs. The biggest hit of all on the title; then it rides
-  // out. (Real seconds, on the grid set with the plan: the music keeps its
+  // The music: "Wild" (tracks.mjs) - the skank over the photograph, the
+  // build from the throw, the drop on the crash zoom, the biggest hit on the
+  // title. (Real seconds, on the grid set with the plan: the music keeps its
   // time through the slow motion.)
-  {
-    const S16 = BEAT / 4, n = m => 440 * Math.pow(2, (m - 69) / 12), D = bz + 1, Rd = at(D);
-    const chords = [[53, 56, 60, 63], [49, 53, 56, 60], [51, 56, 60, 63], [51, 55, 58, 62]], roots = [29, 25, 32, 27];
-    const end = Rw(T.end) + 2, first = -Math.ceil(Rs / BEAT);
-    const lvl = t => t < Rd ? 0.75 : 0.82 + 0.18 * smoother((t - Rd) / (Rc - Rd));
-    const push = (t, kind, extra) => { if (t > 0.01 && t < end) sfx.push(Object.assign({ t, kind }, extra)); };
-    // (the bar's chord, counted from the drop)
-    const ci = b => (((Math.floor((b - D) / 4) % 4) + 4) % 4);
-    // the voice: "ahh... ahh... ohh... ahh", over and over, every two bars from the
-    // first frame - muffled before the drop, clearer after
-    const phrase = [[0, 1.5, 60, 'ah'], [1.5, 1.5, 56, 'ah'], [3, 2.6, 55, 'oh', 53], [6, 1.9, 60, 'ah', 58]];
-    for (let p0 = D - 8 * Math.ceil((D - first) / 8); at(p0) < end; p0 += 8) {
-      phrase.forEach(([o, d, m, v, m2]) => {
-        const t = at(p0 + o), pre = t < Rd - 0.05;
-        if (t + d * BEAT < 0.15) return;
-        push(Math.max(0.05, t), 'vox', { f: n(m), f2: m2 && n(m2), v, v2: v === 'oh' ? 'oh' : 'ah', dur: d * BEAT - 0.05, cut: pre ? 900 : 2000, lvl: (pre ? 0.8 : 0.55) * lvl(t) });
-      });
-    }
-    // (the pad under it, a bar each)
-    for (let b = D - 4 * Math.ceil((D - first) / 4); at(b) < end; b += 4) push(Math.max(0.05, at(b)), 'pad', { f: chords[ci(b)].map(n), dur: BEAT * 3.9, lvl: at(b) < Rd ? 0.55 : 0.6 });
-    // (with the jet: a muted kick, one and three)
-    for (let b = 0; b < bz; b++) if (b % 2 === 0) push(at(b), 'kick', { lvl: 0.4, dust: true });
-    sfx.push({ t: Rs, kind: 'b808', f: n(29), dur: BEAT * 1.5, lvl: 0.55 });
-    // the crash zoom: the reverse cymbal drawn up into the drop as the doors slide shut
-    sfx.push({ t: at(bz), kind: 'revcym', dur: Rd - at(bz), lvl: 1.1 });
-    // the beat, from the drop to the end
-    for (let b = D; at(b) < end; b++) {
-      const t = at(b), beat = (b - D) % 4, L = lvl(t), c = ci(b), hit = b === D || b === nb;
-      if (beat === 0) push(t, 'kick', { lvl: L, dust: true });
-      if (beat === 2) push(t + 2 * S16, 'kick', { lvl: L * 0.8, dust: true });
-      if (beat === 1 || beat === 3) { push(t, 'clap', { lvl: L }); push(t, 'tsnare', { lvl: L * 0.6 }); }
-      // (the hats: sixteenths, leaning on the beat; an open hat on the and
-      // of four; a triplet roll closing every other bar)
-      for (let k = 0; k < 4; k++) {
-        if (beat === 3 && k >= 2 && ((b - D) % 8) === 7) { if (k === 2) for (let r = 0; r < 6; r++) push(t + k * S16 + r * S16 / 3, 'hat', { lvl: L * (0.4 + 0.08 * r) }); continue; }
-        if (beat === 3 && k === 2) { push(t + k * S16, 'hat', { lvl: L * 0.7, open: true }); continue; }
-        push(t + k * S16, 'hat', { lvl: L * [0.75, 0.3, 0.5, 0.35][k] });
-      }
-      // (the voice chopped: two short stabs a bar, off the beat, a chord tone up high)
-      if (beat === 1 || beat === 3) push(t + (beat === 1 ? 2 : 3) * S16, 'vox', { f: n(chords[c][beat === 1 ? 2 : 3]), v: 'ah', dur: S16 * 1.4, cut: 2600, lvl: L * 0.45 });
-      // (the 808: the bar's root, long; a push on the and of three, sliding into the next bar)
-      if (beat === 0 && !hit) push(t, 'b808', { f: n(roots[c]), dur: BEAT * 2.4, lvl: L * 1.1 });
-      if (beat === 2) push(t + 2 * S16, 'b808', { f: n(roots[c]), f2: n(roots[(c + 1) % 4]), dur: BEAT * 1.5, lvl: L * 0.85 });
-    }
-    // the drop, as the doors meet
-    sfx.push({ t: Rd, kind: 'crash', lvl: 0.9 }, { t: Rd, kind: 'b808', f: n(29), dur: BEAT * 2.4, lvl: 1.1 });
-    // into the title: the biggest hit, the voice up high over it
-    sfx.push({ t: at(nb - 2), kind: 'revcym', dur: BEAT * 2, lvl: 1.1 });
-    sfx.push({ t: Rc, kind: 'crash', lvl: 1 }, { t: Rc, kind: 'b808', f: n(29), dur: BEAT * 3.5, lvl: 1.25 });
-    sfx.push({ t: Rc, kind: 'pad', f: [41, 53, 60, 63, 68, 72].map(n), dur: BEAT * 4, lvl: 1 });
-    sfx.push({ t: Rc, kind: 'vox', f: n(65), f2: n(63), v: 'ah', v2: 'oh', dur: BEAT * 3, cut: 2400, lvl: 0.6 });
-    // (every voice of the beat through its own glue)
-    sfx.forEach(e => { if (!['jet', 'whoosh', 'felt', 'wall'].includes(e.kind)) e.band = true; });
-    sfx.sort((a, b) => a.t - b.t);
-  }
+  sfx.push(...wildBeat({ at, BEAT, first: -Math.ceil(Rs / BEAT), drop: bz, title: nb, end: Rw(T.end) + 2, build: Rw(T.whip) }));
+  sfx.sort((a, b) => a.t - b.t);
 
   const warmAt = [Rw(T.swap) + 0.05, Rw(T.jet), Rw(T.gold[1]), Rw(T.dive[1]) + 0.1];
   const dispose = () => {

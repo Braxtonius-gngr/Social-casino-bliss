@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v149';
+const CACHE_NAME = 'almanac-v150';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -41,7 +41,7 @@ const PRECACHE_URLS = [
   './assets/intro/coin-gold.svg', './assets/intro/coin-gold-back.svg', './assets/intro/scorch.svg',
   // the WebGL intro: three.js, the modules and the set
   './assets/vendor/three/three.core.js', './assets/vendor/three/three.module.js', './assets/vendor/three/three.addons.js',
-  './assets/intro3d/intro.mjs', './assets/intro3d/physics.mjs', './assets/intro3d/wheel.mjs', './assets/intro3d/plinko.mjs', './assets/intro3d/blackjack.mjs', './assets/intro3d/slots.mjs', './assets/intro3d/likeness.mjs', './assets/intro3d/flyover.mjs', './assets/intro3d/table.mjs', './assets/intro3d/finish.mjs',
+  './assets/intro3d/intro.mjs', './assets/intro3d/physics.mjs', './assets/intro3d/wheel.mjs', './assets/intro3d/plinko.mjs', './assets/intro3d/blackjack.mjs', './assets/intro3d/slots.mjs', './assets/intro3d/likeness.mjs', './assets/intro3d/flyover.mjs', './assets/intro3d/tracks.mjs', './assets/intro3d/table.mjs', './assets/intro3d/finish.mjs',
   // Obsidian Ledger: the orrery (its Lounge payout, and the study - its
   // Showroom home - where it stands on the desk)
   './assets/intro3d/orrery.mjs', './assets/intro3d/study.mjs',

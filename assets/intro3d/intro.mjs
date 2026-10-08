@@ -1013,9 +1013,9 @@ class Sound {
         o.connect(og); og.connect(this.out || this.master); o.start(when); o.stop(pk + 2.3);
         break;
       }
-      // (the flyover's beat: a voice far off singing its vowels, a pad, a
-      // kick, a clap and a snare, hats, a gliding 808, a reverse cymbal
-      // drawing into the drop)
+      // (the music's voices, for tracks.mjs: a voice singing its vowels, a
+      // pad, a plucked stab, a riser, a wobbling bass, a kick, a clap and a
+      // snare, hats, a gliding 808, a reverse cymbal, a crash)
       case 'vox': {
         // (voices on a vowel, like a sampled choir pitched down: three
         // singers a touch apart in pitch and time, each a buzz with its own
@@ -1047,6 +1047,57 @@ class Sound {
           });
           hp.connect(lp); lp.connect(env); env.connect(this.out || this.master);
         });
+        break;
+      }
+      case 'stab': {
+        // (a short chord, plucked: squares through a closing lowpass - the skank on the offbeat)
+        const l = ev.lvl == null ? 1 : ev.lvl, c = this.ctx;
+        this.wet(0.3, () => ev.f.forEach((f, i) => {
+          const o = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain(), t0 = when + i * 0.004;
+          o.type = 'square'; o.frequency.value = f; lp.type = 'lowpass'; lp.Q.value = 2;
+          lp.frequency.setValueAtTime(ev.cut || 2000, t0); lp.frequency.exponentialRampToValueAtTime(Math.max(200, (ev.cut || 2000) * 0.25), t0 + 0.14);
+          g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.13 * l, t0 + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+          o.connect(lp); lp.connect(g); g.connect(this.out || this.master); o.start(t0); o.stop(t0 + 0.2);
+        }));
+        break;
+      }
+      case 'riser': {
+        // (a build's riser: noise through a band swept up, and a saw climbing two octaves, both swelling to the top and cut)
+        const l = ev.lvl == null ? 1 : ev.lvl, c = this.ctx, d = ev.dur, end = when + d;
+        const src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
+        src.buffer = this.noise; src.loop = true; bp.type = 'bandpass'; bp.Q.value = 1.2;
+        bp.frequency.setValueAtTime(400, when); bp.frequency.exponentialRampToValueAtTime(7000, end);
+        g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(0.14 * l, end - 0.02); g.gain.linearRampToValueAtTime(0, end);
+        src.connect(bp); bp.connect(g); g.connect(this.out || this.master); src.start(when); src.stop(end + 0.05);
+        const o = c.createOscillator(), lp = c.createBiquadFilter(), og = c.createGain();
+        o.type = 'sawtooth'; o.frequency.setValueAtTime(220, when); o.frequency.exponentialRampToValueAtTime(880, end);
+        lp.type = 'lowpass'; lp.frequency.setValueAtTime(600, when); lp.frequency.exponentialRampToValueAtTime(5000, end);
+        og.gain.setValueAtTime(0.0001, when); og.gain.exponentialRampToValueAtTime(0.05 * l, end - 0.02); og.gain.linearRampToValueAtTime(0, end);
+        o.connect(lp); lp.connect(og); og.connect(this.out || this.master); o.start(when); o.stop(end + 0.05);
+        break;
+      }
+      case 'wob': {
+        // (the drop's bass: detuned saws and a square an octave down through
+        // a resonant lowpass the LFO sweeps open and shut `rate` times a
+        // second, driven hard, a clean sine under it; a growl if it falls)
+        const l = ev.lvl == null ? 1 : ev.lvl, c = this.ctx, d = ev.dur, end = when + d;
+        if (!this.drive) { const k = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 511.5 - 1; k[i] = Math.tanh(3.4 * x); } this.drive = k; }
+        const lp = c.createBiquadFilter(), sh = c.createWaveShaper(), g = c.createGain(), mix = c.createGain();
+        lp.type = 'lowpass'; lp.Q.value = 8; sh.curve = this.drive; mix.gain.value = 0.5;
+        const cyc = Math.max(1, ev.rate * d), N = Math.ceil(cyc * 24) + 2, curve = new Float32Array(N);
+        for (let i = 0; i < N; i++) { const ph = i / (N - 1) * cyc; curve[i] = 160 * Math.pow(3200 / 160, 0.5 - 0.5 * Math.cos(2 * Math.PI * ph)); }
+        lp.frequency.setValueCurveAtTime(curve, when, d);
+        g.gain.setValueAtTime(0, when); g.gain.linearRampToValueAtTime(0.32 * l, when + 0.006); g.gain.setValueAtTime(0.32 * l, end - 0.02); g.gain.linearRampToValueAtTime(0, end);
+        const voice = (type, mult, det) => {
+          const o = c.createOscillator(); o.type = type; o.detune.value = det;
+          o.frequency.setValueAtTime(ev.f * mult, when); if (ev.f2) o.frequency.exponentialRampToValueAtTime(ev.f2 * mult, end);
+          o.connect(mix); o.start(when); o.stop(end + 0.03);
+        };
+        voice('sawtooth', 2, -14); voice('sawtooth', 2, 14); voice('square', 1, 0);
+        mix.connect(lp); lp.connect(sh); sh.connect(g); g.connect(this.out || this.master);
+        const so = c.createOscillator(), sg = c.createGain(); so.type = 'sine'; so.frequency.setValueAtTime(ev.f, when); if (ev.f2) so.frequency.exponentialRampToValueAtTime(ev.f2, end);
+        sg.gain.setValueAtTime(0, when); sg.gain.linearRampToValueAtTime(0.16 * l, when + 0.006); sg.gain.setValueAtTime(0.16 * l, end - 0.02); sg.gain.linearRampToValueAtTime(0, end);
+        so.connect(sg); sg.connect(this.out || this.master); so.start(when); so.stop(end + 0.03);
         break;
       }
       case 'clap': {
