@@ -35,7 +35,7 @@ const T = {
   call: 9.3, reveal: 10.55, end: 11.55
 };
 // The sky's world: the sea's surface, the jet's height and its line.
-const SEA = -300, JET_Y = 950, JET_X = 160, JET_Z0 = 2700, JET_Z1 = -2700, JET_W0 = 2.25, JET_W1 = 6.45;
+const BAY_Z = -60, SEA = -300, JET_Y = 950, JET_X = 160, JET_Z0 = 2700, JET_Z1 = -2700, JET_W0 = 2.25, JET_W1 = 6.45;
 const jetZ = w => lerp(JET_Z0, JET_Z1, (w - JET_W0) / (JET_W1 - JET_W0));
 // The dice's way down the table: in the air from the thrower's end, a
 // landing and a hop, a skid into the wall, and back off it.
@@ -63,16 +63,18 @@ export async function makeGame(ctx) {
   // ---- The plan.
   const warp = makeWarp(T.over);
   const Rw = w => warp.real(w);
-  // (the music's grid, real seconds: the sky's opening and the title both on
-  // a downbeat, the tempo near 72; the crash zoom is put on it - in on one
-  // beat, held to the next, out - and the belly's bay shuts while it's held)
+  // (the music's grid, real seconds: beat 0 on the sky's opening, the tempo
+  // near 92; the crash zoom put on it - in on one beat, held to the next, out
+  // - the belly's bay sliding shut while it's held, the beat dropping as the
+  // doors meet; and the title a whole number of bars after the drop)
   const Rs = Rw(T.swap), Rc = Rw(T.call);
-  const nb = 4 * Math.max(2, Math.round((Rc - Rs) / (60 / 72) / 4)), BEAT = (Rc - Rs) / nb;
+  const grid = nb => { const BEAT = (Rc - Rs) / nb, bz = Math.max(1, Math.round((Rw(T.zoom[0]) - Rs) / BEAT)); return { nb, BEAT, bz }; };
+  const { nb, BEAT, bz } = [8, 9, 10, 11, 12, 13, 14, 15, 16].map(grid).filter(g => (g.nb - g.bz - 1) % 4 === 0)
+    .sort((a, b) => Math.abs(a.BEAT - 60 / 92) - Math.abs(b.BEAT - 60 / 92))[0] || grid(8);
   const at = beat => Rs + beat * BEAT;
-  const bz = Math.max(1, Math.round((Rw(T.zoom[0]) - Rs) / BEAT));
   const ZOOM = [warp.world(at(bz)), warp.world(at(bz)) + 0.12, warp.world(at(bz + 1)), warp.world(at(bz + 1)) + 0.3];
-  const BAY = [ZOOM[1] + 0.04, Math.min(ZOOM[2] - 0.06, ZOOM[1] + 0.42)];
-  const bayAt = w => 1.35 * (1 - smoother((w - BAY[0]) / (BAY[1] - BAY[0])));
+  const BAY = [Math.max(ZOOM[1] + 0.02, ZOOM[2] - 0.45), ZOOM[2] - 0.03];
+  const bayAt = w => 0.85 * (1 - smoother((w - BAY[0]) / (BAY[1] - BAY[0])));
   const plan = { tier, seed, warp, wallW: T.over, values: [], call: ['Daily Roll Over', 'Roll in. Cash out.'], throwOk: true, why: [] };
   plan.restW = T.dive[1]; plan.callW = T.call; plan.revealW = T.reveal; plan.endW = T.end;
   plan.revealReal = Rw(T.reveal); plan.totalReal = Rw(T.end); plan.restReal = Rw(T.dive[1]); plan.wallReal = Rw(T.over);
@@ -174,7 +176,6 @@ export async function makeGame(ctx) {
   // line nose to tail and a gold tail with the house's monogram; T-tail,
   // two engines aft, winglets.
   const jet = new THREE.Group(); sky.add(jet);
-  const wings = [];
   {
     const body = new THREE.MeshPhysicalMaterial({ color: 0x0c0c10, metalness: 0.4, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.08, fog: false });
     const gold = new THREE.MeshPhysicalMaterial({ color: 0xe0a83a, metalness: 1, roughness: 0.25, fog: false });
@@ -195,7 +196,7 @@ export async function makeGame(ctx) {
     const wingShape = new THREE.Shape(); wingShape.moveTo(0, -30); wingShape.lineTo(150, 30); wingShape.lineTo(150, 52); wingShape.lineTo(0, 40); wingShape.closePath();
     const wg = new THREE.ExtrudeGeometry(wingShape, { depth: 4, bevelEnabled: true, bevelSize: 1.5, bevelThickness: 1.5, bevelSegments: 2 }); wg.rotateX(Math.PI / 2); keep(wg);
     [-1, 1].forEach(s => {
-      const w = new THREE.Mesh(wg, body); w.scale.x = s; w.position.set(0, -8, -5); w.rotation.z = s * 0.06; jet.add(w); wings.push({ w, s });
+      const w = new THREE.Mesh(wg, body); w.scale.x = s; w.position.set(0, -8, -5); w.rotation.z = s * 0.06; jet.add(w);
       const tip = new THREE.Mesh(new THREE.BoxGeometry(2, 26, 18), gold); tip.position.set(s * 150, 4, 38); tip.rotation.x = -0.3; keep(tip.geometry); jet.add(tip);
       // (the engines, aft on the fuselage)
       const eg = new THREE.CylinderGeometry(9, 8, 46, 24, 1, false); eg.rotateX(Math.PI / 2); keep(eg);
@@ -211,8 +212,7 @@ export async function makeGame(ctx) {
   }
   // (its livery: the house's badge long down the belly, split across the
   // bay's two doors - it reads whole only once they've shut - and on the
-  // fin; DRO under each wing, filling it, the letters shrinking with the
-  // wing toward its tip; the name along the cabin in gold)
+  // fin; the name along the cabin in gold)
   const doors = [];
   {
     const badge = set && set.tex && set.tex.badge;
@@ -227,39 +227,41 @@ export async function makeGame(ctx) {
       if (stroke) { c.lineWidth = Hh * 0.08; c.strokeStyle = stroke; c.strokeText(text, W / 2, Hh / 2 + 2); }
       c.fillStyle = g; c.fillText(text, W / 2, Hh / 2 + 2);
     }));
-    // (the bay: two doors under the belly hinged at their outer edges, the
-    // badge painted across both turned to run nose to tail; inside, the
-    // house's money stacked in a warm light)
+    // (the bay: under the belly ahead of the wing, two doors split down the
+    // keel that slide apart up the hull's curve toward the wings and back
+    // to meet in the middle; the badge painted across both, turned to run
+    // nose to tail; inside, the house's money stacked in a warm light)
     {
-      const BW = 30, BL = 72, BZ = -22, R = 20.7, img = badge && badge.image;
+      const BW = 30, BL = 48, BZ = BAY_Z, R = 20.7, img = badge && badge.image;
       const yAt = x => -Math.sqrt(R * R - x * x);
-      const paint = texOf(canvas(512, 1152, (c, W, H) => {
+      const paint = texOf(canvas(512, 820, (c, W, H) => {
         c.fillStyle = '#0c0c10'; c.fillRect(0, 0, W, H);
-        c.strokeStyle = '#e0a83a'; c.lineWidth = 10; c.strokeRect(14, 14, W - 28, H - 28);
-        if (img) { c.save(); c.translate(W / 2, H / 2); c.rotate(-Math.PI / 2); const w = H * 0.86, h = w * img.height / img.width; c.drawImage(img, -w / 2, -h / 2, w, Math.min(h, W * 0.96)); c.restore(); }
+        c.strokeStyle = '#e0a83a'; c.lineWidth = 10; c.strokeRect(12, 12, W - 24, H - 24);
+        if (img) { c.save(); c.translate(W / 2, H / 2); c.rotate(-Math.PI / 2); const w = H * 0.9, h = Math.min(w * img.height / img.width, W * 0.94); c.drawImage(img, -w / 2, -h / 2, w, h); c.restore(); }
       }));
       const doorM = new THREE.MeshPhysicalMaterial({ map: paint, metalness: 0.35, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.08, fog: false });
       const backM = new THREE.MeshStandardMaterial({ color: 0x16161a, metalness: 0.5, roughness: 0.5, side: THREE.BackSide, fog: false });
       keep(null, doorM); keep(null, backM);
       [-1, 1].forEach(s => {
-        // (the door in its hinge's frame: curved to the hull from the hinge,
-        // x = s*BW/2, in to the keel; uv across the whole badge)
-        const g = new THREE.BufferGeometry(), hx = s * BW / 2, hy = yAt(hx), N = 8, pos = [], uv = [], idx = [];
+        // (the door: curved to the hull from its outer edge, x = s*BW/2, in
+        // to the keel; uv across the whole badge. It turns about the
+        // fuselage's axis, so it slides along the hull's curve.)
+        const g = new THREE.BufferGeometry(), hx = s * BW / 2, N = 8, pos = [], uv = [], idx = [];
         for (let i = 0; i <= N; i++) {
           const x = hx * (1 - i / N);
-          [BZ - BL / 2, BZ + BL / 2].forEach(z => { pos.push(x - hx, yAt(x) - 0.25 - hy, z); uv.push(x / BW + 0.5, (z - BZ) / BL + 0.5); });
+          [BZ - BL / 2, BZ + BL / 2].forEach(z => { pos.push(x, yAt(x) - 0.25, z); uv.push(x / BW + 0.5, (z - BZ) / BL + 0.5); });
           if (i < N) { const a = 2 * i; idx.push(...(s > 0 ? [a, a + 1, a + 2, a + 1, a + 3, a + 2] : [a, a + 2, a + 1, a + 1, a + 2, a + 3])); }
         }
         g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
         g.setIndex(idx); g.computeVertexNormals(); keep(g);
-        const hinge = new THREE.Group(); hinge.position.set(hx, hy, 0); jet.add(hinge);
+        const hinge = new THREE.Group(); jet.add(hinge);
         hinge.add(new THREE.Mesh(g, doorM), new THREE.Mesh(g, backM));
         doors.push({ hinge, s });
       });
       // (the hold: a recess lit gold, bundles of notes in rows)
-      const hold = texOf(canvas(256, 576, (c, W, H) => {
+      const hold = texOf(canvas(256, 400, (c, W, H) => {
         const g = c.createRadialGradient(W / 2, H / 2, 10, W / 2, H / 2, H * 0.6); g.addColorStop(0, '#5a3a12'); g.addColorStop(1, '#0a0806'); c.fillStyle = g; c.fillRect(0, 0, W, H);
-        for (let r = 0; r < 9; r++) for (let k = 0; k < 3; k++) { const x = 30 + k * 70, y = 40 + r * 58; c.fillStyle = (r + k) % 2 ? '#3f6b3a' : '#4f7d44'; c.fillRect(x, y, 56, 40); c.fillStyle = '#e0c060'; c.fillRect(x + 24, y, 8, 40); }
+        for (let r = 0; r < 6; r++) for (let k = 0; k < 3; k++) { const x = 30 + k * 70, y = 40 + r * 58; c.fillStyle = (r + k) % 2 ? '#3f6b3a' : '#4f7d44'; c.fillRect(x, y, 56, 40); c.fillStyle = '#e0c060'; c.fillRect(x + 24, y, 8, 40); }
       }));
       const holdM = new THREE.MeshBasicMaterial({ map: hold, fog: false }); const al = Math.asin((BW / 2 - 1) / R);
       const hg = new THREE.CylinderGeometry(R - 0.1, R - 0.1, BL - 2, 12, 1, true, -al, 2 * al); hg.rotateX(Math.PI / 2); keep(hg, holdM);
@@ -270,16 +272,6 @@ export async function makeGame(ctx) {
       decal(badge, 30, 19.7, [3.2, 50, 104], [0, Math.PI / 2, 0]);
       decal(badge, 30, 19.7, [-0.2, 50, 104], [0, -Math.PI / 2, 0]);
     }
-    // (under the wings: in the wing's own frame - root to tip along x, its
-    // underside at y -5.5, chord from z -30 + 0.4x to 40 + 0.08x - each letter
-    // as tall as the wing there allows; turned back the right way under the
-    // mirrored wing)
-    const glyph = ch => lettering(ch, 256, 256, 'bold 236px Georgia, "Times New Roman", serif', '#e6b04a', '#2a1806');
-    [['D', 38, 40], ['R', 86, 30], ['O', 127, 21]].forEach(([ch, x, h]) => {
-      const t = glyph(ch), m = new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.2, fog: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 });
-      const g = new THREE.PlaneGeometry(h / 0.66, h / 0.66); keep(g, m);
-      wings.forEach(({ w, s }) => { const d = new THREE.Mesh(g, m); d.position.set(x, -5.8, 5 + 0.24 * x); d.rotation.set(Math.PI / 2, 0, Math.PI); d.scale.x = s; w.add(d); });
-    });
     const name = lettering('DAILY ROLL OVER', 1024, 128, 'bold 92px Georgia, "Times New Roman", serif', '#e6b04a', null);
     decal(name, 120, 15, [20.4, 9, -18], [0, Math.PI / 2, 0]);
     decal(name, 120, 15, [-20.4, 9, -18], [0, -Math.PI / 2, 0]);
@@ -342,7 +334,7 @@ export async function makeGame(ctx) {
   const bills = new THREE.InstancedMesh(billG, billM, NB); bills.frustumCulled = false; sky.add(bills);
   const billPlan = Array.from({ length: NB }, () => {
     const ts = lerp(T.rain[0], BAY[0] + 0.1, rng());
-    return { ts, dx: (rng() - 0.5) * 26, dz: (rng() - 0.5) * 70, vx: (rng() - 0.5) * 110, vz: (rng() - 0.5) * 60 - 120, fall: 470 + 140 * rng(), ph: rng() * TAU, fr: 2 + 3 * rng(), ax: V(rng() - 0.5, rng() - 0.5, rng() - 0.5).normalize() };
+    return { ts, dx: (rng() - 0.5) * 26, dz: (rng() - 0.5) * 46, vx: (rng() - 0.5) * 110, vz: (rng() - 0.5) * 60 - 120, fall: 470 + 140 * rng(), ph: rng() * TAU, fr: 2 + 3 * rng(), ax: V(rng() - 0.5, rng() - 0.5, rng() - 0.5).normalize() };
   });
   // (the moment each comes down on the water: its height's root, by Newton)
   const dropY = (b, x) => jetAt(b.ts).y - 26 - b.fall * (x - 0.6 * (1 - Math.exp(-x / 0.6)));
@@ -352,7 +344,7 @@ export async function makeGame(ctx) {
     const p0 = jetAt(b.ts);
     const y = p0.y - 26 - b.fall * (x - 0.6 * (1 - Math.exp(-x / 0.6)));
     if (y < SEA - 4) return null;
-    return { p: V(p0.x + b.dx + b.vx * x + 25 * Math.sin(b.ph + x * b.fr) * Math.min(1, x * 2), y, p0.z - 24 + b.dz + b.vz * x), a: b.ph + x * b.fr * 1.3, x };
+    return { p: V(p0.x + b.dx + b.vx * x + 25 * Math.sin(b.ph + x * b.fr) * Math.min(1, x * 2), y, p0.z + 1.1 * BAY_Z + b.dz + b.vz * x), a: b.ph + x * b.fr * 1.3, x };
   };
   const mtx = new THREE.Matrix4(), qq = new THREE.Quaternion(), one = V(1, 1, 1), hide = new THREE.Matrix4().makeScale(0, 0, 0);
   const poseBills = w => {
@@ -418,11 +410,36 @@ export async function makeGame(ctx) {
   // ---- The sea: open ocean at golden hour - long swells rolling in under
   // a finer chop, deep blue-green in the troughs and clearer on the crests,
   // foam where they break, the low sun laid across it in a path of glitter,
-  // and the far water lost in the haze at the horizon. From where the money
-  // lands, liquid gold spreads out over it.
-  const GOLD_R = 3600;
-  const seaU = { uT: { value: 0 }, uGold: { value: 0 }, uC: { value: new THREE.Vector2(LAND.x, LAND.z) } };
-  const goldAt = p => { const d = Math.hypot(p.x - LAND.x, p.z - LAND.z), R = seaU.uGold.value * GOLD_R; return 1 - smoother((d - (R - 300)) / 300); };
+  // and the far water lost in the haze at the horizon. Nothing changes until
+  // the money touches it: then liquid gold spreads out in rings from each
+  // point of contact, the first bills' and more as they keep coming, the
+  // rings running together until the sea is gold.
+  const GS = 16;
+  const byLand = billPlan.slice().sort((a, b) => a.land - b.land);
+  const seeds = [0, 2, 5, 9, 14, 20, 28, 38, 50, 65, 85, 110, 140, 180, 230, 300].map(k => {
+    const b = byLand[Math.min(k, NB - 1)], p = billAt(b, b.land - 0.01).p; return new THREE.Vector4(p.x, p.z, b.land, 0);
+  });
+  // (a ring's radius, its soft edge, a moment after contact: slow at first, then racing out)
+  const ringR = x => 40 * x + 950 * x * x;
+  const seaU = { uT: { value: 0 }, uS: { value: seeds } };
+  const goldAt = p => {
+    let g = 0;
+    seeds.forEach(sd => { const x = seaU.uT.value - sd.z; if (x <= 0) return; const R = ringR(x), soft = 40 + 0.1 * R, d = Math.hypot(p.x - sd.x, p.z - sd.y); g = Math.max(g, 1 - smoother((d - (R - soft)) / soft)); });
+    return g;
+  };
+  const FIELD = `
+    uniform vec4 uS[${GS}];
+    float gfield(vec2 q, out float edge){
+      float g = 0.0; edge = 0.0;
+      for (int i = 0; i < ${GS}; i++){
+        float x = uT - uS[i].z; if (x <= 0.0) continue;
+        float R = 40.0 * x + 950.0 * x * x, soft = 40.0 + 0.1 * R, d = length(q - uS[i].xy);
+        g = max(g, 1.0 - smoothstep(R - soft, R, d));
+        edge = max(edge, exp(-pow((d - R + soft * 0.5) / (soft * 0.5), 2.0)));
+      }
+      edge *= clamp(2.0 * (1.0 - g), 0.0, 1.0);
+      return g;
+    }`;
   const seaM = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0.08, clearcoat: 0, envMapIntensity: 1.2 });
   const WAVES = `
     // (Gerstner swells: each a direction, a length, a height and a speed)
@@ -434,8 +451,8 @@ export async function makeGame(ctx) {
   seaM.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, seaU);
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float uT; uniform float uGold; uniform vec2 uC; varying vec3 vW; varying float vH;' + WAVES + `
-    float calm(vec2 q){ float R = uGold * ${GOLD_R.toFixed(1)}; return 1.0 - 0.35 * (1.0 - smoothstep(R - 300.0, R, length(q - uC))); }`)
+      .replace('#include <common>', '#include <common>\nuniform float uT; varying vec3 vW; varying float vH;' + WAVES + FIELD + `
+    float calm(vec2 q){ float e; return 1.0 - 0.35 * gfield(q, e); }`)
       .replace('#include <beginnormal_vertex>', `#include <beginnormal_vertex>
         { vec2 q = vec2(position.x, -position.y); float e = 3.0;
           vec3 a = vec3(q.x, 0.0, q.y) + sw(q), bx = vec3(q.x + e, 0.0, q.y) + sw(q + vec2(e, 0.0)), bz = vec3(q.x, 0.0, q.y + e) + sw(q + vec2(0.0, e));
@@ -445,8 +462,8 @@ export async function makeGame(ctx) {
         vW = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-        uniform float uGold; uniform vec2 uC; uniform float uT; varying vec3 vW; varying float vH;
-        float gmask(){ float R = uGold * ${GOLD_R.toFixed(1)}; return 1.0 - smoothstep(R - 300.0, R, length(vW.xz - uC)); }
+        uniform float uT; varying vec3 vW; varying float vH;` + FIELD + `
+        float gmask(){ float e; return gfield(vW.xz, e); }
         // (the chop: fine ripples on the normal, never in the geometry)
         vec3 chop(vec2 p){
           vec2 g = vec2(0.0);
@@ -473,14 +490,15 @@ export async function makeGame(ctx) {
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
         { float g = gmask();
           // (molten: lit from within, brightest at the swell's crests, a bright seam at the spreading edge)
-          float R = uGold * ${GOLD_R.toFixed(1)}, edge = exp(-pow((length(vW.xz - uC) - R + 150.0) / 90.0, 2.0)) * step(0.01, uGold);
+          float edge; gfield(vW.xz, edge);
           totalEmissiveRadiance += vec3(0.8, 0.36, 0.03) * (g * (0.1 + 0.02 * max(vH, 0.0)) + edge * 0.9); }`);
   };
   seaM.customProgramCacheKey = () => 'flyover-sea'; keep(null, seaM);
   const seaG = new THREE.PlaneGeometry(9000, 9000, 300, 300); keep(seaG);
   const sea = new THREE.Mesh(seaG, seaM); sea.rotation.x = -Math.PI / 2; sea.position.y = SEA; sea.frustumCulled = false; sky.add(sea);
   // (under the surface: the light from above through the gold, and bubbles
-  // rising past the lens)
+  // rising past the lens, each with a little $ in it - when one bursts, its
+  // $ comes free and drifts, turning gold as it fades into the gold around it)
   const under = (() => {
     const g = new THREE.SphereGeometry(400, 32, 16), m = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false, uniforms: { uT: seaU.uT },
       vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
@@ -493,12 +511,50 @@ export async function makeGame(ctx) {
           gl_FragColor = vec4(c + vec3(1.0, 0.85, 0.5) * (rays * 0.35 + caus * 0.5), 1.0);
         }` });
     keep(g, m); const dome = new THREE.Mesh(g, m); dome.visible = false; dome.renderOrder = -1; sky.add(dome);
-    const N = 220, pos = new Float32Array(N * 3), seeds = Array.from({ length: N }, () => [(rng() - 0.5) * 260, rng() * 300, (rng() - 0.5) * 260, 0.6 + rng()]);
+    // (each: where it rises, its speed, where in its life it starts, how big)
+    const N = 160, pos = new Float32Array(N * 3), st = new Float32Array(N), sz = new Float32Array(N);
+    const seeds = Array.from({ length: N }, () => [(rng() - 0.5) * 240, (rng() - 0.5) * 240, 0.45 + 0.5 * rng(), rng(), 0.7 + 0.6 * rng(), rng() * TAU]);
     const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const bt = texOf(canvas(64, 64, (c, W) => { c.strokeStyle = 'rgba(255,240,200,0.9)'; c.lineWidth = 4; c.beginPath(); c.arc(W / 2, W / 2, W * 0.36, 0, TAU); c.stroke(); c.fillStyle = 'rgba(255,255,255,0.8)'; c.beginPath(); c.arc(W * 0.4, W * 0.38, W * 0.08, 0, TAU); c.fill(); }));
-    const pm = new THREE.PointsMaterial({ map: bt, size: 7, transparent: true, depthWrite: false, fog: false }); keep(pg, pm, null);
+    pg.setAttribute('aS', new THREE.BufferAttribute(st, 1)); pg.setAttribute('aZ', new THREE.BufferAttribute(sz, 1));
+    // (the sheet: the bubble with its $ on the left, the $ alone on the right)
+    const dollar = (c, x, W, fill) => { c.font = `bold ${W * 0.5}px Georgia, serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = W * 0.06; c.strokeStyle = 'rgba(40,24,4,0.85)'; c.strokeText('$', x, W / 2 + W * 0.03); c.fillStyle = fill; c.fillText('$', x, W / 2 + W * 0.03); };
+    const bt = texOf(canvas(256, 128, (c, W2, W) => {
+      const g = c.createRadialGradient(W / 2, W / 2, W * 0.2, W / 2, W / 2, W * 0.44); g.addColorStop(0, 'rgba(255,250,230,0.05)'); g.addColorStop(0.85, 'rgba(255,245,215,0.35)'); g.addColorStop(1, 'rgba(255,240,200,0)');
+      c.fillStyle = g; c.beginPath(); c.arc(W / 2, W / 2, W * 0.44, 0, TAU); c.fill();
+      c.strokeStyle = 'rgba(255,244,214,0.9)'; c.lineWidth = W * 0.04; c.beginPath(); c.arc(W / 2, W / 2, W * 0.4, 0, TAU); c.stroke();
+      c.fillStyle = 'rgba(255,255,255,0.9)'; c.beginPath(); c.ellipse(W * 0.36, W * 0.33, W * 0.09, W * 0.05, -0.7, 0, TAU); c.fill();
+      dollar(c, W / 2, W, '#dfffd6'); dollar(c, W * 1.5, W, '#f2fff0');
+    }));
+    const pm = new THREE.PointsMaterial({ map: bt, size: 15, transparent: true, depthWrite: false, fog: false });
+    pm.onBeforeCompile = sh => {
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aS; attribute float aZ; varying float vS;')
+        .replace('gl_PointSize = size;', 'gl_PointSize = size * aZ; vS = aS;');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vS;')
+        .replace('#include <map_particle_fragment>', `
+          { float freed = step(0.5, vS), u = clamp(vS - 1.0, 0.0, 1.0);
+            vec4 tx = texture2D(map, vec2(gl_PointCoord.x * 0.5 + 0.5 * freed, 1.0 - gl_PointCoord.y));
+            tx.rgb = mix(tx.rgb, vec3(1.0, 0.74, 0.22), freed * smoothstep(0.0, 0.8, u));
+            tx.a *= 1.0 - freed * smoothstep(0.25, 1.0, u);
+            diffuseColor *= tx; }`);
+    };
+    pm.customProgramCacheKey = () => 'flyover-bubbles'; keep(pg, pm, null);
     const bubbles = new THREE.Points(pg, pm); bubbles.visible = false; bubbles.frustumCulled = false; sky.add(bubbles);
-    return { dome, bubbles, pos, pg, seeds };
+    // (a life: risen from below the lens for 70% of it, then burst - a
+    // swell and gone - the $ left drifting up slowly, turning and fading)
+    const poseAt = w => {
+      seeds.forEach(([x, z, sp, ph, k, wob], i) => {
+        const c = (w * sp * 0.6 + ph) % 1;
+        if (c < 0.7) {
+          const u = c / 0.7, pop = smoother((u - 0.93) / 0.07);
+          pos.set([x + 4 * Math.sin(wob + w * 3), -150 + 260 * u, z], i * 3); st[i] = 0; sz[i] = k * (1 + 0.5 * pop);
+        } else {
+          const u = (c - 0.7) / 0.3;
+          pos.set([x + 4 * Math.sin(wob + w * 3) + 6 * Math.sin(wob + u * 4), 110 + 22 * u, z], i * 3); st[i] = 1 + u; sz[i] = k * 0.8;
+        }
+      });
+      pg.attributes.position.needsUpdate = true; pg.attributes.aS.needsUpdate = true; pg.attributes.aZ.needsUpdate = true;
+    };
+    return { dome, bubbles, poseAt };
   })();
 
   // ---- The gleam: a streak of gold light swept across the lens at the
@@ -605,15 +661,14 @@ export async function makeGame(ctx) {
     scene.environment = out ? skyEnv : env0;
     if (out) {
       poseJet(w); poseBills(w);
-      seaU.uT.value = w; seaU.uGold.value = smoother((w - T.gold[0]) / (T.gold[1] - T.gold[0]));
+      seaU.uT.value = w;
       poseSplashes(w, goldAt); poseSpray(w, goldAt);
     }
     // (under the gold: its own light and the bubbles, about the lens)
     under.dome.visible = under.bubbles.visible = out && below;
     if (out && below) {
       under.dome.position.copy(lens.eye); under.bubbles.position.copy(lens.eye);
-      under.seeds.forEach(([x, y0, z, sp], i) => under.pos.set([x, ((y0 + w * 60 * sp) % 300) - 150, z], i * 3));
-      under.pg.attributes.position.needsUpdate = true;
+      under.poseAt(w);
     }
     // (the gleam card, held in front of the lens across the hand-off)
     const f = flashAt(w);
@@ -632,67 +687,63 @@ export async function makeGame(ctx) {
   sfx.push({ t: 0.0, kind: 'jet', dur: Rw(T.end) + 1, peak: Rw(T.jet) });
   sfx.push({ t: Rw(T.whip - 0.05), kind: 'whoosh' });
   [[1.42, 150], [1.72, 110], [2.0, 200]].forEach(([w, sp]) => sfx.push({ t: Rw(w), kind: w === 2.0 ? 'wall' : 'felt', speed: sp, rate: warp.rateAt(Rw(w)) }));
-  // The music: an original trip-hop / cloud-rap beat - dusty, slow, heavy -
-  // in F minor (Fm9, Dbmaj7, Bbm9, C7). A vinyl record's crackle under it
-  // all. Over the photograph, a dreamy pad and an electric piano's bell
-  // motif thrown into a long echo, a muffled kick like a heartbeat; a reverse
-  // cymbal draws into the sky, where the beat drops: the kick, swung hats, a
-  // snare in a big room, an 808 gliding under. The crash zoom is a record
-  // scratch and a tape-stop - silence but the jet while the lens shakes on it
-  // - and the full beat slams back in as it lets go. A riser under the dive,
-  // into the biggest hit of all on the title; then it rides out.
-  // (Real seconds, on the grid set with the plan: the music keeps its time
-  // through the slow motion.)
+  // The music: an original beat in F minor (Fm, Db, Ab, Eb) - slow, heavy,
+  // hazy. Over the photograph and the sky, only a voice far off - a woman
+  // singing "ahh... ahh... ohh", muffled as if through a wall - and a pad
+  // under it, a muted kick joining in with the jet. The crash zoom draws a
+  // reverse cymbal up while the belly's doors slide shut, and as they meet
+  // on the DRO the beat drops: an 808 under everything, the kick, a clap
+  // and snare on two and four, hats with rolls, the voice still singing
+  // over it, clearer now. The biggest hit of all on the title; then it rides
+  // out. (Real seconds, on the grid set with the plan: the music keeps its
+  // time through the slow motion.)
   {
-    const S16 = BEAT / 4, n = m => 440 * Math.pow(2, (m - 69) / 12);
-    const breakA = at(bz) + 0.02, breakB = at(bz + 1) - 0.02;
-    const quiet = t => t > breakA && t < breakB;
-    // (a bar each: Fm9, Dbmaj7, Bbm9, C7 - the pad's voicings, the 808's roots)
-    const chords = [[53, 56, 60, 63, 67], [49, 53, 56, 60, 65], [46, 49, 53, 56, 60], [48, 52, 55, 58, 61]], roots = [29, 25, 34, 24];
+    const S16 = BEAT / 4, n = m => 440 * Math.pow(2, (m - 69) / 12), D = bz + 1, Rd = at(D);
+    const chords = [[53, 56, 60, 63], [49, 53, 56, 60], [51, 56, 60, 63], [51, 55, 58, 62]], roots = [29, 25, 32, 27];
     const end = Rw(T.end) + 2, first = -Math.ceil(Rs / BEAT);
-    const lvl = t => 0.7 + 0.3 * smoother((t - Rs) / (Rc - Rs));
-    const push = (t, kind, extra) => { if (t > 0.01 && t < end && !quiet(t)) sfx.push(Object.assign({ t, kind }, extra)); };
-    const ci = b => (((Math.floor(b / 4) % 4) + 4) % 4);
-    // the record: its crackle, start to finish
-    sfx.push({ t: 0.02, kind: 'crackle', dur: end - 0.5, lvl: 1 });
-    // the intro, over the photograph: the pad, the bell motif, the heartbeat
-    sfx.push({ t: 0.05, kind: 'pad', f: chords[0].map(n), dur: Rs - 0.3, lvl: 0.9 });
-    const motif = [[0, 72], [0.75, 75], [1.5, 79], [2, 77], [3, 72], [3.5, 70]];
-    for (let b = first; b < 0; b += 4) motif.forEach(([o, m]) => at(b + o) < Rs - 0.05 && push(at(b + o), 'bell', { f: n(m), lvl: 0.75, echo: BEAT * 0.75 }));
-    for (let b = first; b < 0; b++) if (b % 2 === 0) push(at(b), 'kick', { lvl: 0.45, dust: true });
-    // (the reverse cymbal, drawn up into the drop)
-    sfx.push({ t: Math.max(0.1, Rs - BEAT * 2), kind: 'revcym', dur: Math.min(BEAT * 2, Rs - 0.1), lvl: 1 });
-    // the beat, from the sky's opening to the end
-    const kicks = [0, 1.75, 2.5], snares = [1, 3];
-    for (let b = 0; at(b) < end; b++) {
-      const t = at(b), beat = ((b % 4) + 4) % 4, L = lvl(t), riser = b >= nb - 2 && b < nb;
-      kicks.forEach(k => { if (Math.floor(k) === beat) push(t + (k - beat) * BEAT, 'kick', { lvl: L * (k === beat ? 1 : 0.8), dust: true }); });
-      if (snares.includes(beat) && !(riser && beat === 3)) push(t, 'tsnare', { lvl: L });
-      // (the hats: sixteenths, swung, the offbeats lighter; a roll at a bar's end)
-      for (let k = 0; k < 4; k++) {
-        const sw = k % 2 ? S16 * 0.18 : 0;
-        if (beat === 3 && (b % 8 === 7) && k >= 2) { for (let r = 0; r < 3; r++) push(t + k * S16 + r * S16 / 3, 'hat', { lvl: L * (0.5 + 0.15 * r) }); continue; }
-        push(t + k * S16 + sw, 'hat', { lvl: L * (k === 0 ? 0.7 : k === 2 ? 0.55 : 0.35), open: beat === 1 && k === 2 });
-      }
-      // (the 808: the bar's root on one, held, sliding to the next bar's on the four's last sixteenth)
-      const c = ci(b);
-      if (beat === 0 && b !== 0 && b !== nb) push(t, 'b808', { f: n(roots[c]), dur: BEAT * 2.6, lvl: L });
-      if (beat === 2 && b !== bz + 1) push(t + 2 * S16, 'b808', { f: n(roots[c] + 12), f2: n(roots[(c + 1) % 4]), dur: BEAT * 1.4, lvl: L * 0.8 });
-      // (the keys: the chord, soft, on one and the and of two, in the echo)
-      if (beat === 0 || beat === 1) push(t + (beat ? 2 * S16 : 0), 'ep', { f: chords[c].map(m => n(m + 12)), dur: BEAT * 1.4, lvl: L * 0.8, echo: BEAT * 0.75 });
-      if (beat === 0) push(t, 'pad', { f: chords[c].map(n), dur: BEAT * 3.8, lvl: L * 0.7 });
+    const lvl = t => t < Rd ? 0.75 : 0.82 + 0.18 * smoother((t - Rd) / (Rc - Rd));
+    const push = (t, kind, extra) => { if (t > 0.01 && t < end) sfx.push(Object.assign({ t, kind }, extra)); };
+    // (the bar's chord, counted from the drop)
+    const ci = b => (((Math.floor((b - D) / 4) % 4) + 4) % 4);
+    // the voice: "ahh... ahh... ohh... ahh", over and over, every two bars from the
+    // first frame - muffled before the drop, clearer after
+    const phrase = [[0, 1.5, 72, 'ah'], [1.5, 1.5, 68, 'ah'], [3, 2.6, 67, 'oh', 65], [6, 1.9, 72, 'ah', 70]];
+    for (let p0 = D - 8 * Math.ceil((D - first) / 8); at(p0) < end; p0 += 8) {
+      phrase.forEach(([o, d, m, v, m2]) => {
+        const t = at(p0 + o), pre = t < Rd - 0.05;
+        if (t + d * BEAT < 0.15) return;
+        push(Math.max(0.05, t), 'vox', { f: n(m), f2: m2 && n(m2), v, v2: v === 'oh' ? 'oh' : 'ah', dur: d * BEAT - 0.05, cut: pre ? 900 : 2000, lvl: (pre ? 0.55 : 0.5) * lvl(t) });
+      });
     }
-    // the drop, as the sky opens
-    sfx.push({ t: Rs, kind: 'crash', lvl: 0.7 }, { t: Rs, kind: 'b808', f: n(29), dur: BEAT * 1.6, lvl: 1 });
-    // the crash zoom: a scratch on the snatch, the tape stopping under it, silence; back in hard on the release
-    sfx.push({ t: at(bz) - 0.03, kind: 'scratch', dur: 0.32, lvl: 1 });
-    sfx.push({ t: at(bz), kind: 'tapestop', f: chords[ci(bz)].concat([roots[ci(bz)] + 12]).map(n), dur: Math.min(0.7, breakB - at(bz)), lvl: 1 });
-    sfx.push({ t: at(bz + 1), kind: 'crash', lvl: 0.85 }, { t: at(bz + 1), kind: 'b808', f: n(29), dur: BEAT * 1.8, lvl: 1.05 }, { t: at(bz + 1), kind: 'kick', lvl: 1, dust: true });
-    // the riser under the dive, into the title's hit: the biggest of all
-    sfx.push({ t: at(nb - 2), kind: 'revcym', dur: BEAT * 2, lvl: 1.2 });
-    for (let k = 0; k < 8; k++) sfx.push({ t: at(nb - 1) + k * S16 / 2, kind: 'tsnare', lvl: 0.35 + 0.08 * k, dry: true });
-    sfx.push({ t: Rc, kind: 'crash', lvl: 1 }, { t: Rc, kind: 'b808', f: n(29), dur: BEAT * 3.5, lvl: 1.2 });
-    sfx.push({ t: Rc, kind: 'pad', f: [41, 53, 60, 63, 67, 72].map(n), dur: BEAT * 4, lvl: 1.2 });
+    // (the pad under it, a bar each)
+    for (let b = D - 4 * Math.ceil((D - first) / 4); at(b) < end; b += 4) push(Math.max(0.05, at(b)), 'pad', { f: chords[ci(b)].map(n), dur: BEAT * 3.9, lvl: at(b) < Rd ? 0.55 : 0.6 });
+    // (with the jet: a muted kick, one and three)
+    for (let b = 0; b < bz; b++) if (b % 2 === 0) push(at(b), 'kick', { lvl: 0.4, dust: true });
+    sfx.push({ t: Rs, kind: 'b808', f: n(29), dur: BEAT * 1.5, lvl: 0.55 });
+    // the crash zoom: the reverse cymbal drawn up into the drop as the doors slide shut
+    sfx.push({ t: at(bz), kind: 'revcym', dur: Rd - at(bz), lvl: 1.1 });
+    // the beat, from the drop to the end
+    for (let b = D; at(b) < end; b++) {
+      const t = at(b), beat = (b - D) % 4, L = lvl(t), c = ci(b), hit = b === D || b === nb;
+      if (beat === 0) push(t, 'kick', { lvl: L, dust: true });
+      if (beat === 2) push(t + 2 * S16, 'kick', { lvl: L * 0.8, dust: true });
+      if (beat === 1 || beat === 3) { push(t, 'clap', { lvl: L }); push(t, 'tsnare', { lvl: L * 0.6 }); }
+      // (the hats: eighths, a triplet roll closing every other bar)
+      for (let k = 0; k < 4; k += 2) {
+        if (beat === 3 && k === 2 && ((b - D) % 8) === 7) { for (let r = 0; r < 6; r++) push(t + k * S16 + r * S16 / 3, 'hat', { lvl: L * (0.4 + 0.08 * r) }); continue; }
+        push(t + k * S16, 'hat', { lvl: L * (k ? 0.45 : 0.7) });
+      }
+      // (the 808: the bar's root, long; a push on the and of three, sliding into the next bar)
+      if (beat === 0 && !hit) push(t, 'b808', { f: n(roots[c]), dur: BEAT * 2.4, lvl: L });
+      if (beat === 2) push(t + 2 * S16, 'b808', { f: n(roots[c]), f2: n(roots[(c + 1) % 4]), dur: BEAT * 1.5, lvl: L * 0.85 });
+    }
+    // the drop, as the doors meet
+    sfx.push({ t: Rd, kind: 'crash', lvl: 0.9 }, { t: Rd, kind: 'b808', f: n(29), dur: BEAT * 2.4, lvl: 1.1 });
+    // into the title: the biggest hit, the voice up high over it
+    sfx.push({ t: at(nb - 2), kind: 'revcym', dur: BEAT * 2, lvl: 1.1 });
+    sfx.push({ t: Rc, kind: 'crash', lvl: 1 }, { t: Rc, kind: 'b808', f: n(29), dur: BEAT * 3.5, lvl: 1.25 });
+    sfx.push({ t: Rc, kind: 'pad', f: [41, 53, 60, 63, 68, 72].map(n), dur: BEAT * 4, lvl: 1 });
+    sfx.push({ t: Rc, kind: 'vox', f: n(77), f2: n(75), v: 'ah', v2: 'oh', dur: BEAT * 3, cut: 2600, lvl: 0.55 });
     // (every voice of the beat through its own glue)
     sfx.forEach(e => { if (!['jet', 'whoosh', 'felt', 'wall'].includes(e.kind)) e.band = true; });
     sfx.sort((a, b) => a.t - b.t);
