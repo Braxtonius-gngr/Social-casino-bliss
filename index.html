@@ -5371,7 +5371,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // starts from is the shot's end, and that is the one every home's
       // fly-in was laid out from.)
       const gameQ = q.get('game');
-      const game = mod.GAMES.includes(gameQ) ? gameQ : direct ? 'dice' : mod.pickGame(Math.random());
+      // (a scene still in the lab - LAB_GAMES - plays only when named: ?game=flyover)
+      const game = mod.GAMES.includes(gameQ) || (mod.LAB_GAMES || []).includes(gameQ) ? gameQ : direct ? 'dice' : mod.pickGame(Math.random());
       const seedQ = parseInt(q.get('seed'), 10);
       const seed = Number.isFinite(seedQ) ? seedQ >>> 0 : Math.floor(Math.random() * 4294967296);
       // Sound is on by default. It was made on for everyone once, on
@@ -8851,7 +8852,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v143';
+    const APP_BUILD = 'almanac-v144';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads

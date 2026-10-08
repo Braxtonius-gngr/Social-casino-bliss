@@ -43,6 +43,7 @@ const asset = f => new URL(f, HERE).href;
 // the `game` seam in buildIntro(). The set, the resolution, the post, the
 // sound, the quality steps and the handover to the homes are shared.
 export const GAMES = ['dice', 'wheel', 'plinko', 'blackjack', 'slots'];
+export const LAB_GAMES = ['flyover'];
 export function pickGame(r) { return GAMES[Math.min(GAMES.length - 1, Math.floor(r * GAMES.length))]; }
 export const TIERS = ['standard', 'hardways', 'vault', 'edge'];
 export const TIER_NAMES = { standard: 'Standard Drop', hardways: 'The Hardways', vault: 'The Vault Pull', edge: 'The Defiant Edge' };
@@ -946,6 +947,57 @@ class Sound {
         this.tone(when, ev.f0 || 80, 0.025, ev.dur || 0.6, 'sawtooth', ev.f1 || 140);
         this.burst(when, 'bandpass', 600, 2, 0.03, ev.dur || 0.6, 0.6);
         break;
+      // (the flyover's: a jet passing over - far off and thin at first, a
+      // roar at its pass with the turbine's whine falling as it goes, then
+      // dying away - and the beat under the shot, its voices one by one)
+      case 'jet': {
+        const c = this.ctx, src = c.createBufferSource(), lp = c.createBiquadFilter(), g = c.createGain(), pk = when + (ev.peak - ev.t), end = when + ev.dur;
+        src.buffer = this.noise; src.loop = true; src.playbackRate.value = 0.7;
+        lp.type = 'lowpass'; lp.Q.value = 0.7;
+        lp.frequency.setValueAtTime(300, when); lp.frequency.exponentialRampToValueAtTime(2600, pk); lp.frequency.exponentialRampToValueAtTime(500, pk + 2.5);
+        g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(0.05, pk - 2); g.gain.exponentialRampToValueAtTime(0.75, pk); g.gain.exponentialRampToValueAtTime(0.12, pk + 1.6); g.gain.exponentialRampToValueAtTime(0.0001, end);
+        src.connect(lp); lp.connect(g); g.connect(this.out || this.master);
+        src.start(when); src.stop(end + 0.05);
+        const o = c.createOscillator(), og = c.createGain();
+        o.type = 'sawtooth'; o.frequency.setValueAtTime(2100, when); o.frequency.linearRampToValueAtTime(1900, pk - 0.2); o.frequency.exponentialRampToValueAtTime(1250, pk + 0.6);
+        og.gain.setValueAtTime(0.0001, when); og.gain.exponentialRampToValueAtTime(0.012, pk - 0.4); og.gain.exponentialRampToValueAtTime(0.0001, pk + 2.2);
+        o.connect(og); og.connect(this.out || this.master); o.start(when); o.stop(pk + 2.3);
+        break;
+      }
+      case 'kick': {
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        this.tone(when, 120, 0.55 * l, 0.42, 'sine', 42);
+        this.burst(when, 'lowpass', 1800, 0.7, 0.12 * l, 0.012);
+        break;
+      }
+      case 'snare': {
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        this.burst(when, 'bandpass', 1900, 0.9, 0.3 * l, 0.17, 1.1);
+        this.burst(when, 'highpass', 5200, 0.7, 0.16 * l, 0.12);
+        this.tone(when, 210, 0.16 * l, 0.09, 'triangle', 160);
+        break;
+      }
+      case 'hat': {
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        this.burst(when, 'highpass', 7600, 0.9, (ev.open ? 0.14 : 0.11) * l, ev.open ? 0.24 : 0.04, 1.4);
+        break;
+      }
+      case 'bass': {
+        // (an 808: a long sine with a little push into its pitch and a soft overdrive's edge)
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        this.tone(when, ev.f * 1.5, 0.36 * l, ev.dur, 'sine', ev.f);
+        this.tone(when, ev.f * 2, 0.06 * l, ev.dur * 0.6, 'triangle', ev.f * 2);
+        break;
+      }
+      case 'keys': {
+        // (an electric piano's chord: a bell-like tine over a warm body, spread a touch)
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        ev.f.forEach((f, i) => {
+          this.tone(when + i * 0.012, f, 0.07 * l, ev.dur, 'sine');
+          this.tone(when + i * 0.012, f * 2, 0.018 * l, ev.dur * 0.4, 'triangle');
+        });
+        break;
+      }
       default:
     }
   }
@@ -983,7 +1035,8 @@ async function buildIntro(opts, undo, teardown) {
   // The game (see GAMES): the dice are built here; another game's module is
   // fetched now, alongside the set's textures, and asked for its pieces once
   // the room and its lights stand (`game`, below).
-  const gameId = GAMES.includes(o.game) ? o.game : 'dice';
+  // (a scene still in the lab - not yet in the draw - plays only when asked for by name)
+  const gameId = GAMES.includes(o.game) || LAB_GAMES.includes(o.game) ? o.game : 'dice';
   const gameLoad = gameId === 'dice' ? null : import(`./${gameId}.mjs`);
   let game = null;
 
@@ -2418,7 +2471,7 @@ async function buildIntro(opts, undo, teardown) {
   }
   render(0);
   return {
-    plan: { game: gameId, tier, seed: o.seed, revealReal: plan.revealReal, totalReal: plan.totalReal, floatEnd, restReal: plan.restReal, wallReal: plan.wallReal, values: plan.values, call: plan.call, throwOk: plan.throwOk, why: plan.why, moments: game ? game.moments : null },
+    plan: { game: gameId, tier, seed: o.seed, revealReal: plan.revealReal, totalReal: plan.totalReal, floatEnd, restReal: plan.restReal, wallReal: plan.wallReal, values: plan.values, call: plan.call, throwOk: plan.throwOk, why: plan.why, moments: game ? game.moments : null, sfx: () => sfx },
     play() { playing = true; last = 0; pacer.reset(); move(); raf = requestAnimationFrame(loop); },
     seek(time) { playing = false; cancelAnimationFrame(raf); t = Math.max(0, Math.min(floatEnd, time)); render(t); },
     // (lab: that frame drawn as a still - at the screen's own resolution,
