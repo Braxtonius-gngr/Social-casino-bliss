@@ -114,7 +114,7 @@ const SLOT_METAL = {
 // The lettering stamped into the cloth: the plane it is drawn on (centre z,
 // w x h cm, px a cm) and its two arcs, each round the table's own centre
 // (the middle of the dealer's edge) - a and b its half-width and depth.
-const LETTERS = { z: 28.5, w: 64, h: 10, px: 34, arcs: [{ a: 46, b: 35.4, text: 'BLACKJACK PAYS 3 TO 2', cap: 1.55, track: 0.34 }, { a: 48.5, b: 37.8, text: 'DEALER MUST STAND ON 17 AND DRAW TO 16', cap: 0.62, track: 0.16 }] };
+const LETTERS = { z: 28.5, w: 64, h: 10, px: 34, arcs: [{ a: 46, b: 35.4, text: 'BLACKJACK PAYS 3 TO 2', cap: 1.0, track: 0.22 }, { a: 48.5, b: 37.8, text: 'DEALER MUST STAND ON 17 AND DRAW TO 16', cap: 0.5, track: 0.14 }] };
 
 // The machine's pace and phases (the card table's: see DEAL in table.mjs).
 const DEAL = { first: 0.72, grab: 0.24, pull: 0.07, windup: 0.2, beat: 0.05, flick: 0.085, follow: 0.12, give: 0.13, carry: 0.3, settle: 0.07, push: 0.09, fall: 0.22, back: 0.24, rest: 0.6 };
@@ -389,6 +389,8 @@ export async function makeGame(ctx) {
   // (the lens comes lower over this cloth than the seat's ever does: its
   // nap pressed flatter, or at a low angle it reads as water)
   table.felt.normalScale.multiplyScalar(0.55);
+  // (black baize lifted a step, so the cloth holds a tone the light can find)
+  table.felt.color.setHex(tier === 'vault' ? 0x22170f : 0x131318);
   // (and its nap: baize is brushed one way, so it shades in long soft
   // strokes - lighter where the pile lies toward the lamp, darker where it
   // lies away, a few worn paths where hands have swept it - which the
@@ -584,6 +586,13 @@ export async function makeGame(ctx) {
   // shade, not a hole)
   key.shadow.intensity = 0.55;
   seat.add(key, key.target);
+  // (a wider, softer pool from the same pendant with no shadow: the cloth
+  // and the rail take a middle tone between the key's bright pool and the
+  // black round it, so the table reads as a lit felt, not a void with a spot)
+  const pool = new THREE.SpotLight(0xffeedd, 1.6, 0, 0.78, 1, 0);
+  pool.position.set(0, 112, 34);
+  pool.target.position.set(0, 0, 24);
+  seat.add(pool, pool.target);
 
   // ---- The machine: the card table's (table.mjs), stowed under its port.
   const dm = K.dealerMaterials();
@@ -1567,7 +1576,7 @@ export async function makeGame(ctx) {
         goldLamp.position.copy(toWorld(V(-sx * 0.55, 40, 22)));
         goldLamp.target.position.copy(toWorld(V(-sx, 0, burst < 2.6 ? 26 : 19)));
       }
-      if (goldFill) goldFill.intensity = on ? 6000 * smoother(burst / 0.5) * (0.5 + 0.5 * Math.exp(-burst / 3)) * (1 - 0.7 * smoother(clamp01((w - (plan.revealW - 0.5)) / 0.8))) : 0;
+      if (goldFill) goldFill.intensity = on ? 14000 * smoother(burst / 0.5) * (0.5 + 0.5 * Math.exp(-burst / 3)) * (1 - 0.7 * smoother(clamp01((w - (plan.revealW - 0.5)) / 0.8))) : 0;
       if (payout) { payout.set(on ? burst : -1); payout.expose(on ? smoother(burst / 0.5) : 0); }
       lit = on ? 3.2 * smoother(burst / 0.25) * Math.max(0, 1 - burst / 3.8) : 0;
     }
@@ -1603,7 +1612,7 @@ export async function makeGame(ctx) {
     setTrim(id) { if (slotAnim) slotAnim.dress(id); },
     tierNames: TIER_NAMES,
     // (the draw's 1.9% and its edge's 0.1%, folded into one)
-    tierOdds: { vault: '2%' },
+    tierOdds: { vault: '4.8%' },
     // (its call is set on a plate at the top of the screen: the white machine and the cards are never behind it)
     callScrim: true, callPlate: true, badgeFades: true,
     silence: null,
