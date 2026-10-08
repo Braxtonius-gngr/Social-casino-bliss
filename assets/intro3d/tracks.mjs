@@ -87,13 +87,15 @@ export function hazeBeat({ at, BEAT, first, drop: D, title: nb, end }) {
 // the kit under each build; an impact hits on the drop and the title. A shorter build again under the dive, the same silence, and
 // the biggest boom on the title; then the EDM rides it out.
 const WILD_CHORDS = [[52, 55, 59], [52, 55, 59], [53, 57, 60], [50, 53, 57]], WILD_ROOTS = [28, 28, 29, 26];
-// (a bar of the bed: the dark wide pad and the low choir on chord c; opened
-// up, the choir's upper voices over it, an octave higher)
+// (a bar of the bed: the dark wide pad and the low choir on chord c - its
+// root and fifth; opened up, the choir's upper voices over it, an octave
+// higher. Kept lean: on a phone, a choir of a voice per note in every bar
+// was more than the sound could keep up with, and it stalled.)
 const wildBed = (push, t, c, dur, cut, lv, oh) => {
   const ch = WILD_CHORDS[c];
   push(t, 'pad', { f: ch.map(m => n(m - 12)).concat(ch.map(n)), dur, cut, lvl: lv }, true);
-  ch.forEach(m => push(t, 'vox', { f: n(m - 12), v: oh ? 'oh' : 'ah', v2: 'ah', dur, cut: cut * 0.8, lvl: lv * 0.3 }, true));
-  if (cut >= 1500) ch.forEach(m => push(t, 'vox', { f: n(m), v: 'ah', dur, cut: cut * 1.2, lvl: lv * 0.18 }, true));
+  [ch[0], ch[2]].forEach(m => push(t, 'vox', { f: n(m - 12), v: oh ? 'oh' : 'ah', v2: 'ah', dur, cut: cut * 0.8, lvl: lv * 0.36 }, true));
+  if (cut >= 1500) [ch[1], ch[2]].forEach(m => push(t, 'vox', { f: n(m), v: 'ah', dur, cut: cut * 1.2, lvl: lv * 0.22 }, true));
 };
 // (a beat of the EDM: four on the floor, a clap on two and four, open hats
 // on the offbeat, a crash opening every other bar, the 808 on the bar)
@@ -197,7 +199,7 @@ export function wildBeat({ at, BEAT, first, drop: D, back: P = D, title: nb, end
   push(Rc, 'crash', { lvl: 1.1 }, true); push(Rc, 'kick', { lvl: 1.1 }, true); push(Rc, 'impact', { lvl: 1.2 }, true);
   push(Rc, 'b808', { f: n(28), f2: n(28) * 0.9, dur: BEAT * 4, lvl: 1.3, long: true }, true);
   push(Rc, 'pad', { f: [40, 52, 55, 59, 64].map(n), dur: BEAT * 4, cut: 2200, lvl: 1.1 }, true);
-  [40, 47, 52, 55].forEach(m => push(Rc, 'vox', { f: n(m), v: 'ah', v2: 'oh', dur: BEAT * 4, cut: 1800, lvl: 0.35 }, true));
+  [40, 52].forEach(m => push(Rc, 'vox', { f: n(m), v: 'ah', v2: 'oh', dur: BEAT * 4, cut: 1800, lvl: 0.45 }, true));
   return glue(evs);
 }
 

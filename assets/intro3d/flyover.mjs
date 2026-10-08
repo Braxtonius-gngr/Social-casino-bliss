@@ -458,11 +458,11 @@ export async function makeGame(ctx) {
   };
   // (the field is painted here, each frame while it spreads, into a small
   // map laid over the water about the landing - the gold in red, its bright
-  // seam in green - and the sea's shaders only look it up: the rings worked
+  // seam in green, 128 texels a side - and the sea's shaders only look it up: the rings worked
   // out in the shaders themselves, from an array of seeds, drew on a
   // desktop and not on a phone's GPU. Beyond the map, a disc about the
   // landing that the rings are known to have covered.)
-  const GT = 256, GH = 2400, gtData = new Uint8Array(GT * GT * 4), gtG = new Float32Array(GT * GT), gtE = new Float32Array(GT * GT);
+  const GT = 128, GH = 2400, gtData = new Uint8Array(GT * GT * 4), gtG = new Float32Array(GT * GT), gtE = new Float32Array(GT * GT);
   const goldMap = new THREE.DataTexture(gtData, GT, GT, THREE.RGBAFormat, THREE.UnsignedByteType);
   goldMap.magFilter = goldMap.minFilter = THREE.LinearFilter; goldMap.needsUpdate = true; keep(null, null, goldMap);
   const seaU = { uT: { value: 0 }, uGT: { value: goldMap }, uGA: { value: new THREE.Vector4(LAND.x, LAND.z, 1 / (2 * GH), 0) }, uGF: { value: new THREE.Vector2(0, 1) } };

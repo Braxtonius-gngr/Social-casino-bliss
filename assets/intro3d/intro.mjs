@@ -1017,7 +1017,7 @@ class Sound {
       // pad, a plucked stab, a riser, a wobbling bass, a kick, a clap and a
       // snare, hats, a gliding 808, a reverse cymbal, a crash)
       case 'vox': {
-        // (voices on a vowel, like a sampled choir pitched down: three
+        // (voices on a vowel, like a sampled choir pitched down: two
         // singers a touch apart in pitch and time, each a buzz with its own
         // slow-starting vibrato and a breath, through the vowel's formants -
         // 'ah' or 'oh', or moving from one to the other - with a tape's slow
@@ -1030,9 +1030,9 @@ class Sound {
           lp.type = 'lowpass'; lp.frequency.value = ev.cut || 1400; lp.Q.value = 0.4; hp.type = 'highpass'; hp.frequency.value = 140;
           env.gain.setValueAtTime(0, when); env.gain.linearRampToValueAtTime(0.8 * l, when + Math.min(0.18, d * 0.3)); env.gain.setValueAtTime(0.8 * l, end - 0.06); env.gain.linearRampToValueAtTime(0, end + Math.min(0.35, d * 0.5));
           const wow = c.createOscillator(), wg = c.createGain(); wow.frequency.value = 0.55; wg.gain.value = ev.f * 0.004; wow.connect(wg); wow.start(when); wow.stop(end + 0.5);
-          [[-11, 0, 5.1], [9, 0.022, 4.7], [2, 0.041, 5.5]].forEach(([dt, lag, rate], i) => {
+          [[-11, 0, 5.1], [9, 0.026, 4.7]].forEach(([dt, lag, rate], i) => {
             const t0 = when + lag, o = c.createOscillator(), og = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
-            o.type = 'sawtooth'; o.detune.value = dt; og.gain.value = i ? 0.3 : 0.4;
+            o.type = 'sawtooth'; o.detune.value = dt; og.gain.value = 0.42;
             o.frequency.setValueAtTime(ev.f * 0.94, t0); o.frequency.exponentialRampToValueAtTime(ev.f, t0 + 0.12);
             if (ev.f2) { o.frequency.setValueAtTime(ev.f, end - d * 0.45); o.frequency.exponentialRampToValueAtTime(ev.f2, end); }
             lfo.frequency.value = rate; lg.gain.setValueAtTime(0, t0); lg.gain.linearRampToValueAtTime(ev.f * 0.012, t0 + Math.min(0.6, d * 0.6));
@@ -1090,7 +1090,7 @@ class Sound {
       case 'pad': {
         const l = ev.lvl == null ? 1 : ev.lvl;
         // (a pad by default; with att, rel and cut given, a wide saw chord's stab)
-        this.wet(0.75, () => this.section(when, ev.f, 0.13 * l, ev.dur, { att: ev.att || Math.min(0.9, ev.dur * 0.4), rel: ev.rel || 1.4, cut0: 250, cut1: ev.cut || 1100, cutS: ev.cut ? ev.cut * 0.6 : 800, scoop: 1, det: [-14, 0, 14] }));
+        this.wet(0.75, () => this.section(when, ev.f, 0.13 * l, ev.dur, { att: ev.att || Math.min(0.9, ev.dur * 0.4), rel: ev.rel || 0.7, cut0: 250, cut1: ev.cut || 1100, cutS: ev.cut ? ev.cut * 0.6 : 800, scoop: 1, det: [-13, 13] }));
         break;
       }
       case 'revcym': {
@@ -2550,7 +2550,7 @@ async function buildIntro(opts, undo, teardown) {
       // instead (as with motion off) rather than stutter through the shot.
       else if (med > 0.12 && quality === 0) { still(); return; }
     }
-    scheduleSound(t, t + 0.35);
+    scheduleSound(t, t + 1.0);
     if (t >= floatEnd) { settle(); return; }
     render(t);
     cue();
