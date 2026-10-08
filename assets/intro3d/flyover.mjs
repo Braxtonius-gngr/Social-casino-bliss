@@ -38,7 +38,9 @@ const T = {
 };
 // The sky's world: the sea's surface, the jet's height and its line.
 // (in the photograph, as fractions from its top left: the face, and where the lens pulls back to - the hand)
-const PHOTO_FACE = [0.445, 0.36], PHOTO_HAND = [0.34, 0.56];
+const PHOTO_FACE = [0.445, 0.36], PHOTO_HAND = [0.34, 0.56], PHOTO_DICE = [0.21, 0.77];
+// (the throw out of it, world seconds: the dice leave the hand, and are past the lens)
+const THROW = [0.8, 1.12];
 const BAY_Z = -60, SEA = -300, JET_Y = 950, JET_X = 160, JET_Z0 = 2700, JET_Z1 = -2700, JET_W0 = 2.25, JET_W1 = 6.45;
 const jetZ = w => lerp(JET_Z0, JET_Z1, (w - JET_W0) / (JET_W1 - JET_W0));
 // The dice's way down the table: in the air from the thrower's end, a
@@ -103,7 +105,7 @@ export async function makeGame(ctx) {
   const placePhoto = (w, lens) => {
     const out = smoother((w - (T.whip - 0.04)) / 0.2);
     photo.card.visible = out < 1;
-    if (!photo.card.visible) return;
+    if (!photo.card.visible) { flung.forEach(m => { m.visible = false; }); return; }
     const d = lens.aim.clone().sub(lens.eye).normalize(), D = 10, h = 2 * D * Math.tan(FOV / 2), wv = h * aspect;
     // (cover the screen: tight on the face at first, pulling back - gathering
     // pace, as a throw does - to the outstretched hand as the dice leave it)
@@ -117,9 +119,23 @@ export async function makeGame(ctx) {
     photo.card.position.copy(lens.eye).addScaledVector(d, D).addScaledVector(right, -(fu - 0.5) * cw - out * wv * 1.25).addScaledVector(up, -(0.5 - fv) * s + 0.06 * out * h);
     photo.card.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, d.clone().negate()));
     photo.m.opacity = 1 - 0.3 * out;
+    // (the throw: two dice leave the hand in the photograph and come out of
+    // it at the lens, tumbling, growing as they come, off past its corner)
+    const u = (w - THROW[0]) / (THROW[1] - THROW[0]);
+    flung.forEach((m, i) => {
+      const ui = u - i * 0.07; m.visible = ui > 0 && ui < 1 && out < 0.5;
+      if (!m.visible) return;
+      flungMats.forEach(fm => { fm.opacity = smoother(Math.max(0, u) / 0.12); });
+      const hand = photo.card.position.clone().addScaledVector(right, (PHOTO_DICE[0] - 0.5) * cw).addScaledVector(up, (0.5 - PHOTO_DICE[1]) * s).addScaledVector(d, -0.2);
+      const away = lens.eye.clone().addScaledVector(d, 1.7).addScaledVector(right, -1.3 + 0.35 * i).addScaledVector(up, -0.5 + 0.2 * i);
+      const k = Math.pow(ui, 1.7);
+      m.position.copy(hand).lerp(away, k).addScaledVector(up, 0.8 * Math.sin(Math.PI * ui) * (1 - k)).addScaledVector(right, 0.55 * i * (1 - k)).addScaledVector(up, -0.25 * i * (1 - k));
+      m.rotation.set(spin[i][0] + ui * 9, spin[i][1] + ui * 7, ui * 4);
+    });
   };
 
-  // ---- The dice: casino red, translucent, white pips.
+  // ---- The dice: casino red, translucent, white pips. (A second pair, the
+  // ones flung out of the photograph: drawn over the card, the way it is.)
   const pipTex = (n) => texOf(canvas(128, 128, (c, W) => {
     c.fillStyle = '#c4161c'; c.fillRect(0, 0, W, W);
     const at = { 1: [[0.5, 0.5]], 2: [[0.28, 0.28], [0.72, 0.72]], 3: [[0.26, 0.26], [0.5, 0.5], [0.74, 0.74]], 4: [[0.28, 0.28], [0.72, 0.28], [0.28, 0.72], [0.72, 0.72]], 5: [[0.26, 0.26], [0.74, 0.26], [0.5, 0.5], [0.26, 0.74], [0.74, 0.74]], 6: [[0.28, 0.24], [0.72, 0.24], [0.28, 0.5], [0.72, 0.5], [0.28, 0.76], [0.72, 0.76]] }[n];
@@ -129,6 +145,8 @@ export async function makeGame(ctx) {
   const dieG = new THREE.BoxGeometry(1.9, 1.9, 1.9); keep(dieG);
   const dice = [0, 1].map(() => { const d = new THREE.Mesh(dieG, dieMats); d.castShadow = true; scene.add(d); return d; });
   const spin = [[rng() * TAU, rng() * TAU, 9 + 4 * rng()], [rng() * TAU, rng() * TAU, 11 + 4 * rng()]];
+  const flungMats = dieMats.map(m => { const c = m.clone(); c.transparent = true; keep(null, c); return c; });
+  const flung = [0, 1].map(() => { const d = new THREE.Mesh(dieG, flungMats); d.scale.setScalar(0.2); d.renderOrder = 999; d.visible = false; d.frustumCulled = false; scene.add(d); return d; });
   const dicePose = (i, w) => {
     const off = i ? [3.1, 0, 2.2] : [0, 0, 0];
     const K = DICE_KEYS, wi = w - (i ? 0.03 : 0);
@@ -703,6 +721,8 @@ export async function makeGame(ctx) {
   const sfx = [];
   sfx.push({ t: 0.0, kind: 'jet', dur: Rw(T.end) + 1, peak: Rw(T.jet) });
   sfx.push({ t: Rw(T.whip - 0.05), kind: 'whoosh' });
+  // (the dice clicking together as they leave the hand)
+  [0, 0.03, 0.07].forEach(k => sfx.push({ t: Rw(THROW[0]) + k, kind: 'rattle' }));
   [[1.42, 150], [1.72, 110], [2.0, 200]].forEach(([w, sp]) => sfx.push({ t: Rw(w), kind: w === 2.0 ? 'wall' : 'felt', speed: sp, rate: warp.rateAt(Rw(w)) }));
   // The music: "Wild" (tracks.mjs) - the skank over the photograph, the
   // build from the throw, the drop on the crash zoom, the biggest hit on the
@@ -716,7 +736,7 @@ export async function makeGame(ctx) {
     for (const o of theirs) o.visible = true;
     overhead.forEach(m => { m.visible = true; });
     scene.fog = fog0; scene.background = bg0; scene.environment = env0;
-    scene.remove(photo.card, sky, flare.card, ...dice);
+    scene.remove(photo.card, sky, flare.card, ...dice, ...flung);
     made.geos.forEach(g => g.dispose()); made.mats.forEach(m => m.dispose()); made.texs.forEach(t => t.dispose());
   };
   return {
