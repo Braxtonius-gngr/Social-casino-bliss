@@ -865,7 +865,7 @@ class Sound {
       if (!this.bandBus) {
         const c = this.ctx, comp = c.createDynamicsCompressor(), g = c.createGain();
         comp.threshold.value = -14; comp.knee.value = 8; comp.ratio.value = 6; comp.attack.value = 0.004; comp.release.value = 0.18;
-        g.gain.value = 0.9; comp.connect(g); g.connect(this.master); this.bandBus = comp;
+        g.gain.value = 0.9; comp.connect(g); g.connect(this.master); this.bandBus = comp; this.bandGain = g;
       }
       this.out = this.bandBus;
       try { this.play(Object.assign({}, ev, { band: false }), when, slow); } finally { this.out = null; }
@@ -2447,6 +2447,47 @@ async function buildIntro(opts, undo, teardown) {
       sound.play(ev, now + Math.max(0, ev.t - from), ev.rate || 1);
     }
     if (silenceAt != null && !silenced && to >= silenceAt) { silenced = true; sound.cut(now + Math.max(0, silenceAt - from)); }
+    if (groove && !ride && to >= groove.from) startRide(now + Math.max(0, groove.from - from));
+  };
+  // ---- The ride-out: a game's groove ({ from, barLen, bar(k) }, real
+  // seconds) carries its music on where its own events end - through the
+  // float, the fly-in and onto the table - on its own clock, since the
+  // shot's loop stops at the handover. RIDE bars and then faded out; or for
+  // as long as the page lasts, with o.musicStays (or music.stay(true)).
+  const groove = game && game.groove, RIDE = 8;
+  let ride = null, stays = !!o.musicStays;
+  const rideFade = (from, k) => {
+    if (!sound.bandGain) return;
+    sound.bandGain.gain.cancelScheduledValues(from);
+    sound.bandGain.gain.setTargetAtTime(0, from, groove.barLen * 0.5);
+    ride.endK = k;
+  };
+  const rideTick = () => {
+    if (!ride || !sound || !sound.ctx || document.hidden) return;
+    const now = sound.ctx.currentTime, len = groove.barLen;
+    // (back from a hidden tab: on from the bar playing now, nothing piled up)
+    ride.k = Math.max(ride.k, Math.floor((now - ride.ctx0) / len));
+    while (ride.ctx0 + ride.k * len < now + 0.6) {
+      const t0 = ride.ctx0 + ride.k * len;
+      if (ride.endK != null && ride.k >= ride.endK) { stopRide(); return; }
+      if (!stays && ride.endK == null && ride.k >= RIDE - 2) rideFade(t0, RIDE);
+      groove.bar(ride.k).forEach(ev => sound.play(ev, t0 + ev.t, 1));
+      ride.k++;
+    }
+  };
+  const startRide = ctx0 => { ride = { ctx0, k: 0, endK: null, timer: setInterval(rideTick, 120) }; rideTick(); };
+  const stopRide = () => { if (ride) clearInterval(ride.timer); ride = { done: true, k: 0, endK: 0 }; };
+  undo.push(() => { if (ride && ride.timer) clearInterval(ride.timer); });
+  const music = {
+    // (kept on: a fade already begun is taken back; let go: it fades from the next bar)
+    stay(on) {
+      stays = !!on;
+      if (!ride || ride.done || !sound || !sound.ctx) return;
+      const now = sound.ctx.currentTime;
+      if (stays && ride.endK != null && sound.bandGain) { sound.bandGain.gain.cancelScheduledValues(now); sound.bandGain.gain.setTargetAtTime(0.9, now, 0.3); ride.endK = null; }
+      if (!stays && ride.endK == null) rideFade(now, Math.max(ride.k + 1, Math.ceil((now - ride.ctx0) / groove.barLen) + 2));
+    },
+    stop() { if (ride && !ride.done && sound && sound.bandGain) sound.bandGain.gain.setTargetAtTime(0, sound.ctx.currentTime, 0.4); stopRide(); }
   };
   // Fires the landing's cues once each, whichever way the shot gets there.
   const cue = () => {
@@ -2619,7 +2660,8 @@ async function buildIntro(opts, undo, teardown) {
   }
   render(0);
   return {
-    plan: { game: gameId, tier, seed: o.seed, revealReal: plan.revealReal, totalReal: plan.totalReal, floatEnd, restReal: plan.restReal, wallReal: plan.wallReal, values: plan.values, call: plan.call, throwOk: plan.throwOk, why: plan.why, moments: game ? game.moments : null, sfx: () => sfx },
+    music,
+    plan: { game: gameId, tier, seed: o.seed, revealReal: plan.revealReal, totalReal: plan.totalReal, floatEnd, restReal: plan.restReal, wallReal: plan.wallReal, values: plan.values, call: plan.call, throwOk: plan.throwOk, why: plan.why, moments: game ? game.moments : null, sfx: () => sfx, groove: groove || null },
     play() { playing = true; last = 0; pacer.reset(); move(); raf = requestAnimationFrame(loop); },
     seek(time) { playing = false; cancelAnimationFrame(raf); t = Math.max(0, Math.min(floatEnd, time)); render(t); },
     // (lab: that frame drawn as a still - at the screen's own resolution,
@@ -2656,6 +2698,9 @@ async function buildIntro(opts, undo, teardown) {
       soundBtn.hidden = true;
       dropUnlock();
       if (sound && sound.bed) sound.fade(sound.ctx.currentTime, 0.6);
+      // (the shot's music not yet run out when it is left: the rest of it
+      // laid down now, so the groove still takes over from it on the beat)
+      if (groove && !ride) scheduleSound(t, groove.from + 0.01);
       // (the frame at rest was the shot's: the table draws its own)
       move();
       return {

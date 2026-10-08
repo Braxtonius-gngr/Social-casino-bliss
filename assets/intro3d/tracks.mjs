@@ -84,9 +84,30 @@ export function hazeBeat({ at, BEAT, first, drop: D, title: nb, end }) {
 // upper voices over it, open hats, a crash every other bar. Toms roll down
 // the kit under each build; an impact hits on the drop and the title. A shorter build again under the dive, the same silence, and
 // the biggest boom on the title; then the EDM rides it out.
+const WILD_CHORDS = [[52, 55, 59], [52, 55, 59], [53, 57, 60], [50, 53, 57]], WILD_ROOTS = [28, 28, 29, 26];
+// (a bar of the bed: the dark wide pad and the low choir on chord c; opened
+// up, the choir's upper voices over it, an octave higher)
+const wildBed = (push, t, c, dur, cut, lv, oh) => {
+  const ch = WILD_CHORDS[c];
+  push(t, 'pad', { f: ch.map(m => n(m - 12)).concat(ch.map(n)), dur, cut, lvl: lv }, true);
+  ch.forEach(m => push(t, 'vox', { f: n(m - 12), v: oh ? 'oh' : 'ah', v2: 'ah', dur, cut: cut * 0.8, lvl: lv * 0.3 }, true));
+  if (cut >= 1500) ch.forEach(m => push(t, 'vox', { f: n(m), v: 'ah', dur, cut: cut * 1.2, lvl: lv * 0.18 }, true));
+};
+// (a beat of the EDM: four on the floor, a clap on two and four, open hats
+// on the offbeat, a crash opening every other bar, the 808 on the bar)
+const wildEdm = (push, t, beat, c, L, crash, BEAT) => {
+  const S16 = BEAT / 4;
+  push(t, 'kick', { lvl: L });
+  if (beat === 0 && crash) push(t, 'crash', { lvl: L * 0.7 });
+  if (beat === 1 || beat === 3) push(t, 'clap', { lvl: L * 0.9 });
+  push(t + 2 * S16, 'hat', { lvl: L * 0.55, open: true });
+  push(t + S16, 'hat', { lvl: L * 0.25 }); push(t + 3 * S16, 'hat', { lvl: L * 0.25 });
+  if (beat === 0) push(t, 'b808', { f: n(WILD_ROOTS[c]), dur: BEAT * 3.6, lvl: L, long: true });
+};
+
 export function wildBeat({ at, BEAT, first, drop: D, title: nb, end, build }) {
   const evs = [], S16 = BEAT / 4, Rd = at(D), Rc = at(nb);
-  const chords = [[52, 55, 59], [52, 55, 59], [53, 57, 60], [50, 53, 57]], roots = [28, 28, 29, 26];
+  const chords = WILD_CHORDS, roots = WILD_ROOTS;
   const ci = b => (((Math.floor((b - D) / 4) % 4) + 4) % 4);
   const gaps = [[Rd - BEAT * 0.5, Rd - 0.005], [Rc - BEAT * 0.5, Rc - 0.005]];
   const push = (t, kind, extra, loud) => { if (t > 0.01 && t < end && (loud || !gaps.some(([a, b]) => t > a && t < b))) evs.push(Object.assign({ t, kind }, extra)); };
@@ -98,10 +119,7 @@ export function wildBeat({ at, BEAT, first, drop: D, title: nb, end, build }) {
       const s0 = Math.max(b, b0), u = (s0 - b0) / Math.max(1, b1 - b0), c = ci(b), len = Math.min(b + 4, b1) - s0;
       if (len <= 0 || at(s0) + 0.05 > end) continue;
       const t = Math.max(0.05, at(s0)), cut = cut0 + (cut1 - cut0) * u * u, lv = lvl0 + (lvl1 - lvl0) * u, dur = len * BEAT - 0.02;
-      push(t, 'pad', { f: chords[c].map(m => n(m - 12)).concat(chords[c].map(n)), dur, cut, lvl: lv }, true);
-      chords[c].forEach(m => push(t, 'vox', { f: n(m - 12), v: (b - D) % 8 ? 'oh' : 'ah', v2: 'ah', dur, cut: cut * 0.8, lvl: lv * 0.3 }, true));
-      // (opened up, the choir's upper voices over it, an octave higher)
-      if (cut >= 1500) chords[c].forEach(m => push(t, 'vox', { f: n(m), v: 'ah', dur, cut: cut * 1.2, lvl: lv * 0.18 }, true));
+      wildBed(push, t, c, dur, cut, lv, (b - D) % 8 !== 0);
     }
   };
   // (the trap's bars after the drop, before the EDM opens up)
@@ -155,13 +173,7 @@ export function wildBeat({ at, BEAT, first, drop: D, title: nb, end, build }) {
       if (beat === 3) [0, 1, 2, 3].forEach(k => push(t + k * S16, 'hat', { lvl: L * [0.7, 0.4, 0.6, 0.45][k] }));
       if (beat === 1) push(t + 2 * S16, 'hat', { lvl: L * 0.35 });
     } else {
-      // (the EDM: four on the floor, a clap on two and four, open hats on the offbeat, the 808 on the bar)
-      push(t, 'kick', { lvl: L });
-      if (beat === 0 && (b - D) % 8 === 0) push(t, 'crash', { lvl: L * 0.7 });
-      if (beat === 1 || beat === 3) push(t, 'clap', { lvl: L * 0.9 });
-      push(t + 2 * S16, 'hat', { lvl: L * 0.55, open: true });
-      push(t + S16, 'hat', { lvl: L * 0.25 }); push(t + 3 * S16, 'hat', { lvl: L * 0.25 });
-      if (beat === 0) push(t, 'b808', { f: n(roots[c]), dur: BEAT * 3.6, lvl: L, long: true });
+      wildEdm(push, t, beat, c, L, (b - D) % 8 === 0, BEAT);
     }
   }
   push(Rd, 'crash', { lvl: 1 }, true); push(Rd, 'impact', { lvl: 1 }, true);
@@ -174,4 +186,20 @@ export function wildBeat({ at, BEAT, first, drop: D, title: nb, end, build }) {
   push(Rc, 'pad', { f: [40, 52, 55, 59, 64].map(n), dur: BEAT * 4, cut: 2200, lvl: 1.1 }, true);
   [40, 47, 52, 55].forEach(m => push(Rc, 'vox', { f: n(m), v: 'ah', v2: 'oh', dur: BEAT * 4, cut: 1800, lvl: 0.35 }, true));
   return glue(evs);
+}
+
+// Wild's ride-out: its EDM bar, bed and all, as a groove to loop past the
+// shot - through the fly-in and onto the table. bar0: the bar it starts on,
+// counted from the drop, so the chords carry on in turn. Each bar's events
+// are in seconds from the bar's start.
+export function wildGroove({ BEAT, bar0 }) {
+  return {
+    barLen: 4 * BEAT,
+    bar(k) {
+      const evs = [], c = (bar0 + k) % 4, push = (t, kind, extra) => evs.push(Object.assign({ t, kind }, extra));
+      wildBed(push, 0, c, 4 * BEAT - 0.02, 1800, 0.85, (bar0 + k) % 2 === 1);
+      for (let beat = 0; beat < 4; beat++) wildEdm(push, beat * BEAT, beat, c, 1, (bar0 + k) % 2 === 0, BEAT);
+      return glue(evs);
+    }
+  };
 }

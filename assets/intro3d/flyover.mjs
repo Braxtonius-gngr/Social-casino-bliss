@@ -11,7 +11,7 @@
 // (fetched the first time this plays); everything after the gleam is built
 // here; the music is tracks.mjs's.
 
-import { wildBeat } from './tracks.mjs';
+import { wildBeat, wildGroove } from './tracks.mjs';
 
 const TAU = Math.PI * 2, DEG = Math.PI / 180;
 const clamp01 = x => Math.min(Math.max(x, 0), 1);
@@ -728,7 +728,10 @@ export async function makeGame(ctx) {
   // build from the throw, the drop on the crash zoom, the biggest hit on the
   // title. (Real seconds, on the grid set with the plan: the music keeps its
   // time through the slow motion.)
-  sfx.push(...wildBeat({ at, BEAT, first: -Math.ceil(Rs / BEAT), drop: bz, title: nb, end: Rw(T.end) + 2, build: Rw(T.whip) }));
+  // (the shot's own music runs to the first bar after its end; from there
+  // the intro loops the groove on - see groove, below)
+  const G = bz + 4 * Math.ceil((Rw(T.end) - at(bz)) / (4 * BEAT));
+  sfx.push(...wildBeat({ at, BEAT, first: -Math.ceil(Rs / BEAT), drop: bz, title: nb, end: at(G), build: Rw(T.whip) }));
   sfx.sort((a, b) => a.t - b.t);
 
   const warmAt = [Rw(T.swap) + 0.05, Rw(T.jet), Rw(T.gold[1]), Rw(T.dive[1]) + 0.1];
@@ -741,6 +744,8 @@ export async function makeGame(ctx) {
   };
   return {
     plan, camera, gleamAt, shakeAt, stage, callAt, sfx, warmAt, dispose,
+    // (the music carried on past the shot: from the bar its own ends on)
+    groove: Object.assign(wildGroove({ BEAT, bar0: (G - bz) / 4 }), { from: at(G) }),
     tierNames: TIER_NAMES,
     moments: { whip: Rw(T.whip), zoom: Rw(T.zoom[0] + 0.3), over: Rw(T.over), swap: Rw(T.swap), jet: Rw(T.jet), rain: Rw(T.rain[0] + 0.5), down: Rw(T.down), gold: Rw(T.gold[1]), dive: Rw(T.dive[0] + 0.8), under: Rw(T.dive[1] + 0.1), call: Rw(T.call + 0.4), reveal: plan.revealReal, end: plan.totalReal },
     pieces: { photo: photo.card, jet, sea, bills }

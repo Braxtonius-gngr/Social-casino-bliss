@@ -778,6 +778,10 @@
         <input type="checkbox" id="settingHideCollected" onchange="toggleHideCollected()" />
       </div>
       <div class="toggle-row">
+        <span style="color:#fff;">Keep the intro's music playing<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Off: the beat rides onto the table for a few bars, then fades</span></span>
+        <input type="checkbox" id="settingMusicStays" onchange="setMusicStays(this.checked)" />
+      </div>
+      <div class="toggle-row">
         <span style="color:#fff;">Compact platform list<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Show more platforms with less scrolling</span></span>
         <input type="checkbox" id="settingDenseToggle" onchange="setDenseFromSettings(this.checked)" />
       </div>
@@ -3214,6 +3218,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('settingLandingMode').value = rollLandingMode();
       document.getElementById('settingHideCollected').checked = localStorage.getItem('almanac_hide_collected') === 'true';
       document.getElementById('settingDenseToggle').checked = document.body.classList.contains('dense');
+      document.getElementById('settingMusicStays').checked = musicStays();
       renderThemeUI();
       renderFeltUI();
       renderTrimUI();
@@ -5520,6 +5525,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           felt: shotFelt,
           trim: shotTrim,
           sound: !direct && soundPref !== 'off',
+          musicStays: musicStays(),
           onReveal: () => screen.classList.add('roll-popped'),
           onEnd: end,
           onSoundChange: on => { try { localStorage.setItem(ROLL_SOUND_KEY, on ? 'on' : 'off'); } catch (e) { /* private mode */ } }
@@ -5533,7 +5539,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       clearTimeout(timer);
       screen.classList.remove('r3-loading');
       screen.removeEventListener('pointerdown', skipWhileLoading);
-      window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; window.rollIntroSetFelt = null; window.rollIntroSetTrim = null; };
+      window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; window.rollIntroSetFelt = null; window.rollIntroSetTrim = null; window.rollIntroMusic = null; };
+      window.rollIntroMusic = api.music || null;
       window.rollIntroSetFelt = id => { if (api && api.setFelt) { api.setFelt(id); if (game === 'dice') document.documentElement.setAttribute('data-felt', id); } };
       window.rollIntroSetTrim = id => { if (api && api.setTrim) api.setTrim(id); };
       if (direct) {
@@ -6856,6 +6863,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const off = pref === 'off' || (pref === 'system' && osWantsReducedMotion());
       document.documentElement.setAttribute('data-motion', off ? 'off' : 'on');
       return !off;
+    }
+
+    // The intro's music carried on past its shot (a game with a groove: the
+    // flyover's): by default a few bars onto the table and faded; kept
+    // playing, looped, when this is on.
+    const MUSIC_STAYS_KEY = 'almanac_music_stays';
+    function musicStays() { try { return localStorage.getItem(MUSIC_STAYS_KEY) === 'on'; } catch (e) { return false; } }
+    function setMusicStays(on) {
+      try { localStorage.setItem(MUSIC_STAYS_KEY, on ? 'on' : 'off'); } catch (e) { /* private mode */ }
+      if (window.rollIntroMusic) window.rollIntroMusic.stay(on);
     }
 
     function setMotionPref(v) {
@@ -8852,7 +8869,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v154';
+    const APP_BUILD = 'almanac-v156';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
