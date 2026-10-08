@@ -390,7 +390,7 @@ export async function makeGame(ctx) {
   // nap pressed flatter, or at a low angle it reads as water)
   table.felt.normalScale.multiplyScalar(0.55);
   // (black baize lifted a step, so the cloth holds a tone the light can find)
-  table.felt.color.setHex(tier === 'vault' ? 0x22170f : 0x131318);
+  table.felt.color.setHex(tier === 'vault' ? 0x2a1c12 : 0x1d1d26);
   // (and its nap: baize is brushed one way, so it shades in long soft
   // strokes - lighter where the pile lies toward the lamp, darker where it
   // lies away, a few worn paths where hands have swept it - which the
@@ -1316,9 +1316,9 @@ export async function makeGame(ctx) {
     // (a broad warm fill from the same side: the pool is for the cards, and
     // this one spreads over the felt and the rail, so the table itself is
     // gold in the payout and not a black field with a bright spot on it)
-    goldFill = new THREE.SpotLight(0xffb347, 0, 170, 0.85, 1, 2);
-    goldFill.position.copy(toWorld(V(0, 56, 30)));
-    goldFill.target.position.copy(toWorld(V(0, 0, 8)));
+    goldFill = new THREE.SpotLight(0xffb347, 0, 0, 1.05, 1, 0);
+    goldFill.position.copy(toWorld(V(0, 60, 20)));
+    goldFill.target.position.copy(toWorld(V(0, 0, 4)));
     scene.add(goldFill, goldFill.target);
     // (the winnings: seven chips poured on the cloth beside the bet, one
     // after another, each dropping, bouncing short and settling with a
@@ -1576,7 +1576,7 @@ export async function makeGame(ctx) {
         goldLamp.position.copy(toWorld(V(-sx * 0.55, 40, 22)));
         goldLamp.target.position.copy(toWorld(V(-sx, 0, burst < 2.6 ? 26 : 19)));
       }
-      if (goldFill) goldFill.intensity = on ? 14000 * smoother(burst / 0.5) * (0.5 + 0.5 * Math.exp(-burst / 3)) * (1 - 0.7 * smoother(clamp01((w - (plan.revealW - 0.5)) / 0.8))) : 0;
+      if (goldFill) goldFill.intensity = on ? 5.5 * smoother(burst / 0.5) * (0.5 + 0.5 * Math.exp(-burst / 3)) * (1 - 0.7 * smoother(clamp01((w - (plan.revealW - 0.5)) / 0.8))) : 0;
       if (payout) { payout.set(on ? burst : -1); payout.expose(on ? smoother(burst / 0.5) : 0); }
       lit = on ? 3.2 * smoother(burst / 0.25) * Math.max(0, 1 - burst / 3.8) : 0;
     }
