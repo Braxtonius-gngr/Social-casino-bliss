@@ -35,6 +35,8 @@ const T = {
   call: 9.3, reveal: 10.55, end: 11.55
 };
 // The sky's world: the sea's surface, the jet's height and its line.
+// (in the photograph, as fractions from its top left: the face, and where the lens pulls back to - the hand)
+const PHOTO_FACE = [0.445, 0.36], PHOTO_HAND = [0.34, 0.56];
 const BAY_Z = -60, SEA = -300, JET_Y = 950, JET_X = 160, JET_Z0 = 2700, JET_Z1 = -2700, JET_W0 = 2.25, JET_W1 = 6.45;
 const jetZ = w => lerp(JET_Z0, JET_Z1, (w - JET_W0) / (JET_W1 - JET_W0));
 // The dice's way down the table: in the air from the thrower's end, a
@@ -81,8 +83,9 @@ export async function makeGame(ctx) {
 
   // ================================================================ the room
   // ---- The photograph: the maker mid-throw, as the shot's first frame - a
-  // card held square in front of the lens, filling it, pushed in slowly; at
-  // the whip it slides away and the table is behind it.
+  // card held square in front of the lens, filling it, close on the face and
+  // pulling back to the throw; at the whip it slides away and the table is
+  // behind it.
   const FOV = (aspect < 0.62 ? 42 : 34) * DEG;
   const photo = await (async () => {
     const res = await fetch(asset('rare/thrower.jpg'), { signal });
@@ -98,11 +101,16 @@ export async function makeGame(ctx) {
     photo.card.visible = out < 1;
     if (!photo.card.visible) return;
     const d = lens.aim.clone().sub(lens.eye).normalize(), D = 10, h = 2 * D * Math.tan(FOV / 2), wv = h * aspect;
-    // (cover the screen, and a slow push in)
-    const s = (aspect < photo.ar ? h : wv / photo.ar) * (1.02 + 0.07 * smoother(w / T.whip));
-    photo.card.scale.set(s * photo.ar, s, 1);
+    // (cover the screen: tight on the face at first, pulling back - gathering
+    // pace, as a throw does - to the outstretched hand as the dice leave it)
+    const e = smoother((w - 0.12) / (T.whip - 0.2)), k = lerp(2.5, 1.02, e * e * (2 - e));
+    const s = (aspect < photo.ar ? h : wv / photo.ar) * k, cw = s * photo.ar;
+    photo.card.scale.set(cw, s, 1);
+    // (the point of the photograph at the screen's middle: the face, then toward the hand - kept inside the picture)
+    const hu = Math.min(0.5, wv / (2 * cw)), hv = Math.min(0.5, h / (2 * s));
+    const fu = Math.max(hu, Math.min(1 - hu, lerp(PHOTO_FACE[0], PHOTO_HAND[0], e))), fv = Math.max(hv, Math.min(1 - hv, lerp(PHOTO_FACE[1], PHOTO_HAND[1], e)));
     const right = V().crossVectors(d, V(0, 1, 0)).normalize(), up = V().crossVectors(right, d);
-    photo.card.position.copy(lens.eye).addScaledVector(d, D).addScaledVector(right, -out * wv * 1.25).addScaledVector(up, 0.06 * out * h);
+    photo.card.position.copy(lens.eye).addScaledVector(d, D).addScaledVector(right, -(fu - 0.5) * cw - out * wv * 1.25).addScaledVector(up, -(0.5 - fv) * s + 0.06 * out * h);
     photo.card.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, d.clone().negate()));
     photo.m.opacity = 1 - 0.3 * out;
   };
@@ -435,7 +443,7 @@ export async function makeGame(ctx) {
         float x = uT - uS[i].z; if (x <= 0.0) continue;
         float R = 40.0 * x + 950.0 * x * x, soft = 40.0 + 0.1 * R, d = length(q - uS[i].xy);
         g = max(g, 1.0 - smoothstep(R - soft, R, d));
-        edge = max(edge, exp(-pow((d - R + soft * 0.5) / (soft * 0.5), 2.0)));
+        float k = (d - R + soft * 0.5) / (soft * 0.5); edge = max(edge, exp(-k * k));
       }
       edge *= clamp(2.0 * (1.0 - g), 0.0, 1.0);
       return g;
@@ -694,7 +702,7 @@ export async function makeGame(ctx) {
   // reverse cymbal up while the belly's doors slide shut, and as they meet
   // on the DRO the beat drops: an 808 under everything, the kick, a clap
   // and snare on two and four, hats with rolls, the voice still singing
-  // over it, clearer now. The biggest hit of all on the title; then it rides
+  // over it, clearer now, and chopped into stabs. The biggest hit of all on the title; then it rides
   // out. (Real seconds, on the grid set with the plan: the music keeps its
   // time through the slow motion.)
   {
@@ -707,12 +715,12 @@ export async function makeGame(ctx) {
     const ci = b => (((Math.floor((b - D) / 4) % 4) + 4) % 4);
     // the voice: "ahh... ahh... ohh... ahh", over and over, every two bars from the
     // first frame - muffled before the drop, clearer after
-    const phrase = [[0, 1.5, 72, 'ah'], [1.5, 1.5, 68, 'ah'], [3, 2.6, 67, 'oh', 65], [6, 1.9, 72, 'ah', 70]];
+    const phrase = [[0, 1.5, 60, 'ah'], [1.5, 1.5, 56, 'ah'], [3, 2.6, 55, 'oh', 53], [6, 1.9, 60, 'ah', 58]];
     for (let p0 = D - 8 * Math.ceil((D - first) / 8); at(p0) < end; p0 += 8) {
       phrase.forEach(([o, d, m, v, m2]) => {
         const t = at(p0 + o), pre = t < Rd - 0.05;
         if (t + d * BEAT < 0.15) return;
-        push(Math.max(0.05, t), 'vox', { f: n(m), f2: m2 && n(m2), v, v2: v === 'oh' ? 'oh' : 'ah', dur: d * BEAT - 0.05, cut: pre ? 900 : 2000, lvl: (pre ? 0.55 : 0.5) * lvl(t) });
+        push(Math.max(0.05, t), 'vox', { f: n(m), f2: m2 && n(m2), v, v2: v === 'oh' ? 'oh' : 'ah', dur: d * BEAT - 0.05, cut: pre ? 900 : 2000, lvl: (pre ? 0.8 : 0.55) * lvl(t) });
       });
     }
     // (the pad under it, a bar each)
@@ -728,13 +736,17 @@ export async function makeGame(ctx) {
       if (beat === 0) push(t, 'kick', { lvl: L, dust: true });
       if (beat === 2) push(t + 2 * S16, 'kick', { lvl: L * 0.8, dust: true });
       if (beat === 1 || beat === 3) { push(t, 'clap', { lvl: L }); push(t, 'tsnare', { lvl: L * 0.6 }); }
-      // (the hats: eighths, a triplet roll closing every other bar)
-      for (let k = 0; k < 4; k += 2) {
-        if (beat === 3 && k === 2 && ((b - D) % 8) === 7) { for (let r = 0; r < 6; r++) push(t + k * S16 + r * S16 / 3, 'hat', { lvl: L * (0.4 + 0.08 * r) }); continue; }
-        push(t + k * S16, 'hat', { lvl: L * (k ? 0.45 : 0.7) });
+      // (the hats: sixteenths, leaning on the beat; an open hat on the and
+      // of four; a triplet roll closing every other bar)
+      for (let k = 0; k < 4; k++) {
+        if (beat === 3 && k >= 2 && ((b - D) % 8) === 7) { if (k === 2) for (let r = 0; r < 6; r++) push(t + k * S16 + r * S16 / 3, 'hat', { lvl: L * (0.4 + 0.08 * r) }); continue; }
+        if (beat === 3 && k === 2) { push(t + k * S16, 'hat', { lvl: L * 0.7, open: true }); continue; }
+        push(t + k * S16, 'hat', { lvl: L * [0.75, 0.3, 0.5, 0.35][k] });
       }
+      // (the voice chopped: two short stabs a bar, off the beat, a chord tone up high)
+      if (beat === 1 || beat === 3) push(t + (beat === 1 ? 2 : 3) * S16, 'vox', { f: n(chords[c][beat === 1 ? 2 : 3]), v: 'ah', dur: S16 * 1.4, cut: 2600, lvl: L * 0.45 });
       // (the 808: the bar's root, long; a push on the and of three, sliding into the next bar)
-      if (beat === 0 && !hit) push(t, 'b808', { f: n(roots[c]), dur: BEAT * 2.4, lvl: L });
+      if (beat === 0 && !hit) push(t, 'b808', { f: n(roots[c]), dur: BEAT * 2.4, lvl: L * 1.1 });
       if (beat === 2) push(t + 2 * S16, 'b808', { f: n(roots[c]), f2: n(roots[(c + 1) % 4]), dur: BEAT * 1.5, lvl: L * 0.85 });
     }
     // the drop, as the doors meet
@@ -743,7 +755,7 @@ export async function makeGame(ctx) {
     sfx.push({ t: at(nb - 2), kind: 'revcym', dur: BEAT * 2, lvl: 1.1 });
     sfx.push({ t: Rc, kind: 'crash', lvl: 1 }, { t: Rc, kind: 'b808', f: n(29), dur: BEAT * 3.5, lvl: 1.25 });
     sfx.push({ t: Rc, kind: 'pad', f: [41, 53, 60, 63, 68, 72].map(n), dur: BEAT * 4, lvl: 1 });
-    sfx.push({ t: Rc, kind: 'vox', f: n(77), f2: n(75), v: 'ah', v2: 'oh', dur: BEAT * 3, cut: 2600, lvl: 0.55 });
+    sfx.push({ t: Rc, kind: 'vox', f: n(65), f2: n(63), v: 'ah', v2: 'oh', dur: BEAT * 3, cut: 2400, lvl: 0.6 });
     // (every voice of the beat through its own glue)
     sfx.forEach(e => { if (!['jet', 'whoosh', 'felt', 'wall'].includes(e.kind)) e.band = true; });
     sfx.sort((a, b) => a.t - b.t);

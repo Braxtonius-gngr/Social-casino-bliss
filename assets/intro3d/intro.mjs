@@ -1017,31 +1017,35 @@ class Sound {
       // kick, a clap and a snare, hats, a gliding 808, a reverse cymbal
       // drawing into the drop)
       case 'vox': {
-        // (a voice on a vowel: a buzz with a singer's vibrato and a breath
-        // through the vowel's three formants - 'ah' or 'oh', or moving from
-        // one to the other - muffled, and thrown into the room)
+        // (voices on a vowel, like a sampled choir pitched down: three
+        // singers a touch apart in pitch and time, each a buzz with its own
+        // slow-starting vibrato and a breath, through the vowel's formants -
+        // 'ah' or 'oh', or moving from one to the other - with a tape's slow
+        // wow on them all, muffled, and thrown into the room)
         const l = ev.lvl == null ? 1 : ev.lvl, c = this.ctx, d = ev.dur, end = when + d;
-        const V = { ah: [[800, 1], [1150, 0.5], [2900, 0.16]], oh: [[450, 1], [800, 0.45], [2830, 0.07]] };
+        const V = { ah: [[730, 1], [1090, 0.5], [2440, 0.14], [3400, 0.05]], oh: [[500, 1], [820, 0.42], [2500, 0.06], [3300, 0.03]] };
         const a = V[ev.v || 'ah'], b = V[ev.v2 || ev.v || 'ah'];
-        this.wet(0.8, () => {
-          const src = c.createGain(), lp = c.createBiquadFilter(), env = c.createGain();
-          lp.type = 'lowpass'; lp.frequency.value = ev.cut || 1400; lp.Q.value = 0.5;
-          env.gain.setValueAtTime(0, when); env.gain.linearRampToValueAtTime(0.9 * l, when + 0.14); env.gain.setValueAtTime(0.9 * l, end - 0.08); env.gain.linearRampToValueAtTime(0, end + 0.3);
-          const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = 5.2; lg.gain.setValueAtTime(0, when); lg.gain.linearRampToValueAtTime(ev.f * 0.014, when + 0.45);
-          lfo.connect(lg); lfo.start(when); lfo.stop(end + 0.4);
-          [-7, 7].forEach(dt => {
-            const o = c.createOscillator(); o.type = 'sawtooth'; o.detune.value = dt;
-            o.frequency.setValueAtTime(ev.f * 0.95, when); o.frequency.exponentialRampToValueAtTime(ev.f, when + 0.1);
+        this.wet(0.75, () => {
+          const src = c.createGain(), lp = c.createBiquadFilter(), hp = c.createBiquadFilter(), env = c.createGain();
+          lp.type = 'lowpass'; lp.frequency.value = ev.cut || 1400; lp.Q.value = 0.4; hp.type = 'highpass'; hp.frequency.value = 140;
+          env.gain.setValueAtTime(0, when); env.gain.linearRampToValueAtTime(0.8 * l, when + Math.min(0.18, d * 0.3)); env.gain.setValueAtTime(0.8 * l, end - 0.06); env.gain.linearRampToValueAtTime(0, end + Math.min(0.35, d * 0.5));
+          const wow = c.createOscillator(), wg = c.createGain(); wow.frequency.value = 0.55; wg.gain.value = ev.f * 0.004; wow.connect(wg); wow.start(when); wow.stop(end + 0.5);
+          [[-11, 0, 5.1], [9, 0.022, 4.7], [2, 0.041, 5.5]].forEach(([dt, lag, rate], i) => {
+            const t0 = when + lag, o = c.createOscillator(), og = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
+            o.type = 'sawtooth'; o.detune.value = dt; og.gain.value = i ? 0.3 : 0.4;
+            o.frequency.setValueAtTime(ev.f * 0.94, t0); o.frequency.exponentialRampToValueAtTime(ev.f, t0 + 0.12);
             if (ev.f2) { o.frequency.setValueAtTime(ev.f, end - d * 0.45); o.frequency.exponentialRampToValueAtTime(ev.f2, end); }
-            lg.connect(o.frequency); o.connect(src); o.start(when); o.stop(end + 0.4);
+            lfo.frequency.value = rate; lg.gain.setValueAtTime(0, t0); lg.gain.linearRampToValueAtTime(ev.f * 0.012, t0 + Math.min(0.6, d * 0.6));
+            lfo.connect(lg); lg.connect(o.frequency); wg.connect(o.frequency); o.connect(og); og.connect(src);
+            o.start(t0); o.stop(end + 0.5); lfo.start(t0); lfo.stop(end + 0.5);
           });
-          const br = c.createBufferSource(), bg = c.createGain(); br.buffer = this.noise; br.loop = true; bg.gain.value = 0.35; br.connect(bg); bg.connect(src); br.start(when); br.stop(end + 0.4);
+          const br = c.createBufferSource(), bg = c.createGain(); br.buffer = this.noise; br.loop = true; bg.gain.value = 0.22; br.connect(bg); bg.connect(src); br.start(when); br.stop(end + 0.5);
           a.forEach(([F, A], i) => {
             const bp = c.createBiquadFilter(), fg = c.createGain();
-            bp.type = 'bandpass'; bp.Q.value = F / 90; bp.frequency.setValueAtTime(F, when); bp.frequency.linearRampToValueAtTime(b[i][0], end);
-            fg.gain.value = A * 0.5; src.connect(bp); bp.connect(fg); fg.connect(lp);
+            bp.type = 'bandpass'; bp.Q.value = F / 110; bp.frequency.setValueAtTime(F, when); bp.frequency.linearRampToValueAtTime(b[i][0], end);
+            fg.gain.value = A * 0.6; src.connect(bp); bp.connect(fg); fg.connect(hp);
           });
-          lp.connect(env); env.connect(this.out || this.master);
+          hp.connect(lp); lp.connect(env); env.connect(this.out || this.master);
         });
         break;
       }
@@ -1090,7 +1094,7 @@ class Sound {
         // (the 808: a long sine pushed into its pitch, gliding on if it's asked
         // to, a soft overdrive giving it an edge small speakers can hear)
         const l = ev.lvl == null ? 1 : ev.lvl, c = this.ctx, o = c.createOscillator(), sh = c.createWaveShaper(), g = c.createGain(), end = when + ev.dur;
-        if (!this.drive) { const k = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 511.5 - 1; k[i] = Math.tanh(2.6 * x); } this.drive = k; }
+        if (!this.drive) { const k = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 511.5 - 1; k[i] = Math.tanh(3.4 * x); } this.drive = k; }
         sh.curve = this.drive;
         o.type = 'sine'; o.frequency.setValueAtTime(ev.f * 1.9, when); o.frequency.exponentialRampToValueAtTime(ev.f, when + 0.045);
         if (ev.f2 && ev.f2 !== ev.f) { o.frequency.setValueAtTime(ev.f, end - 0.16); o.frequency.exponentialRampToValueAtTime(ev.f2, end); }
