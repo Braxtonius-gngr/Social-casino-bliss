@@ -809,6 +809,42 @@ class Sound {
     o.connect(g); g.connect(this.out || this.master);
     o.start(when); o.stop(when + dur + 0.05);
   }
+  // (the flyover's music: a plate of space and a dub echo the voices can be
+  // sent into, made the first time one asks)
+  wet(amt, play) {
+    const c = this.ctx;
+    if (!this.space) {
+      const n = Math.floor(c.sampleRate * 2.4), ir = c.createBuffer(2, n, c.sampleRate);
+      for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3.2); }
+      this.space = c.createConvolver(); this.space.buffer = ir;
+      const sg = c.createGain(); sg.gain.value = 0.55; this.space.connect(sg); sg.connect(this.master);
+      this.echo = c.createDelay(1.5); this.echo.delayTime.value = 0.36;
+      const fb = c.createGain(), lp = c.createBiquadFilter(), eg = c.createGain();
+      fb.gain.value = 0.34; lp.type = 'lowpass'; lp.frequency.value = 2200; eg.gain.value = 0.5;
+      this.echo.connect(lp); lp.connect(fb); fb.connect(this.echo); lp.connect(eg); eg.connect(this.master);
+    }
+    const bus = c.createGain(), send = c.createGain();
+    bus.connect(this.master); send.gain.value = amt; bus.connect(send); send.connect(this.space); send.connect(this.echo);
+    const prev = this.out; this.out = bus;
+    try { play(); } finally { this.out = prev; }
+  }
+  // (a voice of detuned saws through a filter that opens and closes: the
+  // brass section's chords and the pad's)
+  section(when, freqs, gain, dur, { att = 0.025, rel = 0.18, cut0 = 500, cut1 = 3200, cutS = 1500, scoop = 0.97, det = [-9, 0, 9] } = {}) {
+    const c = this.ctx;
+    freqs.forEach((f, i) => {
+      const lp = c.createBiquadFilter(), g = c.createGain(), t0 = when + i * 0.006;
+      lp.type = 'lowpass'; lp.Q.value = 0.8;
+      lp.frequency.setValueAtTime(cut0, t0); lp.frequency.linearRampToValueAtTime(cut1, t0 + att + 0.05); lp.frequency.setTargetAtTime(cutS, t0 + att + 0.05, 0.15);
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(gain / freqs.length, t0 + att); g.gain.setValueAtTime(gain / freqs.length, t0 + dur); g.gain.linearRampToValueAtTime(0, t0 + dur + rel);
+      lp.connect(g); g.connect(this.out || this.master);
+      det.forEach(d => {
+        const o = c.createOscillator(); o.type = 'sawtooth'; o.detune.value = d;
+        o.frequency.setValueAtTime(f * scoop, t0); o.frequency.exponentialRampToValueAtTime(f, t0 + 0.06);
+        o.connect(lp); o.start(t0); o.stop(t0 + dur + rel + 0.05);
+      });
+    });
+  }
   ambience(start) {
     if (this.bed) return;
     const c = this.ctx, src = c.createBufferSource(), lp = c.createBiquadFilter(), g = c.createGain();
@@ -962,6 +998,61 @@ class Sound {
         o.type = 'sawtooth'; o.frequency.setValueAtTime(2100, when); o.frequency.linearRampToValueAtTime(1900, pk - 0.2); o.frequency.exponentialRampToValueAtTime(1250, pk + 0.6);
         og.gain.setValueAtTime(0.0001, when); og.gain.exponentialRampToValueAtTime(0.012, pk - 0.4); og.gain.exponentialRampToValueAtTime(0.0001, pk + 2.2);
         o.connect(og); og.connect(this.out || this.master); o.start(when); o.stop(pk + 2.3);
+        break;
+      }
+      // (the drumline and the brass: the marching snare's crack, the tenors'
+      // pitched toms, the bass drum, the cymbal, the section's chords - and
+      // the space under them: a pad, a sub, a clap thrown into the echo)
+      case 'msnare': {
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        this.burst(when, 'bandpass', 4300, 1.3, 0.17 * l, 0.075, 1.2);
+        this.burst(when, 'highpass', 7200, 0.8, 0.08 * l, 0.04);
+        this.tone(when, 440, 0.07 * l, 0.05, 'triangle', 380);
+        break;
+      }
+      case 'tenor': {
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        this.tone(when, ev.f, 0.18 * l, 0.22, 'sine', ev.f * 0.82);
+        this.burst(when, 'lowpass', 1200, 0.8, 0.12 * l, 0.03);
+        break;
+      }
+      case 'mbass': {
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        this.tone(when, 82, 0.42 * l, 0.45, 'sine', 48);
+        this.burst(when, 'lowpass', 400, 0.7, 0.3 * l, 0.06);
+        break;
+      }
+      case 'crash': {
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        this.wet(0.4, () => { this.burst(when, 'highpass', 5200, 0.6, 0.2 * l, 1.9, 1.3); this.burst(when, 'bandpass', 9000, 2, 0.08 * l, 1.2, 1.6); });
+        break;
+      }
+      case 'clap': {
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        this.wet(0.5, () => { [0, 0.011, 0.023].forEach((d, i) => this.burst(when + d, 'bandpass', 1500, 1.1, (i < 2 ? 0.14 : 0.3) * l, i < 2 ? 0.02 : 0.16)); this.tone(when, 190, 0.1 * l, 0.1, 'triangle', 150); });
+        break;
+      }
+      case 'brass': {
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        this.wet(0.22, () => this.section(when, ev.f, 0.3 * l, ev.dur, { att: ev.swell ? ev.dur * 0.85 : 0.025, cut0: ev.swell ? 300 : 500 }));
+        break;
+      }
+      case 'pad': {
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        this.wet(0.7, () => this.section(when, ev.f, 0.16 * l, ev.dur, { att: 0.7, rel: 1.2, cut0: 300, cut1: 1100, cutS: 900, scoop: 1, det: [-11, 11] }));
+        break;
+      }
+      case 'sub': {
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        const c = this.ctx, o = c.createOscillator(), g = c.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(ev.f, when); if (ev.f2) o.frequency.exponentialRampToValueAtTime(ev.f2, when + ev.dur);
+        g.gain.setValueAtTime(0, when); g.gain.linearRampToValueAtTime(0.22 * l, when + 0.02); g.gain.setValueAtTime(0.22 * l, when + ev.dur - 0.08); g.gain.linearRampToValueAtTime(0, when + ev.dur);
+        o.connect(g); g.connect(this.out || this.master); o.start(when); o.stop(when + ev.dur + 0.05);
+        break;
+      }
+      case 'rim': {
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        this.wet(0.6, () => { this.burst(when, 'bandpass', 2600, 4, 0.16 * l, 0.02); this.tone(when, 1700, 0.05 * l, 0.03, 'triangle'); });
         break;
       }
       case 'kick': {
