@@ -1453,11 +1453,7 @@ export async function makeGame(ctx) {
     // its chips take the top of the screen, above the page's card, and
     // the felt's bet and its rim the bottom. One that still has its cards
     // - the vault's - keeps them below the card's print, as before)
-    const END = tall ? (plan.sweep || tier === 'vault' ? [0, 100, -26, 0, 0, 40] : [0, 70, -48, 0, 10, 68.5]) : [-45, 54 * W2, -18, -45, 2, 32];
-    // (The Black Jack holds its own close framing, over the cards and the
-    // gold, until the end card is about to come up, then draws back to the
-    // high one)
-    if (tier === 'vault' && tall) push([Rw(plan.revealW) - 0.7, 0, 70, -48, 0, 10, 68.5]);
+    const END = tall ? (plan.sweep ? [0, 100, -26, 0, 0, 40] : [0, 70, -48, 0, 10, 73]) : [-45, 54 * W2, -18, -45, 2, 32];
     push([Rw(plan.revealW) + 0.15, ...END]);
     push([Rw(plan.endW) + 0.3, ...END]);
   }
