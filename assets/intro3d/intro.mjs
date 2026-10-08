@@ -824,7 +824,7 @@ class Sound {
       this.echo.connect(lp); lp.connect(fb); fb.connect(this.echo); lp.connect(eg); eg.connect(this.master);
     }
     const bus = c.createGain(), send = c.createGain();
-    bus.connect(this.master); send.gain.value = amt; bus.connect(send); send.connect(this.space); send.connect(this.echo);
+    bus.connect(this.out || this.master); send.gain.value = amt; bus.connect(send); send.connect(this.space); send.connect(this.echo);
     const prev = this.out; this.out = bus;
     try { play(); } finally { this.out = prev; }
   }
@@ -858,6 +858,19 @@ class Sound {
   cut(when) { this.fade(when, 0.012); }
   fade(when, tc) { if (this.bed) { this.bed.g.gain.cancelScheduledValues(when); this.bed.g.gain.setTargetAtTime(0, when, tc); } }
   play(ev, when, slow) {
+    // (a band's voices go through their own glue: a compressor that keeps
+    // the hits and the full ensemble from clipping, so the shot's other
+    // sounds are untouched)
+    if (ev.band && !this.out) {
+      if (!this.bandBus) {
+        const c = this.ctx, comp = c.createDynamicsCompressor(), g = c.createGain();
+        comp.threshold.value = -14; comp.knee.value = 8; comp.ratio.value = 6; comp.attack.value = 0.004; comp.release.value = 0.18;
+        g.gain.value = 0.9; comp.connect(g); g.connect(this.master); this.bandBus = comp;
+      }
+      this.out = this.bandBus;
+      try { this.play(Object.assign({}, ev, { band: false }), when, slow); } finally { this.out = null; }
+      return;
+    }
     // slow < 1: the moment is in slow motion, so the sound is too.
     const k = slow < 0.6 ? 0.5 : 1;
     const v = Math.min(1, ev.speed / 260);
@@ -991,7 +1004,7 @@ class Sound {
         src.buffer = this.noise; src.loop = true; src.playbackRate.value = 0.7;
         lp.type = 'lowpass'; lp.Q.value = 0.7;
         lp.frequency.setValueAtTime(300, when); lp.frequency.exponentialRampToValueAtTime(2600, pk); lp.frequency.exponentialRampToValueAtTime(500, pk + 2.5);
-        g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(0.05, pk - 2); g.gain.exponentialRampToValueAtTime(0.75, pk); g.gain.exponentialRampToValueAtTime(0.12, pk + 1.6); g.gain.exponentialRampToValueAtTime(0.0001, end);
+        g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(0.05, pk - 2); g.gain.exponentialRampToValueAtTime(0.5, pk); g.gain.exponentialRampToValueAtTime(0.1, pk + 1.6); g.gain.exponentialRampToValueAtTime(0.0001, end);
         src.connect(lp); lp.connect(g); g.connect(this.out || this.master);
         src.start(when); src.stop(end + 0.05);
         const o = c.createOscillator(), og = c.createGain();
@@ -1034,7 +1047,17 @@ class Sound {
       }
       case 'brass': {
         const l = ev.lvl == null ? 1 : ev.lvl;
-        this.wet(0.22, () => this.section(when, ev.f, 0.3 * l, ev.dur, { att: ev.swell ? ev.dur * 0.85 : 0.025, cut0: ev.swell ? 300 : 500 }));
+        this.wet(0.22, () => this.section(when, ev.f, 0.3 * l, ev.dur, { att: ev.swell ? ev.dur * 0.85 : 0.02, cut0: ev.swell ? 300 : 600, cut1: ev.bright ? 5200 : 3400, cutS: ev.bright ? 2400 : 1500 }));
+        break;
+      }
+      case 'tuba': {
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        this.section(when, [ev.f], 0.34 * l, ev.dur, { att: 0.02, rel: 0.08, cut0: 300, cut1: 1300, cutS: 700, scoop: 0.95, det: [-5, 5] });
+        break;
+      }
+      case 'choke': {
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        this.burst(when, 'highpass', 5200, 0.6, 0.22 * l, 0.16, 1.3);
         break;
       }
       case 'pad': {
