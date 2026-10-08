@@ -169,16 +169,10 @@ export function wildBeat({ at, BEAT, first, drop: D, back: P = D, title: nb, end
   // the drop, to the end
   for (let b = D; at(b) < end; b++) {
     const t = at(b), beat = (b - D) % 4, bar = Math.floor((b - D) / 4), c = ci(b), L = 0.85 + 0.15 * smoother((t - Rd) / (Rc - Rd));
-    const edm = b - P >= TRAP && b > nb - 4 || b > nb;
-    // (under the dive's build: the kick on every beat, the hats running)
-    if (b >= nb - 4 && b <= nb) {
-      if (b < nb) {
-        const u = (b - nb + 4) / 4;
-        push(t, 'kick', { lvl: L * (0.8 + 0.3 * u) });
-        for (let k = 0; k < 4; k++) push(t + k * S16, 'hat', { lvl: L * (0.3 + 0.3 * u) });
-      }
-      continue;
-    }
+    const edm = b - P >= TRAP && b >= nb - 2 || b > nb;
+    // (the title's beat is its own hit, below; under the dive's build the
+    // beat runs on - thinned to the roll alone, it read as the music dropping out)
+    if (b === nb) continue;
     if (!edm) {
       // (the trap: DOOOM on one... the tap on three, a second boom on its and... "teh top ti top" on four -
       // its bars counted from where it comes back)

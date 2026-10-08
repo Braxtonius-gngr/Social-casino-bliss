@@ -708,7 +708,11 @@ export async function makeGame(ctx) {
   const callAt = w => { const c = lensAt(w), d = c.aim.clone().sub(c.eye).normalize(); return c.eye.clone().addScaledVector(d, 120).toArray(); };
 
   // ================================================================ each frame
+  // (the sky's haze cool - a blue-grey sea to the horizon - until the gold
+  // spreads, and warm with it: warm from the start, it read the far water
+  // as gold before any money had landed)
   const underCol = new THREE.Color(0xc8861e), skyFog = new THREE.FogExp2(0xf6b47a, 0.00034), underFog = new THREE.FogExp2(0xb07418, 0.004);
+  const hazeCool = new THREE.Color(0x9db3c4), hazeWarm = new THREE.Color(0xf6b47a);
   const stage = (t, { w }) => {
     const out = w >= T.swap;
     // (the room and the sky trade places at the gleam's peak)
@@ -719,6 +723,7 @@ export async function makeGame(ctx) {
     const lens = lensAt(w), below = lens.eye.y < SEA + 2;
     placePhoto(w, lens);
     scene.fog = out ? (below ? underFog : skyFog) : fog0;
+    skyFog.color.copy(hazeCool).lerp(hazeWarm, smoother((w - byLand[0].land) / 1.6));
     scene.background = out ? (below ? underCol : null) : bg0;
     scene.environment = out ? skyEnv : env0;
     if (out) {
@@ -728,6 +733,8 @@ export async function makeGame(ctx) {
     }
     // (under the gold: its own light and the bubbles, about the lens)
     under.dome.visible = under.bubbles.visible = out && below;
+    // (the bubbles cleared away as the title's card comes up, off its words and its buttons)
+    under.bubbles.material.opacity = 1 - smoother((w - T.reveal) / 0.6);
     if (out && below) {
       under.dome.position.copy(lens.eye); under.bubbles.position.copy(lens.eye);
       under.poseAt(w);

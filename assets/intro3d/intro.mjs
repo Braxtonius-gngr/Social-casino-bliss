@@ -782,7 +782,9 @@ class Sound {
   // rendered ahead, in createIntro; else the page's own, made here)
   constructor(ctx) {
     const AC = window.AudioContext || window.webkitAudioContext;
-    this.ctx = ctx || (AC ? new AC() : null);
+    // (latencyHint playback: a larger buffer, so the sound does not run dry
+    // while the page is busy - everything it plays is laid down ahead)
+    this.ctx = ctx || (AC ? (() => { try { return new AC({ latencyHint: 'playback' }); } catch (e) { return new AC(); } })() : null);
     if (!this.ctx) return;
     const c = this.ctx;
     this.master = c.createGain(); this.master.gain.value = 0.85; this.master.connect(c.destination);
