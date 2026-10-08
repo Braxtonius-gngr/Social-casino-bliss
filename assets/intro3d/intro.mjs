@@ -1049,6 +1049,21 @@ class Sound {
         });
         break;
       }
+      case 'impact': {
+        // (a cinematic hit: a deep boom falling away, its octave for small
+        // speakers, and a dark rush of air thrown into the room)
+        const l = ev.lvl == null ? 1 : ev.lvl;
+        this.tone(when, 90, 0.5 * l, 1.6, 'sine', 28);
+        this.tone(when, 180, 0.14 * l, 1.0, 'triangle', 60);
+        this.wet(0.7, () => this.burst(when, 'lowpass', 900, 0.7, 0.22 * l, 1.4, 0.8));
+        break;
+      }
+      case 'tom': {
+        // (a big low tom: a thump falling in pitch, its skin's slap, in the room)
+        const l = ev.lvl == null ? 1 : ev.lvl, f = ev.f || 110;
+        this.wet(0.35, () => { this.tone(when, f * 1.5, 0.4 * l, 0.45, 'sine', f); this.burst(when, 'bandpass', f * 6, 1.2, 0.1 * l, 0.05); });
+        break;
+      }
       case 'riser': {
         // (a build's riser: noise through a band swept up, and a saw climbing two octaves, both swelling to the top and cut)
         const l = ev.lvl == null ? 1 : ev.lvl, c = this.ctx, d = ev.dur, end = when + d;

@@ -80,7 +80,9 @@ export function hazeBeat({ at, BEAT, first, drop: D, title: nb, end }) {
 // riser sweeping up, the bed's filter opening, the kick on every beat - through the sky's opening to half a beat of silence
 // and a shout, and the drop: the 808's long boom... a tap, and a second
 // boom... the hats' "teh top ti top" - over and over, until it opens into
-// the EDM: the kick on every beat, the bed opened wide, open hats. A shorter build again under the dive, the same silence, and
+// the EDM: the kick on every beat, the bed opened wide with the choir's
+// upper voices over it, open hats, a crash every other bar. Toms roll down
+// the kit under each build; an impact hits on the drop and the title. A shorter build again under the dive, the same silence, and
 // the biggest boom on the title; then the EDM rides it out.
 export function wildBeat({ at, BEAT, first, drop: D, title: nb, end, build }) {
   const evs = [], S16 = BEAT / 4, Rd = at(D), Rc = at(nb);
@@ -98,6 +100,8 @@ export function wildBeat({ at, BEAT, first, drop: D, title: nb, end, build }) {
       const t = Math.max(0.05, at(s0)), cut = cut0 + (cut1 - cut0) * u * u, lv = lvl0 + (lvl1 - lvl0) * u, dur = len * BEAT - 0.02;
       push(t, 'pad', { f: chords[c].map(m => n(m - 12)).concat(chords[c].map(n)), dur, cut, lvl: lv }, true);
       chords[c].forEach(m => push(t, 'vox', { f: n(m - 12), v: (b - D) % 8 ? 'oh' : 'ah', v2: 'ah', dur, cut: cut * 0.8, lvl: lv * 0.3 }, true));
+      // (opened up, the choir's upper voices over it, an octave higher)
+      if (cut >= 1500) chords[c].forEach(m => push(t, 'vox', { f: n(m), v: 'ah', dur, cut: cut * 1.2, lvl: lv * 0.18 }, true));
     }
   };
   // (the trap's bars after the drop, before the EDM opens up)
@@ -114,6 +118,8 @@ export function wildBeat({ at, BEAT, first, drop: D, title: nb, end, build }) {
       const u = (b - b0) / Math.max(1, b1 - b0), per = u < 0.34 ? 1 : u < 0.6 ? 2 : u < 0.84 ? 4 : 8;
       for (let k = 0; k < per; k++) { const v = (b - b0 + k / per) / (b1 - b0); push(at(b) + k * BEAT / per, 'tsnare', { lvl: top * (0.3 + 0.7 * v * v), dry: true }); }
       if (u > 0.45) push(at(b), 'kick', { lvl: 0.5 + 0.4 * u });
+      // (the toms rolling under it in its second half, falling down the kit each beat)
+      if (u >= 0.5) [0, 1, 2].forEach(k => push(at(b) + k * BEAT / 3, 'tom', { f: [150, 115, 85][k], lvl: top * (0.5 + 0.5 * u) }));
     }
   };
   roll(B0, D, 0.9);
@@ -151,18 +157,19 @@ export function wildBeat({ at, BEAT, first, drop: D, title: nb, end, build }) {
     } else {
       // (the EDM: four on the floor, a clap on two and four, open hats on the offbeat, the 808 on the bar)
       push(t, 'kick', { lvl: L });
+      if (beat === 0 && (b - D) % 8 === 0) push(t, 'crash', { lvl: L * 0.7 });
       if (beat === 1 || beat === 3) push(t, 'clap', { lvl: L * 0.9 });
       push(t + 2 * S16, 'hat', { lvl: L * 0.55, open: true });
       push(t + S16, 'hat', { lvl: L * 0.25 }); push(t + 3 * S16, 'hat', { lvl: L * 0.25 });
       if (beat === 0) push(t, 'b808', { f: n(roots[c]), dur: BEAT * 3.6, lvl: L, long: true });
     }
   }
-  push(Rd, 'crash', { lvl: 1 }, true);
+  push(Rd, 'crash', { lvl: 1 }, true); push(Rd, 'impact', { lvl: 1 }, true);
   // into the title: the build again, shorter, the gap and the shout, and the biggest boom
   roll(nb - 4, nb, 1.25);
   push(at(nb - 4), 'riser', { dur: BEAT * 3.5, lvl: 1.4 });
   push(Rc - BEAT * 0.5, 'vox', { f: n(52), f2: n(55), v: 'ah', dur: BEAT * 0.4, cut: 2600, lvl: 1 }, true);
-  push(Rc, 'crash', { lvl: 1.1 }, true); push(Rc, 'kick', { lvl: 1.1 }, true);
+  push(Rc, 'crash', { lvl: 1.1 }, true); push(Rc, 'kick', { lvl: 1.1 }, true); push(Rc, 'impact', { lvl: 1.2 }, true);
   push(Rc, 'b808', { f: n(28), f2: n(28) * 0.9, dur: BEAT * 4, lvl: 1.3, long: true }, true);
   push(Rc, 'pad', { f: [40, 52, 55, 59, 64].map(n), dur: BEAT * 4, cut: 2200, lvl: 1.1 }, true);
   [40, 47, 52, 55].forEach(m => push(Rc, 'vox', { f: n(m), v: 'ah', v2: 'oh', dur: BEAT * 4, cut: 1800, lvl: 0.35 }, true));
