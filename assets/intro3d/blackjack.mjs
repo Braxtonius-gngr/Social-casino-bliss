@@ -401,6 +401,36 @@ export async function makeGame(ctx) {
   // (the lens comes lower over this cloth than the seat's ever does: its
   // nap pressed flatter, or at a low angle it reads as water)
   table.felt.normalScale.multiplyScalar(0.55);
+  // (and its nap: baize is brushed one way, so it shades in long soft
+  // strokes - lighter where the pile lies toward the lamp, darker where it
+  // lies away, a few worn paths where hands have swept it - which the
+  // lamp's sheen then reads across the whole cloth. A tiling shade map,
+  // multiplied over the cloth's colour (it only darkens, so a light cloth
+  // stays itself), set now so nothing compiles mid-shot.)
+  {
+    const S = 512, cv = document.createElement('canvas'); cv.width = cv.height = S;
+    const c = cv.getContext('2d'); c.fillStyle = '#fff'; c.fillRect(0, 0, S, S);
+    let st = 90210; const r = () => (st = (st * 1664525 + 1013904223) >>> 0) / 4294967296;
+    // (strokes along the table's depth, drawn three times over so they wrap)
+    for (let k = 0; k < 520; k++) {
+      const x = r() * S, y = r() * S, w = 2 + r() * 7, l = 60 + r() * 200, a = 0.012 + r() * 0.045;
+      c.fillStyle = `rgba(0,0,0,${a})`;
+      for (let wx = -S; wx <= S; wx += S) for (let wy = -S; wy <= S; wy += S) c.fillRect(x + wx, y + wy, w, l);
+    }
+    // (the worn paths: broad, faint, a little off the nap's line)
+    for (let k = 0; k < 9; k++) {
+      const x = r() * S, y = r() * S, w = 18 + r() * 40, l = 120 + r() * 200;
+      c.fillStyle = 'rgba(0,0,0,0.05)';
+      for (let wx = -S; wx <= S; wx += S) for (let wy = -S; wy <= S; wy += S) { c.save(); c.translate(x + wx, y + wy); c.rotate((r() - 0.5) * 0.5); c.filter = 'blur(10px)'; c.fillRect(-w / 2, 0, w, l); c.restore(); }
+    }
+    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(0.3, 0.3);
+    table.felt.map = t;
+    // (a tighter, brighter sheen over it: the nap catches the lamp as a
+    // satin, not a haze)
+    table.felt.sheen = 1; table.felt.sheenRoughness = 0.38;
+    table.felt.needsUpdate = true;
+  }
   // the betting circle: its own small stamp, a double ring and four
   // diamonds round it (the same foil: a clone of the lettering's material)
   {
@@ -511,11 +541,15 @@ export async function makeGame(ctx) {
   seat.add(port.group);
   port.set(0);
   // the bet: three chips, stacked a hair off true, in their shadow
+  // (kept: The Black Jack's lamp would blow their gold out to cream, so it
+  // takes their exposure down as it comes up - see the burst)
+  const betChips = [];
   {
     const names = ['ivory', 'oxblood', 'gold'];
     const geo = new THREE.CylinderGeometry(1.95, 1.95, 0.33, 48, 1);
     names.forEach((n, i) => {
       const m = new THREE.Mesh(geo, K.chipMats(n));
+      betChips.push(m);
       m.position.set(SPOT.bet[0] + Math.sin(i * 2.1) * 0.05, 0.165 + i * 0.335, SPOT.bet[1] + Math.cos(i * 1.7) * 0.05);
       m.rotation.y = i * 1.3 + 0.4;
       m.castShadow = true; m.receiveShadow = true;
@@ -1256,7 +1290,9 @@ export async function makeGame(ctx) {
     // (the winnings: seven chips poured on the cloth beside the bet, one
     // after another, each dropping, bouncing short and settling with a
     // little rock - drawn only once the lettering is lit)
-    const names = ['gold', 'ivory', 'oxblood', 'gold', 'ivory', 'oxblood', 'gold'];
+    // (gold, black and oxblood - the gold stays gold under the lamp; ivory
+    // under it was only ever cream)
+    const names = ['gold', 'onyx', 'oxblood', 'gold', 'onyx', 'oxblood', 'gold'];
     const geoP = new THREE.CylinderGeometry(1.95, 1.95, 0.33, 48, 1);
     const pg = new THREE.Group(); pg.visible = false; seat.add(pg);
     const chips = names.map((n, i) => {
@@ -1270,8 +1306,23 @@ export async function makeGame(ctx) {
     const sh = K.contactShadow(3.9, 3.9, 1.95, 0.9);
     sh.position.set(SPOT.bet[0] + 5.6, 0.02, SPOT.bet[1]); sh.visible = false; pg.add(sh);
     const G = 760, DROP = 26;
+    // (the lamp over them is 9000 candela; at full the coin's gold clips to
+    // cream. Held down as it rises - the colour pulled toward a deeper gold
+    // as it dims, so it reads as metal in strong light, not paper - and the
+    // faces given a metal's sharper highlight and the edges their spots)
+    const chipMs = [...betChips, ...chips].flatMap(m => m.material);
+    // (the lamp's glint off a clay chip is the other half of the cream: a
+    // hundred times the room's light on a glossy face. It is taken off the
+    // chip while the lamp is up - the face matte, the colour carrying it -
+    // and handed back after)
+    chipMs.forEach(mm => { mm.userData.r0 = mm.roughness; mm.userData.m0 = mm.metalness; });
+    const expose = k => chipMs.forEach(mm => {
+      mm.color.setRGB(lerp(1, 0.3, k), lerp(1, 0.22, k), lerp(1, 0.1, k));
+      mm.roughness = lerp(mm.userData.r0, 1, k); mm.metalness = lerp(mm.userData.m0, 0, k);
+    });
     payout = {
       geo: geoP,
+      expose,
       set(b) {
         pg.visible = b > 0;
         sh.visible = b > 0.35;
@@ -1498,7 +1549,7 @@ export async function makeGame(ctx) {
         goldLamp.position.copy(toWorld(V(-sx * 0.55, 40, 22)));
         goldLamp.target.position.copy(toWorld(V(-sx, 0, burst < 2.6 ? 26 : 19)));
       }
-      if (payout) payout.set(on ? burst : -1);
+      if (payout) { payout.set(on ? burst : -1); payout.expose(on ? smoother(burst / 0.5) : 0); }
       lit = on ? 3.2 * smoother(burst / 0.25) * Math.max(0, 1 - burst / 3.8) : 0;
     }
     // the light in the machine's circuits: up while it works, brighter as
