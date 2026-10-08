@@ -1925,7 +1925,7 @@ async function buildIntro(opts, undo, teardown) {
   // the groove the same, eight bars of it, looped on its last four (which
   // carry the first four's tails). Not ready in time, or no offline
   // context: the music is made live, as before.
-  let music = null;
+  let music = null, musicReady = null;
   const bandEvs = sfx.filter(e => e.band);
   const prepared = sound && sound.ctx && bandEvs.length && window.OfflineAudioContext ? (async () => {
     const rate = sound.ctx.sampleRate;
@@ -2477,7 +2477,7 @@ async function buildIntro(opts, undo, teardown) {
   // only when the two part - a stall, a skip - so the music keeps its time:
   // mapped afresh each frame, every frame's own jitter put each beat a
   // little early or late, and the music stuttered.)
-  let clock = null;
+  let clock = null, laid = 0;
   // (a rendered buffer played into the sound, through a gain of its own to
   // fade it by; and let go, faded in a moment)
   const playBuf = (buffer, when, offset, loop) => {
@@ -2495,11 +2495,17 @@ async function buildIntro(opts, undo, teardown) {
     const at = s => Math.max(now, clock.ctx + (s - clock.t));
     if (!sound.bed && silenceAt == null) sound.ambience(now);
     if (silenceAt != null && !sound.bed && t < silenceAt) sound.ambience(now);
-    // (the music rendered ahead: its buffer set going at the shot's second)
-    // (and the groove set to follow it on the buffer's own clock, not the
-    // shot's: a frame that falls behind must not leave a gap between them)
-    if (music && !music.src && from < music.main.duration) {
-      const when = at(from), off = Math.max(0, from);
+    // (the music rendered ahead: ready, it takes over from the live music
+    // where that has been laid down to - its buffer set going at that
+    // second - and the groove is set to follow it on the buffer's own
+    // clock, not the shot's: a frame that falls behind must not leave a
+    // gap between them)
+    if (musicReady && !music && (!ride || ride.done === undefined && ride.k === 0 && ride.ctx0 > now)) {
+      music = musicReady;
+      if (ride && !ride.done) { stopRide(); ride = null; }
+    }
+    if (music && !music.src && laid < music.main.duration) {
+      const s0 = Math.max(from, laid), when = at(s0), off = Math.max(0, s0);
       music.src = playBuf(music.main, when, off);
       if (groove && !ride) startRide(when + groove.from - off);
     }
@@ -2508,6 +2514,7 @@ async function buildIntro(opts, undo, teardown) {
       if (ev.t < from - 0.05 || (music && ev.band)) continue;
       sound.play(ev, at(ev.t), ev.rate || 1);
     }
+    laid = Math.max(laid, to);
     if (silenceAt != null && !silenced && to >= silenceAt) { silenced = true; sound.cut(at(silenceAt)); }
     if (groove && !ride && to >= groove.from) startRide(at(groove.from));
   };
@@ -2729,13 +2736,11 @@ async function buildIntro(opts, undo, teardown) {
     for (const tt of at) { render(Math.min(floatEnd, Math.max(0, tt))); await breath(); checkAbort(); }
     canvas.style.visibility = '';
   }
-  // (the music rendered ahead, if it is ready - or nearly: it is waited
-  // on a little, else made live)
-  if (prepared) {
-    const done = await Promise.race([prepared, new Promise(res => setTimeout(() => res(null), 4000))]);
-    checkAbort();
-    if (done && done.main) music = done;
-  }
+  // (the music rendered ahead is not waited on - waited on, it held the
+  // shot's loading a good few seconds on a phone: the shot starts with its
+  // music made live, and the buffer takes over the moment it is ready,
+  // from where the live music has been laid down to)
+  if (prepared) prepared.then(done => { if (done && done.main) musicReady = done; });
   render(0);
   return {
     music: musicApi,

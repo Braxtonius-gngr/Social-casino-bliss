@@ -106,7 +106,8 @@ const wildEdm = (push, t, beat, c, L, crash, BEAT) => {
   if (beat === 1 || beat === 3) push(t, 'clap', { lvl: L * 0.9 });
   push(t + 2 * S16, 'hat', { lvl: L * 0.55, open: true });
   push(t + S16, 'hat', { lvl: L * 0.25 }); push(t + 3 * S16, 'hat', { lvl: L * 0.25 });
-  if (beat === 0) push(t, 'b808', { f: n(WILD_ROOTS[c]), dur: BEAT * 3.6, lvl: L, long: true });
+  // (held right up to the next bar's: shorter, the bar line dropped out on a phone's speaker)
+  if (beat === 0) push(t, 'b808', { f: n(WILD_ROOTS[c]), dur: BEAT * 4.05, lvl: L, long: true });
 };
 
 export function wildBeat({ at, BEAT, first, drop: D, back: P = D, title: nb, end, build }) {

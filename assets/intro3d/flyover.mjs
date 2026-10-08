@@ -766,10 +766,12 @@ export async function makeGame(ctx) {
   // ---- The way out, onto the table (the intro plays it when the seat is
   // taken, before the fly-in): the lens rises up through the gold toward
   // the light, breaks the surface into a gold glare - and behind the glare
-  // the sky and the sea are put away and the room is back, the lens high
-  // under its ceiling, still rising as the glare clears; the fly-in takes
+  // the sky and the sea are put away and the room is back, the lens over
+  // the table where the dice's shot rests, still rising as the glare clears; the fly-in takes
   // it from there.
-  const ROOM_EYE = [V(0, 118, 150), V(0, 140, 128)], ROOM_AIM = V(0, 22, -10);
+  // (the room's float, where the dice's own shot rests before its fly-in:
+  // over the table, under the lamps - higher, the lens was among them)
+  const ROOM_EYE = [V(-44, 65, -41), V(-52, 81, -37)], ROOM_AIM = V(-52, 81, -37).add(V(0.45, -0.85, -0.28).multiplyScalar(100));
   const handoff = (eye0, aim0) => {
     const look = aim0.clone().sub(eye0).setY(0);
     if (look.lengthSq() < 1e-6) look.set(0, 0, -1);
@@ -786,7 +788,7 @@ export async function makeGame(ctx) {
       } else {
         if (!handed) { handed = true; roomBack(); }
         const k = smoother((u - 0.45) / 0.55);
-        eye.copy(ROOM_EYE[0]).lerp(ROOM_EYE[1], k); aim.copy(ROOM_AIM);
+        eye.copy(ROOM_EYE[0]).lerp(ROOM_EYE[1], k); aim.copy(ROOM_AIM).add(eye).sub(ROOM_EYE[1]);
         holdFlare(1 - smoother((u - 0.45) / 0.4), eye, aim, 8);
       }
       return { eye, aim };
