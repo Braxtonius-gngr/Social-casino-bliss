@@ -823,13 +823,14 @@ class Sound {
       fb.gain.value = 0.34; lp.type = 'lowpass'; lp.frequency.value = 2200; eg.gain.value = 0.5;
       this.echo.connect(lp); lp.connect(fb); fb.connect(this.echo); lp.connect(eg); eg.connect(this.master);
     }
+    if (this.echoTime) this.echo.delayTime.value = this.echoTime;
     const bus = c.createGain(), send = c.createGain();
     bus.connect(this.out || this.master); send.gain.value = amt; bus.connect(send); send.connect(this.space); send.connect(this.echo);
     const prev = this.out; this.out = bus;
     try { play(); } finally { this.out = prev; }
   }
   // (a voice of detuned saws through a filter that opens and closes: the
-  // brass section's chords and the pad's)
+  // pad's chords, the tape-stop's)
   section(when, freqs, gain, dur, { att = 0.025, rel = 0.18, cut0 = 500, cut1 = 3200, cutS = 1500, scoop = 0.97, det = [-9, 0, 9] } = {}) {
     const c = this.ctx;
     freqs.forEach((f, i) => {
@@ -1013,103 +1014,114 @@ class Sound {
         o.connect(og); og.connect(this.out || this.master); o.start(when); o.stop(pk + 2.3);
         break;
       }
-      // (the drumline and the brass: the marching snare's crack, the tenors'
-      // pitched toms, the bass drum, the cymbal, the section's chords - and
-      // the space under them: a pad, a sub, a clap thrown into the echo)
-      case 'msnare': {
-        const l = ev.lvl == null ? 1 : ev.lvl;
-        this.burst(when, 'bandpass', 4300, 1.3, 0.17 * l, 0.075, 1.2);
-        this.burst(when, 'highpass', 7200, 0.8, 0.08 * l, 0.04);
-        this.tone(when, 440, 0.07 * l, 0.05, 'triangle', 380);
-        break;
-      }
-      case 'tenor': {
-        const l = ev.lvl == null ? 1 : ev.lvl;
-        this.tone(when, ev.f, 0.18 * l, 0.22, 'sine', ev.f * 0.82);
-        this.burst(when, 'lowpass', 1200, 0.8, 0.12 * l, 0.03);
-        break;
-      }
-      case 'mbass': {
-        const l = ev.lvl == null ? 1 : ev.lvl;
-        this.tone(when, 82, 0.42 * l, 0.45, 'sine', 48);
-        this.burst(when, 'lowpass', 400, 0.7, 0.3 * l, 0.06);
-        break;
-      }
-      case 'crash': {
-        const l = ev.lvl == null ? 1 : ev.lvl;
-        this.wet(0.4, () => { this.burst(when, 'highpass', 5200, 0.6, 0.2 * l, 1.9, 1.3); this.burst(when, 'bandpass', 9000, 2, 0.08 * l, 1.2, 1.6); });
-        break;
-      }
-      case 'clap': {
-        const l = ev.lvl == null ? 1 : ev.lvl;
-        this.wet(0.5, () => { [0, 0.011, 0.023].forEach((d, i) => this.burst(when + d, 'bandpass', 1500, 1.1, (i < 2 ? 0.14 : 0.3) * l, i < 2 ? 0.02 : 0.16)); this.tone(when, 190, 0.1 * l, 0.1, 'triangle', 150); });
-        break;
-      }
-      case 'brass': {
-        const l = ev.lvl == null ? 1 : ev.lvl;
-        this.wet(0.22, () => this.section(when, ev.f, 0.3 * l, ev.dur, { att: ev.swell ? ev.dur * 0.85 : 0.02, cut0: ev.swell ? 300 : 600, cut1: ev.bright ? 5200 : 3400, cutS: ev.bright ? 2400 : 1500 }));
-        break;
-      }
-      case 'tuba': {
-        const l = ev.lvl == null ? 1 : ev.lvl;
-        this.section(when, [ev.f], 0.34 * l, ev.dur, { att: 0.02, rel: 0.08, cut0: 300, cut1: 1300, cutS: 700, scoop: 0.95, det: [-5, 5] });
-        break;
-      }
-      case 'choke': {
-        const l = ev.lvl == null ? 1 : ev.lvl;
-        this.burst(when, 'highpass', 5200, 0.6, 0.22 * l, 0.16, 1.3);
+      // (the flyover's beat - trip-hop, dusty and slow: a record's crackle,
+      // a dreamy pad, an electric piano and a bell in a long echo, a kick, a
+      // snare in a big room, swung hats, a gliding 808 - and its tricks: a
+      // reverse cymbal, a record scratch, a tape stopping)
+      case 'crackle': {
+        // (the record's surface: a low hiss, and pops and ticks at random through it)
+        const l = ev.lvl == null ? 1 : ev.lvl, c = this.ctx, src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(), end = when + ev.dur;
+        src.buffer = this.noise; src.loop = true; src.playbackRate.value = 0.6;
+        f.type = 'bandpass'; f.frequency.value = 3200; f.Q.value = 0.5;
+        g.gain.setValueAtTime(0, when); g.gain.linearRampToValueAtTime(0.012 * l, when + 0.4); g.gain.setValueAtTime(0.012 * l, end - 1); g.gain.linearRampToValueAtTime(0, end);
+        src.connect(f); f.connect(g); g.connect(this.out || this.master); src.start(when); src.stop(end + 0.05);
+        for (let t = when + 0.05; t < end - 0.2; t += 0.02 + Math.random() * 0.16) {
+          const big = Math.random() < 0.12;
+          this.burst(t, 'highpass', big ? 1800 : 4200, 0.7, (big ? 0.07 : 0.025) * l * (0.4 + Math.random()), big ? 0.012 : 0.004);
+        }
         break;
       }
       case 'pad': {
         const l = ev.lvl == null ? 1 : ev.lvl;
-        this.wet(0.7, () => this.section(when, ev.f, 0.16 * l, ev.dur, { att: 0.7, rel: 1.2, cut0: 300, cut1: 1100, cutS: 900, scoop: 1, det: [-11, 11] }));
+        this.wet(0.75, () => this.section(when, ev.f, 0.13 * l, ev.dur, { att: Math.min(0.9, ev.dur * 0.4), rel: 1.4, cut0: 250, cut1: 1100, cutS: 800, scoop: 1, det: [-14, 0, 14] }));
         break;
       }
-      case 'sub': {
+      case 'bell': {
+        // (a bell-like tine: the note and its inharmonic partial, ringing out, into the echo)
         const l = ev.lvl == null ? 1 : ev.lvl;
-        const c = this.ctx, o = c.createOscillator(), g = c.createGain();
-        o.type = 'sine'; o.frequency.setValueAtTime(ev.f, when); if (ev.f2) o.frequency.exponentialRampToValueAtTime(ev.f2, when + ev.dur);
-        g.gain.setValueAtTime(0, when); g.gain.linearRampToValueAtTime(0.22 * l, when + 0.02); g.gain.setValueAtTime(0.22 * l, when + ev.dur - 0.08); g.gain.linearRampToValueAtTime(0, when + ev.dur);
-        o.connect(g); g.connect(this.out || this.master); o.start(when); o.stop(when + ev.dur + 0.05);
+        if (ev.echo) this.echoTime = ev.echo;
+        this.wet(0.85, () => { this.tone(when, ev.f, 0.09 * l, 1.6, 'sine'); this.tone(when, ev.f * 2.76, 0.025 * l, 0.5, 'sine'); this.tone(when, ev.f * 2, 0.02 * l, 0.8, 'triangle'); });
         break;
       }
-      case 'rim': {
+      case 'ep': {
+        // (an electric piano's chord, soft, rolled a touch, with a slow tremolo's sway)
         const l = ev.lvl == null ? 1 : ev.lvl;
-        this.wet(0.6, () => { this.burst(when, 'bandpass', 2600, 4, 0.16 * l, 0.02); this.tone(when, 1700, 0.05 * l, 0.03, 'triangle'); });
+        if (ev.echo) this.echoTime = ev.echo;
+        this.wet(0.5, () => ev.f.forEach((f, i) => {
+          this.tone(when + i * 0.014, f, 0.045 * l, ev.dur, 'sine');
+          this.tone(when + i * 0.014, f * 2, 0.01 * l, ev.dur * 0.35, 'triangle');
+        }));
+        break;
+      }
+      case 'revcym': {
+        // (a cymbal played backwards: its wash swelling up and cut off dead)
+        const l = ev.lvl == null ? 1 : ev.lvl, c = this.ctx, src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(), end = when + ev.dur;
+        src.buffer = this.noise; src.loop = true; src.playbackRate.value = 1.3;
+        f.type = 'highpass'; f.frequency.setValueAtTime(9000, when); f.frequency.exponentialRampToValueAtTime(3000, end);
+        g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(0.16 * l, end - 0.01); g.gain.linearRampToValueAtTime(0, end);
+        src.connect(f); f.connect(g); g.connect(this.out || this.master); src.start(when); src.stop(end + 0.05);
         break;
       }
       case 'kick': {
+        // (a dusty kick: a thump falling in pitch, its click rolled off)
         const l = ev.lvl == null ? 1 : ev.lvl;
-        this.tone(when, 120, 0.55 * l, 0.42, 'sine', 42);
-        this.burst(when, 'lowpass', 1800, 0.7, 0.12 * l, 0.012);
+        this.tone(when, 110, 0.6 * l, 0.36, 'sine', 44);
+        this.burst(when, 'lowpass', ev.dust ? 900 : 1800, 0.7, 0.14 * l, 0.018);
         break;
       }
-      case 'snare': {
+      case 'tsnare': {
+        // (the snare: a fat crack, thrown into the big room unless it's the riser's dry roll)
         const l = ev.lvl == null ? 1 : ev.lvl;
-        this.burst(when, 'bandpass', 1900, 0.9, 0.3 * l, 0.17, 1.1);
-        this.burst(when, 'highpass', 5200, 0.7, 0.16 * l, 0.12);
-        this.tone(when, 210, 0.16 * l, 0.09, 'triangle', 160);
+        const hit = () => { this.burst(when, 'bandpass', 1700, 0.8, 0.28 * l, 0.2, 1.1); this.burst(when, 'highpass', 4800, 0.7, 0.12 * l, 0.14); this.tone(when, 190, 0.18 * l, 0.11, 'triangle', 150); };
+        if (ev.dry) hit(); else this.wet(0.6, hit);
         break;
       }
       case 'hat': {
         const l = ev.lvl == null ? 1 : ev.lvl;
-        this.burst(when, 'highpass', 7600, 0.9, (ev.open ? 0.14 : 0.11) * l, ev.open ? 0.24 : 0.04, 1.4);
+        this.burst(when, 'highpass', 7600, 0.9, (ev.open ? 0.1 : 0.09) * l, ev.open ? 0.22 : 0.035, 1.4);
         break;
       }
-      case 'bass': {
-        // (an 808: a long sine with a little push into its pitch and a soft overdrive's edge)
-        const l = ev.lvl == null ? 1 : ev.lvl;
-        this.tone(when, ev.f * 1.5, 0.36 * l, ev.dur, 'sine', ev.f);
-        this.tone(when, ev.f * 2, 0.06 * l, ev.dur * 0.6, 'triangle', ev.f * 2);
+      case 'b808': {
+        // (the 808: a long sine pushed into its pitch, gliding on if it's asked
+        // to, a soft overdrive giving it an edge small speakers can hear)
+        const l = ev.lvl == null ? 1 : ev.lvl, c = this.ctx, o = c.createOscillator(), sh = c.createWaveShaper(), g = c.createGain(), end = when + ev.dur;
+        if (!this.drive) { const k = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 511.5 - 1; k[i] = Math.tanh(2.6 * x); } this.drive = k; }
+        sh.curve = this.drive;
+        o.type = 'sine'; o.frequency.setValueAtTime(ev.f * 1.9, when); o.frequency.exponentialRampToValueAtTime(ev.f, when + 0.045);
+        if (ev.f2 && ev.f2 !== ev.f) { o.frequency.setValueAtTime(ev.f, end - 0.16); o.frequency.exponentialRampToValueAtTime(ev.f2, end); }
+        g.gain.setValueAtTime(0, when); g.gain.linearRampToValueAtTime(0.42 * l, when + 0.006); g.gain.setTargetAtTime(0.28 * l, when + 0.05, 0.25); g.gain.setTargetAtTime(0, end - 0.05, 0.03);
+        o.connect(sh); sh.connect(g); g.connect(this.out || this.master); o.start(when); o.stop(end + 0.2);
         break;
       }
-      case 'keys': {
-        // (an electric piano's chord: a bell-like tine over a warm body, spread a touch)
+      case 'crash': {
         const l = ev.lvl == null ? 1 : ev.lvl;
-        ev.f.forEach((f, i) => {
-          this.tone(when + i * 0.012, f, 0.07 * l, ev.dur, 'sine');
-          this.tone(when + i * 0.012, f * 2, 0.018 * l, ev.dur * 0.4, 'triangle');
-        });
+        this.wet(0.45, () => { this.burst(when, 'highpass', 5200, 0.6, 0.15 * l, 2.2, 1.2); this.burst(when, 'lowpass', 300, 0.7, 0.12 * l, 0.25); });
+        break;
+      }
+      case 'scratch': {
+        // (a record scratch: the needle dragged back and forth - a pitched
+        // squeal through a narrow band, the fader chopping it)
+        const l = ev.lvl == null ? 1 : ev.lvl, c = this.ctx, d = ev.dur;
+        const curve = new Float32Array([1, 2.6, 0.5, 2.2, 0.35, 1.8, 0.25]);
+        const src = c.createBufferSource(), f = c.createBiquadFilter(), o = c.createOscillator(), og = c.createGain(), g = c.createGain();
+        src.buffer = this.noise; src.loop = true;
+        f.type = 'bandpass'; f.Q.value = 3; f.frequency.setValueCurveAtTime(curve.map(x => x * 900), when, d);
+        o.type = 'sawtooth'; o.frequency.setValueCurveAtTime(curve.map(x => x * 260), when, d); og.gain.value = 0.35;
+        const chop = [0, 0.13, 0.17, 0.3, 0.34, 0.52, 0.56, 0.74, 0.78, 1];
+        g.gain.setValueAtTime(0, when);
+        chop.forEach((u, i) => g.gain.linearRampToValueAtTime(i % 2 ? 0.32 * l : 0.02 * l, when + u * d));
+        g.gain.linearRampToValueAtTime(0, when + d + 0.01);
+        src.connect(f); o.connect(og); og.connect(f); f.connect(g); g.connect(this.out || this.master);
+        src.start(when); src.stop(when + d + 0.05); o.start(when); o.stop(when + d + 0.05);
+        break;
+      }
+      case 'tapestop': {
+        // (the tape stopping: the chord and the bass slowing to nothing, the top rolling off)
+        const l = ev.lvl == null ? 1 : ev.lvl, c = this.ctx, d = ev.dur, f = c.createBiquadFilter(), g = c.createGain();
+        f.type = 'lowpass'; f.frequency.setValueAtTime(4000, when); f.frequency.exponentialRampToValueAtTime(200, when + d);
+        g.gain.setValueAtTime(0.3 * l / ev.f.length, when); g.gain.setTargetAtTime(0, when + d * 0.7, d * 0.12);
+        f.connect(g); g.connect(this.out || this.master);
+        ev.f.forEach(fr => { const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(fr, when); o.frequency.exponentialRampToValueAtTime(fr * 0.18, when + d); o.connect(f); o.start(when); o.stop(when + d + 0.1); });
         break;
       }
       default:

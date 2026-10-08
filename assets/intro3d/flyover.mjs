@@ -28,7 +28,7 @@ const T = {
   swap: 2.4,                      // the gleam's peak: the room gives way to the sky
   zoom: [3.3, 3.42, 3.95, 4.25],  // the crash zoom on the jet: in, held, shaking, out
   jet: 4.35,                      // the jet straight overhead
-  rain: [3.45, 5.05],             // the bills let go from its tail
+  rain: [2.7],                    // the bills pour from its belly's open bay (until it shuts, below)
   down: 4.65,                     // the lens tips down with them, at their pace
   gold: [6.35, 7.75],             // the sea turns to gold from where they land
   dive: [7.65, 9.15],             // the dive, through the surface at its end
@@ -61,10 +61,18 @@ export async function makeGame(ctx) {
   theirs.forEach(o => o.traverse(m => { if (m.isMesh && m.visible) { const b = new THREE.Box3().setFromObject(m); if (b.min.y > 110 && b.max.y < 1000) overhead.push(m); } }));
 
   // ---- The plan.
-  // (the crash zoom's moments: set on the music's beat, below)
-  let ZOOM = T.zoom.slice();
   const warp = makeWarp(T.over);
   const Rw = w => warp.real(w);
+  // (the music's grid, real seconds: the sky's opening and the title both on
+  // a downbeat, the tempo near 72; the crash zoom is put on it - in on one
+  // beat, held to the next, out - and the belly's bay shuts while it's held)
+  const Rs = Rw(T.swap), Rc = Rw(T.call);
+  const nb = 4 * Math.max(2, Math.round((Rc - Rs) / (60 / 72) / 4)), BEAT = (Rc - Rs) / nb;
+  const at = beat => Rs + beat * BEAT;
+  const bz = Math.max(1, Math.round((Rw(T.zoom[0]) - Rs) / BEAT));
+  const ZOOM = [warp.world(at(bz)), warp.world(at(bz)) + 0.12, warp.world(at(bz + 1)), warp.world(at(bz + 1)) + 0.3];
+  const BAY = [ZOOM[1] + 0.04, Math.min(ZOOM[2] - 0.06, ZOOM[1] + 0.42)];
+  const bayAt = w => 1.35 * (1 - smoother((w - BAY[0]) / (BAY[1] - BAY[0])));
   const plan = { tier, seed, warp, wallW: T.over, values: [], call: ['Daily Roll Over', 'Roll in. Cash out.'], throwOk: true, why: [] };
   plan.restW = T.dive[1]; plan.callW = T.call; plan.revealW = T.reveal; plan.endW = T.end;
   plan.revealReal = Rw(T.reveal); plan.totalReal = Rw(T.end); plan.restReal = Rw(T.dive[1]); plan.wallReal = Rw(T.over);
@@ -166,6 +174,7 @@ export async function makeGame(ctx) {
   // line nose to tail and a gold tail with the house's monogram; T-tail,
   // two engines aft, winglets.
   const jet = new THREE.Group(); sky.add(jet);
+  const wings = [];
   {
     const body = new THREE.MeshPhysicalMaterial({ color: 0x0c0c10, metalness: 0.4, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.08, fog: false });
     const gold = new THREE.MeshPhysicalMaterial({ color: 0xe0a83a, metalness: 1, roughness: 0.25, fog: false });
@@ -186,7 +195,7 @@ export async function makeGame(ctx) {
     const wingShape = new THREE.Shape(); wingShape.moveTo(0, -30); wingShape.lineTo(150, 30); wingShape.lineTo(150, 52); wingShape.lineTo(0, 40); wingShape.closePath();
     const wg = new THREE.ExtrudeGeometry(wingShape, { depth: 4, bevelEnabled: true, bevelSize: 1.5, bevelThickness: 1.5, bevelSegments: 2 }); wg.rotateX(Math.PI / 2); keep(wg);
     [-1, 1].forEach(s => {
-      const w = new THREE.Mesh(wg, body); w.scale.x = s; w.position.set(0, -8, -5); w.rotation.z = s * 0.06; jet.add(w);
+      const w = new THREE.Mesh(wg, body); w.scale.x = s; w.position.set(0, -8, -5); w.rotation.z = s * 0.06; jet.add(w); wings.push({ w, s });
       const tip = new THREE.Mesh(new THREE.BoxGeometry(2, 26, 18), gold); tip.position.set(s * 150, 4, 38); tip.rotation.x = -0.3; keep(tip.geometry); jet.add(tip);
       // (the engines, aft on the fuselage)
       const eg = new THREE.CylinderGeometry(9, 8, 46, 24, 1, false); eg.rotateX(Math.PI / 2); keep(eg);
@@ -200,9 +209,11 @@ export async function makeGame(ctx) {
     const fm = new THREE.Mesh(fin, gold); fm.position.set(1.5, 16, 60); jet.add(fm);
     const tp = new THREE.Mesh(new THREE.BoxGeometry(110, 3, 22), body); tp.position.set(0, 78, 128); keep(tp.geometry); jet.add(tp);
   }
-  // (its livery: the house's badge large on the belly - what the lens sees
-  // from below - and on the fin; DRO under each wing; the name along the
-  // cabin in gold)
+  // (its livery: the house's badge long down the belly, split across the
+  // bay's two doors - it reads whole only once they've shut - and on the
+  // fin; DRO under each wing, filling it, the letters shrinking with the
+  // wing toward its tip; the name along the cabin in gold)
+  const doors = [];
   {
     const badge = set && set.tex && set.tex.badge;
     const decal = (map, w, h, pos, rot) => {
@@ -216,15 +227,59 @@ export async function makeGame(ctx) {
       if (stroke) { c.lineWidth = Hh * 0.08; c.strokeStyle = stroke; c.strokeText(text, W / 2, Hh / 2 + 2); }
       c.fillStyle = g; c.fillText(text, W / 2, Hh / 2 + 2);
     }));
+    // (the bay: two doors under the belly hinged at their outer edges, the
+    // badge painted across both turned to run nose to tail; inside, the
+    // house's money stacked in a warm light)
+    {
+      const BW = 30, BL = 72, BZ = -22, R = 20.7, img = badge && badge.image;
+      const yAt = x => -Math.sqrt(R * R - x * x);
+      const paint = texOf(canvas(512, 1152, (c, W, H) => {
+        c.fillStyle = '#0c0c10'; c.fillRect(0, 0, W, H);
+        c.strokeStyle = '#e0a83a'; c.lineWidth = 10; c.strokeRect(14, 14, W - 28, H - 28);
+        if (img) { c.save(); c.translate(W / 2, H / 2); c.rotate(-Math.PI / 2); const w = H * 0.86, h = w * img.height / img.width; c.drawImage(img, -w / 2, -h / 2, w, Math.min(h, W * 0.96)); c.restore(); }
+      }));
+      const doorM = new THREE.MeshPhysicalMaterial({ map: paint, metalness: 0.35, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.08, fog: false });
+      const backM = new THREE.MeshStandardMaterial({ color: 0x16161a, metalness: 0.5, roughness: 0.5, side: THREE.BackSide, fog: false });
+      keep(null, doorM); keep(null, backM);
+      [-1, 1].forEach(s => {
+        // (the door in its hinge's frame: curved to the hull from the hinge,
+        // x = s*BW/2, in to the keel; uv across the whole badge)
+        const g = new THREE.BufferGeometry(), hx = s * BW / 2, hy = yAt(hx), N = 8, pos = [], uv = [], idx = [];
+        for (let i = 0; i <= N; i++) {
+          const x = hx * (1 - i / N);
+          [BZ - BL / 2, BZ + BL / 2].forEach(z => { pos.push(x - hx, yAt(x) - 0.25 - hy, z); uv.push(x / BW + 0.5, (z - BZ) / BL + 0.5); });
+          if (i < N) { const a = 2 * i; idx.push(...(s > 0 ? [a, a + 1, a + 2, a + 1, a + 3, a + 2] : [a, a + 2, a + 1, a + 1, a + 2, a + 3])); }
+        }
+        g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+        g.setIndex(idx); g.computeVertexNormals(); keep(g);
+        const hinge = new THREE.Group(); hinge.position.set(hx, hy, 0); jet.add(hinge);
+        hinge.add(new THREE.Mesh(g, doorM), new THREE.Mesh(g, backM));
+        doors.push({ hinge, s });
+      });
+      // (the hold: a recess lit gold, bundles of notes in rows)
+      const hold = texOf(canvas(256, 576, (c, W, H) => {
+        const g = c.createRadialGradient(W / 2, H / 2, 10, W / 2, H / 2, H * 0.6); g.addColorStop(0, '#5a3a12'); g.addColorStop(1, '#0a0806'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+        for (let r = 0; r < 9; r++) for (let k = 0; k < 3; k++) { const x = 30 + k * 70, y = 40 + r * 58; c.fillStyle = (r + k) % 2 ? '#3f6b3a' : '#4f7d44'; c.fillRect(x, y, 56, 40); c.fillStyle = '#e0c060'; c.fillRect(x + 24, y, 8, 40); }
+      }));
+      const holdM = new THREE.MeshBasicMaterial({ map: hold, fog: false }); const al = Math.asin((BW / 2 - 1) / R);
+      const hg = new THREE.CylinderGeometry(R - 0.1, R - 0.1, BL - 2, 12, 1, true, -al, 2 * al); hg.rotateX(Math.PI / 2); keep(hg, holdM);
+      const hm = new THREE.Mesh(hg, holdM); hm.position.set(0, 0, BZ); jet.add(hm);
+    }
     if (badge) {
-      // (the belly: the badge laid flat under the fuselage, nose toward -z, read from below)
-      decal(badge, 34, 22.3, [0, -20.2, -28], [Math.PI / 2, 0, Math.PI]);
       // (the fin, both faces)
       decal(badge, 30, 19.7, [3.2, 50, 104], [0, Math.PI / 2, 0]);
       decal(badge, 30, 19.7, [-0.2, 50, 104], [0, -Math.PI / 2, 0]);
     }
-    const dro = lettering('DRO', 512, 220, 'bold 190px Georgia, "Times New Roman", serif', '#e6b04a', '#2a1806');
-    [-1, 1].forEach(sd => decal(dro, 58, 25, [sd * 92, -10.5, 22], [Math.PI / 2, 0, Math.PI]));
+    // (under the wings: in the wing's own frame - root to tip along x, its
+    // underside at y -5.5, chord from z -30 + 0.4x to 40 + 0.08x - each letter
+    // as tall as the wing there allows; turned back the right way under the
+    // mirrored wing)
+    const glyph = ch => lettering(ch, 256, 256, 'bold 236px Georgia, "Times New Roman", serif', '#e6b04a', '#2a1806');
+    [['D', 38, 40], ['R', 86, 30], ['O', 127, 21]].forEach(([ch, x, h]) => {
+      const t = glyph(ch), m = new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.2, fog: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2 });
+      const g = new THREE.PlaneGeometry(h / 0.66, h / 0.66); keep(g, m);
+      wings.forEach(({ w, s }) => { const d = new THREE.Mesh(g, m); d.position.set(x, -5.8, 5 + 0.24 * x); d.rotation.set(Math.PI / 2, 0, Math.PI); d.scale.x = s; w.add(d); });
+    });
     const name = lettering('DAILY ROLL OVER', 1024, 128, 'bold 92px Georgia, "Times New Roman", serif', '#e6b04a', null);
     decal(name, 120, 15, [20.4, 9, -18], [0, Math.PI / 2, 0]);
     decal(name, 120, 15, [-20.4, 9, -18], [0, -Math.PI / 2, 0]);
@@ -246,6 +301,7 @@ export async function makeGame(ctx) {
   const jetAt = w => V(JET_X, JET_Y + 30 * Math.sin(w * 0.7), jetZ(w));
   const poseJet = w => {
     const p = jetAt(w); jet.position.copy(p); jet.rotation.set(0, 0, 0.08 * Math.sin(w * 0.9));
+    const a = bayAt(w); doors.forEach(({ hinge, s }) => { hinge.rotation.z = s * a; });
     for (let s = 0; s < 2; s++) for (let k = 0; k < trail.N; k++) {
       const z = p.z + 75 + k * 28, wide = 2 + k * 0.4, x = p.x + (s ? 34 : -34), y = p.y + 10 + k * 0.6, a = (s * trail.N * 2 + k * 2) * 3;
       trail.pos.set([x - wide, y, z, x + wide, y, z], a);
@@ -254,7 +310,8 @@ export async function makeGame(ctx) {
   };
 
   // ---- The money: banknotes of the house - green, the monogram and a
-  // hundred - let go from the jet's tail, fluttering down to the sea.
+  // hundred - poured from the jet's belly while its bay is open, fluttering
+  // down to the sea.
   const NB = 520;
   // (the note: engraved - a fine guilloche ground, a border of rosettes, the
   // house's dice in an oval, seals, the denomination in each corner, a
@@ -284,18 +341,18 @@ export async function makeGame(ctx) {
   { const p = billG.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i) / 23; p.setZ(i, 4.2 * (1 - x * x) + 0.8 * Math.sin(p.getY(i) * 0.3) * x); } billG.computeVertexNormals(); }
   const bills = new THREE.InstancedMesh(billG, billM, NB); bills.frustumCulled = false; sky.add(bills);
   const billPlan = Array.from({ length: NB }, () => {
-    const ts = lerp(T.rain[0], T.rain[1], Math.pow(rng(), 0.8));
-    return { ts, dx: (rng() - 0.5) * 120, dz: (rng() - 0.5) * 80, vx: (rng() - 0.5) * 70, vz: (rng() - 0.5) * 60 - 120, fall: 470 + 140 * rng(), ph: rng() * TAU, fr: 2 + 3 * rng(), ax: V(rng() - 0.5, rng() - 0.5, rng() - 0.5).normalize() };
+    const ts = lerp(T.rain[0], BAY[0] + 0.1, rng());
+    return { ts, dx: (rng() - 0.5) * 26, dz: (rng() - 0.5) * 70, vx: (rng() - 0.5) * 110, vz: (rng() - 0.5) * 60 - 120, fall: 470 + 140 * rng(), ph: rng() * TAU, fr: 2 + 3 * rng(), ax: V(rng() - 0.5, rng() - 0.5, rng() - 0.5).normalize() };
   });
   // (the moment each comes down on the water: its height's root, by Newton)
-  const dropY = (b, x) => jetAt(b.ts).y - 12 - b.fall * (x - 0.6 * (1 - Math.exp(-x / 0.6)));
+  const dropY = (b, x) => jetAt(b.ts).y - 26 - b.fall * (x - 0.6 * (1 - Math.exp(-x / 0.6)));
   billPlan.forEach(b => { let x = 2.5; for (let k = 0; k < 8; k++) x -= (dropY(b, x) - SEA) / -(b.fall * (1 - Math.exp(-x / 0.6))); b.land = b.ts + x; });
   const billAt = (b, w) => {
     const x = w - b.ts; if (x < 0) return null;
     const p0 = jetAt(b.ts);
-    const y = p0.y - 12 - b.fall * (x - 0.6 * (1 - Math.exp(-x / 0.6)));
+    const y = p0.y - 26 - b.fall * (x - 0.6 * (1 - Math.exp(-x / 0.6)));
     if (y < SEA - 4) return null;
-    return { p: V(p0.x + b.dx + b.vx * x + 25 * Math.sin(b.ph + x * b.fr), y, p0.z + 120 + b.dz + b.vz * x), a: b.ph + x * b.fr * 1.3, x };
+    return { p: V(p0.x + b.dx + b.vx * x + 25 * Math.sin(b.ph + x * b.fr) * Math.min(1, x * 2), y, p0.z - 24 + b.dz + b.vz * x), a: b.ph + x * b.fr * 1.3, x };
   };
   const mtx = new THREE.Matrix4(), qq = new THREE.Quaternion(), one = V(1, 1, 1), hide = new THREE.Matrix4().makeScale(0, 0, 0);
   const poseBills = w => {
@@ -575,83 +632,68 @@ export async function makeGame(ctx) {
   sfx.push({ t: 0.0, kind: 'jet', dur: Rw(T.end) + 1, peak: Rw(T.jet) });
   sfx.push({ t: Rw(T.whip - 0.05), kind: 'whoosh' });
   [[1.42, 150], [1.72, 110], [2.0, 200]].forEach(([w, sp]) => sfx.push({ t: Rw(w), kind: w === 2.0 ? 'wall' : 'felt', speed: sp, rate: warp.rateAt(Rw(w)) }));
-  // The music: an original marching-band groove in the spirit of OutKast's
-  // "Morris Brown" - a drumline's cadence (snares, tenors, bass drums,
-  // cymbals), a tuba's bass line and the horn section's riffs, bright and
-  // driving from the first frame. Over the photograph the drumline plays its
-  // street beat; the tenors sweep the whip; a snare roll rides the dice into
-  // the wall and the sky opens on the full band and a brass hit. The crash
-  // zoom is a stop: one stab, a cymbal choked, the band silent while the
-  // lens shakes on the jet - and back in on the beat as it lets go. The roll
-  // again under the dive, into the biggest chord of all on the title. The
-  // tempo is set so the sky's hit and the title both fall on a downbeat.
-  // (Real seconds: the band keeps its time through the slow motion.)
+  // The music: an original trip-hop / cloud-rap beat - dusty, slow, heavy -
+  // in F minor (Fm9, Dbmaj7, Bbm9, C7). A vinyl record's crackle under it
+  // all. Over the photograph, a dreamy pad and an electric piano's bell
+  // motif thrown into a long echo, a muffled kick like a heartbeat; a reverse
+  // cymbal draws into the sky, where the beat drops: the kick, swung hats, a
+  // snare in a big room, an 808 gliding under. The crash zoom is a record
+  // scratch and a tape-stop - silence but the jet while the lens shakes on it
+  // - and the full beat slams back in as it lets go. A riser under the dive,
+  // into the biggest hit of all on the title; then it rides out.
+  // (Real seconds, on the grid set with the plan: the music keeps its time
+  // through the slow motion.)
   {
-    const Rs = Rw(T.swap), Rc = Rw(T.call);
-    const nb = 4 * Math.max(2, Math.round((Rc - Rs) / (60 / 110) / 4)), BEAT = (Rc - Rs) / nb, S16 = BEAT / 4;
-    const n = m => 440 * Math.pow(2, (m - 69) / 12);
-    const at = beat => Rs + beat * BEAT;
-    // (the crash zoom, put on the beat: in on one, held to the next, out)
-    const bz = Math.round((Rw(T.zoom[0]) - Rs) / BEAT);
-    ZOOM = [warp.world(at(bz)), warp.world(at(bz)) + 0.12, warp.world(at(bz + 1)), warp.world(at(bz + 1)) + 0.3];
+    const S16 = BEAT / 4, n = m => 440 * Math.pow(2, (m - 69) / 12);
     const breakA = at(bz) + 0.02, breakB = at(bz + 1) - 0.02;
     const quiet = t => t > breakA && t < breakB;
-    // (B flat: I - IV - V - I, the horns' voicings, the tuba's roots)
-    const chords = [[58, 62, 65, 70], [58, 63, 67, 70], [60, 65, 69, 72], [58, 62, 65, 70]], roots = [34, 39, 41, 34];
-    const lvl = t => 0.72 + 0.28 * smoother(t / Rc);
-    const end = Rw(T.end) + 2, first = -Math.floor(Rs / BEAT);
+    // (a bar each: Fm9, Dbmaj7, Bbm9, C7 - the pad's voicings, the 808's roots)
+    const chords = [[53, 56, 60, 63, 67], [49, 53, 56, 60, 65], [46, 49, 53, 56, 60], [48, 52, 55, 58, 61]], roots = [29, 25, 34, 24];
+    const end = Rw(T.end) + 2, first = -Math.ceil(Rs / BEAT);
+    const lvl = t => 0.7 + 0.3 * smoother((t - Rs) / (Rc - Rs));
     const push = (t, kind, extra) => { if (t > 0.01 && t < end && !quiet(t)) sfx.push(Object.assign({ t, kind }, extra)); };
-    // the drumline's cadence, bar by bar from the first frame
-    for (let b = first; at(b) < end; b++) {
-      const t = at(b), beat = ((b % 4) + 4) % 4, bar = Math.floor(b / 4), L = lvl(t), band = true, ci = ((bar % 4) + 4) % 4;
-      // (bass drums: the trio's pattern; cymbal on each bar's one)
-      if (beat === 0) push(t, 'mbass', { lvl: L * 0.8 });
-      if (beat === 1) push(t + 3 * S16, 'mbass', { lvl: L * 0.6 });
-      if (beat === 2) push(t + 2 * S16, 'mbass', { lvl: L * 0.7 });
-      if (beat === 0 && b !== 0 && Math.abs(t - Rc) > 0.01) push(t, 'choke', { lvl: L * 0.7 });
-      // (snares: backbeat cracks on two and four, the sixteenth cadence under them, accents moving)
-      for (let s16 = 0; s16 < 4; s16++) {
-        const ts = t + s16 * S16, back = (beat === 1 || beat === 3) && s16 === 0, acc = (beat + s16) % 3 === 0;
-        push(ts, 'msnare', { lvl: L * (back ? 1.1 : acc ? 0.7 : 0.4) });
+    const ci = b => (((Math.floor(b / 4) % 4) + 4) % 4);
+    // the record: its crackle, start to finish
+    sfx.push({ t: 0.02, kind: 'crackle', dur: end - 0.5, lvl: 1 });
+    // the intro, over the photograph: the pad, the bell motif, the heartbeat
+    sfx.push({ t: 0.05, kind: 'pad', f: chords[0].map(n), dur: Rs - 0.3, lvl: 0.9 });
+    const motif = [[0, 72], [0.75, 75], [1.5, 79], [2, 77], [3, 72], [3.5, 70]];
+    for (let b = first; b < 0; b += 4) motif.forEach(([o, m]) => at(b + o) < Rs - 0.05 && push(at(b + o), 'bell', { f: n(m), lvl: 0.75, echo: BEAT * 0.75 }));
+    for (let b = first; b < 0; b++) if (b % 2 === 0) push(at(b), 'kick', { lvl: 0.45, dust: true });
+    // (the reverse cymbal, drawn up into the drop)
+    sfx.push({ t: Math.max(0.1, Rs - BEAT * 2), kind: 'revcym', dur: Math.min(BEAT * 2, Rs - 0.1), lvl: 1 });
+    // the beat, from the sky's opening to the end
+    const kicks = [0, 1.75, 2.5], snares = [1, 3];
+    for (let b = 0; at(b) < end; b++) {
+      const t = at(b), beat = ((b % 4) + 4) % 4, L = lvl(t), riser = b >= nb - 2 && b < nb;
+      kicks.forEach(k => { if (Math.floor(k) === beat) push(t + (k - beat) * BEAT, 'kick', { lvl: L * (k === beat ? 1 : 0.8), dust: true }); });
+      if (snares.includes(beat) && !(riser && beat === 3)) push(t, 'tsnare', { lvl: L });
+      // (the hats: sixteenths, swung, the offbeats lighter; a roll at a bar's end)
+      for (let k = 0; k < 4; k++) {
+        const sw = k % 2 ? S16 * 0.18 : 0;
+        if (beat === 3 && (b % 8 === 7) && k >= 2) { for (let r = 0; r < 3; r++) push(t + k * S16 + r * S16 / 3, 'hat', { lvl: L * (0.5 + 0.15 * r) }); continue; }
+        push(t + k * S16 + sw, 'hat', { lvl: L * (k === 0 ? 0.7 : k === 2 ? 0.55 : 0.35), open: beat === 1 && k === 2 });
       }
-      if (band && (beat === 1 || beat === 3)) push(t, 'clap', { lvl: L * 0.7 });
-      // (the tenors' sweep at the end of every other bar)
-      if (beat === 3 && bar % 2 === 1) [0, 1, 2, 3].forEach(k => push(t + k * S16, 'tenor', { f: [560, 470, 390, 320][k], lvl: L * 0.9 }));
-      if (!band) continue;
-      // (the tuba: root, the and of two, three, a walk up on four)
-      const r = roots[ci], nx = roots[(ci + 1) % 4];
-      if (beat === 0) push(t, 'tuba', { f: n(r), dur: BEAT * 0.8, lvl: L });
-      if (beat === 1) push(t + 2 * S16, 'tuba', { f: n(r + 12), dur: BEAT * 0.4, lvl: L * 0.8 });
-      if (beat === 2) push(t, 'tuba', { f: n(r + 7), dur: BEAT * 0.8, lvl: L * 0.9 });
-      if (beat === 3) { push(t, 'tuba', { f: n(r + 4), dur: BEAT * 0.4, lvl: L * 0.8 }); push(t + 2 * S16, 'tuba', { f: n(nx - 1), dur: BEAT * 0.4, lvl: L * 0.8 }); }
-      // (the horns' riff: a call - stab, stab, push on the a of two - and its answer, a run down)
-      const ch = chords[ci].map(n);
-      if (bar % 2 === 0) {
-        if (beat === 0 && b > 0) { push(t, 'brass', { f: ch, dur: S16 * 1.2, lvl: L * 0.75, bright: true }); push(t + 2 * S16, 'brass', { f: ch, dur: S16 * 1.2, lvl: L * 0.65, bright: true }); }
-        if (beat === 1) push(t + 3 * S16, 'brass', { f: chords[ci].map(m => n(m + 2)), dur: BEAT * 1.1, lvl: L * 0.8, bright: true });
-      } else if (beat === 3) {
-        [77, 75, 74, 72].forEach((m, k) => push(t + k * S16, 'brass', { f: [n(m), n(m - 12)], dur: S16 * 0.9, lvl: L * 0.6, bright: true }));
-      }
+      // (the 808: the bar's root on one, held, sliding to the next bar's on the four's last sixteenth)
+      const c = ci(b);
+      if (beat === 0 && b !== 0 && b !== nb) push(t, 'b808', { f: n(roots[c]), dur: BEAT * 2.6, lvl: L });
+      if (beat === 2 && b !== bz + 1) push(t + 2 * S16, 'b808', { f: n(roots[c] + 12), f2: n(roots[(c + 1) % 4]), dur: BEAT * 1.4, lvl: L * 0.8 });
+      // (the keys: the chord, soft, on one and the and of two, in the echo)
+      if (beat === 0 || beat === 1) push(t + (beat ? 2 * S16 : 0), 'ep', { f: chords[c].map(m => n(m + 12)), dur: BEAT * 1.4, lvl: L * 0.8, echo: BEAT * 0.75 });
+      if (beat === 0) push(t, 'pad', { f: chords[c].map(n), dur: BEAT * 3.8, lvl: L * 0.7 });
     }
-    // the whip: the tenors swept, top to bottom
-    [0, 1, 2, 3, 4, 5].forEach(k => sfx.push({ t: Rw(T.whip) - 0.1 + k * 0.035, kind: 'tenor', f: 620 - k * 60, lvl: 0.9 }));
-    // the rolls: into the sky's hit, out of the zoom's stop, and under the dive into the title
-    const roll = (t0, t1, top) => { const N = Math.floor((t1 - t0) / (S16 / 2)); for (let k = 0; k < N; k++) { const u = k / N; sfx.push({ t: t0 + k * S16 / 2, kind: 'msnare', lvl: top * (0.3 + 0.7 * u * u) }); } };
-    roll(at(-2), Rs - 0.02, 1.0);
-    roll(breakB - BEAT * 0.5, breakB, 0.9);
-    roll(at(nb - 2), Rc - 0.02, 1.05);
-    sfx.push({ t: at(nb - 2), kind: 'brass', f: [58, 62, 65, 69].map(n), dur: BEAT * 2 - 0.04, lvl: 0.8, swell: true });
-    // the hits
-    const hit = (t, voicing, big) => {
-      sfx.push({ t, kind: 'crash', lvl: 1 }, { t, kind: 'mbass', lvl: 0.95 }, { t, kind: 'tuba', f: n(34), dur: BEAT * (big ? 2 : 1), lvl: 1 });
-      sfx.push({ t, kind: 'brass', f: voicing.map(n), dur: big ? BEAT * 3 : BEAT * 1.4, lvl: big ? 0.95 : 0.85, bright: true });
-    };
-    hit(Rs, [46, 58, 62, 65, 70], false);
-    hit(Rc, [46, 58, 65, 70, 74, 77], true);
-    // the zoom's stop: one stab and a choke, then silence but the jet; back in hard
-    sfx.push({ t: at(bz), kind: 'brass', f: [58, 63, 67, 70, 75].map(n), dur: S16 * 1.5, lvl: 1, bright: true }, { t: at(bz), kind: 'choke', lvl: 1.2 }, { t: at(bz), kind: 'mbass', lvl: 1 });
-    sfx.push({ t: at(bz + 1), kind: 'crash', lvl: 0.9 }, { t: at(bz + 1), kind: 'brass', f: [60, 65, 69, 72].map(n), dur: BEAT * 0.9, lvl: 0.85, bright: true });
-    // (every voice of the band through its own glue)
+    // the drop, as the sky opens
+    sfx.push({ t: Rs, kind: 'crash', lvl: 0.7 }, { t: Rs, kind: 'b808', f: n(29), dur: BEAT * 1.6, lvl: 1 });
+    // the crash zoom: a scratch on the snatch, the tape stopping under it, silence; back in hard on the release
+    sfx.push({ t: at(bz) - 0.03, kind: 'scratch', dur: 0.32, lvl: 1 });
+    sfx.push({ t: at(bz), kind: 'tapestop', f: chords[ci(bz)].concat([roots[ci(bz)] + 12]).map(n), dur: Math.min(0.7, breakB - at(bz)), lvl: 1 });
+    sfx.push({ t: at(bz + 1), kind: 'crash', lvl: 0.85 }, { t: at(bz + 1), kind: 'b808', f: n(29), dur: BEAT * 1.8, lvl: 1.05 }, { t: at(bz + 1), kind: 'kick', lvl: 1, dust: true });
+    // the riser under the dive, into the title's hit: the biggest of all
+    sfx.push({ t: at(nb - 2), kind: 'revcym', dur: BEAT * 2, lvl: 1.2 });
+    for (let k = 0; k < 8; k++) sfx.push({ t: at(nb - 1) + k * S16 / 2, kind: 'tsnare', lvl: 0.35 + 0.08 * k, dry: true });
+    sfx.push({ t: Rc, kind: 'crash', lvl: 1 }, { t: Rc, kind: 'b808', f: n(29), dur: BEAT * 3.5, lvl: 1.2 });
+    sfx.push({ t: Rc, kind: 'pad', f: [41, 53, 60, 63, 67, 72].map(n), dur: BEAT * 4, lvl: 1.2 });
+    // (every voice of the beat through its own glue)
     sfx.forEach(e => { if (!['jet', 'whoosh', 'felt', 'wall'].includes(e.kind)) e.band = true; });
     sfx.sort((a, b) => a.t - b.t);
   }
@@ -667,7 +709,7 @@ export async function makeGame(ctx) {
   return {
     plan, camera, gleamAt, shakeAt, stage, callAt, sfx, warmAt, dispose,
     tierNames: TIER_NAMES,
-    moments: { whip: Rw(T.whip), zoom: Rw(T.zoom[0] + 0.3), over: Rw(T.over), swap: Rw(T.swap), jet: Rw(T.jet), rain: Rw(T.rain[0] + 1), down: Rw(T.down), gold: Rw(T.gold[1]), dive: Rw(T.dive[0] + 0.8), under: Rw(T.dive[1] + 0.1), call: Rw(T.call + 0.4), reveal: plan.revealReal, end: plan.totalReal },
+    moments: { whip: Rw(T.whip), zoom: Rw(T.zoom[0] + 0.3), over: Rw(T.over), swap: Rw(T.swap), jet: Rw(T.jet), rain: Rw(T.rain[0] + 0.5), down: Rw(T.down), gold: Rw(T.gold[1]), dive: Rw(T.dive[0] + 0.8), under: Rw(T.dive[1] + 0.1), call: Rw(T.call + 0.4), reveal: plan.revealReal, end: plan.totalReal },
     pieces: { photo: photo.card, jet, sea, bills }
   };
 }
