@@ -1190,7 +1190,7 @@ export async function makeGame(ctx) {
       const per = [0, 1, 2, 3].map(i => {
         const fi = i ? fingersNow(k, tt - i * 0.028) : f;
         const live = shown ? 0.03 * Math.sin(tt * 2.6 + i * 1.3 + k) + 0.015 * Math.sin(tt * 7.1 + i * 2.1 + k * 2) : 0;
-        return [fi[0] * (1 + 0.04 * i) + live, fi[1]];
+        return [fi[0] * (1 + 0.08 * i) + live, fi[1]];
       });
       const ft = fingersNow(k, tt + 0.02);
       a.hand.userData.fingers(per, ft[0], ft[1]);
