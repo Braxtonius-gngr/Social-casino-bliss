@@ -418,12 +418,21 @@ export async function makeGame(ctx) {
       c.strokeStyle = `rgba(0,0,0,${a})`; c.lineWidth = 0.7 + r() * 0.8;
       for (let wx = -S; wx <= S; wx += S) for (let wy = -S; wy <= S; wy += S) { if (Math.abs(wx) + Math.abs(wy) && (x + wx < -30 || x + wx > S + 30 || y + wy < -30 || y + wy > S + 30)) continue; c.beginPath(); c.moveTo(x + wx, y + wy); c.lineTo(x + wx + Math.cos(th) * l, y + wy + Math.sin(th) * l); c.stroke(); }
     }
-    // (the worn paths: broad, faint, a little off the nap's line)
+    // (the worn paths: broad, faint, a little off the nap's line. Drawn
+    // sharp onto a layer of their own, the layer tiled three by three, and
+    // blurred in ONE draw - so the blur runs across the tile's seams - not a
+    // filtered stroke apiece: a canvas filter per stroke freezes a software-GL
+    // page)
+    const worn = document.createElement('canvas'); worn.width = worn.height = S;
+    const wc = worn.getContext('2d'); wc.fillStyle = 'rgba(0,0,0,0.05)';
     for (let k = 0; k < 9; k++) {
-      const x = r() * S, y = r() * S, w = 18 + r() * 40, l = 120 + r() * 200;
-      c.fillStyle = 'rgba(0,0,0,0.05)';
-      for (let wx = -S; wx <= S; wx += S) for (let wy = -S; wy <= S; wy += S) { c.save(); c.translate(x + wx, y + wy); c.rotate((r() - 0.5) * 0.5); c.filter = 'blur(10px)'; c.fillRect(-w / 2, 0, w, l); c.restore(); }
+      const x = r() * S, y = r() * S, w = 18 + r() * 40, l = 120 + r() * 200, rot = (r() - 0.5) * 0.5;
+      for (let wx = -S; wx <= S; wx += S) for (let wy = -S; wy <= S; wy += S) { wc.save(); wc.translate(x + wx, y + wy); wc.rotate(rot); wc.fillRect(-w / 2, 0, w, l); wc.restore(); }
     }
+    const big = document.createElement('canvas'); big.width = big.height = S * 3;
+    const bc = big.getContext('2d');
+    for (let wx = 0; wx < 3; wx++) for (let wy = 0; wy < 3; wy++) bc.drawImage(worn, wx * S, wy * S);
+    c.filter = 'blur(10px)'; c.drawImage(big, -S, -S); c.filter = 'none';
     const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
     t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(0.3, 0.3);
     table.felt.map = t;
