@@ -1,15 +1,15 @@
-// The Flyover: a cold open. It starts on the photograph - the maker at a
-// craps table, mid-throw - close on the face, pulling back to the throw; a whip, and the lens is low at
-// the side of the table, running alongside the dice down the felt to the
-// back wall. They strike it, and a gold gleam takes the frame. Out of it,
-// open sky: a gold-liveried jet comes over low and loud - the lens snatches
-// a crash zoom onto it, the house's badge on its belly - raining money; the
-// lens follows the bills down onto the sea, which turns to gold where they
-// land, and dives into it, and the title comes up out of the gold.
+// The Flyover: a cold open. The lens is over a craps table by its back
+// wall, looking up the empty felt; a click of dice off it, they fly in from
+// the thrower's end, and it swings round beside them, running alongside
+// down the felt to the back wall. They strike it,
+// and a gold gleam takes the frame. Out of it, open sky: a gold-liveried jet
+// comes over low and loud - the lens snatches a crash zoom onto it, the
+// house's badge on its belly - raining money; the lens follows the bills
+// down onto the sea, which turns to gold where they land, and dives into
+// it, and the title comes up out of the gold.
 //
-// The table and its room are the intro's; the photograph is rare/thrower.jpg
-// (fetched the first time this plays); everything after the gleam is built
-// here; the music is tracks.mjs's.
+// The table and its room are the intro's; everything after the gleam is
+// built here; the music is tracks.mjs's.
 
 import { wildBeat, wildGroove } from './tracks.mjs';
 
@@ -24,7 +24,7 @@ export const TIER_NAMES = { standard: 'The Flyover', hardways: 'The Flyover', va
 // The timetable, world seconds. (The slow motion is centred on the dice's
 // strike on the wall.)
 const T = {
-  whip: 1.15,                     // the photograph pushed in, then whipped away
+  whip: 1.15,                     // the build's start: the dice just thrown
   dice: 1.0,                      // the dice in flight down the table
   over: 2.0,                      // their strike on the back wall: the slow
   swap: 2.4,                      // the gleam's peak: the room gives way to the sky
@@ -37,10 +37,6 @@ const T = {
   call: 9.3, reveal: 10.55, end: 11.55
 };
 // The sky's world: the sea's surface, the jet's height and its line.
-// (in the photograph, as fractions from its top left: the face, and where the lens pulls back to - the hand)
-const PHOTO_FACE = [0.445, 0.36], PHOTO_HAND = [0.34, 0.56], PHOTO_DICE = [0.21, 0.77];
-// (the throw out of it, world seconds: the dice leave the hand, and are past the lens)
-const THROW = [0.8, 1.12];
 const BAY_Z = -60, SEA = -300, JET_Y = 950, JET_X = 160, JET_Z0 = 2700, JET_Z1 = -2700, JET_W0 = 2.25, JET_W1 = 6.45;
 const jetZ = w => lerp(JET_Z0, JET_Z1, (w - JET_W0) / (JET_W1 - JET_W0));
 // The dice's way down the table: in the air from the thrower's end, a
@@ -88,54 +84,9 @@ export async function makeGame(ctx) {
   plan.revealReal = Rw(T.reveal); plan.totalReal = Rw(T.end); plan.restReal = Rw(T.dive[1]); plan.wallReal = Rw(T.over);
 
   // ================================================================ the room
-  // ---- The photograph: the maker mid-throw, as the shot's first frame - a
-  // card held square in front of the lens, filling it, close on the face and
-  // pulling back to the throw; at the whip it slides away and the table is
-  // behind it.
   const FOV = (aspect < 0.62 ? 42 : 34) * DEG;
-  const photo = await (async () => {
-    const res = await fetch(asset('rare/thrower.jpg'), { signal });
-    const bmp = await createImageBitmap(await res.blob(), { imageOrientation: 'flipY' });
-    const map = new THREE.Texture(bmp); map.colorSpace = THREE.SRGBColorSpace; map.needsUpdate = true;
-    const m = new THREE.MeshBasicMaterial({ map, depthTest: false, depthWrite: false, fog: false, toneMapped: false, transparent: true });
-    const g = new THREE.PlaneGeometry(1, 1); keep(g, m, map);
-    const card = new THREE.Mesh(g, m); card.renderOrder = 998; card.frustumCulled = false; scene.add(card);
-    return { card, m, ar: bmp.width / bmp.height };
-  })();
-  const placePhoto = (w, lens) => {
-    const out = smoother((w - (T.whip - 0.04)) / 0.2);
-    photo.card.visible = out < 1;
-    if (!photo.card.visible) { flung.forEach(m => { m.visible = false; }); return; }
-    const d = lens.aim.clone().sub(lens.eye).normalize(), D = 10, h = 2 * D * Math.tan(FOV / 2), wv = h * aspect;
-    // (cover the screen: tight on the face at first, pulling back - gathering
-    // pace, as a throw does - to the outstretched hand as the dice leave it)
-    const e = smoother((w - 0.12) / (T.whip - 0.2)), k = lerp(2.5, 1.02, e * e * (2 - e));
-    const s = (aspect < photo.ar ? h : wv / photo.ar) * k, cw = s * photo.ar;
-    photo.card.scale.set(cw, s, 1);
-    // (the point of the photograph at the screen's middle: the face, then toward the hand - kept inside the picture)
-    const hu = Math.min(0.5, wv / (2 * cw)), hv = Math.min(0.5, h / (2 * s));
-    const fu = Math.max(hu, Math.min(1 - hu, lerp(PHOTO_FACE[0], PHOTO_HAND[0], e))), fv = Math.max(hv, Math.min(1 - hv, lerp(PHOTO_FACE[1], PHOTO_HAND[1], e)));
-    const right = V().crossVectors(d, V(0, 1, 0)).normalize(), up = V().crossVectors(right, d);
-    photo.card.position.copy(lens.eye).addScaledVector(d, D).addScaledVector(right, -(fu - 0.5) * cw - out * wv * 1.25).addScaledVector(up, -(0.5 - fv) * s + 0.06 * out * h);
-    photo.card.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, d.clone().negate()));
-    photo.m.opacity = 1 - 0.3 * out;
-    // (the throw: two dice leave the hand in the photograph and come out of
-    // it at the lens, tumbling, growing as they come, off past its corner)
-    const u = (w - THROW[0]) / (THROW[1] - THROW[0]);
-    flung.forEach((m, i) => {
-      const ui = u - i * 0.07; m.visible = ui > 0 && ui < 1 && out < 0.5;
-      if (!m.visible) return;
-      flungMats.forEach(fm => { fm.opacity = smoother(Math.max(0, u) / 0.12); });
-      const hand = photo.card.position.clone().addScaledVector(right, (PHOTO_DICE[0] - 0.5) * cw).addScaledVector(up, (0.5 - PHOTO_DICE[1]) * s).addScaledVector(d, -0.2);
-      const away = lens.eye.clone().addScaledVector(d, 1.7).addScaledVector(right, -1.3 + 0.35 * i).addScaledVector(up, -0.5 + 0.2 * i);
-      const k = Math.pow(ui, 1.7);
-      m.position.copy(hand).lerp(away, k).addScaledVector(up, 0.8 * Math.sin(Math.PI * ui) * (1 - k)).addScaledVector(right, 0.55 * i * (1 - k)).addScaledVector(up, -0.25 * i * (1 - k));
-      m.rotation.set(spin[i][0] + ui * 9, spin[i][1] + ui * 7, ui * 4);
-    });
-  };
 
-  // ---- The dice: casino red, translucent, white pips. (A second pair, the
-  // ones flung out of the photograph: drawn over the card, the way it is.)
+  // ---- The dice: casino red, translucent, white pips.
   const pipTex = (n) => texOf(canvas(128, 128, (c, W) => {
     c.fillStyle = '#c4161c'; c.fillRect(0, 0, W, W);
     const at = { 1: [[0.5, 0.5]], 2: [[0.28, 0.28], [0.72, 0.72]], 3: [[0.26, 0.26], [0.5, 0.5], [0.74, 0.74]], 4: [[0.28, 0.28], [0.72, 0.28], [0.28, 0.72], [0.72, 0.72]], 5: [[0.26, 0.26], [0.74, 0.26], [0.5, 0.5], [0.26, 0.74], [0.74, 0.74]], 6: [[0.28, 0.24], [0.72, 0.24], [0.28, 0.5], [0.72, 0.5], [0.28, 0.76], [0.72, 0.76]] }[n];
@@ -145,8 +96,6 @@ export async function makeGame(ctx) {
   const dieG = new THREE.BoxGeometry(1.9, 1.9, 1.9); keep(dieG);
   const dice = [0, 1].map(() => { const d = new THREE.Mesh(dieG, dieMats); d.castShadow = true; scene.add(d); return d; });
   const spin = [[rng() * TAU, rng() * TAU, 9 + 4 * rng()], [rng() * TAU, rng() * TAU, 11 + 4 * rng()]];
-  const flungMats = dieMats.map(m => { const c = m.clone(); c.transparent = true; keep(null, c); return c; });
-  const flung = [0, 1].map(() => { const d = new THREE.Mesh(dieG, flungMats); d.scale.setScalar(0.2); d.renderOrder = 999; d.visible = false; d.frustumCulled = false; scene.add(d); return d; });
   const dicePose = (i, w) => {
     const off = i ? [3.1, 0, 2.2] : [0, 0, 0];
     const K = DICE_KEYS, wi = w - (i ? 0.03 : 0);
@@ -645,14 +594,23 @@ export async function makeGame(ctx) {
   const lensAt = w => {
     const eye = V(), aim = V();
     if (w < T.swap) {
-      // (the photograph first - the lens behind it already low at the side of
-      // the table; then alongside the dice down the felt, a little behind
-      // them, onto the wall as they strike it)
+      // (alongside the dice down the felt, a little behind them, onto the
+      // wall as they strike it)
       const a = dicePose(0, Math.max(w, T.dice)).p, b = dicePose(1, Math.max(w, T.dice)).p;
       const mid = V((a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + 1, (a[2] + b[2]) / 2);
       const wall = smoother((w - (T.over - 0.25)) / 0.5);
       eye.set(-46, lerp(20, 13, smoother((w - T.dice) / 0.8)), Math.max(-34, mid.z + 34));
       aim.copy(mid).lerp(V(0, 6, -70), 0.5 * wall);
+      // (before that: over the felt by the back wall, looking up the table
+      // to the thrower's end, easing toward it; the dice come at the lens
+      // and it swings round beside them as they land)
+      const k = smoother((w - (T.dice + 0.08)) / 0.42);
+      if (k < 1) {
+        const u = clamp01(w / (T.dice + 0.1));
+        eye.lerp(V(lerp(-22, -16, u), lerp(24, 20, u), lerp(-52, -42, u)), 1 - k);
+        // (held on the dice from the moment they show, so the swing keeps them in frame)
+        aim.lerp(V(6, 9, 80).lerp(mid, smoother((w - T.dice) / 0.12)), 1 - k);
+      }
       eye.y += 0.4 * Math.sin(w * 2.3);
       return { eye, aim };
     }
@@ -719,8 +677,8 @@ export async function makeGame(ctx) {
   const roomBack = () => {
     for (const o of theirs) o.visible = true;
     overhead.forEach(m => { m.visible = true; });
-    sky.visible = false; under.dome.visible = under.bubbles.visible = false; photo.card.visible = false; flare.card.visible = false;
-    dice.forEach(d => { d.visible = false; }); flung.forEach(m => { m.visible = false; });
+    sky.visible = false; under.dome.visible = under.bubbles.visible = false; flare.card.visible = false;
+    dice.forEach(d => { d.visible = false; });
     scene.fog = fog0; scene.background = bg0; scene.environment = env0;
   };
   const stage = (t, { w }) => {
@@ -732,7 +690,6 @@ export async function makeGame(ctx) {
     dice.forEach((d, i) => { const p = dicePose(i, w); d.visible = !out && p.on; d.position.set(p.p[0], p.p[1], p.p[2]); d.rotation.set(p.r[0], p.r[1], p.r[2]); });
     sky.visible = out;
     const lens = lensAt(w), below = lens.eye.y < SEA + 2;
-    placePhoto(w, lens);
     scene.fog = out ? (below ? underFog : skyFog) : fog0;
     skyFog.color.copy(hazeCool).lerp(hazeWarm, smoother((w - byLand[0].land) / 1.6));
     scene.background = out ? (below ? underCol : null) : bg0;
@@ -799,11 +756,10 @@ export async function makeGame(ctx) {
   // ---- Sounds, real seconds (the jet and the beat are the Sound's own voices).
   const sfx = [];
   sfx.push({ t: 0.0, kind: 'jet', dur: Rw(T.end) + 1, peak: Rw(T.jet) });
-  sfx.push({ t: Rw(T.whip - 0.05), kind: 'whoosh' });
-  // (the dice clicking together as they leave the hand)
-  [0, 0.03, 0.07].forEach(k => sfx.push({ t: Rw(THROW[0]) + k, kind: 'rattle' }));
+  // (the dice clicking together in the thrower's hand, off the felt, before they fly in)
+  [0, 0.03, 0.07].forEach(k => sfx.push({ t: Rw(0.8) + k, kind: 'rattle' }));
   [[1.42, 150], [1.72, 110], [2.0, 200]].forEach(([w, sp]) => sfx.push({ t: Rw(w), kind: w === 2.0 ? 'wall' : 'felt', speed: sp, rate: warp.rateAt(Rw(w)) }));
-  // The music: "Wild" (tracks.mjs) - the bed over the photograph, the build
+  // The music: "Wild" (tracks.mjs) - the bed over the empty felt, the build
   // from the throw into the crash zoom, the music sinking under the jet's
   // pass and back on the beat after it, the biggest hit on the title.
   // (Real seconds, on the grid set with the plan: the music keeps its time
@@ -822,7 +778,7 @@ export async function makeGame(ctx) {
     for (const o of theirs) o.visible = true;
     overhead.forEach(m => { m.visible = true; });
     scene.fog = fog0; scene.background = bg0; scene.environment = env0;
-    scene.remove(photo.card, sky, flare.card, ...dice, ...flung);
+    scene.remove(sky, flare.card, ...dice);
     made.geos.forEach(g => g.dispose()); made.mats.forEach(m => m.dispose()); made.texs.forEach(t => t.dispose());
   };
   return {
@@ -831,6 +787,6 @@ export async function makeGame(ctx) {
     groove: Object.assign(wildGroove({ BEAT, bar0: (G - bz) / 4 }), { from: at(G) }),
     tierNames: TIER_NAMES,
     moments: { whip: Rw(T.whip), zoom: Rw(T.zoom[0] + 0.3), over: Rw(T.over), swap: Rw(T.swap), jet: Rw(T.jet), rain: Rw(T.rain[0] + 0.5), down: Rw(T.down), gold: Rw(T.gold[1]), dive: Rw(T.dive[0] + 0.8), under: Rw(T.dive[1] + 0.1), call: Rw(T.call + 0.4), reveal: plan.revealReal, end: plan.totalReal },
-    pieces: { photo: photo.card, jet, sea, bills }
+    pieces: { jet, sea, bills }
   };
 }
