@@ -5973,8 +5973,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function rollLab3dPanel(screen, tier, tiers, game, games) {
       if (screen.querySelector('.roll-lab')) return;
       // (the tiers' names are each game's own)
-      const tierNames = { dice: { standard: 'Standard', hardways: 'Hardways', vault: 'Vault Pull', edge: 'Defiant Edge' }, wheel: { standard: 'Standard Spin', hardways: 'The Twenty', vault: 'The Joker', edge: 'The Peg' }, plinko: { standard: 'Standard Drop', hardways: 'The Twenty', vault: 'The House', edge: 'The Pin' }, blackjack: { standard: 'Standard Hand', hardways: 'Blackjack', vault: 'The Black Jack', edge: 'On Its Edge' }, slots: { standard: 'Standard Pull', hardways: 'Three Sevens', vault: 'The Jackpot', edge: 'On a Tooth' } };
+      const tierNames = { dice: { standard: 'Standard', hardways: 'Hardways', vault: 'Vault Pull', edge: 'Defiant Edge' }, wheel: { standard: 'Standard Spin', hardways: 'The Twenty', vault: 'The Joker', edge: 'The Peg' }, plinko: { standard: 'Standard Drop', hardways: 'The Twenty', vault: 'The House', edge: 'The Pin' }, blackjack: { standard: 'Standard Hand', hardways: 'Blackjack', vault: 'The Black Jack' }, slots: { standard: 'Standard Pull', hardways: 'Three Sevens', vault: 'The Jackpot', edge: 'On a Tooth' } };
       const names = Object.assign({ dice: 'Dice', wheel: 'Wheel', plinko: 'Plinko', blackjack: 'Blackjack', slots: 'Slots' }, tierNames[game] || tierNames.dice);
+      // (blackjack folds its edge into The Black Jack: see TIER_FOLDS in intro.mjs)
+      const shownTiers = game === 'blackjack' ? tiers.filter(t => t !== 'edge') : tiers;
       const link = (k, v) => {
         const p = new URLSearchParams(window.location.search);
         p.set('lab', '');
@@ -5982,7 +5984,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (k === 'tier') p.delete('seed');
         return `?${p.toString().replace('lab=&', 'lab&').replace(/lab=$/, 'lab')}`;
       };
-      screen.insertAdjacentHTML('beforeend', `<nav class="roll-lab" aria-label="Intro options"><div class="roll-lab-row"><span>Game</span>${(games || ['dice']).map(g => `<a data-g="${g}"${g === game ? ' aria-current="true"' : ''}>${names[g] || g}</a>`).join('')}</div><div class="roll-lab-row"><span>Tier</span>${tiers.map(t => `<a data-v="${t}"${t === tier ? ' aria-current="true"' : ''}>${names[t]}</a>`).join('')}</div><div class="roll-lab-row"><a class="roll-lab-replay" data-new="1">&#8635; New throw</a><a class="roll-lab-replay" data-css="1">CSS intro</a></div></nav>`);
+      screen.insertAdjacentHTML('beforeend', `<nav class="roll-lab" aria-label="Intro options"><div class="roll-lab-row"><span>Game</span>${(games || ['dice']).map(g => `<a data-g="${g}"${g === game ? ' aria-current="true"' : ''}>${names[g] || g}</a>`).join('')}</div><div class="roll-lab-row"><span>Tier</span>${shownTiers.map(t => `<a data-v="${t}"${t === tier ? ' aria-current="true"' : ''}>${names[t]}</a>`).join('')}</div><div class="roll-lab-row"><a class="roll-lab-replay" data-new="1">&#8635; New throw</a><a class="roll-lab-replay" data-css="1">CSS intro</a></div></nav>`);
       const nav = screen.querySelector('.roll-lab');
       nav.querySelectorAll('a[data-v]').forEach(a => { a.href = link('tier', a.dataset.v); });
       nav.querySelectorAll('a[data-g]').forEach(a => { a.href = link('game', a.dataset.g); });
