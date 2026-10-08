@@ -1397,9 +1397,9 @@ export async function makeGame(ctx) {
   // machine; a phone stands it further back)
   // (a phone's aim: the action sits left and high of its frame, so it looks
   // a little left and up - the arms and hands come into it from the edges)
-  const SEATV = tall ? [0, 58 * W2, -22, -7, 9, 34] : [0, 58 * W2, -22, 0, 6, 34];
+  const SEATV = tall ? [0, 84, -38, -7, 9, 34] : [0, 58 * W2, -22, 0, 6, 34];
   // (the lens drawn back and over toward the drop slot while it clears the cards)
-  const SWEEPV = tall ? [0, 76 * W2, -34, -7, 8, 34] : [0, 76 * W2, -34, 0, 5, 34];
+  const SWEEPV = tall ? [0, 98, -46, -7, 8, 34] : [0, 76 * W2, -34, 0, 5, 34];
   push([0, 6, 26, 20, 0, 0, 57.6]);
   push([Rw(dealAt - RISE.open) + 0.25, 5, 24, 23, 0, 0.5, 57.6]);
   push([Rw(dealAt - RISE.swing) - 0.05, 2, 34, -6, 0, 22, 57]);
