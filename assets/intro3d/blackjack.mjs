@@ -812,17 +812,41 @@ export async function makeGame(ctx) {
     return pose(V(SWP.x, SWP.y, SWP.z0).addScaledVector(lead, m), _q2.setFromAxisAngle(V(1, 0, 0), th).multiply(qr));
   };
   const restOf = c => turned(c.slot, c.turn < Infinity ? Math.PI : 0, { p: V(0, 0, 0), q: new THREE.Quaternion() }, c.restY);
-  const sweepCard = c => {
-    const rest = restOf(c), gp = handFor(rest, 1);
-    addMove(B, pose(gp.p.clone().add(V(0, 3.4, 0)), gp.q), 0.26, { lift: 1.5, to: FIN.reach, lean: [0, 0], dip: [-0.1, 0] });
-    addMove(B, gp, 0.15, { settle: true, to: FIN.grip, lean: [0, 0] });
-    c.sw = { grab: B.t, qr: rest.q.clone(), rel: 0 };
-    hold(B, 0.04);
-    c.sw.lift = B.t;
-    const end = handFor(swPose(SWP.m0, SWP.th0, c.sw.qr), 1);
-    addMove(B, end, 0.42, { lift: 3.0, to: FIN.grip, lean: [0, 0], dip: [-0.12, 0] });
-    c.sw.rel = B.t;
-    addMove(B, pose(end.p.clone().add(V(1.0, 2.6, 0.2)), end.q), 0.2, { to: FIN.open, lean: [0, 0] });
+  // The wash: the machine lays its hand flat across its own cards and works
+  // them together in a slow circle, as dominoes are washed on a table, till
+  // they lie in one pile; then it pushes the pile to the slot's lip and
+  // lifts away, and the cards go in one after another, a beat apart. (r: the
+  // circle's radius, cm; the cards follow a part of it.)
+  const WASH = { r: 1.5, turns: 1.25, steps: 9, step: 0.1, push: 0.38, follow: 0.7, stack: 0.045, between: 0.09, press: -1.1, mid: 5.6, dz: 1.8, lag: 0.16 };
+  const washOff = (u, out) => {
+    const a = u * TAU * WASH.turns - 1.2, r = WASH.r * Math.sqrt(Math.sin(Math.PI * clamp01(u)));
+    return out.set(r * Math.cos(a), 0, r * Math.sin(a));
+  };
+  const _wo = V(0, 0, 0);
+  const washPlan = mine => {
+    const cx = mine.reduce((t, c) => t + c.slot.x, 0) / mine.length, cz = SPOT.dealer[0][1];
+    const rq = restOf(mine[0]).q;
+    // (the hand centred on x, z: handFor puts a card's end at the fingertips,
+    // so the hand is slid back along itself to lie over the cards)
+    const mid = handFor(pose(V(0, 0.3, 0), rq), 1), back = V(0, 0, -WASH.mid).applyQuaternion(mid.q);
+    const hov = (x, z, y = 0) => { const h = handFor(pose(V(x, 0.3 + y, z), rq), 1); h.p.x -= back.x; h.p.z -= back.z - WASH.dz; h.p.y -= WASH.press; return h; };
+    const E = swPose(SWP.m0, SWP.th0, rq);
+    addMove(B, hov(cx, cz, 3.2), 0.5, { lift: 2, to: FIN.reach, lean: [0, 0], dip: [-0.1, 0] });
+    addMove(B, hov(cx, cz), 0.16, { settle: true, to: FIN.easy, lean: [0, 0] });
+    const tg = B.t;
+    for (let i = 1; i <= WASH.steps; i++) {
+      const o = washOff(i / WASH.steps, _wo);
+      addMove(B, hov(cx + o.x, cz + o.z), WASH.step, { via: i < WASH.steps, settle: i === WASH.steps, to: FIN.easy, lean: [0, 0] });
+    }
+    const tw = B.t;
+    addMove(B, hov(E.p.x, E.p.z), WASH.push, { settle: true, to: FIN.easy, lean: [0, 0] });
+    const tp = B.t;
+    mine.forEach((c, j) => {
+      const rest = restOf(c);
+      c.sw = { pile: true, grab: tg, wash: tw, push: tp, rel: tp + WASH.lag + WASH.between * j, qr: rest.q.clone(), p0: rest.p.clone(), cx, cz, ox: (j - (mine.length - 1) / 2) * 0.35, oz: 0.25 * Math.sin(j * 2.3), py: 0.02 + WASH.stack * j, dy: WASH.stack * j, wob: (j % 2 ? -1 : 1) * (0.3 + 0.08 * j), fin: 0.05 * Math.sin(j * 3.1 + 1) };
+    });
+    // (and the hand lifts clear, open, as the first card tips over the lip)
+    addMove(B, pose(hov(E.p.x, E.p.z).p.clone().add(V(2.6, 4.6, 0.6)), hov(0, 0).q), 0.24, { to: FIN.open, lean: [0, 0] });
   };
   const grabAt =() => handFor(shoePose(inShoe)), outAt = () => handFor(shoePose(pulled));
   // (the shoe arm draws: down into the shoe, level at the grab; out by its
@@ -1024,14 +1048,15 @@ export async function makeGame(ctx) {
     until(B, restW + 1.1);
     plan.sweep = [B.t, 0];
     const mine = cards.filter(c => c.who === 'dealer').sort((a, b) => b.slot.x - a.slot.x);
-    mine.forEach(sweepCard);
+    washPlan(mine);
     addMove(B, REST[1], DEAL.rest, { lift: 2.4, to: FIN.poise, lean: [0, 0], dip: [-0.15, 0], elbow: 1 });
-    let prev = Math.max(...mine.map(c => c.sw.rel));
-    let k = 0;
+    const tp = mine[0].sw.push;
+    let prev = Math.max(...mine.map(c => c.sw.rel)), k = 0;
     cards.filter(c => c.who === 'you').sort((a, b) => b.i - a.i).forEach(c => {
-      // (set off as the machine lifts its last card from the cloth)
-      const rel = Math.max(prev + SWP.drop + 0.1, Math.max(...mine.map(m => m.sw.lift)) - 0.05 + SWP.slide + 0.2 * k);
-      c.sw = { auto: true, grab: rel - SWP.slide, rel, qr: lying(new THREE.Quaternion(), {}), p0: c.slot.clone().setY(c.restY) };
+      // (yours, which it cannot reach, are drawn across the cloth by the
+      // table as it lifts clear, to follow the others in)
+      const rel = Math.max(prev + 0.12, tp + SWP.slide);
+      c.sw = { auto: true, grab: rel - SWP.slide, rel, qr: lying(new THREE.Quaternion(), {}), p0: c.slot.clone().setY(c.restY), dy: WASH.stack * (mine.length + k) };
       prev = rel; k++;
     });
     const rels = cards.filter(c => c.sw).map(c => c.sw.rel);
@@ -1221,6 +1246,18 @@ export async function makeGame(ctx) {
   const cardPose = { p: V(0, 0, 0), q: new THREE.Quaternion() };
   const _cy = V(0, 0, 0);
   const inAir = (c, tt) => (c.toss && tt >= c.toss.t0 && tt < c.toss.t1) || (c.pitch && tt >= c.pitch.t0 && tt < c.lay);
+  // A card in the wash: drawn in under the hand's circle to the pile, the
+  // pile pushed on to the slot's lip.
+  const _py = new THREE.Quaternion(), _po = V(0, 0, 0);
+  const pileAt = (c, tt, out) => {
+    const S = c.sw, uw = clamp01((tt - S.grab) / (S.wash - S.grab)), g = smoother(uw), u2 = smoother(clamp01((tt - S.wash) / (S.push - S.wash)));
+    const o = washOff(uw, _po);
+    const x = lerp(S.p0.x, S.cx + S.ox + o.x * WASH.follow, g), y = lerp(S.p0.y, S.py, g), z = lerp(S.p0.z, S.cz + S.oz + o.z * WASH.follow, g);
+    const E = swPose(SWP.m0, SWP.th0, S.qr);
+    out.p.set(lerp(x, E.p.x, u2), lerp(y, E.p.y + S.dy, u2), lerp(z, E.p.z, u2));
+    out.q.copy(_py.setFromAxisAngle(up, (S.wob * Math.sin(Math.PI * uw) + S.fin * g) * (1 - u2))).multiply(S.qr).slerp(E.q, u2 * u2 * u2);
+    return out;
+  };
   const poseCards = tt => {
     cards.forEach(c => {
       const g = c.obj;
@@ -1230,11 +1267,11 @@ export async function makeGame(ctx) {
       if (c.sw && tt >= c.sw.grab) {
         if (tt < c.sw.rel && c.sw.auto) {
           const e = smoother(clamp01((tt - c.sw.grab) / SWP.slide)), E = swPose(SWP.m0, SWP.th0, c.sw.qr);
-          cardPose.p.copy(c.sw.p0).lerp(E.p, e); cardPose.q.copy(c.sw.qr).slerp(E.q, e * e * e);
-        } else if (tt < c.sw.rel) cardIn(arms[1].now, cardPose, 1);
+          cardPose.p.copy(c.sw.p0).lerp(E.p, e); cardPose.p.y += c.sw.dy * e; cardPose.q.copy(c.sw.qr).slerp(E.q, e * e * e);
+        } else if (tt < c.sw.rel) pileAt(c, tt, cardPose);
         else {
           const u = clamp01((tt - c.sw.rel) / SWP.drop), P = swPose(lerp(SWP.m0, CARD.h / 2 + 0.5, Math.pow(u, 1.7)), lerp(SWP.th0, SWP.th1, Math.pow(u, 1.2)), c.sw.qr);
-          cardPose.p.copy(P.p); cardPose.q.copy(P.q);
+          cardPose.p.copy(P.p); cardPose.p.y += c.sw.dy * (1 - u); cardPose.q.copy(P.q);
           if (u >= 1) { g.visible = false; g.userData.contact.visible = false; return; }
         }
       } else if (!air && tt < c.lay) {
@@ -1494,7 +1531,7 @@ export async function makeGame(ctx) {
     else if (c.lay < Infinity) at(c.lay, 'pat', { speed: 50 });
     if (c.turn < Infinity) { at(c.turn, 'snap', { soft: true }); if (!c.edge) at(turnEnd(c), 'pat', { speed: 90 }); }
   });
-  cards.forEach(c => { if (c.sw) { if (c.sw.auto) at(c.sw.grab, 'slide', { dur: SWP.slide }); else at(c.sw.grab, 'pat', { speed: 30 }); at(c.sw.rel, 'slide', { dur: SWP.drop }); } });
+  cards.forEach(c => { if (c.sw) { if (c.sw.auto) at(c.sw.grab, 'slide', { dur: SWP.slide }); else { at(c.sw.grab, 'pat', { speed: 30 }); at(c.sw.grab + 0.06, 'slide', { dur: c.sw.wash - c.sw.grab }); at(c.sw.wash, 'slide', { dur: c.sw.push - c.sw.wash }); } at(c.sw.rel, 'slide', { dur: SWP.drop }); } });
   if (tier === 'edge') { at(holeCard.turn + DEAL.push + EDGE, 'pat', { speed: 25 }); at(plan.silence[1], 'drop'); }
   if (plan.slot) { at(plan.slot.open, 'servo', { f0: 220, f1: 340, dur: 0.32 }); at(plan.slot.close, 'servo', { f0: 340, f1: 200, dur: 0.36 }); at(plan.slot.close + 0.34, 'knock', { soft: true }); }
   at(plan.sinkW + SINK.lag, 'servo', { f0: 150, f1: 60, dur: SINK.down });
