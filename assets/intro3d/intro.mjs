@@ -778,9 +778,11 @@ export function studioEnvironment(renderer) {
 // starts the sound (see createIntro), and the speaker button turns it on
 // or off without skipping the shot.
 class Sound {
-  constructor() {
+  // (ctx: an OfflineAudioContext to render into, ahead - see the music,
+  // rendered ahead, in createIntro; else the page's own, made here)
+  constructor(ctx) {
     const AC = window.AudioContext || window.webkitAudioContext;
-    this.ctx = AC ? new AC() : null;
+    this.ctx = ctx || (AC ? new AC() : null);
     if (!this.ctx) return;
     const c = this.ctx;
     this.master = c.createGain(); this.master.gain.value = 0.85; this.master.connect(c.destination);
@@ -1912,6 +1914,36 @@ async function buildIntro(opts, undo, teardown) {
   try { sound = o.sound ? new Sound() : null; } catch (e) { sound = null; }
   // (read when undone: the speaker can make one later)
   undo.push(() => { if (sound && sound.ctx) sound.ctx.close().catch(() => {}); });
+  // ---- The music, rendered ahead. A game's music (its `band` events) is
+  // many voices at once, and made live it is more than a phone can keep up
+  // with while it draws the shot's busiest moments: it stuttered through
+  // the transitions and the title. So it is rendered, offline, into one
+  // buffer while the shot gets ready (the rendering runs on the audio
+  // thread, beside the shaders' warming), and played back as that buffer;
+  // the groove the same, eight bars of it, looped on its last four (which
+  // carry the first four's tails). Not ready in time, or no offline
+  // context: the music is made live, as before.
+  let music = null;
+  const bandEvs = sfx.filter(e => e.band);
+  const prepared = sound && sound.ctx && bandEvs.length && window.OfflineAudioContext ? (async () => {
+    const rate = sound.ctx.sampleRate;
+    const renderAhead = (evs, len) => {
+      const off = new OfflineAudioContext(2, Math.ceil(len * rate), rate), s2 = new Sound(off);
+      s2.master.gain.value = 1;
+      evs.forEach(e => s2.play(e, e.t, e.rate || 1));
+      return off.startRendering();
+    };
+    try {
+      const main = await renderAhead(bandEvs, Math.max(...bandEvs.map(e => e.t + (e.dur || 0))) + 3);
+      let loop = null;
+      if (game && game.groove) {
+        const g = game.groove, evs = [];
+        for (let k = 0; k < 8; k++) g.bar(k).forEach(e => evs.push(Object.assign({}, e, { t: k * g.barLen + e.t })));
+        loop = await renderAhead(evs, 8 * g.barLen + 0.5);
+      }
+      return { main, loop };
+    } catch (e) { return null; }
+  })() : null;
   if (sound && sound.ctx) {
     if (rare.clackBytes) sound.ctx.decodeAudioData(rare.clackBytes.slice(0)).then(b => { sound.clack = b; }).catch(() => {});
     try { sound.ctx.resume().catch(() => { /* needs a tap */ }); } catch (e) { /* needs a tap */ }
@@ -2444,6 +2476,16 @@ async function buildIntro(opts, undo, teardown) {
   // mapped afresh each frame, every frame's own jitter put each beat a
   // little early or late, and the music stuttered.)
   let clock = null;
+  // (a rendered buffer played into the sound, through a gain of its own to
+  // fade it by; and let go, faded in a moment)
+  const playBuf = (buffer, when, offset, loop) => {
+    const src = sound.ctx.createBufferSource(), g = sound.ctx.createGain();
+    src.buffer = buffer; src.connect(g); g.connect(sound.master);
+    if (loop) { src.loop = true; src.loopStart = loop[0]; src.loopEnd = loop[1]; }
+    src.start(when, offset);
+    return { src, g };
+  };
+  const letGo = p => { if (!p || !sound || !sound.ctx) return; const now = sound.ctx.currentTime; p.g.gain.setTargetAtTime(0, now, 0.04); try { p.src.stop(now + 0.3); } catch (e) { /* stopped */ } };
   const scheduleSound = (from, to) => {
     if (!sound || !sound.on) return;
     const now = sound.ctx.currentTime;
@@ -2451,9 +2493,17 @@ async function buildIntro(opts, undo, teardown) {
     const at = s => Math.max(now, clock.ctx + (s - clock.t));
     if (!sound.bed && silenceAt == null) sound.ambience(now);
     if (silenceAt != null && !sound.bed && t < silenceAt) sound.ambience(now);
+    // (the music rendered ahead: its buffer set going at the shot's second)
+    // (and the groove set to follow it on the buffer's own clock, not the
+    // shot's: a frame that falls behind must not leave a gap between them)
+    if (music && !music.src && from < music.main.duration) {
+      const when = at(from), off = Math.max(0, from);
+      music.src = playBuf(music.main, when, off);
+      if (groove && !ride) startRide(when + groove.from - off);
+    }
     while (sfxIndex < sfx.length && sfx[sfxIndex].t < to) {
       const ev = sfx[sfxIndex++];
-      if (ev.t < from - 0.05) continue;
+      if (ev.t < from - 0.05 || (music && ev.band)) continue;
       sound.play(ev, at(ev.t), ev.rate || 1);
     }
     if (silenceAt != null && !silenced && to >= silenceAt) { silenced = true; sound.cut(at(silenceAt)); }
@@ -2467,10 +2517,12 @@ async function buildIntro(opts, undo, teardown) {
   // as long as the page lasts, with o.musicStays (or music.stay(true)).
   const groove = game && game.groove, RIDE = 21;
   let ride = null, stays = !!o.musicStays;
+  // (what the ride fades by: its looped buffer's gain, or the live band's)
+  const rideGain = () => (ride && ride.buf ? ride.buf.g : sound.bandGain);
   const rideFade = (from, k) => {
-    if (!sound.bandGain) return;
-    sound.bandGain.gain.cancelScheduledValues(from);
-    sound.bandGain.gain.setTargetAtTime(0, from, groove.barLen * 0.7);
+    const g = rideGain(); if (!g) return;
+    g.gain.cancelScheduledValues(from);
+    g.gain.setTargetAtTime(0, from, groove.barLen * 0.7);
     ride.endK = k;
   };
   const rideTick = () => {
@@ -2482,23 +2534,29 @@ async function buildIntro(opts, undo, teardown) {
       const t0 = ride.ctx0 + ride.k * len;
       if (ride.endK != null && ride.k >= ride.endK) { stopRide(); return; }
       if (!stays && ride.endK == null && ride.k >= RIDE - 3) rideFade(t0, RIDE);
-      groove.bar(ride.k).forEach(ev => sound.play(ev, t0 + ev.t, 1));
+      // (the looped buffer plays itself: only the count of its bars is kept here)
+      if (!ride.buf) groove.bar(ride.k).forEach(ev => sound.play(ev, t0 + ev.t, 1));
       ride.k++;
     }
   };
-  const startRide = ctx0 => { ride = { ctx0, k: 0, endK: null, timer: setInterval(rideTick, 120) }; rideTick(); };
-  const stopRide = () => { if (ride) clearInterval(ride.timer); ride = { done: true, k: 0, endK: 0 }; };
+  const startRide = ctx0 => {
+    const len = groove.barLen;
+    ride = { ctx0, k: 0, endK: null, timer: setInterval(rideTick, 120), buf: music && music.loop ? playBuf(music.loop, ctx0, 0, [4 * len, 8 * len]) : null };
+    rideTick();
+  };
+  const stopRide = () => { if (ride) { clearInterval(ride.timer); if (ride.buf) letGo(ride.buf); } ride = { done: true, k: 0, endK: 0 }; };
   undo.push(() => { if (ride && ride.timer) clearInterval(ride.timer); });
-  const music = {
+  const musicApi = {
     // (kept on: a fade already begun is taken back; let go: it fades from the next bar)
     stay(on) {
       stays = !!on;
       if (!ride || ride.done || !sound || !sound.ctx) return;
       const now = sound.ctx.currentTime;
-      if (stays && ride.endK != null && sound.bandGain) { sound.bandGain.gain.cancelScheduledValues(now); sound.bandGain.gain.setTargetAtTime(0.9, now, 0.3); ride.endK = null; }
+      const g = rideGain();
+      if (stays && ride.endK != null && g) { g.gain.cancelScheduledValues(now); g.gain.setTargetAtTime(ride.buf ? 1 : 0.9, now, 0.3); ride.endK = null; }
       if (!stays && ride.endK == null) rideFade(now, Math.max(ride.k + 1, Math.ceil((now - ride.ctx0) / groove.barLen) + 2));
     },
-    stop() { if (ride && !ride.done && sound && sound.bandGain) sound.bandGain.gain.setTargetAtTime(0, sound.ctx.currentTime, 0.4); stopRide(); }
+    stop() { const g = ride && !ride.done && sound ? rideGain() : null; if (g) g.gain.setTargetAtTime(0, sound.ctx.currentTime, 0.4); stopRide(); }
   };
   // Fires the landing's cues once each, whichever way the shot gets there.
   const cue = () => {
@@ -2515,6 +2573,7 @@ async function buildIntro(opts, undo, teardown) {
     rest(() => render(t));
     soundBtn.hidden = true;
     if (sound && sound.bed) sound.cut(sound.ctx.currentTime);
+    if (music && music.src) { letGo(music.src); music.src = null; }
     cue();
   };
   // The float has risen into the ceiling: the frame stays, the loop rests.
@@ -2668,9 +2727,16 @@ async function buildIntro(opts, undo, teardown) {
     for (const tt of at) { render(Math.min(floatEnd, Math.max(0, tt))); await breath(); checkAbort(); }
     canvas.style.visibility = '';
   }
+  // (the music rendered ahead, if it is ready - or nearly: it is waited
+  // on a little, else made live)
+  if (prepared) {
+    const done = await Promise.race([prepared, new Promise(res => setTimeout(() => res(null), 4000))]);
+    checkAbort();
+    if (done && done.main) music = done;
+  }
   render(0);
   return {
-    music,
+    music: musicApi,
     // (sound wanted but held by the browser until a gesture - its autoplay
     // rule - and that gesture's resume; see the landing's tap to roll)
     soundWaiting() { return !!(sound && sound.ctx && !sound.muted && sound.ctx.state !== 'running'); },
@@ -2686,6 +2752,11 @@ async function buildIntro(opts, undo, teardown) {
       if (t < plan.totalReal) {
         t = plan.totalReal;
         sfxIndex = sfx.findIndex(ev => ev.t >= t); if (sfxIndex < 0) sfxIndex = sfx.length;
+        // (the rendered music taken up again from there, and its groove after it)
+        if (music && music.src) {
+          letGo(music.src); music.src = null;
+          if (ride && !ride.done && sound && ride.ctx0 > sound.ctx.currentTime) { stopRide(); ride = null; }
+        }
       }
       if (!playing && t < floatEnd) { playing = true; last = 0; pacer.reset(); move(); raf = requestAnimationFrame(loop); }
       render(t);
