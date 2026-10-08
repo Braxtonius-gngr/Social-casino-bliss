@@ -444,35 +444,62 @@ export async function makeGame(ctx) {
   // the money touches it: then liquid gold spreads out in rings from each
   // point of contact, the first bills' and more as they keep coming, the
   // rings running together until the sea is gold.
-  const GS = 16;
   const byLand = billPlan.slice().sort((a, b) => a.land - b.land);
   const seeds = [0, 2, 5, 9, 14, 20, 28, 38, 50, 65, 85, 110, 140, 180, 230, 300].map(k => {
-    const b = byLand[Math.min(k, NB - 1)], p = billAt(b, b.land - 0.01).p; return new THREE.Vector4(p.x, p.z, b.land, 0);
+    const b = byLand[Math.min(k, NB - 1)], p = billAt(b, b.land - 0.01).p; return { x: p.x, y: p.z, z: b.land };
   });
   // (a ring's radius, its soft edge, a moment after contact: slow at first, then racing out)
   const ringR = x => 40 * x + 950 * x * x;
-  const seaU = { uT: { value: 0 }, uS: { value: seeds } };
+  const ringSoft = R => 40 + 0.1 * R;
   const goldAt = p => {
     let g = 0;
-    seeds.forEach(sd => { const x = seaU.uT.value - sd.z; if (x <= 0) return; const R = ringR(x), soft = 40 + 0.1 * R, d = Math.hypot(p.x - sd.x, p.z - sd.y); g = Math.max(g, 1 - smoother((d - (R - soft)) / soft)); });
+    seeds.forEach(sd => { const x = seaU.uT.value - sd.z; if (x <= 0) return; const R = ringR(x), soft = ringSoft(R), d = Math.hypot(p.x - sd.x, p.z - sd.y); g = Math.max(g, 1 - smoother((d - (R - soft)) / soft)); });
     return g;
   };
-  // (worked out per vertex and handed on: sixteen seeds as uniforms in the
-  // sea's fragment shader were more than a phone's GPU allows beside the
-  // physical material's own, and the sea failed to draw at all)
+  // (the field is painted here, each frame while it spreads, into a small
+  // map laid over the water about the landing - the gold in red, its bright
+  // seam in green - and the sea's shaders only look it up: the rings worked
+  // out in the shaders themselves, from an array of seeds, drew on a
+  // desktop and not on a phone's GPU. Beyond the map, a disc about the
+  // landing that the rings are known to have covered.)
+  const GT = 256, GH = 2400, gtData = new Uint8Array(GT * GT * 4), gtG = new Float32Array(GT * GT), gtE = new Float32Array(GT * GT);
+  const goldMap = new THREE.DataTexture(gtData, GT, GT, THREE.RGBAFormat, THREE.UnsignedByteType);
+  goldMap.magFilter = goldMap.minFilter = THREE.LinearFilter; goldMap.needsUpdate = true; keep(null, null, goldMap);
+  const seaU = { uT: { value: 0 }, uGT: { value: goldMap }, uGA: { value: new THREE.Vector4(LAND.x, LAND.z, 1 / (2 * GH), 0) }, uGF: { value: new THREE.Vector2(0, 1) } };
+  let goldFull = Infinity;
+  const paintGold = w => {
+    if (w >= goldFull) return;
+    gtG.fill(0); gtE.fill(0);
+    let far = 0, farSoft = 1;
+    const cell = 2 * GH / GT;
+    seeds.forEach(sd => {
+      const x = w - sd.z; if (x <= 0) return;
+      const R = ringR(x), soft = ringSoft(R), reach = R - Math.hypot(sd.x - LAND.x, sd.y - LAND.z);
+      if (reach > far) { far = reach; farSoft = soft; }
+      const i0 = Math.max(0, Math.floor((sd.x - R - soft - LAND.x + GH) / cell)), i1 = Math.min(GT - 1, Math.ceil((sd.x + R + soft - LAND.x + GH) / cell));
+      const j0 = Math.max(0, Math.floor((sd.y - R - soft - LAND.z + GH) / cell)), j1 = Math.min(GT - 1, Math.ceil((sd.y + R + soft - LAND.z + GH) / cell));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const px = LAND.x - GH + (i + 0.5) * cell, pz = LAND.z - GH + (j + 0.5) * cell, d = Math.hypot(px - sd.x, pz - sd.y), k = j * GT + i;
+        const g = 1 - smoother((d - (R - soft)) / soft), e = (d - R + soft * 0.5) / (soft * 0.5);
+        if (g > gtG[k]) gtG[k] = g;
+        const ee = Math.exp(-Math.min(e * e, 30)); if (ee > gtE[k]) gtE[k] = ee;
+      }
+    });
+    for (let k = 0; k < GT * GT; k++) { gtData[k * 4] = Math.round(255 * gtG[k]); gtData[k * 4 + 1] = Math.round(255 * gtE[k] * Math.min(1, 2 * (1 - gtG[k]))); }
+    goldMap.needsUpdate = true;
+    seaU.uGF.value.set(far, farSoft);
+    // (the map wholly inside the disc: nothing left to paint)
+    if (far - farSoft > GH * 1.5) goldFull = w;
+  };
   const FIELD = `
-    uniform vec4 uS[${GS}];
+    uniform sampler2D uGT; uniform vec4 uGA; uniform vec2 uGF;
     // (x: the gold, y: its bright spreading seam)
     vec2 gfield(vec2 q){
-      float g = 0.0, edge = 0.0;
-      for (int i = 0; i < ${GS}; i++){
-        vec4 sd = uS[i];
-        float x = max(uT - sd.z, 0.0), on = step(0.0001, x);
-        float R = 40.0 * x + 950.0 * x * x, soft = 40.0 + 0.1 * R, d = length(q - sd.xy);
-        g = max(g, on * (1.0 - smoothstep(R - soft, R, d)));
-        float k = (d - R + soft * 0.5) / (soft * 0.5); edge = max(edge, on * exp(-min(k * k, 30.0)));
-      }
-      return vec2(g, edge * clamp(2.0 * (1.0 - g), 0.0, 1.0));
+      vec2 uv = (q - uGA.xy) * uGA.z + 0.5;
+      float inside = step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0);
+      vec2 s = texture2D(uGT, clamp(uv, 0.0, 1.0)).rg * inside;
+      float far = step(0.0001, uGF.x) * (1.0 - smoothstep(uGF.x - uGF.y, uGF.x, length(q - uGA.xy)));
+      return vec2(max(s.x, far), s.y);
     }`;
   const seaM = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0.08, clearcoat: 0, envMapIntensity: 1.2 });
   const WAVES = `
@@ -696,7 +723,7 @@ export async function makeGame(ctx) {
     scene.environment = out ? skyEnv : env0;
     if (out) {
       poseJet(w); poseBills(w);
-      seaU.uT.value = w;
+      seaU.uT.value = w; if (w >= byLand[0].land - 0.02) paintGold(w);
       poseSplashes(w, goldAt); poseSpray(w, goldAt);
     }
     // (under the gold: its own light and the bubbles, about the lens)
@@ -724,14 +751,18 @@ export async function makeGame(ctx) {
   // (the dice clicking together as they leave the hand)
   [0, 0.03, 0.07].forEach(k => sfx.push({ t: Rw(THROW[0]) + k, kind: 'rattle' }));
   [[1.42, 150], [1.72, 110], [2.0, 200]].forEach(([w, sp]) => sfx.push({ t: Rw(w), kind: w === 2.0 ? 'wall' : 'felt', speed: sp, rate: warp.rateAt(Rw(w)) }));
-  // The music: "Wild" (tracks.mjs) - the skank over the photograph, the
-  // build from the throw, the drop on the crash zoom, the biggest hit on the
-  // title. (Real seconds, on the grid set with the plan: the music keeps its
-  // time through the slow motion.)
+  // The music: "Wild" (tracks.mjs) - the bed over the photograph, the build
+  // from the throw into the crash zoom, the music sinking under the jet's
+  // pass and back on the beat after it, the biggest hit on the title.
+  // (Real seconds, on the grid set with the plan: the music keeps its time
+  // through the slow motion.)
   // (the shot's own music runs to the first bar after its end; from there
   // the intro loops the groove on - see groove, below)
   const G = bz + 4 * Math.ceil((Rw(T.end) - at(bz)) / (4 * BEAT));
-  sfx.push(...wildBeat({ at, BEAT, first: -Math.ceil(Rs / BEAT), drop: bz, title: nb, end: at(G), build: Rw(T.whip) }));
+  // (the jet is the drop: the music sinks away under its pass and comes back
+  // on the beat - every other one - just after it has gone over)
+  const back = Math.min(nb - 6, bz + 2 * Math.ceil((Rw(T.jet) + 0.45 - at(bz)) / (2 * BEAT)));
+  sfx.push(...wildBeat({ at, BEAT, first: -Math.ceil(Rs / BEAT), drop: bz, back, title: nb, end: at(G), build: Rw(T.whip) }));
   sfx.sort((a, b) => a.t - b.t);
 
   const warmAt = [Rw(T.swap) + 0.05, Rw(T.jet), Rw(T.gold[1]), Rw(T.dive[1]) + 0.1];

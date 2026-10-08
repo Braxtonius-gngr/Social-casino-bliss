@@ -1004,12 +1004,12 @@ class Sound {
         src.buffer = this.noise; src.loop = true; src.playbackRate.value = 0.7;
         lp.type = 'lowpass'; lp.Q.value = 0.7;
         lp.frequency.setValueAtTime(300, when); lp.frequency.exponentialRampToValueAtTime(2600, pk); lp.frequency.exponentialRampToValueAtTime(500, pk + 2.5);
-        g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(0.05, pk - 2); g.gain.exponentialRampToValueAtTime(0.5, pk); g.gain.exponentialRampToValueAtTime(0.1, pk + 1.6); g.gain.exponentialRampToValueAtTime(0.0001, end);
+        g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(0.04, pk - 2); g.gain.exponentialRampToValueAtTime(0.4, pk); g.gain.exponentialRampToValueAtTime(0.08, pk + 1.6); g.gain.exponentialRampToValueAtTime(0.0001, end);
         src.connect(lp); lp.connect(g); g.connect(this.out || this.master);
         src.start(when); src.stop(end + 0.05);
         const o = c.createOscillator(), og = c.createGain();
         o.type = 'sawtooth'; o.frequency.setValueAtTime(2100, when); o.frequency.linearRampToValueAtTime(1900, pk - 0.2); o.frequency.exponentialRampToValueAtTime(1250, pk + 0.6);
-        og.gain.setValueAtTime(0.0001, when); og.gain.exponentialRampToValueAtTime(0.012, pk - 0.4); og.gain.exponentialRampToValueAtTime(0.0001, pk + 2.2);
+        og.gain.setValueAtTime(0.0001, when); og.gain.exponentialRampToValueAtTime(0.0096, pk - 0.4); og.gain.exponentialRampToValueAtTime(0.0001, pk + 2.2);
         o.connect(og); og.connect(this.out || this.master); o.start(when); o.stop(pk + 2.3);
         break;
       }
@@ -2436,30 +2436,39 @@ async function buildIntro(opts, undo, teardown) {
     if (med > 0.036 && pixelRatio > 1) { pixelRatio = Math.max(1, pixelRatio - 0.5); pacedWait = now + pacedFor; pacedFor = Math.min(PACED_MAX, pacedFor * 2); refit = true; }
     else if (med < 0.021 && now > pacedWait && pixelRatio < LIVE_MAX) { pixelRatio = Math.min(LIVE_MAX, pixelRatio + 0.5); refit = true; }
   };
+  // (from: the shot's second now; to: how far ahead to lay sounds down.
+  // One steady map from the shot's seconds to the sound's clock, laid again
+  // only when the two part - a stall, a skip - so the music keeps its time:
+  // mapped afresh each frame, every frame's own jitter put each beat a
+  // little early or late, and the music stuttered.)
+  let clock = null;
   const scheduleSound = (from, to) => {
     if (!sound || !sound.on) return;
     const now = sound.ctx.currentTime;
+    if (!clock || Math.abs((now - clock.ctx) - (from - clock.t)) > 0.08) clock = { ctx: now, t: from };
+    const at = s => Math.max(now, clock.ctx + (s - clock.t));
     if (!sound.bed && silenceAt == null) sound.ambience(now);
     if (silenceAt != null && !sound.bed && t < silenceAt) sound.ambience(now);
     while (sfxIndex < sfx.length && sfx[sfxIndex].t < to) {
       const ev = sfx[sfxIndex++];
       if (ev.t < from - 0.05) continue;
-      sound.play(ev, now + Math.max(0, ev.t - from), ev.rate || 1);
+      sound.play(ev, at(ev.t), ev.rate || 1);
     }
-    if (silenceAt != null && !silenced && to >= silenceAt) { silenced = true; sound.cut(now + Math.max(0, silenceAt - from)); }
-    if (groove && !ride && to >= groove.from) startRide(now + Math.max(0, groove.from - from));
+    if (silenceAt != null && !silenced && to >= silenceAt) { silenced = true; sound.cut(at(silenceAt)); }
+    if (groove && !ride && to >= groove.from) startRide(at(groove.from));
   };
   // ---- The ride-out: a game's groove ({ from, barLen, bar(k) }, real
   // seconds) carries its music on where its own events end - through the
   // float, the fly-in and onto the table - on its own clock, since the
-  // shot's loop stops at the handover. RIDE bars and then faded out; or for
+  // shot's loop stops at the handover. RIDE bars (half a minute) and then
+  // faded out over the last three; or for
   // as long as the page lasts, with o.musicStays (or music.stay(true)).
-  const groove = game && game.groove, RIDE = 8;
+  const groove = game && game.groove, RIDE = 21;
   let ride = null, stays = !!o.musicStays;
   const rideFade = (from, k) => {
     if (!sound.bandGain) return;
     sound.bandGain.gain.cancelScheduledValues(from);
-    sound.bandGain.gain.setTargetAtTime(0, from, groove.barLen * 0.5);
+    sound.bandGain.gain.setTargetAtTime(0, from, groove.barLen * 0.7);
     ride.endK = k;
   };
   const rideTick = () => {
@@ -2470,7 +2479,7 @@ async function buildIntro(opts, undo, teardown) {
     while (ride.ctx0 + ride.k * len < now + 0.6) {
       const t0 = ride.ctx0 + ride.k * len;
       if (ride.endK != null && ride.k >= ride.endK) { stopRide(); return; }
-      if (!stays && ride.endK == null && ride.k >= RIDE - 2) rideFade(t0, RIDE);
+      if (!stays && ride.endK == null && ride.k >= RIDE - 3) rideFade(t0, RIDE);
       groove.bar(ride.k).forEach(ev => sound.play(ev, t0 + ev.t, 1));
       ride.k++;
     }
@@ -2526,7 +2535,6 @@ async function buildIntro(opts, undo, teardown) {
     // Time runs with the clock (a slow device drops frames rather than
     // stretching the shot); only a stall - a hidden tab - is held back.
     const dt = Math.min(raw, 0.1);
-    const t0 = t;
     t += dt;
     // (the first frames are skipped: they carry texture uploads and the
     // app's own start-up)
@@ -2542,7 +2550,7 @@ async function buildIntro(opts, undo, teardown) {
       // instead (as with motion off) rather than stutter through the shot.
       else if (med > 0.12 && quality === 0) { still(); return; }
     }
-    scheduleSound(t0, t + 0.1);
+    scheduleSound(t, t + 0.35);
     if (t >= floatEnd) { settle(); return; }
     render(t);
     cue();
