@@ -71,6 +71,12 @@ export async function makeGame(ctx) {
   // (what the intro built - its room, its table, its lights - so the sky can put it away)
   const theirs = scene.children.slice();
   const fog0 = scene.fog, bg0 = scene.background;
+  // (the room's ceiling pieces - its lamp panels over the table - are put
+  // away for this shot: the lens looks straight up past them, and the gleam
+  // is the only light it should find there)
+  const overhead = [];
+  scene.updateMatrixWorld(true);
+  theirs.forEach(o => o.traverse(m => { if (m.isMesh && m.visible) { const b = new THREE.Box3().setFromObject(m); if (b.min.y > 110 && b.max.y < 1000) overhead.push(m); } }));
 
   // ---- The plan.
   const warp = makeWarp(T.over);
@@ -397,7 +403,7 @@ export async function makeGame(ctx) {
     streak.renderOrder = full.renderOrder = 999; card.add(full, streak); scene.add(card);
     return { card, streak, full, m, wash };
   })();
-  const flashAt = w => Math.exp(-(((w - T.swap) / 0.16) ** 2));
+  const flashAt = w => Math.exp(-(((w - T.swap) / 0.22) ** 2));
 
   // ================================================================ the lens
   // keys [w, eye, aim]: on the felt, up after the dice, through the gleam to
@@ -415,7 +421,8 @@ export async function makeGame(ctx) {
       aim.copy(face).lerp(follow, k);
       // (as they pass over, on up toward the ceiling - not straight up: the lens keeps its horizon)
       const up = smoother((w - (T.over - 0.05)) / (T.swap - T.over + 0.05));
-      aim.lerp(V(2, 260, -90), up);
+      // (on over its head after the dice, up past the wall into the dark above it - the lamp over the table stays behind the lens)
+      aim.lerp(V(2, 300, -125), up);
       eye.y += 0.6 * Math.sin(w * 1.3) * (1 - up);
       return { eye, aim };
     }
@@ -464,6 +471,7 @@ export async function makeGame(ctx) {
     const out = w >= T.swap;
     // (the room and the sky trade places at the gleam's peak)
     for (const o of theirs) o.visible = !out;
+    overhead.forEach(m => { m.visible = false; });
     thrower.visible = !out; key.visible = !out;
     dice.forEach((d, i) => { d.visible = !out; const p = dicePose(i, w); d.position.set(p.p[0], p.p[1], p.p[2]); d.rotation.set(p.r[0], p.r[1], p.r[2]); });
     // (his throw: a lean in and a snap forward at the release)
@@ -574,6 +582,7 @@ export async function makeGame(ctx) {
   const warmAt = [Rw(T.swap) + 0.05, Rw(T.jet), Rw(T.gold[1]), Rw(T.dive[1]) + 0.1];
   const dispose = () => {
     for (const o of theirs) o.visible = true;
+    overhead.forEach(m => { m.visible = true; });
     scene.fog = fog0; scene.background = bg0; scene.environment = env0;
     scene.remove(thrower, key, sky, flare.card, ...dice);
     made.geos.forEach(g => g.dispose()); made.mats.forEach(m => m.dispose()); made.texs.forEach(t => t.dispose());
