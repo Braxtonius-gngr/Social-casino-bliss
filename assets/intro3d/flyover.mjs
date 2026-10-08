@@ -713,7 +713,18 @@ export async function makeGame(ctx) {
   // as gold before any money had landed)
   const underCol = new THREE.Color(0xc8861e), skyFog = new THREE.FogExp2(0xf6b47a, 0.00034), underFog = new THREE.FogExp2(0xb07418, 0.004);
   const hazeCool = new THREE.Color(0x9db3c4), hazeWarm = new THREE.Color(0xf6b47a);
+  // (handed off to the room - see handoff: the shot is over, and a frame of
+  // it drawn again after - a warm, a resize - keeps to the room)
+  let handed = false;
+  const roomBack = () => {
+    for (const o of theirs) o.visible = true;
+    overhead.forEach(m => { m.visible = true; });
+    sky.visible = false; under.dome.visible = under.bubbles.visible = false; photo.card.visible = false; flare.card.visible = false;
+    dice.forEach(d => { d.visible = false; }); flung.forEach(m => { m.visible = false; });
+    scene.fog = fog0; scene.background = bg0; scene.environment = env0;
+  };
   const stage = (t, { w }) => {
+    if (handed) { roomBack(); return { burst: -1 }; }
     const out = w >= T.swap;
     // (the room and the sky trade places at the gleam's peak)
     for (const o of theirs) o.visible = !out;
@@ -740,15 +751,47 @@ export async function makeGame(ctx) {
       under.poseAt(w);
     }
     // (the gleam card, held in front of the lens across the hand-off)
-    const f = flashAt(w);
-    flare.card.visible = f > 0.01;
-    if (flare.card.visible) {
-      const d = lens.aim.clone().sub(lens.eye).normalize();
-      flare.card.position.copy(lens.eye).addScaledVector(d, 4); flare.card.lookAt(lens.eye);
-      flare.streak.scale.set(16, 4, 1); flare.streak.position.set(lerp(-8, 8, smoother((w - (T.swap - 0.25)) / 0.5)), 0, 0); flare.streak.rotation.z = 0.5;
-      flare.m.opacity = f; flare.full.scale.set(14, 14, 1); flare.wash.opacity = 0.95 * Math.pow(f, 1.4);
-    }
+    holdFlare(flashAt(w), lens.eye, lens.aim, lerp(-8, 8, smoother((w - (T.swap - 0.25)) / 0.5)));
     return { burst: -1 };
+  };
+  // (the gleam card at strength f in front of the lens, its streak at sx)
+  const holdFlare = (f, eye, aim, sx) => {
+    flare.card.visible = f > 0.01;
+    if (!flare.card.visible) return;
+    const d = aim.clone().sub(eye).normalize();
+    flare.card.position.copy(eye).addScaledVector(d, 4); flare.card.lookAt(eye);
+    flare.streak.scale.set(16, 4, 1); flare.streak.position.set(sx, 0, 0); flare.streak.rotation.z = 0.5;
+    flare.m.opacity = f; flare.full.scale.set(14, 14, 1); flare.wash.opacity = 0.95 * Math.pow(f, 1.4);
+  };
+  // ---- The way out, onto the table (the intro plays it when the seat is
+  // taken, before the fly-in): the lens rises up through the gold toward
+  // the light, breaks the surface into a gold glare - and behind the glare
+  // the sky and the sea are put away and the room is back, the lens high
+  // under its ceiling, still rising as the glare clears; the fly-in takes
+  // it from there.
+  const ROOM_EYE = [V(0, 118, 150), V(0, 140, 128)], ROOM_AIM = V(0, 22, -10);
+  const handoff = (eye0, aim0) => {
+    const look = aim0.clone().sub(eye0).setY(0);
+    if (look.lengthSq() < 1e-6) look.set(0, 0, -1);
+    look.normalize();
+    const frame = u => {
+      const eye = V(), aim = V();
+      if (u < 0.45) {
+        // (rising, the lens tipping up to the light)
+        const k = smoother(u / 0.45);
+        eye.copy(eye0).setY(lerp(eye0.y, SEA + 30, k));
+        aim.copy(eye).addScaledVector(look, 100).add(V(0, lerp(-20, 160, k), 0));
+        under.dome.position.copy(eye); under.bubbles.position.copy(eye);
+        holdFlare(smoother((u - 0.12) / 0.33), eye, aim, lerp(-8, 8, k));
+      } else {
+        if (!handed) { handed = true; roomBack(); }
+        const k = smoother((u - 0.45) / 0.55);
+        eye.copy(ROOM_EYE[0]).lerp(ROOM_EYE[1], k); aim.copy(ROOM_AIM);
+        holdFlare(1 - smoother((u - 0.45) / 0.4), eye, aim, 8);
+      }
+      return { eye, aim };
+    };
+    return { dur: 1.7, frame };
   };
 
   // ---- Sounds, real seconds (the jet and the beat are the Sound's own voices).
@@ -781,7 +824,7 @@ export async function makeGame(ctx) {
     made.geos.forEach(g => g.dispose()); made.mats.forEach(m => m.dispose()); made.texs.forEach(t => t.dispose());
   };
   return {
-    plan, camera, gleamAt, shakeAt, stage, callAt, sfx, warmAt, dispose,
+    plan, camera, gleamAt, shakeAt, stage, callAt, sfx, warmAt, dispose, handoff,
     // (the music carried on past the shot: from the bar its own ends on)
     groove: Object.assign(wildGroove({ BEAT, bar0: (G - bz) / 4 }), { from: at(G) }),
     tierNames: TIER_NAMES,

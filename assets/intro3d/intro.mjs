@@ -2766,6 +2766,25 @@ async function buildIntro(opts, undo, teardown) {
     },
     // Motion off: the finished frame, held still.
     finish: still,
+    // A game's way out of its shot into the room, played before the fly-in
+    // (game.handoff(eye, aim) -> { dur, frame(u) -> { eye, aim } }: the
+    // flyover's rise out of the gold); nothing for the others. Motion off,
+    // it is skipped to its end.
+    async surface() {
+      if (!game || !game.handoff) return;
+      // (the held frame let go first: drawn again, it would put the shot's
+      // last moment - and its camera - back over the way out)
+      playing = false; cancelAnimationFrame(raf); move();
+      const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+      const h = game.handoff(camera.position.clone(), camera.position.clone().addScaledVector(dir, 100));
+      const put = u => { const c = h.frame(u); camera.position.copy(c.eye); camera.lookAt(c.aim); camera.updateMatrixWorld(); paint(); };
+      if (o.motionOff && o.motionOff()) { put(1); return; }
+      await new Promise(res => {
+        let t0 = 0;
+        const step = now => { t0 = t0 || now; const u = Math.min(1, (now - t0) / 1000 / h.dur); put(u); if (u < 1) requestAnimationFrame(step); else res(); };
+        requestAnimationFrame(step);
+      });
+    },
     // A look at the running scene (the table builds into it while the
     // intro floats), without stopping anything.
     peek() { return { scene, renderer, camera, composer, bloom, game, dbg: { camEye, camAim, CAM_DT, W, plan, dicePose } }; },

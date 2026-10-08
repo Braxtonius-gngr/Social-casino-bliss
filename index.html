@@ -5429,6 +5429,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // (the table owns the renderer from here: the landing must not
         // dispose it when it goes)
         window.rollIntroDispose = null;
+        // (a shot that ends out of the room - the flyover, under its gold sea
+        // - first finds its way back into it)
+        if (api.surface) { screen.classList.add('r3-flying'); await api.surface(); }
         const world = api.release();
         screen.classList.add('r3-flying');
         const seatcam = (q.get('seatcam') || '').split(',').map(Number);
@@ -8891,7 +8894,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v162';
+    const APP_BUILD = 'almanac-v163';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
