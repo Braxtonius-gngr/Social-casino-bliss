@@ -87,14 +87,14 @@ export function hazeBeat({ at, BEAT, first, drop: D, title: nb, end }) {
 // the kit under each build; an impact hits on the drop and the title. A shorter build again under the dive, the same silence, and
 // the biggest boom on the title; then the EDM rides it out.
 const WILD_CHORDS = [[52, 55, 59], [52, 55, 59], [53, 57, 60], [50, 53, 57]], WILD_ROOTS = [28, 28, 29, 26];
-// (a bar of the bed: the dark wide pad and the low choir on chord c - its
-// root and fifth; opened up, the choir's upper voices over it, an octave
+// (a bar of the bed: the dark wide pad and, where it is open enough to be
+// heard, the low choir on chord c - its root and fifth; opened up, the choir's upper voices over it, an octave
 // higher. Kept lean: on a phone, a choir of a voice per note in every bar
 // was more than the sound could keep up with, and it stalled.)
 const wildBed = (push, t, c, dur, cut, lv, oh) => {
   const ch = WILD_CHORDS[c];
-  push(t, 'pad', { f: ch.map(m => n(m - 12)).concat(ch.map(n)), dur, cut, lvl: lv }, true);
-  [ch[0], ch[2]].forEach(m => push(t, 'vox', { f: n(m - 12), v: oh ? 'oh' : 'ah', v2: 'ah', dur, cut: cut * 0.8, lvl: lv * 0.36 }, true));
+  push(t, 'pad', { f: [n(ch[0] - 12)].concat(ch.map(n)), dur, cut, lvl: lv }, true);
+  if (cut >= 1000) [ch[0], ch[2]].forEach(m => push(t, 'vox', { f: n(m - 12), v: oh ? 'oh' : 'ah', v2: 'ah', dur, cut: cut * 0.8, lvl: lv * 0.36 }, true));
   if (cut >= 1500) [ch[1], ch[2]].forEach(m => push(t, 'vox', { f: n(m), v: 'ah', dur, cut: cut * 1.2, lvl: lv * 0.22 }, true));
 };
 // (a beat of the EDM: four on the floor, a clap on two and four, open hats

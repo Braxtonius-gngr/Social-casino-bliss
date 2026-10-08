@@ -831,17 +831,19 @@ class Sound {
   // (a voice of detuned saws through a filter that opens and closes: the
   // pad's chords, the tape-stop's)
   section(when, freqs, gain, dur, { att = 0.025, rel = 0.18, cut0 = 500, cut1 = 3200, cutS = 1500, scoop = 0.97, det = [-9, 0, 9] } = {}) {
-    const c = this.ctx;
+    // (the notes swell together through one filter: a filter each was
+    // more than a phone could keep up with under a bed of chords)
+    const c = this.ctx, lp = c.createBiquadFilter(), g = c.createGain(), end = when + dur;
+    lp.type = 'lowpass'; lp.Q.value = 0.8;
+    lp.frequency.setValueAtTime(cut0, when); lp.frequency.linearRampToValueAtTime(cut1, when + att + 0.05); lp.frequency.setTargetAtTime(cutS, when + att + 0.05, 0.15);
+    g.gain.setValueAtTime(0, when); g.gain.linearRampToValueAtTime(gain / freqs.length, when + att); g.gain.setValueAtTime(gain / freqs.length, end); g.gain.linearRampToValueAtTime(0, end + rel);
+    lp.connect(g); g.connect(this.out || this.master);
     freqs.forEach((f, i) => {
-      const lp = c.createBiquadFilter(), g = c.createGain(), t0 = when + i * 0.006;
-      lp.type = 'lowpass'; lp.Q.value = 0.8;
-      lp.frequency.setValueAtTime(cut0, t0); lp.frequency.linearRampToValueAtTime(cut1, t0 + att + 0.05); lp.frequency.setTargetAtTime(cutS, t0 + att + 0.05, 0.15);
-      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(gain / freqs.length, t0 + att); g.gain.setValueAtTime(gain / freqs.length, t0 + dur); g.gain.linearRampToValueAtTime(0, t0 + dur + rel);
-      lp.connect(g); g.connect(this.out || this.master);
+      const t0 = when + i * 0.006;
       det.forEach(d => {
         const o = c.createOscillator(); o.type = 'sawtooth'; o.detune.value = d;
         o.frequency.setValueAtTime(f * scoop, t0); o.frequency.exponentialRampToValueAtTime(f, t0 + 0.06);
-        o.connect(lp); o.start(t0); o.stop(t0 + dur + rel + 0.05);
+        o.connect(lp); o.start(t0); o.stop(end + rel + 0.05);
       });
     });
   }
@@ -1018,34 +1020,34 @@ class Sound {
       // snare, hats, a gliding 808, a reverse cymbal, a crash)
       case 'vox': {
         // (voices on a vowel, like a sampled choir pitched down: two
-        // singers a touch apart in pitch and time, each a buzz with its own
-        // slow-starting vibrato and a breath, through the vowel's formants -
-        // 'ah' or 'oh', or moving from one to the other - with a tape's slow
-        // wow on them all, muffled, and thrown into the room)
+        // singers a touch apart in pitch and time sharing one slow-starting
+        // vibrato, through the vowel's three formants - 'ah' or 'oh', or
+        // moving from one to the other - muffled, and thrown into the room.
+        // Lean on purpose: a bed of these must play on a phone.)
         const l = ev.lvl == null ? 1 : ev.lvl, c = this.ctx, d = ev.dur, end = when + d;
-        const V = { ah: [[730, 1], [1090, 0.5], [2440, 0.14], [3400, 0.05]], oh: [[500, 1], [820, 0.42], [2500, 0.06], [3300, 0.03]] };
+        const V = { ah: [[730, 1], [1090, 0.5], [2440, 0.14]], oh: [[500, 1], [820, 0.42], [2500, 0.06]] };
         const a = V[ev.v || 'ah'], b = V[ev.v2 || ev.v || 'ah'];
         this.wet(0.75, () => {
-          const src = c.createGain(), lp = c.createBiquadFilter(), hp = c.createBiquadFilter(), env = c.createGain();
-          lp.type = 'lowpass'; lp.frequency.value = ev.cut || 1400; lp.Q.value = 0.4; hp.type = 'highpass'; hp.frequency.value = 140;
+          const src = c.createGain(), lp = c.createBiquadFilter(), env = c.createGain();
+          lp.type = 'lowpass'; lp.frequency.value = ev.cut || 1400; lp.Q.value = 0.4;
           env.gain.setValueAtTime(0, when); env.gain.linearRampToValueAtTime(0.8 * l, when + Math.min(0.18, d * 0.3)); env.gain.setValueAtTime(0.8 * l, end - 0.06); env.gain.linearRampToValueAtTime(0, end + Math.min(0.35, d * 0.5));
-          const wow = c.createOscillator(), wg = c.createGain(); wow.frequency.value = 0.55; wg.gain.value = ev.f * 0.004; wow.connect(wg); wow.start(when); wow.stop(end + 0.5);
-          [[-11, 0, 5.1], [9, 0.026, 4.7]].forEach(([dt, lag, rate], i) => {
-            const t0 = when + lag, o = c.createOscillator(), og = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
-            o.type = 'sawtooth'; o.detune.value = dt; og.gain.value = 0.42;
+          const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = 5; lg.gain.setValueAtTime(0, when); lg.gain.linearRampToValueAtTime(ev.f * 0.012, when + Math.min(0.6, d * 0.6));
+          lfo.connect(lg); lfo.start(when); lfo.stop(end + 0.5);
+          [[-11, 0], [9, 0.026]].forEach(([dt, lag]) => {
+            const t0 = when + lag, o = c.createOscillator();
+            o.type = 'sawtooth'; o.detune.value = dt;
             o.frequency.setValueAtTime(ev.f * 0.94, t0); o.frequency.exponentialRampToValueAtTime(ev.f, t0 + 0.12);
             if (ev.f2) { o.frequency.setValueAtTime(ev.f, end - d * 0.45); o.frequency.exponentialRampToValueAtTime(ev.f2, end); }
-            lfo.frequency.value = rate; lg.gain.setValueAtTime(0, t0); lg.gain.linearRampToValueAtTime(ev.f * 0.012, t0 + Math.min(0.6, d * 0.6));
-            lfo.connect(lg); lg.connect(o.frequency); wg.connect(o.frequency); o.connect(og); og.connect(src);
-            o.start(t0); o.stop(end + 0.5); lfo.start(t0); lfo.stop(end + 0.5);
+            lg.connect(o.frequency); o.connect(src); o.start(t0); o.stop(end + 0.5);
           });
-          const br = c.createBufferSource(), bg = c.createGain(); br.buffer = this.noise; br.loop = true; bg.gain.value = 0.22; br.connect(bg); bg.connect(src); br.start(when); br.stop(end + 0.5);
+          src.gain.value = 0.42;
           a.forEach(([F, A], i) => {
             const bp = c.createBiquadFilter(), fg = c.createGain();
-            bp.type = 'bandpass'; bp.Q.value = F / 110; bp.frequency.setValueAtTime(F, when); bp.frequency.linearRampToValueAtTime(b[i][0], end);
-            fg.gain.value = A * 0.6; src.connect(bp); bp.connect(fg); fg.connect(hp);
+            bp.type = 'bandpass'; bp.Q.value = F / 110; bp.frequency.value = F;
+            if (b[i][0] !== F) { bp.frequency.setValueAtTime(F, when); bp.frequency.linearRampToValueAtTime(b[i][0], end); }
+            fg.gain.value = A * 0.6; src.connect(bp); bp.connect(fg); fg.connect(lp);
           });
-          hp.connect(lp); lp.connect(env); env.connect(this.out || this.master);
+          lp.connect(env); env.connect(this.out || this.master);
         });
         break;
       }
