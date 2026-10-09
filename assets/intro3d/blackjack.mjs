@@ -764,7 +764,7 @@ export async function makeGame(ctx) {
     const [la, lb] = shoe.userData.lid.map(p => toSeat(shoe, p));
     const d = lb.clone().sub(la).normalize(), side = d.clone().cross(up).normalize(), n = side.clone().cross(d).normalize();
     return handPose(la.clone().addScaledVector(d, 1.6).addScaledVector(n, 0.55), d.clone().negate(), n);
-  })(), handPose(V(16, 0.62, 49), V(-0.42, -0.74, -0.52), up)];
+  })(), handPose(V(13, 0.62, 49), V(-0.42, -0.74, -0.52), up)];
 
   // ---- The deal: the cards, in the order a shoe game deals them.
   const slot = xz => V(xz[0], 0, xz[1]);
