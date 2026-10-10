@@ -50,6 +50,18 @@ export const LAB_GAMES = ['flyover'];
 // dive starts, in the shot's own seconds. Read when the shot is built.
 export const TUNE_KNOBS = { jet: [0, 1.6, 1], music: [0, 1.5, 1], gold: [5.5, 7.5, 6.35], dive: [6.8, 8.5, 7.65] };
 export function pickGame(r) { return GAMES[Math.min(GAMES.length - 1, Math.floor(r * GAMES.length))]; }
+// The games the landing shows in turn, one per launch: the ones with no open
+// fixes. A game goes back in here once its fixes are in (the rest of GAMES
+// stay for the lab and ?game=). The turn is kept on this device.
+export const ROTATION = ['dice', 'slots'];
+const ROTATE_KEY = 'almanac_intro_turn';
+export function nextGame() {
+  let n = Math.floor(Math.random() * ROTATION.length);
+  try { n = parseInt(localStorage.getItem(ROTATE_KEY), 10) || 0; } catch (e) { /* no storage: this launch's own draw */ }
+  const game = ROTATION[((n % ROTATION.length) + ROTATION.length) % ROTATION.length];
+  try { localStorage.setItem(ROTATE_KEY, String(n + 1)); } catch (e) { /* the turn is not kept */ }
+  return game;
+}
 export const TIERS = ['standard', 'hardways', 'vault', 'edge'];
 export const TIER_NAMES = { standard: 'Standard Drop', hardways: 'The Hardways', vault: 'The Vault Pull', edge: 'The Defiant Edge' };
 // (as the draw below gives them: 90%, 8%, 1.9%, 0.1%)
