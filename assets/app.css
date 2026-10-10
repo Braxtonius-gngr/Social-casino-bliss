@@ -242,6 +242,7 @@
 
     .hero-stat-card { border-radius: 20px; padding: 20px; display: flex; align-items: center; gap: 18px; margin-bottom: 20px; }
     .btn-start-run.hero-run-btn { width: auto; margin: 0; padding: 6px 2px; font-size: 0.85rem; text-align: left; }
+    .btn-start-run.hero-payout-btn[hidden] { display: none; }
     .hero-ring-wrapper { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
     .hero-ring-circle { width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--accent-green); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; color: var(--text-main); background: color-mix(in srgb, var(--accent-green) 8%, transparent); cursor: pointer; }
     /* Popout: collapsed by default, tapping the ring number reveals it -

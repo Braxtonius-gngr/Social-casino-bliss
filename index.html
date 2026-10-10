@@ -341,6 +341,7 @@
            since the hero card sits outside the switched sections. -->
       <div class="hero-details">
         <button class="btn-start-run hero-run-btn" id="btnStartDailyRun" onclick="startDailyRun()" disabled>NOTHING READY YET</button>
+        <button class="btn-start-run hero-run-btn hero-payout-btn" id="btnHeroPayout" onclick="playPayoutFromSettings()" hidden>PLAY THE PAYOUT</button>
         <div class="hero-details-popout" id="heroDetailsPopout">
           <h2 id="heroReadyText">0 ready to collect</h2>
           <p><span id="heroCooldownText">0 on cooldown</span> &bull; <span id="heroDoneText">0 done today</span></p>
@@ -8939,7 +8940,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v167';
+    const APP_BUILD = 'almanac-v169';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
