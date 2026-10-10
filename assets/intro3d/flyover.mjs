@@ -23,7 +23,7 @@ export const TIER_NAMES = { standard: 'The Flyover', hardways: 'The Flyover', va
 
 // The timetable, world seconds. (The slow motion is centred on the dice's
 // strike on the wall.)
-const T = {
+const T0 = {
   whip: 1.15,                     // the build's start: the dice just thrown
   dice: 1.0,                      // the dice in flight down the table
   over: 2.0,                      // their strike on the back wall: the slow
@@ -45,6 +45,10 @@ const DICE_KEYS = [[1.0, [18, 24, 82], 0], [1.42, [6, 0.95, 15], 9], [1.72, [2, 
 
 export async function makeGame(ctx) {
   const { THREE, scene, set, lights, tier, seed, aspect, room, asset, signal, helpers: H } = ctx;
+  // (the lab's knobs, ?tune= - see TUNE_KNOBS in intro.mjs: the gold and the
+  // dive's starts move; the rest of the timetable stays as it is above)
+  const tn = ctx.tune || {};
+  const T = { ...T0, gold: [tn.gold ?? T0.gold[0], T0.gold[1]], dive: [tn.dive ?? T0.dive[0], T0.dive[1]] };
   const { makeWarp, spline } = H;
   const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
   const rng = mkRng((seed ^ 0xf17e0) >>> 0);
@@ -755,7 +759,7 @@ export async function makeGame(ctx) {
 
   // ---- Sounds, real seconds (the jet and the beat are the Sound's own voices).
   const sfx = [];
-  sfx.push({ t: 0.0, kind: 'jet', dur: Rw(T.end) + 1, peak: Rw(T.jet) });
+  sfx.push({ t: 0.0, kind: 'jet', dur: Rw(T.end) + 1, peak: Rw(T.jet), level: tn.jet ?? 1 });
   // (the dice clicking together in the thrower's hand, off the felt, before they fly in)
   [0, 0.03, 0.07].forEach(k => sfx.push({ t: Rw(0.8) + k, kind: 'rattle' }));
   [[1.42, 150], [1.72, 110], [2.0, 200]].forEach(([w, sp]) => sfx.push({ t: Rw(w), kind: w === 2.0 ? 'wall' : 'felt', speed: sp, rate: warp.rateAt(Rw(w)) }));

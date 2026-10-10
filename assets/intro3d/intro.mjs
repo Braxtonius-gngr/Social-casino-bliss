@@ -44,6 +44,11 @@ const asset = f => new URL(f, HERE).href;
 // sound, the quality steps and the handover to the homes are shared.
 export const GAMES = ['dice', 'wheel', 'plinko', 'blackjack', 'slots'];
 export const LAB_GAMES = ['flyover'];
+// The flyover's lab knobs (?lab on ?game=flyover shows them as sliders, and
+// ?tune=jet:1.2,music:0.8,gold:6.2,dive:7.6 sets them). [min, max, default]:
+// the jet's and the music's levels, and the second the gold starts and the
+// dive starts, in the shot's own seconds. Read when the shot is built.
+export const TUNE_KNOBS = { jet: [0, 1.6, 1], music: [0, 1.5, 1], gold: [5.5, 7.5, 6.35], dive: [6.8, 8.5, 7.65] };
 export function pickGame(r) { return GAMES[Math.min(GAMES.length - 1, Math.floor(r * GAMES.length))]; }
 export const TIERS = ['standard', 'hardways', 'vault', 'edge'];
 export const TIER_NAMES = { standard: 'Standard Drop', hardways: 'The Hardways', vault: 'The Vault Pull', edge: 'The Defiant Edge' };
@@ -1008,17 +1013,18 @@ class Sound {
       // roar at its pass with the turbine's whine falling as it goes, then
       // dying away - and the beat under the shot, its voices one by one)
       case 'jet': {
-        const c = this.ctx, src = c.createBufferSource(), lp = c.createBiquadFilter(), g = c.createGain(), pk = when + (ev.peak - ev.t), end = when + ev.dur;
+        const c = this.ctx, src = c.createBufferSource(), lp = c.createBiquadFilter(), g = c.createGain(), lv = c.createGain(), pk = when + (ev.peak - ev.t), end = when + ev.dur;
+        lv.gain.value = ev.level ?? 1; lv.connect(this.out || this.master);
         src.buffer = this.noise; src.loop = true; src.playbackRate.value = 0.7;
         lp.type = 'lowpass'; lp.Q.value = 0.7;
         lp.frequency.setValueAtTime(300, when); lp.frequency.exponentialRampToValueAtTime(2600, pk); lp.frequency.exponentialRampToValueAtTime(500, pk + 2.5);
         g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(0.04, pk - 2); g.gain.exponentialRampToValueAtTime(0.4, pk); g.gain.exponentialRampToValueAtTime(0.08, pk + 1.6); g.gain.exponentialRampToValueAtTime(0.0001, end);
-        src.connect(lp); lp.connect(g); g.connect(this.out || this.master);
+        src.connect(lp); lp.connect(g); g.connect(lv);
         src.start(when); src.stop(end + 0.05);
         const o = c.createOscillator(), og = c.createGain();
         o.type = 'sawtooth'; o.frequency.setValueAtTime(2100, when); o.frequency.linearRampToValueAtTime(1900, pk - 0.2); o.frequency.exponentialRampToValueAtTime(1250, pk + 0.6);
         og.gain.setValueAtTime(0.0001, when); og.gain.exponentialRampToValueAtTime(0.0096, pk - 0.4); og.gain.exponentialRampToValueAtTime(0.0001, pk + 2.2);
-        o.connect(og); og.connect(this.out || this.master); o.start(when); o.stop(pk + 2.3);
+        o.connect(og); og.connect(lv); o.start(when); o.stop(pk + 2.3);
         break;
       }
       // (the music's voices, for tracks.mjs: a voice singing its vowels, a
@@ -1183,7 +1189,7 @@ export async function createIntro(opts) {
 }
 
 async function buildIntro(opts, undo, teardown) {
-  const o = Object.assign({ host: null, controlsHost: null, tier: 'standard', seed: 1, game: 'dice', onReveal: null, onEnd: null, sound: true, onSoundChange: null, quality: 'auto', signal: null, motionOff: null, felt: 'black', trim: 'gold' }, opts);
+  const o = Object.assign({ host: null, controlsHost: null, tier: 'standard', seed: 1, game: 'dice', tune: {}, onReveal: null, onEnd: null, sound: true, onSoundChange: null, quality: 'auto', signal: null, motionOff: null, felt: 'black', trim: 'gold' }, opts);
   const checkAbort = () => { if (o.signal && o.signal.aborted) throw new Error('intro cancelled'); };
   checkAbort();
   const host = o.host;
@@ -1439,7 +1445,7 @@ async function buildIntro(opts, undo, teardown) {
     const mod = await gameLoad;
     checkAbort();
     game = await mod.makeGame({
-      THREE, scene, set: scene.userData.set, lights, tier, seed: o.seed, trim: o.trim, aspect, host, signal: o.signal,
+      THREE, scene, set: scene.userData.set, lights, tier, seed: o.seed, trim: o.trim, aspect, host, signal: o.signal, tune: o.tune || {},
       room: { floor: ROOM.floor, lamp: ROOM.lamp, backdropZ: ROOM.backdropZ, FLOAT, CEIL, PENDANT, ENV_LEVEL, RIM }, asset,
       helpers: { makeWarp, spline, smoother, easeOut, lerp, mix3, clamp01, canvasTexture, radial, finished, embossTex, scaleUV, boxUV }
     });
@@ -1919,6 +1925,9 @@ async function buildIntro(opts, undo, teardown) {
   // ---- Sound.
   let sound = null;
   try { sound = o.sound ? new Sound() : null; } catch (e) { sound = null; }
+  // (the lab's music level: every route the music takes is scaled by it)
+  const musicLevel = (o.tune || {}).music ?? 1;
+  if (sound && sound.bandGain) sound.bandGain.gain.value = 0.9 * musicLevel;
   // (read when undone: the speaker can make one later)
   undo.push(() => { if (sound && sound.ctx) sound.ctx.close().catch(() => {}); });
   // ---- The music, rendered ahead. A game's music (its `band` events) is
@@ -2517,7 +2526,7 @@ async function buildIntro(opts, undo, teardown) {
   // fade it by; and let go, faded in a moment)
   const playBuf = (buffer, when, offset, loop) => {
     const src = sound.ctx.createBufferSource(), g = sound.ctx.createGain();
-    src.buffer = buffer; src.connect(g); g.connect(sound.master);
+    src.buffer = buffer; src.connect(g); g.connect(sound.master); g.gain.value = musicLevel;
     if (loop) { src.loop = true; src.loopStart = loop[0]; src.loopEnd = loop[1]; }
     src.start(when, offset);
     return { src, g };

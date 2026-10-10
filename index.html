@@ -5376,6 +5376,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // starts from is the shot's end, and that is the one every home's
       // fly-in was laid out from.)
       const gameQ = q.get('game');
+      // (?tune=jet:1.2,music:0.8 - the flyover's lab knobs, TUNE_KNOBS in intro.mjs)
+      const tuneNow = rollTune(q, mod);
       // (a scene still in the lab - LAB_GAMES - plays only when named: ?game=flyover)
       const game = mod.GAMES.includes(gameQ) || (mod.LAB_GAMES || []).includes(gameQ) ? gameQ : direct ? 'dice' : mod.pickGame(Math.random());
       const seedQ = parseInt(q.get('seed'), 10);
@@ -5518,7 +5520,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       };
       try {
         api = await mod.createIntro({
-          host, tier, seed, game,
+          host, tier, seed, game, tune: tuneNow,
           controlsHost: screen,
           signal: building ? building.signal : null,
           motionOff,
@@ -5569,7 +5571,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           const ms = Math.max(0, (t - api.plan.revealReal) * 1000);
           (screen.getAnimations ? screen.getAnimations({ subtree: true }) : []).forEach(a => { a.pause(); a.currentTime = ms; });
         };
-        rollLab3dPanel(screen, tier, mod.TIERS, game, mod.GAMES);
+        rollLab3dPanel(screen, tier, mod.TIERS, game, mod.GAMES, mod.TUNE_KNOBS, tuneNow);
       }
       if (q.has('lab') && tableDest) {
         // (lab: fly in by hand - rollTableFly({ manual: true }) then
@@ -5970,7 +5972,19 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
 
     // The WebGL intro's lab switcher (?lab): force a tier, or throw again.
-    function rollLab3dPanel(screen, tier, tiers, game, games) {
+    // ?tune=jet:1.2,music:0.8 sets the flyover's knobs (each clamped to its
+    // range; a knob left at its default is left out of the link).
+    function rollTune(q, mod) {
+      const out = {};
+      const knobs = mod.TUNE_KNOBS || {};
+      String((q && q.get('tune')) || '').split(',').forEach(part => {
+        const [k, v] = part.split(':');
+        const r = knobs[k], n = parseFloat(v);
+        if (r && Number.isFinite(n)) out[k] = Math.min(r[1], Math.max(r[0], n));
+      });
+      return out;
+    }
+    function rollLab3dPanel(screen, tier, tiers, game, games, knobs, tuneNow) {
       if (screen.querySelector('.roll-lab')) return;
       // (the tiers' names are each game's own)
       const tierNames = { dice: { standard: 'Standard', hardways: 'Hardways', vault: 'Vault Pull', edge: 'Defiant Edge' }, wheel: { standard: 'Standard Spin', hardways: 'The Twenty', vault: 'The Joker', edge: 'The Peg' }, plinko: { standard: 'Standard Drop', hardways: 'The Twenty', vault: 'The House', edge: 'The Pin' }, blackjack: { standard: 'Standard Hand', hardways: 'Blackjack', vault: 'The Black Jack' }, slots: { standard: 'Standard Pull', hardways: 'Three Sevens', vault: 'The Jackpot', edge: 'On a Tooth' } };
@@ -5984,13 +5998,42 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (k === 'tier') p.delete('seed');
         return `?${p.toString().replace('lab=&', 'lab&').replace(/lab=$/, 'lab')}`;
       };
-      screen.insertAdjacentHTML('beforeend', `<nav class="roll-lab" aria-label="Intro options"><div class="roll-lab-row"><span>Game</span>${(games || ['dice']).map(g => `<a data-g="${g}"${g === game ? ' aria-current="true"' : ''}>${names[g] || g}</a>`).join('')}</div><div class="roll-lab-row"><span>Tier</span>${shownTiers.map(t => `<a data-v="${t}"${t === tier ? ' aria-current="true"' : ''}>${names[t]}</a>`).join('')}</div><div class="roll-lab-row"><a class="roll-lab-replay" data-new="1">&#8635; New throw</a><a class="roll-lab-replay" data-css="1">CSS intro</a></div></nav>`);
+      screen.insertAdjacentHTML('beforeend', `<nav class="roll-lab" aria-label="Intro options"><div class="roll-lab-row"><span>Game</span>${(games || ['dice']).map(g => `<a data-g="${g}"${g === game ? ' aria-current="true"' : ''}>${names[g] || g}</a>`).join('')}</div><div class="roll-lab-row"><span>Tier</span>${shownTiers.map(t => `<a data-v="${t}"${t === tier ? ' aria-current="true"' : ''}>${names[t]}</a>`).join('')}</div><div class="roll-lab-row"><a class="roll-lab-replay" data-new="1">&#8635; New throw</a><a class="roll-lab-replay" data-css="1">CSS intro</a></div>${game === 'flyover' && knobs ? flyoverTuneRows(knobs, tuneNow) : ''}</nav>`);
       const nav = screen.querySelector('.roll-lab');
       nav.querySelectorAll('a[data-v]').forEach(a => { a.href = link('tier', a.dataset.v); });
       nav.querySelectorAll('a[data-g]').forEach(a => { a.href = link('game', a.dataset.g); });
       nav.querySelector('[data-new]').href = link('seed', String(Math.floor(Math.random() * 1e9)));
       nav.querySelector('[data-css]').href = link('intro', 'css');
+      if (game === 'flyover' && knobs) {
+        // (the sliders set the link to the same shot with the knobs changed:
+        // Apply rebuilds it, so a change is heard from its first bar)
+        const tuneLink = () => {
+          const p = new URLSearchParams(window.location.search);
+          p.set('lab', '');
+          const parts = [];
+          nav.querySelectorAll('input[data-tune]').forEach(i => {
+            const k = i.dataset.tune, v = parseFloat(i.value);
+            if (Math.abs(v - knobs[k][2]) > 0.005) parts.push(`${k}:${v.toFixed(2)}`);
+            const out = i.parentElement.querySelector('output'); if (out) out.textContent = v.toFixed(2);
+          });
+          if (parts.length) p.set('tune', parts.join(',')); else p.delete('tune');
+          return `?${p.toString().replace('lab=&', 'lab&').replace(/lab=$/, 'lab')}`;
+        };
+        nav.querySelectorAll('input[data-tune]').forEach(i => i.addEventListener('input', () => { nav.querySelector('[data-apply]').href = tuneLink(); }));
+        nav.querySelector('[data-apply]').href = tuneLink();
+      }
       nav.addEventListener('pointerdown', e => e.stopPropagation());
+    }
+
+    // The flyover's sliders: a range for each knob (its own range and default
+    // from TUNE_KNOBS), and Apply, which replays the shot with them.
+    function flyoverTuneRows(knobs, tuneNow) {
+      const names = { jet: 'Jet level', music: 'Music level', gold: 'Gold from (s)', dive: 'Dive from (s)' };
+      const rows = Object.keys(knobs).map(k => {
+        const v = k in tuneNow ? tuneNow[k] : knobs[k][2];
+        return `<label class="roll-lab-row"><span>${names[k] || k}</span><input type="range" data-tune="${k}" min="${knobs[k][0]}" max="${knobs[k][1]}" step="0.05" value="${v}" aria-label="${names[k] || k}" /><output>${v.toFixed(2)}</output></label>`;
+      }).join('');
+      return `${rows}<div class="roll-lab-row"><a class="roll-lab-replay" data-apply="1">&#8635; Apply and replay</a></div>`;
     }
 
     function dismissLanding(classic) {
@@ -8896,7 +8939,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v165';
+    const APP_BUILD = 'almanac-v166';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads

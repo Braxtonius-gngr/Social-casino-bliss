@@ -1376,6 +1376,9 @@
     .roll-lab a { padding: 5px 9px; border-radius: 999px; border: 1px solid rgba(232,200,106,0.3); color: #e8dfc4; text-decoration: none; }
     .roll-lab a[aria-current] { background: #d9b24e; color: #141414; border-color: #d9b24e; }
     .roll-lab .roll-lab-replay { align-self: center; }
+    .roll-lab input[type=range] { flex: 1 1 140px; min-width: 0; accent-color: #d9b24e; }
+    .roll-lab output { min-width: 3.2em; font-variant-numeric: tabular-nums; color: #e8dfc4; font-size: 12px; }
+    .roll-lab { max-height: 62vh; overflow-y: auto; }
 
     /* The copy arrives last. Until the pop it is held hidden (the dark
        well behind it sits above the intro layer and would hide the
