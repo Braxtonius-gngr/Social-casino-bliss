@@ -384,6 +384,17 @@ serve(async (req) => {
       client_reference_id: user.id,
       metadata: { supabase_uid: user.id },
       subscription_data: { metadata: { supabase_uid: user.id } },
+      // Checkout Studio settings. "hosted" is this SDK's name for the
+      // Stripe-hosted page (stripe-node 21+ calls it "hosted_page"). Its
+      // origin_context and integration_identifier wait for an API version
+      // newer than the one pinned above: see STRIPE_INTEGRATION_TODO.md.
+      ui_mode: "hosted",
+      billing_address_collection: "auto",
+      phone_number_collection: { enabled: false },
+      automatic_tax: { enabled: false },
+      allow_promotion_codes: false,
+      payment_method_collection: "always",
+      submit_type: "auto",
     });
     if (!(await keepNewestOpenSession(customerId, session))) {
       return jsonResponse({ error: CHECKOUT_ELSEWHERE }, 409, cors);
