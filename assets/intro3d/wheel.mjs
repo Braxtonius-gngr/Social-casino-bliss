@@ -10,7 +10,7 @@
 // over the pit, from where the homes' fly-ins start (intro.mjs: FLOAT).
 //
 // The tiers, drawn as the dice's are (TIERS / pickTier):
-//   standard  Standard Spin (90%)   a one, a two, a five or a ten
+//   standard  Standard Spin (90%)   a zero, a one, a two, a five or a ten
 //   hardways  The Twenty (8%)       the twenty, called in platinum
 //   vault     The Joker (1.9%)      the joker or the house: the pocket
 //                                   lights, the pegs chase gold round the
@@ -56,14 +56,15 @@ const TAU = Math.PI * 2;
 
 // The pockets round the wheel, clockwise from the top: 54 of them in six
 // blocks of nine, each block one ten, one twenty, the joker or the house
-// badge among ones, twos and a five.
-const BLOCK = ['1', '2', '1', '5', '1', '2', '1', 'X', '1'];
+// badge among a zero (a loss), ones, twos and a five.
+const BLOCK = ['1', '2', '0', '5', '1', '2', '1', 'X', '1'];
 const RARES = ['10', '20', 'joker', '10', '20', 'house'];
 export const POCKETS = RARES.flatMap(x => BLOCK.map(v => (v === 'X' ? x : v)));
 const N = POCKETS.length;
 const SEG = TAU / N;
 // The pockets' paint and lettering.
 const PAINT = {
+  0: { fill: '#1b1d22', ink: '#8c929c' },
   1: { fill: '#0c0c10', ink: '#e9c56a' },
   2: { fill: '#5a0d16', ink: '#f0d383' },
   5: { fill: '#0e2a1c', ink: '#efd28a' },
@@ -72,7 +73,7 @@ const PAINT = {
   joker: { fill: '#c9a24c', ink: '#120c08' },
   house: { fill: '#0c0c10', ink: '#e9c56a' }
 };
-const WORDS = { 1: ['One', 'Even money'], 2: ['Two', 'Two to one'], 5: ['Five', 'Five to one'], 10: ['Ten', 'Ten to one'], 20: ['Twenty', 'Twenty to one'], joker: ['Joker', 'Forty to one'], house: ['The House', 'Forty to one'] };
+const WORDS = { 0: ['Zero', 'Nothing'], 1: ['One', 'Even money'], 2: ['Two', 'Two to one'], 5: ['Five', 'Five to one'], 10: ['Ten', 'Ten to one'], 20: ['Twenty', 'Twenty to one'], joker: ['Joker', 'Forty to one'], house: ['The House', 'Forty to one'] };
 export const TIER_NAMES = { standard: 'Standard Spin', hardways: 'The Twenty', vault: 'The Joker', edge: 'The Peg' };
 
 // Where the wheel stands: its hub, in the room's frame (the dice table's
@@ -336,7 +337,7 @@ export async function makeGame(ctx) {
     onPeg = true;
     target = { peg: Math.floor(rng() * N) };
   } else {
-    const want = tier === 'hardways' ? ['20'] : tier === 'vault' ? [rng() < 0.5 ? 'joker' : 'house'] : ['1', '2', '5', '10'];
+    const want = tier === 'hardways' ? ['20'] : tier === 'vault' ? [rng() < 0.5 ? 'joker' : 'house'] : ['0', '1', '2', '5', '10'];
     const choices = POCKETS.map((v, i) => (want.includes(v) ? i : -1)).filter(i => i >= 0);
     target = { pocket: choices[Math.floor(rng() * choices.length)], u: 0.3 + 0.4 * rng() };
   }
@@ -672,9 +673,14 @@ export async function makeGame(ctx) {
     [Rw(pullAt) + 0.5, X + 40, Y + 54, Z + 120, X, Y + 30, Z + FRONT],
     [wide1, wx(96), ey + 14, wd(200), X, aimY + 4, Z + FRONT],
     [wide2, wx(34), ey, wd(212), X, aimY, Z + FRONT],
-    [Rslow - 0.1, X + 22, tipY + 12, tipZ + 58, X, tipY - 1, tipZ],
-    [Rslow + 0.9, X + 16, tipY + 9, tipZ + 50, X, tipY - 2, tipZ]
   ];
+  // The lens comes in to the clapper at the slow moment only for The Peg,
+  // which closes on the balanced tip. The other tiers hold the whole wheel
+  // through the slow moment and come in once the pocket is at rest (the
+  // pocket-under-the-clapper keys below), so nobody watches the lens close
+  // on a pocket before it is set.
+  if (onPeg) keys.push([Rslow - 0.1, X + 22, tipY + 12, tipZ + 58, X, tipY - 1, tipZ], [Rslow + 0.9, X + 16, tipY + 9, tipZ + 50, X, tipY - 2, tipZ]);
+  else keys.push([Rslow + 0.9, wx(34), ey, wd(212), X, aimY, Z + FRONT]);
   const push = k => { const p = keys[keys.length - 1]; k[0] = Math.max(k[0], p[0] + 0.3); keys.push(k); };
   if (onPeg) {
     // the lens closes in on the tip balanced on its peg
