@@ -1,6 +1,6 @@
 # Growth and revenue plan
 
-Written 2026-10-10. Organic first, 8-12 channels, automated where the
+Written 2026-10-10. Organic first, about 20 channels, automated where the
 channel allows it. Paid ads wait until the numbers below say which channel
 turns visitors into players.
 
@@ -52,22 +52,37 @@ giving people a reason to pay for Pro.
 
 ## Channels
 
-| # | Channel | How | Automated | `?src=` |
-|---|---|---|---|---|
-| 1 | Google and Bing search | The 138 platform pages and tier list are already built and in the sitemap. Submit `https://dailyrollover.com/platforms/sitemap.xml` in Google Search Console and Bing Webmaster Tools. | Already (build:seo) | `seo`, `seo-hub` |
-| 2 | Reddit | The weekly tier-list post. Pick 2-3 sweeps subreddits, read each one's self-promotion rule, and answer questions there between posts. | No, on purpose: subreddits remove automated self-promotion | `reddit` |
-| 3 | Discord | Your own server's announcements channel, plus helping out in the big sweeps servers | Yes (Postiz) | `discord` |
-| 4 | X | Short weekly post: the biggest tier moves and one link | Yes | `x` |
-| 5 | Bluesky | Same as X | Yes | `bluesky` |
-| 6 | Threads | Same as X | Yes | `threads` |
-| 7 | Facebook | A Page gets the long post. Groups stay manual, since Meta doesn't let apps post to them | Page yes, groups no | `facebook` |
-| 8 | Telegram | A channel for the long post | Yes | `telegram` |
-| 9 | Mastodon | Optional; small audience | Yes | `mastodon` |
-| 10 | TikTok / YouTube Shorts / Instagram Reels | 20-30 second screen recordings: "this site went A to S this week", or one Daily Run timed start to finish. Videos need filming, so they're next. | Later (Postiz can upload once a clip exists) | `tiktok`, `youtube`, `instagram` |
+Every automated channel gets its own version of the post and its own
+`?src=` tag (the channel's name), so the "Where new users come from" query
+in [analytics-queries.sql](analytics-queries.sql) shows which channels bring
+players, not just clicks.
 
-Each channel's link carries its own `?src=`, so the "Where new users come
-from" query in [analytics-queries.sql](analytics-queries.sql) shows which
-channels bring players, not just clicks.
+**By hand, on purpose**
+
+| Channel | How |
+|---|---|
+| Google and Bing search | The 138 platform pages and tier list are already built and in the sitemap. Submit `https://dailyrollover.com/platforms/sitemap.xml` in Google Search Console and Bing Webmaster Tools. Tag: `seo`, `seo-hub`. |
+| Reddit | The weekly post (it's in each Monday run's summary). Pick 2-3 sweeps subreddits, read each one's self-promotion rule, and answer questions there between posts. Subreddits remove automated self-promotion. Tag: `reddit`. |
+| Facebook groups | Meta doesn't let apps post to groups. Share the Page's post into the sweeps groups that allow it. |
+| Short videos (TikTok, YouTube Shorts, Reels) | 20-30 second screen recordings: "this site went A to S this week", or one Daily Run timed start to finish. Postiz can schedule a clip once it's filmed. |
+
+**Automated every Monday (21 channels)**
+
+| Kind | Channels | What goes out |
+|---|---|---|
+| Feeds | X, Bluesky, Threads, Mastodon, Farcaster, Nostr | The biggest tier moves, one link, the card (Nostr: text only) |
+| Pages and groups you run | Facebook Page, Discord server, LinkedIn Page, Tumblr, MeWe, Telegram channel | Every section, a few lines each, the card (Telegram: text only) |
+| Communities | Lemmy, Whop, Skool | The long post, in the communities you name |
+| Blog and email | Medium, WordPress, newsletter (Listmonk) | An article with headings and a link to each platform's page |
+| Picture-first | Instagram, Pinterest, TikTok (photo post) | The card, with a short caption and hashtags. Links in Instagram and TikTok captions can't be tapped, so the caption says "link in bio": make each bio link `https://dailyrollover.com/platforms/index.html?src=instagram` (or `?src=tiktok`) so those visits are counted too. |
+
+Turn channels on one at a time: a channel is skipped until it's in
+`POSTIZ_CHANNELS`, so there's no harm in starting with five.
+
+**The tier card.** Each Monday's run also draws the week's card: the
+biggest moves as tier badges, in the site's colours. It's 1080x1350 for feeds
+and 1080x1920 for TikTok. Posts with a picture usually travel further than
+text-only ones, and Instagram, Pinterest and TikTok can't post without one.
 
 ## Automation (built)
 
@@ -75,9 +90,11 @@ Every Monday the **Weekly social posts** workflow:
 
 1. reads the week's tier changes from the catalogue's git history;
 2. writes one post per channel, within each channel's character limit;
-3. sends them to Postiz as drafts you approve from the Postiz app (or
-   publishes them automatically once `SOCIAL_AUTOPUBLISH` is `true`);
-4. puts the Reddit and Discord versions in the run's summary to paste by
+3. draws the tier card;
+4. sends everything to Postiz in one request, as drafts you approve from the
+   Postiz app (or publishes automatically once `SOCIAL_AUTOPUBLISH` is
+   `true`);
+5. puts the Reddit and Discord versions in the run's summary to paste by
    hand.
 
 Setup: README, *Weekly social posts*. Postiz can be self-hosted for free
@@ -94,6 +111,13 @@ or used as a paid hosted service; check postiz.com for current plans.
 - Write each channel's post for that channel (the script does this). Don't
   paste the same text into many Reddit or Facebook groups.
 - New accounts: post by hand for a week or two, then turn on automation.
+- Each network has its own gambling rules, so read them before connecting
+  it. TikTok's are the strictest: its community guidelines restrict gambling
+  promotion, so keep TikTok posts about the tier data, not about playing, and
+  expect it to be the account most at risk. Lemmy, Whop and Skool communities
+  have their own self-promotion rules, so post only where they allow it.
+- Set Facebook, Instagram and other accounts to 18+ where the network offers
+  an age setting.
 
 ## Paid ads, later
 
@@ -107,10 +131,10 @@ Anything that links to casinos needs an age gate and state targeting.
 
 | Week | Do |
 |---|---|
-| 1 | Add the 11 S/A referral links. Submit the sitemap to Google and Bing. Create the accounts (X, Bluesky, Threads, Facebook Page, Telegram channel, Discord server). |
-| 2 | Connect them in Postiz and set the secret and variables. Run the workflow by hand; approve the drafts. Post the Reddit draft by hand. |
-| 3 | If the drafts read right, set `SOCIAL_AUTOPUBLISH` to `true`. Record and post the first two short videos by hand. |
-| 4 | Run the "Where new users come from" query. Keep the channels that bring app opens; drop the rest. Decide whether any channel earns an ad test. |
+| 1 | Add the 11 S/A referral links. Submit the sitemap to Google and Bing. Create the first accounts: X, Bluesky, Threads, Facebook Page, Instagram, Discord server, Telegram channel. |
+| 2 | Connect them in Postiz and set the secret and variables. Run the workflow by hand; check the drafts and the card. Post the Reddit draft by hand. |
+| 3 | If the drafts read right, set `SOCIAL_AUTOPUBLISH` to `true`. Add the next batch: Pinterest, TikTok, Mastodon, Farcaster, Nostr, Tumblr, MeWe, LinkedIn Page. Record the first two short videos. |
+| 4 | Add the long-form channels (Medium, WordPress blog, newsletter) and any Lemmy, Whop or Skool communities that allow it. Run the "Where new users come from" query. Keep the channels that bring app opens; drop the rest. Decide whether any channel earns an ad test. |
 
 ## What "working" looks like by day 30
 

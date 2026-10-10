@@ -266,7 +266,7 @@ function main() {
 
 module.exports = {
   netChanges, classify, buildPost, splitMessages,
-  parseArgs, isoDate, isRealDate, shortDate, loadHistory, SECTIONS, sortChanges, detail
+  parseArgs, isoDate, isRealDate, shortDate, loadHistory, SECTIONS, SECTION_LIMIT, sortChanges, detail
 };
 
 if (require.main === module) main();
