@@ -243,6 +243,36 @@ or `-- --since 2026-09-20 --until 2026-09-26` for another week (both days
 included; the default is the last seven days, uncommitted catalog edits
 included). It only prints the draft; posting is a manual step.
 
+### Weekly social posts
+
+`npm run post:social` turns the same week into one post per channel (X,
+Bluesky, Threads, Mastodon, Facebook, Telegram, Discord), each within the
+channel's character limit and linked with its own `?src=`. With `-- --send` it
+sends them to [Postiz](https://postiz.com), which publishes to the accounts
+connected there. They arrive as drafts, or with `-- --send --schedule` they're
+queued to go out 15 minutes later. Reddit is never sent: its post stays manual.
+A week with no ranking changes sends nothing.
+
+The **Weekly social posts** workflow (`.github/workflows/weekly-social.yml`)
+runs this every Monday from `main` and puts the Reddit and Discord drafts in
+the run's summary. To set it up:
+
+1. In Postiz, connect each account and create an API key (Settings → Public
+   API). `postiz integrations:list` shows each account's integration id.
+2. Repository settings → Secrets and variables → Actions:
+   - secret `POSTIZ_API_KEY`;
+   - variable `POSTIZ_CHANNELS`, channel name to integration id. Discord also
+     takes the id of the channel to post in:
+     `{"x":"cm1","bluesky":"cm2","discord":{"id":"cm3","settings":{"channel":"1122334455"}}}`;
+   - variable `SOCIAL_AUTOPUBLISH` = `true` once the drafts read right, to
+     publish without approving each one.
+3. Run the workflow by hand from the Actions tab and check the drafts in
+   Postiz.
+
+Re-running the workflow in the same week sends the posts again; delete the
+duplicates in Postiz. [docs/growth-plan.md](docs/growth-plan.md) covers which
+channels to use and why.
+
 `npm run test:sw` runs `sw.js`'s push handler against fakes (no browser):
 which push becomes a new-drop alert, a "ready to collect" alert, or both.
 CI also runs the edge functions' Deno tests.

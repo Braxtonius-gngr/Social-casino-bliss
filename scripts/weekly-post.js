@@ -264,6 +264,9 @@ function main() {
   });
 }
 
-module.exports = { netChanges, classify, buildPost, splitMessages };
+module.exports = {
+  netChanges, classify, buildPost, splitMessages,
+  parseArgs, isoDate, isRealDate, shortDate, loadHistory, SECTIONS, sortChanges, detail
+};
 
 if (require.main === module) main();

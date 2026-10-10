@@ -15,6 +15,7 @@
     "build:history": "node scripts/catalog-history.js",
     "build:seo": "node scripts/catalog-history.js && node scripts/generate-seo-pages.js",
     "post:weekly": "node scripts/weekly-post.js",
+    "post:social": "node scripts/social-post.js",
     "setup:push": "node scripts/setup-web-push.js",
     "build:site": "node scripts/build-site.js"
   },
