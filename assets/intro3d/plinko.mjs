@@ -202,7 +202,9 @@ export async function makeGame(ctx) {
 
   // ---- The plan.
   const gateAt = 0.82 + 0.14 * rng();
-  const dropAt = gateAt + 0.07;
+  // (the chip waits on the chute half a second after the lever, so the lens
+  // can back off to the whole board before it drops)
+  const dropAt = gateAt + 0.6;
   const onPin = tier === 'edge';
   let want;
   if (tier === 'hardways') want = [0, NB - 1];
@@ -317,6 +319,18 @@ export async function makeGame(ctx) {
     [-1, 1].forEach(s => { if (s > 0 && !gap) return; const w = gap ? half : 2 * HALF; const plate = new THREE.Mesh(new THREE.BoxGeometry(w, 2, BODY.front), brass); plate.position.set(gap ? s * (gap / 2 + w / 2) : 0, BK.floor - 1, BODY.front / 2); plate.receiveShadow = true; group.add(plate); keep(plate.geometry, null); });
     // a brass escutcheon and two drawer lines on the body
     const esc = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 0.5, 24), brass); esc.rotation.x = Math.PI / 2; esc.position.set(0, (innerBot - FRAME + BODY.floor) / 2 + 6, BODY.front + 0.25); group.add(esc); keep(esc.geometry, null);
+  }
+  // The DRO coins: a loose row along the front of the bottom ledge, brass
+  // and flat, the way a few spill from a tray, in the bucket floor's light.
+  {
+    const coinG = new THREE.CylinderGeometry(1.1, 1.1, 0.28, 28); keep(coinG, null);
+    for (let i = 0; i < 13; i++) {
+      const c = new THREE.Mesh(coinG, brass);
+      const u = i / 12;
+      c.position.set(-HALF + 3 + u * (2 * HALF - 6), BK.floor + 0.14 + (i % 3 === 1 ? 0.28 : 0), BODY.front + 1.3 + (i % 2) * 1.6);
+      c.rotation.set((i % 3) * 0.12, i * 0.9, (i % 2) * 0.1);
+      c.castShadow = true; group.add(c);
+    }
   }
   // the chute: a brass funnel into a throat, and the lever across it
   const lever = new THREE.Group();
@@ -499,7 +513,9 @@ export async function makeGame(ctx) {
   // (the ride keeps most of the board in frame, and the last pin is seen
   // with its neighbours about it: the fall reads as a fall down the board,
   // not a chip against black)
-  push([Math.min(Rdrop + 0.45, Rslow - 0.5), X + 8, midY + 14, BZ + wide * 0.64, X, midY + 8, BZ]);
+  // (the whole board is in frame before the chip drops: the lens backs off
+  // from the chute as the lever is pulled, and is there by the drop)
+  push([Math.min(Rdrop - 0.2, Rslow - 0.5), X + 8, midY + 14, BZ + wide * 0.64, X, midY + 8, BZ]);
   push([Rslow - 0.05, sx + 16, sy + 12, BZ + 72, sx, sy - 4, BZ]);
   push([Rslow + 0.9, sx + 12, sy + 9, BZ + 64, sx, sy - 5, BZ]);
   if (pinned) {
