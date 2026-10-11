@@ -363,7 +363,9 @@ export async function makeGame(ctx) {
   if (tier === 'vault') {
     plan.boom = restW + 0.9;
     plan.revealW = plan.boom + 2.2;
-    plan.endW = plan.boom + 3.6;
+    // (the slow-down: the Joker's glow and the lens's drift run 1.4 s
+    // longer than the other tiers' hold, so the win sinks in)
+    plan.endW = plan.boom + 5;
   } else if (onPeg) {
     plan.silence = [spin.stuck ? spin.stuck.t : restW, (spin.stuck ? spin.stuck.t : restW) + 0.7];
     plan.callW = plan.silence[1];
@@ -697,6 +699,8 @@ export async function makeGame(ctx) {
   } else {
     // the pocket under the clapper, then the whole wheel with its call
     push([Rrest + 0.5, X + 12, tipY - 8, tipZ + 66, X, tipY - 14, tipZ]);
+    // The Twenty, the good win: the lens pushes in on its pocket and holds
+    if (tier === 'hardways') push([Rrest + 1.6, wx(22), ey + 2, wd(170), X, aimY + 6, Z + FRONT]);
     push([Rw(plan.revealW) + 0.2, wx(30), ey + 4, wd(200), X, aimY + 4, Z + FRONT]);
     push([Rend + 2, wx(44), ey + 2, wd(240), X, aimY - 6, Z + FRONT]);
   }
