@@ -457,7 +457,9 @@ export async function makeGame(ctx) {
   const shoe = K.buildShoe(set);
   faceToward(shoe, L.shoe[0], L.shoe[1], L.shoe[0] + 3, L.shoe[1] + 15);
   shoe.position.sub(V(0, 0, -11.6).applyAxisAngle(up, shoe.rotation.y));
-  const discard = K.buildDiscard(set);
+  // (the blackjack intro's rack carries a brass trim at its top edge, so it
+  // has presence while it is not in use: see buildDiscard)
+  const discard = K.buildDiscard(set, { presence: true });
   faceToward(discard, DISCARD[0], DISCARD[1], 0, 20);
   seat.add(shoe, discard);
   // the drop slot the machine clears its cards into (see SWP): let into the
