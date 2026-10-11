@@ -93,7 +93,10 @@ const BJ = { at: [-215, 0, -95], yaw: 180 };
 const SPOT = { you: [[-2.3, 18.0], [2.3, 20.6]], dealer: [[-3.4, 36.5], [3.4, 36.5], [10.2, 36.5]], bet: [0, 8.5] };
 // The shoe (the card table's place) and the discard rack, its mouth turned
 // to the middle of the table.
-const DISCARD = [28, 52];
+// (out of the dealing hand's way: it was at [28, 52], and the left hand and
+// the card it lays passed through its near corner; the hands' moves are
+// kept as they are and the rack stands clear of them instead)
+const DISCARD = [36, 56];
 // The drop slot (see SWP): one, let into the cloth in front of the machine's
 // port, long across the table, its mouth to you. Flush with the felt when
 // shut - a hairline of gold and a glint - and open (its two leaves drawn
@@ -1516,7 +1519,11 @@ export async function makeGame(ctx) {
     // seam lit and a glint on it; the leaves draw back while the cards go
     // in, and close on a seam that glimmers)
     if (slotAnim) {
-      const S = plan.slot, k = smoother(clamp01((w - S.wake) / 0.5)) * (1 - smoother(clamp01((w - (plan.revealW - 0.45)) / 0.75))), o = smoother(clamp01((w - S.open) / 0.32)) * (1 - smoother(clamp01((w - S.close) / 0.36)));
+      // (the slot is there from the first frame, its brass outline and a
+      // wandering glint on the cloth like the port's ring, and comes up to
+      // full as the machine turns to it; it goes only for the end card)
+      const PRE = 0.5;
+      const S = plan.slot, k = (PRE + (1 - PRE) * smoother(clamp01((w - S.wake) / 0.5))) * (1 - smoother(clamp01((w - (plan.revealW - 0.45)) / 0.75))), o = smoother(clamp01((w - S.open) / 0.32)) * (1 - smoother(clamp01((w - S.close) / 0.36)));
       slotG.visible = k > 0.001;
       // (lit while it works, then it sinks to a hairline: shut, only a gold
       // seam and a glint wandering it say it is there)
