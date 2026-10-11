@@ -1407,33 +1407,33 @@
        table's own print is: dark ink, the gold keylined in umber, the
        button a disc of black lacquer. No veil: a dark veil on a light cloth
        reads as a smudge, not a shade - just a breath of light under it. */
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl:is(.roll-popped, .roll-rest) .landing-inner::before { background: radial-gradient(ellipse 72% 56% at 50% 50%, rgba(255,250,238,0.2) 0%, rgba(255,250,238,0.1) 55%, transparent 88%); }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-title { color: #1c140c; text-shadow: none; }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-title span,
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-title::after { filter: drop-shadow(0 0 0.6px #1a1108) drop-shadow(0 0 0.6px #1a1108) drop-shadow(0 1px 1px rgba(26,17,8,0.5)); }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-tagline { color: #36281a; }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-subtitle { color: rgba(34,25,15,0.84); }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-btn { background: #16110b; border-color: #16110b; color: var(--accent-gold); box-shadow: 0 2px 10px rgba(26,17,8,0.35); }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-btn:hover { background: #231a10; }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-legal { color: #36281a; }
-    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"]) .landing-screen.roll-webgl .landing-legal a { color: #1c140c; }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"]) .landing-screen.roll-webgl:is(.roll-popped, .roll-rest) .landing-inner::before { background: radial-gradient(ellipse 72% 56% at 50% 50%, rgba(255,250,238,0.2) 0%, rgba(255,250,238,0.1) 55%, transparent 88%); }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"]) .landing-screen.roll-webgl .landing-title { color: #1c140c; text-shadow: none; }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"]) .landing-screen.roll-webgl .landing-title span,
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"]) .landing-screen.roll-webgl .landing-title::after { filter: drop-shadow(0 0 0.6px #1a1108) drop-shadow(0 0 0.6px #1a1108) drop-shadow(0 1px 1px rgba(26,17,8,0.5)); }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"]) .landing-screen.roll-webgl .landing-tagline { color: #36281a; }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"]) .landing-screen.roll-webgl .landing-subtitle { color: rgba(34,25,15,0.84); }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"]) .landing-screen.roll-webgl .landing-btn { background: #16110b; border-color: #16110b; color: var(--accent-gold); box-shadow: 0 2px 10px rgba(26,17,8,0.35); }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"]) .landing-screen.roll-webgl .landing-btn:hover { background: #231a10; }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"]) .landing-screen.roll-webgl .landing-legal { color: #36281a; }
+    html:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"]) .landing-screen.roll-webgl .landing-legal a { color: #1c140c; }
     /* Over the set (dark cloth) the button is a backed pill and the small
        print sits in a halo of shade, so neither dissolves into the chip rack
        or the shoe behind them. Light felts keep their own printed look. */
-    html:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-btn { background: rgba(10,8,5,0.82); box-shadow: 0 0 18px 8px rgba(10,8,5,0.5); }
-    html:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-legal { text-shadow: 0 0 5px rgba(6,5,3,0.95), 0 0 14px rgba(6,5,3,0.85), 0 0 26px rgba(6,5,3,0.7); }
+    html:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"])) .landing-screen.roll-webgl .landing-btn { background: rgba(10,8,5,0.82); box-shadow: 0 0 18px 8px rgba(10,8,5,0.5); }
+    html:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"])) .landing-screen.roll-webgl .landing-legal { text-shadow: 0 0 5px rgba(6,5,3,0.95), 0 0 14px rgba(6,5,3,0.85), 0 0 26px rgba(6,5,3,0.7); }
     /* The end card in the plates' type, for every game's shot in the house look (Refinement x Realization;
        other skins keep their own title): wide-tracked capitals,
        the title in the plates' gold, the tagline and legal line in a soft gold-cream. */
     [data-theme="executive"] .landing-screen.roll-webgl .landing-title { font-size: min(1.85rem, 7vw); line-height: 1.18; letter-spacing: 0.13em; text-indent: 0.13em; text-transform: uppercase; }
     [data-theme="executive"] .landing-screen.roll-webgl .landing-tagline { font-style: normal; font-size: min(0.8rem, 3vw); letter-spacing: 0.34em; text-indent: 0.34em; text-transform: uppercase; margin: 4px 0 14px; }
     [data-theme="executive"] .landing-screen.roll-webgl .landing-subtitle { font-family: Georgia, "Times New Roman", serif; font-size: min(0.72rem, 2.6vw); letter-spacing: 0.16em; font-weight: 700; }
-    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-title { background: linear-gradient(180deg, #f8e7ab 0%, #e8bb52 52%, #b98a2c 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; text-shadow: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.85)) drop-shadow(0 0 14px rgba(255,190,80,0.32)); }
-    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-title span { -webkit-text-fill-color: transparent; color: transparent; }
-    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-tagline { color: #e2c987; text-shadow: 0 0 8px rgba(6,5,3,0.95), 0 1px 2px rgba(6,5,3,0.9); }
-    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-subtitle { color: rgba(236,222,180,0.86); text-shadow: 0 0 8px rgba(6,5,3,0.95), 0 1px 2px rgba(6,5,3,0.9); }
-    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-legal { color: rgba(232,218,178,0.82); }
-    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"])) .landing-screen.roll-webgl .landing-legal a { color: #ecd9a0; }
+    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"])) .landing-screen.roll-webgl .landing-title { background: linear-gradient(180deg, #f8e7ab 0%, #e8bb52 52%, #b98a2c 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; text-shadow: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.85)) drop-shadow(0 0 14px rgba(255,190,80,0.32)); }
+    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"])) .landing-screen.roll-webgl .landing-title span { -webkit-text-fill-color: transparent; color: transparent; }
+    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"])) .landing-screen.roll-webgl .landing-tagline { color: #e2c987; text-shadow: 0 0 8px rgba(6,5,3,0.95), 0 1px 2px rgba(6,5,3,0.9); }
+    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"])) .landing-screen.roll-webgl .landing-subtitle { color: rgba(236,222,180,0.86); text-shadow: 0 0 8px rgba(6,5,3,0.95), 0 1px 2px rgba(6,5,3,0.9); }
+    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"])) .landing-screen.roll-webgl .landing-legal { color: rgba(232,218,178,0.82); }
+    html[data-theme="executive"]:not(:is([data-felt="tan"], [data-felt="ivory"], [data-felt="dove"], [data-felt="lilac"], [data-felt="cream"], [data-felt="sage"])) .landing-screen.roll-webgl .landing-legal a { color: #ecd9a0; }
     .landing-screen.intro-play.roll-popped .landing-title { animation: roll-title-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s both; }
     .landing-screen.intro-play.roll-popped .landing-tagline { animation: roll-rise 0.6s ease-out 0.95s both; }
     .landing-screen.intro-play.roll-popped .landing-subtitle { animation: roll-rise 0.6s ease-out 1.15s both; }
@@ -1754,6 +1754,27 @@
 
     /* Theme picker */
     .theme-settings { margin-top: 18px; border-top: 1px solid var(--glass-border); padding-top: 14px; }
+/* Settings in folds: each group a drop-down, closed until opened, so the
+   sheet reads as a short list of headings. Inside one the first section
+   needs no rule above it. A choice list (felt, trim, the dealer) is a fold
+   of its own, its summary showing what is picked. */
+.settings-fold { border: 1px solid var(--glass-border); border-radius: 12px; margin: 0 0 10px; background: rgba(255,255,255,0.02); }
+.settings-fold > summary { list-style: none; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; cursor: pointer; color: var(--text-main); font-size: 0.86rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.settings-fold > summary::-webkit-details-marker, .settings-subfold > summary::-webkit-details-marker { display: none; }
+.settings-fold > summary::after { content: ""; margin-left: auto; width: 8px; height: 8px; border-right: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted); transform: translateY(-2px) rotate(45deg); transition: transform 0.2s; }
+.settings-fold[open] > summary { color: var(--accent-gold); }
+.settings-fold[open] > summary::after { transform: translateY(2px) rotate(-135deg); }
+.settings-fold-body { padding: 0 12px 12px; }
+.settings-fold-body > .theme-settings:first-child, .settings-fold-body > .notify-settings:first-child, .settings-fold-body > .billing-section:first-child { margin-top: 0; border-top: none; padding-top: 4px; }
+.settings-subfold { border: 1px solid var(--glass-border); border-radius: 10px; background: rgba(0,0,0,0.18); }
+.settings-subfold > summary { list-style: none; display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 12px; cursor: pointer; color: var(--text-main); font-size: 0.84rem; }
+.settings-subfold > .settings-fold-body { padding: 6px 8px 10px; }
+.fold-value { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.fold-value .felt-swatch, .fold-value .trim-swatch { width: 26px; height: 26px; flex: none; }
+.fold-hint { margin-left: auto; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.12em; }
+.settings-subfold[open] .fold-hint { color: var(--accent-gold); }
+.fold-label { margin: 10px 0 6px; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+.fold-label:first-of-type { margin-top: 0; }
     .theme-settings h4 { margin: 0 0 10px; font-size: 0.8rem; color: var(--accent-cyan); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; }
     .theme-grid { display: flex; flex-direction: column; gap: 10px; }
     .theme-card { background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border); border-radius: 12px; padding: 12px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: border-color .2s, background .2s; }
@@ -5095,6 +5116,11 @@ html[data-motion="off"][data-theme="obsidian"] .cooldown-chip { color: #B8AFA3; 
 .trim-silver { --trim-metal: linear-gradient(160deg, #ffffff 0%, #d9dde3 45%, #8e949c 100%); --trim-spec: 0.7; }
 .trim-crimson { --trim-metal: radial-gradient(90% 90% at 35% 30%, #ff5068 0%, #c0162e 45%, #4e0410 100%); --trim-spec: 0.75; }
 .trim-burgundy { --trim-metal: linear-gradient(160deg, #c46a5c 0%, #86342f 45%, #3e1214 100%); --trim-spec: 0.35; }
+.trim-rose { --trim-metal: linear-gradient(160deg, #fbd9c8 0%, #e2a48c 45%, #9a5e4c 100%); --trim-spec: 0.6; }
+.trim-champagne { --trim-metal: linear-gradient(160deg, #fff4d8 0%, #e8d29e 45%, #a8925c 100%); --trim-spec: 0.65; }
+.trim-copper { --trim-metal: linear-gradient(160deg, #f4b08a 0%, #c4703e 45%, #6a3418 100%); --trim-spec: 0.5; }
+.trim-emerald { --trim-metal: radial-gradient(90% 90% at 35% 30%, #5ee0a0 0%, #14935a 45%, #04381f 100%); --trim-spec: 0.75; }
+.trim-sapphire { --trim-metal: radial-gradient(90% 90% at 35% 30%, #7aa2ff 0%, #2552c4 45%, #0b1d52 100%); --trim-spec: 0.75; }
 .felt-choice[aria-checked="true"] .trim-swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.55), inset 0 -6px 10px rgba(0,0,0,0.35), 0 0 0 2px var(--accent-gold), 0 2px 8px rgba(212,175,55,0.35); }
 
 /* =========================================================

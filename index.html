@@ -736,6 +736,9 @@
     <div class="sheet-modal glass-panel" style="max-height:88vh; display:flex; flex-direction:column;">
       <h3 style="flex-shrink:0; margin-bottom:12px; cursor:default;" onclick="tapSettingsTitle()">Ledger Settings</h3>
       <div style="flex:1; overflow-y:auto; min-height:0; padding-right:4px;">
+      <details class="settings-fold" id="foldMembership">
+        <summary><span class="fold-title">Membership &amp; ledger</span></summary>
+        <div class="settings-fold-body">
       <div class="billing-section settings-group">
         <h4>Membership &amp; Billing</h4>
         <div class="billing-card" id="billingCard">
@@ -764,6 +767,11 @@
         </span>
         <span class="slc-net" id="settingsLedgerNet"></span>
       </button>
+        </div>
+      </details>
+      <details class="settings-fold" id="foldHome">
+        <summary><span class="fold-title">Home &amp; deck</span></summary>
+        <div class="settings-fold-body">
       <div class="toggle-row">
         <span style="color:#fff;">Landing on Open<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Every open plays the shot; Once a day plays it on your first open, then straight to your seat</span></span>
         <select id="settingLandingMode" class="settings-select" onchange="setLandingMode(this.value)" aria-label="Landing on open">
@@ -781,6 +789,95 @@
         <span style="color:#fff;">Compact platform list<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Show more platforms with less scrolling</span></span>
         <input type="checkbox" id="settingDenseToggle" onchange="setDenseFromSettings(this.checked)" />
       </div>
+        </div>
+      </details>
+      <details class="settings-fold" id="foldLook">
+        <summary><span class="fold-title">Look &amp; table</span></summary>
+        <div class="settings-fold-body">
+      <div class="theme-settings">
+        <h4 id="showLevelTitle">Refinement &times; Realization</h4>
+        <!-- One skin at its levels - Showroom / Lounge / Quiet, or the last
+             two for a room without a Showroom yet. One tap sets the skin and
+             the Motion setting below together (assets/show.js, which names
+             this block for the skin you are on); the Theme list shows the
+             skin once. -->
+        <div id="showLevelLede" class="backup-helper show-lede">One skin at three levels of show: the same deck and the same gold on each, with more or less of it moving. Showroom is all of it &mdash; the dice, the dealer, the card table as your home.</div>
+        <div id="showLevelList" class="show-levels" role="radiogroup" aria-label="Refinement &times; Realization: how much show"></div>
+        <div id="showLevelNote" class="backup-helper" style="text-align:left; margin-top:6px;"></div>
+        <button type="button" id="btnPlayPayout" class="btn-dock show-replay" onclick="playPayoutFromSettings()">PLAY THE PAYOUT</button>
+      </div>
+
+      <div class="theme-settings">
+        <h4>Table felt</h4>
+        <!-- The cloth on the card table (Showroom): the house's black, or a
+             lighter one. See FELT_CHOICES. -->
+        <details class="settings-subfold" id="feltFold">
+          <summary><span class="fold-value"></span><span class="fold-hint">Change</span></summary>
+          <div class="settings-fold-body">
+  <div id="feltList" class="felt-list" role="radiogroup" aria-label="Table felt"></div>
+          </div>
+        </details>
+        <div class="backup-helper" style="text-align:left; margin-top:8px;">The cloth on the card table, at Showroom.</div>
+      </div>
+
+      <div class="theme-settings">
+        <h4>Table trim</h4>
+        <!-- The inlay round the felt: the filigree band and the fine lines
+             either side of it. See TRIM_CHOICES. -->
+        <details class="settings-subfold" id="trimFold">
+          <summary><span class="fold-value"></span><span class="fold-hint">Change</span></summary>
+          <div class="settings-fold-body">
+  <div id="trimList" class="felt-list trim-list" role="radiogroup" aria-label="Table trim"></div>
+          </div>
+        </details>
+        <div class="backup-helper" style="text-align:left; margin-top:8px;">The inlay round the felt, and the print on it, at Showroom.</div>
+      </div>
+
+      <div class="theme-settings">
+        <h4>Dealer</h4>
+        <!-- The machine at the card table: its skin and its circuitry, each
+             matched to the felt or the trim, or a colour of its own. See
+             ROBOT_CHOICES. -->
+        <div class="fold-label">Skin</div>
+        <details class="settings-subfold" id="robotSkinFold">
+          <summary><span class="fold-value"></span><span class="fold-hint">Change</span></summary>
+          <div class="settings-fold-body">
+  <div id="robotSkinList" class="felt-list" role="radiogroup" aria-label="Dealer skin"></div>
+          </div>
+        </details>
+        <div class="fold-label">Circuitry</div>
+        <details class="settings-subfold" id="robotVeinFold">
+          <summary><span class="fold-value"></span><span class="fold-hint">Change</span></summary>
+          <div class="settings-fold-body">
+  <div id="robotVeinList" class="felt-list" role="radiogroup" aria-label="Dealer circuitry"></div>
+          </div>
+        </details>
+        <div class="backup-helper" style="text-align:left; margin-top:8px;">The dealer at the card table, at Showroom. Matched to the felt or the trim, it changes with them.</div>
+      </div>
+
+      <div class="theme-settings">
+        <h4>Theme</h4>
+        <div id="themeList" class="theme-grid"></div>
+      </div>
+
+      <div class="theme-settings">
+        <h4>Motion</h4>
+        <div class="toggle-row" style="border-bottom:none; padding-bottom:6px;">
+          <span style="color:#fff; font-size:0.85rem;">Animations</span>
+          <select id="motionSelect" onchange="setMotionPref(this.value)"
+                  style="background:rgba(0,0,0,0.5); border:1px solid var(--glass-border); color:var(--text-main); padding:7px 10px; border-radius:8px; font-family:inherit; font-size:0.82rem;">
+            <option value="system">Follow device</option>
+            <option value="on">Always on</option>
+            <option value="off">Off</option>
+          </select>
+        </div>
+        <div id="motionNote" class="backup-helper" style="text-align:left; margin-top:4px;"></div>
+      </div>
+        </div>
+      </details>
+      <details class="settings-fold" id="foldTools">
+        <summary><span class="fold-title">Tools &amp; resets</span></summary>
+        <div class="settings-fold-body">
       <div style="margin-top: 20px; display:flex; flex-direction:column; gap:10px;">
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-cyan); color:var(--accent-cyan); text-shadow:0 0 5px var(--accent-cyan);" onclick="restartTourFromSettings()">Restart Interactive Tour</button>
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="resetViewState()">Reset View</button>
@@ -788,6 +885,11 @@
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-pink); color:var(--accent-pink); text-shadow:0 0 5px var(--accent-pink);" onclick="resetTrackerData()">Reset All Tracked Data</button>
       </div>
       <div class="backup-helper" style="margin-top:2px;">Pulls the built-in Catalogue's current reset timing, tier, daily rate, redeem floor, link and research notes onto platforms you already track - the same fix that corrected Zula's reset time, now covering the whole entry. Shows exactly what would change before anything is applied. Never touches your own balance, tags, your notes, or your saved referral link.</div>
+        </div>
+      </details>
+      <details class="settings-fold" id="foldBackup">
+        <summary><span class="fold-title">Backup &amp; cloud sync</span></summary>
+        <div class="settings-fold-body">
       <div class="backup-controls">
         <button class="btn-dock" style="border-color:var(--accent-green); color:var(--accent-green); text-shadow:0 0 5px var(--accent-green);" onclick="exportBackup()">&#8681; EXPORT BACKUP</button>
         <button class="btn-dock" style="border-color:var(--accent-gold); color:var(--accent-gold); text-shadow:0 0 5px var(--accent-gold);" onclick="document.getElementById('importBackupInput').click()">&#8679; IMPORT BACKUP</button>
@@ -819,6 +921,11 @@
         <button id="btnRestorePrevious" class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="restoreFromRecoverySnapshot()">Restore Previous State (Undo Last Import)</button>
         <div id="restorePreviousHint" class="backup-helper" style="margin-top:6px;"></div>
       </div>
+        </div>
+      </details>
+      <details class="settings-fold" id="foldShare">
+        <summary><span class="fold-title">Share a deck or list</span></summary>
+        <div class="settings-fold-body">
       <div class="backup-controls" style="margin-top:10px;">
         <button class="btn-dock" onclick="exportDeck()">&#8681; SHARE DECK</button>
         <button class="btn-dock" onclick="document.getElementById('importDeckInput').click()">&#8679; IMPORT DECK</button>
@@ -830,6 +937,11 @@
         <button class="btn-dock" onclick="importSharedListPrompt()">&#8679; IMPORT A LIST</button>
       </div>
       <div id="shareListStatus" class="backup-helper" style="margin-top:8px;"></div>
+        </div>
+      </details>
+      <details class="settings-fold" id="foldGuides">
+        <summary><span class="fold-title">Guides &amp; extras</span></summary>
+        <div class="settings-fold-body">
       <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
         <button class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-orange); color:var(--accent-orange); text-shadow:0 0 5px var(--accent-orange);" onclick="openStatsModal()">&#9673; VIEW STATS</button>
         <button id="btnDropInbox" class="btn-dock" style="max-width:100%; width:100%; border-color:var(--accent-gold); color:var(--accent-gold); display:none;" onclick="openDropsModal()">&#9670; DROP INBOX</button>
@@ -845,55 +957,13 @@
           iPhone / iPad &mdash; Share button &rarr; "Add to Home Screen". On iPhone this is also what lets alerts reach you while the app is closed.
         </div>
       </div>
-
-      <div class="theme-settings">
-        <h4 id="showLevelTitle">Refinement &times; Realization</h4>
-        <!-- One skin at its levels - Showroom / Lounge / Quiet, or the last
-             two for a room without a Showroom yet. One tap sets the skin and
-             the Motion setting below together (assets/show.js, which names
-             this block for the skin you are on); the Theme list shows the
-             skin once. -->
-        <div id="showLevelLede" class="backup-helper show-lede">One skin at three levels of show: the same deck and the same gold on each, with more or less of it moving. Showroom is all of it &mdash; the dice, the dealer, the card table as your home.</div>
-        <div id="showLevelList" class="show-levels" role="radiogroup" aria-label="Refinement &times; Realization: how much show"></div>
-        <div id="showLevelNote" class="backup-helper" style="text-align:left; margin-top:6px;"></div>
-        <button type="button" id="btnPlayPayout" class="btn-dock show-replay" onclick="playPayoutFromSettings()">PLAY THE PAYOUT</button>
-      </div>
-
-      <div class="theme-settings">
-        <h4>Table felt</h4>
-        <!-- The cloth on the card table (Showroom): the house's black, or a
-             lighter one. See FELT_CHOICES. -->
-        <div id="feltList" class="felt-list" role="radiogroup" aria-label="Table felt"></div>
-        <div class="backup-helper" style="text-align:left; margin-top:8px;">The cloth on the card table, at Showroom.</div>
-      </div>
-
-      <div class="theme-settings">
-        <h4>Table trim</h4>
-        <!-- The inlay round the felt: the filigree band and the fine lines
-             either side of it. See TRIM_CHOICES. -->
-        <div id="trimList" class="felt-list trim-list" role="radiogroup" aria-label="Table trim"></div>
-        <div class="backup-helper" style="text-align:left; margin-top:8px;">The inlay round the felt, at Showroom.</div>
-      </div>
-
-      <div class="theme-settings">
-        <h4>Theme</h4>
-        <div id="themeList" class="theme-grid"></div>
-      </div>
-
-      <div class="theme-settings">
-        <h4>Motion</h4>
-        <div class="toggle-row" style="border-bottom:none; padding-bottom:6px;">
-          <span style="color:#fff; font-size:0.85rem;">Animations</span>
-          <select id="motionSelect" onchange="setMotionPref(this.value)"
-                  style="background:rgba(0,0,0,0.5); border:1px solid var(--glass-border); color:var(--text-main); padding:7px 10px; border-radius:8px; font-family:inherit; font-size:0.82rem;">
-            <option value="system">Follow device</option>
-            <option value="on">Always on</option>
-            <option value="off">Off</option>
-          </select>
         </div>
-        <div id="motionNote" class="backup-helper" style="text-align:left; margin-top:4px;"></div>
-      </div>
+      </details>
 
+
+      <details class="settings-fold" id="foldTimers">
+        <summary><span class="fold-title">Timers &amp; alerts</span></summary>
+        <div class="settings-fold-body">
       <div class="theme-settings">
         <h4>Home timezone</h4>
         <div class="toggle-row" style="border-bottom:none; padding-bottom:6px;">
@@ -982,6 +1052,8 @@
         <div class="backup-helper" style="text-align:left; margin-top:0;">Set a private on-device session reminder. It never sends data anywhere.</div>
         <button class="btn-dock" style="width:100%; max-width:none; margin-top:8px;" onclick="startBreakReminder()">REMIND ME IN 30 MINUTES</button>
       </div>
+        </div>
+      </details>
       <div class="backup-helper">
         Everything is stored locally in this browser only. Backups are the only way to move your data to another device or recover it if browser data is cleared.
         <span id="lastSavedStatus"></span>
@@ -3217,6 +3289,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       renderThemeUI();
       renderFeltUI();
       renderTrimUI();
+      renderRobotUI();
       refreshMotionUI();
       if (window.renderShowLevelUI) renderShowLevelUI();
       refreshTZUI();
@@ -5884,6 +5957,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // Done (and not undone): the table is cleared; sit down to a fresh
         // hand - the seat taken again, dealt from what is ready now.
         redeal() { setTimeout(() => { rollLeaveTable(); rollEnterTable(); }, 0); },
+        // the dealer's colours picked in Settings (see ROBOT_CHOICES)
+        robot() { return { skin: getRobot('skin'), vein: getRobot('vein') }; },
         openView(view) { rollTableSheet(view); },
         // A lifted card: the Keen Info its logo pops out in the Deck (the
         // Catalogue's for a demonstration card) and what it can do from
@@ -7332,7 +7407,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // table.mjs). The swatch is the cloth as it looks under the lamp.
     const FELT_KEY = 'almanac_felt_v1';
     // (each swatch the cloth's colour as the table draws it, sampled)
-    const FELT_CHOICES = { black: ['Black', '#1a1612'], tan: ['Tan', '#c2945a'], ivory: ['Ivory', '#ded3bc'], dove: ['Dove grey', '#a49f99'], lilac: ['Pastel purple', '#c4aebc'], cream: ['Cream', '#dccda4'], chocolate: ['Chocolate', '#573e29'], mahogany: ['Mahogany', '#783b2a'], crimson: ['Crimson', '#9f2830'] };
+    const FELT_CHOICES = { black: ['Black', '#1a1612'], tan: ['Tan', '#c2945a'], ivory: ['Ivory', '#ded3bc'], dove: ['Dove grey', '#a49f99'], lilac: ['Pastel purple', '#c4aebc'], cream: ['Cream', '#dccda4'], chocolate: ['Chocolate', '#573e29'], mahogany: ['Mahogany', '#783b2a'], crimson: ['Crimson', '#9f2830'],
+      emerald: ['Emerald', '#1f7a4c'], royal: ['Royal blue', '#2d55a8'], midnight: ['Midnight navy', '#1e2a4e'], teal: ['Peacock teal', '#1f7f88'], plum: ['Plum', '#6a3474'], charcoal: ['Charcoal', '#45464c'], sage: ['Sage', '#a4b293'] };
     function getFelt() {
       let v = null;
       try { v = localStorage.getItem(FELT_KEY); } catch (e) { v = null; }
@@ -7353,7 +7429,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // other inlays (assets/intro3d/intro.mjs TRIMS). Kept and carried like
     // the felt; the swatch is the inlay under the lamp.
     const TRIM_KEY = 'almanac_trim_v1';
-    const TRIM_CHOICES = { gold: ['Gold', 'gold'], onyx: ['Shiny onyx', 'onyx'], silver: ['Luminous silver', 'silver'], crimson: ['Pooled crimson', 'crimson'], burgundy: ['Bronzed burgundy', 'burgundy'] };
+    const TRIM_CHOICES = { gold: ['Gold', 'gold'], onyx: ['Shiny onyx', 'onyx'], silver: ['Luminous silver', 'silver'], crimson: ['Pooled crimson', 'crimson'], burgundy: ['Bronzed burgundy', 'burgundy'],
+      rose: ['Rose gold', 'rose'], champagne: ['Champagne', 'champagne'], copper: ['Burnished copper', 'copper'], emerald: ['Emerald enamel', 'emerald'], sapphire: ['Sapphire enamel', 'sapphire'] };
     function getTrim() {
       let v = null;
       try { v = localStorage.getItem(TRIM_KEY); } catch (e) { v = null; }
@@ -7373,12 +7450,61 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (!list) return;
       const cur = getTrim();
       list.innerHTML = Object.entries(TRIM_CHOICES).map(([id, [name, cls]]) => `<button type="button" class="felt-choice" role="radio" aria-checked="${id === cur}" onclick="setTableTrim('${id}')"><span class="trim-swatch trim-${cls}" aria-hidden="true"></span><span class="felt-name">${name}</span></button>`).join('');
+      settingsFoldValue('trimFold', TRIM_CHOICES[cur][0], `<span class="trim-swatch trim-${TRIM_CHOICES[cur][1]}" aria-hidden="true"></span>`);
+      // (the dealer's "Match the trim" swatch shows the trim it matches)
+      renderRobotUI();
     }
     function renderFeltUI() {
       const list = document.getElementById('feltList');
       if (!list) return;
       const cur = getFelt();
       list.innerHTML = Object.entries(FELT_CHOICES).map(([id, [name, hex]]) => `<button type="button" class="felt-choice" role="radio" aria-checked="${id === cur}" onclick="setFelt('${id}')"><span class="felt-swatch" style="--felt:${hex}" aria-hidden="true"></span><span class="felt-name">${name}</span></button>`).join('');
+      settingsFoldValue('feltFold', FELT_CHOICES[cur][0], `<span class="felt-swatch" style="--felt:${FELT_CHOICES[cur][1]}" aria-hidden="true"></span>`);
+      renderRobotUI();
+    }
+    // --- The dealer at the card table (Showroom): its skin (the glaze) and
+    // its circuitry (the traces in it, and their light), each matched to the
+    // felt or the trim - so it changes with them - or a colour of its own.
+    // "House" for both is the machine as it was made: white glaze, amber
+    // light (assets/intro3d/table.mjs robotPalette).
+    const ROBOT_KEYS = { skin: 'almanac_robot_skin_v1', vein: 'almanac_robot_vein_v1' };
+    const ROBOT_DEFAULT = { skin: 'felt', vein: 'trim' };
+    const ROBOT_CHOICES = { felt: ['Match the felt', null], trim: ['Match the trim', null], house: ['House', '#ece6da'], onyx: ['Onyx', '#1b1a1e'], gold: ['Gold', '#d6b064'], silver: ['Silver', '#d9dde3'], rose: ['Rose gold', '#e8a890'], emerald: ['Emerald', '#1f8a58'], royal: ['Royal blue', '#2d55a8'], crimson: ['Crimson', '#a8202e'], amber: ['Amber', '#ffb860'] };
+    function getRobot(part) {
+      let v = null;
+      try { v = localStorage.getItem(ROBOT_KEYS[part]); } catch (e) { v = null; }
+      return ROBOT_CHOICES[v] ? v : ROBOT_DEFAULT[part];
+    }
+    function setRobot(part, id) {
+      if (!ROBOT_KEYS[part] || !ROBOT_CHOICES[id]) return;
+      try { localStorage.setItem(ROBOT_KEYS[part], id); } catch (e) {}
+      renderRobotUI();
+      if (window.rollTable && window.rollTable.setRobot) window.rollTable.setRobot();
+    }
+    // (a choice's swatch: the felt's or the trim's own when it matches one)
+    function robotSwatch(id) {
+      if (id === 'felt') return `<span class="felt-swatch" style="--felt:${FELT_CHOICES[getFelt()][1]}" aria-hidden="true"></span>`;
+      if (id === 'trim') return `<span class="trim-swatch trim-${TRIM_CHOICES[getTrim()][1]}" aria-hidden="true"></span>`;
+      return `<span class="felt-swatch robot-swatch" style="--felt:${ROBOT_CHOICES[id][1]}" aria-hidden="true"></span>`;
+    }
+    function renderRobotUI() {
+      ['skin', 'vein'].forEach(part => {
+        const list = document.getElementById(part === 'skin' ? 'robotSkinList' : 'robotVeinList');
+        if (!list) return;
+        const cur = getRobot(part);
+        list.innerHTML = Object.entries(ROBOT_CHOICES).map(([id, [name]]) => `<button type="button" class="felt-choice" role="radio" aria-checked="${id === cur}" onclick="setRobot('${part}', '${id}')">${robotSwatch(id)}<span class="felt-name">${name}</span></button>`).join('');
+        settingsFoldValue(part === 'skin' ? 'robotSkinFold' : 'robotVeinFold', ROBOT_CHOICES[cur][0], robotSwatch(cur));
+      });
+    }
+    // (a fold's summary: the choice it holds, so a closed one still says it)
+    function settingsFoldValue(foldId, text, swatchHtml) {
+      const v = document.querySelector(`#${foldId} > summary .fold-value`);
+      if (v) v.innerHTML = `${swatchHtml || ''}<span>${text}</span>`;
+    }
+    // (an element inside Settings brought into view: every fold round it
+    // opened first)
+    function settingsReveal(el) {
+      for (let d = el && el.closest('details'); d; d = d.parentElement && d.parentElement.closest('details')) d.open = true;
     }
 
     function selectTheme(themeId) {
@@ -7400,7 +7526,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const cur = THEMES[getActiveThemeId()];
       if (themeId !== getActiveThemeId() && !(cur && cur.visual === themeId)) { selectTheme(themeId); return; }
       const levels = document.getElementById('showLevelList');
-      if (levels && window.showLevelNames && window.showLevelNames(themeId)) levels.scrollIntoView({ block: 'center', behavior: document.documentElement.getAttribute('data-motion') === 'off' ? 'auto' : 'smooth' });
+      if (levels && window.showLevelNames && window.showLevelNames(themeId)) settingsReveal(levels), levels.scrollIntoView({ block: 'center', behavior: document.documentElement.getAttribute('data-motion') === 'off' ? 'auto' : 'smooth' });
     }
 
     function renderThemeUI() {
@@ -9463,6 +9589,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           openSettingsModal();
           const input = document.getElementById('syncLinkEmailInput');
           if (input) {
+            settingsReveal(input);
             input.scrollIntoView({ block: 'center' });
             input.focus();
           }
@@ -12866,7 +12993,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const ALL_APP_STORAGE_KEYS = [
       'the_casino_almanac_v7', 'the_casino_almanac_history_v1', 'the_casino_almanac_runs_v1',
       LEDGER_KEY, THEME_KEY, 'almanac_tz_v1', NOTIFY_KEY,
-      'almanac_hide_collected', 'almanac_show_landing', 'almanac_dense', VIEW_STATE_KEY, FELT_KEY, TRIM_KEY
+      'almanac_hide_collected', 'almanac_show_landing', 'almanac_dense', VIEW_STATE_KEY, FELT_KEY, TRIM_KEY, ROBOT_KEYS.skin, ROBOT_KEYS.vein
     ];
 
     // WHY THE EXCLUSIONS ABOVE, so the next schema bump doesn't have to
@@ -13101,7 +13228,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             : p.landingMode === 'daily' || p.landingMode === 'true' || p.landingMode === 'false' ? p.landingMode : null,
           dense: typeof p.dense === 'boolean' ? p.dense : null,
           felt: typeof p.felt === 'string' && FELT_CHOICES[p.felt] ? p.felt : null,
-          trim: typeof p.trim === 'string' && TRIM_CHOICES[p.trim] ? p.trim : null
+          trim: typeof p.trim === 'string' && TRIM_CHOICES[p.trim] ? p.trim : null,
+          robotSkin: typeof p.robotSkin === 'string' && ROBOT_CHOICES[p.robotSkin] ? p.robotSkin : null,
+          robotVein: typeof p.robotVein === 'string' && ROBOT_CHOICES[p.robotVein] ? p.robotVein : null
         };
       }
 
@@ -13171,7 +13300,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             landingEvery: true,
             dense: localStorage.getItem('almanac_dense') === 'true',
             felt: localStorage.getItem(FELT_KEY) || null,
-            trim: localStorage.getItem(TRIM_KEY) || null
+            trim: localStorage.getItem(TRIM_KEY) || null,
+            robotSkin: localStorage.getItem(ROBOT_KEYS.skin) || null,
+            robotVein: localStorage.getItem(ROBOT_KEYS.vein) || null
           };
         })(),
         viewState: (() => {
@@ -13390,6 +13521,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (typeof p.dense === 'boolean') writePref('almanac_dense', String(p.dense));
         if (typeof p.felt === 'string' && FELT_CHOICES[p.felt]) writePref(FELT_KEY, p.felt);
         if (typeof p.trim === 'string' && TRIM_CHOICES[p.trim]) writePref(TRIM_KEY, p.trim);
+        if (typeof p.robotSkin === 'string' && ROBOT_CHOICES[p.robotSkin]) writePref(ROBOT_KEYS.skin, p.robotSkin);
+        if (typeof p.robotVein === 'string' && ROBOT_CHOICES[p.robotVein]) writePref(ROBOT_KEYS.vein, p.robotVein);
         (prefsOk ? written : failed).push('preferences');
       }
 
