@@ -829,9 +829,16 @@ export async function makeGame(ctx) {
     const tw = B.t;
     addMove(B, hov(E.p.x, E.p.z), WASH.push, { settle: true, to: FIN.easy, lean: [0, 0] });
     const tp = B.t;
+    // (each card starts to move only when the palm first reaches it on the
+    // circle, so every card visibly gets touched and none drifts in alone)
+    const contactU = (ox, oz) => {
+      for (let i = 0; i <= 40; i++) { const o = washOff(i / 40, _wo); if (Math.hypot(o.x - ox, o.z - oz) < 0.9) return i / 40; }
+      return 0.5;
+    };
     mine.forEach((c, j) => {
       const rest = restOf(c);
-      c.sw = { pile: true, grab: tg, wash: tw, push: tp, rel: tp + WASH.lag + WASH.between * j, qr: rest.q.clone(), p0: rest.p.clone(), cx, cz, ox: (j - (mine.length - 1) / 2) * 0.35, oz: 0.25 * Math.sin(j * 2.3), py: 0.02 + WASH.stack * j, dy: WASH.stack * j, wob: (j % 2 ? -1 : 1) * (0.3 + 0.08 * j), fin: 0.05 * Math.sin(j * 3.1 + 1) };
+      const ox0 = (j - (mine.length - 1) / 2) * 0.35, oz0 = 0.25 * Math.sin(j * 2.3);
+      c.sw = { pile: true, tg, grab: tg + contactU(ox0, oz0) * (tw - tg), wash: tw, push: tp, rel: tp + WASH.lag + WASH.between * j, qr: rest.q.clone(), p0: rest.p.clone(), cx, cz, ox: (j - (mine.length - 1) / 2) * 0.35, oz: 0.25 * Math.sin(j * 2.3), py: 0.02 + WASH.stack * j, dy: WASH.stack * j, wob: (j % 2 ? -1 : 1) * (0.3 + 0.08 * j), fin: 0.05 * Math.sin(j * 3.1 + 1) };
     });
     // (and the hand lifts clear, open, as the first card tips over the lip)
     addMove(B, pose(hov(E.p.x, E.p.z).p.clone().add(V(2.6, 4.6, 0.6)), hov(0, 0).q), 0.24, { to: FIN.open, lean: [0, 0] });
@@ -1217,7 +1224,9 @@ export async function makeGame(ctx) {
   const _py = new THREE.Quaternion(), _po = V(0, 0, 0);
   const pileAt = (c, tt, out) => {
     const S = c.sw, uw = clamp01((tt - S.grab) / (S.wash - S.grab)), g = smoother(uw), u2 = smoother(clamp01((tt - S.wash) / (S.push - S.wash)));
-    const o = washOff(uw, _po);
+    // (the circle is the hand's own: the card rides the palm from where it is touched)
+    const uh = clamp01((tt - S.tg) / (S.wash - S.tg));
+    const o = washOff(uh, _po);
     const x = lerp(S.p0.x, S.cx + S.ox + o.x * WASH.follow, g), y = lerp(S.p0.y, S.py, g), z = lerp(S.p0.z, S.cz + S.oz + o.z * WASH.follow, g);
     const E = swPose(SWP.m0, SWP.th0, S.qr);
     out.p.set(lerp(x, E.p.x, u2), lerp(y, E.p.y + S.dy, u2), lerp(z, E.p.z, u2));
