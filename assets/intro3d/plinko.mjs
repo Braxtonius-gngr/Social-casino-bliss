@@ -340,6 +340,14 @@ export async function makeGame(ctx) {
       const m = new THREE.Mesh(g, brass); m.position.set((x1 + x2) / 2, (y1 + y2) / 2, (PIN.len + 1.6) / 2); m.rotation.z = Math.atan2(y2 - y1, x2 - x1); m.castShadow = true; group.add(m); keep(g, null); return m;
     };
     [-1, 1].forEach(s => { plate(s * CHUTE.throat, CHUTE.y0 - 3, s * CHUTE.throat, CHUTE.y1, 0.6); plate(s * CHUTE.throat, CHUTE.y1, s * CHUTE.mouth, CHUTE.yMouth, 0.6); });
+    // The drop point: a warm glowing lip across the throat where the chip
+    // goes in, so the entrance reads at a glance (a glow, not a light: it
+    // takes no shadow and costs nothing to draw).
+    {
+      const lipG = new THREE.PlaneGeometry(2 * CHUTE.throat, 0.9);
+      const lipM = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 1.7, 0.9), transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, fog: false });
+      const lip = new THREE.Mesh(lipG, lipM); lip.position.set(0, CHUTE.y1 + 0.4, CHIP.z + 0.2); group.add(lip); keep(lipG, lipM);
+    }
     lever.position.set(LEVER.pivot, CHUTE.leverY, CHIP.z);
     const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 2.2, 16), brass); pin.rotation.x = Math.PI / 2; lever.add(pin); keep(pin.geometry, null);
     const bar = new THREE.Mesh(new THREE.CapsuleGeometry(LEVER.r, LEVER.len, 4, 12), brass); bar.rotation.z = Math.PI / 2; bar.position.x = -LEVER.len / 2; bar.castShadow = true; lever.add(bar); keep(bar.geometry, null);
