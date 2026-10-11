@@ -5317,9 +5317,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // the same look).
     function rollEnterTable() {
       const screen = document.getElementById('landingScreen');
-      if (!screen || !themeTable() || rollTableSession) return false;
+      if (!screen || rollTableSession) return false;
       let q = null;
       try { q = new URLSearchParams(window.location.search); } catch (e) { q = null; }
+      // (?dest=card and the like name a home under any skin: no skin needed)
+      if (!themeTable() && !(q && ROLL_DESTS[q.get('dest')])) return false;
       if ((q && q.get('intro') === 'css') || !rollHasWebGL2()) return false;
       screen.classList.remove('hidden');
       rollIntro3d(screen, q || new URLSearchParams(), { direct: true });
@@ -13984,7 +13986,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // (the landing on open: every open - the default - once a day - the
     // first open of the day - or never; see rollLandingMode)
     const landingMode = rollLandingMode();
-    const showLanding = rollOptions().lab || landingMode === 'true' || (landingMode === 'daily' && !rollLandingSeenToday());
+    // (?seat: no shot, straight to the seat of the home ?dest= names - for
+    // looking at a table without playing through a game first)
+    let seatOnly = false;
+    try { seatOnly = new URLSearchParams(window.location.search).has('seat'); } catch (e) { seatOnly = false; }
+    const showLanding = !seatOnly && (rollOptions().lab || landingMode === 'true' || (landingMode === 'daily' && !rollLandingSeenToday()));
     // (the day's shot claimed here, as the choice is made, not when the shot
     // starts: two tabs opened together would otherwise both play it)
     if (showLanding && landingMode === 'daily') rollLandingStamp();
