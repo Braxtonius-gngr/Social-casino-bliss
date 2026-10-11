@@ -5881,6 +5881,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           return { ready: r.length, value: r.reduce((s, g) => s + (g.dailySC || 0), 0), next, done };
         },
         run() { if (ready().length) startDailyRun(); else showToast('Nothing ready yet', null); },
+        // Done (and not undone): the table is cleared; sit down to a fresh
+        // hand - the seat taken again, dealt from what is ready now.
+        redeal() { setTimeout(() => { rollLeaveTable(); rollEnterTable(); }, 0); },
         openView(view) { rollTableSheet(view); },
         // A lifted card: the Keen Info its logo pops out in the Deck (the
         // Catalogue's for a demonstration card) and what it can do from

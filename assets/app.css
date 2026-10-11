@@ -998,7 +998,7 @@
 
     /* The rail's instruments: walnut-black lacquer in a brass frame, let
        into the rail in front of the seat. */
-    .r3t-rail { width: 500px; height: 330px; }
+    .r3t-rail { width: 500px; height: 356px; }
     .r3t-rail-in { position: absolute; inset: 0; display: grid; grid-template-columns: 124px 1fr; grid-template-rows: 1fr 110px; grid-template-areas: "dial time" "run run"; align-items: center; column-gap: 18px; row-gap: 14px; padding: 20px 26px 22px; border-radius: 34px; color: #efe2c4; font-family: Georgia, "Times New Roman", serif;
       background: radial-gradient(120% 140% at 50% 0%, #241a15 0%, #120d0b 55%, #0a0807 100%);
       border: 4px solid #c39a52; box-shadow: inset 0 0 0 9px #0c0908, inset 0 0 0 11px rgba(214,176,98,0.55), inset 0 2px 0 13px rgba(255,236,190,0.08), 0 16px 34px rgba(0,0,0,0.65); }
@@ -1027,6 +1027,16 @@
     .r3t-run-k { grid-area: k; align-self: end; font-size: 33px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; line-height: 1; }
     .r3t-run-v { grid-area: v; align-self: start; font-size: 22px; letter-spacing: 0.04em; color: #5a1a14; white-space: nowrap; line-height: 1; }
     .r3t-run:active { filter: brightness(0.92); }
+    /* Done / Undo: a pill under the time. While it says Undo a ring runs
+       down round it (8 s: see CLEAR_MS in table.mjs). */
+    .r3t-clear { position: relative; align-self: flex-start; margin-top: 8px; height: 42px; padding: 0 22px; border-radius: 21px; border: 1.5px solid #8a6a2c; background: rgba(23,19,16,0.85); color: #f0dca6; cursor: pointer; font-family: Georgia, "Times New Roman", serif; font-size: 18px; letter-spacing: 0.14em; text-transform: uppercase; overflow: hidden; }
+    .r3t-clear:active { filter: brightness(1.2); }
+    .r3t-clear-k { position: relative; }
+    .r3t-clear-ring { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: rgba(232,199,122,0.28); transform-origin: left center; transform: scaleX(0); }
+    .r3t-clearing .r3t-clear { border-color: #e8c77a; color: #fff3cf; }
+    .r3t-clearing .r3t-clear-ring { animation: r3t-clear-run 8s linear forwards; transform: scaleX(1); }
+    @keyframes r3t-clear-run { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+    @media (prefers-reduced-motion: reduce) { .r3t-clearing .r3t-clear-ring { animation: none; transform: scaleX(0.5); } }
     .r3t-status { display: flex; gap: 14px; align-items: baseline; white-space: nowrap; margin-top: 4px; }
     .r3t-status b { font-size: 22px; font-weight: 400; color: #f0dca6; }
     .r3t-status small { font-size: 15px; letter-spacing: 0.12em; text-transform: uppercase; color: #a89670; }
