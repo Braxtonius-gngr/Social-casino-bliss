@@ -225,6 +225,13 @@
       btn.disabled = !(p && lively());
       btn.textContent = p && lively() ? (p.label || 'PLAY THE PAYOUT') : 'THE PAYOUT IS OFF WHILE THINGS HOLD STILL';
     }
+    // The same payout, beside Run today: on the Lounge (the middle level) only.
+    var heroBtn = document.getElementById('btnHeroPayout');
+    if (heroBtn) {
+      var hp = room() && room().payout;
+      heroBtn.hidden = !hp || showLevel() !== 'lounge';
+      heroBtn.disabled = !(hp && lively());
+    }
     var sheetList = document.getElementById('showSheetList');
     if (sheetList) { sheetList.innerHTML = levelRowsHtml(); bindRows(sheetList); }
     var done = document.getElementById('showSheetDone');
@@ -972,8 +979,11 @@
   }
   // exitDailyRun() calls this with the run's stats; a finished run with
   // something collected is what the house pays out on.
+  // (the Lounge only: the Showroom and Quiet hold it back - it is there on
+  // the Lounge's button, beside Run today, any time)
   function showOnRunExit(finished, collected) {
     if (!finished || !(collected > 0)) return;
+    if (showLevel() !== 'lounge') return;
     setTimeout(function () { playPayout({ collected: collected }); }, 450);
   }
   // The first touch after it settles sends the tableau past you (the touch
@@ -1051,5 +1061,9 @@
   window.showOnRunExit = showOnRunExit;
   window.playPayout = playPayout;
   window.playPayoutFromSettings = playPayoutFromSettings;
+  // (once the page is in: the room's pieces and the payout buttons match the
+  // skin this page opened in - showAddRoom only does it when the page is ready)
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showRefresh);
+  else showRefresh();
   window.showRefresh = showRefresh;
 })();
