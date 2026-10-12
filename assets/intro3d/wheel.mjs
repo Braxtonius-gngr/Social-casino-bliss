@@ -80,7 +80,12 @@ export const TIER_NAMES = { standard: 'Standard Spin', hardways: 'The Twenty', v
 // felt is y = 0; its back wall at z = -70; the floor 82 cm down), facing
 // the lens (+z). R: the pegs' circle; RIM: the wood outside it; FACE: the
 // painted disc; the wheel's front face is FRONT cm forward of its back.
-const HUB = [-30, 60, -168];
+// The hub stands high enough (95 cm over the felt, the pedestal taking up
+// the rest - a Big Six wheel is hung high, over the players' heads) that the
+// whole wheel, rim and all, clears the dice table's back rail (its padded
+// top 26 cm over the felt) from every whole-wheel shot: at 60 the rail hid
+// the bottom quarter of it.
+const HUB = [-30, 95, -168];
 const R = 63.6, RIM = [60, 75], FACE = 60.6, FRONT = 7, PEG = { r: 0.38, len: 1.6, head: 0.5 };
 // The clapper: a leather flapper hung from a brass pin on an arm over the
 // top of the wheel, reaching down over the pegs. Its strap is as deep (z)
@@ -326,7 +331,7 @@ function bendStrap(geo, rest, lean, bend) {
 // ------------------------------------------------------------ the pieces
 export async function makeGame(ctx) {
   const { THREE, scene, set, lights, tier, seed, aspect, room, helpers: H } = ctx;
-  const { makeWarp, spline, canvasTexture, finished, embossTex, scaleUV } = H;
+  const { makeWarp, spline, glide, canvasTexture, finished, embossTex, scaleUV } = H;
   // (the seed mixed first: neighbouring seeds would otherwise open alike)
   const rng = (s => { for (let k = 0; k < 3; k++) { s = Math.imul(s ^ (s >>> 15), 0x2c1b3c6d) >>> 0; s = Math.imul(s ^ (s >>> 12), 0x297a2d39) >>> 0; } return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; s ^= s >>> 16; return (s >>> 0) / 4294967296; }; })((seed ^ 0x5bd1e995) >>> 0);
 
@@ -618,7 +623,9 @@ export async function makeGame(ctx) {
   // The wheel's lamp: a round bronze shade hung over it, and the light it
   // throws (the shadows of the pegs and the clapper onto the paint).
   const key = new THREE.SpotLight(0xfff0e2, room.PENDANT * 1.2, 0, 0.5, 0.7, 0);
-  key.position.set(HUB[0] + 14, room.lamp - 4, HUB[2] + 78);
+  // (hung 108 cm over the hub - the dice table's lamp height when the hub
+  // stood at 60 - so it lights the wheel as it always did, risen with it)
+  key.position.set(HUB[0] + 14, HUB[1] + 108, HUB[2] + 78);
   key.target.position.set(HUB[0], HUB[1] + 4, HUB[2] + FRONT);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
@@ -656,12 +663,18 @@ export async function makeGame(ctx) {
   const wd = k => Z + (wide / 200) * k, wx = k => X + (wide / 200) * k;
   // From that far back the lens looks under the dice table's lamp (its
   // far end 77 cm in front of the wheel, its diffuser at the lamp's height
-  // less 4): the eye stays low and aims so the top of the frame passes
-  // between the clapper's arm and the lamp - the wheel sits high in the
-  // frame, the pit's rail and felt below it.
-  const ey = Y + 10, topY = Y + CLAP.pivot + 6, lampY = room.lamp - 4;
-  const sTop = ((topY - ey) / wide + (lampY - ey) / (wide - 77)) / 2;
-  const aimY = ey + (sTop - Math.tan(vfov / 2)) * wide;
+  // less 4): the eye stays low - a standing player's eye, 70 cm over the
+  // felt, the wheel hung above it - and each whole-wheel shot aims so the
+  // top of its frame passes midway between the clapper's arm and the lamp,
+  // seen from where that shot's eye stands - the wheel high in the frame,
+  // the pit's rail and felt below it, and the lamp's bright diffuser never
+  // in the top of it.
+  const ey = 70, topY = Y + CLAP.pivot + 6, lampY = room.lamp - 4;
+  const faceZ = Z + FRONT, lampZ = faceZ + 77, tanV = Math.tan(vfov / 2);
+  const frame = (eY, eZ) => {
+    const dW = eZ - faceZ, s = ((topY - eY) / dW + (lampY - eY) / (eZ - lampZ)) / 2;
+    return eY + (s - tanV) * dW;
+  };
   const Rslow = Rw(slowW), Rrest = Rw(restW), Rend = Rw(plan.endW);
   // (the two whole-wheel keys sit between the pull and the slow moment,
   // in order whatever the spin's length: a short spin brings them in,
@@ -672,17 +685,19 @@ export async function makeGame(ctx) {
   const keys = [
     [0, X + 26, tipY + 10, tipZ + 52, X - 2, tipY + 2, tipZ],
     [0.9, X + 20, tipY + 8, tipZ + 46, X, tipY + 1, tipZ],
-    [Rw(pullAt) + 0.5, X + 40, Y + 54, Z + 120, X, Y + 30, Z + FRONT],
-    [wide1, wx(96), ey + 14, wd(200), X, aimY + 4, Z + FRONT],
-    [wide2, wx(34), ey, wd(212), X, aimY, Z + FRONT],
+    [Rw(pullAt) + 0.5, X + 40, Y + 36, Z + 120, X, Y + 26, Z + FRONT],
+    [wide1, wx(72), ey + 4, wd(200), X, frame(ey + 4, wd(200)) - 8, Z + FRONT],
+    [wide2, wx(34), ey, wd(212), X, frame(ey, wd(212)), Z + FRONT],
   ];
   // The lens comes in to the clapper at the slow moment only for The Peg,
   // which closes on the balanced tip. The other tiers hold the whole wheel
   // through the slow moment and come in once the pocket is at rest (the
   // pocket-under-the-clapper keys below), so nobody watches the lens close
   // on a pocket before it is set.
-  if (onPeg) keys.push([Rslow - 0.1, X + 22, tipY + 12, tipZ + 58, X, tipY - 1, tipZ], [Rslow + 0.9, X + 16, tipY + 9, tipZ + 50, X, tipY - 2, tipZ]);
-  else keys.push([Rslow + 0.9, wx(34), ey, wd(212), X, aimY, Z + FRONT]);
+  // (The Peg's lens arrives in the slow moment rather than ahead of it: a
+  // glide in of a second and a half or more, not a lunge at the clapper)
+  if (onPeg) keys.push([Rslow + 0.3, X + 22, tipY + 12, tipZ + 62, X, tipY - 1, tipZ], [Rslow + 1.2, X + 16, tipY + 9, tipZ + 50, X, tipY - 2, tipZ]);
+  else keys.push([Rslow + 0.9, wx(34), ey, wd(212), X, frame(ey, wd(212)), Z + FRONT]);
   const push = k => { const p = keys[keys.length - 1]; k[0] = Math.max(k[0], p[0] + 0.3); keys.push(k); };
   if (onPeg) {
     // the lens closes in on the tip balanced on its peg
@@ -690,19 +705,29 @@ export async function makeGame(ctx) {
     push([Rw(plan.silence[1]) + 0.5, X + 6, tipY + 3, tipZ + 24, X, tipY - 1.5, tipZ]);
     push([Rend + 2, X + 14, tipY + 2, tipZ + 34, X, tipY - 2, tipZ]);
   } else if (tier === 'vault') {
+    // the Joker's pocket under the clapper as it lights, held while the bell
+    // rings, then a long glide back for the pegs chasing gold round the
+    // whole wheel
     const Bm = Rw(plan.boom);
-    push([Rrest + 0.4, X + 12, tipY - 8, tipZ + 70, X, tipY - 14, tipZ]);
-    push([Bm - 0.2, wx(30), ey + 6, wd(170), X, aimY + 12, Z + FRONT]);
-    push([Bm + 0.5, wx(34), ey + 6, wd(176), X, aimY + 12, Z + FRONT]);
-    push([Bm + 2.2, wx(44), ey + 4, wd(200), X, aimY + 4, Z + FRONT]);
-    push([Rend + 2, wx(50), ey + 2, wd(240), X, aimY - 6, Z + FRONT]);
+    push([Bm + 0.2, X + 10, tipY - 8, tipZ + 96, X, tipY - 14, tipZ]);
+    push([Bm + 0.8, X + 9, tipY - 8, tipZ + 90, X, tipY - 13, tipZ]);
+    push([Bm + 2.6, wx(34), ey + 6, wd(176), X, frame(ey + 6, wd(176)), Z + FRONT]);
+    push([Bm + 4.0, wx(44), ey + 4, wd(200), X, frame(ey + 4, wd(200)), Z + FRONT]);
+    push([Rend + 2.5, wx(50), ey + 2, wd(240), X, frame(ey + 2, wd(240)) - 6, Z + FRONT]);
   } else {
-    // the pocket under the clapper, then the whole wheel with its call
-    push([Rrest + 0.5, X + 12, tipY - 8, tipZ + 66, X, tipY - 14, tipZ]);
-    // The Twenty, the good win: the lens pushes in on its pocket and holds
-    if (tier === 'hardways') push([Rrest + 1.6, wx(22), ey + 2, wd(170), X, aimY + 6, Z + FRONT]);
-    push([Rw(plan.revealW) + 0.2, wx(30), ey + 4, wd(200), X, aimY + 4, Z + FRONT]);
-    push([Rend + 2, wx(44), ey + 2, wd(240), X, aimY - 6, Z + FRONT]);
+    // The pocket under the clapper: the lens comes in once it is set (to a
+    // close shot, not right up on the paint), drifts on it a moment rather
+    // than stopping dead, and glides back to the whole wheel with its call -
+    // the way back as long again as the way in, so it never snaps in and
+    // out. (It was in to 66 cm and out again inside two seconds.)
+    push([Rrest + 0.8, X + 10, tipY - 8, tipZ + 96, X, tipY - 14, tipZ]);
+    // The Twenty, the good win: the lens keeps closing on its pocket and
+    // holds there longer
+    if (tier === 'hardways') push([Rrest + 1.9, X + 8, tipY - 8, tipZ + 82, X, tipY - 14, tipZ]);
+    else push([Rrest + 1.3, X + 9, tipY - 8, tipZ + 90, X, tipY - 14, tipZ]);
+    // (two seconds back out, whatever the hold)
+    push([Math.max(Rw(plan.revealW) + 1.8, keys[keys.length - 1][0] + 2), wx(30), ey + 4, wd(200), X, frame(ey + 4, wd(200)), Z + FRONT]);
+    push([Rend + 2.5, wx(44), ey + 2, wd(240), X, frame(ey + 2, wd(240)) - 6, Z + FRONT]);
   }
   // the float: up and away over the pit, into the ceiling
   {
@@ -710,13 +735,12 @@ export async function makeGame(ctx) {
     [[6, 60, 60, 130], [16, 80, 110, 240], [room.FLOAT - 2, 90, 140, 330]].forEach(([dt, dx, dy, dz]) => push([L[0] + dt, L[1] + dx * 0.4, Math.min(room.CEIL - 20, L[2] + dy), L[3] + dz, X + 10, Y + 20, Z + FRONT]));
   }
   const camera = ({ eye, aim, dt, n }) => {
-    let last = null;
+    // (eased a little behind the keys - twice over, so each turn of the
+    // lens starts and ends softly and its speed never jumps: see glide)
+    const lens = glide(0.08);
     for (let k = 0; k < n; k++) {
       const t = k * dt;
-      const v = spline(keys, t);
-      // (eased a little behind the keys, so each turn of the lens starts
-      // and ends softly)
-      last = last ? last.map((x, j) => lerp(x, v[j], 1 - Math.exp(-dt / 0.09))) : v;
+      const last = lens(spline(keys, t), dt);
       const e = last.slice(0, 3), a = last.slice(3, 6);
       // (never through the wheel: the eye keeps 30 cm off its face)
       const dz = e[2] - (Z + FRONT);

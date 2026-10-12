@@ -196,7 +196,7 @@ export function dropSim(x0, vx0, opts = {}) {
 
 export async function makeGame(ctx) {
   const { THREE, scene, set, lights, tier, seed, aspect, room, helpers: H } = ctx;
-  const { makeWarp, spline, finished, embossTex, scaleUV, boxUV } = H;
+  const { makeWarp, spline, glide, finished, embossTex, scaleUV, boxUV } = H;
   // (the seed mixed first: neighbouring seeds would otherwise open alike)
   const rng = (s => { for (let k = 0; k < 3; k++) { s = Math.imul(s ^ (s >>> 15), 0x2c1b3c6d) >>> 0; s = Math.imul(s ^ (s >>> 12), 0x297a2d39) >>> 0; } return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; s ^= s >>> 16; return (s >>> 0) / 4294967296; }; })((seed ^ 0x7f4a7c15) >>> 0);
 
@@ -493,8 +493,10 @@ export async function makeGame(ctx) {
 
   // ---- The camera: world keys [t, eye xyz, aim xyz], real seconds. Close
   // on the chute for the wait and the flick; back to the whole board for
-  // the drop, riding down with the chip; in again to the last pin; the
-  // bucket; then the float up and away over the pit.
+  // the drop; then the lens watches the chip down the board (see watch,
+  // below) - where it is, never where it will land; once it is in its bucket
+  // the lens comes in to it, drifts on it, and glides back for the call;
+  // then the float up and away over the pit.
   const X = CAB[0], BZ = CAB[1] + BOARD_Z;
   const chuteY = CHUTE.leverY + 2;
   // (the whole-board shots stand off by what this screen's lens needs:
@@ -508,39 +510,63 @@ export async function makeGame(ctx) {
   const pSlow = posAt(slowW + 0.1), pRest = posAt(restW);
   const wp = p => [X + p[0], p[1], BZ + CHIP.z];
   const [sx, sy] = wp(pSlow), [rx, ry] = wp(pRest);
-  // (the fall is short - a second and a bit - so the lens backs off to a
-  // medium shot as the chip meets the first pins and rides down with it,
-  // the whole board waiting for the call)
-  // (every key after the gate's keeps 0.3 s behind the one before it,
-  // whatever the drop's length: The Pin can come down on the third row)
-  const keys = [
+  // Before the drop: close on the chute, then back to the whole board - the
+  // lens backs off from the chute as the lever is pulled, the board all but
+  // in frame by the drop, and settles on it as the chip leaves the chute
+  // (a glide of most of a second, not a jump back in half of one).
+  const tBoard = Math.min(Rdrop + 0.1, Rslow - 0.5);
+  const before = [
     [0, X + 16, chuteY + 8, BZ + 42, X - 1, chuteY - 1, BZ],
-    [Rgate - 0.1, X + 12, chuteY + 6, BZ + 40, X, chuteY - 3, BZ]
+    [Rgate - 0.1, X + 12, chuteY + 6, BZ + 40, X, chuteY - 3, BZ],
+    [Math.max(tBoard, Rgate + 0.2), X + 8, midY + 14, BZ + wide * 0.64, X, midY + 8, BZ]
   ];
+  // The watch, from the drop until the chip is in: the aim rides the chip's
+  // height and leans toward its side, more as it comes down; the eye comes
+  // in from the whole board to a closer shot as it comes down. All of it is
+  // read from where the chip is at that moment (and the lens trails that:
+  // see glide), so the lens heads for a bucket only as the chip does - it
+  // used to swing to the bucket the drop was bound for while the chip was
+  // still high on the board.
+  const yTop = CHUTE.y0, yBot = BK.top;
+  const watch = t => {
+    const c = posAt(warp.world(t));
+    const z = smoother((yTop - c[1]) / (yTop - yBot));
+    const ride = smoother((t - Rdrop) / 0.45);
+    // (the aim a little over the chip, more as it nears the buckets: the
+    // chip low in the frame with the pins it has still to meet over it, not
+    // a frame half full of the cabinet's dark front below the buckets)
+    const ax = X + c[0] * lerp(0.25, 0.9, z), ay = lerp(midY + 8, c[1] + lerp(3, 14, z), ride * lerp(0.85, 1, z));
+    return [ax + lerp(8, 10, z), ay + lerp(6, 8, z), BZ + lerp(wide * 0.64, 118, z), ax, ay, BZ];
+  };
+  // After the chip is in: keys from the watch's last frame. (Every key
+  // after the first keeps 0.3 s behind the one before it, whatever the
+  // drop's length: The Pin can come down on the third row.)
+  const keys = [[Rrest, ...watch(Rrest)]];
   const push = k => { const p = keys[keys.length - 1]; k[0] = Math.max(k[0], p[0] + 0.3); keys.push(k); };
-  // (the ride keeps most of the board in frame, and the last pin is seen
-  // with its neighbours about it: the fall reads as a fall down the board,
-  // not a chip against black)
-  // (the whole board is in frame before the chip drops: the lens backs off
-  // from the chute as the lever is pulled, and is there by the drop)
-  push([Math.min(Rdrop - 0.2, Rslow - 0.5), X + 8, midY + 14, BZ + wide * 0.64, X, midY + 8, BZ]);
-  push([Rslow - 0.05, sx + 16, sy + 12, BZ + 72, sx, sy - 4, BZ]);
-  push([Rslow + 0.9, sx + 12, sy + 9, BZ + 64, sx, sy - 5, BZ]);
   if (pinned) {
-    push([Rw(plan.silence[0]) + 0.4, sx + 9, sy + 5, BZ + 34, sx, sy - 1, BZ]);
-    push([Rw(plan.silence[1]) + 0.5, sx + 5, sy + 2.5, BZ + 22, sx, sy - 1, BZ]);
-    push([Rend + 2, sx + 12, sy + 2, BZ + 32, sx, sy - 2, BZ]);
+    // the lens closes in on the chip balanced on its pin
+    push([Rw(plan.silence[0]) + 0.8, rx + 9, ry + 5, BZ + 36, rx, ry - 1, BZ]);
+    push([Rw(plan.silence[1]) + 0.8, rx + 5, ry + 2.5, BZ + 24, rx, ry - 1, BZ]);
+    push([Rend + 2.5, rx + 12, ry + 2, BZ + 32, rx, ry - 2, BZ]);
   } else if (tier === 'vault') {
+    // the house bucket as its trap opens, held while the bell rings, then
+    // a long glide back for the pins chasing gold up the board
     const Bm = Rw(plan.boom);
-    push([Rrest + 0.4, rx + 12, ry + 10, BZ + 70, rx, ry + 3, BZ]);
-    push([Bm - 0.2, rx + 10, ry + 12, BZ + 74, rx, ry + 2, BZ]);
-    push([Bm + 0.6, rx + 8, ry + 14, BZ + 78, rx, ry - 1, BZ]);
-    push([Bm + 2.2, X + 8, midY + 2, BZ + wide * 0.9, X, midY - 2, BZ]);
-    push([Rend + 2, X + 14, midY + 4, BZ + wide * 1.1, X, midY - 6, BZ]);
+    push([Rrest + 0.9, rx + 10, ry + 19, BZ + 90, rx, ry + 13, BZ]);
+    push([Bm + 0.7, rx + 8, ry + 19, BZ + 84, rx, ry + 12, BZ]);
+    push([Bm + 2.6, X + 8, midY + 2, BZ + wide * 0.9, X, midY - 2, BZ]);
+    push([Rend + 2.5, X + 14, midY + 4, BZ + wide * 1.1, X, midY - 6, BZ]);
   } else {
-    push([Rrest + 0.5, rx + 12, ry + 10, BZ + 70, rx, ry + 3, BZ]);
-    push([Rw(plan.revealW) + 0.2, X + 8, midY + 2, BZ + wide * 0.95, X, midY - 2, BZ]);
-    push([Rend + 2, X + 14, midY + 4, BZ + wide * 1.1, X, midY - 6, BZ]);
+    // in to the bucket (a close shot, not right up on the chip), a drift on
+    // it rather than a dead stop, and a glide back for the call as long
+    // again as the way in (it was in to 52 cm and out inside a second and a
+    // half)
+    // (the bucket low in the frame, the board's last pins over it, rather
+    // than a frame half full of the cabinet's dark front below it)
+    push([Rrest + 1.0, rx + 10, ry + 19, BZ + 92, rx, ry + 14, BZ]);
+    push([Rrest + 1.6, rx + 9, ry + 18, BZ + 84, rx, ry + 14, BZ]);
+    push([Rw(plan.revealW) + 1.7, X + 8, midY + 2, BZ + wide * 0.95, X, midY - 2, BZ]);
+    push([Rend + 2.5, X + 14, midY + 4, BZ + wide * 1.1, X, midY - 6, BZ]);
   }
   // the float: up and away over the pit (to the left, where it lies), into
   // the ceiling
@@ -551,21 +577,23 @@ export async function makeGame(ctx) {
     const L = keys[keys.length - 1];
     [[6, -60, 60, 130, L[4], L[5] + 8], [16, -90, 110, 240, X - 10, midY], [room.FLOAT - 2, -110, 140, 330, X - 30, midY]].forEach(([dt, dx, dy, dz, ax, ay]) => push([L[0] + dt, L[1] + dx * 0.4, Math.min(room.CEIL - 20, L[2] + dy), L[3] + dz, ax, ay, BZ]));
   }
-  // (the ride: through the drop the aim leans toward the chip, a little
-  // behind it, and the eye drops with it)
-  const ride = t => smoother((t - Rdrop - 0.1) / 0.45) * (1 - smoother((t - (Rslow - 0.45)) / 0.4));
   const camera = ({ eye, aim, dt, n }) => {
-    let last = null;
+    // (eased a little behind the path - twice over, so the lens starts,
+    // turns and stops softly and its speed never jumps: see glide)
+    const lens = glide(0.08);
+    const into = before[before.length - 1][0];
     for (let k = 0; k < n; k++) {
       const t = k * dt;
-      const v = spline(keys, t);
-      const f = ride(t);
-      if (f > 0) {
-        const p = wp(posAt(warp.world(Math.max(0, t - 0.06))));
-        v[4] = lerp(v[4], p[1] + 4, 0.9 * f); v[3] = lerp(v[3], X + (p[0] - X) * 0.4, 0.5 * f);
-        v[1] = lerp(v[1], p[1] + 16, 0.7 * f);
+      let v;
+      if (t >= Rrest) v = spline(keys, t);
+      else {
+        // (the watch takes over from the board shot as it is reached -
+        // with the chip on the lever, or just off it, the two are one shot)
+        v = spline(before, t);
+        const f = smoother((t - (into - 0.2)) / 0.2);
+        if (f > 0) { const w = watch(t); v = v.map((x, j) => lerp(x, w[j], f)); }
       }
-      last = last ? last.map((x, j) => lerp(x, v[j], 1 - Math.exp(-dt / 0.09))) : v;
+      const last = lens(v, dt);
       const e = last.slice(0, 3), a = last.slice(3, 6);
       // (never into the cabinet: the eye keeps 18 cm off the glass)
       if (e[2] < BZ + 18 && Math.abs(e[0] - X) < outerW / 2 + 10 && e[1] > BODY.floor && e[1] < topY + 10) e[2] = BZ + 18;
