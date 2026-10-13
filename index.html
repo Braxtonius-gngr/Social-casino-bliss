@@ -5559,10 +5559,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // game's frames are its own, dark, so the copy keeps its veil)
       document.documentElement.setAttribute('data-felt', game === 'dice' ? shotFelt : 'black');
       let tablePrep = null, flying = false;
+      // (the shot's end: the table, built and warmed under the gate and the
+      // shot, shows itself - lamp coming up - only from here)
+      let shotRested = null;
+      const shotRest = new Promise(res => { shotRested = res; });
       const prepTable = () => {
         if (!tableDest || tablePrep || !api) return tablePrep;
+        rollPerf.mark('table: import');
         tablePrep = import(ROLL_DESTS[tableDest])
-          .then(m => m.prepareTable({ scene: api.peek().scene, dest: tableDest, hooks: rollTableHooks(), warm: opts => (api ? api.warm(opts) : null) }))
+          .then(m => { rollPerf.mark('table: build + warm'); return m.prepareTable({ scene: api.peek().scene, dest: tableDest, hooks: rollTableHooks(), warm: opts => (api ? api.warm(opts) : null), showWhen: shotRest }); })
+          .then(prep => { rollPerf.mark('table: ready'); return prep; })
           .catch(e => { console.warn('table', e); disarmTable(); return null; });
         return tablePrep;
       };
@@ -5573,10 +5579,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (!tableDest || !api) return false;
         if (flying) return true;
         flying = true;
+        rollPerf.mark('seat: tap');
         // (the card table's music, if Settings switched it on since the shot began)
         if (tableDest === 'card') rollMusicStart();
+        // (the button answers at once - and gets a frame to paint before the
+        // work the tap sets off)
+        const btn0 = screen.querySelector('.landing-btn');
+        if (btn0) { btn0.classList.add('is-busy'); btn0.innerHTML = 'TAKING YOUR SEAT&hellip;'; btn0.setAttribute('aria-busy', 'true'); }
+        await new Promise(res => requestAnimationFrame(() => setTimeout(res, 0)));
         const prep = await prepTable();
-        if (!prep || !api) { flying = false; return false; }
+        rollPerf.mark('seat: table ready');
+        if (!prep || !api) { flying = false; if (btn0) { btn0.classList.remove('is-busy'); btn0.removeAttribute('aria-busy'); } return false; }
         screen.removeEventListener('pointerdown', onTap);
         window.rollIntroEnter = () => true;
         // (the table owns the renderer from here: the landing must not
@@ -5584,6 +5597,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         window.rollIntroDispose = null;
         const world = api.release();
         screen.classList.add('r3-flying');
+        rollPerf.mark('seat: fly-in');
         const seatcam = (q.get('seatcam') || '').split(',').map(Number);
         // (prep: the home's set, kept to take it away when you drift to
         // another; base: the room as the shot left it, handed back to each
@@ -5614,6 +5628,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             kickSync();
             // (down in the chair, the cards coming: the groove)
             if (rollMusic) rollMusic.touch();
+            rollPerf.mark('seat: arrived');
+            rollPerf.report();
           }
         }, flyOpts));
         } catch (e) {
@@ -5654,6 +5670,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const end = () => {
         if (done || !api) return;
         done = true;
+        rollPerf.mark('shot: ended');
+        shotRested();
         screen.removeEventListener('pointerdown', skip);
         screen.removeEventListener('focusin', skip);
         document.removeEventListener('keydown', skip);
@@ -5715,6 +5733,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // frame it ends on, with the table built into it - and the camera
         // goes down into the chair from there.
         done = true;
+        shotRested();
         if (motionOff()) api.finish(); else api.seek(api.plan.totalReal);
         const ok = await flyIn({ duration: 2.2 });
         if (!ok) { screen.classList.remove('intro-play', 'roll-webgl', 'r3-direct'); screen.classList.add('hidden'); if (window.rollIntroDispose) window.rollIntroDispose(); rollTableSession = null; }
@@ -5738,7 +5757,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (q.has('lab') && tableDest) {
         // (lab: fly in by hand - rollTableFly({ manual: true }) then
         // rollTable.seek(t) - for frame-exact captures)
-        window.rollTableFly = o => { done = true; return flyIn(o); };
+        window.rollTableFly = o => { done = true; shotRested(); return flyIn(o); };
         window.rollIntroPeek = () => api && api.peek();
       }
       // Motion off - or a muted skin, the still take of a visualized one
@@ -5747,7 +5766,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // The gate: the seal stays up, now reading TAP TO ROLL, and the shot
       // waits for that tap (or Enter / Space). It is the tap that lets the
       // page sound - the dice, and the table's music under them.
+      // (and the table it will fly into is started now - its module, its
+      // build, its shaders and textures - while the seal waits and the shot
+      // plays, so the seat is ready long before the tap that takes it)
+      rollPerf.mark('gate: shown');
+      if (tableDest) prepTable();
       await rollGate(screen);
+      rollPerf.mark('gate: tapped');
       if (!api || fellBack) return;
       // Any tap, key press, or focus arriving on the screen skips straight
       // to the end of the shot (as in the CSS intro).
@@ -5759,6 +5784,38 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       api.play();
       if (tappedEarly) skip();
     }
+    // Where the time goes between the shot and the seat (performance marks,
+    // and the main thread's long tasks): a summary in the console on
+    // arrival, and an overlay with ?perf - for reading a slow phone.
+    const rollPerf = (() => {
+      const marks = [];
+      const t0 = performance.now();
+      const longTasks = [];
+      try {
+        new PerformanceObserver(list => list.getEntries().forEach(e => longTasks.push([e.startTime, e.duration]))).observe({ type: 'longtask', buffered: true });
+      } catch (e) { /* no long task timing here */ }
+      let wantOverlay = false;
+      try { wantOverlay = new URLSearchParams(window.location.search).has('perf'); } catch (e) { /* fine */ }
+      const mark = name => { marks.push([name, performance.now()]); try { performance.mark('dro:' + name); } catch (e) { /* fine */ } };
+      const report = () => {
+        if (!marks.length) return;
+        const first = marks[0][1];
+        const rows = marks.map(([n, t], i) => ({ step: n, at: +((t - first) / 1000).toFixed(2), gap: +(((t - (i ? marks[i - 1][1] : t)) / 1000)).toFixed(2) }));
+        const tap = marks.find(m => m[0] === 'seat: tap'), sat = marks.find(m => m[0] === 'seat: arrived');
+        const blockedAfterTap = tap ? longTasks.filter(([s]) => s >= tap[1]).reduce((a, [, d]) => a + d, 0) : 0;
+        const worst = longTasks.reduce((a, [, d]) => Math.max(a, d), 0);
+        try { console.info('[dro perf] shot -> seat', rows, { longTasksMs: Math.round(longTasks.reduce((a, [, d]) => a + d, 0)), blockedAfterTapMs: Math.round(blockedAfterTap), worstTaskMs: Math.round(worst), tapToSeatS: tap && sat ? +((sat[1] - tap[1]) / 1000).toFixed(2) : null }); } catch (e) { /* fine */ }
+        if (!wantOverlay) return;
+        let el = document.getElementById('r3Perf');
+        if (!el) { el = document.createElement('pre'); el.id = 'r3Perf'; el.className = 'r3-perf'; document.body.appendChild(el); }
+        el.textContent = rows.map(r => `${r.at.toFixed(2).padStart(6)}s  +${r.gap.toFixed(2)}  ${r.step}`).join('\n')
+          + `\n\nlong tasks: ${Math.round(longTasks.reduce((a, [, d]) => a + d, 0))} ms total, worst ${Math.round(worst)} ms`
+          + `\nblocked after the seat tap: ${Math.round(blockedAfterTap)} ms`
+          + (tap && sat ? `\ntap -> seated: ${((sat[1] - tap[1]) / 1000).toFixed(2)} s` : '')
+          + `\n${navigator.userAgent.replace(/^Mozilla\/5\.0 /, '').slice(0, 90)}`;
+      };
+      return { mark, report, get marks() { return marks; }, get longTasks() { return longTasks; } };
+    })();
     // The landing's gate (see rollIntro3d): resolves on the tap or key that
     // starts the shot. ?lab and ?autoplay skip it.
     function rollGate(screen) {
@@ -9128,7 +9185,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v150';
+    const APP_BUILD = 'almanac-v151';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads

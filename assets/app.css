@@ -697,6 +697,14 @@
     .landing-screen.r3-ready .r3-loader-seal::before { animation-duration: 22s; }
     @keyframes r3-gate-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
     html[data-motion="off"] .r3-gate span { animation: none; opacity: 0.85; }
+    /* The seat tap, answered: the button says it heard you while the table
+       is readied (see flyIn). */
+    .landing-btn.is-busy { opacity: 0.75; pointer-events: none; letter-spacing: 0.12em; }
+    .landing-btn.is-busy::after { content: ""; display: inline-block; width: 0.8em; height: 0.8em; margin-left: 0.6em; vertical-align: -0.1em; border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; animation: r3-busy-turn 0.9s linear infinite; }
+    @keyframes r3-busy-turn { to { transform: rotate(360deg); } }
+    html[data-motion="off"] .landing-btn.is-busy::after { animation: none; border-right-color: currentColor; opacity: 0.5; }
+    /* ?perf: the shot-to-seat timings, over everything */
+    .r3-perf { position: fixed; left: 8px; right: 8px; bottom: max(8px, env(safe-area-inset-bottom)); z-index: 9999; margin: 0; padding: 10px 12px; max-height: 45vh; overflow: auto; background: rgba(5,4,4,0.88); color: #d9b467; font: 11px/1.45 ui-monospace, Menlo, Consolas, monospace; border: 1px solid rgba(214,176,98,0.4); border-radius: 8px; white-space: pre-wrap; pointer-events: auto; }
     .landing-screen.intro-play .roll-intro { display: block; }
     /* Performance: no blend modes anywhere in the intro and no filters in
        the shot itself (each forces an extra full off-screen pass per frame;
