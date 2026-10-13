@@ -362,7 +362,10 @@ export async function makeGame(ctx) {
   // in the slowing, snaps back and the wheel glides on in the hold) - or,
   // for The Peg, the ride up onto it and the stop
   const slowW = onPeg ? (spin.stuck ? spin.stuck.t : restW) - 0.2 : lastTick - 0.1;
-  const warp = makeWarp(slowW);
+  // (no slow motion but for The Peg: the wheel slows of itself, the ticks
+  // coming one by one, and time slowing on top of that - with the lens
+  // closing in - read as the spin stopping short)
+  const warp = makeWarp(slowW, onPeg ? 0.12 : 1);
   const plan = { tier, seed, warp, wallW: slowW, restW, values: [value], call: value == null ? null : WORDS[value], throwOk: true, why: [] };
   plan.callW = restW + 0.15;
   if (tier === 'vault') {

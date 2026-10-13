@@ -589,7 +589,10 @@ export async function makeGame(ctx) {
   seat.add(key, key.target);
 
   // ---- The machine: the card table's (table.mjs), stowed under its port.
-  const dm = K.dealerMaterials();
+  // (the dealer in the colours Settings gives the card table's - skin and
+  // circuitry matched to the felt or the trim, or the house's white - so
+  // the machine dealing here is the one that deals at home)
+  const dm = K.dealerMaterials(ctx.robot ? K.robotPalette(ctx.robot.skin, ctx.robot.vein, ctx.felt || 'black', ctx.trim || 'gold') : null);
   const torso = K.buildDealerTorso(dm);
   seat.add(torso.group);
   const arms = SIDES.map(side => {
