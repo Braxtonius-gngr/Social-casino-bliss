@@ -119,7 +119,7 @@ function checkServiceWorker() {
 }
 
 // Everything the app can load is precached, except the rare tiers' extras
-// (assets/intro3d/rare/, kept on first use): a new asset left out of
+// and the card table's music (assets/intro3d/rare/, kept on first use): a new asset left out of
 // PRECACHE_URLS would be fetched mid-shot on every first play, the lag the
 // "Updating" download exists to prevent.
 const PRECACHE_SKIP = [/^assets\/intro3d\/rare\//, /(^|\/)(README\.md|LICENSE)$/];
