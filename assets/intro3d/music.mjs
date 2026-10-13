@@ -1,7 +1,8 @@
 // The card table's music: three loops of the same piece - Base (sparse,
 // idle), Main (the groove) and Lift (the trumpet up, for a collect or a
-// rare card) - all 16 bars at 117.45 BPM in D, cut to the SAME sample
-// length and started on one clock, so they stay locked bar for bar. A
+// rare card) - all 16 bars at 119.73 BPM in D (the takes were stretched to
+// one tempo and kick-aligned), cut to the SAME sample length and started
+// on one clock, so they stay locked bar for bar. A
 // change of layer is a change of volume only: the layer coming in fades up
 // over two bars while the one going out fades down (equal power, so the
 // loudness holds through the middle), and each fade starts on the next
@@ -33,11 +34,11 @@
 // api.dispose()          stop and release everything
 
 const FILES = { base: 'rare/music/rxr-base.mp3', main: 'rare/music/rxr-main.mp3', lift: 'rare/music/rxr-lift.mp3' };
-export const BPM = 117.45;
-export const BEAT = 60 / BPM;                 // 0.51084 s
+export const BPM = 119.728;
+export const BEAT = 60 / BPM;                 // 0.50114 s
 export const BAR = BEAT * 4;
-export const LOOP_SAMPLES = 1569297;          // every loop, at 48 kHz
-export const LOOP_SECONDS = LOOP_SAMPLES / 48000;   // 32.694 s, 16 bars
+export const LOOP_SAMPLES = 1539494;          // every loop, at 48 kHz
+export const LOOP_SECONDS = LOOP_SAMPLES / 48000;   // 32.073 s, 16 bars
 // LAME's encoder delay (576) plus the decoder's (529), in case a decoder
 // returns the padding instead of trimming it by the Info tag (Chrome,
 // Firefox and Safari all trim; this is the fallback).

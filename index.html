@@ -774,7 +774,7 @@
       </div>
       <button type="button" class="btn-dock settings-replay-landing" style="max-width:100%; width:100%; margin-bottom:12px;" onclick="replayLanding()">Play the Landing Now</button>
       <div class="toggle-row">
-        <span style="color:#fff;">Music at the table<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">A lounge loop at the card table that lifts when you collect; the landing's speaker silences it too</span></span>
+        <span style="color:#fff;">Music at the table<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">A lounge loop under the landing and at the card table that lifts when you collect; the landing's speaker silences it too</span></span>
         <input type="checkbox" id="settingTableMusic" onchange="setTableMusic(this.checked)" />
       </div>
       <div class="toggle-row">
@@ -5304,12 +5304,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     const ROLL_SOUND_RESET_KEY = 'almanac_intro_sound_on_v1';   // 'done': the one-time reset to on
     const TABLE_MUSIC_KEY = 'almanac_table_music';   // 'on' | 'off' (the card table's music; on by default)
     // The card table's music (assets/intro3d/music.mjs): three loops of one
-    // piece on one clock - Base while nothing is happening, Main while you
-    // are at the cards, Lift for a collect or an S-tier card lifted - each
-    // change a two-bar crossfade. It plays at the card table only (the
-    // other homes have their own quiet), when Settings has it on and the
-    // landing's speaker is not off. Started by the tap that takes the seat,
-    // so the browser lets it sound.
+    // piece on one clock - Base under the landing's shot and while nothing
+    // is happening, Main while you are at the cards, Lift for a collect or
+    // an S-tier card lifted - each change a two-bar crossfade. It plays for
+    // the card table only (the other homes have their own quiet), when
+    // Settings has it on and the landing's speaker is not off. Started as
+    // the shot loads, so it runs under the shot and straight into the seat;
+    // the browser holds it silent until the first tap or key (the one that
+    // skips the shot, or takes the seat).
     let rollMusic = null;
     function tableMusicOn() {
       try { return localStorage.getItem(TABLE_MUSIC_KEY) !== 'off' && localStorage.getItem(ROLL_SOUND_KEY) !== 'off'; } catch (e) { return true; }
@@ -5323,8 +5325,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // happened for a while; Main otherwise.
       const settle = () => {
         if (!ctl.api) return;
+        // (the landing gone with no seat taken - the classic home, or the
+        // CSS intro: no table, no music)
+        const screen = document.getElementById('landingScreen');
+        const landing = screen && !screen.classList.contains('hidden');
+        if (!rollTableSession && !landing) { ctl.stop(); return; }
         const away = document.body.classList.contains('r3-sheet-open') || !!document.querySelector('.sheet-backdrop.open');
-        const layer = away || Date.now() - ctl.idleAt > IDLE_MS ? 'base' : 'main';
+        const layer = !rollTableSession || away || Date.now() - ctl.idleAt > IDLE_MS ? 'base' : 'main';
         if (layer !== ctl.lastLayer) { ctl.lastLayer = layer; ctl.api.layer(layer); }
       };
       ctl.touch = () => { ctl.idleAt = Date.now(); settle(); };
@@ -5455,6 +5462,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // landing as it always was.
       const destQ = q.get('dest');
       const tableDest = ROLL_DESTS[destQ] ? destQ : destQ === 'none' ? null : themeTable();
+      // (the card table's music, under the shot and on into the seat)
+      if (tableDest === 'card') rollMusicStart();
       // (the felt and trim are the card table's: another home's shot keeps
       // the house's black and gold)
       const shotFelt = FELT_CHOICES[q.get('felt')] ? q.get('felt') : tableDest === 'card' ? getFelt() : 'black';
@@ -5479,8 +5488,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (!tableDest || !api) return false;
         if (flying) return true;
         flying = true;
-        // (the card table's music, from the tap that takes the seat - the
-        // gesture the browser wants before a page may sound)
+        // (the card table's music, if Settings switched it on since the shot began)
         if (tableDest === 'card') rollMusicStart();
         const prep = await prepTable();
         if (!prep || !api) { flying = false; return false; }
