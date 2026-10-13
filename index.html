@@ -774,6 +774,10 @@
       </div>
       <button type="button" class="btn-dock settings-replay-landing" style="max-width:100%; width:100%; margin-bottom:12px;" onclick="replayLanding()">Play the Landing Now</button>
       <div class="toggle-row">
+        <span style="color:#fff;">Music at the table<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">A lounge loop at the card table that lifts when you collect; the landing's speaker silences it too</span></span>
+        <input type="checkbox" id="settingTableMusic" onchange="setTableMusic(this.checked)" />
+      </div>
+      <div class="toggle-row">
         <span style="color:#fff;">Hide platforms on cooldown<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Keeps your Deck to just what's ready</span></span>
         <input type="checkbox" id="settingHideCollected" onchange="toggleHideCollected()" />
       </div>
@@ -2547,6 +2551,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       logCollection(id);
       persist();
       hapticBuzz(40);
+      // (at the card table: the music lifts for a collect)
+      if (rollMusic) rollMusic.lift();
 
       let undone = false;
       const undo = () => {
@@ -3214,6 +3220,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('settingLandingMode').value = rollLandingMode();
       document.getElementById('settingHideCollected').checked = localStorage.getItem('almanac_hide_collected') === 'true';
       document.getElementById('settingDenseToggle').checked = document.body.classList.contains('dense');
+      try { document.getElementById('settingTableMusic').checked = localStorage.getItem(TABLE_MUSIC_KEY) !== 'off'; } catch (e) { /* private mode */ }
       renderThemeUI();
       renderFeltUI();
       renderTrimUI();
@@ -5295,6 +5302,62 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // throw; ?lab adds a switcher and window.rollIntroSeek(t).
     const ROLL_SOUND_KEY = 'almanac_intro_sound';   // 'on' | 'off'
     const ROLL_SOUND_RESET_KEY = 'almanac_intro_sound_on_v1';   // 'done': the one-time reset to on
+    const TABLE_MUSIC_KEY = 'almanac_table_music';   // 'on' | 'off' (the card table's music; on by default)
+    // The card table's music (assets/intro3d/music.mjs): three loops of one
+    // piece on one clock - Base while nothing is happening, Main while you
+    // are at the cards, Lift for a collect or an S-tier card lifted - each
+    // change a two-bar crossfade. It plays at the card table only (the
+    // other homes have their own quiet), when Settings has it on and the
+    // landing's speaker is not off. Started by the tap that takes the seat,
+    // so the browser lets it sound.
+    let rollMusic = null;
+    function tableMusicOn() {
+      try { return localStorage.getItem(TABLE_MUSIC_KEY) !== 'off' && localStorage.getItem(ROLL_SOUND_KEY) !== 'off'; } catch (e) { return true; }
+    }
+    function rollMusicStart() {
+      if (rollMusic || !tableMusicOn()) return;
+      const ctl = { api: null, idleAt: 0, timer: 0, dead: false, lastLayer: null };
+      rollMusic = ctl;
+      const IDLE_MS = 20000;
+      // Base when a sheet or a modal is over the table, or nothing has
+      // happened for a while; Main otherwise.
+      const settle = () => {
+        if (!ctl.api) return;
+        const away = document.body.classList.contains('r3-sheet-open') || !!document.querySelector('.sheet-backdrop.open');
+        const layer = away || Date.now() - ctl.idleAt > IDLE_MS ? 'base' : 'main';
+        if (layer !== ctl.lastLayer) { ctl.lastLayer = layer; ctl.api.layer(layer); }
+      };
+      ctl.touch = () => { ctl.idleAt = Date.now(); settle(); };
+      ctl.lift = () => { if (ctl.api) { ctl.idleAt = Date.now(); ctl.api.lift(4); } };
+      ctl.stop = () => {
+        ctl.dead = true;
+        clearInterval(ctl.timer);
+        ['pointerdown', 'keydown'].forEach(t => document.removeEventListener(t, ctl.touch, true));
+        document.removeEventListener('visibilitychange', ctl.onVis);
+        if (ctl.api) ctl.api.dispose();
+        ctl.api = null;
+        if (rollMusic === ctl) rollMusic = null;
+      };
+      ctl.onVis = () => { if (!ctl.api) return; if (document.visibilityState === 'hidden') ctl.api.suspend(); else ctl.api.resume(); };
+      import('./assets/intro3d/music.mjs').then(m => {
+        if (ctl.dead) return;
+        ctl.api = m.createMusic({ base: './assets/intro3d/' });
+        // (quiet during the fly-in; the table's arrival wakes it: see onArrive)
+        ctl.api.layer('base');
+        ctl.api.start();
+        ['pointerdown', 'keydown'].forEach(t => document.addEventListener(t, ctl.touch, true));
+        document.addEventListener('visibilitychange', ctl.onVis);
+        ctl.timer = setInterval(settle, 1000);
+        if (document.visibilityState === 'hidden') ctl.api.suspend();
+      }).catch(e => { console.warn('music', e); ctl.stop(); });
+    }
+    function rollMusicStop() { if (rollMusic) rollMusic.stop(); }
+    // Settings: the music on or off - live, when the table is up.
+    function setTableMusic(on) {
+      try { localStorage.setItem(TABLE_MUSIC_KEY, on ? 'on' : 'off'); } catch (e) { /* private mode */ }
+      if (!on) { rollMusicStop(); return; }
+      if (rollTableSession && rollTableSession.dest === 'card') { rollMusicStart(); if (rollMusic) rollMusic.touch(); }
+    }
     function rollHasWebGL2() {
       try {
         const c = document.createElement('canvas');
@@ -5416,6 +5479,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (!tableDest || !api) return false;
         if (flying) return true;
         flying = true;
+        // (the card table's music, from the tap that takes the seat - the
+        // gesture the browser wants before a page may sound)
+        if (tableDest === 'card') rollMusicStart();
         const prep = await prepTable();
         if (!prep || !api) { flying = false; return false; }
         screen.removeEventListener('pointerdown', onTap);
@@ -5453,6 +5519,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             screen.classList.remove('r3-flying', 'r3-direct', 'intro-play', 'roll-webgl', 'roll-popped', 'roll-rest');
             rollDriftUI(session);
             kickSync();
+            // (down in the chair, the cards coming: the groove)
+            if (rollMusic) rollMusic.touch();
           }
         }, flyOpts));
         } catch (e) {
@@ -5600,6 +5668,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const s = rollTableSession;
       rollTableSession = null;
       window.rollTable = null;
+      rollMusicStop();
       if (s) {
         try { if (s.table) s.table.dispose(); } catch (e) { /* gone */ }
         // (the homes' sets: the one you are at, and one you were drifting
@@ -5696,6 +5765,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // them - see rollLeaveTable)
         const was = s.prep;
         s.prevPrep = was; s.prep = prep; s.dest = dest;
+        // (the music is the card table's: it goes with it, and comes back
+        // with it)
+        if (dest === 'card') rollMusicStart(); else rollMusicStop();
         // (the chair lets go of the camera and the page; the room goes back
         // to how the shot left it, and the next home takes it from there)
         try { if (s.table) s.table.dispose(); } catch (e) { /* gone */ }
@@ -5912,6 +5984,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           if (!g) return null;
           const st = getCooldownState(g);
           return { remaining: st.isReady ? 0 : st.remainingMs };
+        },
+        // A card lifted to look at: an S-tier one lifts the music with it.
+        cardTap(id, up) {
+          if (!rollMusic || !up) return;
+          const g = gameFor(id);
+          const tier = g ? g.tier : /^demo_S$/.test(id) ? 'S' : null;
+          if (tier === 'S') rollMusic.lift();
         }
       };
     }
@@ -8853,7 +8932,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v149';
+    const APP_BUILD = 'almanac-v150';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
