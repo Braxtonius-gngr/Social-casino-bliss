@@ -4,9 +4,11 @@
 // one tempo and kick-aligned), cut to the SAME sample length and started
 // on one clock, so they stay locked bar for bar. A
 // change of layer is a change of volume only: the layer coming in fades up
-// over two bars while the one going out fades down (equal power, so the
-// loudness holds through the middle), and each fade starts on the next
-// beat rather than mid-beat.
+// over two bars while the one going out fades down - a LINEAR fade, since
+// the layers are takes of one piece and add up in phase (an equal-power
+// fade swells 3 dB in the middle on correlated material: the hiccup you
+// hear as the Hi line coming back quieter) - and each fade starts on the
+// next beat rather than mid-beat.
 //
 // Files: assets/intro3d/rare/music/rxr-{base,main,lift}.mp3 - fetched the
 // first time the table is taken and kept by the service worker from then
@@ -46,13 +48,6 @@ const MP3_DELAY = 1105 / 48000;
 const FADE_BARS = 2;
 // Each layer's trim, so the three read as one piece at one level.
 const TRIM = { base: 0.9, main: 1.0, lift: 1.0 };
-const CURVE_N = 48;
-const curveIn = new Float32Array(CURVE_N), curveOut = new Float32Array(CURVE_N);
-for (let i = 0; i < CURVE_N; i++) {
-  const t = i / (CURVE_N - 1);
-  curveIn[i] = Math.sin(t * Math.PI / 2);
-  curveOut[i] = Math.cos(t * Math.PI / 2);
-}
 
 export function createMusic(opts = {}) {
   const o = Object.assign({ base: './assets/intro3d/', gain: 0.42, onState: null }, opts);
@@ -134,7 +129,15 @@ export function createMusic(opts = {}) {
   };
 
   // Bring `name` up and the others down over two bars (or at once, at the
-  // start).
+  // start). A fade already running is held where it is and continued from
+  // there (cancelAndHoldAtTime; cancelScheduledValues alone can snap a
+  // ramp back to where it began).
+  const hold = (p, t) => {
+    if (p.cancelAndHoldAtTime) { try { p.cancelAndHoldAtTime(t); return; } catch (e) { /* fall through */ } }
+    const v = p.value;
+    p.cancelScheduledValues(t);
+    p.setValueAtTime(v, t);
+  };
   const set = (name, now) => {
     if (!started || !layers[name] || current === name) return;
     current = name;
@@ -144,14 +147,10 @@ export function createMusic(opts = {}) {
       const L = layers[n], p = L.gain.gain;
       const to = n === name ? TRIM[n] : 0;
       if (L.level === to) return;
-      p.cancelScheduledValues(0);
-      p.setValueAtTime(p.value, Math.max(ctx.currentTime, t0 - 0.001));
-      // equal-power: sin up for the one coming in, cos down for the one
-      // going out - scaled to where each actually is
-      const from = p.value;
-      const curve = new Float32Array(CURVE_N);
-      for (let i = 0; i < CURVE_N; i++) curve[i] = to > from ? from + (to - from) * curveIn[i] : to + (from - to) * curveOut[i];
-      try { p.setValueCurveAtTime(curve, t0, dur); } catch (e) { p.linearRampToValueAtTime(to, t0 + dur); }
+      const tc = ctx.currentTime;
+      hold(p, tc);
+      p.setValueAtTime(p.value, Math.max(tc, t0 - 0.001));
+      p.linearRampToValueAtTime(to, t0 + dur);
       L.level = to;
     });
   };

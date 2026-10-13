@@ -103,6 +103,7 @@
     <!-- While the 3D shot is being built (a few seconds on a phone), the
          house's seal turns in the dark instead of a black screen. -->
     <div class="r3-loader" aria-hidden="true"><span class="r3-loader-seal"><b>DRO</b></span><i class="r3-loader-line"></i></div>
+    <button type="button" class="r3-gate" aria-label="Tap to roll the dice"><span>TAP TO ROLL</span></button>
     <div class="roll-intro" aria-hidden="true">
       <div class="roll-backdrop"></div>
       <div class="roll-stage">
@@ -5425,9 +5426,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // CSS intro. Nor does a slow load drop to the CSS intro: the shot is
       // waited for. Only a shot that cannot be made (no WebGL 2, a module
       // that fails to load, a build that throws) falls back.
+      // (a tap while it loads does nothing: the shot waits at the gate below
+      // for one deliberate tap, which is also the one that lets the page
+      // sound - so a tap that did not seem to register cannot skip the shot
+      // or mute it when it lands twice)
       let tappedEarly = false;
-      const skipWhileLoading = () => { tappedEarly = true; screen.removeEventListener('pointerdown', skipWhileLoading); };
-      if (!direct) screen.addEventListener('pointerdown', skipWhileLoading);
+      const skipWhileLoading = () => {};
       let mod;
       try {
         mod = await import('./assets/intro3d/intro.mjs');
@@ -5577,9 +5581,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         armTable();
       };
       // A tap, a key or focus arriving mid-shot: straight to the end of it -
-      // held still with motion off, floating on otherwise.
+      // held still with motion off, floating on otherwise. (Not within the
+      // first moments after the gate's tap: a second tap of a double-tap
+      // is not a skip.)
+      // (measured in frames drawn as well as time: a phone that stalls on
+      // the shot's first frames would otherwise let the second tap through
+      // when it catches up)
+      let playedAt = 0, framesPlayed = 0;
+      const countFrames = () => { framesPlayed++; if (framesPlayed < 12) requestAnimationFrame(countFrames); };
       const skip = () => {
         if (!api || done) return;
+        if (performance.now() - playedAt < 900 || framesPlayed < 12) return;
         if (motionOff()) api.finish(); else api.skip();
         end();
       };
@@ -5608,7 +5620,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       clearTimeout(timer);
       screen.classList.remove('r3-loading');
       screen.removeEventListener('pointerdown', skipWhileLoading);
-      window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; window.rollIntroSetFelt = null; window.rollIntroSetTrim = null; };
+      window.rollIntroDispose = () => { if (api) api.dispose(); api = null; screen.classList.remove('r3-ready'); window.rollIntroDispose = null; window.rollIntroSetFelt = null; window.rollIntroSetTrim = null; };
       window.rollIntroSetFelt = id => { if (api && api.setFelt) { api.setFelt(id); if (game === 'dice') document.documentElement.setAttribute('data-felt', id); } };
       window.rollIntroSetTrim = id => { if (api && api.setTrim) api.setTrim(id); };
       if (direct) {
@@ -5645,13 +5657,46 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // Motion off - or a muted skin, the still take of a visualized one
       // (see THEMES): the finished frame, held, and no shot.
       if (motionOff() || themeMuted()) { api.finish(); end(); return; }
+      // The gate: the seal stays up, now reading TAP TO ROLL, and the shot
+      // waits for that tap (or Enter / Space). It is the tap that lets the
+      // page sound - the dice, and the table's music under them.
+      await rollGate(screen);
+      if (!api || fellBack) return;
       // Any tap, key press, or focus arriving on the screen skips straight
       // to the end of the shot (as in the CSS intro).
       screen.addEventListener('pointerdown', skip);
       screen.addEventListener('focusin', skip);
       document.addEventListener('keydown', skip);
+      playedAt = performance.now();
+      requestAnimationFrame(countFrames);
       api.play();
       if (tappedEarly) skip();
+    }
+    // The landing's gate (see rollIntro3d): resolves on the tap or key that
+    // starts the shot. ?lab and ?autoplay skip it.
+    function rollGate(screen) {
+      let q = null;
+      try { q = new URLSearchParams(window.location.search); } catch (e) { q = null; }
+      if (q && (q.has('lab') || q.has('autoplay'))) return Promise.resolve();
+      const gate = screen.querySelector('.r3-gate');
+      if (!gate) return Promise.resolve();
+      return new Promise(resolve => {
+        let went = false;
+        const go = e => {
+          if (went) return;
+          if (e && e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+          if (e && e.type === 'keydown') e.preventDefault();
+          went = true;
+          gate.removeEventListener('click', go);
+          gate.removeEventListener('keydown', go);
+          screen.classList.remove('r3-ready');
+          resolve();
+        };
+        gate.addEventListener('click', go);
+        gate.addEventListener('keydown', go);
+        screen.classList.add('r3-ready');
+        try { gate.focus({ preventScroll: true }); } catch (e) { /* fine */ }
+      });
     }
     // The table that is up, when one is: the intro's world (its renderer
     // and set), the table controller and the stage they were moved to.
