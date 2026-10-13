@@ -92,11 +92,11 @@ const BJ = { at: [-215, 0, -95], yaw: 180 };
 // circle, in front of your cards.
 const SPOT = { you: [[-2.3, 18.0], [2.3, 20.6]], dealer: [[-3.4, 36.5], [3.4, 36.5], [10.2, 36.5]], bet: [0, 8.5] };
 // The shoe (the card table's place) and the discard rack, its mouth turned
-// to the middle of the table.
-// (out of the dealing hand's way: it was at [28, 52], and the left hand and
-// the card it lays passed through its near corner; the hands' moves are
-// kept as they are and the rack stands clear of them instead)
-const DISCARD = [36, 56];
+// to the middle of the table - at the card table's own spot for it, the
+// dealer's right hand against the back rail (dealerKit.DISCARD_SPOT), so
+// the two tables keep it in one place. The arms are steered clear of it
+// (an obstacle in houseOf: it stood at [36, 56] before, out of their way).
+const DISCARD = K.DISCARD_SPOT;
 // The drop slot (see SWP): one, let into the cloth in front of the machine's
 // port, long across the table, its mouth to you. Flush with the felt when
 // shut - a hairline of gold and a glint - and open (its two leaves drawn
@@ -1151,6 +1151,8 @@ export async function makeGame(ctx) {
   // what the arms are steered clear of: the lift, the saddle, each half of
   // the yoke and its J1 drum, and (for the second arm) the first one
   const house0 = [3.05, 2.0, 2.0, 2.0, 2.2, 2.2].map(r => ({ a: V(0, 0, 0), b: V(0, 0, 0), r }));
+  // (and the discard rack: a capsule along its length, fixed)
+  house0.push({ a: V(DISCARD[0], 2.6, DISCARD[1] - 4.5), b: V(DISCARD[0], 2.6, DISCARD[1] + 4.5), r: 5.2 });
   const houseFor = [house0.filter((c, i) => i !== 4), house0.filter((c, i) => i !== 5)];
   const houseOf = (y, tp) => {
     const { shoulders, side, fwd, pins } = tp;
