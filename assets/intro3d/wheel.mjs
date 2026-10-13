@@ -835,6 +835,12 @@ export async function makeGame(ctx) {
 
   return {
     plan, camera, gleamAt, stage, callAt, sfx, warmAt, dispose,
+    // (the light behind the lens, held low: the lacquered face, square to
+    // the lens through the whole-wheel shots, gives it straight back as a
+    // wash across a band of pockets, and brightest in the slow moment -
+    // the frame everyone watches. The dice's glass wants it; the wheel's
+    // numbers want to be read.)
+    lens: { base: 0.12, peak: 0.4 },
     tierNames: TIER_NAMES,
     silence: onPeg ? Rw(plan.silence[0]) : null,
     // (for the lab: the moments, in real seconds, and the spin)

@@ -1472,12 +1472,18 @@
     .btn-danger { flex: 1; padding: 12px; background: var(--accent-pink-dim); border: 1px solid var(--accent-pink); color: var(--accent-pink); border-radius: 10px; font-weight: 800; cursor: pointer; transition: all 0.2s; }
     .btn-danger:hover { background: var(--accent-pink); color: var(--text-main); text-shadow: none; }
 
-    .tour-tooltip-box { position: fixed; background: var(--accent-gold); backdrop-filter: blur(10px); color: #0a0a0a; padding: 14px 16px; border-radius: 14px; font-size: 0.85rem; font-weight: 900; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55); z-index: 150; cursor: pointer; display: none; line-height: 1.4; transition: opacity 0.2s, top 0.3s cubic-bezier(0.16, 1, 0.3, 1), left 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    /* (the tour's tip and the control it points at sit under any sheet
+       that opens - Settings, a platform's details - at 98 and 99 to the
+       sheets' 100: above the page, below a sheet, so neither takes a tap
+       meant for the sheet. At 150 and 151 the Catalogue tab, raised for
+       the first tip, lay over the Settings sheet's Look & Table row and
+       took its taps.) */
+    .tour-tooltip-box { position: fixed; background: var(--accent-gold); backdrop-filter: blur(10px); color: #0a0a0a; padding: 14px 16px; border-radius: 14px; font-size: 0.85rem; font-weight: 900; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55); z-index: 98; cursor: pointer; display: none; line-height: 1.4; transition: opacity 0.2s, top 0.3s cubic-bezier(0.16, 1, 0.3, 1), left 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     .tour-tooltip-box::before { content: ""; position: absolute; top: -10px; left: var(--arrow-pos, 50%); transform: translateX(-50%); border-width: 0 10px 10px 10px; border-style: solid; border-color: transparent transparent var(--accent-gold) transparent; transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     .tour-tooltip-box.arrow-below::before { top: auto; bottom: -10px; border-width: 10px 10px 0 10px; border-color: var(--accent-gold) transparent transparent transparent; }
     .tour-tooltip-box.no-arrow::before { display: none; }
     .tour-advance-subtext { display: block; font-size: 0.65rem; font-weight: 900; color: rgba(0, 0, 0, 0.6); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; border-top: 1px solid rgba(0, 0, 0, 0.2); padding-top: 6px; }
-    .tour-target-active { position: relative; z-index: 151; animation: targetPulse 1.5s infinite !important; }
+    .tour-target-active { position: relative; z-index: 99; animation: targetPulse 1.5s infinite !important; }
     /* currentColor, not a literal: the pulse then takes the colour of whatever
        it is highlighting, so every theme gets a correct ring without its own
        copy of this keyframe. */

@@ -5402,7 +5402,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
     async function rollIntro3d(screen, q, mode = {}) {
       const host = screen.querySelector('.roll-intro');
-      const motionOff = () => document.documentElement.getAttribute('data-motion') === 'off';
+      // (?perf - the readout, for recording the shot on a phone - plays the
+      // shot whatever level or motion setting the phone has saved: a still
+      // has nothing to read)
+      const perf = q.has('perf');
+      const motionOff = () => !perf && document.documentElement.getAttribute('data-motion') === 'off';
       const direct = !!mode.direct;
       let api = null, fellBack = false, done = false, timer = null;
       // Aborting stops a shot that is still being built: it gives back
@@ -5447,8 +5451,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // fly-in was laid out from.)
       const gameQ = q.get('game');
       const game = mod.GAMES.includes(gameQ) ? gameQ : direct ? 'dice' : mod.pickGame(Math.random());
+      // (the dice take a seed whose throw plays first time - one throw
+      // simulated, not a search of them: see DICE_SEEDS in intro.mjs)
       const seedQ = parseInt(q.get('seed'), 10);
-      const seed = Number.isFinite(seedQ) ? seedQ >>> 0 : Math.floor(Math.random() * 4294967296);
+      const seed = Number.isFinite(seedQ) ? seedQ >>> 0 : game === 'dice' ? mod.pickDiceSeed(Math.random()) : Math.floor(Math.random() * 4294967296);
       // Sound is on by default. It was made on for everyone once, on
       // 2026-09-28: a speaker switched off before then is back on (the
       // speaker still switches it off, and that choice holds from here).
@@ -5589,6 +5595,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           signal: building ? building.signal : null,
           motionOff,
           quality: q.get('quality') || 'auto',
+          // (a muted skin, or motion off: the finished frame is all that
+          // shows, and the shot is built for that frame alone - unless it is
+          // the seat taken directly, whose fly-in starts from the shot's end)
+          still: !direct && (motionOff() || (themeMuted() && !perf)),
           // (the felt picked in Settings - the table's, so a skin without
           // one keeps the house's black; ?felt= any, for the lab)
           felt: shotFelt,
@@ -5643,7 +5653,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
       // Motion off - or a muted skin, the still take of a visualized one
       // (see THEMES): the finished frame, held, and no shot.
-      if (motionOff() || themeMuted()) { api.finish(); end(); return; }
+      if (motionOff() || (themeMuted() && !perf)) { api.finish(); end(); return; }
       // Any tap, key press, or focus arriving on the screen skips straight
       // to the end of the shot (as in the CSS intro).
       screen.addEventListener('pointerdown', skip);
@@ -8984,7 +8994,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v148';
+    const APP_BUILD = 'almanac-v150';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
