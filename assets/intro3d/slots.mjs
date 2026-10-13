@@ -682,18 +682,21 @@ export async function makeGame(ctx) {
     mesh(new THREE.BoxGeometry(WIN.w + 1.2, 2 * REEL.r + 1.6, 2 * REEL.r + 3), vel, body, false).position.set(0, WIN.y, winZ - 1.2 - REEL.r - 1.2);
     // the reels: drums with their strips (painted upside down: read off the
     // drum's front as it comes down), brass ends, on one arbor
-    const strip = i => canvas(256, 2048, (g, W, Hh) => {
+    // (half the resolution of the first cut: the strip is seen through a
+    // small window and moves, so the finer grain was not read; the rules
+    // and edges are halved to match)
+    const strip = i => canvas(128, 1024, (g, W, Hh) => {
       g.fillStyle = '#efe6d2'; g.fillRect(0, 0, W, Hh);
       for (let k = 0; k < NS; k++) {
         const y0 = (k / NS) * Hh, h = Hh / NS, cy = y0 + h / 2;
-        g.strokeStyle = '#b8913f'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, y0 + 1.5); g.lineTo(W, y0 + 1.5); g.stroke();
+        g.strokeStyle = '#b8913f'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, y0 + 0.75); g.lineTo(W, y0 + 0.75); g.stroke();
         g.save(); g.translate(W / 2, cy); g.scale(1, -1); drawSymbol(g, STRIPS[i][k], 0, 0, h * 0.74); g.restore();
       }
-      g.fillStyle = '#b8913f'; g.fillRect(6, 0, 4, Hh); g.fillRect(W - 10, 0, 4, Hh);
+      g.fillStyle = '#b8913f'; g.fillRect(3, 0, 2, Hh); g.fillRect(W - 5, 0, 2, Hh);
     });
     for (let i = 0; i < 3; i++) {
       const sharp = strip(i);
-      const blur = canvas(sharp.width, sharp.height, (g) => { for (let k = -6; k <= 6; k++) { g.globalAlpha = 1 / 13; g.drawImage(sharp, 0, k * 14); } g.globalAlpha = 1; });
+      const blur = canvas(sharp.width, sharp.height, (g) => { for (let k = -6; k <= 6; k++) { g.globalAlpha = 1 / 13; g.drawImage(sharp, 0, k * 7); } g.globalAlpha = 1; });
       const mapS = texOf(sharp, true), mapB = texOf(blur, true);
       mapS.wrapT = mapB.wrapT = THREE.RepeatWrapping;
       const uBlur = { value: 0 };

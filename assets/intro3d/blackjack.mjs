@@ -92,8 +92,11 @@ const BJ = { at: [-215, 0, -95], yaw: 180 };
 // circle, in front of your cards.
 const SPOT = { you: [[-2.3, 18.0], [2.3, 20.6]], dealer: [[-3.4, 36.5], [3.4, 36.5], [10.2, 36.5]], bet: [0, 8.5] };
 // The shoe (the card table's place) and the discard rack, its mouth turned
-// to the middle of the table.
-const DISCARD = [28, 52];
+// to the middle of the table - at the card table's own spot for it, the
+// dealer's right hand against the back rail (dealerKit.DISCARD_SPOT), so
+// the two tables keep it in one place. The arms are steered clear of it
+// (an obstacle in houseOf: it stood at [36, 56] before, out of their way).
+const DISCARD = K.DISCARD_SPOT;
 // The drop slot (see SWP): one, let into the cloth in front of the machine's
 // port, long across the table, its mouth to you. Flush with the felt when
 // shut - a hairline of gold and a glint - and open (its two leaves drawn
@@ -595,7 +598,10 @@ export async function makeGame(ctx) {
   seat.add(pool, pool.target);
 
   // ---- The machine: the card table's (table.mjs), stowed under its port.
-  const dm = K.dealerMaterials();
+  // (the dealer in the colours Settings gives the card table's - skin and
+  // circuitry matched to the felt or the trim, or the house's white - so
+  // the machine dealing here is the one that deals at home)
+  const dm = K.dealerMaterials(ctx.robot ? K.robotPalette(ctx.robot.skin, ctx.robot.vein, ctx.felt || 'black', ctx.trim || 'gold') : null);
   const torso = K.buildDealerTorso(dm);
   seat.add(torso.group);
   const arms = SIDES.map(side => {
@@ -838,9 +844,16 @@ export async function makeGame(ctx) {
     const tw = B.t;
     addMove(B, hov(E.p.x, E.p.z), WASH.push, { settle: true, to: FIN.easy, lean: [0, 0] });
     const tp = B.t;
+    // (each card starts to move only when the palm first reaches it on the
+    // circle, so every card visibly gets touched and none drifts in alone)
+    const contactU = (ox, oz) => {
+      for (let i = 0; i <= 40; i++) { const o = washOff(i / 40, _wo); if (Math.hypot(o.x - ox, o.z - oz) < 0.9) return i / 40; }
+      return 0.5;
+    };
     mine.forEach((c, j) => {
       const rest = restOf(c);
-      c.sw = { pile: true, grab: tg, wash: tw, push: tp, rel: tp + WASH.lag + WASH.between * j, qr: rest.q.clone(), p0: rest.p.clone(), cx, cz, ox: (j - (mine.length - 1) / 2) * 0.35, oz: 0.25 * Math.sin(j * 2.3), py: 0.02 + WASH.stack * j, dy: WASH.stack * j, wob: (j % 2 ? -1 : 1) * (0.3 + 0.08 * j), fin: 0.05 * Math.sin(j * 3.1 + 1) };
+      const ox0 = (j - (mine.length - 1) / 2) * 0.35, oz0 = 0.25 * Math.sin(j * 2.3);
+      c.sw = { pile: true, tg, grab: tg + contactU(ox0, oz0) * (tw - tg), wash: tw, push: tp, rel: tp + WASH.lag + WASH.between * j, qr: rest.q.clone(), p0: rest.p.clone(), cx, cz, ox: (j - (mine.length - 1) / 2) * 0.35, oz: 0.25 * Math.sin(j * 2.3), py: 0.02 + WASH.stack * j, dy: WASH.stack * j, wob: (j % 2 ? -1 : 1) * (0.3 + 0.08 * j), fin: 0.05 * Math.sin(j * 3.1 + 1) };
     });
     // (and the hand lifts clear, open, as the first card tips over the lip)
     addMove(B, pose(hov(E.p.x, E.p.z).p.clone().add(V(2.6, 4.6, 0.6)), hov(0, 0).q), 0.24, { to: FIN.open, lean: [0, 0] });
@@ -1147,6 +1160,8 @@ export async function makeGame(ctx) {
   // what the arms are steered clear of: the lift, the saddle, each half of
   // the yoke and its J1 drum, and (for the second arm) the first one
   const house0 = [3.05, 2.0, 2.0, 2.0, 2.2, 2.2].map(r => ({ a: V(0, 0, 0), b: V(0, 0, 0), r }));
+  // (and the discard rack: a capsule along its length, fixed)
+  house0.push({ a: V(DISCARD[0], 2.6, DISCARD[1] - 4.5), b: V(DISCARD[0], 2.6, DISCARD[1] + 4.5), r: 5.2 });
   const houseFor = [house0.filter((c, i) => i !== 4), house0.filter((c, i) => i !== 5)];
   const houseOf = (y, tp) => {
     const { shoulders, side, fwd, pins } = tp;
@@ -1226,7 +1241,9 @@ export async function makeGame(ctx) {
   const _py = new THREE.Quaternion(), _po = V(0, 0, 0);
   const pileAt = (c, tt, out) => {
     const S = c.sw, uw = clamp01((tt - S.grab) / (S.wash - S.grab)), g = smoother(uw), u2 = smoother(clamp01((tt - S.wash) / (S.push - S.wash)));
-    const o = washOff(uw, _po);
+    // (the circle is the hand's own: the card rides the palm from where it is touched)
+    const uh = clamp01((tt - S.tg) / (S.wash - S.tg));
+    const o = washOff(uh, _po);
     const x = lerp(S.p0.x, S.cx + S.ox + o.x * WASH.follow, g), y = lerp(S.p0.y, S.py, g), z = lerp(S.p0.z, S.cz + S.oz + o.z * WASH.follow, g);
     const E = swPose(SWP.m0, SWP.th0, S.qr);
     out.p.set(lerp(x, E.p.x, u2), lerp(y, E.p.y + S.dy, u2), lerp(z, E.p.z, u2));
@@ -1525,7 +1542,11 @@ export async function makeGame(ctx) {
     // seam lit and a glint on it; the leaves draw back while the cards go
     // in, and close on a seam that glimmers)
     if (slotAnim) {
-      const S = plan.slot, k = smoother(clamp01((w - S.wake) / 0.5)) * (1 - smoother(clamp01((w - (plan.revealW - 0.45)) / 0.75))), o = smoother(clamp01((w - S.open) / 0.32)) * (1 - smoother(clamp01((w - S.close) / 0.36)));
+      // (the slot is there from the first frame, its brass outline and a
+      // wandering glint on the cloth like the port's ring, and comes up to
+      // full as the machine turns to it; it goes only for the end card)
+      const PRE = 0.5;
+      const S = plan.slot, k = (PRE + (1 - PRE) * smoother(clamp01((w - S.wake) / 0.5))) * (1 - smoother(clamp01((w - (plan.revealW - 0.45)) / 0.75))), o = smoother(clamp01((w - S.open) / 0.32)) * (1 - smoother(clamp01((w - S.close) / 0.36)));
       slotG.visible = k > 0.001;
       // (lit while it works, then it sinks to a hairline: shut, only a gold
       // seam and a glint wandering it say it is there)
