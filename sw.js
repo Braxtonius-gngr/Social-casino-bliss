@@ -11,15 +11,16 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v153';
+const CACHE_NAME = 'almanac-v150';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
 // and silently fail.
 //
 // Everything the app can load is precached except the rare tiers' extras
-// (assets/intro3d/rare/, fetched and kept on first use: most launches never
-// need them). A new build downloads the whole set once, while the landing
+// and the card table's music (assets/intro3d/rare/, fetched and kept on
+// first use: most launches never need the extras, and the music is for the
+// table alone). A new build downloads the whole set once, while the landing
 // shows its "Updating" bar (see precacheAll below and appWhenCached in
 // index.html), so no launch after that waits on the network. check:refs
 // fails if an asset is missing here, or if this CACHE_NAME and index.html
@@ -41,7 +42,7 @@ const PRECACHE_URLS = [
   './assets/intro/coin-gold.svg', './assets/intro/coin-gold-back.svg', './assets/intro/scorch.svg',
   // the WebGL intro: three.js, the modules and the set
   './assets/vendor/three/three.core.js', './assets/vendor/three/three.module.js', './assets/vendor/three/three.addons.js',
-  './assets/intro3d/intro.mjs', './assets/intro3d/physics.mjs', './assets/intro3d/wheel.mjs', './assets/intro3d/plinko.mjs', './assets/intro3d/blackjack.mjs', './assets/intro3d/slots.mjs', './assets/intro3d/likeness.mjs', './assets/intro3d/table.mjs', './assets/intro3d/finish.mjs',
+  './assets/intro3d/intro.mjs', './assets/intro3d/physics.mjs', './assets/intro3d/wheel.mjs', './assets/intro3d/plinko.mjs', './assets/intro3d/blackjack.mjs', './assets/intro3d/slots.mjs', './assets/intro3d/likeness.mjs', './assets/intro3d/table.mjs', './assets/intro3d/finish.mjs', './assets/intro3d/music.mjs',
   // Obsidian Ledger: the orrery (its Lounge payout, and the study - its
   // Showroom home - where it stands on the desk)
   './assets/intro3d/orrery.mjs', './assets/intro3d/study.mjs',

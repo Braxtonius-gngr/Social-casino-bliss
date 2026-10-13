@@ -1,0 +1,55 @@
+name: Weekly social posts
+
+# Mondays, the week's tier-list changes go to Postiz as one post per
+# channel (scripts/social-post.js), with the week's tier card attached where
+# the channel takes a picture (drawn by the runner's Chrome,
+# scripts/social-card.js). They arrive as drafts to approve in
+# Postiz, unless the SOCIAL_AUTOPUBLISH repository variable is "true", which
+# schedules them to publish 15 minutes later. The Reddit and Discord drafts
+# (npm run post:weekly) land in the run's summary, to post by hand. Without
+# the POSTIZ_API_KEY secret and POSTIZ_CHANNELS variable the run only writes
+# that summary. Setup: README, "Weekly social posts".
+
+on:
+  schedule:
+    - cron: '7 15 * * 1'   # Mondays 15:07 UTC (11:07 a.m. Eastern in summer)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-social
+  cancel-in-progress: false
+
+jobs:
+  post:
+    # A manual run from any other branch would post that branch's catalogue.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The week's changes are read from the catalogue's git history.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Reddit and Discord drafts
+        run: |
+          {
+            echo '## Reddit (post by hand)'
+            echo '````markdown'
+            node scripts/weekly-post.js
+            echo '````'
+            echo '## Discord'
+            echo '````'
+            node scripts/weekly-post.js --format discord
+            echo '````'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Send to Postiz
+        run: node scripts/social-post.js --send --card ${{ vars.SOCIAL_AUTOPUBLISH == 'true' && '--schedule' || '' }}
+        env:
+          POSTIZ_API_KEY: ${{ secrets.POSTIZ_API_KEY }}
+          POSTIZ_CHANNELS: ${{ vars.POSTIZ_CHANNELS }}

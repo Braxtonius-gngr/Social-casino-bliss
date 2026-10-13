@@ -103,6 +103,7 @@
     <!-- While the 3D shot is being built (a few seconds on a phone), the
          house's seal turns in the dark instead of a black screen. -->
     <div class="r3-loader" aria-hidden="true"><span class="r3-loader-seal"><b>DRO</b></span><i class="r3-loader-line"></i></div>
+    <button type="button" class="r3-gate" aria-label="Tap to roll the dice"><span>TAP TO ROLL</span></button>
     <div class="roll-intro" aria-hidden="true">
       <div class="roll-backdrop"></div>
       <div class="roll-stage">
@@ -781,6 +782,10 @@
         </select>
       </div>
       <button type="button" class="btn-dock settings-replay-landing" style="max-width:100%; width:100%; margin-bottom:12px;" onclick="replayLanding()">Play the Landing Now</button>
+      <div class="toggle-row">
+        <span style="color:#fff;">Music at the table<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">A lounge loop under the landing and at the card table that lifts when you collect; the landing's speaker silences it too</span></span>
+        <input type="checkbox" id="settingTableMusic" onchange="setTableMusic(this.checked)" />
+      </div>
       <div class="toggle-row">
         <span style="color:#fff;">Hide platforms on cooldown<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">Keeps your Deck to just what's ready</span></span>
         <input type="checkbox" id="settingHideCollected" onchange="toggleHideCollected()" />
@@ -2619,6 +2624,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       logCollection(id);
       persist();
       hapticBuzz(40);
+      // (at the card table: the music lifts for a collect)
+      if (rollMusic) rollMusic.lift();
 
       let undone = false;
       const undo = () => {
@@ -3286,6 +3293,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       document.getElementById('settingLandingMode').value = rollLandingMode();
       document.getElementById('settingHideCollected').checked = localStorage.getItem('almanac_hide_collected') === 'true';
       document.getElementById('settingDenseToggle').checked = document.body.classList.contains('dense');
+      try { document.getElementById('settingTableMusic').checked = localStorage.getItem(TABLE_MUSIC_KEY) !== 'off'; } catch (e) { /* private mode */ }
       renderThemeUI();
       renderFeltUI();
       renderTrimUI();
@@ -5368,6 +5376,69 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // throw; ?lab adds a switcher and window.rollIntroSeek(t).
     const ROLL_SOUND_KEY = 'almanac_intro_sound';   // 'on' | 'off'
     const ROLL_SOUND_RESET_KEY = 'almanac_intro_sound_on_v1';   // 'done': the one-time reset to on
+    const TABLE_MUSIC_KEY = 'almanac_table_music';   // 'on' | 'off' (the card table's music; on by default)
+    // The card table's music (assets/intro3d/music.mjs): three loops of one
+    // piece on one clock - Base under the landing's shot and while nothing
+    // is happening, Main while you are at the cards, Lift for a collect or
+    // an S-tier card lifted - each change a two-bar crossfade. It plays for
+    // the card table only (the other homes have their own quiet), when
+    // Settings has it on and the landing's speaker is not off. Started as
+    // the shot loads, so it runs under the shot and straight into the seat;
+    // the browser holds it silent until the first tap or key (the one that
+    // skips the shot, or takes the seat).
+    let rollMusic = null;
+    function tableMusicOn() {
+      try { return localStorage.getItem(TABLE_MUSIC_KEY) !== 'off' && localStorage.getItem(ROLL_SOUND_KEY) !== 'off'; } catch (e) { return true; }
+    }
+    function rollMusicStart() {
+      if (rollMusic || !tableMusicOn()) return;
+      const ctl = { api: null, idleAt: 0, timer: 0, dead: false, lastLayer: null };
+      rollMusic = ctl;
+      const IDLE_MS = 20000;
+      // Base when a sheet or a modal is over the table, or nothing has
+      // happened for a while; Main otherwise.
+      const settle = () => {
+        if (!ctl.api) return;
+        // (the landing gone with no seat taken - the classic home, or the
+        // CSS intro: no table, no music)
+        const screen = document.getElementById('landingScreen');
+        const landing = screen && !screen.classList.contains('hidden');
+        if (!rollTableSession && !landing) { ctl.stop(); return; }
+        const away = document.body.classList.contains('r3-sheet-open') || !!document.querySelector('.sheet-backdrop.open');
+        const layer = !rollTableSession || away || Date.now() - ctl.idleAt > IDLE_MS ? 'base' : 'main';
+        if (layer !== ctl.lastLayer) { ctl.lastLayer = layer; ctl.api.layer(layer); }
+      };
+      ctl.touch = () => { ctl.idleAt = Date.now(); settle(); };
+      ctl.lift = () => { if (ctl.api) { ctl.idleAt = Date.now(); ctl.api.lift(4); } };
+      ctl.stop = () => {
+        ctl.dead = true;
+        clearInterval(ctl.timer);
+        ['pointerdown', 'keydown'].forEach(t => document.removeEventListener(t, ctl.touch, true));
+        document.removeEventListener('visibilitychange', ctl.onVis);
+        if (ctl.api) ctl.api.dispose();
+        ctl.api = null;
+        if (rollMusic === ctl) rollMusic = null;
+      };
+      ctl.onVis = () => { if (!ctl.api) return; if (document.visibilityState === 'hidden') ctl.api.suspend(); else ctl.api.resume(); };
+      import('./assets/intro3d/music.mjs').then(m => {
+        if (ctl.dead) return;
+        ctl.api = m.createMusic({ base: './assets/intro3d/' });
+        // (quiet during the fly-in; the table's arrival wakes it: see onArrive)
+        ctl.api.layer('base');
+        ctl.api.start();
+        ['pointerdown', 'keydown'].forEach(t => document.addEventListener(t, ctl.touch, true));
+        document.addEventListener('visibilitychange', ctl.onVis);
+        ctl.timer = setInterval(settle, 1000);
+        if (document.visibilityState === 'hidden') ctl.api.suspend();
+      }).catch(e => { console.warn('music', e); ctl.stop(); });
+    }
+    function rollMusicStop() { if (rollMusic) rollMusic.stop(); }
+    // Settings: the music on or off - live, when the table is up.
+    function setTableMusic(on) {
+      try { localStorage.setItem(TABLE_MUSIC_KEY, on ? 'on' : 'off'); } catch (e) { /* private mode */ }
+      if (!on) { rollMusicStop(); return; }
+      if (rollTableSession && rollTableSession.dest === 'card') { rollMusicStart(); if (rollMusic) rollMusic.touch(); }
+    }
     function rollHasWebGL2() {
       try {
         const c = document.createElement('canvas');
@@ -5434,9 +5505,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // CSS intro. Nor does a slow load drop to the CSS intro: the shot is
       // waited for. Only a shot that cannot be made (no WebGL 2, a module
       // that fails to load, a build that throws) falls back.
+      // (a tap while it loads does nothing: the shot waits at the gate below
+      // for one deliberate tap, which is also the one that lets the page
+      // sound - so a tap that did not seem to register cannot skip the shot
+      // or mute it when it lands twice)
       let tappedEarly = false;
-      const skipWhileLoading = () => { tappedEarly = true; screen.removeEventListener('pointerdown', skipWhileLoading); };
-      if (!direct) screen.addEventListener('pointerdown', skipWhileLoading);
+      const skipWhileLoading = () => {};
       let mod;
       try {
         mod = await import('./assets/intro3d/intro.mjs');
@@ -5473,6 +5547,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // landing as it always was.
       const destQ = q.get('dest');
       const tableDest = ROLL_DESTS[destQ] ? destQ : destQ === 'none' ? null : themeTable();
+      // (the card table's music, under the shot and on into the seat)
+      if (tableDest === 'card') rollMusicStart();
       // (the felt and trim are the card table's: another home's shot keeps
       // the house's black and gold)
       const shotFelt = FELT_CHOICES[q.get('felt')] ? q.get('felt') : tableDest === 'card' ? getFelt() : 'black';
@@ -5497,6 +5573,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (!tableDest || !api) return false;
         if (flying) return true;
         flying = true;
+        // (the card table's music, if Settings switched it on since the shot began)
+        if (tableDest === 'card') rollMusicStart();
         const prep = await prepTable();
         if (!prep || !api) { flying = false; return false; }
         screen.removeEventListener('pointerdown', onTap);
@@ -5534,6 +5612,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
             screen.classList.remove('r3-flying', 'r3-direct', 'intro-play', 'roll-webgl', 'roll-popped', 'roll-rest');
             rollDriftUI(session);
             kickSync();
+            // (down in the chair, the cards coming: the groove)
+            if (rollMusic) rollMusic.touch();
           }
         }, flyOpts));
         } catch (e) {
@@ -5582,9 +5662,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         armTable();
       };
       // A tap, a key or focus arriving mid-shot: straight to the end of it -
-      // held still with motion off, floating on otherwise.
+      // held still with motion off, floating on otherwise. (Not within the
+      // first moments after the gate's tap: a second tap of a double-tap
+      // is not a skip.)
+      // (measured in frames drawn as well as time: a phone that stalls on
+      // the shot's first frames would otherwise let the second tap through
+      // when it catches up)
+      let playedAt = 0, framesPlayed = 0;
+      const countFrames = () => { framesPlayed++; if (framesPlayed < 12) requestAnimationFrame(countFrames); };
       const skip = () => {
         if (!api || done) return;
+        if (performance.now() - playedAt < 900 || framesPlayed < 12) return;
         if (motionOff()) api.finish(); else api.skip();
         end();
       };
@@ -5619,7 +5707,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       clearTimeout(timer);
       screen.classList.remove('r3-loading');
       screen.removeEventListener('pointerdown', skipWhileLoading);
-      window.rollIntroDispose = () => { if (api) api.dispose(); api = null; window.rollIntroDispose = null; window.rollIntroSetFelt = null; window.rollIntroSetTrim = null; };
+      window.rollIntroDispose = () => { if (api) api.dispose(); api = null; screen.classList.remove('r3-ready'); window.rollIntroDispose = null; window.rollIntroSetFelt = null; window.rollIntroSetTrim = null; };
       window.rollIntroSetFelt = id => { if (api && api.setFelt) { api.setFelt(id); if (game === 'dice') document.documentElement.setAttribute('data-felt', id); } };
       window.rollIntroSetTrim = id => { if (api && api.setTrim) api.setTrim(id); };
       if (direct) {
@@ -5655,14 +5743,47 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
       // Motion off - or a muted skin, the still take of a visualized one
       // (see THEMES): the finished frame, held, and no shot.
-      if (motionOff() || (themeMuted() && !perf)) { api.finish(); end(); return; }
+      if (motionOff() || themeMuted()) { api.finish(); end(); return; }
+      // The gate: the seal stays up, now reading TAP TO ROLL, and the shot
+      // waits for that tap (or Enter / Space). It is the tap that lets the
+      // page sound - the dice, and the table's music under them.
+      await rollGate(screen);
+      if (!api || fellBack) return;
       // Any tap, key press, or focus arriving on the screen skips straight
       // to the end of the shot (as in the CSS intro).
       screen.addEventListener('pointerdown', skip);
       screen.addEventListener('focusin', skip);
       document.addEventListener('keydown', skip);
+      playedAt = performance.now();
+      requestAnimationFrame(countFrames);
       api.play();
       if (tappedEarly) skip();
+    }
+    // The landing's gate (see rollIntro3d): resolves on the tap or key that
+    // starts the shot. ?lab and ?autoplay skip it.
+    function rollGate(screen) {
+      let q = null;
+      try { q = new URLSearchParams(window.location.search); } catch (e) { q = null; }
+      if (q && (q.has('lab') || q.has('autoplay'))) return Promise.resolve();
+      const gate = screen.querySelector('.r3-gate');
+      if (!gate) return Promise.resolve();
+      return new Promise(resolve => {
+        let went = false;
+        const go = e => {
+          if (went) return;
+          if (e && e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+          if (e && e.type === 'keydown') e.preventDefault();
+          went = true;
+          gate.removeEventListener('click', go);
+          gate.removeEventListener('keydown', go);
+          screen.classList.remove('r3-ready');
+          resolve();
+        };
+        gate.addEventListener('click', go);
+        gate.addEventListener('keydown', go);
+        screen.classList.add('r3-ready');
+        try { gate.focus({ preventScroll: true }); } catch (e) { /* fine */ }
+      });
     }
     // The table that is up, when one is: the intro's world (its renderer
     // and set), the table controller and the stage they were moved to.
@@ -5687,6 +5808,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const s = rollTableSession;
       rollTableSession = null;
       window.rollTable = null;
+      rollMusicStop();
       if (s) {
         try { if (s.table) s.table.dispose(); } catch (e) { /* gone */ }
         // (the homes' sets: the one you are at, and one you were drifting
@@ -5783,6 +5905,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // them - see rollLeaveTable)
         const was = s.prep;
         s.prevPrep = was; s.prep = prep; s.dest = dest;
+        // (the music is the card table's: it goes with it, and comes back
+        // with it)
+        if (dest === 'card') rollMusicStart(); else rollMusicStop();
         // (the chair lets go of the camera and the page; the room goes back
         // to how the shot left it, and the next home takes it from there)
         try { if (s.table) s.table.dispose(); } catch (e) { /* gone */ }
@@ -6004,6 +6129,13 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           if (!g) return null;
           const st = getCooldownState(g);
           return { remaining: st.isReady ? 0 : st.remainingMs };
+        },
+        // A card lifted to look at: an S-tier one lifts the music with it.
+        cardTap(id, up) {
+          if (!rollMusic || !up) return;
+          const g = gameFor(id);
+          const tier = g ? g.tier : /^demo_S$/.test(id) ? 'S' : null;
+          if (tier === 'S') rollMusic.lift();
         }
       };
     }
@@ -8996,7 +9128,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v153';
+    const APP_BUILD = 'almanac-v150';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
