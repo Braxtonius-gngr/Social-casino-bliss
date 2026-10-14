@@ -5375,6 +5375,33 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // ?intro=css forces the CSS one; ?tier= and ?seed= pick a tier and a
     // throw; ?lab adds a switcher and window.rollIntroSeek(t).
     const ROLL_SOUND_KEY = 'almanac_intro_sound';   // 'on' | 'off'
+    // The quality step each game's shot settled on, on this device: the
+    // next shot starts there, so a phone that stepped down through the shot
+    // once (each step recompiles its shaders - the freeze) never steps
+    // mid-shot again. { game: { q, ok } } - ok counts shots that ran clean
+    // at their start step; after three, the next starts a step up, and a
+    // step down there sets q again. (The shot's own steps still run from
+    // wherever it starts: see o.quality in intro.mjs.)
+    const ROLL_QUALITY_KEY = 'almanac_shot_quality_v1';
+    const ROLL_QUALITY_CLEAN = 3;
+    const rollQualityRead = () => { try { return JSON.parse(localStorage.getItem(ROLL_QUALITY_KEY) || '{}') || {}; } catch (e) { return {}; } };
+    const rollQualityStart = game => {
+      const r = rollQualityRead()[game];
+      if (!r || !Number.isInteger(r.q)) return null;
+      return r.ok >= ROLL_QUALITY_CLEAN ? Math.min(3, r.q + 1) : Math.max(0, Math.min(3, r.q));
+    };
+    // (after a shot that played: the step it ended on, and whether it held
+    // the step it started at)
+    const rollQualityNote = (game, startQ, endQ) => {
+      try {
+        const all = rollQualityRead(), r = all[game] || { q: endQ, ok: 0 };
+        const s0 = startQ != null ? startQ : 3;     // (auto starts full)
+        const climbed = startQ != null && r.ok >= ROLL_QUALITY_CLEAN;
+        if (endQ < s0) all[game] = { q: endQ, ok: 0 };
+        else all[game] = { q: endQ, ok: climbed ? 0 : Math.min(ROLL_QUALITY_CLEAN, (r.q === endQ ? r.ok : 0) + 1) };
+        localStorage.setItem(ROLL_QUALITY_KEY, JSON.stringify(all));
+      } catch (e) { /* private mode */ }
+    };
     const ROLL_SOUND_RESET_KEY = 'almanac_intro_sound_on_v1';   // 'done': the one-time reset to on
     const TABLE_MUSIC_KEY = 'almanac_table_music';   // 'on' | 'off' (the card table's music; on by default)
     // The card table's music (assets/intro3d/music.mjs): three loops of one
@@ -5679,6 +5706,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         done = true;
         rollPerf.mark('shot: ended');
         shotRested();
+        // (a shot that played for a while: the step it settled on, kept for
+        // next time - not a skip after a second, which measured nothing)
+        if (playedAt && performance.now() - playedAt > 5000 && !q.has('quality') && typeof api.quality === 'number') rollQualityNote(game, startQ, api.quality);
         screen.removeEventListener('pointerdown', skip);
         screen.removeEventListener('focusin', skip);
         document.removeEventListener('keydown', skip);
@@ -5701,13 +5731,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (motionOff()) api.finish(); else api.skip();
         end();
       };
+      const startQ = rollQualityStart(game);
       try {
         api = await mod.createIntro({
           host, tier, seed, game,
           controlsHost: screen,
           signal: building ? building.signal : null,
           motionOff,
-          quality: q.get('quality') || 'auto',
+          // (?quality=auto|full|low|0..3 for the lab; else the step this
+          // device settled on last time, or auto)
+          quality: /^[0-3]$/.test(q.get('quality') || '') ? +q.get('quality') : q.get('quality') || (startQ != null ? startQ : 'auto'),
           // (a muted skin, or motion off: the finished frame is all that
           // shows, and the shot is built for that frame alone - unless it is
           // the seat taken directly, whose fly-in starts from the shot's end)
@@ -5786,7 +5819,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // it lands under the shot.)
       const TABLE_WAIT = 12000;
       if (tableDest) prepTable();
-      await rollGate(screen, tableDest ? Promise.race([built, new Promise(res => setTimeout(res, TABLE_WAIT))]) : null, () => { rollPerf.mark('gate: shown'); dropSeal(); });
+      // (and the shot's next two steps down made ready under the seal too -
+      // their shaders compiled and linked now, so a step the phone takes in
+      // the shot is a switch, not a compile: see prepSteps in intro.mjs)
+      const steps = (tableDest ? built : Promise.resolve()).then(() => { rollPerf.mark('steps: prep'); return api && api.prepSteps ? api.prepSteps(2) : null; }).then(() => rollPerf.mark('steps: ready')).catch(() => {});
+      await rollGate(screen, Promise.race([steps, new Promise(res => setTimeout(res, TABLE_WAIT))]), () => { rollPerf.mark('gate: shown'); dropSeal(); });
       rollPerf.mark('gate: tapped');
       if (!api || fellBack) return;
       // Any tap, key press, or focus arriving on the screen skips straight
@@ -9203,7 +9240,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v154';
+    const APP_BUILD = 'almanac-v155';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
