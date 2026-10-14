@@ -5563,13 +5563,20 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // shot, shows itself - lamp coming up - only from here)
       let shotRested = null;
       const shotRest = new Promise(res => { shotRested = res; });
+      // (the table's work done - built, warmed, its dealer primed - with
+      // only the shot's end to wait for: the gate opens on this, so the
+      // work never lands in the shot's frames. A home without onBuilt is
+      // built when its prepareTable resolves; a failure counts as built.)
+      let tableBuilt = null;
+      const built = new Promise(res => { tableBuilt = res; });
+      const onBuilt = () => { rollPerf.mark('table: built'); tableBuilt(); };
       const prepTable = () => {
         if (!tableDest || tablePrep || !api) return tablePrep;
         rollPerf.mark('table: import');
         tablePrep = import(ROLL_DESTS[tableDest])
-          .then(m => { rollPerf.mark('table: build + warm'); const look = api.peek(); return m.prepareTable({ scene: look.scene, gl: look, dest: tableDest, hooks: rollTableHooks(), warm: opts => (api ? api.warm(opts) : null), showWhen: shotRest }); })
-          .then(prep => { rollPerf.mark('table: ready'); return prep; })
-          .catch(e => { console.warn('table', e); disarmTable(); return null; });
+          .then(m => { rollPerf.mark('table: build + warm'); const look = api.peek(); return m.prepareTable({ scene: look.scene, gl: look, dest: tableDest, hooks: rollTableHooks(), warm: opts => (api ? api.warm(opts) : null), showWhen: shotRest, onBuilt }); })
+          .then(prep => { rollPerf.mark('table: ready'); tableBuilt(); return prep; })
+          .catch(e => { console.warn('table', e); disarmTable(); tableBuilt(); return null; });
         return tablePrep;
       };
       // One continuous shot from the float into the seat; on arrival the
@@ -5766,12 +5773,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // The gate: the seal stays up, now reading TAP TO ROLL, and the shot
       // waits for that tap (or Enter / Space). It is the tap that lets the
       // page sound - the dice, and the table's music under them.
-      // (and the table it will fly into is started now - its module, its
-      // build, its shaders and textures - while the seal waits and the shot
-      // plays, so the seat is ready long before the tap that takes it)
-      rollPerf.mark('gate: shown');
+      // (and the table it will fly into is built first - its module, its
+      // build, its shaders and textures, its dealer - under the seal, which
+      // reads TAP TO ROLL only once that is done: the seat is then ready
+      // before the shot, and none of the work falls in the shot's frames,
+      // where a phone showed it as held frames. A build that runs long is
+      // not waited on past TABLE_WAIT: the gate opens, and what is left of
+      // it lands under the shot.)
+      const TABLE_WAIT = 12000;
       if (tableDest) prepTable();
-      await rollGate(screen);
+      await rollGate(screen, tableDest ? Promise.race([built, new Promise(res => setTimeout(res, TABLE_WAIT))]) : null, () => rollPerf.mark('gate: shown'));
       rollPerf.mark('gate: tapped');
       if (!api || fellBack) return;
       // Any tap, key press, or focus arriving on the screen skips straight
@@ -5817,13 +5828,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return { mark, report, get marks() { return marks; }, get longTasks() { return longTasks; } };
     })();
     // The landing's gate (see rollIntro3d): resolves on the tap or key that
-    // starts the shot. ?lab and ?autoplay skip it.
-    function rollGate(screen) {
+    // starts the shot. `until` (a promise) holds the seal, still loading,
+    // before the gate is offered; `onShown` is called as it is. ?lab and
+    // ?autoplay skip it.
+    async function rollGate(screen, until, onShown) {
       let q = null;
       try { q = new URLSearchParams(window.location.search); } catch (e) { q = null; }
-      if (q && (q.has('lab') || q.has('autoplay'))) return Promise.resolve();
+      if (q && (q.has('lab') || q.has('autoplay'))) return;
       const gate = screen.querySelector('.r3-gate');
-      if (!gate) return Promise.resolve();
+      if (!gate) return;
+      if (until) { try { await until; } catch (e) { /* offered anyway */ } }
+      if (onShown) onShown();
       return new Promise(resolve => {
         let went = false;
         const go = e => {
@@ -9185,7 +9200,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v152';
+    const APP_BUILD = 'almanac-v153';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
