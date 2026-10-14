@@ -5730,12 +5730,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
       if (fellBack) { api.dispose(); return; }
       clearTimeout(timer);
-      screen.classList.remove('r3-loading');
+      // (the seal stays up - r3-loading - until the gate is offered: the
+      // table is built meanwhile, and the shot's first frame, drawn and
+      // held under it, must not show through in between)
+      const dropSeal = () => screen.classList.remove('r3-loading');
       screen.removeEventListener('pointerdown', skipWhileLoading);
       window.rollIntroDispose = () => { if (api) api.dispose(); api = null; screen.classList.remove('r3-ready'); window.rollIntroDispose = null; window.rollIntroSetFelt = null; window.rollIntroSetTrim = null; };
       window.rollIntroSetFelt = id => { if (api && api.setFelt) { api.setFelt(id); if (game === 'dice') document.documentElement.setAttribute('data-felt', id); } };
       window.rollIntroSetTrim = id => { if (api && api.setTrim) api.setTrim(id); };
       if (direct) {
+        dropSeal();
         // Straight to the seat: the shot is over before it began - the
         // frame it ends on, with the table built into it - and the camera
         // goes down into the chair from there.
@@ -5769,7 +5773,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
       // Motion off - or a muted skin, the still take of a visualized one
       // (see THEMES): the finished frame, held, and no shot.
-      if (motionOff() || themeMuted()) { api.finish(); end(); return; }
+      if (motionOff() || themeMuted()) { dropSeal(); api.finish(); end(); return; }
       // The gate: the seal stays up, now reading TAP TO ROLL, and the shot
       // waits for that tap (or Enter / Space). It is the tap that lets the
       // page sound - the dice, and the table's music under them.
@@ -5782,7 +5786,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // it lands under the shot.)
       const TABLE_WAIT = 12000;
       if (tableDest) prepTable();
-      await rollGate(screen, tableDest ? Promise.race([built, new Promise(res => setTimeout(res, TABLE_WAIT))]) : null, () => rollPerf.mark('gate: shown'));
+      await rollGate(screen, tableDest ? Promise.race([built, new Promise(res => setTimeout(res, TABLE_WAIT))]) : null, () => { rollPerf.mark('gate: shown'); dropSeal(); });
       rollPerf.mark('gate: tapped');
       if (!api || fellBack) return;
       // Any tap, key press, or focus arriving on the screen skips straight
@@ -5834,9 +5838,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     async function rollGate(screen, until, onShown) {
       let q = null;
       try { q = new URLSearchParams(window.location.search); } catch (e) { q = null; }
-      if (q && (q.has('lab') || q.has('autoplay'))) return;
       const gate = screen.querySelector('.r3-gate');
-      if (!gate) return;
+      if ((q && (q.has('lab') || q.has('autoplay'))) || !gate) { if (onShown) onShown(); return; }
       if (until) { try { await until; } catch (e) { /* offered anyway */ } }
       if (onShown) onShown();
       return new Promise(resolve => {
@@ -9200,7 +9203,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v153';
+    const APP_BUILD = 'almanac-v154';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
