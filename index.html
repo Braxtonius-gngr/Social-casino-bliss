@@ -5540,6 +5540,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const skipWhileLoading = () => {};
       let mod;
       try {
+        rollPerf.mark('shot: import');
         mod = await import('./assets/intro3d/intro.mjs');
       } catch (e) { fallBack(false); return; }
       if (fellBack) return;
@@ -5574,6 +5575,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // landing as it always was.
       const destQ = q.get('dest');
       const tableDest = ROLL_DESTS[destQ] ? destQ : destQ === 'none' ? null : themeTable();
+      // (its module fetched now, beside the shot's own build, not after it)
+      const tableMod = tableDest ? import(ROLL_DESTS[tableDest]).catch(e => { console.warn('table module', e); return null; }) : null;
+      // (the shot's api, once createIntro has it - the table, built while the
+      // shot's shaders compile, warms its own through it afterwards)
+      let apiReadyRes = null;
+      const apiReady = new Promise(res => { apiReadyRes = res; });
       // (the card table's music, under the shot and on into the seat)
       if (tableDest === 'card') rollMusicStart();
       // (the felt and trim are the card table's: another home's shot keeps
@@ -5597,11 +5604,16 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       let tableBuilt = null;
       const built = new Promise(res => { tableBuilt = res; });
       const onBuilt = () => { rollPerf.mark('table: built'); tableBuilt(); };
-      const prepTable = () => {
-        if (!tableDest || tablePrep || !api) return tablePrep;
-        rollPerf.mark('table: import');
-        tablePrep = import(ROLL_DESTS[tableDest])
-          .then(m => { rollPerf.mark('table: build + warm'); const look = api.peek(); return m.prepareTable({ scene: look.scene, gl: look, dest: tableDest, hooks: rollTableHooks(), warm: opts => (api ? api.warm(opts) : null), showWhen: shotRest, onBuilt }); })
+      // (look: the shot's scene, renderer, camera and quality - handed over
+      // by createIntro as soon as its scene stands, before its shaders
+      // compile (onScene), so the table and the dealer's rig are built while
+      // those link; or api.peek() later, on the paths that reach the gate
+      // without it)
+      const prepTable = look => {
+        if (!tableDest || tablePrep || !(look || api)) return tablePrep;
+        rollPerf.mark('table: build + warm');
+        tablePrep = tableMod
+          .then(m => { if (!m) throw new Error('table module'); const at = look || api.peek(); return m.prepareTable({ scene: at.scene, gl: at, dest: tableDest, hooks: rollTableHooks(), warm: opts => apiReady.then(a => (a ? a.warm(opts) : null)), showWhen: shotRest, onBuilt }); })
           .then(prep => { rollPerf.mark('table: ready'); tableBuilt(); return prep; })
           .catch(e => { console.warn('table', e); disarmTable(); tableBuilt(); return null; });
         return tablePrep;
@@ -5732,9 +5744,17 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         end();
       };
       const startQ = rollQualityStart(game);
+      // (a shot that fails or falls back after the table was started under
+      // it: the table let go - its build resolves once the shot's end is
+      // given, and is disposed)
+      const dropTable = () => { shotRested(); if (tablePrep) tablePrep.then(p => { try { if (p) p.dispose(); } catch (e2) { /* gone */ } }); };
       try {
         api = await mod.createIntro({
           host, tier, seed, game,
+          // (the scene handed over before the shot's shaders compile: the
+          // table is built under that compile - on the next turn, so the
+          // compile is issued first and the build runs while it links)
+          onScene: look => { rollPerf.mark('shot: scene'); if (tableDest) setTimeout(() => prepTable(look), 0); },
           controlsHost: screen,
           signal: building ? building.signal : null,
           motionOff,
@@ -5758,10 +5778,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         });
       } catch (e) {
         api = null;
+        apiReadyRes(null);
+        dropTable();
         fallBack(false);
         return;
       }
-      if (fellBack) { api.dispose(); return; }
+      rollPerf.mark('shot: ready');
+      if (fellBack) { apiReadyRes(null); dropTable(); api.dispose(); return; }
+      apiReadyRes(api);
       clearTimeout(timer);
       // (the seal stays up - r3-loading - until the gate is offered: the
       // table is built meanwhile, and the shot's first frame, drawn and
@@ -5822,7 +5846,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // (and the shot's next two steps down made ready under the seal too -
       // their shaders compiled and linked now, so a step the phone takes in
       // the shot is a switch, not a compile: see prepSteps in intro.mjs)
-      const steps = (tableDest ? built : Promise.resolve()).then(() => { rollPerf.mark('steps: prep'); return api && api.prepSteps ? api.prepSteps(2) : null; }).then(() => rollPerf.mark('steps: ready')).catch(() => {});
+      const steps = (tableDest ? built : Promise.resolve()).then(() => { rollPerf.mark('steps: prep'); return api && api.prepSteps ? api.prepSteps(startQ != null ? 1 : 2) : null; }).then(() => rollPerf.mark('steps: ready')).catch(() => {});
       await rollGate(screen, Promise.race([steps, new Promise(res => setTimeout(res, TABLE_WAIT))]), () => { rollPerf.mark('gate: shown'); dropSeal(); });
       rollPerf.mark('gate: tapped');
       if (!api || fellBack) return;
@@ -5851,7 +5875,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const mark = name => { marks.push([name, performance.now()]); try { performance.mark('dro:' + name); } catch (e) { /* fine */ } };
       const report = () => {
         if (!marks.length) return;
-        const first = marks[0][1];
+        // (times from the page's load, not the first mark: the seal's own
+        // phases - the shot's import, scene, compile - count)
+        const first = 0;
         const rows = marks.map(([n, t], i) => ({ step: n, at: +((t - first) / 1000).toFixed(2), gap: +(((t - (i ? marks[i - 1][1] : t)) / 1000)).toFixed(2) }));
         const tap = marks.find(m => m[0] === 'seat: tap'), sat = marks.find(m => m[0] === 'seat: arrived');
         const blockedAfterTap = tap ? longTasks.filter(([s]) => s >= tap[1]).reduce((a, [, d]) => a + d, 0) : 0;
@@ -9240,7 +9266,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v155';
+    const APP_BUILD = 'almanac-v156';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
