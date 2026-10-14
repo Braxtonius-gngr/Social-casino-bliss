@@ -195,15 +195,36 @@ export function makeSpin(target, pullAt, onPeg, rng = null) {
       if (Math.abs(r.theta - goal) > SEG * 0.01) break;
       best = Object.assign(r, { omega0: om });
     }
-  } else if (rng) {
-    // (many pulls end in the same pocket - the clapper pushes the wheel
-    // back the same way from a range of them - so the pull is varied
-    // within those, and no two spins are alike)
+  } else {
+    // The rest must read: a wheel that coasts to a stop with a peg within
+    // the clapper's reach of its line (GRIP behind it, LET past it) leaves
+    // the leather lying over that peg, pointing into the pocket beyond -
+    // the call names the pocket at the line, the eye reads the one the
+    // tip is in. So a rest is only taken clear of both pegs (CLEAR of a
+    // pocket in from each: 2 cm, past the clapper's reach).
     const pocketOf = th => ((Math.floor(-th / SEG) % N) + N) % N;
-    for (let k = 0; k < 8; k++) {
-      const om = best.omega0 + (rng() - 0.5) * 0.5;
-      const r = integrate(om, pullAt, false);
-      if (pocketOf(r.theta) === target.pocket) { best = Object.assign(r, { omega0: om }); break; }
+    const CLEAR = 0.28;
+    const clear = th => { const a = ((th % SEG) + SEG) % SEG; return a > CLEAR * SEG && a < (1 - CLEAR) * SEG; };
+    const ok = r => pocketOf(r.theta) === target.pocket && clear(r.theta);
+    if (rng) {
+      // (many pulls end in the same pocket - the clapper pushes the wheel
+      // back the same way from a range of them - so the pull is varied
+      // within those, and no two spins are alike)
+      for (let k = 0; k < 8; k++) {
+        const om = best.omega0 + (rng() - 0.5) * 0.5;
+        const r = integrate(om, pullAt, false);
+        if (ok(r)) { best = Object.assign(r, { omega0: om }); break; }
+      }
+    }
+    if (!ok(best)) {
+      // (the pull nudged, either way, until the wheel rests clear in its
+      // pocket; a wheel that will not is left where the bisection put it)
+      for (let k = 1; k <= 40 && !ok(best); k++) {
+        for (const om of [best.omega0 + 0.012 * k, best.omega0 - 0.012 * k]) {
+          const r = integrate(om, pullAt, false);
+          if (ok(r)) { best = Object.assign(r, { omega0: om }); break; }
+        }
+      }
     }
   }
   return best;
