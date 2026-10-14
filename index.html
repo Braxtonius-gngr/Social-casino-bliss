@@ -5567,7 +5567,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (!tableDest || tablePrep || !api) return tablePrep;
         rollPerf.mark('table: import');
         tablePrep = import(ROLL_DESTS[tableDest])
-          .then(m => { rollPerf.mark('table: build + warm'); return m.prepareTable({ scene: api.peek().scene, dest: tableDest, hooks: rollTableHooks(), warm: opts => (api ? api.warm(opts) : null), showWhen: shotRest }); })
+          .then(m => { rollPerf.mark('table: build + warm'); const look = api.peek(); return m.prepareTable({ scene: look.scene, gl: look, dest: tableDest, hooks: rollTableHooks(), warm: opts => (api ? api.warm(opts) : null), showWhen: shotRest }); })
           .then(prep => { rollPerf.mark('table: ready'); return prep; })
           .catch(e => { console.warn('table', e); disarmTable(); return null; });
         return tablePrep;
@@ -5956,7 +5956,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         const m = await import(ROLL_DESTS[dest]);
         // (built into the same room, hidden, compiled and uploaded before it
         // shows - while you are still in your chair)
-        prep = await m.prepareTable({ scene: world.scene, dest, hooks: rollTableHooks(), warm: opts => world.warm(opts) });
+        prep = await m.prepareTable({ scene: world.scene, gl: world, dest, hooks: rollTableHooks(), warm: opts => world.warm(opts) });
         if (rollTableSession !== s) { prep.dispose(); return false; }
         // (from here the session owns both sets: leaving mid-flight disposes
         // them - see rollLeaveTable)
@@ -9185,7 +9185,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v151';
+    const APP_BUILD = 'almanac-v152';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
