@@ -6043,7 +6043,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // up out of the chair, over the floor and down into another seat. A
     // visit changes nothing but where you are; "Sit here" takes that seat
     // for good (its skin), and your own seat is always one drift away.
-    const ROLL_PLACES = { card: 'The card table', study: 'The study', arcade: 'The arcade', seance: 'The séance room' };
+    const ROLL_PLACES = { card: 'The card table', study: 'The study', arcade: 'The arcade', seance: 'The séance room', slaughter: 'The slaughter floor' };
     // the skin whose home a place is (its Showroom skin)
     function rollSkinOf(dest) {
       return Object.keys(THEMES).find(id => THEMES[id].table === dest) || null;
