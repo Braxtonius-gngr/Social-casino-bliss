@@ -16,6 +16,11 @@
 //           is the Remix with its drums and vocals taken out (the stems:
 //           synth, keys, strings, guitar, crackle, and the bass smoothed so
 //           it holds its notes), Main the Remix, Lift Remix III.
+//   wtgf  - West Texas Gore Fest's slaughter floor: a southern-gothic
+//           stomp, 75 BPM in E minor (the kick on 1 and 3, half-time).
+//           Main is the take, Lift its remix (brighter, harder), Base Main's
+//           stems without drums or percussion, the kick-locked duck on the
+//           bass and guitar lifted out so it holds steady.
 // Files: assets/intro3d/rare/music/<piece>-{base,main,lift}.mp3 - fetched
 // the first time the home is taken and kept by the service worker from then
 // on, like the rare tiers' extras (so an install does not carry them).
@@ -34,7 +39,7 @@
 // play - one made after an await, away from the tap, would be held silent.
 //
 // createMusic(opts) -> api
-//   opts.piece  - 'card' (default) | 'study'
+//   opts.piece  - 'card' (default) | 'study' | 'wtgf'
 //   opts.base   - URL base the file names are resolved against
 //   opts.gain   - master level (0..1); the loops sit at about -16 dBFS RMS,
 //                 so this is kept low to live under the UI
@@ -66,6 +71,11 @@ export const PIECES = {
     files: { base: 'rare/music/sifsi-base.mp3', main: 'rare/music/sifsi-main.mp3', lift: 'rare/music/sifsi-lift.mp3' },
     bpm: 82.117, loopSamples: 2244649,         // 46.764 s, 16 bars (a beat is four 16ths of 0.18267 s)
     trim: { base: 1.0, main: 0.9, lift: 0.85 }    // (Base sits 4 dB under the full takes as cut; Lift is the hotter take)
+  },
+  wtgf: {
+    files: { base: 'rare/music/wtgf-base.mp3', main: 'rare/music/wtgf-main.mp3', lift: 'rare/music/wtgf-lift.mp3' },
+    bpm: 75, loopSamples: 2457600,             // 51.200 s, 16 bars
+    trim: { base: 1.0, main: 1.0, lift: 1.0 }     // (levelled as cut: Base 4 dB under Main and Lift)
   }
 };
 // (the card table's, for anything that reads the tempo)

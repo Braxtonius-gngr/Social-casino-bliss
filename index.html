@@ -783,7 +783,7 @@
       </div>
       <button type="button" class="btn-dock settings-replay-landing" style="max-width:100%; width:100%; margin-bottom:12px;" onclick="replayLanding()">Play the Landing Now</button>
       <div class="toggle-row">
-        <span style="color:#fff;">Music at the table<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">A loop under the landing and at the card table or in the study that lifts when you collect; the landing's speaker silences it too</span></span>
+        <span style="color:#fff;">Music at the table<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">A loop under the landing and in your home (the card table, the study, the slaughter floor) that lifts when you collect; the landing's speaker silences it too</span></span>
         <input type="checkbox" id="settingTableMusic" onchange="setTableMusic(this.checked)" />
       </div>
       <div class="toggle-row">
@@ -2624,7 +2624,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       logCollection(id);
       persist();
       hapticBuzz(40);
-      // (at the card table or in the study: the music lifts for a collect)
+      // (in a home with music: it lifts for a collect)
       if (rollMusic) rollMusic.lift();
 
       let undone = false;
@@ -5404,8 +5404,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     };
     const ROLL_SOUND_RESET_KEY = 'almanac_intro_sound_on_v1';   // 'done': the one-time reset to on
     const TABLE_MUSIC_KEY = 'almanac_table_music';   // 'on' | 'off' (the homes' music; on by default)
-    // The homes' music (assets/intro3d/music.mjs): for the card table and
-    // the study, three loops of one piece on one clock - Base under the
+    // The homes' music (assets/intro3d/music.mjs): for the card table, the
+    // study and the slaughter floor, three loops of one piece on one clock - Base under the
     // landing's shot and while nothing is happening, Main while you are at
     // the cards or the ledger, Lift for a collect or an S-tier card lifted -
     // each change a two-bar crossfade - and a change of home crossfades one
@@ -5414,7 +5414,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // Started as the shot loads, so it runs under the shot and straight into
     // the seat; the browser holds it silent until the first tap or key (the
     // one that skips the shot, or takes the seat).
-    const MUSIC_PIECES = { card: 'card', study: 'study' };   // home -> piece (see music.mjs PIECES)
+    const MUSIC_PIECES = { card: 'card', study: 'study', slaughter: 'wtgf' };   // home -> piece (see music.mjs PIECES)
     // One home's piece into the next: the crossfade's length, and how long a
     // piece let go by leaving the seat waits to be taken up by the next one
     // (a change of skin leaves one home and enters the next straight after:
@@ -6043,7 +6043,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // up out of the chair, over the floor and down into another seat. A
     // visit changes nothing but where you are; "Sit here" takes that seat
     // for good (its skin), and your own seat is always one drift away.
-    const ROLL_PLACES = { card: 'The card table', study: 'The study', arcade: 'The arcade', seance: 'The séance room' };
+    const ROLL_PLACES = { card: 'The card table', study: 'The study', arcade: 'The arcade', seance: 'The séance room', slaughter: 'The slaughter floor' };
     // the skin whose home a place is (its Showroom skin)
     function rollSkinOf(dest) {
       return Object.keys(THEMES).find(id => THEMES[id].table === dest) || null;
@@ -6094,8 +6094,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // them - see rollLeaveTable)
         const was = s.prep;
         s.prevPrep = was; s.prep = prep; s.dest = dest;
-        // (the music is the home's: the card table's or the study's piece,
-        // and none for the others)
+        // (the music is the home's: its piece, and none for a home without
+        // one)
         rollMusicStart(dest);
         // (the chair lets go of the camera and the page; the room goes back
         // to how the shot left it, and the next home takes it from there)
@@ -9317,7 +9317,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v158';
+    const APP_BUILD = 'almanac-v159';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
