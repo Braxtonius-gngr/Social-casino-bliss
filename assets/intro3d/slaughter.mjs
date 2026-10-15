@@ -920,12 +920,15 @@ export async function prepareTable(opts) {
       cardEl.dataset.id = id;
       liftFrom = lift; liftTo = 1; liftT0 = tNow;
       showInfo(id);
+      // (a card brought up: an S-tier one lifts the music, as at the table)
+      if (hooks.cardTap) hooks.cardTap(id, true, c.tier);
       wake();
     };
     const putBack = () => {
       if (!cardId) return;
       liftFrom = lift; liftTo = 0; liftT0 = tNow;
       hideInfo();
+      if (hooks.cardTap) hooks.cardTap(cardId, false);
       wake();
     };
 

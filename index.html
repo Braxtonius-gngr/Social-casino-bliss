@@ -6320,10 +6320,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           return { remaining: st.isReady ? 0 : st.remainingMs };
         },
         // A card lifted to look at: an S-tier one lifts the music with it.
-        cardTap(id, up) {
+        // (a room may say the card's tier: its own last-resort demo hand
+        // has ids the app does not know)
+        cardTap(id, up, cardTier) {
           if (!rollMusic || !up) return;
           const g = gameFor(id);
-          const tier = g ? g.tier : /^demo_S$/.test(id) ? 'S' : null;
+          const tier = g ? g.tier : /^demo_S$/.test(id) ? 'S' : cardTier || null;
           if (tier === 'S') rollMusic.lift();
         }
       };
@@ -9317,7 +9319,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v159';
+    const APP_BUILD = 'almanac-v160';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
