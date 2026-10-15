@@ -11,14 +11,14 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v156';
+const CACHE_NAME = 'almanac-v157';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
 // and silently fail.
 //
 // Everything the app can load is precached except the rare tiers' extras
-// and the card table's music (assets/intro3d/rare/, fetched and kept on
+// and the homes' music (assets/intro3d/rare/, fetched and kept on
 // first use: most launches never need the extras, and the music is for the
 // table alone). A new build downloads the whole set once, while the landing
 // shows its "Updating" bar (see precacheAll below and appWhenCached in

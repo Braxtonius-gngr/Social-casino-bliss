@@ -783,7 +783,7 @@
       </div>
       <button type="button" class="btn-dock settings-replay-landing" style="max-width:100%; width:100%; margin-bottom:12px;" onclick="replayLanding()">Play the Landing Now</button>
       <div class="toggle-row">
-        <span style="color:#fff;">Music at the table<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">A lounge loop under the landing and at the card table that lifts when you collect; the landing's speaker silences it too</span></span>
+        <span style="color:#fff;">Music at the table<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:400;">A loop under the landing and at the card table or in the study that lifts when you collect; the landing's speaker silences it too</span></span>
         <input type="checkbox" id="settingTableMusic" onchange="setTableMusic(this.checked)" />
       </div>
       <div class="toggle-row">
@@ -2624,7 +2624,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       logCollection(id);
       persist();
       hapticBuzz(40);
-      // (at the card table: the music lifts for a collect)
+      // (at the card table or in the study: the music lifts for a collect)
       if (rollMusic) rollMusic.lift();
 
       let undone = false;
@@ -5403,23 +5403,28 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } catch (e) { /* private mode */ }
     };
     const ROLL_SOUND_RESET_KEY = 'almanac_intro_sound_on_v1';   // 'done': the one-time reset to on
-    const TABLE_MUSIC_KEY = 'almanac_table_music';   // 'on' | 'off' (the card table's music; on by default)
-    // The card table's music (assets/intro3d/music.mjs): three loops of one
-    // piece on one clock - Base under the landing's shot and while nothing
-    // is happening, Main while you are at the cards, Lift for a collect or
-    // an S-tier card lifted - each change a two-bar crossfade. It plays for
-    // the card table only (the other homes have their own quiet), when
-    // Settings has it on and the landing's speaker is not off. Started as
-    // the shot loads, so it runs under the shot and straight into the seat;
-    // the browser holds it silent until the first tap or key (the one that
-    // skips the shot, or takes the seat).
+    const TABLE_MUSIC_KEY = 'almanac_table_music';   // 'on' | 'off' (the homes' music; on by default)
+    // The homes' music (assets/intro3d/music.mjs): for the card table and
+    // the study, three loops of one piece on one clock - Base under the
+    // landing's shot and while nothing is happening, Main while you are at
+    // the cards or the ledger, Lift for a collect or an S-tier card lifted -
+    // each change a two-bar crossfade. The other homes have their own quiet.
+    // It plays when Settings has it on and the landing's speaker is not off.
+    // Started as the shot loads, so it runs under the shot and straight into
+    // the seat; the browser holds it silent until the first tap or key (the
+    // one that skips the shot, or takes the seat).
+    const MUSIC_PIECES = { card: 'card', study: 'study' };   // home -> piece (see music.mjs PIECES)
     let rollMusic = null;
     function tableMusicOn() {
       try { return localStorage.getItem(TABLE_MUSIC_KEY) !== 'off' && localStorage.getItem(ROLL_SOUND_KEY) !== 'off'; } catch (e) { return true; }
     }
-    function rollMusicStart() {
-      if (rollMusic || !tableMusicOn()) return;
-      const ctl = { api: null, idleAt: 0, timer: 0, dead: false, lastLayer: null };
+    // Start the music for a home (none for a home without a piece); a
+    // different home's piece already playing is stopped first.
+    function rollMusicStart(dest) {
+      const piece = MUSIC_PIECES[dest];
+      if (rollMusic && rollMusic.piece !== piece) rollMusicStop();
+      if (rollMusic || !piece || !tableMusicOn()) return;
+      const ctl = { api: null, piece, idleAt: 0, timer: 0, dead: false, lastLayer: null };
       rollMusic = ctl;
       const IDLE_MS = 20000;
       // Base when a sheet or a modal is over the table, or nothing has
@@ -5449,7 +5454,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       ctl.onVis = () => { if (!ctl.api) return; if (document.visibilityState === 'hidden') ctl.api.suspend(); else ctl.api.resume(); };
       import('./assets/intro3d/music.mjs').then(m => {
         if (ctl.dead) return;
-        ctl.api = m.createMusic({ base: './assets/intro3d/' });
+        ctl.api = m.createMusic({ piece, base: './assets/intro3d/' });
         // (quiet during the fly-in; the table's arrival wakes it: see onArrive)
         ctl.api.layer('base');
         ctl.api.start();
@@ -5464,7 +5469,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     function setTableMusic(on) {
       try { localStorage.setItem(TABLE_MUSIC_KEY, on ? 'on' : 'off'); } catch (e) { /* private mode */ }
       if (!on) { rollMusicStop(); return; }
-      if (rollTableSession && rollTableSession.dest === 'card') { rollMusicStart(); if (rollMusic) rollMusic.touch(); }
+      if (rollTableSession) { rollMusicStart(rollTableSession.dest); if (rollMusic) rollMusic.touch(); }
     }
     function rollHasWebGL2() {
       try {
@@ -5581,8 +5586,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // shot's shaders compile, warms its own through it afterwards)
       let apiReadyRes = null;
       const apiReady = new Promise(res => { apiReadyRes = res; });
-      // (the card table's music, under the shot and on into the seat)
-      if (tableDest === 'card') rollMusicStart();
+      // (the home's music, under the shot and on into the seat)
+      rollMusicStart(tableDest);
       // (the felt and trim are the card table's: another home's shot keeps
       // the house's black and gold)
       const shotFelt = FELT_CHOICES[q.get('felt')] ? q.get('felt') : tableDest === 'card' ? getFelt() : 'black';
@@ -5626,8 +5631,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         if (flying) return true;
         flying = true;
         rollPerf.mark('seat: tap');
-        // (the card table's music, if Settings switched it on since the shot began)
-        if (tableDest === 'card') rollMusicStart();
+        // (the home's music, if Settings switched it on since the shot began)
+        rollMusicStart(tableDest);
         // (the button answers at once - and gets a frame to paint before the
         // work the tap sets off)
         const btn0 = screen.querySelector('.landing-btn');
@@ -6043,9 +6048,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // them - see rollLeaveTable)
         const was = s.prep;
         s.prevPrep = was; s.prep = prep; s.dest = dest;
-        // (the music is the card table's: it goes with it, and comes back
-        // with it)
-        if (dest === 'card') rollMusicStart(); else rollMusicStop();
+        // (the music is the home's: the card table's or the study's piece,
+        // and none for the others)
+        rollMusicStart(dest);
         // (the chair lets go of the camera and the page; the room goes back
         // to how the shot left it, and the next home takes it from there)
         try { if (s.table) s.table.dispose(); } catch (e) { /* gone */ }
@@ -9266,7 +9271,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v156';
+    const APP_BUILD = 'almanac-v157';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
