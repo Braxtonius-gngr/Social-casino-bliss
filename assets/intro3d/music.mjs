@@ -1,7 +1,7 @@
-// The card table's music: three loops of the same piece - Base (sparse,
-// idle), Main (the groove) and Lift (the trumpet up, for a collect or a
-// rare card) - all 16 bars at 119.73 BPM in D (the takes were stretched to
-// one tempo and kick-aligned), cut to the SAME sample length and started
+// The homes' music: for each, three loops of one piece - Base (sparse,
+// idle), Main (the groove) and Lift (the top line, for a collect or a rare
+// card) - all 16 bars at one tempo and in one key (the takes were stretched
+// to one tempo and kick-aligned), cut to the SAME sample length and started
 // on one clock, so they stay locked bar for bar. A
 // change of layer is a change of volume only: the layer coming in fades up
 // over two bars while the one going out fades down - a LINEAR fade, since
@@ -10,8 +10,14 @@
 // hear as the Hi line coming back quieter) - and each fade starts on the
 // next beat rather than mid-beat.
 //
-// Files: assets/intro3d/rare/music/rxr-{base,main,lift}.mp3 - fetched the
-// first time the table is taken and kept by the service worker from then
+// Pieces (PIECES below):
+//   card  - R x R, 119.73 BPM in D: the card table's lounge loop.
+//   study - Sifsi, 82.12 BPM in F minor, a 3-3-2 shuffle: the study's. Base
+//           is the Remix with its drums and vocals taken out (the stems:
+//           synth, keys, strings, guitar, crackle, and the bass smoothed so
+//           it holds its notes), Main the Remix, Lift Remix III.
+// Files: assets/intro3d/rare/music/<piece>-{base,main,lift}.mp3 - fetched
+// the first time the home is taken and kept by the service worker from then
 // on, like the rare tiers' extras (so an install does not carry them).
 //
 // Browsers hold a page silent until it is tapped. The table is reached by a
@@ -20,6 +26,7 @@
 // resumes it (see unlock below).
 //
 // createMusic(opts) -> api
+//   opts.piece  - 'card' (default) | 'study'
 //   opts.base   - URL base the file names are resolved against
 //   opts.gain   - master level (0..1); the loops sit at about -16 dBFS RMS,
 //                 so this is kept low to live under the UI
@@ -35,22 +42,39 @@
 // api.suspend()/resume() for the page going to the background and back
 // api.dispose()          stop and release everything
 
-const FILES = { base: 'rare/music/rxr-base.mp3', main: 'rare/music/rxr-main.mp3', lift: 'rare/music/rxr-lift.mp3' };
-export const BPM = 119.728;
+// Each piece: its loops, tempo and the exact sample count of every loop (at
+// 48 kHz), and each layer's trim so the three read as one piece at one level.
+// A replacement loop must keep its piece's tempo, key and sample count, or
+// all three must change together.
+export const PIECES = {
+  card: {
+    files: { base: 'rare/music/rxr-base.mp3', main: 'rare/music/rxr-main.mp3', lift: 'rare/music/rxr-lift.mp3' },
+    bpm: 119.728, loopSamples: 1539494,        // 32.073 s, 16 bars
+    trim: { base: 0.9, main: 1.0, lift: 1.0 }
+  },
+  study: {
+    files: { base: 'rare/music/sifsi-base.mp3', main: 'rare/music/sifsi-main.mp3', lift: 'rare/music/sifsi-lift.mp3' },
+    bpm: 82.117, loopSamples: 2244649,         // 46.764 s, 16 bars (a beat is four 16ths of 0.18267 s)
+    trim: { base: 1.0, main: 0.9, lift: 0.85 }    // (Base sits 4 dB under the full takes as cut; Lift is the hotter take)
+  }
+};
+// (the card table's, for anything that reads the tempo)
+export const BPM = PIECES.card.bpm;
 export const BEAT = 60 / BPM;                 // 0.50114 s
 export const BAR = BEAT * 4;
-export const LOOP_SAMPLES = 1539494;          // every loop, at 48 kHz
-export const LOOP_SECONDS = LOOP_SAMPLES / 48000;   // 32.073 s, 16 bars
+export const LOOP_SAMPLES = PIECES.card.loopSamples;
+export const LOOP_SECONDS = LOOP_SAMPLES / 48000;
 // LAME's encoder delay (576) plus the decoder's (529), in case a decoder
 // returns the padding instead of trimming it by the Info tag (Chrome,
 // Firefox and Safari all trim; this is the fallback).
 const MP3_DELAY = 1105 / 48000;
 const FADE_BARS = 2;
-// Each layer's trim, so the three read as one piece at one level.
-const TRIM = { base: 0.9, main: 1.0, lift: 1.0 };
 
 export function createMusic(opts = {}) {
-  const o = Object.assign({ base: './assets/intro3d/', gain: 0.42, onState: null }, opts);
+  const o = Object.assign({ piece: 'card', base: './assets/intro3d/', gain: 0.42, onState: null }, opts);
+  const piece = PIECES[o.piece] || PIECES.card;
+  const FILES = piece.files, TRIM = piece.trim;
+  const BEAT = 60 / piece.bpm, BAR = BEAT * 4, LOOP_SECONDS = piece.loopSamples / 48000;
   const AC = window.AudioContext || window.webkitAudioContext;
   let ctx = null, master = null;
   const layers = {};        // name -> { buf, src, gain, level }
@@ -158,6 +182,7 @@ export function createMusic(opts = {}) {
   const api = {
     get muted() { return muted; },
     get ready() { return started; },
+    get piece() { return o.piece; },
     active() { return current; },
     start() {
       if (disposed) return Promise.resolve(false);
