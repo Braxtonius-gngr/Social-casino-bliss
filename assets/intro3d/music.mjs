@@ -25,11 +25,20 @@
 // can be; if it still arrives suspended, the next tap or key anywhere
 // resumes it (see unlock below).
 //
+// One home's piece into the next (a change of skin): the two are different
+// tempos, so there is no beat to meet on - the outgoing piece plays on until
+// the incoming one is loaded, then one fades down as the other fades up, an
+// EQUAL-POWER fade this time (two different pieces don't add up in phase: a
+// linear fade would dip in the middle). Every piece plays on one shared
+// context, so the incoming one starts on a context the browser already let
+// play - one made after an await, away from the tap, would be held silent.
+//
 // createMusic(opts) -> api
 //   opts.piece  - 'card' (default) | 'study'
 //   opts.base   - URL base the file names are resolved against
 //   opts.gain   - master level (0..1); the loops sit at about -16 dBFS RMS,
 //                 so this is kept low to live under the UI
+//   opts.fadeIn - seconds to fade up over when it starts (0: at once)
 //   opts.onState(state) - 'loading' | 'ready' | 'suspended' | 'failed'
 // api.start()            fetch, decode and start all three (silent until a
 //                        layer is set); safe to call again
@@ -40,7 +49,8 @@
 // api.mute(on)           silence without stopping the clock
 // api.muted              whether muted
 // api.suspend()/resume() for the page going to the background and back
-// api.dispose()          stop and release everything
+// api.dispose(fade)      stop and release everything, fading down over
+//                        `fade` seconds first (default: a short fade)
 
 // Each piece: its loops, tempo and the exact sample count of every loop (at
 // 48 kHz), and each layer's trim so the three read as one piece at one level.
@@ -70,13 +80,39 @@ export const LOOP_SECONDS = LOOP_SAMPLES / 48000;
 const MP3_DELAY = 1105 / 48000;
 const FADE_BARS = 2;
 
+// The one context every piece plays on, and how many are using it.
+const shared = { ctx: null, users: 0 };
+// An equal-power fade from `from` to `to` (see above), as a gain curve.
+const fadeCurve = (from, to, n = 64) => {
+  const a = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1);
+    a[i] = to > from ? from + (to - from) * Math.sin(t * Math.PI / 2) : to + (from - to) * Math.cos(t * Math.PI / 2);
+  }
+  return a;
+};
+const holdAt = (p, t) => {
+  if (p.cancelAndHoldAtTime) { try { p.cancelAndHoldAtTime(t); return; } catch (e) { /* fall through */ } }
+  const v = p.value;
+  p.cancelScheduledValues(t);
+  p.setValueAtTime(v, t);
+};
+// Fade a gain to `to` over `dur` seconds from `at` (from where it stands).
+const fadeGain = (c, p, to, at, dur) => {
+  const t = Math.max(at, c.currentTime + 0.005);
+  holdAt(p, c.currentTime);
+  const from = p.value;
+  try { p.setValueCurveAtTime(fadeCurve(from, to), t, dur); }
+  catch (e) { p.setValueAtTime(from, t); p.linearRampToValueAtTime(to, t + dur); }
+};
+
 export function createMusic(opts = {}) {
-  const o = Object.assign({ piece: 'card', base: './assets/intro3d/', gain: 0.42, onState: null }, opts);
+  const o = Object.assign({ piece: 'card', base: './assets/intro3d/', gain: 0.42, fadeIn: 0, onState: null }, opts);
   const piece = PIECES[o.piece] || PIECES.card;
   const FILES = piece.files, TRIM = piece.trim;
   const BEAT = 60 / piece.bpm, BAR = BEAT * 4, LOOP_SECONDS = piece.loopSamples / 48000;
   const AC = window.AudioContext || window.webkitAudioContext;
-  let ctx = null, master = null;
+  let ctx = null, master = null, fader = null, onCtxState = null;
   const layers = {};        // name -> { buf, src, gain, level }
   let started = false, startAt = 0, disposed = false;
   let want = 'base';        // the layer to settle on
@@ -86,15 +122,25 @@ export function createMusic(opts = {}) {
   let loading = null;
   const tell = s => { if (o.onState) try { o.onState(s); } catch (e) { /* theirs */ } };
 
+  // The layers go through the master (the level, and mute) and then this
+  // piece's fader (its fade in and out) to the shared context.
   const makeCtx = () => {
     if (ctx || !AC) return;
-    try { ctx = new AC({ latencyHint: 'playback' }); } catch (e) { try { ctx = new AC(); } catch (e2) { ctx = null; } }
-    if (!ctx) return;
+    if (!shared.ctx || shared.ctx.state === 'closed') {
+      shared.ctx = null; shared.users = 0;
+      try { shared.ctx = new AC({ latencyHint: 'playback' }); } catch (e) { try { shared.ctx = new AC(); } catch (e2) { shared.ctx = null; } }
+    }
+    if (!shared.ctx) return;
+    ctx = shared.ctx;
+    shared.users++;
     master = ctx.createGain();
     master.gain.value = muted ? 0 : o.gain;
-    master.connect(ctx.destination);
+    fader = ctx.createGain();
+    fader.gain.value = o.fadeIn > 0 ? 0 : 1;
+    master.connect(fader); fader.connect(ctx.destination);
     const c = ctx;
-    c.onstatechange = () => { if (ctx === c) tell(c.state === 'running' ? 'ready' : 'suspended'); };
+    onCtxState = () => { if (ctx === c) tell(c.state === 'running' ? 'ready' : 'suspended'); };
+    c.addEventListener('statechange', onCtxState);
   };
 
   // The next tap or key anywhere starts a context the browser is holding.
@@ -142,6 +188,7 @@ export function createMusic(opts = {}) {
     const first = current || want;
     current = null;
     set(first, true);
+    if (o.fadeIn > 0) fadeGain(ctx, fader.gain, 1, when, o.fadeIn);
   };
 
   // The next beat from now (a fade starts on a beat, not between two).
@@ -156,12 +203,7 @@ export function createMusic(opts = {}) {
   // start). A fade already running is held where it is and continued from
   // there (cancelAndHoldAtTime; cancelScheduledValues alone can snap a
   // ramp back to where it began).
-  const hold = (p, t) => {
-    if (p.cancelAndHoldAtTime) { try { p.cancelAndHoldAtTime(t); return; } catch (e) { /* fall through */ } }
-    const v = p.value;
-    p.cancelScheduledValues(t);
-    p.setValueAtTime(v, t);
-  };
+  const hold = holdAt;
   const set = (name, now) => {
     if (!started || !layers[name] || current === name) return;
     current = name;
@@ -216,21 +258,30 @@ export function createMusic(opts = {}) {
     },
     suspend() { hiddenPause = true; if (ctx && ctx.state === 'running') ctx.suspend().catch(() => {}); },
     resume() { hiddenPause = false; if (ctx && ctx.state === 'suspended') { ctx.resume().catch(() => {}); armUnlock(); } },
-    dispose() {
+    dispose(fade) {
+      if (disposed) return;
       disposed = true;
       dropUnlock();
       if (lifting) clearTimeout(lifting);
       lifting = null;
       if (!ctx) return;
-      const t = ctx.currentTime;
-      try { master.gain.cancelScheduledValues(0); master.gain.setTargetAtTime(0, t, 0.08); } catch (e) { /* gone */ }
-      const c = ctx;
+      const c = ctx, f = fader, out = fade > 0 ? fade : 0;
       ctx = null;
-      c.onstatechange = null;
+      c.removeEventListener('statechange', onCtxState);
+      try {
+        if (out) fadeGain(c, f.gain, 0, c.currentTime, out);
+        else { master.gain.cancelScheduledValues(0); master.gain.setTargetAtTime(0, c.currentTime, 0.08); }
+      } catch (e) { /* gone */ }
+      // (the context is closed with the last piece on it - not under one
+      // that is still fading up)
       setTimeout(() => {
         Object.keys(layers).forEach(n => { try { if (layers[n].src) layers[n].src.stop(); } catch (e) { /* stopped */ } });
-        try { c.close(); } catch (e) { /* closed */ }
-      }, 400);
+        try { f.disconnect(); } catch (e) { /* gone */ }
+        if (shared.ctx === c && --shared.users <= 0) {
+          shared.ctx = null; shared.users = 0;
+          try { c.close(); } catch (e) { /* closed */ }
+        }
+      }, out * 1000 + 400);
     }
   };
   return api;

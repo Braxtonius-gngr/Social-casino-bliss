@@ -5408,63 +5408,109 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // the study, three loops of one piece on one clock - Base under the
     // landing's shot and while nothing is happening, Main while you are at
     // the cards or the ledger, Lift for a collect or an S-tier card lifted -
-    // each change a two-bar crossfade. The other homes have their own quiet.
+    // each change a two-bar crossfade - and a change of home crossfades one
+    // piece into the next (MUSIC_XFADE). The other homes have their own quiet.
     // It plays when Settings has it on and the landing's speaker is not off.
     // Started as the shot loads, so it runs under the shot and straight into
     // the seat; the browser holds it silent until the first tap or key (the
     // one that skips the shot, or takes the seat).
     const MUSIC_PIECES = { card: 'card', study: 'study' };   // home -> piece (see music.mjs PIECES)
+    // One home's piece into the next: the crossfade's length, and how long a
+    // piece let go by leaving the seat waits to be taken up by the next one
+    // (a change of skin leaves one home and enters the next straight after:
+    // the same piece plays on, another fades in over it). The outgoing piece
+    // plays on until the incoming one is loaded, so there is no gap.
+    const MUSIC_XFADE = 4;          // s
+    const MUSIC_PARK_MS = 1500;
     let rollMusic = null;
+    let rollMusicParked = null;     // let go by leaving the seat, still sounding
     function tableMusicOn() {
       try { return localStorage.getItem(TABLE_MUSIC_KEY) !== 'off' && localStorage.getItem(ROLL_SOUND_KEY) !== 'off'; } catch (e) { return true; }
     }
-    // Start the music for a home (none for a home without a piece); a
-    // different home's piece already playing is stopped first.
+    // Start the music for a home: the same piece plays on, another fades in
+    // over the one playing, and a home without a piece lets it fade away.
     function rollMusicStart(dest) {
       const piece = MUSIC_PIECES[dest];
-      if (rollMusic && rollMusic.piece !== piece) rollMusicStop();
-      if (rollMusic || !piece || !tableMusicOn()) return;
-      const ctl = { api: null, piece, idleAt: 0, timer: 0, dead: false, lastLayer: null };
+      if (rollMusic && rollMusic.piece === piece) return;
+      const parked = rollMusicParked;
+      rollMusicParked = null;
+      if (parked) clearTimeout(parked.parkTimer);
+      // (the piece let go a moment ago, taken back up: it never stopped)
+      if (parked && !rollMusic && parked.piece === piece && tableMusicOn()) { parked.revive(); return; }
+      const outgoing = [rollMusic, parked].filter(Boolean);
+      rollMusic = null;
+      outgoing.forEach(c => c.release());
+      if (!piece || !tableMusicOn()) { outgoing.forEach(c => c.stop(MUSIC_XFADE)); return; }
+      const ctl = { api: null, piece, idleAt: 0, timer: 0, dead: false, live: false, lastLayer: null, parkTimer: 0, outgoing };
       rollMusic = ctl;
       const IDLE_MS = 20000;
       // Base when a sheet or a modal is over the table, or nothing has
       // happened for a while; Main otherwise.
       const settle = () => {
-        if (!ctl.api) return;
+        if (!ctl.api || !ctl.live) return;
         // (the landing gone with no seat taken - the classic home, or the
         // CSS intro: no table, no music)
         const screen = document.getElementById('landingScreen');
         const landing = screen && !screen.classList.contains('hidden');
-        if (!rollTableSession && !landing) { ctl.stop(); return; }
+        if (!rollTableSession && !landing) { ctl.stop(MUSIC_XFADE); return; }
         const away = document.body.classList.contains('r3-sheet-open') || !!document.querySelector('.sheet-backdrop.open');
         const layer = !rollTableSession || away || Date.now() - ctl.idleAt > IDLE_MS ? 'base' : 'main';
         if (layer !== ctl.lastLayer) { ctl.lastLayer = layer; ctl.api.layer(layer); }
       };
       ctl.touch = () => { ctl.idleAt = Date.now(); settle(); };
       ctl.lift = () => { if (ctl.api) { ctl.idleAt = Date.now(); ctl.api.lift(4); } };
-      ctl.stop = () => {
-        ctl.dead = true;
-        clearInterval(ctl.timer);
-        ['pointerdown', 'keydown'].forEach(t => document.removeEventListener(t, ctl.touch, true));
-        document.removeEventListener('visibilitychange', ctl.onVis);
-        if (ctl.api) ctl.api.dispose();
-        ctl.api = null;
-        if (rollMusic === ctl) rollMusic = null;
-      };
       ctl.onVis = () => { if (!ctl.api) return; if (document.visibilityState === 'hidden') ctl.api.suspend(); else ctl.api.resume(); };
-      import('./assets/intro3d/music.mjs').then(m => {
-        if (ctl.dead) return;
-        ctl.api = m.createMusic({ piece, base: './assets/intro3d/' });
-        // (quiet during the fly-in; the table's arrival wakes it: see onArrive)
-        ctl.api.layer('base');
-        ctl.api.start();
+      // (listening to the page: while it is the music playing)
+      ctl.arm = () => {
+        if (ctl.live || ctl.dead) return;
+        ctl.live = true;
         ['pointerdown', 'keydown'].forEach(t => document.addEventListener(t, ctl.touch, true));
         document.addEventListener('visibilitychange', ctl.onVis);
         ctl.timer = setInterval(settle, 1000);
+      };
+      ctl.release = () => {
+        if (!ctl.live) return;
+        ctl.live = false;
+        clearInterval(ctl.timer);
+        ['pointerdown', 'keydown'].forEach(t => document.removeEventListener(t, ctl.touch, true));
+        document.removeEventListener('visibilitychange', ctl.onVis);
+      };
+      ctl.revive = () => { rollMusic = ctl; ctl.arm(); settle(); };
+      // (the pieces this one came in over fade down as it fades up)
+      ctl.handoff = fade => { const out = ctl.outgoing; ctl.outgoing = []; out.forEach(c => c.stop(fade)); };
+      ctl.stop = fade => {
+        ctl.dead = true;
+        ctl.release();
+        clearTimeout(ctl.parkTimer);
+        ctl.handoff(fade);
+        if (ctl.api) ctl.api.dispose(fade);
+        ctl.api = null;
+        if (rollMusic === ctl) rollMusic = null;
+        if (rollMusicParked === ctl) rollMusicParked = null;
+      };
+      ctl.arm();
+      import('./assets/intro3d/music.mjs').then(m => {
+        if (ctl.dead) return;
+        ctl.api = m.createMusic({ piece, base: './assets/intro3d/', fadeIn: outgoing.length ? MUSIC_XFADE : 0 });
+        // (quiet during the fly-in; the table's arrival wakes it: see onArrive)
+        ctl.api.layer('base');
+        ctl.api.start().then(ok => { ctl.handoff(MUSIC_XFADE); if (!ok) ctl.stop(); });
         if (document.visibilityState === 'hidden') ctl.api.suspend();
-      }).catch(e => { console.warn('music', e); ctl.stop(); });
+      }).catch(e => { console.warn('music', e); ctl.stop(MUSIC_XFADE); });
     }
-    function rollMusicStop() { if (rollMusic) rollMusic.stop(); }
+    // Leaving the seat: the music plays on a moment for the next home to take
+    // up (see rollMusicStart), then fades away.
+    function rollMusicLetGo() {
+      const ctl = rollMusic;
+      if (!ctl) return;
+      rollMusic = null;
+      ctl.release();
+      if (rollMusicParked) rollMusicParked.stop(MUSIC_XFADE);
+      rollMusicParked = ctl;
+      ctl.parkTimer = setTimeout(() => { if (rollMusicParked === ctl) ctl.stop(MUSIC_XFADE); }, MUSIC_PARK_MS);
+    }
+    // Off now (Settings): a short fade, nothing waits.
+    function rollMusicStop(fade) { [rollMusic, rollMusicParked].forEach(c => { if (c) c.stop(fade); }); }
     // Settings: the music on or off - live, when the table is up.
     function setTableMusic(on) {
       try { localStorage.setItem(TABLE_MUSIC_KEY, on ? 'on' : 'off'); } catch (e) { /* private mode */ }
@@ -5951,7 +5997,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const s = rollTableSession;
       rollTableSession = null;
       window.rollTable = null;
-      rollMusicStop();
+      rollMusicLetGo();
       if (s) {
         try { if (s.table) s.table.dispose(); } catch (e) { /* gone */ }
         // (the homes' sets: the one you are at, and one you were drifting
@@ -9271,7 +9317,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v157';
+    const APP_BUILD = 'almanac-v158';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
