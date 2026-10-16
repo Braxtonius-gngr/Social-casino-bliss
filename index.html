@@ -758,6 +758,7 @@
             <button id="btnUpgradeProAnnual" class="btn-dock" onclick="initiateProCheckout(PRO_ANNUAL_PRICE_ID)">$49.90/yr &middot; 2 months free</button>
             <button id="btnManageBilling" class="btn-dock hidden" onclick="openCustomerPortal()">Manage Subscription</button>
           </div>
+          <p class="billing-fine text-sm text-muted">Sales tax is added at checkout where it applies. Your first payment can be refunded within 7 days; see the <a href="terms.html">terms</a>.</p>
         </div>
       </div>
       <button class="settings-ledger-card" onclick="openLedgerModal()">
@@ -9319,7 +9320,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v160';
+    const APP_BUILD = 'almanac-v161';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads

@@ -32,7 +32,8 @@ These parameters were configured in Checkout Studio and are already set correctl
 | ui_mode | `hosted` (this is stripe-node 17's name; 21+ calls it `hosted_page`) |
 | billing_address_collection | `auto` |
 | phone_number_collection | `{ enabled: false }` |
-| automatic_tax | `{ enabled: false }` |
+| automatic_tax | `{ enabled: STRIPE_AUTOMATIC_TAX === "on" }` (off until that secret is set) |
+| customer_update | `{ address: "auto" }` (Stripe Tax needs the address on an existing customer) |
 | allow_promotion_codes | `false` |
 | payment_method_collection | `always` (included because mode is `subscription`) |
 | submit_type | `auto` |
@@ -126,9 +127,21 @@ Manage Billing.
 ### Next steps
 
 - Copy both products to live mode and switch the four secrets (README,
-  *Going live*, steps 1-9, including the real-card purchase and refund).
-- Decide whether to turn on `automatic_tax` once you know where you owe
-  sales tax. It's off for now, as set in Checkout Studio.
+  *Going live*, steps 1-10, including the real-card purchase and refund).
+- Stripe Tax (decided: on). In each mode's dashboard, under Tax: set the
+  origin (head office) address; set the default product tax code to
+  *Software as a service (SaaS) - personal use* and the default tax
+  behaviour to *exclusive* (tax added on top of $4.99 / $49.90); add a
+  registration for each state you're registered in (register with that
+  state first - Texas through the Comptroller). Then set the Supabase secret
+  `STRIPE_AUTOMATIC_TAX=on` and redeploy `create-checkout-session`. Until
+  the secret is on, checkout runs without tax, so the order can't break it.
+- Refund policy (decided): a full refund on request within 7 days of a first
+  payment; renewals and later requests are not refunded, cancel any time.
+  It's on the Terms page. To honour one: in the Stripe dashboard open the
+  customer's subscription, *Cancel subscription* > *Immediately*, and tick
+  refund of the last payment. The webhook's `customer.subscription.deleted`
+  then ends Pro. (A refund on its own leaves Pro running to the period end.)
 - Watch `user_subscriptions` and Stripe's Subscriptions page for the first
   real signups. Fulfilment is automatic: the webhook grants Pro.
 
