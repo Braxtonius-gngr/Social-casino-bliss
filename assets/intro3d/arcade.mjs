@@ -109,7 +109,9 @@ const SIGN_X = 50;
 const WALL = { z: 150, half: 270, sill: -30, head: 196, top: 900, side: -230 };
 // The views from the seat: upright, a wide lens, the screen across the
 // foot of the frame and the window over it; on its side, the natural one.
-const VIEW = [{ eye: [0, 50, -12], aim: [0, 7.6, 88], fov: 66 }, { eye: [0, 44, -40], aim: [0, 17.2, 60], fov: 46 }];
+// (on a phone held upright, a little wider and 4 degrees lower: the cabinet
+// up into the frame, its foot clear of the phone, the moon still in the sky)
+const VIEW = [{ eye: [0, 50, -12], aim: [0, -0.9, 88], fov: 72 }, { eye: [0, 44, -40], aim: [0, 17.2, 60], fov: 46 }];
 // Leaning in over the tube to read it (a tap on the screen): over the
 // near edge, looking down at the picture nearly square on, so each line of
 // the table is a fingertip tall; the same lens as the seat's.
@@ -121,8 +123,37 @@ const FOCUS = [{ eye: [0, 52, 20], aim: [0, SCREEN_Y, 45], fov: 66 }, { eye: [0,
 const GRID = { at: [0, -60000, 0], cell: 500, near: -600, far: 46000, moonZ: 47000, moonR: 5200 };
 const GAME = { eye: [0, 260, 0], aim: [0, 200, 6000], fov: 56 };
 const INSIDE = { eye: [0, 170, 900], aim: [0, 330, 12000], fov: [66, 50] };
-// The signs: one per platform down the road, left and right in turn.
+// The signs: one per platform down the road, left and right in turn - and,
+// on a phone held upright, further down the road and nearer its middle,
+// so all six stand inside that narrow view (the nearest one whole).
 const SIGN = { w: 560, h: 260, y: 460, x: 760, z0: 1500, dz: 950 };
+const SIGN_UPRIGHT = { x: 420, z0: 3100, dz: 700 };
+function placeSigns(signs, upright) {
+  const L = upright ? SIGN_UPRIGHT : SIGN;
+  const eyeY = INSIDE.eye[1], eyeZ = INSIDE.eye[2], pole0 = SIGN.y - SIGN.h / 2;
+  // (upright, the signs down one side line up behind each other from where
+  // you stand, so each stands on a taller pole than the last, its bottom
+  // edge clear above the top of the one in front: a rise of pylons down the
+  // road. `top` is each side's last top edge, as rise over distance.)
+  const top = [-Infinity, -Infinity];
+  signs.forEach(s => {
+    const z = L.z0 + s.i * L.dz, x = s.side * L.x, d = z - eyeZ;
+    let y = SIGN.y;
+    if (upright) {
+      const k = s.side > 0 ? 0 : 1, half = SIGN.h / 2 / d;
+      const e = Math.max((SIGN.y - eyeY) / d, top[k] + half + 0.012);
+      y = eyeY + e * d; top[k] = e + half;
+    }
+    s.board.position.set(x, y, z);
+    // (turned to face the road's middle a little ahead)
+    s.board.rotation.set(0, Math.atan2(-x, -2600), 0);
+    const h = y - SIGN.h / 2;
+    s.pole.scale.y = h / pole0;
+    s.pole.position.set(x, h / 2, z);
+    s.glow.position.copy(s.board.position); s.glow.quaternion.copy(s.board.quaternion); s.glow.translateZ(-8);
+    s.pool.position.set(x * 0.8, 2, z);
+  });
+}
 // The shot's timings (seconds): the glide in, the table coming up on the
 // screen, the dive (the lean, and the ride), a card's lift; and where in
 // the dive the lens hands over from the room to the game.
@@ -651,7 +682,7 @@ function buildGrid(cards) {
     const pool = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), new THREE.MeshBasicMaterial({ map: glowTex(), color: new THREE.Color(color).multiplyScalar(0.35), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
     pool.rotation.x = -Math.PI / 2; pool.position.set(x * 0.8, 2, z);
     g.add(pole, glow, pool, board);
-    signs.push({ id: c.id, board, mat, color, card: c });
+    signs.push({ id: c.id, board, mat, color, card: c, pole, glow, pool, side, i });
   });
   return { group: g, floorMat, signs, moon, floor, sky };
 }
@@ -713,6 +744,7 @@ export async function prepareTable(opts) {
 
   // The game: its world far under the floor, its camera, the picture.
   const grid = buildGrid(cards);
+  placeSigns(grid.signs, window.innerWidth / Math.max(1, window.innerHeight) < 0.62);
   grid.group.position.set(...GRID.at);
   seat.add(grid.group);
   const gameCam = new THREE.PerspectiveCamera(GAME.fov, SCREEN.w / SCREEN.d, 20, 120000);
@@ -1283,6 +1315,7 @@ export async function prepareTable(opts) {
     css.domElement.addEventListener('keydown', onKey);
     const onResize = () => {
       aspect = size();
+      placeSigns(grid.signs, aspect < 0.62);
       sv = seatView(); E1 = toWorld(sv.eye); A1 = toWorld(sv.aim); fv = focusView();
       setHover();
       update(tNow); show();
