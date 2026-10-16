@@ -116,8 +116,8 @@ const LAMP = { at: [0, 160, 6], aim: [0, 0, 30], top: 262 };
 // is what shows); the drain in the floor.
 const WALL = { z: 88, w: 520, h: 312, brick: 135 };
 const RIB = { pitch: 30, h: 3.2, top: 2.6, base: 8, minor: 0.42 };
-const SLATE = { at: [0, 136, 84.5], w: 66, h: 40, px: 30, tilt: -1.2 * DEG, phase: 18.3 };
-const BARN = { at: [0, 196, 50], aim: [0, 134, 84] };
+const SLATE = { at: [0, 141, 84.5], w: 66, h: 40, px: 30, tilt: -1.2 * DEG, phase: 18.3 };
+const BARN = { at: [0, 200, 50], aim: [0, 139, 84] };
 const DRAIN = [10, 36];
 // The run's chain: off to the right, down to a hook.
 const CHAIN = { x: -86, z: 28, top: 142, links: 32, link: 3.0 };
@@ -271,7 +271,7 @@ function metalTex(screws) {
   const k = 3.2, W = Math.round(WALL.w * k), H = Math.round((WALL.h - WALL.brick) * k);
   return K.canvasTex(W, H, (g) => {
     const rnd = seeded(43);
-    g.fillStyle = '#4a443e'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#3e4347'; g.fillRect(0, 0, W, H);
     const pw = RIB.pitch * 3 * k;
     for (let x = 0, i = 0; x < W; x += pw, i++) { g.fillStyle = `rgba(${i % 2 ? '255,250,240' : '0,0,0'},${(0.025 + rnd() * 0.03).toFixed(3)})`; g.fillRect(x, 0, pw, H); }
     for (let i = 0; i < 70; i++) { const x = rnd() * W, y = rnd() * H * 0.6, r = 30 + rnd() * 140, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(170,165,155,${(0.04 + rnd() * 0.07).toFixed(3)})`); gr.addColorStop(1, 'rgba(170,165,155,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, 2 * r, 2 * r); }
@@ -318,7 +318,7 @@ function corrugatedGeo(w, h, phase = 0, axis = 'x') {
 // grooves. (Tiles; 512 to a 26 cm tile.)
 function crocSurface() {
   const N = 512, rnd = seeded(61), ROWS = 13, rows = [];
-  let acc = 0; const hs = Array.from({ length: ROWS }, () => 0.8 + rnd() * 0.4), ht = hs.reduce((s, h) => s + h, 0);
+  let acc = 0; const hs = Array.from({ length: ROWS }, () => 0.6 + rnd() * 0.8), ht = hs.reduce((s, h) => s + h, 0);
   hs.forEach(h => {
     const y0 = acc / ht, y1 = (acc + h) / ht, cells = [], n = 9 + Math.floor(rnd() * 2), off = rnd();
     let cx = 0; const ws = Array.from({ length: n }, () => 0.75 + rnd() * 0.5), wt = ws.reduce((s, w) => s + w, 0);
@@ -335,10 +335,10 @@ function crocSurface() {
     const e = Math.min(du * 2 * cell.w * N / 40, dv * 2 * rh * N / 40), edge = Math.min(du, dv);
     const groove = sstep(0.0, 0.32, e), crown = sstep(0.06, 0.5, edge), n = fine(u * 96, v * 96);
     const tone = (0.7 + cell.t * 0.45) * (0.62 + 0.38 * crown) + (n - 0.5) * 0.08;
-    const r = (150 + cell.u * 24) * tone + 50 * crown * crown, gg = (82 + cell.u * 12) * tone + 30 * crown * crown, b = (42 + cell.u * 12) * tone + 14 * crown * crown;
+    const r = (124 + cell.u * 20) * tone + 40 * crown * crown, gg = (76 + cell.u * 12) * tone + 28 * crown * crown, b = (48 + cell.u * 10) * tone + 16 * crown * crown;
     o.r = lerp(28, r, groove); o.g = lerp(13, gg, groove); o.b = lerp(8, b, groove);
     o.h = groove * (0.5 + 0.5 * crown) + (n - 0.5) * 0.05 * groove;
-    o.k = lerp(0.9, 0.38 - 0.1 * crown, groove);
+    o.k = lerp(0.9, 0.52 - 0.1 * crown, groove);
   });
 }
 // Distressed dark pine: a dark stain over flat-sawn pine, the grain's
@@ -395,7 +395,8 @@ function burlapSurface(seed, soak) {
     const gr = 0.8 + 0.35 * fbm(grime, u * 6, vb * 4, 3);
     const tone = (0.5 + 0.55 * t) * gr * (0.92 + 0.16 * f);
     const dry = [160 * tone, 124 * tone, 80 * tone];
-    const level = soak * (0.75 + 0.55 * fbm(lvl, u * 5, 0.5, 3));
+    // (wicked up the threads unevenly: a ragged line, fingers up the weave)
+    const level = soak * (0.75 + 0.55 * fbm(lvl, u * 5, 0.5, 3)) + 0.07 * (fbm(blot, u * 26, vb * 3, 3) - 0.45) + 0.05 * Math.pow(fbm(lvl, u * 60, 1.5, 2), 3);
     const s = sstep(level + 0.035, level - 0.04, vb), tide = Math.exp(-Math.pow((vb - level) / 0.012, 2));
     const bl = sstep(0.64, 0.72, fbm(blot, u * 7, vb * 5, 4)) * (1 - s) * sstep(0.95, 0.4, vb);
     const wetK = Math.max(s, bl * 0.8);
@@ -455,7 +456,7 @@ function leatherSurface(seed) {
     const c = [lerp(base[0], 150, worn * 0.6 + scuff * 0.3), lerp(base[1], 104, worn * 0.6 + scuff * 0.3), lerp(base[2], 64, worn * 0.6 + scuff * 0.3)];
     o.r = lerp(c[0], 54, sm); o.g = lerp(c[1], 8, sm); o.b = lerp(c[2], 6, sm);
     o.h = 0.5 + gr * 0.35 + m * 0.1;
-    o.k = lerp(0.58 + scuff * 0.2, 0.22, sm);
+    o.k = lerp(0.46 + scuff * 0.2, 0.22, sm);
   });
 }
 // Cowhide, hair on: brown and cream, the hair's lie down the flap, the
@@ -530,7 +531,9 @@ function tagArt(card, spent) {
   // the beaded border
   const [a, b, e] = tri(g, 0.78), bead = (x, y) => {
     const r = 0.17 * U;
-    let p = g.createRadialGradient(x - r * 0.35, y - r * 0.35, 0, x, y, r); p.addColorStop(0, 'rgba(255,240,190,0.9)'); p.addColorStop(0.7, 'rgba(190,150,70,0.6)'); p.addColorStop(1, 'rgba(70,50,16,0.5)');
+    let p = g.createRadialGradient(x - r * 0.35, y - r * 0.35, 0, x, y, r);
+    if (spent) { p.addColorStop(0, 'rgba(120,110,80,0.5)'); p.addColorStop(1, 'rgba(50,40,20,0.5)'); }
+    else { p.addColorStop(0, 'rgba(255,240,190,0.9)'); p.addColorStop(0.7, 'rgba(190,150,70,0.6)'); p.addColorStop(1, 'rgba(70,50,16,0.5)'); }
     g.fillStyle = p; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
     p = hg.createRadialGradient(x, y, 0, x, y, r); p.addColorStop(0, '#fff'); p.addColorStop(1, '#8c8c8c'); hg.fillStyle = p; hg.beginPath(); hg.arc(x, y, r, 0, Math.PI * 2); hg.fill();
   };
@@ -567,9 +570,13 @@ function tagArt(card, spent) {
   // verdigris, the letters still dark - an old tag, not a shadowed one)
   if (spent) {
     g.globalCompositeOperation = 'color'; g.fillStyle = 'rgba(118,132,104,0.85)'; g.fillRect(0, 0, W, H);
-    g.globalCompositeOperation = 'multiply'; g.fillStyle = 'rgb(176,180,166)'; g.fillRect(0, 0, W, H);
+    g.globalCompositeOperation = 'multiply'; g.fillStyle = 'rgb(112,114,104)'; g.fillRect(0, 0, W, H);
     g.globalCompositeOperation = 'source-over';
-    for (let i = 0; i < 14; i++) { const x = rnd() * W, y = H * (0.25 + rnd() * 0.75), r = 8 + rnd() * 30, p = g.createRadialGradient(x, y, 0, x, y, r); p.addColorStop(0, 'rgba(96,150,120,0.35)'); p.addColorStop(1, 'rgba(96,150,120,0)'); g.fillStyle = p; g.fillRect(x - r, y - r, 2 * r, 2 * r); }
+    for (let i = 0; i < 14; i++) { const x = rnd() * W, y = H * (0.25 + rnd() * 0.75), r = 8 + rnd() * 30, p = g.createRadialGradient(x, y, 0, x, y, r); p.addColorStop(0, 'rgba(70,120,96,0.3)'); p.addColorStop(1, 'rgba(70,120,96,0)'); g.fillStyle = p; g.fillRect(x - r, y - r, 2 * r, 2 * r); }
+    // (and punched, as a used ticket is: a star struck through it low at the
+    // right, its burr bright round the hole)
+    const px = W / 2 + 3.9 * U, py = 10.25 * U, star = (c, r0, r1) => { c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? r1 : r0; c[i ? 'lineTo' : 'moveTo'](px + Math.cos(a) * r, py + Math.sin(a) * r); } c.closePath(); };
+    star(g, 0.62 * U, 0.28 * U); g.strokeStyle = 'rgba(210,200,160,0.8)'; g.lineWidth = 3; g.stroke(); g.fillStyle = '#0a0806'; g.fill();
   }
   return { color, height };
 }
@@ -845,9 +852,9 @@ function boneEnd(kit, base, dir, len, r, sawn) {
 // a drop gathering at a low point, and a run of blood down from it
 function drip(kit, x, y, z, s) {
   const g = new THREE.Group();
-  const run = new THREE.Mesh(new THREE.CylinderGeometry(0.1 * s, 0.22 * s, 1.6 * s, 8), kit.blood); run.position.set(x, y - 0.8 * s, z); g.add(run);
-  const m = new THREE.Mesh(new THREE.SphereGeometry(0.6 * s, 12, 10), kit.blood);
-  m.scale.set(1, 1.5, 1); m.position.set(x, y - 2.0 * s, z); g.add(m);
+  const run = new THREE.Mesh(new THREE.CylinderGeometry(0.08 * s, 0.3 * s, 2.6 * s, 8), kit.blood); run.position.set(x, y - 1.3 * s, z); g.add(run);
+  const m = new THREE.Mesh(new THREE.SphereGeometry(0.42 * s, 12, 10), kit.blood);
+  m.scale.set(1, 1.7, 1); m.position.set(x, y - 2.85 * s, z); g.add(m);
   return g;
 }
 // the twine loop a load hangs by: from its tie, up through the hook's bend
@@ -952,8 +959,8 @@ function buildBundle(kit, rnd, bone) {
 function buildSatchel(kit, rnd) {
   const g = new THREE.Group();
   const w = 15, h = 11, d = 6.4, drop = 6.5, top = -drop, cy = top - h / 2;
-  const bg = atlasUV(slab(w, h, d, 1.7, 3, 3), w, h, d);
-  const body = new THREE.Mesh(relit(lumpy(bg, 0.25, 5, Math.floor(rnd() * 1e6))), kit.leather);
+  const bg = atlasUV(slab(w, h, d, 2.6, 3, 4), w, h, d);
+  const body = new THREE.Mesh(relit(lumpy(bg, 0.5, 4, Math.floor(rnd() * 1e6))), kit.leather);
   body.position.y = cy; body.castShadow = true; body.receiveShadow = true; g.add(body);
   // the flap: over the top and down the front, its edge lifting a little
   const flap = new THREE.Mesh(atlasUV(slab(w + 0.5, 7.4, 0.55, 0.25, 2), w + 0.5, 7.4, 0.55), kit.leather);
@@ -1137,7 +1144,7 @@ function cowlTex() {
     g.fillStyle = 'rgba(232,222,196,0.85)'; g.fillRect(0, H * 0.62, W, H * 0.08);
     g.fillStyle = 'rgba(18,16,14,0.9)'; g.fillRect(0, H * 0.6, W, H * 0.014); g.fillRect(0, H * 0.71, W, H * 0.01);
     // the oil run down from the caps: dark streaks, glossy at their heads
-    for (let i = 0; i < 16; i++) { const x = rnd() * W, y0 = rnd() * H * 0.4, l = 60 + rnd() * 220, w = 2 + rnd() * 7; const gr = g.createLinearGradient(0, y0, 0, y0 + l); gr.addColorStop(0, 'rgba(25,14,6,0.55)'); gr.addColorStop(1, 'rgba(25,14,6,0)'); g.fillStyle = gr; g.fillRect(x, y0, w, l); }
+    for (let i = 0; i < 6; i++) { const x = rnd() * W, y0 = rnd() * H * 0.4, l = 30 + rnd() * 90, w = 3 + rnd() * 8; const gr = g.createLinearGradient(0, y0, 0, y0 + l); gr.addColorStop(0, 'rgba(25,14,6,0.55)'); gr.addColorStop(1, 'rgba(25,14,6,0)'); g.fillStyle = gr; g.fillRect(x, y0, w, l); }
     // scuffs to the grey plastic, and the scratches of the job
     for (let i = 0; i < 26; i++) { const x = rnd() * W, y = rnd() * H, r = 3 + rnd() * 12; g.fillStyle = `rgba(150,140,128,${(0.35 + rnd() * 0.3).toFixed(2)})`; g.beginPath(); g.ellipse(x, y, r, r * (0.3 + rnd() * 0.5), rnd() * 3, 0, Math.PI * 2); g.fill(); }
     g.lineWidth = 1;
@@ -1355,7 +1362,7 @@ function slateBackOf(W, H) {
   if (slateBack && slateBack.width === W) return slateBack;
   slateBack = document.createElement('canvas'); slateBack.width = W; slateBack.height = H;
   const g = slateBack.getContext('2d'), rnd = seeded(11);
-  g.fillStyle = '#4a443e'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#40454a'; g.fillRect(0, 0, W, H);
   for (let i = 0; i < 40; i++) { const x = rnd() * W, y = rnd() * H, r = 60 + rnd() * 260, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(180,172,160,${(0.04 + rnd() * 0.07).toFixed(3)})`); gr.addColorStop(1, 'rgba(180,172,160,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, 2 * r, 2 * r); }
   for (let i = 0; i < 9000; i++) { const v = rnd(); g.fillStyle = v > 0.5 ? `rgba(210,200,185,${((v - 0.5) * 0.12).toFixed(3)})` : `rgba(0,0,0,${((0.5 - v) * 0.16).toFixed(3)})`; g.fillRect(rnd() * W, rnd() * H, 2, 2); }
   // rust at the cut and round the screw holes, run down
@@ -1492,7 +1499,7 @@ export async function prepareTable(opts) {
   const pine = surfaceTex(pineSurface(), 1.6, 1, true);
   await breathe();
   const benchMats = {
-    croc: new THREE.MeshStandardMaterial(Object.assign(croc, { roughness: 1, metalness: 0.62, envMapIntensity: 1.1 })),
+    croc: new THREE.MeshStandardMaterial(Object.assign(croc, { roughness: 1, metalness: 0.45, envMapIntensity: 0.9 })),
     pine: new THREE.MeshStandardMaterial(Object.assign(pine, { roughness: 1, metalness: 0 })),
     nail: (() => { const m = K.polishedOf(set.brass, 0.3); m.color = m.color.clone().multiplyScalar(0.62); return m; })()
   };
