@@ -1355,6 +1355,11 @@
     .r3-drift { display: none; }
     body.r3-table-mode .r3-drift { display: flex; position: fixed; top: max(12px, env(safe-area-inset-top)); left: 12px; z-index: 262; gap: 8px; align-items: center; pointer-events: none; }
     body.r3-table-mode.r3-sheet-open .r3-drift { display: none; }
+    /* (leaned in, or inside a room's inner view, that view's own way back
+       takes the top of the screen: the ghost and "Sit here" step aside
+       until you are back in the chair) */
+    body.r3-table-mode .r3-drift { transition: opacity .4s ease, visibility 0s; }
+    body.r3-table-mode:has(.r3s-out.r3s-on, .r3a-out.r3a-on, .r3d-out.r3d-on) .r3-drift { opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility 0s .3s; }
     .r3-drift button { pointer-events: auto; cursor: pointer; }
     .r3-drift-out { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(214, 226, 240, 0.34); background: rgba(8, 10, 14, 0.62); color: #dfe8f2; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: border-color .3s ease, background .3s ease; }
     .r3-drift-out svg { width: 22px; height: 22px; }
@@ -5087,11 +5092,13 @@ html[data-motion="off"] .ob-orrery { display: none; }
 .r3s-clock { top: 183px; display: flex; align-items: baseline; gap: 14px; }
 .r3s-now { font-weight: 600; font-size: 146px; line-height: 1; color: #221c13; font-variant-numeric: lining-nums; }
 .r3s-ampm { font-family: 'Cinzel', Georgia, serif; font-weight: 500; font-size: 28px; color: #6d5530; }
-.r3s-line { right: 60px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.4px dotted rgba(90,70,40,0.35); padding-bottom: 8px; }
+.r3s-line { right: 60px; display: flex; justify-content: space-between; align-items: baseline; gap: 18px; border-bottom: 1.4px dotted rgba(90,70,40,0.35); padding-bottom: 8px; }
 .r3s-l1 { top: 391px; }
 .r3s-l2 { top: 461px; }
 .r3s-line span { font-style: italic; font-weight: 500; font-size: 36px; color: #5d4f3a; }
-.r3s-line b { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 500; font-size: 30px; color: #2b241a; }
+.r3s-line b { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 500; font-size: 30px; color: #2b241a; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* (a readout in words, not figures - "All caught up" - is written in the ledger's hand) */
+.r3s-line b.r3s-word { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-weight: 600; font-size: 36px; }
 .r3s-hand { top: 169px; display: flex; align-items: baseline; gap: 16px; }
 .r3s-ready { font-weight: 600; font-size: 164px; line-height: 1; color: #221c13; font-variant-numeric: lining-nums; }
 .r3s-ready-k { font-style: italic; font-weight: 500; font-size: 50px; color: #5d4f3a; }
@@ -5103,7 +5110,7 @@ html[data-motion="off"] .ob-orrery { display: none; }
 .r3s-run i { font-style: normal; font-size: 50px; line-height: 0.6; }
 .r3s-run:active { transform: translateY(1px); box-shadow: inset 0 1px 0 rgba(255,244,214,0.4), 0 1px 2px rgba(60,40,15,0.35); }
 .r3s-dive { top: 646px; padding: 0; border: 0; background: none; cursor: pointer; font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-weight: 600; font-size: 42px; color: #7a4a22; }
-.r3s-foot { top: 658px; font-style: italic; font-weight: 500; font-size: 28px; color: #7d6d55; }
+.r3s-foot { top: 636px; right: 60px; white-space: normal; line-height: 1.15; font-style: italic; font-weight: 500; font-size: 28px; color: #7d6d55; }
 .r3s-ledger :focus-visible { outline: 4px solid #6d5530; outline-offset: 6px; }
 /* Inside the orrery, the way out: a small brass-edged plate at the top. */
 .r3s-out { position: absolute; top: max(16px, env(safe-area-inset-top)); left: 50%; transform: translate(-50%, -12px); opacity: 0; visibility: hidden; pointer-events: auto;
@@ -5475,3 +5482,9 @@ html[data-motion="off"][data-theme="western"] .ready-at, html[data-motion="off"]
   font-family: 'Oswald', 'Arial Narrow', sans-serif; font-weight: 600; font-size: 112px; letter-spacing: 0.04em; color: #0b0b0b; background: #FFC107; box-shadow: 8px 8px 0 #0b0b0b; }
 .r3w-run:active { transform: translate(3px, 3px); box-shadow: 5px 5px 0 #0b0b0b; }
 .r3w-slate :focus-visible { outline: 4px solid #FFC107; outline-offset: 6px; }
+/* (the chalk is drawn on the board itself - slaughter.mjs, printSlate - so
+   the hooks' chains in front of it cover it; this page slate lies over it
+   unseen, only for the taps, the keyboard and screen readers) */
+.r3w-slate .r3w-slate-in { background: none; }
+.r3w-slate .r3w-slate-in, .r3w-slate .r3w-slate-in * { color: transparent; }
+.r3w-slate .r3w-run, .r3w-slate .r3w-run:active { background: transparent; box-shadow: none; transform: none; }
