@@ -91,19 +91,19 @@ const BJ = { at: [-215, 0, -95], yaw: 180 };
 // it toward the machine (see turned), clear of the port's bezel. The bet's
 // circle, in front of your cards.
 const SPOT = { you: [[-2.3, 18.0], [2.3, 20.6]], dealer: [[-3.4, 36.5], [3.4, 36.5], [10.2, 36.5]], bet: [0, 8.5] };
-// The shoe (the card table's place) and the discard rack, its mouth turned
-// to the middle of the table - at the card table's own spot for it, the
-// dealer's right hand against the back rail (dealerKit.DISCARD_SPOT), so
-// the two tables keep it in one place. The arms are steered clear of it
-// (an obstacle in houseOf: it stood at [36, 56] before, out of their way).
-const DISCARD = K.DISCARD_SPOT;
-// The drop slot (see SWP): one, let into the cloth in front of the machine's
-// port, long across the table, its mouth to you. Flush with the felt when
+// The shoe stands where the card table keeps it. (The card table's discard
+// rack is not on this table: nothing is undone here, and the cards go back
+// to the shoe's own side - the drop slot.)
+//   The drop slot (see SWP): let into the cloth along the shoe's inner
+// side, front to back, hard against its base - the shoe and its slot one
+// machine, as a casino's shuffler is: the cards come out of its mouth and
+// go back in at its side. Its mouth faces the middle of the table; the
+// cards go in long edge first, over its near lip. Flush with the felt when
 // shut - a hairline of gold and a glint - and open (its two leaves drawn
-// back) on a black well while the cards go in. x, z its middle, w across,
-// d deep (cm). A bust (a third card) keeps clear of it: the cards lie a
-// card's length short of it.
-const SLOT = { x: 0, z: 46.4, w: 10.4, d: 4.0 };
+// back) on a black well while the cards go in. w along it, d across (cm);
+// off: its middle in the shoe's frame (x across, z along); x, z and yaw (its
+// mouth's way in) are set from the shoe when the table is laid.
+const SLOT = { w: 10.4, d: 4.0, off: [-7.85, -2], x: 0, z: 0, yaw: 0 };
 // The slot's metal, in the trim the player chose in Settings (see TRIMS in
 // intro.mjs): the bezel and the seams `c`/`m`/`r`, their glow `e`, the glint
 // `g` (rgb), the leaves a dark shade of the same `l`.
@@ -455,16 +455,14 @@ export async function makeGame(ctx) {
     const keyM = mark.children[0] && mark.children[0].material.clone();
     if (keyM) { keyM.alphaMap = paint(0.11); const k = new THREE.Mesh(ring.geometry, keyM); k.position.z = -0.001; k.visible = mark.children[0].visible; k.renderOrder = 0.25; ring.add(k); }
   }
-  // the shoe, where the card table keeps it; the discard rack on the
-  // dealer's right
+  // the shoe, where the card table keeps it, and its slot beside it
   const faceToward = (obj, x, z, tx, tz) => { obj.position.set(x, 0, z); obj.rotation.y = Math.atan2(-(tx - x), -(tz - z)); };
   const L = LAYOUT.card;
   const shoe = K.buildShoe(set);
   faceToward(shoe, L.shoe[0], L.shoe[1], L.shoe[0] + 3, L.shoe[1] + 15);
   shoe.position.sub(V(0, 0, -11.6).applyAxisAngle(up, shoe.rotation.y));
-  const discard = K.buildDiscard(set);
-  faceToward(discard, DISCARD[0], DISCARD[1], 0, 20);
-  seat.add(shoe, discard);
+  seat.add(shoe);
+  { const at = V(SLOT.off[0], 0, SLOT.off[1]).applyAxisAngle(up, shoe.rotation.y).add(shoe.position); SLOT.x = at.x; SLOT.z = at.z; SLOT.yaw = shoe.rotation.y + Math.PI / 2; }
   // the drop slot the machine clears its cards into (see SWP): let into the
   // cloth, black leaves over a black well and a hairline of brass round it
   let slotG = null, slotAnim = null;
@@ -474,7 +472,7 @@ export async function makeGame(ctx) {
     const leafM = new THREE.MeshStandardMaterial({ color: 0x0a0908, roughness: 0.8, metalness: 0.1, transparent: true, opacity: 0 });
     const wellM = new THREE.MeshBasicMaterial({ color: 0x010101 });
     slotG = new THREE.Group();
-    slotG.position.set(sx, 0, sz);
+    slotG.position.set(sx, 0, sz); slotG.rotation.y = SLOT.yaw;
     // (the bezel: a raised, bevelled frame of metal on the far side and the
     // two ends, with a low ramp for the near lip, which the cards tip over;
     // inside it the walls drop to the well)
@@ -804,15 +802,18 @@ export async function makeGame(ctx) {
   const bank = (a, b, k = 0.012) => { const d = b.p.clone().sub(a.p).applyQuaternion(a.q.clone().invert()); return THREE.MathUtils.clamp(-d.x * k, -0.3, 0.3); };
   const arm = k => ({ segs: [], t: dealAt - RISE.swing, at: upright(k, ARM.up), fin: FIN.rest, att: [0, 0], el: 0 });
   const A = arm(0), B = arm(1);
-  // The drop slot: the machine gathers every card in to itself at the end -
-  // its own lifted by their long edges, carried to the slot's near lip and
-  // let go, and yours drawn across the cloth to it by the table - each goes
-  // in short edge first, tipping over the lip (m: the card's middle along
-  // its way from the lip, th: how far its leading end has gone down).
-  const SWP = { x: SLOT.x, z0: SLOT.z - SLOT.d / 2, slide: 0.8, y: 0.12, m0: -CARD.h / 2 + 0.9, th0: 0.15, th1: 1.35, drop: 0.34, gap: 0.46 };
+  // The drop slot: the machine gathers every card in to its shoe at the end
+  // - its own washed into a pile and pushed to the slot's near lip, and
+  // yours drawn across the cloth to it by the table - each turning square
+  // to the slot on the way and going in long edge first, tipping over the
+  // lip (m: the card's middle along its way in from the lip, th: how far
+  // its leading edge has gone down).
+  const inWay = V(Math.sin(SLOT.yaw), 0, Math.cos(SLOT.yaw)), lipWay = V(Math.cos(SLOT.yaw), 0, -Math.sin(SLOT.yaw));
+  const SWP = { lip: V(SLOT.x, 0.12, SLOT.z).addScaledVector(inWay, -SLOT.d / 2), square: new THREE.Quaternion().setFromAxisAngle(up, SLOT.yaw + Math.PI / 2), slide: 0.8, m0: -CARD.w / 2 + 0.9, m1: CARD.w / 2 + 0.5, th0: 0.15, th1: 1.35, drop: 0.34, gap: 0.46 };
+  const _sq = new THREE.Quaternion();
   const swPose = (m, th, qr) => {
-    const lead = V(0, -Math.sin(th), Math.cos(th));
-    return pose(V(SWP.x, SWP.y, SWP.z0).addScaledVector(lead, m), _q2.setFromAxisAngle(V(1, 0, 0), th).multiply(qr));
+    const lead = inWay.clone().multiplyScalar(Math.cos(th)).add(V(0, -Math.sin(th), 0));
+    return pose(SWP.lip.clone().addScaledVector(lead, m), _q2.setFromAxisAngle(lipWay, th).multiply(_sq.copy(SWP.square).multiply(qr)));
   };
   const restOf = c => turned(c.slot, c.turn < Infinity ? Math.PI : 0, { p: V(0, 0, 0), q: new THREE.Quaternion() }, c.restY);
   // The wash: the machine lays its hand flat across its own cards and works
@@ -1160,8 +1161,6 @@ export async function makeGame(ctx) {
   // what the arms are steered clear of: the lift, the saddle, each half of
   // the yoke and its J1 drum, and (for the second arm) the first one
   const house0 = [3.05, 2.0, 2.0, 2.0, 2.2, 2.2].map(r => ({ a: V(0, 0, 0), b: V(0, 0, 0), r }));
-  // (and the discard rack: a capsule along its length, fixed)
-  house0.push({ a: V(DISCARD[0], 2.6, DISCARD[1] - 4.5), b: V(DISCARD[0], 2.6, DISCARD[1] + 4.5), r: 5.2 });
   const houseFor = [house0.filter((c, i) => i !== 4), house0.filter((c, i) => i !== 5)];
   const houseOf = (y, tp) => {
     const { shoulders, side, fwd, pins } = tp;
@@ -1262,7 +1261,7 @@ export async function makeGame(ctx) {
           cardPose.p.copy(c.sw.p0).lerp(E.p, e); cardPose.p.y += c.sw.dy * e; cardPose.q.copy(c.sw.qr).slerp(E.q, e * e * e);
         } else if (tt < c.sw.rel) pileAt(c, tt, cardPose);
         else {
-          const u = clamp01((tt - c.sw.rel) / SWP.drop), P = swPose(lerp(SWP.m0, CARD.h / 2 + 0.5, Math.pow(u, 1.7)), lerp(SWP.th0, SWP.th1, Math.pow(u, 1.2)), c.sw.qr);
+          const u = clamp01((tt - c.sw.rel) / SWP.drop), P = swPose(lerp(SWP.m0, SWP.m1, Math.pow(u, 1.7)), lerp(SWP.th0, SWP.th1, Math.pow(u, 1.2)), c.sw.qr);
           cardPose.p.copy(P.p); cardPose.p.y += c.sw.dy * (1 - u); cardPose.q.copy(P.q);
           if (u >= 1) { g.visible = false; g.userData.contact.visible = false; return; }
         }
