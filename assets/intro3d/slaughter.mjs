@@ -97,20 +97,27 @@ const SEAT = { at: [440, 0, 60], yaw: 90 };
 const BENCH = { w: 150, d: 70, z0: -4, cush: 6.5, apron: 9, floor: -82, legs: 8.5 };
 // The bench you sit on, under the camera.
 const PEW = { w: 112, d: 40, z0: -168, top: -36, cush: 8, apron: 7, legs: 6.5 };
-// The rail: in from over your right shoulder to the wall, its trolleys a
-// man's height over the bench; the loads hang between t0 and t1 along it.
-const RAIL = { y: 100, from: [-80, -64], to: [44, 82], t0: 0.435, t1: 0.94, link: 2.7 };
+// The rail: from a hanger over the bench's right front corner back to a
+// bracket on the wall, its trolleys a man's height over the bench; the
+// loads hang between t0 and t1 along it.
+const RAIL = { y: 95, from: [-36, -12], to: [44, 82], t0: 0.124, t1: 0.9075, link: 2.7, flange: 5.5 };
+// The loads: s their scale, tag the tags' (both from the sizes they are
+// built at); their lowest points a little high and low by turns, over
+// the bench, clear of the saw - each tag at the top of its load, so the
+// tags step back down the rail together, in the same light.
+const LOAD = { s: 1.2, tag: 1.12, low: 32, high: 38 };
 // The tags: a triangle w x h, corners rounded r, the hole hole across at
 // holeY down from the apex, t thick.
 const TAG = { w: 13, h: 12, r: 1.3, hole: 0.62, holeY: 2.05, t: 0.3 };
 // The lamp, high over the bench (out of the shot), aimed down it.
 const LAMP = { at: [0, 160, 6], aim: [0, 0, 30], top: 262 };
 // The wall: brick to brick, then the cladding; its ribs; the sign on it;
-// the barn light over the sign; the drain in the floor.
-const WALL = { z: 88, w: 320, h: 312, brick: 135 };
+// the barn light over the sign (above the shot: its light, not the lamp,
+// is what shows); the drain in the floor.
+const WALL = { z: 88, w: 520, h: 312, brick: 135 };
 const RIB = { pitch: 30, h: 3.2, top: 2.6, base: 8, minor: 0.42 };
-const SLATE = { at: [0, 140, 84.5], w: 66, h: 40, px: 30, tilt: -1.2 * DEG, phase: 18.3 };
-const BARN = { at: [0, 171, 61], aim: [0, 138, 84] };
+const SLATE = { at: [0, 136, 84.5], w: 66, h: 40, px: 30, tilt: -1.2 * DEG, phase: 18.3 };
+const BARN = { at: [0, 196, 50], aim: [0, 134, 84] };
 const DRAIN = [10, 36];
 // The run's chain: off to the right, down to a hook.
 const CHAIN = { x: -86, z: 28, top: 142, links: 32, link: 3.0 };
@@ -118,7 +125,7 @@ const CHAIN = { x: -86, z: 28, top: 142, links: 32, link: 3.0 };
 const SAW = { at: [-12, 0, 16], yaw: -35 * DEG };
 const DIE = { at: [34, 0, 16], size: 5.2 };
 // The views: the seat, portrait and landscape.
-const VIEW = [{ eye: [0, 80, -140], aim: [0, 70, 40], fov: 60 }, { eye: [0, 78, -160], aim: [0, 72, 40], fov: 52 }];
+const VIEW = [{ eye: [0, 80, -140], aim: [0, 67, 40], fov: 60 }, { eye: [0, 78, -160], aim: [0, 72, 40], fov: 52 }];
 const T = { fly: 4.8, uiIn: 0.6, swing: 11, lift: 0.55 };
 
 // ------------------------------------------------------------ noise
@@ -178,7 +185,7 @@ function surfaceTex(s, strength, R = 1, wrap = false) {
 // Bare concrete, warm and worn smooth: the aggregate's speckle, the
 // trowel's mottle, the saw-cut joints, the stains pooled toward the drain.
 function concreteTex(w, h, seed, stains, drain) {
-  const k = 3, W = Math.round(w * k), H = Math.round(h * k);
+  const k = 2, W = Math.round(w * k), H = Math.round(h * k);
   return K.canvasTex(W, H, (g) => {
     const rnd = seeded(seed);
     g.fillStyle = '#5c554c'; g.fillRect(0, 0, W, H);
@@ -219,10 +226,10 @@ function brickSurface() {
   const mk = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; };
   const color = mk(), height = mk(), g = color.getContext('2d'), hg = height.getContext('2d');
   const rnd = seeded(29);
-  g.fillStyle = '#6a6156'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#4e463e'; g.fillRect(0, 0, W, H);
   hg.fillStyle = '#262626'; hg.fillRect(0, 0, W, H);
   for (let i = 0; i < W * H / 10; i++) { g.fillStyle = `rgba(${rnd() > 0.5 ? '150,140,124' : '20,18,14'},${(rnd() * 0.2).toFixed(2)})`; g.fillRect(rnd() * W, rnd() * H, 1.5, 1.5); }
-  const pal = [[118, 52, 36], [130, 60, 40], [104, 46, 32], [94, 40, 28], [138, 70, 48], [112, 56, 40], [86, 38, 28]];
+  const pal = [[92, 36, 28], [100, 42, 32], [82, 32, 26], [74, 30, 24], [106, 50, 38], [88, 40, 32], [66, 28, 22]];
   const cH = 7.5 * k, bH = 6.5 * k, bL = 21 * k, bW = 20 * k;
   for (let r = 0; r * cH < H + cH; r++) {
     const y = H - (r + 1) * cH + (cH - bH) / 2, off = (r % 2) * bL / 2 + rnd() * 2;
@@ -251,6 +258,7 @@ function brickSurface() {
   // rising damp and splash at the foot, a soot of years toward the top
   const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, 'rgba(10,8,6,0.25)'); gr.addColorStop(0.35, 'rgba(10,8,6,0)'); gr.addColorStop(0.7, 'rgba(10,8,6,0.1)'); gr.addColorStop(1, 'rgba(14,10,8,0.6)');
   g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 26; i++) { const x = rnd() * W, y = rnd() * H, r = 40 + rnd() * 160, s = g.createRadialGradient(x, y, 0, x, y, r); s.addColorStop(0, `rgba(12,8,6,${(0.18 + rnd() * 0.22).toFixed(2)})`); s.addColorStop(1, 'rgba(12,8,6,0)'); g.fillStyle = s; g.fillRect(x - r, y - r, 2 * r, 2 * r); }
   // the work's spray: old blood flung low across the middle, dried brown
   for (let i = 0; i < 160; i++) { const x = W * (0.3 + rnd() * 0.4), y = H * (0.55 + rnd() * 0.4), s = 1 + rnd() * 3.5; g.fillStyle = `rgba(${60 + rnd() * 20 | 0},10,8,${(0.3 + rnd() * 0.4).toFixed(2)})`; g.beginPath(); g.ellipse(x, y, s, s * (0.6 + rnd()), rnd() * 3, 0, Math.PI * 2); g.fill(); }
   for (let i = 0; i < 12; i++) { const x = W * (0.32 + rnd() * 0.36), y0 = H * (0.5 + rnd() * 0.3), l = (8 + rnd() * 30) * k, rg = g.createLinearGradient(0, y0, 0, y0 + l); rg.addColorStop(0, 'rgba(66,12,8,0.45)'); rg.addColorStop(1, 'rgba(66,12,8,0)'); g.fillStyle = rg; g.fillRect(x, y0, 1.5 + rnd() * 2, l); }
@@ -304,28 +312,33 @@ function corrugatedGeo(w, h, phase = 0, axis = 'x') {
   geo.computeVertexNormals();
   return geo;
 }
-// Copper crocodile, embossed on leather: belly scales in offset rows, each
-// its own shade, burnished bright on its crown, dark in the grooves.
-// (Tiles; 512 to a 26 cm tile.)
+// Copper crocodile, embossed on leather, from the belly: rectangular
+// scales in rows, the rows each a little off the next, each scale its own
+// shade of a deep copper-brown, burnished on its crown, dark in the
+// grooves. (Tiles; 512 to a 26 cm tile.)
 function crocSurface() {
-  const N = 512, rnd = seeded(61), CX = 9, CY = 12, pts = [];
-  for (let j = 0; j < CY; j++) for (let i = 0; i < CX; i++) pts.push({ x: (i + (j % 2) * 0.5 + 0.3 + rnd() * 0.4) / CX, y: (j + 0.3 + rnd() * 0.4) / CY, t: rnd(), u: rnd() });
+  const N = 512, rnd = seeded(61), ROWS = 13, rows = [];
+  let acc = 0; const hs = Array.from({ length: ROWS }, () => 0.8 + rnd() * 0.4), ht = hs.reduce((s, h) => s + h, 0);
+  hs.forEach(h => {
+    const y0 = acc / ht, y1 = (acc + h) / ht, cells = [], n = 9 + Math.floor(rnd() * 2), off = rnd();
+    let cx = 0; const ws = Array.from({ length: n }, () => 0.75 + rnd() * 0.5), wt = ws.reduce((s, w) => s + w, 0);
+    ws.forEach(w => { cells.push({ x0: (cx / wt + off) % 1, w: w / wt, t: rnd(), u: rnd() }); cx += w; });
+    rows.push({ y0, y1, cells }); acc += h;
+  });
   const fine = vnoise(7, 96, 96);
   return surface(N, N, (x, y, o) => {
-    const u = x / N, v = y / N, ci = Math.floor(u * CX), cj = Math.floor(v * CY);
-    let f1 = 9, f2 = 9, p1 = pts[0];
-    for (let dj = -1; dj <= 1; dj++) for (let di = -2; di <= 2; di++) {
-      const p = pts[((cj + dj + CY) % CY) * CX + (ci + di + CX) % CX];
-      let dx = u - p.x, dy = v - p.y; dx -= Math.round(dx); dy -= Math.round(dy);
-      const d = Math.hypot(dx * CX * 0.8, dy * CY);
-      if (d < f1) { f2 = f1; f1 = d; p1 = p; } else if (d < f2) f2 = d;
-    }
-    const edge = f2 - f1, groove = sstep(0, 0.16, edge), crown = sstep(0.05, 0.7, edge), n = fine(u * 96, v * 96);
-    const tone = (0.74 + p1.t * 0.42) * (0.6 + 0.4 * crown) + (n - 0.5) * 0.08;
-    const r = (178 + p1.u * 20) * tone + 46 * crown * crown, gg = (100 + p1.u * 12) * tone + 30 * crown * crown, b = (54 + p1.u * 16) * tone + 16 * crown * crown;
-    o.r = lerp(34, r, groove); o.g = lerp(16, gg, groove); o.b = lerp(9, b, groove);
-    o.h = groove * (0.55 + 0.45 * crown) + (n - 0.5) * 0.05 * groove;
-    o.k = lerp(0.9, 0.36 - 0.1 * crown, groove);
+    const u = x / N, v = y / N, row = rows.find(r => v < r.y1) || rows[ROWS - 1];
+    let cell = row.cells[0], du = 1;
+    for (const c of row.cells) { let d = (u - c.x0) % 1; if (d < 0) d += 1; if (d < c.w) { cell = c; du = Math.min(d, c.w - d) / c.w; break; } }
+    const rh = row.y1 - row.y0, dv = Math.min(v - row.y0, row.y1 - v) / rh;
+    // (the distance to the scale's edge, in its own half-sizes, both ways)
+    const e = Math.min(du * 2 * cell.w * N / 40, dv * 2 * rh * N / 40), edge = Math.min(du, dv);
+    const groove = sstep(0.0, 0.32, e), crown = sstep(0.06, 0.5, edge), n = fine(u * 96, v * 96);
+    const tone = (0.7 + cell.t * 0.45) * (0.62 + 0.38 * crown) + (n - 0.5) * 0.08;
+    const r = (150 + cell.u * 24) * tone + 50 * crown * crown, gg = (82 + cell.u * 12) * tone + 30 * crown * crown, b = (42 + cell.u * 12) * tone + 14 * crown * crown;
+    o.r = lerp(28, r, groove); o.g = lerp(13, gg, groove); o.b = lerp(8, b, groove);
+    o.h = groove * (0.5 + 0.5 * crown) + (n - 0.5) * 0.05 * groove;
+    o.k = lerp(0.9, 0.38 - 0.1 * crown, groove);
   });
 }
 // Distressed dark pine: a dark stain over flat-sawn pine, the grain's
@@ -377,7 +390,7 @@ function burlapSurface(seed, soak) {
     const ix = Math.floor(x / P), iy = Math.floor(y / P), fx = (x % P + 0.5) / P, fy = (y % P + 0.5) / P;
     const pv = Math.sin(Math.PI * fx), ph = Math.sin(Math.PI * fy);
     let t = ((ix + iy) & 1) ? pv * th(ix) : ph * th(iy + 7919);
-    if (pv < 0.6 && ph < 0.6) t = 0.12;
+    if (pv < 0.6 && ph < 0.6) t = 0.32;
     const u = x / N, vb = 1 - y / N, f = fz(x, y);
     const gr = 0.8 + 0.35 * fbm(grime, u * 6, vb * 4, 3);
     const tone = (0.5 + 0.55 * t) * gr * (0.92 + 0.16 * f);
@@ -386,12 +399,12 @@ function burlapSurface(seed, soak) {
     const s = sstep(level + 0.035, level - 0.04, vb), tide = Math.exp(-Math.pow((vb - level) / 0.012, 2));
     const bl = sstep(0.64, 0.72, fbm(blot, u * 7, vb * 5, 4)) * (1 - s) * sstep(0.95, 0.4, vb);
     const wetK = Math.max(s, bl * 0.8);
-    const blood = [96 * tone + 8, 14 * tone + 2, 10 * tone + 2];
+    const blood = [112 * tone + 16, 14 * tone + 3, 12 * tone + 3];
     o.r = lerp(dry[0], blood[0] * (1 - 0.35 * sstep(level * 0.6, 0, vb)), wetK) * (1 - 0.45 * tide);
     o.g = lerp(dry[1], blood[1], wetK) * (1 - 0.45 * tide);
     o.b = lerp(dry[2], blood[2], wetK) * (1 - 0.45 * tide);
     o.h = t * (1 - 0.35 * wetK);
-    o.k = lerp(0.96, 0.45 - 0.2 * sstep(level, 0, vb), wetK);
+    o.k = lerp(0.96, 0.4 - 0.22 * sstep(level, 0, vb), wetK);
   });
 }
 // Pink butcher paper, as a Texas smokehouse wraps a brisket: the fibre's
@@ -399,36 +412,42 @@ function burlapSurface(seed, soak) {
 // tide line at their edges, heaviest on the parcel's underside. Six faces
 // in a 3 x 2 atlas (see atlasUV): +x, -x, top, bottom, +z, -z.
 function paperSurface(seed) {
-  const W = 1024, H = 512, cw = W / 3, ch = H / 2, rnd = seeded(seed), blot = vnoise(seed, 0, 0), fib = vnoise(seed + 1, 0, 0);
-  const wet = [0.55, 0.45, 0.12, 1, 0.4, 0.55];
+  const W = 640, H = 320, cw = W / 3, ch = H / 2, rnd = seeded(seed), blot = vnoise(seed, 0, 0), fib = vnoise(seed + 1, 0, 0);
+  const wet = [0.6, 0.5, 0.15, 1, 0.65, 0.75];
+  const grease = vnoise(seed + 2, 0, 0);
   const creases = wet.map(() => Array.from({ length: 4 }, () => { const a = rnd() * Math.PI, c = Math.cos(a), s = Math.sin(a); return { c, s, d: c * rnd() + s * rnd() }; }));
   return surface(W, H, (x, y, o) => {
     const col = Math.min(2, Math.floor(x / cw)), yb = H - 1 - y, rb = Math.min(1, Math.floor(yb / ch)), k = rb * 3 + col;
     const u = (x - col * cw) / cw, v = (yb - rb * ch) / ch;
     const edge = Math.min(u, 1 - u, v, 1 - v);
-    let cr = 0; creases[k].forEach(l => { const d = (u * l.c + v * l.s - l.d) * 300; cr += Math.exp(-d * d) * (d > 0 ? 1 : -0.6); });
+    let cr = 0; creases[k].forEach(l => { const d = (u * l.c + v * l.s - l.d) * 190; cr += Math.exp(-d * d) * (d > 0 ? 1 : -0.6); });
+    // (the ends folded in as a parcel's are: the top and bottom flaps
+    // turned down over the sides, their edges a crease from each corner)
+    let flap = 0;
+    if (k < 2) { const tl = Math.abs(v - 0.5) - Math.abs(u - 0.5) * 0.9; cr += Math.exp(-Math.pow(tl * 60, 2)) * 1.4; flap = tl > 0 ? (v > 0.5 ? 0.1 : -0.18) : 0; }
     const sideBias = (k === 2 || k === 3) ? 1 : 1.3 - v;
     const field = fbm(blot, u * 3.5 + k * 7.3, v * 3 + k * 3.1, 4) * sideBias * (0.62 + 0.45 * wet[k]);
     const s = sstep(0.6, 0.66, field), tide = Math.exp(-Math.pow((field - 0.6) / 0.012, 2)), deep = sstep(0.68, 0.9, field);
     const fbr = fib(u * 40 + k * 100, v * 6) - 0.5;
-    const paper = [214 + fbr * 14, 160 + fbr * 12, 136 + fbr * 10].map(c => c * (1 - 0.25 * sstep(0.06, 0, edge)) * (1 + cr * 0.06));
-    const blood = [lerp(140, 78, deep), lerp(36, 12, deep), lerp(30, 10, deep)];
+    const gs = sstep(0.55, 0.7, fbm(grease, u * 5 + k * 11, v * 5, 3));
+    const paper = [158 + fbr * 12, 118 + fbr * 10, 96 + fbr * 8].map(c => c * (1 - 0.3 * sstep(0.07, 0, edge)) * (1 + cr * 0.13 + flap) * (1 - 0.22 * gs));
+    const blood = [lerp(118, 66, deep), lerp(28, 10, deep), lerp(24, 8, deep)];
     o.r = lerp(paper[0], blood[0], s) * (1 - 0.4 * tide); o.g = lerp(paper[1], blood[1], s) * (1 - 0.45 * tide); o.b = lerp(paper[2], blood[2], s) * (1 - 0.45 * tide);
-    o.h = 0.5 + cr * 0.25 + fbr * 0.1;
-    o.k = lerp(0.86, 0.32, s * (0.5 + 0.5 * deep));
+    o.h = 0.5 + cr * 0.45 + fbr * 0.1 + flap;
+    o.k = lerp(0.86 - 0.3 * gs, 0.32, s * (0.5 + 0.5 * deep));
   });
 }
 // An old satchel's leather: dark oiled brown, mottled, worn pale at every
 // edge and corner (the atlas's cells are its faces, so a cell's border is
 // the bag's edge), scuffed; blood wiped across it in smears and run down.
 function leatherSurface(seed) {
-  const W = 1024, H = 512, cw = W / 3, ch = H / 2, rnd = seeded(seed), mot = vnoise(seed, 0, 0), smear = vnoise(seed + 1, 0, 0), grain = vnoise(seed + 2, 0, 0);
+  const W = 640, H = 320, cw = W / 3, ch = H / 2, rnd = seeded(seed), mot = vnoise(seed, 0, 0), smear = vnoise(seed + 1, 0, 0), grain = vnoise(seed + 2, 0, 0);
   const drips = Array.from({ length: 6 }, () => Array.from({ length: 5 }, () => ({ u: 0.08 + rnd() * 0.84, v0: 0.3 + rnd() * 0.6, l: 0.15 + rnd() * 0.5, w: 0.006 + rnd() * 0.01 })));
   return surface(W, H, (x, y, o) => {
     const col = Math.min(2, Math.floor(x / cw)), yb = H - 1 - y, rb = Math.min(1, Math.floor(yb / ch)), k = rb * 3 + col;
     const u = (x - col * cw) / cw, v = (yb - rb * ch) / ch;
     const edge = Math.min(u, 1 - u, v, 1 - v), worn = sstep(0.07, 0, edge) * (0.6 + 0.4 * mot(u * 30 + k * 9, v * 30));
-    const m = fbm(mot, u * 6 + k * 5, v * 6, 4), gr = grain(x * 0.7, y * 0.7) - 0.5;
+    const m = fbm(mot, u * 6 + k * 5, v * 6, 4), gr = grain(x * 1.1, y * 1.1) - 0.5;
     const scuff = sstep(0.68, 0.75, fbm(mot, u * 14 + 50, v * 14 + k * 3, 3));
     const base = [62 + m * 30, 38 + m * 18, 22 + m * 10];
     let sm = sstep(0.62, 0.7, fbm(smear, u * 2.2 + k * 4, v * 7, 4)) * (k === 2 ? 0.3 : 1);
@@ -500,7 +519,7 @@ function tagArt(card, spent) {
   const tri = (c, d) => { const k = (ri - d * U) / ri, P = ([x, y]) => [ix + (x - ix) * k, iy + (y - iy) * k]; const [a, b, e] = [[W / 2, 0], [0, H], [W, H]].map(P); c.beginPath(); c.moveTo(...a); c.lineTo(...b); c.lineTo(...e); c.closePath(); return [a, b, e]; };
   // the brass, brushed across
   const gr = g.createLinearGradient(0, 0, W, H);
-  gr.addColorStop(0, '#ecd07c'); gr.addColorStop(0.5, '#c79f4a'); gr.addColorStop(1, '#dcb862');
+  gr.addColorStop(0, '#e0ae46'); gr.addColorStop(0.5, '#b1802c'); gr.addColorStop(1, '#d29e3a');
   g.fillStyle = gr; g.fillRect(0, 0, W, H);
   for (let y = 0; y < H; y += 2) { g.fillStyle = `rgba(${rnd() > 0.5 ? '255,240,200' : '70,50,16'},${(0.03 + rnd() * 0.06).toFixed(3)})`; g.fillRect(0, y, W, 1); }
   for (let i = 0; i < 50; i++) { const x = rnd() * W, y = rnd() * H, l = 8 + rnd() * 50, a = (rnd() - 0.5) * 2; g.strokeStyle = `rgba(${rnd() > 0.5 ? '255,245,210' : '60,40,10'},${(0.12 + rnd() * 0.25).toFixed(2)})`; g.lineWidth = 0.8; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
@@ -544,7 +563,14 @@ function tagArt(card, spent) {
   const cw = chars.map(ch => g.measureText(ch).width), gap = 0.25 * U, tw = cw.reduce((s, w) => s + w, 0) + gap * (chars.length - 1);
   let cx = W / 2 - tw / 2;
   chars.forEach((ch, i) => { strike(ch, `700 %px ${tagFont.punch}`, cx + cw[i] / 2 + (rnd() - 0.5) * 2, 10.85 * U + (rnd() - 0.5) * 2, 999, ps, tilt() * 1.5); cx += cw[i] + gap; });
-  if (spent) { g.globalCompositeOperation = 'multiply'; g.fillStyle = 'rgba(96,78,52,1)'; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'source-over'; g.fillStyle = 'rgba(40,36,24,0.25)'; g.fillRect(0, 0, W, H); }
+  // (spent: the brass gone over to a dull grey-green, its blooms of
+  // verdigris, the letters still dark - an old tag, not a shadowed one)
+  if (spent) {
+    g.globalCompositeOperation = 'color'; g.fillStyle = 'rgba(118,132,104,0.85)'; g.fillRect(0, 0, W, H);
+    g.globalCompositeOperation = 'multiply'; g.fillStyle = 'rgb(176,180,166)'; g.fillRect(0, 0, W, H);
+    g.globalCompositeOperation = 'source-over';
+    for (let i = 0; i < 14; i++) { const x = rnd() * W, y = H * (0.25 + rnd() * 0.75), r = 8 + rnd() * 30, p = g.createRadialGradient(x, y, 0, x, y, r); p.addColorStop(0, 'rgba(96,150,120,0.35)'); p.addColorStop(1, 'rgba(96,150,120,0)'); g.fillStyle = p; g.fillRect(x - r, y - r, 2 * r, 2 * r); }
+  }
   return { color, height };
 }
 // the tag's plate: the rounded triangle with its hole, its faces mapped to
@@ -648,7 +674,10 @@ function steelMat(color = 0x2a2724, rough = 0.5) {
   const m = new THREE.MeshStandardMaterial({ color, metalness: 0.85, roughness: rough });
   return K.finished(m, 'brushed', 2, 2, 0.12);
 }
-function buildFloorAndWall() {
+// (the heavy surfaces are painted one at a time, the page let breathe
+// between them, so the shot playing while the room is built keeps time)
+const breathe = () => new Promise(r => setTimeout(r, 0));
+async function buildFloorAndWall() {
   const g = new THREE.Group();
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(520, 460), new THREE.MeshStandardMaterial({ map: concreteTex(520, 460, 3, 30, DRAIN), roughness: 0.86, metalness: 0 }));
   floor.rotation.x = -Math.PI / 2; floor.position.set(0, BENCH.floor + 0.15, 30); floor.receiveShadow = true;
@@ -666,7 +695,9 @@ function buildFloorAndWall() {
   drain.add(bars);
   g.add(drain);
   // the brick, proud of the cladding by a veneer's depth, to over the bench
+  await breathe();
   const bs = brickSurface();
+  await breathe();
   const brick = new THREE.Mesh(new THREE.PlaneGeometry(WALL.w, WALL.brick), new THREE.MeshStandardMaterial({ map: asTex(bs.color), normalMap: embossTex(bs.height, 2.4, 1), roughness: 0.93, metalness: 0 }));
   brick.position.set(0, BENCH.floor + WALL.brick / 2, WALL.z - 4); brick.rotation.y = Math.PI; brick.receiveShadow = true;
   g.add(brick);
@@ -676,7 +707,9 @@ function buildFloorAndWall() {
   g.add(sill);
   // the cladding: ribs up and down, screwed at the flats beside each rib
   const mh = WALL.h - WALL.brick, screws = [];
-  for (let x = -WALL.w / 2 + RIB.pitch / 2 - 5.8; x < WALL.w / 2; x += RIB.pitch) [10, 70, 140].forEach(y => screws.push([x, y - mh / 2]));
+  const sx0 = RIB.pitch / 2 - 5.8, sx1 = sx0 - RIB.pitch * Math.floor((WALL.w / 2 + sx0) / RIB.pitch);
+  for (let x = sx1; x < WALL.w / 2 - 2; x += RIB.pitch) [10, 70, 140].forEach(y => screws.push([x, y - mh / 2]));
+  await breathe();
   const metalMat = new THREE.MeshStandardMaterial({ map: metalTex(screws.map(([x, y]) => [(x + WALL.w / 2) / WALL.w, (y + mh / 2) / mh])), roughness: 0.55, metalness: 0.3 });
   K.finished(metalMat, 'peel', 6, 4, 0.2); metalMat.roughness = 0.55;
   const metal = new THREE.Mesh(corrugatedGeo(WALL.w, mh), metalMat);
@@ -726,16 +759,24 @@ const railAt = t => [lerp(RAIL.from[0], RAIL.to[0], t), lerp(RAIL.from[1], RAIL.
 const RAIL_YAW = Math.atan2(-(RAIL.to[1] - RAIL.from[1]), RAIL.to[0] - RAIL.from[0]);
 function buildRail() {
   const g = new THREE.Group();
-  const steel = steelMat(0x26231f, 0.5);
+  const steel = new THREE.MeshStandardMaterial({ color: 0x8a8984, metalness: 0.6, roughness: 0.48 });
+  K.finished(steel, 'blast', 2, 2, 0.15);
   const L = Math.hypot(RAIL.to[0] - RAIL.from[0], RAIL.to[1] - RAIL.from[1]), [mx, mz] = railAt(0.5);
   const beam = new THREE.Group(); beam.position.set(mx, 0, mz); beam.rotation.y = RAIL_YAW;
-  const web = new THREE.Mesh(new THREE.BoxGeometry(L, 10, 1.2), steel); web.position.y = RAIL.y + 6;
-  const fl1 = new THREE.Mesh(new THREE.BoxGeometry(L, 1.4, 8), steel); fl1.position.y = RAIL.y + 11.3;
-  const fl2 = new THREE.Mesh(new THREE.BoxGeometry(L, 1.4, 8), steel); fl2.position.y = RAIL.y + 0.7;
-  const stop = new THREE.Mesh(new THREE.BoxGeometry(3, 6, 9), steel); stop.position.set(L / 2 - 1.5, RAIL.y + 1, 0);
+  const web = new THREE.Mesh(new THREE.BoxGeometry(L, 7.4, 1.0), steel); web.position.y = RAIL.y + 4.6;
+  const fl1 = new THREE.Mesh(new THREE.BoxGeometry(L, 1.2, RAIL.flange), steel); fl1.position.y = RAIL.y + 8.6;
+  const fl2 = new THREE.Mesh(new THREE.BoxGeometry(L, 1.2, RAIL.flange), steel); fl2.position.y = RAIL.y + 0.6;
+  const stop = new THREE.Mesh(new THREE.BoxGeometry(2.4, 5, RAIL.flange + 1), steel); stop.position.set(L / 2 - 1.2, RAIL.y + 1.2, 0);
   [web, fl1, fl2, stop].forEach(m => { m.castShadow = true; m.receiveShadow = true; beam.add(m); });
   g.add(beam);
-  [0.16, 0.985].forEach(t => { const [x, z] = railAt(t); const h = new THREE.Mesh(new THREE.BoxGeometry(4, 200, 4), steel); h.position.set(x, RAIL.y + 112, z); h.rotation.y = RAIL_YAW; h.castShadow = true; g.add(h); });
+  // (a hanger up into the dark at the near end; at the wall, a bracket
+  // plate screwed through the cladding and a stub out to the rail's end)
+  { const [x, z] = railAt(0.03); const h = new THREE.Mesh(new THREE.BoxGeometry(3.4, 200, 3.4), steel); h.position.set(x, RAIL.y + 109, z); h.rotation.y = RAIL_YAW; h.castShadow = true; g.add(h); }
+  { const [x, z] = railAt(1), wz = WALL.z - RIB.h - 0.5;
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(12, 18, 1), steel); plate.position.set(x, RAIL.y + 4.5, wz); plate.castShadow = true; g.add(plate);
+    const stub = new THREE.Mesh(new THREE.BoxGeometry(3, 9, Math.max(1, wz - z)), steel); stub.position.set(x, RAIL.y + 4.5, (z + wz) / 2); stub.castShadow = true; g.add(stub);
+    const bolt = new THREE.CylinderGeometry(0.7, 0.7, 0.6, 6); bolt.rotateX(Math.PI / 2);
+    [[-4, -6.5], [4, -6.5], [-4, 6.5], [4, 6.5]].forEach(([bx, by]) => { const b = new THREE.Mesh(bolt, steel); b.position.set(x + bx, RAIL.y + 4.5 + by, wz - 0.7); g.add(b); }); }
   return g;
 }
 // a length of chain: forged oval links, each turned ninety degrees from
@@ -764,10 +805,13 @@ function buildChain(mat, n, pitch, x, y0, z, parent) {
 // Each hangs from the hook's bend at its origin, down -y, its front to -z;
 // each says where its tag's ring is (ring), which way the tag leans out
 // (lean) and rolls (roll), where its bottom is (foot).
-function loadKit(set) {
-  const burlap = [0, 1].map(i => new THREE.MeshStandardMaterial(Object.assign(surfaceTex(burlapSurface(101 + i * 17, 0.3 + i * 0.12), 1.3, 0), { roughness: 1, metalness: 0, side: THREE.DoubleSide })));
+async function loadKit(set) {
+  const burlap = [];
+  for (let i = 0; i < 2; i++) { burlap.push(new THREE.MeshStandardMaterial(Object.assign(surfaceTex(burlapSurface(101 + i * 17, 0.3 + i * 0.12), 1.3, 0), { roughness: 1, metalness: 0, side: THREE.DoubleSide }))); await breathe(); }
   const paper = new THREE.MeshStandardMaterial(Object.assign(surfaceTex(paperSurface(131), 1.2, 1), { roughness: 1, metalness: 0 }));
+  await breathe();
   const leather = new THREE.MeshStandardMaterial(Object.assign(surfaceTex(leatherSurface(151), 1.4, 1), { roughness: 1, metalness: 0 }));
+  await breathe();
   const hide = new THREE.MeshStandardMaterial(Object.assign(hideTex(), { roughness: 0.9, metalness: 0, side: THREE.DoubleSide }));
   const bone = new THREE.MeshPhysicalMaterial({ map: boneTex(), roughness: 0.42, clearcoat: 0.35, clearcoatRoughness: 0.35 });
   const marrow = new THREE.MeshPhysicalMaterial({ map: marrowTex(), roughness: 0.35, clearcoat: 0.6, clearcoatRoughness: 0.2 });
@@ -775,8 +819,11 @@ function loadKit(set) {
   const blood = new THREE.MeshPhysicalMaterial({ color: 0x3c0405, roughness: 0.14, clearcoat: 1, clearcoatRoughness: 0.05 });
   const meat = new THREE.MeshPhysicalMaterial({ color: 0x5c100e, roughness: 0.32, clearcoat: 0.7, clearcoatRoughness: 0.2 });
   const wire = steelMat(0x77736a, 0.38);
+  const galv = new THREE.MeshStandardMaterial({ color: 0x8a8984, metalness: 0.6, roughness: 0.48 });
+  K.finished(galv, 'blast', 2, 2, 0.15);
   const brass = K.polishedOf(set.brass, 0.32);
-  return { burlap, paper, leather, hide, bone, marrow, twine, blood, meat, wire, brass };
+  const iron = steelMat(0x1f1d1b, 0.5), ironBright = K.polishedOf(iron, 0.35);
+  return { burlap, paper, leather, hide, bone, marrow, twine, blood, meat, wire, brass, galv, iron, ironBright };
 }
 // a bone's end: its shaft out of whatever holds it (from base, toward
 // dir, len long) and its end - the joint's knuckles, or the saw's face
@@ -797,9 +844,11 @@ function boneEnd(kit, base, dir, len, r, sawn) {
 }
 // a drop gathering at a low point, and a run of blood down from it
 function drip(kit, x, y, z, s) {
-  const m = new THREE.Mesh(new THREE.SphereGeometry(0.42 * s, 10, 8), kit.blood);
-  m.scale.set(1, 1.9, 1); m.position.set(x, y - 0.5 * s, z);
-  return m;
+  const g = new THREE.Group();
+  const run = new THREE.Mesh(new THREE.CylinderGeometry(0.1 * s, 0.22 * s, 1.6 * s, 8), kit.blood); run.position.set(x, y - 0.8 * s, z); g.add(run);
+  const m = new THREE.Mesh(new THREE.SphereGeometry(0.6 * s, 12, 10), kit.blood);
+  m.scale.set(1, 1.5, 1); m.position.set(x, y - 2.0 * s, z); g.add(m);
+  return g;
 }
 // the twine loop a load hangs by: from its tie, up through the hook's bend
 // at the origin, and down again
@@ -812,10 +861,14 @@ function hangLoop(kit, spread, low) {
 // bone's knuckle out of its mouth, a flap of hide over the lip, meat at it.
 function buildSack(kit, rnd, open) {
   const g = new THREE.Group();
+  // (a sack, not a purse: a woven tube sewn across its bottom, so it hangs
+  // long and straight-sided, flat front to back, its bottom seam's two
+  // corners standing out as ears; the top twisted and tied, not flared)
   const prof = open
-    ? [[0, -27], [3.6, -26.6], [6, -25.2], [7.2, -22.4], [7.5, -18.6], [7.1, -14.4], [6.1, -10.8], [4.8, -7.6], [3.9, -5.4], [3.8, -4.4], [4.4, -2.8], [5.0, -1.4], [5.1, -0.6]]
-    : [[0, -26.5], [3.5, -26.1], [5.8, -24.8], [7.1, -22.2], [7.4, -18.6], [7.0, -14.6], [6.1, -11.2], [4.5, -8.4], [2.9, -6.4], [1.8, -5.0], [1.55, -4.3], [1.9, -3.6], [2.7, -2.6], [3.3, -1.5], [3.3, -0.8], [2.9, -0.5]];
-  const pts = new THREE.SplineCurve(prof.map(([r, y]) => new THREE.Vector2(r, y))).getPoints(60).map(p => new THREE.Vector2(Math.max(0, p.x), p.y));
+    ? [[0, -28], [4.6, -27.8], [6.5, -27], [6.9, -24.5], [6.9, -18], [6.6, -12.5], [5.8, -9], [4.6, -6.6], [3.9, -5.2], [3.8, -4.3], [4.2, -2.8], [4.6, -1.4], [4.6, -0.6]]
+    : [[0, -28], [4.6, -27.8], [6.4, -27], [6.8, -24.5], [6.8, -18], [6.5, -12.5], [5.6, -9.4], [4.0, -7.4], [2.6, -6.0], [1.75, -4.9], [1.55, -4.3], [1.8, -3.7], [2.2, -2.9], [2.3, -1.9], [2.0, -1.1], [1.6, -0.6]];
+  // (spaced by length, so the cloth's texture lies evenly up the sack)
+  const pts = new THREE.SplineCurve(prof.map(([r, y]) => new THREE.Vector2(r, y))).getSpacedPoints(64).map(p => new THREE.Vector2(Math.max(0, p.x), p.y));
   const S = 48, geo = new THREE.LatheGeometry(pts, S);
   // (turned at random first, so its stains fall anywhere; the squash and
   // the sag stay front to back)
@@ -828,8 +881,10 @@ function buildSack(kit, rnd, open) {
       const th = (Math.atan2(z, x) / (Math.PI * 2) + 1) % 1, body = sstep(-6.5, -10, y);
       let k = 1 + body * 0.16 * (fbm(n1, th * 6, y / 5, 3) - 0.5) * 2;
       if (!open) k *= 1 + 0.16 * Math.exp(-Math.pow((y + 6.6) / 2.2, 2)) * Math.sin(th * Math.PI * 2 * 11 + n2(th * 11, y) * 4);
-      if (y > (open ? -5 : -3.7)) k *= 1 + 0.2 * (n2(th * 11, y * 1.5) - 0.5) * 2;
-      x *= k; z *= k * 0.86;
+      if (y > (open ? -5 : -3.7)) k *= 1 + 0.3 * (n2(th * 7 + y * 0.8, y * 2.2) - 0.5) * 2;
+      // (the ears: the bottom seam's corners, out to either side)
+      const ear = sstep(-23, -27.6, y) * Math.pow(Math.abs(Math.cos(th * Math.PI * 2)), 3) * 0.22;
+      x *= k * (1 + ear); z *= k * 0.72 * (1 - ear * 0.6);
     }
     // (what is in it sits low and off true)
     x += lean * sstep(-8, -24, y) * 2.2;
@@ -844,7 +899,7 @@ function buildSack(kit, rnd, open) {
   const neckY = open ? -4.7 : -4.4, neckR = open ? 3.95 : 1.62;
   for (let i = 0; i < 3; i++) {
     const t = new THREE.Mesh(new THREE.TorusGeometry(neckR + 0.28, 0.25, 6, 28), kit.twine);
-    t.rotation.x = Math.PI / 2 + (rnd() - 0.5) * 0.14; t.scale.y = 0.86; t.position.y = neckY - i * 0.48; t.castShadow = true; g.add(t);
+    t.rotation.x = Math.PI / 2 + (rnd() - 0.5) * 0.14; t.scale.y = 0.78; t.position.y = neckY - i * 0.48; t.castShadow = true; g.add(t);
   }
   g.add(hangLoop(kit, neckR * 0.7, neckY + 0.2));
   if (open) {
@@ -860,7 +915,7 @@ function buildSack(kit, rnd, open) {
   const foot = prof[0][1];
   for (let i = 0, nd = 1 + Math.floor(rnd() * 2); i < nd; i++) g.add(drip(kit, lean * 2.2 + (rnd() - 0.5) * 2.4, foot + 0.4, (rnd() - 0.5) * 1.8, 0.8 + rnd() * 0.5));
   // (its tag on the tie, at the front, out over the belly)
-  return { group: g, ring: V(1.0, neckY - 0.7, -(neckR + 0.3) * 0.86), lean: 0.62, roll: -0.1, foot };
+  return { group: g, ring: V(1.0, neckY - 0.7, -(neckR + 0.3) * 0.78), lean: 0.52, roll: -0.08, foot };
 }
 // The parcel: pink butcher paper over something heavy and lumpy, sagging
 // in the middle, tied both ways with twine, hung by a loop from the knot;
@@ -869,16 +924,16 @@ function buildBundle(kit, rnd, bone) {
   const g = new THREE.Group();
   const w = 14 + rnd() * 2.5, h = 8.6 + rnd() * 1.6, d = 8.2, drop = 5.4, cy = -drop - h / 2;
   const geo = atlasUV(slab(w, h, d, 2.1, 3, 6), w, h, d);
-  lumpy(geo, 0.55, 4.5, Math.floor(rnd() * 1e6));
+  lumpy(geo, 0.85, 3.6, Math.floor(rnd() * 1e6));
   const pp = geo.attributes.position;
   for (let i = 0; i < pp.count; i++) { const x = pp.getX(i), y = pp.getY(i); if (y < 0) pp.setY(i, y - 0.9 * Math.max(0, 1 - Math.pow(x / (w / 2), 2)) * (-y / (h / 2))); }
   relit(geo);
   const parcel = new THREE.Mesh(geo, kit.paper); parcel.position.y = cy; parcel.castShadow = true; parcel.receiveShadow = true; g.add(parcel);
   // the twine round it both ways, bitten into the paper
   const band = ax => {
-    const a = (ax === 'x' ? d : w) / 2 + 0.12, b = h / 2 + 0.12, pts = [];
+    const a = (ax === 'x' ? d : w) / 2 + 0.25, b = h / 2 + 0.25, pts = [];
     for (let i = 0; i < 64; i++) { const t = i / 64 * Math.PI * 2, c = Math.cos(t), s = Math.sin(t), u = Math.sign(c) * Math.pow(Math.abs(c), 0.3) * a, v = Math.sign(s) * Math.pow(Math.abs(s), 0.3) * b; pts.push(ax === 'x' ? V(0, cy + v, u) : V(u, cy + v, 0)); }
-    const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 128, 0.2, 6, true), kit.twine); m.castShadow = true; return m;
+    const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 128, 0.3, 6, true), kit.twine); m.castShadow = true; return m;
   };
   g.add(band('x'), band('z'));
   const knot = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 8), kit.twine); knot.position.set(0, -drop + 0.1, 0); g.add(knot);
@@ -889,8 +944,8 @@ function buildBundle(kit, rnd, bone) {
   }
   const foot = cy - h / 2 - 1;
   for (let i = 0; i < 2; i++) g.add(drip(kit, (rnd() - 0.5) * w * 0.5, foot + 0.5, (rnd() - 0.5) * 3, 0.8 + rnd() * 0.4));
-  // (its tag on the twine where it turns under the front, hanging below)
-  return { group: g, ring: V(0, cy - h / 2 + 0.5, -d / 2 - 0.3), lean: 0.08, roll: 0.04, foot };
+  // (its tag on the twine where it turns over the front, hanging down it)
+  return { group: g, ring: V(0, cy + h / 2 - 0.4, -d / 2 - 0.45), lean: 0.07, roll: 0.04, foot };
 }
 // The satchel: an old leather bag hung by its strap, its flap buckled
 // down, smeared, a flap of hide caught under the flap at one side.
@@ -920,10 +975,10 @@ function buildSatchel(kit, rnd) {
   const hide = new THREE.Mesh(hg, kit.hide); hide.position.set(hs * (w / 2 - 2.6), top - 6.4, -d / 2 - 0.2); hide.castShadow = true; g.add(hide);
   const foot = cy - h / 2;
   g.add(drip(kit, -hs * (w / 2 - 1.5), foot + 0.4, -d / 2 + 0.8, 1));
-  // (its tag on the buckle, hanging below the bag)
-  return { group: g, ring: V(0, top - 8.2, -d / 2 - 1.0), lean: 0.1, roll: 0.05, foot };
+  // (its tag on the flap's strap, at the top, hanging down the flap)
+  return { group: g, ring: V(2.6, top - 0.4, -d / 2 - 0.95), lean: 0.1, roll: 0.05, foot };
 }
-const LOADS = ['sack', 'bundle', 'satchel', 'open', 'bundleBone', 'sack', 'satchel'];
+const LOADS = ['sack', 'bundle', 'open', 'satchel', 'sack', 'bundleBone', 'satchel'];
 function buildLoad(kit, kind, rnd) {
   if (kind === 'sack') return buildSack(kit, rnd, false);
   if (kind === 'open') return buildSack(kit, rnd, true);
@@ -934,28 +989,33 @@ function buildLoad(kit, kind, rnd) {
 // load on the hook with its tag; the whole thing swings from the trolley.
 // The load (and its tag) is turned to the seat, and the hook square to
 // the load's loop, so the loop goes through it.
-function buildHook(set, kit, card, t, kind, rnd) {
+function buildHook(set, kit, card, t, kind, rnd, low) {
   const [x, z] = railAt(t);
   const pivot = new THREE.Group();
   pivot.position.set(x, RAIL.y, z);
-  const steel = steelMat(0x1f1d1b, 0.5);
+  const steel = kit.iron;
   // (the trolley: two wheels each side of the web on the lower flange, its
   // cheeks down outside the flange to a yoke under it)
   const trolley = new THREE.Group(); trolley.rotation.y = RAIL_YAW; pivot.add(trolley);
-  const yoke = new THREE.Mesh(new THREE.BoxGeometry(6, 2.2, 10), steel); yoke.position.y = -1.3; trolley.add(yoke);
-  const wheel = new THREE.CylinderGeometry(1.4, 1.4, 0.9, 16); wheel.rotateX(Math.PI / 2);
-  [-1, 1].forEach(s => [-1, 1].forEach(sz => { const w = new THREE.Mesh(wheel, steel); w.position.set(s * 2.2, 2.8, sz * 2.2); trolley.add(w); }));
-  [-1, 1].forEach(sz => { const cheek = new THREE.Mesh(new THREE.BoxGeometry(6, 6.4, 0.5), steel); cheek.position.set(0, 1.4, sz * 4.7); cheek.castShadow = true; trolley.add(cheek); });
+  const galv = kit.galv, cz = RAIL.flange / 2 + 0.45;
+  const yoke = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.3, 2 * cz + 0.4), galv); yoke.position.y = -1.0; trolley.add(yoke);
+  const wheel = new THREE.CylinderGeometry(1.15, 1.15, 0.8, 16); wheel.rotateX(Math.PI / 2);
+  [-1, 1].forEach(s => [-1, 1].forEach(sz => { const w = new THREE.Mesh(wheel, galv); w.position.set(s * 1.7, 2.35, sz * 1.9); trolley.add(w); }));
+  [-1, 1].forEach(sz => { const cheek = new THREE.Mesh(new THREE.BoxGeometry(4.6, 5.2, 0.35), galv); cheek.position.set(0, 1.2, sz * cz); cheek.castShadow = true; trolley.add(cheek); });
   const face = Math.atan2(x, 140 + z);
+  // the load first: how far down it reaches (its foot, or its tag hung
+  // below it) sets the chain, so the loads hang low and high by turns
+  const L = buildLoad(kit, kind, rnd), ts = LOAD.tag / LOAD.s;
+  L.group.scale.setScalar(LOAD.s);
+  const reach = Math.max(-L.foot, -(L.ring.y - 12.2 * ts)) * LOAD.s;
+  const n = THREE.MathUtils.clamp(Math.round((RAIL.y - 2.4 - 7.24 - reach - (low ? LOAD.low : LOAD.high)) / RAIL.link), 2, 12);
   const hang = new THREE.Group(); hang.rotation.y = face + Math.PI / 2; pivot.add(hang);
-  const n = 2 + Math.floor(rnd() * 4);
   buildChain(steel, n, RAIL.link, 0, -2.4, 0, hang);
   const y0 = -2.4 - n * RAIL.link;
   const pts = [V(0, y0 + 1, 0), V(0, y0 - 1.5, 0), V(1.6, y0 - 3.2, 0), V(2.6, y0 - 1.6, 0), V(1.4, y0 - 0.4, 0), V(0.2, y0 - 2.2, 0), V(-1.2, y0 - 4.6, 0), V(-2.4, y0 - 6.2, 0), V(-1.2, y0 - 7.6, 0), V(0.6, y0 - 6.6, 0)];
-  const hook = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 48, 0.42, 8, false), K.polishedOf(steel, 0.35));
+  const hook = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 48, 0.42, 8, false), kit.ironBright);
   hook.castShadow = true; hang.add(hook);
   // the load, its loop over the hook's lower bend
-  const L = buildLoad(kit, kind, rnd);
   L.group.position.copy(V(-1.3, y0 - 7.24, 0).applyAxisAngle(V(0, 1, 0), face + Math.PI / 2));
   L.group.rotation.y = face + (rnd() - 0.5) * 0.3;
   pivot.add(L.group);
@@ -963,11 +1023,12 @@ function buildHook(set, kit, card, t, kind, rnd) {
   // edge on the ring's bottom), leaning out where the load bulges,
   // turned square to the seat
   const tagHang = new THREE.Group();
-  tagHang.position.copy(L.ring); tagHang.rotation.set(L.lean, face - L.group.rotation.y + (rnd() - 0.5) * 0.14, L.roll, 'YXZ');
+  tagHang.position.copy(L.ring); tagHang.rotation.set(L.lean, face - L.group.rotation.y + (rnd() - 0.5) * 0.14, L.roll, 'YXZ'); tagHang.scale.setScalar(ts);
   const ring = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.11, 6, 20), kit.wire);
   ring.position.y = -0.85; ring.rotation.y = Math.PI / 2; tagHang.add(ring);
   const art = tagArt(card, false), normalMap = embossTex(art.height, 2.6, 1);
-  const faceMat = new THREE.MeshStandardMaterial({ map: asTex(art.color), normalMap, metalness: 0.85, roughness: 0.34 });
+  const faceMat = new THREE.MeshStandardMaterial({ map: asTex(art.color), normalMap, metalness: 0.85, roughness: 0.3 });
+  faceMat.normalScale.set(1.4, 1.4);
   const plate = new THREE.Mesh(tagGeo(), [faceMat, set.brass]);
   plate.position.y = -(1.59 + TAG.hole) - (TAG.h * 2 / 3 - TAG.holeY); plate.castShadow = true; plate.receiveShadow = true;
   tagHang.add(plate); L.group.add(tagHang);
@@ -1067,7 +1128,7 @@ function cowlTex() {
   return K.canvasTex(512, 512, (g, W, H) => {
     const rnd = seeded(23);
     const base = g.createLinearGradient(0, 0, 0, H);
-    base.addColorStop(0, '#b4501e'); base.addColorStop(0.55, '#9a3a14'); base.addColorStop(1, '#6e2a10');
+    base.addColorStop(0, '#8a3c18'); base.addColorStop(0.55, '#70300f'); base.addColorStop(1, '#4a1d0a');
     g.fillStyle = base; g.fillRect(0, 0, W, H);
     // the moulding's fine orange-peel, and the sun's fade in blotches
     for (let i = 0; i < 9000; i++) { const v = rnd(); g.fillStyle = v > 0.5 ? `rgba(255,190,140,${((v - 0.5) * 0.08).toFixed(3)})` : `rgba(40,10,0,${((0.5 - v) * 0.1).toFixed(3)})`; g.fillRect(rnd() * W, rnd() * H, 1 + rnd() * 2, 1 + rnd() * 2); }
@@ -1284,9 +1345,11 @@ function buildSlateBody() {
 // The sign carries three things, big enough to read from the seat on a
 // phone: the clock, what is ready, and the hand to deal. (Laid out to the
 // pixel as the page's own slate is - app.css, .r3w-* - each line placed by
-// its baseline: top = baseline - 0.8 of its size.) Brush paint over the
+// its baseline: top = baseline - 0.8 of its size; the labels painted
+// larger than the page's, at label, to read from the seat - and READY
+// carries the hand's worth.) Brush paint over the
 // scrap's own weathered Burnished Slate: runs under the strokes, chipped.
-const SL = { x: 70, rx: 1250, eyebrowY: 110, eyebrow: 48, numY: 600, now: 380, ampm: 60, ready: 460, runY: 790, runH: 240, run: 112 };
+const SL = { x: 70, rx: 1250, eyebrowY: 110, eyebrow: 48, numY: 600, now: 380, ampm: 60, ready: 460, runY: 790, runH: 240, run: 112, label: 74 };
 let slateBack = null, slateLayer = null;
 function slateBackOf(W, H) {
   if (slateBack && slateBack.width === W) return slateBack;
@@ -1295,8 +1358,6 @@ function slateBackOf(W, H) {
   g.fillStyle = '#4a443e'; g.fillRect(0, 0, W, H);
   for (let i = 0; i < 40; i++) { const x = rnd() * W, y = rnd() * H, r = 60 + rnd() * 260, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(180,172,160,${(0.04 + rnd() * 0.07).toFixed(3)})`); gr.addColorStop(1, 'rgba(180,172,160,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, 2 * r, 2 * r); }
   for (let i = 0; i < 9000; i++) { const v = rnd(); g.fillStyle = v > 0.5 ? `rgba(210,200,185,${((v - 0.5) * 0.12).toFixed(3)})` : `rgba(0,0,0,${((0.5 - v) * 0.16).toFixed(3)})`; g.fillRect(rnd() * W, rnd() * H, 2, 2); }
-  // the stencil it carried before, ghosting through
-  g.save(); g.globalAlpha = 0.07; g.fillStyle = '#e8e0cc'; g.font = `600 ${H * 0.62}px Oswald, Impact, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('BAY 7', W * 0.52, H * 0.5); g.restore();
   // rust at the cut and round the screw holes, run down
   const k = W / 66;
   for (let i = 0; i < 4; i++) { const t = 18 + i * 10; g.strokeStyle = `rgba(${120 - i * 10},${56 - i * 4},22,${(0.5 - i * 0.1).toFixed(2)})`; g.lineWidth = t; g.strokeRect(0, 0, W, H); }
@@ -1336,13 +1397,13 @@ function drawSlate(g, W, H, v) {
     }
   };
   const cream = '#ece4d2', dim = 'rgba(236,228,210,0.8)', red = '#d0393f', yellow = '#e4b52a';
-  paint('THE FLOOR', P(SL.x), P(SL.eyebrowY), `${P(SL.eyebrow)}px "Special Elite", monospace`, dim);
+  paint('THE FLOOR', P(SL.x), P(SL.eyebrowY), `${P(SL.label)}px "Special Elite", monospace`, dim);
   const nowFont = `600 ${P(SL.now)}px Oswald, Impact, sans-serif`;
   paint(v.now, P(SL.x), P(SL.numY), nowFont, cream);
   L.font = nowFont; const nowW = L.measureText(v.now).width;
   runs(P(SL.x), P(SL.x) + nowW, P(SL.numY), cream, 5, 70);
   paint(v.ampm, P(SL.x) + nowW + P(14), P(SL.numY), `${P(SL.ampm)}px "Special Elite", monospace`, dim);
-  paint('READY', P(SL.rx), P(SL.eyebrowY), `${P(SL.eyebrow)}px "Special Elite", monospace`, red);
+  paint(v.value > 0 ? `READY \u00b7 ~$${v.value.toFixed(2)}` : 'READY', P(SL.rx), P(SL.eyebrowY), `${P(SL.label)}px "Special Elite", monospace`, red);
   const readyFont = `600 ${P(SL.ready)}px Oswald, Impact, sans-serif`;
   paint(v.ready, P(SL.rx), P(SL.numY), readyFont, cream);
   L.font = readyFont; runs(P(SL.rx), P(SL.rx) + L.measureText(v.ready).width, P(SL.numY), cream, 3, 70);
@@ -1365,12 +1426,13 @@ function drawSlate(g, W, H, v) {
   L.globalCompositeOperation = 'source-over';
   g.drawImage(slateLayer, 0, 0);
 }
-// The barn light over the sign: an enamelled RLM shade on a gooseneck out
-// of the wall, aimed down at it.
+// The barn light over the sign: a galvanised RLM shade on a gooseneck out
+// of the wall, aimed down at it, its bulb up inside the dome.
 function buildBarnLight() {
   const g = new THREE.Group();
   const [x, y, z] = BARN.at;
-  const enamel = new THREE.MeshPhysicalMaterial({ color: 0x1d3328, roughness: 0.35, clearcoat: 0.6, clearcoatRoughness: 0.3, metalness: 0.1 });
+  const enamel = new THREE.MeshStandardMaterial({ color: 0x9a9890, roughness: 0.42, metalness: 0.65 });
+  K.finished(enamel, 'blast', 2, 2, 0.12);
   const pipe = steelMat(0x2a2622, 0.5);
   const aim = V(...BARN.aim).sub(V(x, y, z)).normalize();
   // the gooseneck: out of a wall plate, up and over to the shade's neck
@@ -1385,10 +1447,10 @@ function buildBarnLight() {
   outer.castShadow = true; shade.add(outer);
   const lining = new THREE.Mesh(new THREE.LatheGeometry([[9.7, -0.85], [6.3, 0.5], [3.0, 1.6], [1.4, 2.6]].map(([r, h]) => new THREE.Vector2(r, h)), 40), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 1.2, 0.85), side: THREE.BackSide }));
   shade.add(lining);
-  const bulb = new THREE.Mesh(new THREE.SphereGeometry(1.8, 16, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color(3.2, 2.5, 1.6) })); bulb.position.y = 0.4; shade.add(bulb);
-  const light = new THREE.SpotLight(0xffd6a0, 0, 0, 0.62, 0.55, 0);
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color(3.2, 2.5, 1.6) })); bulb.position.y = 1.9; shade.add(bulb);
+  const light = new THREE.SpotLight(0xffd6a0, 0, 0, 0.5, 0.55, 0);
   light.position.set(x, y - 1, z); light.target.position.set(...BARN.aim);
-  light.castShadow = true; light.shadow.mapSize.set(512, 512); light.shadow.camera.near = 8; light.shadow.camera.far = 90; light.shadow.bias = -0.0008; light.shadow.normalBias = 0.03; light.shadow.radius = 3;
+  light.castShadow = true; light.shadow.mapSize.set(512, 512); light.shadow.camera.near = 20; light.shadow.camera.far = 120; light.shadow.bias = -0.0008; light.shadow.normalBias = 0.03; light.shadow.radius = 3;
   g.add(light, light.target);
   return { group: g, light, lining, bulb };
 }
@@ -1423,10 +1485,15 @@ export async function prepareTable(opts) {
   }
   if (document.fonts && document.fonts.load) await Promise.all(['700 92px Oswald', '600 92px Oswald', '30px "Special Elite"', '400 40px "Pinyon Script"', '400 40px Rye'].map(f => document.fonts.load(f).catch(() => {})));
 
-  seat.add(buildFloorAndWall());
+  seat.add(await buildFloorAndWall());
+  await breathe();
+  const croc = surfaceTex(crocSurface(), 2.2, 1, true);
+  await breathe();
+  const pine = surfaceTex(pineSurface(), 1.6, 1, true);
+  await breathe();
   const benchMats = {
-    croc: new THREE.MeshStandardMaterial(Object.assign(surfaceTex(crocSurface(), 2.2, 1, true), { roughness: 1, metalness: 0.62, envMapIntensity: 1.1 })),
-    pine: new THREE.MeshStandardMaterial(Object.assign(surfaceTex(pineSurface(), 1.6, 1, true), { roughness: 1, metalness: 0 })),
+    croc: new THREE.MeshStandardMaterial(Object.assign(croc, { roughness: 1, metalness: 0.62, envMapIntensity: 1.1 })),
+    pine: new THREE.MeshStandardMaterial(Object.assign(pine, { roughness: 1, metalness: 0 })),
     nail: (() => { const m = K.polishedOf(set.brass, 0.3); m.color = m.color.clone().multiplyScalar(0.62); return m; })()
   };
   seat.add(buildBench(benchMats, { w: BENCH.w, d: BENCH.d, z0: BENCH.z0, top: 0, cush: BENCH.cush, apron: BENCH.apron, legs: BENCH.legs }));
@@ -1436,6 +1503,11 @@ export async function prepareTable(opts) {
   seat.add(lamp.group);
   const barn = buildBarnLight();
   seat.add(barn.group);
+  // a fill from where you sit, low and soft: the room's own bounce, so
+  // what faces you is not lost to black under the key light
+  const fill = new THREE.SpotLight(0xffdcb8, 0, 0, 0.6, 0.85, 0);
+  fill.position.set(0, 50, -150); fill.target.position.set(0, 50, 40);
+  seat.add(fill, fill.target);
   const run = buildRunChain();
   seat.add(run.group);
   seat.add(buildSaw());
@@ -1453,14 +1525,15 @@ export async function prepareTable(opts) {
   const cards = hand.length ? hand : K.demoHand().slice(0, 6);
   cards.forEach(c => { c.initials = K.initials(c.name); c.spent = c.remaining > 0; });
   const rnd = seeded(41);
-  const kit = loadKit(set);
+  const kit = await loadKit(set);
   const hooksG = new THREE.Group();
   const pivots = [];
-  cards.forEach((c, i) => {
-    const t = cards.length > 1 ? lerp(RAIL.t0, RAIL.t1, i / (cards.length - 1)) : (RAIL.t0 + RAIL.t1) / 2;
-    const p = buildHook(set, kit, c, t, LOADS[i % LOADS.length], rnd);
+  for (let i = 0; i < cards.length; i++) {
+    const c = cards[i], t = cards.length > 1 ? lerp(RAIL.t0, RAIL.t1, i / (cards.length - 1)) : (RAIL.t0 + RAIL.t1) / 2;
+    const p = buildHook(set, kit, c, t, LOADS[i % LOADS.length], rnd, i % 2 === 1);
     pivots.push(p); hooksG.add(p);
-  });
+    await breathe();
+  }
   seat.add(hooksG);
   seat.add(buildSpatter(pivots.map(p => [p.position.x, p.position.z])));
   const pivotOf = id => pivots.find(p => p.userData.tag.userData.id === id);
@@ -1469,7 +1542,7 @@ export async function prepareTable(opts) {
     const t = p.userData.tag.userData;
     if (spent && !t.spentTex) t.spentTex = asTex(tagArt(t.card, true).color);
     const m = t.plate.material[0];
-    m.map = spent ? t.spentTex : t.liveTex; m.roughness = spent ? 0.62 : 0.34; m.needsUpdate = true;
+    m.map = spent ? t.spentTex : t.liveTex; m.roughness = spent ? 0.6 : 0.3; m.metalness = spent ? 0.45 : 0.85; m.needsUpdate = true;
   };
   cards.forEach(c => { if (c.spent) setSpent(c.id, true); });
 
@@ -1481,6 +1554,7 @@ export async function prepareTable(opts) {
     lamp.light.intensity = 6.5 * k;
     lamp.lining.material.color.setRGB(1.9 * k + 0.05, 1.3 * k + 0.04, 0.5 * k + 0.02);
     barn.light.intensity = 3.2 * k;
+    fill.intensity = 0.85 * k;
     barn.lining.material.color.setRGB(1.5 * k + 0.04, 1.2 * k + 0.03, 0.85 * k + 0.02);
     barn.bulb.material.color.setRGB(3.2 * k + 0.1, 2.5 * k + 0.08, 1.6 * k + 0.05);
     return k;
@@ -1621,9 +1695,9 @@ export async function prepareTable(opts) {
     // hanging in front of it cover it as they should (the page's own slate
     // lies over it unseen, for the taps, the keyboard and screen readers):
     // redrawn when what it says changes.
-    let slateKey = '';
+    let slateKey = '', slateValue = 0;
     function printSlate() {
-      slateBody.userData.print.draw({ now: q('.r3w-now').textContent, ampm: q('.r3w-ampm').textContent, ready: q('.r3w-ready').textContent });
+      slateBody.userData.print.draw({ now: q('.r3w-now').textContent, ampm: q('.r3w-ampm').textContent, ready: q('.r3w-ready').textContent, value: slateValue });
     }
     const tick = () => {
       const d = new Date();
@@ -1633,7 +1707,8 @@ export async function prepareTable(opts) {
       put(q('.r3w-ampm'), hh < 12 ? 'AM' : 'PM');
       const st = (hand.length && hooks.status && hooks.status()) || sample();
       put(q('.r3w-ready'), String(st.ready));
-      const key = `${hm}|${hh < 12 ? 'AM' : 'PM'}|${st.ready}`;
+      slateValue = st.value || 0;
+      const key = `${hm}|${hh < 12 ? 'AM' : 'PM'}|${st.ready}|${slateValue.toFixed(2)}`;
       if (key !== slateKey) { slateKey = key; printSlate(); spentChanged = true; }
       phoneEl.querySelectorAll('.r3t-ph-clock, .r3t-ph-big').forEach(n => put(n, hm));
       put(phoneEl.querySelector('.r3t-ph-day'), d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }));
@@ -1693,7 +1768,7 @@ export async function prepareTable(opts) {
       pw.addScaledVector(V(0, 1, 0).applyQuaternion(camera.quaternion), Math.sin(Math.PI * k) * 3);
       flipQ.setFromAxisAngle(V(0, 1, 0), Math.PI * (1 - smoother(clamp01((k - 0.15) / 0.7))));
       qw.copy(_q1).multiply(flipQ);
-      const tagPx = TAG.h / K.CARD.h;
+      const tagPx = TAG.h * LOAD.tag / K.CARD.h;
       const sc = lerp(tagPx, 1, smoother(k)) / K.CARD.px;
       seatQi.copy(seat.quaternion).invert();
       cardObj.position.copy(pw); seat.worldToLocal(cardObj.position);
