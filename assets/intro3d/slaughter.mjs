@@ -819,6 +819,14 @@ export async function prepareTable(opts) {
     const put = (el, v) => { if (el && el.textContent !== v) el.textContent = v; };
     const sample = () => ({ ready: cards.length, value: cards.reduce((t, c) => t + (c.ev || 0), 0), next: null, done: 0 });
     let spentChanged = false;
+    // The slate's chalk is drawn on the board itself, so the hooks' chains
+    // hanging in front of it cover it as they should (the page's own slate
+    // lies over it unseen, for the taps, the keyboard and screen readers):
+    // redrawn when what it says changes.
+    let slateKey = '';
+    function printSlate() {
+      slateBody.userData.print.draw({ now: q('.r3w-now').textContent, ampm: q('.r3w-ampm').textContent, ready: q('.r3w-ready').textContent });
+    }
     const tick = () => {
       const d = new Date();
       const hh = d.getHours(), mm = d.getMinutes();
@@ -827,6 +835,8 @@ export async function prepareTable(opts) {
       put(q('.r3w-ampm'), hh < 12 ? 'AM' : 'PM');
       const st = (hand.length && hooks.status && hooks.status()) || sample();
       put(q('.r3w-ready'), String(st.ready));
+      const key = `${hm}|${hh < 12 ? 'AM' : 'PM'}|${st.ready}`;
+      if (key !== slateKey) { slateKey = key; printSlate(); spentChanged = true; }
       phoneEl.querySelectorAll('.r3t-ph-clock, .r3t-ph-big').forEach(n => put(n, hm));
       put(phoneEl.querySelector('.r3t-ph-day'), d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }));
       put(phoneEl.querySelector('.r3t-ph-ready'), `${st.ready} ready${st.value > 0 ? ` · ~$${st.value.toFixed(2)}` : ''}`);
@@ -969,9 +979,8 @@ export async function prepareTable(opts) {
       if (!fo.reduced && swingT0 < 0 && tt >= FLY - 0.4) { swingT0 = tt; pivots.forEach(p => { p.userData.amp = 0.7 + Math.random() * 0.6; }); }
       pivots.forEach(p => swing(p, tt));
       poseCard(tt);
-      // (on the way in, the slate is print on the board; on the stool it is
-      // the page's own)
-      slateBody.userData.print.mesh.visible = tt < FLY;
+      // (the slate is print on the board all the way; on the stool the
+      // page's own, unseen, lies over it for the taps)
       slateEl.style.visibility = tt < FLY ? 'hidden' : '';
       const stg = world.canvas.parentElement;
       if (stg && stg.classList.contains('r3t-focus') !== !!(cardId && liftTo)) stg.classList.toggle('r3t-focus', !!(cardId && liftTo));
@@ -1078,10 +1087,6 @@ export async function prepareTable(opts) {
 
     tick();
     const clock = setInterval(tick, 1000);
-    const printSlate = () => slateBody.userData.print.draw({
-      now: q('.r3w-now').textContent, ampm: q('.r3w-ampm').textContent, ready: q('.r3w-ready').textContent
-    });
-    printSlate();
     update(0);
     if (fo.manual) world.rest(draw);
     else { draw(); running = true; raf = requestAnimationFrame(loop); }

@@ -65,7 +65,9 @@ const LAMP = { at: [-50, 0, 60], shade: [-43, 41, 51], aim: [-2, 0, 32] };
 // the orrery (on the leather, under the arms, looking up and in).
 // (upright, the lens is wide - the desk from the ledger to the dome's top
 // has to fit a narrow screen; on its side, the natural one)
-const VIEW = [{ eye: [0, 72, -46], aim: [0, 8, 29], fov: 64 }, { eye: [0, 54, -40], aim: [0, 10, 32], fov: 44 }];
+// (on a phone held upright, a little nearer: the frame ends at the desk's
+// edge, not on the floor past it)
+const VIEW = [{ eye: [0, 70, -38], aim: [0, 9, 30], fov: 64 }, { eye: [0, 54, -40], aim: [0, 10, 32], fov: 44 }];
 const INSIDE = { eye: [8, 2, 31], aim: [-3, 21, 49], fov: 74, scale: 0.085 };
 // The shot's timings (seconds), the dive's, and the crank's.
 const T = { fly: 4.8, uiIn: 0.6, wake: 2.9, dive: 3.6, lift: 0.55 };
@@ -319,7 +321,9 @@ function drawPages(g, W, H, v) {
   txt(v.ampm, L + g.measureText(v.now).width + P(14), P(300), `500 ${P(28)}px Cinzel, Georgia, serif`, '#6d5530');
   const line = (y, a, b) => {
     txt(a, L, y, `italic 500 ${P(36)}px "Cormorant Garamond", Georgia, serif`, '#5d4f3a');
-    txt(b, mid, y, `500 ${P(30)}px "IBM Plex Mono", ui-monospace, monospace`, '#2b241a', 'right');
+    // (figures in the mono; a readout in words in the ledger's hand)
+    const font = /\d/.test(b) ? `500 ${P(30)}px "IBM Plex Mono", ui-monospace, monospace` : `italic 600 ${P(36)}px "Cormorant Garamond", Georgia, serif`;
+    txt(b, mid, y, font, '#2b241a', 'right');
     g.fillStyle = 'rgba(90,70,40,0.35)'; for (let x = L; x < mid; x += P(6)) g.fillRect(x, y + P(10), P(2), P(1.4));
   };
   line(P(420), 'Next ready', v.next);
@@ -338,7 +342,9 @@ function drawPages(g, W, H, v) {
   g.strokeStyle = '#8c6a3a'; g.lineWidth = P(2); g.strokeRect(bx, by, bw, bh);
   txt('Deal your hand', bx + P(30), by + bh / 2 + P(12), `700 ${P(32)}px Cinzel, Georgia, serif`, '#1c1812');
   txt('\u203a', bx + bw - P(30), by + bh / 2 + P(16), `700 ${P(50)}px Cinzel, Georgia, serif`, '#1c1812', 'right');
-  txt('Tap a planet for its card \u00b7 drag to turn the orrery', R, H - P(70), `italic 500 ${P(28)}px "Cormorant Garamond", Georgia, serif`, '#7d6d55');
+  // (two lines, as the page's own text wraps: one is wider than the page)
+  txt('Tap a planet for its card \u00b7', R, H - P(88), `italic 500 ${P(28)}px "Cormorant Garamond", Georgia, serif`, '#7d6d55');
+  txt('drag to turn the orrery', R, H - P(56), `italic 500 ${P(28)}px "Cormorant Garamond", Georgia, serif`, '#7d6d55');
 }
 function ledgerHTML() {
   return `<div class="r3s-ledger-in">
@@ -579,6 +585,7 @@ export async function prepareTable(opts) {
       put(q('.r3s-ready'), String(st.ready));
       put(q('.r3s-value'), st.value > 0 ? `about $${st.value.toFixed(2)} in sweeps coins` : '');
       put(q('.r3s-next'), st.next ? K.fmtLeft(st.next) : 'All caught up');
+      q('.r3s-next').classList.toggle('r3s-word', !st.next);
       put(q('.r3s-done'), String(st.done));
       phoneEl.querySelectorAll('.r3t-ph-clock, .r3t-ph-big').forEach(n => put(n, hm));
       put(phoneEl.querySelector('.r3t-ph-day'), d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }));

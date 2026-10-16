@@ -108,7 +108,8 @@ function planetTex(p) {
       g.fillRect(0, y, w, 1);
     }
     const txt = (p.initials || '?').slice(0, 2);
-    g.font = '600 64px Cinzel, Georgia, serif';
+    // (big enough to read from the chair: a planet is small in the frame)
+    g.font = '700 104px Cinzel, Georgia, serif';
     g.textAlign = 'center'; g.textBaseline = 'middle';
     // (a painted letter: a hair of shadow where the paint stands proud)
     g.fillStyle = 'rgba(0,0,0,0.35)';

@@ -133,18 +133,20 @@ const VIEW = [{ eye: [0, 47, -86], aim: [0, 9.5, 2], fov: 66 }, { eye: [0, 44, -
 // (the snow across the lens) and where you stop, and the spirit far off.
 const SIGNAL = { at: [0, -60000, 0], spiritZ: 2600, spiritY: 300, spiritH: 1500, stopZ: 900 };
 // The channels there: a column 800 in front of where you stop, low in the
-// frame under the spirit's face.
-const CHAN = { w: 300, z: 1700, y0: -40, step: 84, x: 70 };
+// frame under the spirit's face (stepped so all six clear the foot of a
+// phone-shaped frame).
+const CHAN = { w: 300, z: 1700, y0: -30, step: 64, x: 70 };
 // The vigil lights: [x, z] on the cloth, and the cup (radius at the foot
 // and the rim, height); the votive's top sits `wax` above the cup's floor.
 const CUPS = [[14, -11], [18, -25], [4, -33], [-12, -30], [-19, -15]];
 const CUP = { r0: 2.45, r1: 2.8, h: 7.2, wax: 3.6, foot: 0.7 };
 // The snuffer at rest on the cloth (x, z, its yaw), and its rod's length.
 const SNUFF = { at: [11, -43], yaw: 0, rod: 27 };
-// The picture's layout, in canvas pixels (960 x 720): the header, four
-// listings, the buttons at the foot. The page's own buttons lie over the
-// same places (see .r3d-screen in the stylesheet).
-const GUIDE = { W: 960, H: 720, head: 100, row0: 108, rowH: 118, foot: 596, footH: 112, padX: 44 };
+// The picture's layout, in canvas pixels (960 x 720): the header, the
+// listings (ROWS of them, sharing the band between the header and the
+// foot), the buttons at the foot. The page's own buttons lie over the same
+// places (see .r3d-screen in the stylesheet).
+const GUIDE = { W: 960, H: 720, head: 100, row0: 108, rowH: 0, foot: 596, footH: 112, padX: 44 };
 // The shot's timings (seconds): the glide in, the set tuning in, leaning
 // in and sitting back, a card's lift; and the way through, in its own
 // seconds - the snuffer's round, the dial, the lean, the drift - and how
@@ -164,8 +166,13 @@ const CUT = W.cut / W.all;
 // The dial: 13 detents (2 to 13, then U - nothing tuned on it: the dead
 // one), and the channel each listing is on.
 const DETENTS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', 'U'];
-const ROWS = 4;
-const chOf = i => 2 + i * 3;
+// (six listings, as the card table deals six; on 2, 4 ... 12, so every
+// one is a detent on the dial)
+const ROWS = 6;
+const chOf = i => 2 + i * 2;
+GUIDE.rowH = Math.floor((GUIDE.foot - 16 - GUIDE.row0) / ROWS);
+// the listing's type, scaled from the size it was drawn at for a 106px band
+const ROW_K = (GUIDE.rowH - 12) / 106;
 
 // ------------------------------------------------------------ textures
 // Walnut-grain vinyl: long figured grain, a satin face.
@@ -391,20 +398,21 @@ function drawGuide(g, d) {
     g.shadowBlur = 0;
     g.fillStyle = 'rgba(2,7,13,0.74)'; g.fillRect(GUIDE.padX, y, w - GUIDE.padX * 2, bh);
     g.fillStyle = 'rgba(233,228,216,0.13)'; g.fillRect(GUIDE.padX, y, w - GUIDE.padX * 2, 2); g.fillRect(GUIDE.padX, y + bh - 2, w - GUIDE.padX * 2, 2);
-    const mid = y + bh / 2 + 22;
+    const mid = y + bh / 2 + 22 * ROW_K;
+    const px = n => Math.round(n * ROW_K);
     glow('rgba(125,182,240,0.7)', 12); g.fillStyle = '#8cc0f4';
-    g.font = '400 80px VT323, "Courier New", monospace';
+    g.font = `400 ${px(80)}px VT323, "Courier New", monospace`;
     g.fillText(String(r.ch).padStart(2, ' '), GUIDE.padX + 22, mid + 4);
     glow(r.ready ? 'rgba(224,36,47,0.75)' : 'rgba(0,0,0,0)', 12);
     g.fillStyle = r.ready ? '#ff3b45' : 'rgba(233,228,216,0.5)';
-    g.font = '400 62px VT323, "Courier New", monospace';
+    g.font = `400 ${px(62)}px VT323, "Courier New", monospace`;
     g.textAlign = 'right';
     const stW = g.measureText(r.status).width;
     g.fillText(r.status, w - GUIDE.padX - 22, mid);
     g.textAlign = 'left';
     glow('rgba(233,228,216,0.45)', 10); g.fillStyle = '#E9E4D8';
-    g.font = '400 60px "IM Fell English SC", Georgia, serif';
-    g.fillText(fitText(g, r.name, w - GUIDE.padX * 2 - 190 - stW - 40), GUIDE.padX + 150, mid);
+    g.font = `400 ${px(60)}px "IM Fell English SC", Georgia, serif`;
+    g.fillText(fitText(g, r.name, w - GUIDE.padX * 2 - 150 * ROW_K - 40 - stW - 40), GUIDE.padX + 40 + 110 * ROW_K, mid);
   });
   // the foot: the two buttons up close; from the chair, how to come close
   const fy = GUIDE.foot, fh = GUIDE.footH - 10;
