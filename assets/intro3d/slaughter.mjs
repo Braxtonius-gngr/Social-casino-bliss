@@ -9,10 +9,10 @@
 // on its hooks hangs the day's lot - burlap sacks, a satchel, parcels in
 // butcher paper, the leavings that never made it to processing - each
 // with a brass tag wired on: your ready platforms, swinging as you come
-// in. A sodium lamp hangs over the bench; a saw lies on it; the bone die
-// from the fire rests beside it. On the wall behind, under a barn light,
-// a scrap of the wall's own cladding with the clock painted on it, what is
-// ready, and the hand to deal. Off to the right hangs the hoist's chain:
+// in. A sodium lamp hangs over the bench; a saw lies along it; the bone
+// die from the fire rests behind it. Propped against the brick at the back
+// of the bench, under your thumb, a scrap of the wall's own cladding with
+// the clock painted on it, what is ready, and the hand to deal. Off to the right hangs the hoist's chain:
 // today's run is how much of it has gone to ember, from the hook up.
 //
 // Tap a load or its tag: its card comes up off the hook to you, with its
@@ -57,11 +57,11 @@
 //   The chain - the hoist's own: heavy forged links. Today's run is the
 //     chain gone to ember from the hook up, blood red to white-hot at the
 //     head, its glow on the wall behind; the rest black iron.
-//   The sign - a scrap of the cladding cut with snips and screwed up
-//     sideways, its ribs across: an old stencil ghosting through, rust at
-//     the cut, and over it the day in brush paint (Special Elite for the
-//     labels, Oswald for the numbers), runs under the strokes, the hand's
-//     button a box of safety yellow. A gooseneck barn light over it.
+//   The sign - a scrap of the cladding cut with snips, its ribs across,
+//     propped on the bench against the brick: rust at the cut and its old
+//     screw holes, and over it the day in brush paint (Special Elite for
+//     the labels, Oswald for the numbers), runs under the strokes, the
+//     hand's button a box of safety yellow.
 //   The floor and the wall - bare concrete, stained, a drain in it; the
 //     wall aged brick to above the bench, a steel sill, and over it
 //     roll-formed panels in Burnished Slate, ribbed, screwed at the flats,
@@ -97,33 +97,34 @@ const SEAT = { at: [440, 0, 60], yaw: 90 };
 const BENCH = { w: 150, d: 70, z0: -4, cush: 6.5, apron: 9, floor: -82, legs: 8.5 };
 // The bench you sit on, under the camera.
 const PEW = { w: 112, d: 40, z0: -168, top: -36, cush: 8, apron: 7, legs: 6.5 };
-// The rail: from a hanger over the bench's right front corner back to a
-// bracket on the wall, its trolleys a man's height over the bench; the
-// loads hang between t0 and t1 along it.
-const RAIL = { y: 95, from: [-36, -12], to: [44, 82], t0: 0.124, t1: 0.9075, link: 2.7, flange: 5.5 };
+// The rail: overhead, from a hanger over the bench's right front corner
+// back to a bracket on the wall; the loads hang between t0 and t1 along
+// it, above the sign.
+const RAIL = { y: 125, from: [-36, -12], to: [44, 82], t0: 0.124, t1: 0.9075, link: 2.7, flange: 5.5 };
 // The loads: s their scale, tag the tags' (both from the sizes they are
-// built at); their lowest points a little high and low by turns, over
-// the bench, clear of the saw - each tag at the top of its load, so the
-// tags step back down the rail together, in the same light.
-const LOAD = { s: 1.2, tag: 1.12, low: 32, high: 38 };
+// built at); their lowest points a little high and low by turns, clear
+// over the sign - each tag at the top of its load, so the tags step back
+// down the rail together, in the same light.
+const LOAD = { s: 1.2, tag: 1.12, low: 58, high: 64 };
 // The tags: a triangle w x h, corners rounded r, the hole hole across at
 // holeY down from the apex, t thick.
 const TAG = { w: 13, h: 12, r: 1.3, hole: 0.62, holeY: 2.05, t: 0.3 };
 // The lamp, high over the bench (out of the shot), aimed down it.
 const LAMP = { at: [0, 160, 6], aim: [0, 0, 30], top: 262 };
-// The wall: brick to brick, then the cladding; its ribs; the sign on it;
-// the barn light over the sign (above the shot: its light, not the lamp,
-// is what shows); the drain in the floor.
+// The wall: brick to brick, then the cladding; its ribs. The sign: propped
+// on the back of the bench at the right, leaning back (lean) against the
+// brick, under your thumb - at: its middle, its foot on the leather, its
+// top on the brick. The drain in the floor.
 const WALL = { z: 88, w: 520, h: 312, brick: 135 };
 const RIB = { pitch: 30, h: 3.2, top: 2.6, base: 8, minor: 0.42 };
-const SLATE = { at: [0, 141, 84.5], w: 66, h: 40, px: 30, tilt: -1.2 * DEG, phase: 18.3 };
-const BARN = { at: [0, 200, 50], aim: [0, 139, 84] };
+const SLATE = { at: [-22, 17.75, 74.4], lean: 0.49, w: 66, h: 40, px: 30, tilt: -0.8 * DEG, phase: 18.3 };
 const DRAIN = [10, 36];
 // The run's chain: off to the right, down to a hook.
 const CHAIN = { x: -86, z: 28, top: 142, links: 32, link: 3.0 };
-// The saw on the bench, right of the middle; the die left of it.
-const SAW = { at: [-12, 0, 16], yaw: -35 * DEG };
-const DIE = { at: [34, 0, 16], size: 5.2 };
+// The saw along the front of the bench from the left, its bar across
+// toward the right; the die behind it, in front of the sign.
+const SAW = { at: [42, 0, 10], yaw: Math.PI + 0.2 };
+const DIE = { at: [-12, 0, 36], size: 5.2 };
 // The views: the seat, portrait and landscape.
 const VIEW = [{ eye: [0, 80, -140], aim: [0, 67, 40], fov: 60 }, { eye: [0, 78, -160], aim: [0, 72, 40], fov: 52 }];
 const T = { fly: 4.8, uiIn: 0.6, swing: 11, lift: 0.55 };
@@ -1315,8 +1316,8 @@ function buildDie(size) {
 }
 // The sign's body and its paint (the day as the page's own elements show
 // it, painted on the scrap itself for the fly in): a scrap of the wall's
-// cladding, ribs across, cut ragged with snips and screwed to the wall at
-// its corners, a little off true.
+// cladding, ribs across, cut ragged with snips, its old screw holes rusted
+// at the corners; propped against the brick, a little off true.
 function buildSlateBody() {
   const g = new THREE.Group();
   const c = document.createElement('canvas');
@@ -1337,15 +1338,6 @@ function buildSlateBody() {
   K.finished(mat, 'peel', 3, 2, 0.25); mat.roughness = 0.6;
   const face = new THREE.Mesh(corrugatedGeo(SLATE.w, SLATE.h, SLATE.phase, 'y'), mat);
   face.castShadow = true; face.receiveShadow = true; g.add(face);
-  // four roofing screws through it, their washers' rubber gone hard
-  const screw = new THREE.CylinderGeometry(0.62, 0.62, 0.42, 6); screw.rotateX(Math.PI / 2);
-  const washer = new THREE.CylinderGeometry(0.95, 0.95, 0.18, 16); washer.rotateX(Math.PI / 2);
-  const steel = steelMat(0x5a5048, 0.55), rubber = new THREE.MeshStandardMaterial({ color: 0x161412, roughness: 0.9 });
-  [[-1, 1], [1, 1], [-1, -1], [1, -1]].forEach(([sx, sy]) => {
-    const x = sx * (SLATE.w / 2 - 2.4), y = sy * (SLATE.h / 2 - 2.2), z = ribAt(y + SLATE.phase);
-    const w = new THREE.Mesh(washer, rubber); w.position.set(x, y, z + 0.1); g.add(w);
-    const s = new THREE.Mesh(screw, steel); s.position.set(x, y, z + 0.38); s.castShadow = true; g.add(s);
-  });
   g.userData.print = { mesh: face, draw: v => { drawSlate(c.getContext('2d'), c.width, c.height, v); tex.needsUpdate = true; } };
   return g;
 }
@@ -1433,34 +1425,6 @@ function drawSlate(g, W, H, v) {
   L.globalCompositeOperation = 'source-over';
   g.drawImage(slateLayer, 0, 0);
 }
-// The barn light over the sign: a galvanised RLM shade on a gooseneck out
-// of the wall, aimed down at it, its bulb up inside the dome.
-function buildBarnLight() {
-  const g = new THREE.Group();
-  const [x, y, z] = BARN.at;
-  const enamel = new THREE.MeshStandardMaterial({ color: 0x9a9890, roughness: 0.42, metalness: 0.65 });
-  K.finished(enamel, 'blast', 2, 2, 0.12);
-  const pipe = steelMat(0x2a2622, 0.5);
-  const aim = V(...BARN.aim).sub(V(x, y, z)).normalize();
-  // the gooseneck: out of a wall plate, up and over to the shade's neck
-  const neck = V(x, y, z).addScaledVector(aim, -3.2);
-  const wallZ = WALL.z - RIB.h - 0.4;
-  const plate = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.8, 24), pipe); plate.rotation.x = Math.PI / 2; plate.position.set(x, y + 14, wallZ); g.add(plate);
-  const gn = tube([[x, y + 14, wallZ], [x, y + 15.5, wallZ - 8], [x, y + 13, wallZ - 18], [neck.x, neck.y + 3, neck.z + 2], [neck.x, neck.y, neck.z]], 0.75, pipe, 40, 10);
-  gn.castShadow = true; g.add(gn);
-  // the shade: a shallow dome, white inside, the lamp's glow in it
-  const shade = new THREE.Group(); shade.position.set(x, y, z); shade.quaternion.setFromUnitVectors(V(0, -1, 0), aim); g.add(shade);
-  const outer = new THREE.Mesh(new THREE.LatheGeometry([[1.4, 3.6], [1.8, 3.0], [3.2, 2.0], [6.5, 0.8], [9.5, -0.4], [10.2, -0.9], [10.0, -1.1]].map(([r, h]) => new THREE.Vector2(r, h)), 40), enamel);
-  outer.castShadow = true; shade.add(outer);
-  const lining = new THREE.Mesh(new THREE.LatheGeometry([[9.7, -0.85], [6.3, 0.5], [3.0, 1.6], [1.4, 2.6]].map(([r, h]) => new THREE.Vector2(r, h)), 40), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 1.2, 0.85), side: THREE.BackSide }));
-  shade.add(lining);
-  const bulb = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color(3.2, 2.5, 1.6) })); bulb.position.y = 1.9; shade.add(bulb);
-  const light = new THREE.SpotLight(0xffd6a0, 0, 0, 0.5, 0.55, 0);
-  light.position.set(x, y - 1, z); light.target.position.set(...BARN.aim);
-  light.castShadow = true; light.shadow.mapSize.set(512, 512); light.shadow.camera.near = 20; light.shadow.camera.far = 120; light.shadow.bias = -0.0008; light.shadow.normalBias = 0.03; light.shadow.radius = 3;
-  g.add(light, light.target);
-  return { group: g, light, lining, bulb };
-}
 function slateHTML() {
   return `<div class="r3w-slate-in">
     <div class="r3w-eyebrow r3w-a">THE FLOOR</div>
@@ -1508,8 +1472,6 @@ export async function prepareTable(opts) {
   seat.add(buildRail());
   const lamp = buildLamp();
   seat.add(lamp.group);
-  const barn = buildBarnLight();
-  seat.add(barn.group);
   // a fill from where you sit, low and soft: the room's own bounce, so
   // what faces you is not lost to black under the key light
   const fill = new THREE.SpotLight(0xffdcb8, 0, 0, 0.6, 0.85, 0);
@@ -1520,7 +1482,7 @@ export async function prepareTable(opts) {
   seat.add(buildSaw());
   seat.add(buildDie(DIE.size));
   const slateBody = buildSlateBody();
-  slateBody.position.set(...SLATE.at); slateBody.rotation.set(0, Math.PI, SLATE.tilt);
+  slateBody.position.set(...SLATE.at); slateBody.rotation.set(SLATE.lean, Math.PI, SLATE.tilt);
   seat.add(slateBody);
   const cs1 = K.contactShadow(26, 15, 6, 2.2, [], 0.5); cs1.position.set(SAW.at[0], 0.03, SAW.at[2]); cs1.rotation.z = SAW.yaw;
   const cs2 = K.contactShadow(DIE.size, DIE.size, 1, 1.2, [], 0.5); cs2.position.set(DIE.at[0], 0.03, DIE.at[2]);
@@ -1560,10 +1522,7 @@ export async function prepareTable(opts) {
     const k = smoother((performance.now() - lampT0) / 2200);
     lamp.light.intensity = 6.5 * k;
     lamp.lining.material.color.setRGB(1.9 * k + 0.05, 1.3 * k + 0.04, 0.5 * k + 0.02);
-    barn.light.intensity = 3.2 * k;
     fill.intensity = 0.85 * k;
-    barn.lining.material.color.setRGB(1.5 * k + 0.04, 1.2 * k + 0.03, 0.85 * k + 0.02);
-    barn.bulb.material.color.setRGB(3.2 * k + 0.1, 2.5 * k + 0.08, 1.6 * k + 0.05);
     return k;
   };
   lampUp();
@@ -1662,8 +1621,9 @@ export async function prepareTable(opts) {
     slateEl.style.height = `${Math.round(SLATE.h * SLATE.px)}px`;
     slateEl.innerHTML = slateHTML();
     const slateObj = new CSS3DObject(slateEl);
-    slateObj.position.set(SLATE.at[0], SLATE.at[1], SLATE.at[2] - 1.2);
-    slateObj.rotation.set(0, Math.PI, SLATE.tilt);
+    // (a hair in front of the scrap's face, leaning with it)
+    slateObj.position.set(SLATE.at[0], SLATE.at[1] + 1.2 * Math.sin(SLATE.lean), SLATE.at[2] - 1.2 * Math.cos(SLATE.lean));
+    slateObj.rotation.set(SLATE.lean, Math.PI, SLATE.tilt);
     slateObj.scale.setScalar(1 / SLATE.px);
     cssSeat.add(slateObj);
     const cardEl = document.createElement('div');
