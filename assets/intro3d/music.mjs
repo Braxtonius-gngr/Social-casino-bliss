@@ -54,6 +54,9 @@
 // api.mute(on)           silence without stopping the clock
 // api.muted              whether muted
 // api.suspend()/resume() for the page going to the background and back
+// api.bus()              a way in for a room's own sounds: { ctx, node }, a
+//                        gain into the master (so the level and mute carry
+//                        them), or null before the music has a context
 // api.dispose(fade)      stop and release everything, fading down over
 //                        `fade` seconds first (default: a short fade)
 
@@ -265,6 +268,12 @@ export function createMusic(opts = {}) {
       if (!master || !ctx) return;
       master.gain.cancelScheduledValues(0);
       master.gain.setTargetAtTime(muted ? 0 : o.gain, ctx.currentTime, 0.05);
+    },
+    bus() {
+      if (!ctx || !master || disposed) return null;
+      const node = ctx.createGain();
+      node.connect(master);
+      return { ctx, node };
     },
     suspend() { hiddenPause = true; if (ctx && ctx.state === 'running') ctx.suspend().catch(() => {}); },
     resume() { hiddenPause = false; if (ctx && ctx.state === 'suspended') { ctx.resume().catch(() => {}); armUnlock(); } },

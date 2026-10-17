@@ -6327,7 +6327,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           const g = gameFor(id);
           const tier = g ? g.tier : /^demo_S$/.test(id) ? 'S' : cardTier || null;
           if (tier === 'S') rollMusic.lift();
-        }
+        },
+        // A room's own sounds (the slaughter floor's hum, flies and creaks)
+        // go in under the music's level and mute - none with the music off.
+        ambience() { return rollMusic && rollMusic.bus ? rollMusic.bus() : null; }
       };
     }
     // A view from the phone (Freebies, Community) over the table, with a
@@ -7611,13 +7614,14 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // gore treatment (splatter, jagged torn edges, a rougher tearing
       // animation character) lives in assets/app.css.
       // West Texas Gore Fest at Showroom: the slaughter floor as home
-      // (assets/intro3d/slaughter.mjs) - a steel bench under a hoist rail,
-      // the deck's ready platforms hanging from its hooks as brass cattle
-      // tags, the saw on the bench. Wears the muted pairing's palette, set
-      // from it after this object.
+      // (assets/intro3d/slaughter.mjs) - a blood-soaked butcher's block under
+      // a dying tube and a hoist rail, hog sides on its hooks with the deck's
+      // ready platforms as rusted tin tags nailed into them, the cleaver in
+      // the block. Wears the muted pairing's palette, set from it after this
+      // object.
       slaughter: {
         name: 'West Texas Gore Fest',
-        description: 'The gore fest at three levels of show. At Showroom, a throw of the dice, then the slaughter floor as your home: a steel bench under the hoist rail, your platforms on its hooks, the saw on the bench; at Lounge and Quiet, the same fuse and iron with less burning.',
+        description: 'The gore fest at three levels of show. At Showroom, a throw of the dice, then the slaughter floor as your home: a blood-soaked butcher block under a dying tube, hog sides swaying on the hoist rail with your platforms tagged into them; at Lounge and Quiet, the same fuse and iron with less burning.',
         look: 'western',
         table: 'slaughter',
         vars: null,
@@ -9319,7 +9323,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v164';
+    const APP_BUILD = 'almanac-v166';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
