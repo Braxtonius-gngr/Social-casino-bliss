@@ -723,8 +723,8 @@
        is off (then it is the only frame). */
     .landing-screen.roll-rest .roll-intro { display: block; }
     /* The set covers the whole screen while it stands, so a theme's ambient
-       layers under it (Executive's drifting mesh and gold flecks, repainted
-       every frame) are held still rather than drawn unseen - the shot gets
+       layers under it (Executive's gold flecks, repainted every frame,
+       and any body::before a theme draws) are held still rather than drawn unseen - the shot gets
        those frames. Paused, not removed, so nothing jumps on the way in. */
     html:has(.landing-screen.intro-play:not(.hidden)) body::before,
     html:has(.landing-screen.intro-play:not(.hidden)) body::after,
@@ -1519,6 +1519,21 @@
     /* Daily Run mode */
     #dailyRunOverlay { position: fixed; inset: 0; z-index: 300; display: none; flex-direction: column; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent-gold) 10%, transparent), transparent 60%), var(--bg-base); overflow-y: auto; }
     #dailyRunOverlay.open { display: flex; }
+    /* While the run is up it covers the whole screen on an opaque ground, so
+       nothing under it is seen - but the page's own loops kept running under
+       it (the landing's circuit sweep, the loader's sheen, the levels' edge,
+       the room's dust on body), each repainted every frame unseen, and on a
+       phone that painting is taken from the run's (2026-10-18: the run's card
+       and gold buttons blinked out). Held still under it, so the run gets
+       the frames; paused, not removed, so nothing jumps on the way back. */
+    html:has(#dailyRunOverlay.open) body::before,
+    html:has(#dailyRunOverlay.open) body::after,
+    html:has(#dailyRunOverlay.open) body > :not(#dailyRunOverlay),
+    html:has(#dailyRunOverlay.open) body > :not(#dailyRunOverlay)::before,
+    html:has(#dailyRunOverlay.open) body > :not(#dailyRunOverlay)::after,
+    html:has(#dailyRunOverlay.open) body > :not(#dailyRunOverlay) *,
+    html:has(#dailyRunOverlay.open) body > :not(#dailyRunOverlay) *::before,
+    html:has(#dailyRunOverlay.open) body > :not(#dailyRunOverlay) *::after { animation-play-state: paused !important; }
     .run-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-shrink: 0; }
     .run-progress-text { font-family: "Courier New", Courier, monospace; font-weight: 900; font-size: 0.85rem; color: var(--accent-gold); letter-spacing: 0.1em; }
     .btn-exit-run { background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); border-radius: 20px; padding: 6px 14px; font-size: 0.75rem; font-weight: 800; cursor: pointer; }
@@ -4124,8 +4139,8 @@ html[data-motion="off"][data-theme="glitch"] .cooldown-chip { color: #b7c0cc; }
    detail in the edges, and colour only in the gold. No coloured light on
    the ground and no blur behind the cards - the glass-over-glow treatment
    an earlier pass built here was retired 2026-09-28 in favour of the clean
-   room; the ambient mesh it was built to catch is the visualized skin's
-   own now (see below).
+   room; the ambient mesh it was built to catch went too, from both skins
+   (see below).
    ========================================================================== */
 /* Everything this block used to restate for glass panels, the wordmark, and
    text-shadow suppression is now simply what the base looks like (Executive
@@ -4143,8 +4158,8 @@ html[data-motion="off"][data-theme="glitch"] .cooldown-chip { color: #b7c0cc; }
    effects. The room itself is [data-theme="executive"] and both have it:
    the black cards, the poured gold, the podium, the one warm light
    swaying slowly through everything, and a little gold dust. The
-   visualized skin's own effects are [data-skin="refinement"]: the
-   drifting three-tone mesh and the sweep on the gold. Executive Lounge
+   visualized skin's own effect in its pages is [data-skin="refinement"]:
+   the sweep on the gold. Executive Lounge
    is the quiet take, on purpose - and with motion off, both hold
    completely still. */
 
@@ -4212,8 +4227,8 @@ html[data-motion="off"][data-theme="glitch"] .cooldown-chip { color: #b7c0cc; }
    mix-blend-mode: screen is what makes it light rather than a white
    smear: it only ever adds, so the near-black cards take a soft sheen,
    the brushed ground lifts a shade, and white text is untouched. The
-   layer is a pseudo on #main-content, not body - body::before is the
-   visualized skin's mesh and body::after its dust - and it goes with
+   layer is a pseudo on #main-content, not body - body::after is the
+   room's dust - and it goes with
    #main-content: hidden with it under the table, above the sheet's own
    content when a sheet is up (its z-index is then inside #main-content's
    stacking context), under every modal (100+) in the classic home.
@@ -4323,7 +4338,8 @@ html[data-motion="off"][data-theme="executive"] #main-content::after { animation
   top: 0; left: -60%;
   width: 34%; height: 100%;
   background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%);
-  transform: skewX(-20deg);
+  transform: translateX(0) skewX(-20deg);
+  will-change: transform;
   animation: gold-sheen 4.5s linear infinite;
   pointer-events: none;
 }
@@ -4336,10 +4352,15 @@ html[data-motion="off"][data-theme="executive"] #main-content::after { animation
    the "barely appears, pauses, then catches up" effect. linear timing
    keeps the speed constant through the loop point too, so the seam where
    one pass ends and the next begins doesn't have a visible flicker of
-   acceleration the way ease-in-out would give it. */
+   acceleration the way ease-in-out would give it. It travels by transform
+   (from left -60% to 130% of the button: 190% of the button, the streak
+   being 34% of it, is 558.8% of the streak's own width), not by animating
+   `left` - that laid the button out and painted it again every frame, and
+   with three on the run screen it fought the run for the phone's paint
+   (2026-10-18). */
 @keyframes gold-sheen {
-  0% { left: -60%; }
-  100% { left: 130%; }
+  0% { transform: translateX(0) skewX(-20deg); }
+  100% { transform: translateX(558.8%) skewX(-20deg); }
 }
 /* Global animation kill switch (html[data-motion="off"] *) already covers
    this - restated per the pattern the rest of this file follows, so an
@@ -4444,94 +4465,36 @@ html[data-motion="off"][data-skin="refinement"] .btn-run-collect::after { animat
    cyan flare - restraint extends to motion, not just colour. */
 [data-theme="executive"] .tour-target-active { animation: none !important; box-shadow: 0 0 0 2px var(--accent-gold) !important; }
 
-/* Ambient mesh: three soft colour glows behind everything that drift and
-   slowly shift hue. The second thing worth keeping from the retired "Amped"
-   variant - there it completed a drift pass in 14s and a full hue cycle in
-   19s, which read as a lava lamp; here the same three glows take 52s to
-   drift and nearly two minutes to turn through the spectrum, so the room's
-   colour is always changing and never seen to change.
+/* (No ambient mesh. The visualized skin's pages once had three soft colour
+   glows drifting and turning through the spectrum behind everything -
+   body::before, .landing-screen::before and #dailyRunOverlay::before. Its
+   pages are Executive Lounge's room now, exactly (2026-10-18): the mesh
+   was a full-screen layer repainted every frame under a filter, and on a
+   phone it starved the daily run's own painting - the card and its gold
+   buttons blinked out while it ran. The Showroom's effects are the WebGL
+   landing, the table home and the sweep on the gold.) */
 
-   The mesh is the visualized skin's (data-skin="refinement") and only its:
-   Executive Lounge, the muted pairing, is the clean room - black cards on
-   brushed obsidian, no coloured light at all (its ground is
-   THEMES.executive.bodyBg alone). The visualized skin's pages are the same
-   room with this light moving through it.
-
-   Why a pseudo-element and not part of bodyBg: applyTheme() writes
-   body.style.background as an inline SHORTHAND (documented on
-   THEMES.executive.bodyBg in index.html), so any animation on a body
-   background property would be inline-overridden the instant the theme
-   applies. A pseudo-element has no inline style for JS to touch.
-   z-index:-1 paints above the canvas background and below the layer's
-   own content.
-
-   Three copies because three layers each fully occlude whatever is under
-   them: body, .landing-screen (position:fixed;inset:0) and
-   #dailyRunOverlay (same). body::before is position:fixed; the other two
-   are position:absolute inside an already-fixed parent, which covers the
-   parent identically but sidesteps a mobile WebKit bug where fixed inside
-   fixed can fail to paint at all - headless Chromium never reproduces it,
-   a real phone did. */
-[data-skin="refinement"] body::before,
-[data-skin="refinement"] .landing-screen::before,
-[data-skin="refinement"] #dailyRunOverlay::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(55% 48% at 18% 18%, rgba(212,175,55,0.26) 0%, transparent 65%),
-    radial-gradient(52% 45% at 85% 78%, rgba(63,191,143,0.20) 0%, transparent 66%),
-    radial-gradient(48% 40% at 88% 12%, rgba(79,216,232,0.14) 0%, transparent 64%);
-  background-size: 220% 220%;
-  background-position: 5% 10%, 95% 90%, 92% 8%;
-  animation: exec-mesh-drift 52s ease-in-out infinite, exec-mesh-hue 110s linear infinite;
-}
-[data-skin="refinement"] .landing-screen::before,
-[data-skin="refinement"] #dailyRunOverlay::before {
-  position: absolute;
-}
-/* Each glow relocates across about a third of the screen and back. The
-   amplitude is Amped's; only the clock changed - at this speed the motion
-   is well under what a glance registers, and is only ever caught by
-   looking away and back. Distinct values at 0/50/100 so nothing holds. */
-@keyframes exec-mesh-drift {
-  0% { background-position: 5% 10%, 95% 90%, 92% 8%; }
-  50% { background-position: 45% 55%, 55% 40%, 40% 60%; }
-  100% { background-position: 5% 10%, 95% 90%, 92% 8%; }
-}
-@keyframes exec-mesh-hue {
-  0% { filter: hue-rotate(0deg); }
-  100% { filter: hue-rotate(360deg); }
-}
-
-/* Gold dust. A sparse field of tiny warm points sitting in front of the
-   mesh, drifting on the mesh's own 52s clock and along the same general
-   vector so it reads as motes suspended in that light rather than a
-   separate effect layered on. The shimmer - individual flecks brightening
+/* Gold dust. A sparse field of tiny warm points over the ground, drifting
+   on a slow 52s clock so it reads as motes suspended in the room's light
+   rather than a separate effect layered on. The shimmer - individual flecks brightening
    and fading rather than the whole field pulsing - comes from a mask:
    two tiled fields of soft blobs slide across the dots at their own
    speeds, and a dot is only visible while a blob is over it. Two mask
    layers at unrelated tile sizes (300 vs 470px) is what stops the fades
    from ever falling into a visible rhythm.
 
-   The dots are on the mesh's ::after, not folded into its ::before, so
-   the hue-rotate never touches them - the point is that the flecks stay
-   gold while the light behind them wanders. Not applied to the landing
-   screen: .landing-screen::after already carries the base grain texture,
-   and stacking a second effect there would need a real element, not a
-   pseudo. The landing keeps the mesh only.
+   Not applied to the landing screen: .landing-screen::after already
+   carries the base grain texture, and stacking a second effect there would
+   need a real element, not a pseudo.
 
    Cost: one full-screen layer repainting on animation frames (background-
-   and mask-position are paint properties, not compositor ones) - the same
-   class of cost as the mesh itself, and the two together are still less
+   and mask-position are paint properties, not compositor ones) - less
    than Amped's total, which also spun a ring, pulsed every badge and
    button, and shimmered the wordmark. If it ever has to be clawed back on
-   low-end hardware, drop this layer before touching the mesh.
+   low-end hardware, this is the layer to drop.
 
-   The dust is both skins' - it is part of the room, not of the mesh -
-   and it is a little brighter than it first shipped (2026-09-28): the
+   The dust is both skins' - it is part of the room - and it is a little
+   brighter than it first shipped (2026-09-28): the
    flecks a touch larger and fuller, and the mask's solid core wider so
    more of them are lit at any moment. Still sparse; still gold. */
 [data-theme="executive"] body::after,
@@ -4572,9 +4535,8 @@ html[data-motion="off"][data-skin="refinement"] .btn-run-collect::after { animat
 [data-theme="executive"] #dailyRunOverlay::after {
   position: absolute;
 }
-/* Same clock and the same lower-right heading as the mesh's dominant gold
-   glow, at a fraction of the distance - the dust moves with the light,
-   the light doesn't move with the dust. Large tiles move a little further
+/* A slow lower-right heading, a short way - the dust moves with the
+   room's light, the light doesn't move with the dust. Large tiles move a little further
    than small ones, which reads as depth. */
 @keyframes exec-fleck-drift {
   0% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
@@ -4589,14 +4551,10 @@ html[data-motion="off"][data-skin="refinement"] .btn-run-collect::after { animat
   0% { -webkit-mask-position: 0 0, 0 0; mask-position: 0 0, 0 0; }
   100% { -webkit-mask-position: 300px 300px, -470px 470px; mask-position: 300px 300px, -470px 470px; }
 }
-html[data-motion="off"][data-skin="refinement"] body::before,
-html[data-motion="off"][data-skin="refinement"] .landing-screen::before,
-html[data-motion="off"][data-skin="refinement"] #dailyRunOverlay::before { animation: none; }
 html[data-motion="off"][data-theme="executive"] body::after,
 html[data-motion="off"][data-theme="executive"] #dailyRunOverlay::after { animation: none; content: none; }
-/* (with motion off, then: the mesh's glows stay where they are, the dust
-   and the swaying light go, and the visualized skin's pages are its muted
-   pairing's held still) */
+/* (with motion off, then: the dust and the swaying light go, and the
+   visualized skin's pages are its muted pairing's held still) */
 
 /* Nav-tab glyphs. Stacked above the label rather than beside it: an inline
    icon adds ~20px per tab, which four tabs cannot afford at 320px, while a
