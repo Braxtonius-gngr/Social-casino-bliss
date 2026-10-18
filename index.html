@@ -32,7 +32,7 @@
         // stored lands on the default here, and getActiveThemeId() does the
         // same for the rest of the app, so the stale key never needs an
         // explicit migration step.
-        var look = { refinement: 'executive', executive: 'executive', prism: 'prism', arcade: 'neon', neon: 'neon', orrery: 'obsidian', obsidian: 'obsidian', glitch: 'glitch', seance: 'glitch', western: 'western', slaughter: 'western' };
+        var look = { refinement: 'executive', executive: 'executive', prism: 'prism', arcade: 'neon', neon: 'neon', orrery: 'obsidian', obsidian: 'obsidian', glitch: 'glitch', seance: 'glitch', western: 'western', slaughter: 'western', burin: 'burin' };
         // Refinement x Realization became the default on 2026-09-28 and
         // everyone was moved onto it once, whatever they had picked - the
         // picker switches back, and the flag keeps that choice from then
@@ -1565,6 +1565,7 @@
   <script src="assets/rooms/neon.js"></script>
   <script src="assets/rooms/glitch.js"></script>
   <script src="assets/rooms/western.js"></script>
+  <script src="assets/rooms/burin.js"></script>
   <!-- Cloud sync (optional, opt-in - see the "Cloud sync" block near the
        end of the inline script below). Loaded from a CDN rather than
        vendored, matching how Google Fonts is already loaded here - this
@@ -7653,6 +7654,40 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         },
         bodyBg: 'radial-gradient(130% 90% at 50% 15%, rgba(196,30,46,0.72) 0%, rgba(90,10,16,0.58) 42%, #0B0B0B 86%), linear-gradient(180deg, #0B0B0B 0%, #050505 100%)',
         metaColor: '#0B0B0B'
+      },
+      // Burin & Brimstone: hell, cut in copper - a white-line engraving
+      // (the ground is the ink, the cuts print as the paper's bone) with
+      // the one wet thing on the plate being blood. Its room is
+      // assets/rooms/burin.js; its Showroom home, the valley, comes with
+      // the visualized skin (brimstone) in a later change.
+      burin: {
+        name: 'Burin & Brimstone',
+        description: 'Hell, cut in copper. Bone line on an inked plate: the plate mark cut round your deck with the day’s run, a breaking wheel catching fire round the ready count, a drop of blood on every collect, and the plate bleeding when a run is done.',
+        vars: {
+          '--bg-base': '#140B08',
+          '--accent-gold': '#E8DCC0',
+          '--accent-gold-hover': '#FFF6E2',
+          '--accent-gold-dim': 'rgba(232, 220, 192, 0.14)',
+          '--accent-green': '#9DB38A',
+          '--accent-green-dim': 'rgba(157, 179, 138, 0.16)',
+          '--accent-pink': '#B81414',
+          '--accent-pink-dim': 'rgba(184, 20, 20, 0.2)',
+          '--accent-orange': '#D2451E',
+          '--accent-orange-dim': 'rgba(210, 69, 30, 0.18)',
+          '--accent-cyan': '#8FA3B0',
+          '--accent-cyan-dim': 'rgba(143, 163, 176, 0.16)',
+          '--glass-border': 'rgba(232, 220, 192, 0.22)',
+          '--glass-highlight': 'rgba(232, 220, 192, 0.08)',
+          '--text-main': '#E8DCC0',
+          '--text-muted': '#A89880',
+          '--text-dim': '#6B5A4E',
+          '--tier-s': '#B81414',
+          '--tier-a': '#E8DCC0',
+          '--tier-b': '#D2451E',
+          '--tier-c': '#8FA3B0'
+        },
+        bodyBg: 'radial-gradient(120% 80% at 50% 10%, rgba(142,14,14,0.16) 0%, transparent 55%), linear-gradient(180deg, #170D09 0%, #140B08 50%, #0F0806 100%)',
+        metaColor: '#140B08'
       }
     };
     // A visualized skin is its pairing's colours; the pairing knows which
@@ -9319,7 +9354,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v167';
+    const APP_BUILD = 'almanac-v168';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
