@@ -5696,7 +5696,11 @@ html[data-motion="off"][data-theme="burin"] .hero-ring-circle { font-size: 2.4re
 /* (its shadow thrown as a woodcut throws one: parallel cuts, no grey) */
 .r3b-card .r3t-card-in::before { content: ""; position: absolute; inset: 0; transform: translate3d(11px, 13px, -1px); border-radius: 6px; background: repeating-linear-gradient(-48deg, #1A0F0C 0 2px, transparent 2px 7px); pointer-events: none; }
 .r3b-card .r3t-frame, .r3b-card .r3t-front:is(.t-S, .t-A, .t-B, .t-C, .t-D) .r3t-frame { inset: 20px; border: 3px solid #1A0F0C; border-radius: 0; opacity: 1; background: none; -webkit-mask: none; mask: none; box-shadow: inset 0 0 0 5px #E3D6B8, inset 0 0 0 6px #1A0F0C; animation: none; }
-.r3b-card .r3t-sheen, .r3b-card .r3t-linen { display: none; }
+.r3b-card .r3t-sheen, .r3b-card .r3t-linen, .r3b-card .r3t-scan, .r3b-card .r3t-front.t-S::before, .r3b-card .r3t-front.t-S::after { display: none; }
+.r3b-card .r3t-front.t-S .r3t-name { color: #8E0E0E; }
+.r3b-card .r3t-front.t-S .r3t-meta, .r3b-card .r3t-front .r3t-meta { color: #1A0F0C; }
+/* (the back, when it turns: the same stock, the art in ink alone) */
+.r3b-card .r3t-back { --bk: #E3D6B8; --bk2: #D8C9A6; --foil: 0; --r3t-sheen: 0; border-color: #1A0F0C; filter: grayscale(1) contrast(1.15); }
 .r3b-card .r3t-front :is(.r3t-idx, .r3t-name, .r3t-meta) { text-shadow: none; }
 .r3b-card .r3t-name { font-family: 'IM Fell English SC', Georgia, serif; font-weight: 400; letter-spacing: 0.06em; }
 .r3b-card .r3t-meta { font-family: 'IM Fell English', Georgia, serif; font-weight: 400; font-style: italic; text-transform: none; letter-spacing: 0.02em; color: #1A0F0C; }
