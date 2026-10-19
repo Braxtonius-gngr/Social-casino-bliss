@@ -5686,3 +5686,15 @@ html[data-motion="off"][data-theme="burin"] .hero-ring-circle { font-size: 2.4re
 .r3b-sheet .r3b-sheet-in { background: none; }
 .r3b-sheet .r3b-sheet-in, .r3b-sheet .r3b-sheet-in * { color: transparent; }
 .r3b-sheet .r3b-run, .r3b-sheet .r3b-run:active { background: transparent; box-shadow: none; transform: none; }
+/* The valley's card: the card table's card, but printed as the page is -
+   bone stock, Fell's letters, ink and blood, a double rule for a frame
+   whatever the tier (no foil, no lacquer, no sheen), and a cast shadow in
+   ink as a woodcut throws one. */
+.r3b-card .r3t-front, .r3b-card .r3t-front.t-S { --stock: #E3D6B8; --ink: #1A0F0C; --red: #8E0E0E; color: var(--ink); background: #E3D6B8; font-family: 'IM Fell English', Georgia, serif; }
+.r3b-card .r3t-front.r3t-red { --ink: var(--red); }
+.r3b-card .r3t-face, .r3b-card .r3t-card:not(.r3t-lifted) .r3t-face { border-radius: 6px; box-shadow: 0 0 0 2px #1A0F0C, 9px 11px 0 0 rgba(26,15,12,0.82) !important; }
+.r3b-card .r3t-frame, .r3b-card .r3t-front:is(.t-S, .t-A, .t-B, .t-C, .t-D) .r3t-frame { inset: 20px; border: 3px solid #1A0F0C; border-radius: 0; opacity: 1; background: none; -webkit-mask: none; mask: none; box-shadow: inset 0 0 0 5px #E3D6B8, inset 0 0 0 6px #1A0F0C; animation: none; }
+.r3b-card .r3t-sheen, .r3b-card .r3t-linen { display: none; }
+.r3b-card .r3t-front :is(.r3t-idx, .r3t-name, .r3t-meta) { text-shadow: none; }
+.r3b-card .r3t-name { font-family: 'IM Fell English SC', Georgia, serif; font-weight: 400; letter-spacing: 0.06em; }
+.r3b-card .r3t-meta { font-family: 'IM Fell English', Georgia, serif; font-weight: 400; font-style: italic; text-transform: none; letter-spacing: 0.02em; color: #1A0F0C; }
