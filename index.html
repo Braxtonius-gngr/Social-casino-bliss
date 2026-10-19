@@ -32,7 +32,7 @@
         // stored lands on the default here, and getActiveThemeId() does the
         // same for the rest of the app, so the stale key never needs an
         // explicit migration step.
-        var look = { refinement: 'executive', executive: 'executive', prism: 'prism', arcade: 'neon', neon: 'neon', orrery: 'obsidian', obsidian: 'obsidian', glitch: 'glitch', seance: 'glitch', western: 'western', slaughter: 'western', burin: 'burin' };
+        var look = { refinement: 'executive', executive: 'executive', prism: 'prism', arcade: 'neon', neon: 'neon', orrery: 'obsidian', obsidian: 'obsidian', glitch: 'glitch', seance: 'glitch', western: 'western', slaughter: 'western', burin: 'burin', brimstone: 'burin' };
         // Refinement x Realization became the default on 2026-09-28 and
         // everyone was moved onto it once, whatever they had picked - the
         // picker switches back, and the flag keeps that choice from then
@@ -5980,7 +5980,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     let rollTableSession = null;
     // The homes a skin can fly into, and their modules (each exports
     // prepareTable(): see assets/intro3d/table.mjs).
-    const ROLL_DESTS = { card: './assets/intro3d/table.mjs', study: './assets/intro3d/study.mjs', arcade: './assets/intro3d/arcade.mjs', seance: './assets/intro3d/seance-room.mjs', slaughter: './assets/intro3d/slaughter.mjs' };
+    const ROLL_DESTS = { card: './assets/intro3d/table.mjs', study: './assets/intro3d/study.mjs', arcade: './assets/intro3d/arcade.mjs', seance: './assets/intro3d/seance-room.mjs', slaughter: './assets/intro3d/slaughter.mjs', valley: './assets/intro3d/valley.mjs' };
     // The home changes with the skin (selectTheme): a skin with a table
     // takes its seat now - leaving another home first - and one without
     // leaves it for the classic home.
@@ -6044,7 +6044,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // up out of the chair, over the floor and down into another seat. A
     // visit changes nothing but where you are; "Sit here" takes that seat
     // for good (its skin), and your own seat is always one drift away.
-    const ROLL_PLACES = { card: 'The card table', study: 'The study', arcade: 'The arcade', seance: 'The séance room', slaughter: 'The slaughter floor' };
+    const ROLL_PLACES = { card: 'The card table', study: 'The study', arcade: 'The arcade', seance: 'The séance room', slaughter: 'The slaughter floor', valley: 'The valley' };
     // the skin whose home a place is (its Showroom skin)
     function rollSkinOf(dest) {
       return Object.keys(THEMES).find(id => THEMES[id].table === dest) || null;
@@ -6328,7 +6328,10 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           const g = gameFor(id);
           const tier = g ? g.tier : /^demo_S$/.test(id) ? 'S' : cardTier || null;
           if (tier === 'S') rollMusic.lift();
-        }
+        },
+        // (a home that plays its own score - the valley - asks whether the
+        // music is on at all)
+        musicOn() { return tableMusicOn(); }
       };
     }
     // A view from the phone (Freebies, Community) over the table, with a
@@ -7655,11 +7658,20 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         bodyBg: 'radial-gradient(130% 90% at 50% 15%, rgba(196,30,46,0.72) 0%, rgba(90,10,16,0.58) 42%, #0B0B0B 86%), linear-gradient(180deg, #0B0B0B 0%, #050505 100%)',
         metaColor: '#0B0B0B'
       },
-      // Burin & Brimstone: hell, cut in copper - a white-line engraving
-      // (the ground is the ink, the cuts print as the paper's bone) with
-      // the one wet thing on the plate being blood. Its room is
-      // assets/rooms/burin.js; its Showroom home, the valley, comes with
-      // the visualized skin (brimstone) in a later change.
+      // Burin & Brimstone at Showroom: the valley as home (assets/intro3d/
+      // valley.mjs) - a gaming table on a rock over hell, Death dealing,
+      // the dance of death along the ridge behind him with your platforms
+      // as the souls' lanterns. Wears the muted pairing's palette.
+      brimstone: {
+        name: 'Burin & Brimstone',
+        description: 'Hell, cut in copper, at three levels of show. At Showroom, a throw of the dice, then the valley as your home: a table on a rock over the river of blood, Death across it, the dance of death on the ridge with your platforms as its lanterns; at Lounge and Quiet, the same plate with less cut into it.',
+        look: 'burin',
+        table: 'valley',
+        vars: null,
+        bodyBg: null,
+        metaColor: null
+      },
+      // (Burin & Brimstone's Lounge and Quiet levels: not listed on its own)
       burin: {
         name: 'Burin & Brimstone',
         description: 'Hell, cut in copper. Bone line on an inked plate: the plate mark cut round your deck with the day’s run, a breaking wheel catching fire round the ready count, a drop of blood on every collect, and the plate bleeding when a run is done.',
@@ -9354,7 +9366,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v168';
+    const APP_BUILD = 'almanac-v169';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads

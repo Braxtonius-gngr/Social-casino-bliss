@@ -322,7 +322,7 @@
   window.showAddRoom('burin', {
     name: 'Burin & Brimstone',
     lede: 'Hell, cut in copper, at three levels of show: the same deck on each, more or less of it alive. Showroom is all of it — the dice, then the valley, your platforms the souls on its road.',
-    showroom: null,
+    showroom: 'brimstone',
     muted: 'burin',
     copy: {
       showroom: 'The valley is your home: a gaming table on a rock over the river of blood, the dance of death on the ridge behind the dealer, your platforms the souls it leads, each with a lantern. Uses the most battery.',
