@@ -89,6 +89,29 @@
       --tier-b: #6E7C7C;
       --tier-c: #5C4B51;
     }
+    [data-theme="burin"] {
+      --bg-base: #140B08;
+      --accent-gold: #E8DCC0;
+      --accent-gold-hover: #FFF6E2;
+      --accent-gold-dim: rgba(232, 220, 192, 0.14);
+      --accent-green: #9DB38A;
+      --accent-green-dim: rgba(157, 179, 138, 0.16);
+      --accent-pink: #B81414;
+      --accent-pink-dim: rgba(184, 20, 20, 0.2);
+      --accent-orange: #D2451E;
+      --accent-orange-dim: rgba(210, 69, 30, 0.18);
+      --accent-cyan: #8FA3B0;
+      --accent-cyan-dim: rgba(143, 163, 176, 0.16);
+      --glass-border: rgba(232, 220, 192, 0.22);
+      --glass-highlight: rgba(232, 220, 192, 0.08);
+      --text-main: #E8DCC0;
+      --text-muted: #A89880;
+      --text-dim: #6B5A4E;
+      --tier-s: #B81414;
+      --tier-a: #E8DCC0;
+      --tier-b: #D2451E;
+      --tier-c: #8FA3B0;
+    }
 
     [data-theme="prism"] {
       --bg-base: #0a0b0a;
@@ -5446,3 +5469,192 @@ html[data-motion="off"][data-theme="western"] .ready-at, html[data-motion="off"]
 .r3w-slate .r3w-slate-in { background: none; }
 .r3w-slate .r3w-slate-in, .r3w-slate .r3w-slate-in * { color: transparent; }
 .r3w-slate .r3w-run, .r3w-slate .r3w-run:active { background: transparent; box-shadow: none; transform: none; }
+
+/* ==========================================================================
+   BURIN & BRIMSTONE'S ROOM (assets/rooms/burin.js) - hell, cut in copper:
+   a white-line engraving (Bewick's craft - the ground is the ink, the cuts
+   print as the paper's bone, so a form is lit by being cut more). Its
+   Lounge and Quiet levels; the pieces' makers are in the room's own
+   header. The type: Pinyon Script for the wordmark's brand word (the
+   engraver's copperplate hand), IM Fell English for names and body, IM
+   Fell English SC for labels, tabs and buttons, IM Fell DW Pica for
+   numbers (the room fetches them when it is first built).
+   ========================================================================== */
+[data-theme="burin"] {
+  --bb-serif: 'IM Fell English', 'IM Fell DW Pica', Georgia, 'Times New Roman', serif;
+  --bb-caps: 'IM Fell English SC', 'IM Fell English', Georgia, serif;
+  --bb-num: 'IM Fell DW Pica', 'IM Fell English', Georgia, serif;
+  --bb-script: 'Pinyon Script', 'Snell Roundhand', cursive;
+  --bb-ink: #140B08;
+  --bb-ink-2: #1E110C;
+  --bb-bone: #E8DCC0;
+  --bb-bone-dim: rgba(232, 220, 192, 0.55);
+  --bb-blood: #8E0E0E;
+  --bb-blood-wet: #B81414;
+  --bb-ember: #D2451E;
+  /* a cut line: bone, with the burr's dark hairline beside it */
+  --bb-cut: 0 0 0 1px var(--bb-bone), 1px 1px 0 1px rgba(0,0,0,0.6);
+}
+/* The ground: the inked plate - black-brown, the plate's burnish as a
+   faint diagonal grain, and under the deck the valley's own cuts so faint
+   they read as texture: a horizon of hatched hills and the river's line. */
+[data-theme="burin"] body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='390' height='844' viewBox='0 0 390 844'%3E%3Cg fill='none' stroke='%23E8DCC0' stroke-width='.5'%3E%3Cpath d='M0 560c40-28 80-10 120-30s70-40 130-24 80 30 140 10'/%3E%3Cpath d='M0 574c40-28 80-10 120-30s70-40 130-24 80 30 140 10' opacity='.7'/%3E%3Cpath d='M0 588c40-28 80-10 120-30s70-40 130-24 80 30 140 10' opacity='.5'/%3E%3Cpath d='M0 602c40-28 80-10 120-30s70-40 130-24 80 30 140 10' opacity='.35'/%3E%3Cpath d='M0 616c40-28 80-10 120-30s70-40 130-24 80 30 140 10' opacity='.2'/%3E%3Cpath d='M44 548V500M44 500h26M70 500v8M300 540v-70M300 470h20'/%3E%3C/g%3E%3Cpath d='M0 700c60-20 120 6 190-8s110-30 200-6' fill='none' stroke='%238E0E0E' stroke-width='1.2'/%3E%3C/svg%3E") center bottom / 100% auto no-repeat,
+    repeating-linear-gradient(135deg, rgba(232,220,192,0.028) 0 1px, transparent 1px 7px);
+  opacity: 0.55;
+}
+/* (the deck over the ground and over the bleed's far half; the docked
+   footer keeps its 50) */
+[data-theme="burin"] .app-container { position: relative; z-index: 2; }
+
+/* The masthead: the date in Fell small capitals, the wordmark as the
+   engraved title of a plate - "Daily" in Fell, "Roll Over" in the
+   copperplate hand, a swash rule under it with the plate's number. */
+[data-theme="burin"] .date-header { font-family: var(--bb-caps); letter-spacing: 0.22em; font-size: 0.72rem; color: var(--text-muted); }
+[data-theme="burin"] .app-title { font-family: var(--bb-serif); font-weight: 400; font-size: 2.3rem; letter-spacing: 0.01em; line-height: 1.05; position: relative; padding-bottom: 16px; margin-bottom: 18px; color: var(--bb-bone); text-shadow: 1px 1px 0 rgba(0,0,0,0.6); }
+[data-theme="burin"] .app-title span { font-family: var(--bb-script); font-weight: 400; font-size: 1.28em; color: var(--bb-bone); padding-left: 0.08em; }
+[data-theme="burin"] .landing-title { font-family: var(--bb-serif); font-weight: 400; }
+[data-theme="burin"] .landing-title span { font-family: var(--bb-script); font-weight: 400; }
+[data-theme="burin"] .app-title::after {
+  content: ''; position: absolute; left: 50%; bottom: 0; width: 150px; height: 8px; transform: translateX(-50%);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 8'%3E%3Cpath d='M0 4h58M92 4h58' stroke='%23E8DCC0' stroke-width='.8'/%3E%3Cpath d='M62 4c3-4 6-4 9 0s6 4 9 0 6-4 9-0' fill='none' stroke='%23E8DCC0' stroke-width='.8'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* Plates: every panel is a smaller plate laid on the big one - black-brown,
+   a hair warmer than the ground, its edge a double cut (bone outside, the
+   burr's dark inside) and a lit bevel along the top left where the lamp
+   finds the plate's edge. No blur: a plate is opaque. */
+[data-theme="burin"] .glass-panel,
+[data-theme="burin"] .ledger-card,
+[data-theme="burin"] .hero-stat-card,
+[data-theme="burin"] .keen-info-popover,
+[data-theme="burin"] .catalog-item-row {
+  background: linear-gradient(160deg, #221410 0%, #170D09 55%, #120906 100%);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+  border: 1px solid rgba(232, 220, 192, 0.42);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.75), inset 0 0 0 2px rgba(232,220,192,0.14), inset 1px 1px 0 2px rgba(232,220,192,0.06), 0 10px 26px rgba(0,0,0,0.55);
+}
+[data-theme="burin"] .ledger-card:active { transform: scale(0.99); }
+/* the cards' corners: a small engraved rosette in each, as a border plate
+   has (two, top left and bottom right, so the eye reads a plate and not a
+   frame) */
+[data-theme="burin"] .ledger-card-wrapper { position: relative; }
+[data-theme="burin"] .ledger-card-wrapper::before, [data-theme="burin"] .ledger-card-wrapper::after {
+  content: ''; position: absolute; width: 14px; height: 14px; pointer-events: none; z-index: 2; opacity: 0.75;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cg fill='none' stroke='%23E8DCC0' stroke-width='.7'%3E%3Ccircle cx='7' cy='7' r='3.2'/%3E%3Cpath d='M7 1v12M1 7h12M2.8 2.8l8.4 8.4M11.2 2.8l-8.4 8.4'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+}
+[data-theme="burin"] .ledger-card-wrapper::before { left: 6px; top: 6px; }
+[data-theme="burin"] .ledger-card-wrapper::after { right: 6px; bottom: 6px; transform: rotate(180deg); }
+[data-theme="burin"] .casino-name, [data-theme="burin"] .hero-details h2, [data-theme="burin"] .res-ext-title { font-family: var(--bb-serif); font-weight: 400; letter-spacing: 0.01em; }
+[data-theme="burin"] .hero-details h2 { font-size: 1.25rem; }
+[data-theme="burin"] .hero-details p { font-family: var(--bb-serif); font-style: italic; color: var(--text-muted); }
+[data-theme="burin"] .casino-avatar, [data-theme="burin"] .run-avatar { font-family: var(--bb-caps); background: transparent; border: 1px solid var(--bb-bone); color: var(--bb-bone); box-shadow: inset 0 0 0 2px var(--bb-ink), inset 0 0 0 3px rgba(232,220,192,0.35); border-radius: 50%; }
+[data-theme="burin"] .nav-tab, [data-theme="burin"] .filter-btn, [data-theme="burin"] .tier-badge, [data-theme="burin"] .res-brief-label, [data-theme="burin"] .res-links-label, [data-theme="burin"] .res-ext-kind, [data-theme="burin"] .ready-at, [data-theme="burin"] .cooldown-chip {
+  font-family: var(--bb-caps); letter-spacing: 0.12em; text-transform: lowercase; font-weight: 400; }
+[data-theme="burin"] .nav-tab { border-radius: 2px; }
+[data-theme="burin"] .nav-tab.active { background: var(--bb-bone); color: var(--bb-ink); border-color: var(--bb-bone); box-shadow: 1px 1px 0 1px rgba(0,0,0,0.6); }
+[data-theme="burin"] .filter-btn { background: transparent; border: 1px solid rgba(232,220,192,0.35); border-radius: 2px; }
+[data-theme="burin"] .filter-btn.active { background: var(--bb-bone); color: var(--bb-ink); border-color: var(--bb-bone); }
+[data-theme="burin"] .tier-badge { border-radius: 2px; border: 1px solid currentColor; background: transparent; }
+[data-theme="burin"] .tier-S { color: var(--bb-blood-wet); box-shadow: 0 0 0 1px rgba(184,20,20,0.25); }
+
+/* The buttons: a cut plate. OPEN SITE is a bone plate with the letters
+   left in ink (the engraver cut everything but the letters); CONFIRM
+   COLLECTED is the one thing printed in blood. A short cut of three lines
+   stands at each end of the button, the engraver's ornament. */
+[data-theme="burin"] .btn-open, [data-theme="burin"] .btn-primary, [data-theme="burin"] .btn-run-collect, [data-theme="burin"] .btn-start-run.hero-run-btn:not(:disabled), [data-theme="burin"] .landing-btn, [data-theme="burin"] .btn-check {
+  font-family: var(--bb-caps); letter-spacing: 0.16em; text-transform: lowercase; font-weight: 400; font-size: 0.98rem;
+  border-radius: 2px; background: var(--bb-bone); color: var(--bb-ink); border: 1px solid var(--bb-bone);
+  box-shadow: inset 0 0 0 1px var(--bb-ink), inset 0 0 0 2px rgba(232,220,192,0.5), 2px 2px 0 0 rgba(0,0,0,0.7); text-shadow: none; position: relative; overflow: hidden;
+}
+[data-theme="burin"] .btn-open::before, [data-theme="burin"] .btn-run-collect::before {
+  content: ''; position: absolute; left: 10px; right: 10px; top: 50%; height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, currentColor 0 10px, transparent 10px calc(100% - 10px), currentColor calc(100% - 10px)); opacity: 0.6;
+}
+[data-theme="burin"] .btn-run-collect { background: var(--bb-blood); color: var(--bb-bone); border-color: var(--bb-blood-wet); box-shadow: inset 0 0 0 1px var(--bb-ink), inset 0 0 0 2px rgba(232,220,192,0.35), 2px 2px 0 0 rgba(0,0,0,0.7); font-size: 1.05rem; }
+[data-theme="burin"] .btn-open:active, [data-theme="burin"] .btn-primary:active, [data-theme="burin"] .btn-run-collect:active, [data-theme="burin"] .hero-run-btn:active { transform: translate(1px, 1px); box-shadow: inset 0 0 0 1px var(--bb-ink), 1px 1px 0 0 rgba(0,0,0,0.7); }
+[data-theme="burin"] .btn-start-run.hero-run-btn { font-family: var(--bb-caps); letter-spacing: 0.16em; text-transform: lowercase; border-radius: 2px; }
+[data-theme="burin"] .btn-start-run.hero-run-btn:disabled { background: transparent; color: var(--text-dim); border: 1px dashed rgba(232,220,192,0.3); }
+[data-theme="burin"] .btn-cancel, [data-theme="burin"] .btn-share, [data-theme="burin"] .btn-skip, [data-theme="burin"] .btn-exit-run, [data-theme="burin"] .btn-dock, [data-theme="burin"] .btn-ledger-quick { font-family: var(--bb-caps); letter-spacing: 0.12em; text-transform: lowercase; border-radius: 2px; }
+[data-theme="burin"] .btn-dock { border-color: rgba(232,220,192,0.5); color: var(--bb-bone); text-shadow: none; box-shadow: none; }
+[data-theme="burin"] .docked-footer { background: rgba(20, 11, 8, 0.92); border-top: 1px solid rgba(232,220,192,0.35); box-shadow: 0 -1px 0 rgba(0,0,0,0.8), 0 -10px 30px rgba(0,0,0,0.6); backdrop-filter: none; -webkit-backdrop-filter: none; }
+[data-theme="burin"] input, [data-theme="burin"] select, [data-theme="burin"] textarea { font-family: var(--bb-serif); border-radius: 2px; }
+[data-theme="burin"] .cd-fill { background: var(--bb-blood); }
+[data-theme="burin"] .cooldown-chip { border-radius: 2px; }
+/* numbers: Fell's figures, with their old-style fall */
+[data-theme="burin"] .hero-ring-circle, [data-theme="burin"] .hero-stat-card b, [data-theme="burin"] .hero-stat-card strong, [data-theme="burin"] .run-progress-text, [data-theme="burin"] .streak-badge { font-family: var(--bb-num); font-weight: 400; }
+[data-theme="burin"] .streak-badge { border-radius: 2px; background: var(--bb-ink); color: var(--bb-bone); border: 1px solid var(--bb-bone); box-shadow: 1px 1px 0 1px rgba(0,0,0,0.6); }
+/* the run: the plate's own ground, the card a plate */
+[data-theme="burin"] #dailyRunOverlay { background: radial-gradient(circle at 50% 0%, rgba(142,14,14,0.18), transparent 55%), var(--bg-base); }
+[data-theme="burin"] .run-progress-bar { background: rgba(232,220,192,0.12); border-radius: 0; height: 2px; }
+[data-theme="burin"] .run-progress-fill { background: var(--bb-bone); border-radius: 0; }
+
+/* The plate mark (the edge light): two rules round the inside of the
+   glass and the band of cuts between them (see the room's header). Under
+   every sheet, the tour, the landing and the table, like the gold edge. */
+.bb-edge { display: none; }
+[data-theme="burin"] .bb-edge { display: block; position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 95; pointer-events: none; overflow: visible; }
+.bb-edge path { fill: none; }
+.bb-rule { stroke: rgba(232, 220, 192, 0.42); stroke-width: 0.7; }
+.bb-probe { stroke: none; }
+.bb-band-uncut path { stroke: rgba(232, 220, 192, 0.1); stroke-width: 0.9; }
+.bb-band-cut path { stroke: var(--bb-bone, #E8DCC0); stroke-width: 1.05; stroke-linecap: round; transition: opacity 0.25s; }
+.bb-band-burr path { stroke: rgba(0, 0, 0, 0.85); stroke-width: 0.6; transition: opacity 0.25s; }
+.bb-point { transition: opacity 0.3s; }
+.bb-burin { fill: #6a6f78; stroke: #1b1b1b; stroke-width: 0.4; }
+.bb-burin-lit { fill: #e9edf2; }
+.bb-swarf { stroke: #c9743a; stroke-width: 0.9; fill: none; stroke-linecap: round; transform-origin: 0 0; filter: drop-shadow(0 0 0.6px #ffd39a); }
+
+/* The wheel: the breaking wheel cut in bone line round the ready count,
+   the run as the wheel catching (see the room's header). */
+.bb-wheel { display: none; }
+[data-theme="burin"] .hero-ring-wrapper { width: 112px; height: 112px; }
+[data-theme="burin"] .bb-wheel { display: block; position: absolute; inset: 0; pointer-events: none; overflow: visible; filter: drop-shadow(1px 1px 0 rgba(0,0,0,0.7)); }
+.bb-wheel svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.bb-wheel path, .bb-wheel circle { fill: none; }
+.bb-fell-under { stroke: rgba(0,0,0,0.9); stroke-width: 4.2; }
+.bb-fell { stroke: #E8DCC0; stroke-width: 1.4; }
+.bb-fell-fine { stroke: rgba(232,220,192,0.45); stroke-width: 0.5; }
+.bb-joint { stroke: #E8DCC0; stroke-width: 0.8; }
+.bb-spoke { stroke: #E8DCC0; stroke-width: 1.2; stroke-linecap: round; }
+.bb-spoke-fine { stroke: rgba(232,220,192,0.5); stroke-width: 0.45; }
+.bb-hub { stroke: #E8DCC0; stroke-width: 1.1; fill: #140B08; }
+.bb-pin { fill: #E8DCC0; stroke: none; }
+.bb-heat { stroke-linecap: butt; }
+.bb-heat-bloom { stroke: #D2451E; stroke-width: 7; opacity: 0.5; }
+.bb-heat-body { stroke: url(#bbHeat); stroke-width: 2.4; }
+.bb-heat-spoke { stroke: #8E0E0E; stroke-width: 1.3; stroke-linecap: round; transition: opacity 0.6s; }
+.bb-spark { stroke: #F2B46A; stroke-width: 0.8; stroke-linecap: round; stroke-dasharray: 3 12; }
+[data-theme="burin"] .hero-ring-circle { position: absolute; inset: 24%; width: auto; height: auto; z-index: 1; border: 0; border-radius: 50%; background: transparent; box-shadow: none; text-shadow: 1px 1px 0 rgba(0,0,0,0.8);
+  flex-direction: column; gap: 0; font-size: 2.1rem; line-height: 1; color: var(--bb-bone); animation: none; }
+[data-theme="burin"] .hero-ring-circle::after { content: 'ready'; font-family: var(--bb-caps); font-size: 0.52rem; letter-spacing: 0.3em; color: var(--bb-ember); margin-top: 3px; padding-left: 0.3em; }
+
+/* A collect: the drop (see the room's header) - over the card, under
+   nothing; the only wet thing on the plate. */
+.bb-drop { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; overflow: visible; }
+.bb-drop path { fill: none; stroke-linecap: round; }
+.bb-drop .bb-run { stroke: #8E0E0E; }
+.bb-drop .bb-run-lit { stroke: rgba(255, 150, 140, 0.45); }
+.bb-drop .bb-bead { fill: #8E0E0E; }
+.bb-drop .bb-bead-lit { fill: rgba(255, 200, 190, 0.7); }
+.bb-drop .bb-splat { fill: #8E0E0E; stroke: #5a0606; stroke-width: 0.4; filter: drop-shadow(1px 1.5px 1px rgba(0,0,0,0.6)); }
+.bb-drop .bb-sats circle { fill: #8E0E0E; }
+.bb-drop .bb-sheen { fill: rgba(255, 230, 225, 0.7); }
+html[data-motion="off"] .bb-drop { display: none; }
+
+/* The payout: the plate bleeds (assets/intro3d/bleed.mjs), drawn twice -
+   behind the glass under the deck, in front of it over the deck, under
+   every sheet. */
+.bb-bleed { position: fixed; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.bb-bleed-back { z-index: 1; }
+.bb-bleed-front { z-index: 98; }
+html[data-motion="off"] .bb-bleed { display: none; }
+
+/* Quiet: the plate mark and the wheel stand as cut, nothing burns, the
+   point is still; larger figures. */
+html[data-motion="off"][data-theme="burin"] .bb-point, html[data-motion="off"][data-theme="burin"] .bb-spark, html[data-motion="off"][data-theme="burin"] .bb-heat-bloom { display: none; }
+html[data-motion="off"][data-theme="burin"] .bb-heat-body { stroke: #8E0E0E; }
+html[data-motion="off"][data-theme="burin"] .hero-ring-circle { font-size: 2.4rem; }
