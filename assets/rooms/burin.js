@@ -241,6 +241,7 @@
 
   // ---------- A collect: the drop ----------
   function collect(card) {
+    if (window.roomMusicLift) window.roomMusicLift();
     if (!lively() || !card) return;
     var box = card.getBoundingClientRect();
     if (!box.width || box.bottom < 0 || box.top > window.innerHeight) return;
