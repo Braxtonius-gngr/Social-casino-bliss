@@ -5415,7 +5415,11 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // Started as the shot loads, so it runs under the shot and straight into
     // the seat; the browser holds it silent until the first tap or key (the
     // one that skips the shot, or takes the seat).
-    const MUSIC_PIECES = { card: 'card', study: 'study', slaughter: 'wtgf' };   // home -> piece (see music.mjs PIECES)
+    const MUSIC_PIECES = { card: 'card', study: 'study', slaughter: 'wtgf', valley: 'valley' };   // home -> piece (see music.mjs PIECES)
+    // A room's piece (by look): plays in the Lounge and Quiet of a skin with
+    // no seat taken - the first rooms to have one. Quiet (motion off) holds
+    // its Base.
+    const ROOM_PIECES = { burin: 'burin' };
     // One home's piece into the next: the crossfade's length, and how long a
     // piece let go by leaving the seat waits to be taken up by the next one
     // (a change of skin leaves one home and enters the next straight after:
@@ -5430,9 +5434,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
     // Start the music for a home: the same piece plays on, another fades in
     // over the one playing, and a home without a piece lets it fade away.
-    function rollMusicStart(dest) {
-      const piece = MUSIC_PIECES[dest];
-      if (rollMusic && rollMusic.piece === piece) return;
+    function rollMusicStart(dest, roomLook) {
+      const piece = roomLook ? ROOM_PIECES[roomLook] : MUSIC_PIECES[dest];
+      if (rollMusic && rollMusic.piece === piece) { rollMusic.room = !!roomLook; return; }
       const parked = rollMusicParked;
       rollMusicParked = null;
       if (parked) clearTimeout(parked.parkTimer);
@@ -5442,7 +5446,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       rollMusic = null;
       outgoing.forEach(c => c.release());
       if (!piece || !tableMusicOn()) { outgoing.forEach(c => c.stop(MUSIC_XFADE)); return; }
-      const ctl = { api: null, piece, idleAt: 0, timer: 0, dead: false, live: false, lastLayer: null, parkTimer: 0, outgoing };
+      const ctl = { api: null, piece, room: !!roomLook, idleAt: 0, timer: 0, dead: false, live: false, lastLayer: null, parkTimer: 0, outgoing };
       rollMusic = ctl;
       const IDLE_MS = 20000;
       // Base when a sheet or a modal is over the table, or nothing has
@@ -5453,9 +5457,12 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         // CSS intro: no table, no music)
         const screen = document.getElementById('landingScreen');
         const landing = screen && !screen.classList.contains('hidden');
-        if (!rollTableSession && !landing) { ctl.stop(MUSIC_XFADE); return; }
+        if (!rollTableSession && !landing && !ctl.room) { ctl.stop(MUSIC_XFADE); return; }
+        // (a room's piece: gone when the room is, or the music is off)
+        if (ctl.room && (rollTableSession || !tableMusicOn() || ROOM_PIECES[document.documentElement.getAttribute('data-theme')] !== ctl.piece)) { ctl.stop(MUSIC_XFADE); return; }
         const away = document.body.classList.contains('r3-sheet-open') || !!document.querySelector('.sheet-backdrop.open');
-        const layer = !rollTableSession || away || Date.now() - ctl.idleAt > IDLE_MS ? 'base' : 'main';
+        const quiet = document.documentElement.getAttribute('data-motion') === 'off';
+        const layer = (!rollTableSession && !ctl.room) || away || quiet || Date.now() - ctl.idleAt > IDLE_MS ? 'base' : 'main';
         if (layer !== ctl.lastLayer) { ctl.lastLayer = layer; ctl.api.layer(layer); }
       };
       ctl.touch = () => { ctl.idleAt = Date.now(); settle(); };
@@ -5512,11 +5519,29 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     }
     // Off now (Settings): a short fade, nothing waits.
     function rollMusicStop(fade) { [rollMusic, rollMusicParked].forEach(c => { if (c) c.stop(fade); }); }
+    // A room's piece, when the skin has one and no seat is taken: started
+    // on a change of skin, on leaving a seat, and when the music is turned
+    // on; its own settle() lets it go when any of that changes.
+    function roomMusicSync() {
+      if (rollTableSession) return;
+      const look = document.documentElement.getAttribute('data-theme');
+      if (!ROOM_PIECES[look] || !tableMusicOn()) return;
+      // (a skin with a home: its piece is the home's, started by the seat;
+      // and never under the landing's shot, which has its own sound)
+      if (themeTable()) return;
+      const screen = document.getElementById('landingScreen');
+      if (screen && !screen.classList.contains('hidden')) return;
+      rollMusicStart(null, look);
+      if (rollMusic) rollMusic.touch();
+    }
+    // (the room's collect: a lift of the piece, as a card lifted at a table is)
+    window.roomMusicLift = function () { if (rollMusic && rollMusic.room) rollMusic.lift(); };
     // Settings: the music on or off - live, when the table is up.
     function setTableMusic(on) {
       try { localStorage.setItem(TABLE_MUSIC_KEY, on ? 'on' : 'off'); } catch (e) { /* private mode */ }
       if (!on) { rollMusicStop(); return; }
       if (rollTableSession) { rollMusicStart(rollTableSession.dest); if (rollMusic) rollMusic.touch(); }
+      else roomMusicSync();
     }
     function rollHasWebGL2() {
       try {
@@ -5999,6 +6024,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       rollTableSession = null;
       window.rollTable = null;
       rollMusicLetGo();
+      setTimeout(roomMusicSync, MUSIC_PARK_MS + 50);
       if (s) {
         try { if (s.table) s.table.dispose(); } catch (e) { /* gone */ }
         // (the homes' sets: the one you are at, and one you were drifting
@@ -6413,6 +6439,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       } else {
         screen.classList.add('hidden');
       }
+      // (a room with a piece of its own takes it up as the screen goes)
+      setTimeout(roomMusicSync, burnEligible ? 2100 : 500);
       // The WebGL intro gives its GPU memory back once the screen is gone.
       setTimeout(() => { if (window.rollIntroDispose) window.rollIntroDispose(); }, burnEligible ? 2600 : 600);
       // Cloud sync already started at boot (see initSync()) regardless of
@@ -7743,6 +7771,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (document.body) document.body.style.background = theme.bodyBg;
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute('content', theme.metaColor);
+      // (the room's piece, if it has one; the old one lets itself go)
+      if (typeof roomMusicSync === 'function') setTimeout(roomMusicSync, 0);
     }
 
     // isWesternTheme() keeps its name - the object key never changed (see
@@ -9366,7 +9396,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v170';
+    const APP_BUILD = 'almanac-v171';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
@@ -14516,8 +14546,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // all cached - see appWhenCached)
     if (!showLanding) {
       document.getElementById('landingScreen').classList.add('hidden');
-      // (a skin whose home is a table: the seat is taken without the shot)
-      appWhenCached(() => rollEnterTable(), 'strip');
+      // (a skin whose home is a table: the seat is taken without the shot;
+      // a room with a piece of its own takes it up here)
+      appWhenCached(() => { if (!rollEnterTable()) roomMusicSync(); }, 'strip');
     } else {
       appWhenCached(() => playRollIntro(), 'landing');
     }
