@@ -21,14 +21,16 @@
 //           Main is the take, Lift its remix (brighter, harder), Base Main's
 //           stems without drums or percussion, the kick-locked duck on the
 //           bass and guitar lifted out so it holds steady.
-//   burin  - Burin & Brimstone's Lounge: a groove-metal procession with a
-//           psytrance floor under it, 132.6 BPM in D minor, cut from the
-//           take's middle (1:16, where the groove has settled). The layers
-//           are the same 16 bars of the take's stems: Base the bass, synth
-//           and keys alone; Main with the drums and percussion; Lift with
-//           the guitars - the riff and the leads.
-//   valley - the same take at its peak (2:40), for the valley: the same
-//           three layers from the same stems, 132.2 BPM, hotter.
+//   burin  - Burin & Brimstone's Lounge: "Into the Valley", the owner's
+//           near-instrumental take (drums, bass, guitar; a synth and keys
+//           swell), 98.36 BPM, 16 bars from 1:33 (the swell in bars 5-10).
+//           Base is the bed (bass, keys, synth, the rest) with the guitar
+//           behind a low-pass - the riff heard through a wall; Main adds the
+//           drums and percussion; Lift opens the guitar.
+//   valley - the valley: "In the Valley", the take with a voice in it,
+//           98.85 BPM, 16 bars from 1:14 (where the voice is strongest).
+//           The same three layers, and the voice is Lift's alone - it comes
+//           with a collect or an S-tier card, so a 39 s phrase never wears.
 // Files: assets/intro3d/rare/music/<piece>-{base,main,lift}.mp3 - fetched
 // the first time the home is taken and kept by the service worker from then
 // on, like the rare tiers' extras (so an install does not carry them).
@@ -86,14 +88,14 @@ export const PIECES = {
     trim: { base: 1.0, main: 1.0, lift: 1.0 }     // (levelled as cut: Base 4 dB under Main and Lift)
   },
   burin: {
-    files: { base: 'rare/music/burin-base.mp3', main: 'rare/music/burin-main.mp3', lift: 'rare/music/burin-lift.mp3' },
-    bpm: 132.6196, loopSamples: 1389840,       // 28.955 s, 16 bars
-    trim: { base: 1.0, main: 0.95, lift: 0.85 }   // (as cut: Base -21.8, Main -18.6, Lift -17.0 dBFS RMS)
+    files: { base: 'rare/music/into-base.mp3', main: 'rare/music/into-main.mp3', lift: 'rare/music/into-lift.mp3' },
+    bpm: 98.3565, loopSamples: 1873999,        // 39.042 s, 16 bars
+    trim: { base: 1.0, main: 0.9, lift: 0.82 }    // (as cut: Base -21.5, Main -17.8, Lift -16.6 dBFS RMS)
   },
   valley: {
-    files: { base: 'rare/music/valley-base.mp3', main: 'rare/music/valley-main.mp3', lift: 'rare/music/valley-lift.mp3' },
-    bpm: 132.1631, loopSamples: 1394640,       // 29.055 s, 16 bars
-    trim: { base: 1.0, main: 0.85, lift: 0.72 }   // (as cut: Base -23.2, Main -16.3, Lift -14.6 dBFS RMS)
+    files: { base: 'rare/music/in-base.mp3', main: 'rare/music/in-main.mp3', lift: 'rare/music/in-lift.mp3' },
+    bpm: 98.8478, loopSamples: 1864685,        // 38.848 s, 16 bars
+    trim: { base: 1.0, main: 0.88, lift: 0.8 }    // (as cut: Base -22.6, Main -18.9, Lift -17.5 dBFS RMS)
   }
 };
 // (the card table's, for anything that reads the tempo)
