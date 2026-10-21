@@ -91,15 +91,17 @@ export const PIECES = {
     bpm: 75, loopSamples: 2457600,             // 51.200 s, 16 bars
     trim: { base: 1.0, main: 1.0, lift: 1.0 }     // (levelled as cut: Base 4 dB under Main and Lift)
   },
+  // (the two Burin & Brimstone pieces are one take, "ChampChant", cut on
+  // the same 96 bars: the take drifts ~141 -> ~143.5 BPM, so bpm is the mean)
   burin: {
-    files: { full: 'rare/music/into-full.mp3' },
-    bpm: 98.3565, loopSamples: 7495997,        // 156.170 s, 64 bars
-    trim: { full: 0.8 }                         // (as cut: -15.7 dBFS RMS)
+    files: { full: 'rare/music/champ-lounge.mp3' },
+    bpm: 142.401, loopSamples: 7766234,        // 161.797 s, 96 bars
+    trim: { full: 0.9 }                         // (as cut: -18.8 dBFS RMS)
   },
   valley: {
-    files: { full: 'rare/music/in-full.mp3' },
-    bpm: 98.8478, loopSamples: 7458740,        // 155.390 s, 64 bars
-    trim: { full: 0.85 }                        // (as cut: -16.9 dBFS RMS)
+    files: { full: 'rare/music/champ-valley.mp3' },
+    bpm: 142.401, loopSamples: 7766234,        // 161.797 s, 96 bars
+    trim: { full: 0.75 }                        // (as cut: -15.5 dBFS RMS)
   }
 };
 // (the card table's, for anything that reads the tempo)
