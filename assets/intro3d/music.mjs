@@ -21,14 +21,20 @@
 //           Main is the take, Lift its remix (brighter, harder), Base Main's
 //           stems without drums or percussion, the kick-locked duck on the
 //           bass and guitar lifted out so it holds steady.
-//   burin  - Burin & Brimstone's Lounge: a groove-metal procession with a
-//           psytrance floor under it, 132.6 BPM in D minor, cut from the
-//           take's middle (1:16, where the groove has settled). The layers
-//           are the same 16 bars of the take's stems: Base the bass, synth
-//           and keys alone; Main with the drums and percussion; Lift with
-//           the guitars - the riff and the leads.
-//   valley - the same take at its peak (2:40), for the valley: the same
-//           three layers from the same stems, 132.2 BPM, hotter.
+//   burin  - Burin & Brimstone's Lounge: "Into the Valley", the owner's
+//           near-instrumental take, 98.36 BPM. One level, no layers: a
+//           64-bar arrangement (2:36) of the take's own bars 16-79 with
+//           every stem, and colour lifted from the parts the loop does not
+//           reach laid over its thin stretches - the intro's keys and
+//           woodwinds to open it and again before the loop comes round,
+//           the outro's synth two-thirds through (the harmony is one key
+//           throughout, so a phrase sits on any block).
+//   valley - the valley: "In the Valley", the take with a voice in it,
+//           98.85 BPM, one level the same way: its bars 16-79, the voice
+//           where it sings (3 dB under), keys, synth and the rest lifted
+//           in from the intro and the last bars wherever the bed thins.
+// A piece with a single `full` file plays at one level: layer() and lift()
+// do nothing for it.
 // Files: assets/intro3d/rare/music/<piece>-{base,main,lift}.mp3 - fetched
 // the first time the home is taken and kept by the service worker from then
 // on, like the rare tiers' extras (so an install does not carry them).
@@ -86,14 +92,14 @@ export const PIECES = {
     trim: { base: 1.0, main: 1.0, lift: 1.0 }     // (levelled as cut: Base 4 dB under Main and Lift)
   },
   burin: {
-    files: { base: 'rare/music/burin-base.mp3', main: 'rare/music/burin-main.mp3', lift: 'rare/music/burin-lift.mp3' },
-    bpm: 132.6196, loopSamples: 1389840,       // 28.955 s, 16 bars
-    trim: { base: 1.0, main: 0.95, lift: 0.85 }   // (as cut: Base -21.8, Main -18.6, Lift -17.0 dBFS RMS)
+    files: { full: 'rare/music/into-full.mp3' },
+    bpm: 98.3565, loopSamples: 7495997,        // 156.170 s, 64 bars
+    trim: { full: 0.8 }                         // (as cut: -15.7 dBFS RMS)
   },
   valley: {
-    files: { base: 'rare/music/valley-base.mp3', main: 'rare/music/valley-main.mp3', lift: 'rare/music/valley-lift.mp3' },
-    bpm: 132.1631, loopSamples: 1394640,       // 29.055 s, 16 bars
-    trim: { base: 1.0, main: 0.85, lift: 0.72 }   // (as cut: Base -23.2, Main -16.3, Lift -14.6 dBFS RMS)
+    files: { full: 'rare/music/in-full.mp3' },
+    bpm: 98.8478, loopSamples: 7458740,        // 155.390 s, 64 bars
+    trim: { full: 0.85 }                        // (as cut: -16.9 dBFS RMS)
   }
 };
 // (the card table's, for anything that reads the tempo)
@@ -138,6 +144,7 @@ export function createMusic(opts = {}) {
   const o = Object.assign({ piece: 'card', base: './assets/intro3d/', gain: 0.42, fadeIn: 0, onState: null }, opts);
   const piece = PIECES[o.piece] || PIECES.card;
   const FILES = piece.files, TRIM = piece.trim;
+  const SINGLE = !!FILES.full;   // (one level: the arrangement plays as it is)
   const BEAT = 60 / piece.bpm, BAR = BEAT * 4, LOOP_SECONDS = piece.loopSamples / 48000;
   const AC = window.AudioContext || window.webkitAudioContext;
   let ctx = null, master = null, fader = null, onCtxState = null;
@@ -213,7 +220,7 @@ export function createMusic(opts = {}) {
       L.src = src; L.gain = g;
     });
     // (the layer asked for while loading)
-    const first = current || want;
+    const first = SINGLE ? 'full' : (current || want);
     current = null;
     set(first, true);
     if (o.fadeIn > 0) fadeGain(ctx, fader.gain, 1, when, o.fadeIn);
@@ -266,13 +273,13 @@ export function createMusic(opts = {}) {
       return loading;
     },
     layer(name) {
-      if (name !== 'base' && name !== 'main') return;
+      if (SINGLE || (name !== 'base' && name !== 'main')) return;
       want = name;
       if (lifting) return;        // (after the Lift)
       if (started) set(name); else current = name;
     },
     lift(bars) {
-      if (!started) return;
+      if (!started || SINGLE) return;
       if (lifting) clearTimeout(lifting);
       set('lift');
       const hold = ((bars || 4) + FADE_BARS) * BAR * 1000;
