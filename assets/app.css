@@ -5677,6 +5677,7 @@ html[data-motion="off"][data-theme="burin"] .hero-ring-circle { font-size: 2.4re
 .r3b-now { font-family: 'IM Fell DW Pica', 'IM Fell English', Georgia, serif; font-weight: 400; font-size: 340px; line-height: 1; color: #1A0F0C; }
 .r3b-ampm { font-style: italic; font-size: 64px; color: rgba(26,15,12,0.72); }
 .r3b-ready { left: 1120px; top: 224px; font-family: 'IM Fell DW Pica', 'IM Fell English', Georgia, serif; font-weight: 400; font-size: 420px; line-height: 1; color: #1A0F0C; }
+.r3b-souls { left: 1400px; top: 440px; font-style: italic; font-size: 72px; color: rgba(26,15,12,0.72); }
 .r3b-run { left: 70px; right: 70px; top: 760px; height: 240px; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 0; cursor: pointer;
   font-family: 'IM Fell English SC', 'IM Fell English', Georgia, serif; font-weight: 400; font-size: 108px; letter-spacing: 0.04em; color: #EBE1CB; background: #8E0E0E; box-shadow: inset 0 0 0 6px #8E0E0E, inset 0 0 0 9px #1A0F0C; }
 .r3b-sheet :focus-visible { outline: 4px solid #D2451E; outline-offset: 6px; }
