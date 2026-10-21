@@ -196,7 +196,7 @@ export function reach(arm, target, root, rounds = 10, o = {}) {
   // (a few starts round the given one, the best kept: coordinate descent
   // can settle in a fold of the arm's space)
   if (o.start && !o.single) {
-    const s0 = o.start, tries = [s0, [s0[0] - 0.5, s0[1], s0[2], s0[3]], [s0[0] + 0.4, s0[1], s0[2], s0[3] - 0.5], [s0[0], s0[1] + 0.4, s0[2], s0[3]], [s0[0], s0[1] - 0.4, s0[2], s0[3]], [s0[0] - 0.9, s0[1], s0[2] * 2, -0.4]];
+    const s0 = o.start, tries = [s0, [s0[0] - 0.5, s0[1], s0[2], s0[3]], [s0[0] + 0.4, s0[1], s0[2], s0[3] - 0.5], [s0[0], s0[1] + 0.4, s0[2], s0[3]], [s0[0], s0[1] - 0.4, s0[2], s0[3]], [s0[0] - 0.9, s0[1], s0[2] * 2, 0.4]];
     let best = null;
     for (const st of tries) { const a = reach(arm, target, root, rounds, Object.assign({}, o, { start: st, single: true })); if (!best || arm.miss < best.miss) best = { a, miss: arm.miss }; }
     setArm(arm, best.a); arm.miss = best.miss; return best.a;
@@ -212,8 +212,10 @@ export function reach(arm, target, root, rounds = 10, o = {}) {
     return d;
   };
   const P = [[sh.rotation, 'x'], [sh.rotation, 'y'], [sh.rotation, 'z'], [el.rotation, 'x']];
-  // (the elbow bends one way only: a skeleton's forearm folds forward, -x)
-  const ok = () => el.rotation.x <= 0.02 && el.rotation.x >= -2.6;
+  // (the elbow bends one way only, the forearm to the body's front: on a
+  // limb that hangs down a joint's +x swings it forward, -z - the knee is the
+  // one that folds back)
+  const ok = () => el.rotation.x >= -0.02 && el.rotation.x <= 2.6;
   let step = 0.6, best = dist();
   for (let r = 0; r < rounds * 4 && best > (o.elbow ? 0.5 : 0.05); r++) {
     let moved = false;
@@ -515,6 +517,12 @@ export function buildDeath(kit, rnd) {
       }
     });
   }
+  // the hollow of the chest: a dark hull just inside the staves, so each rib
+  // stands white against the shade of the cage, as a cutter leaves it, and
+  // the far side's ribs never show through the near ones' gaps (seen from
+  // above they ran on round the back, and the cage read as a coiled spring)
+  const cav = (y, R) => ({ y, rx: R * 0.78, rz: R * 0.34, z: 3.2 - R * 0.42 });
+  facet(loft([cav(10, 10.0), cav(4, 13.6), cav(-3, 14.6), cav(-10, 13.4), cav(-17, 10.2), cav(-21, 7.6)], { n: 12, cap: true }), kit.hollow || kit.ball, chest, 0, 0.9);
   // the shoulder blades: two flat plates on the back
   [-1, 1].forEach(s => { const sc = facet(loft([{ y: -12, rx: 2.0, rz: 0.7, x: s * 5 }, { y: -2, rx: 5.0, rz: 0.8, x: s * 8 }, { y: 9, rx: 5.6, rz: 0.9, x: s * 11 }], { n: 5 }), m, chest, 1.0); sc.position.set(0, 2, 7.6); sc.rotation.y = s * 0.25; });
   const neck = G(chest, 0, 14, 0);
