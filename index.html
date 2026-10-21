@@ -9396,7 +9396,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v180';
+    const APP_BUILD = 'almanac-v181';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
@@ -11684,6 +11684,8 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       enqueueHistorySync(entry, false);
       collectFlash();
       if (window.showCollected) showCollected(id);
+      // (a home that answers a collect: the valley frees a soul for a moment)
+      if (window.rollTable && window.rollTable.collected) { try { window.rollTable.collected(id); } catch (e) { /* the home's own */ } }
     }
 
     // Removes the most recent collectionHistory entry for this platform
