@@ -2,6 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <!-- ?lab is the owner's dev lab (lab/anatomy.html, behind the passkey
+       gate): straight there, before any of the app loads. ?lab=valley
+       keeps the older way - the sliders over the valley itself. -->
+  <script>
+    (function () {
+      try {
+        var lab = new URLSearchParams(location.search).get('lab');
+        if (lab !== null && lab !== 'valley') location.replace('./lab/anatomy.html');
+      } catch (e) {}
+    })();
+  </script>
   <!-- Sets data-theme before the stylesheet paints anything, so the
        landing screen never flashes the wrong look before switching to the
        saved theme a moment later. Every [data-theme="..."] rule in app.css
@@ -9396,7 +9407,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so bump both.
-    const APP_BUILD = 'almanac-v186';
+    const APP_BUILD = 'almanac-v187';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
