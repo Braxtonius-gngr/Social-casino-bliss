@@ -143,8 +143,8 @@ serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Invalid step" }), {
       status: 400, headers: { ...CORS, "Content-Type": "application/json" },
     });
-  } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), {
+  } catch {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500, headers: { ...CORS, "Content-Type": "application/json" },
     });
   }
