@@ -391,7 +391,13 @@ serve(async (req) => {
       ui_mode: "hosted",
       billing_address_collection: "auto",
       phone_number_collection: { enabled: false },
-      automatic_tax: { enabled: false },
+      // Stripe Tax: on only once STRIPE_AUTOMATIC_TAX is "on" - set it after
+      // Stripe Tax is set up in that mode's dashboard (origin address,
+      // default tax code and behaviour, registrations), or every session
+      // fails. The address Checkout collects for it is saved to the
+      // customer, which Stripe requires when the customer already exists.
+      automatic_tax: { enabled: Deno.env.get("STRIPE_AUTOMATIC_TAX") === "on" },
+      customer_update: { address: "auto" },
       allow_promotion_codes: false,
       payment_method_collection: "always",
       submit_type: "auto",

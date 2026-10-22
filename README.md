@@ -462,13 +462,17 @@ moves every account at once. Do these in order:
    live mode.
 5. **Webhook:** add a live endpoint at the same URL with the four events above,
    and copy its signing secret.
-6. **Secrets:** set `STRIPE_SECRET_KEY` (`sk_live_...`),
+6. **Stripe Tax:** set it up in live mode too (origin address, default tax
+   code and behaviour, registrations: see `docs/STRIPE_INTEGRATION_TODO.md`).
+   `STRIPE_AUTOMATIC_TAX=on` turns it on in checkout; leave it unset to sell
+   without tax.
+7. **Secrets:** set `STRIPE_SECRET_KEY` (`sk_live_...`),
    `STRIPE_WEBHOOK_SECRET` (the live endpoint's), and both
    `STRIPE_PRICE_ID_PRO_*` to the live price IDs, then redeploy the three
    billing functions.
-7. **Test-mode endpoint:** disable it. Its events now fail the live signature
+8. **Test-mode endpoint:** disable it. Its events now fail the live signature
    check.
-8. **Leftovers from testing:** the checkout and portal functions treat
+9. **Leftovers from testing:** the checkout and portal functions treat
    customer and subscription IDs saved in test mode as absent, so an account
    that tested checkout can still buy for real. A test Pro period keeps its
    entitlement until its `current_period_end`. To end those at once instead,
@@ -483,7 +487,7 @@ moves every account at once. Do these in order:
      and updated_at < '<switch time, UTC>';
    ```
 
-9. **A real purchase:** buy the monthly plan with a real card, confirm Pro
+10. **A real purchase:** buy the monthly plan with a real card, confirm Pro
    unlocks, open Manage Billing and cancel, then refund the charge from the
    dashboard.
 
