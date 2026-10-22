@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'anlmanac-v195';
+const CACHE_NAME = 'almanac-v196';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
