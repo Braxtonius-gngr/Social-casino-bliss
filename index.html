@@ -2,6 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <!-- ?lab is the owner's dev lab (lab/anatomy.html, behind the passkey
+       gate): straight there, before any of the app loads. ?lab=valley
+       keeps the older way - the sliders over the valley itself. -->
+  <script>
+    (function () {
+      try {
+        var lab = new URLSearchParams(location.search).get('lab');
+        if (lab !== null && lab !== 'valley') location.replace('./lab/anatomy.html');
+      } catch (e) {}
+    })();
+  </script>
   <!-- Sets data-theme before the stylesheet paints anything, so the
        landing screen never flashes the wrong look before switching to the
        saved theme a moment later. Every [data-theme="..."] rule in app.css
