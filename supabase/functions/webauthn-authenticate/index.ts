@@ -21,6 +21,22 @@ const CORS = {
 
 const RP_ID = Deno.env.get("WEBAUTHN_RP_ID") || "dailyrollover.com";
 const RP_ORIGIN = Deno.env.get("WEBAUTHN_RP_ORIGIN") || `https://${RP_ID}`;
+// Preview deploys: every Cloudflare Pages preview of this project lives under
+// one parent domain, so a passkey made there (its RP ID that parent) works on
+// every preview. Picked by the calling page's Origin; anything else gets the
+// production RP above. The repo is private, so only the owner's branches
+// deploy there - and the browser signs the real origin into clientData, which
+// verification checks.
+const PREVIEW_RP_ID = Deno.env.get("WEBAUTHN_PREVIEW_RP_ID") || "social-casino-bliss.pages.dev";
+function relyingParty(req: Request): { id: string; origin: string } {
+  try {
+    const u = new URL(req.headers.get("origin") || "");
+    if (u.protocol === "https:" && (u.hostname === PREVIEW_RP_ID || u.hostname.endsWith("." + PREVIEW_RP_ID))) {
+      return { id: PREVIEW_RP_ID, origin: u.origin };
+    }
+  } catch (_) { /* no or bad Origin: production */ }
+  return { id: RP_ID, origin: RP_ORIGIN };
+}
 // The owner's Supabase user id (johndopamine210@gmail.com). Override with the
 // WEBAUTHN_OWNER_ID secret if the owner account ever changes.
 const OWNER_ID = Deno.env.get("WEBAUTHN_OWNER_ID") || "0c1c98cf-9d2a-49d5-8895-ccd434494f91";
@@ -55,6 +71,7 @@ serve(async (req: Request) => {
     }
 
     const body = await req.json();
+    const rp = relyingParty(req);
 
     if (body.step === "options") {
       // fetch the user's registered credentials
@@ -76,7 +93,7 @@ serve(async (req: Request) => {
       }));
 
       const options = await generateAuthenticationOptions({
-        rpID: RP_ID,
+        rpID: rp.id,
         allowCredentials,
         userVerification: "required",
       });
@@ -130,8 +147,8 @@ serve(async (req: Request) => {
       const verification = await verifyAuthenticationResponse({
         response: body.response,
         expectedChallenge: challenges[0].challenge,
-        expectedOrigin: RP_ORIGIN,
-        expectedRPID: RP_ID,
+        expectedOrigin: rp.origin,
+        expectedRPID: rp.id,
         credential: {
           id: cred.credential_id,
           publicKey: publicKeyBytes,
