@@ -24,6 +24,25 @@ const CORS = {
 const RP_NAME = "Casino Almanac Dev";
 const RP_ID = Deno.env.get("WEBAUTHN_RP_ID") || "dailyrollover.com";
 const RP_ORIGIN = Deno.env.get("WEBAUTHN_RP_ORIGIN") || `https://${RP_ID}`;
+// Preview deploys: every Cloudflare Pages preview of this project lives under
+// one parent domain, so a passkey made there (its RP ID that parent) works on
+// every preview. Picked by the calling page's Origin; anything else gets the
+// production RP above. The repo is private, so only the owner's branches
+// deploy there - and the browser signs the real origin into clientData, which
+// verification checks.
+const PREVIEW_RP_ID = Deno.env.get("WEBAUTHN_PREVIEW_RP_ID") || "social-casino-bliss.pages.dev";
+function relyingParty(req: Request): { id: string; origin: string } {
+  try {
+    const u = new URL(req.headers.get("origin") || "");
+    if (u.protocol === "https:" && (u.hostname === PREVIEW_RP_ID || u.hostname.endsWith("." + PREVIEW_RP_ID))) {
+      return { id: PREVIEW_RP_ID, origin: u.origin };
+    }
+  } catch (_) { /* no or bad Origin: production */ }
+  return { id: RP_ID, origin: RP_ORIGIN };
+}
+// The owner's Supabase user id (johndopamine210@gmail.com). Override with the
+// WEBAUTHN_OWNER_ID secret if the owner account ever changes.
+const OWNER_ID = Deno.env.get("WEBAUTHN_OWNER_ID") || "0c1c98cf-9d2a-49d5-8895-ccd434494f91";
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
@@ -33,16 +52,29 @@ serve(async (req: Request) => {
     const authHeader = req.headers.get("authorization");
     if (!authHeader) return new Response("Unauthorized", { status: 401, headers: CORS });
 
+    // Service-role client, same as the other functions: SUPABASE_ANON_KEY is
+    // now an sb_publishable_ key this supabase-js version can't send, which
+    // made every caller (owner included) come back "Unauthorized". Every
+    // query below is scoped to the verified caller's user_id.
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { authorization: authHeader } } }
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false, autoRefreshToken: false } }
     );
 
-    const { data: { user }, error: authErr } = await supabase.auth.getUser();
+    // Pass the JWT explicitly so Supabase checks who the caller is.
+    const jwt = authHeader.replace(/^Bearer\s+/i, "");
+    const { data: { user }, error: authErr } = await supabase.auth.getUser(jwt);
     if (authErr || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
 
+    // Owner lock: every Cloud Sync visitor has an anonymous session, so being
+    // signed in proves nothing. Only the owner account may use the dev overlay.
+    if (user.id !== OWNER_ID) {
+      return new Response("Not the owner account", { status: 403, headers: CORS });
+    }
+
     const body = await req.json();
+    const rp = relyingParty(req);
 
     if (body.step === "options") {
       // fetch any existing credentials so the browser skips them
@@ -59,7 +91,7 @@ serve(async (req: Request) => {
 
       const options = await generateRegistrationOptions({
         rpName: RP_NAME,
-        rpID: RP_ID,
+        rpID: rp.id,
         userName: user.email || user.id,
         userID: new TextEncoder().encode(user.id),
         attestationType: "none",
@@ -102,8 +134,8 @@ serve(async (req: Request) => {
       const verification = await verifyRegistrationResponse({
         response: body.response,
         expectedChallenge: challenges[0].challenge,
-        expectedOrigin: RP_ORIGIN,
-        expectedRPID: RP_ID,
+        expectedOrigin: rp.origin,
+        expectedRPID: rp.id,
       });
 
       if (!verification.verified || !verification.registrationInfo) {

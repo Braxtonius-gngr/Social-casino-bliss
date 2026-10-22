@@ -5,13 +5,33 @@
 // Usage: import and call `initDevOverlay(scene)` from the valley module
 // when `?lab` is in the URL.  The overlay floats over the WebGL canvas.
 
-import { getAnatomy, rebuildAnatomy } from './figure.mjs';
+import { getAnatomy, setAnatomy, rebuildAnatomy } from './figure.mjs';
+
+// the creation values, kept for "Reset defaults" (the sliders move the live
+// base with setAnatomy, so men built after a change - the lab rebuilds a
+// man on every pose or outfit - take the tuned values)
+const DEFAULTS = getAnatomy();
 
 // ── Supabase constants (same as index.html) ──────────────────────────
 const SB_URL = 'https://ewfvyrhlsanzkmozrmhs.supabase.co';
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3ZnZ5cmhsc2Fuemttb3pybWhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNjkxODksImV4cCI6MjEwNDc0NTE4OX0.kxDXQnueexwstqLeZNJdlITffqTHulaV6z-Rdb0ZJQE';
 
 const SESSION_KEY = 'dev_overlay_session_v1';
+// (a preview deploy has no app sign-in of its own - its address is new to
+// the browser - so the gate signs the owner in itself: an emailed link back
+// to this page, its token kept here, apart from the app's own session)
+const SIGNIN_KEY = 'dev_overlay_signin_v1';
+
+// back from the emailed link: the token rides in the address's #fragment
+(function takeSignIn() {
+  try {
+    if (!location.hash || location.hash.indexOf('access_token=') < 0) return;
+    const q = new URLSearchParams(location.hash.slice(1));
+    const at = q.get('access_token'), exp = Number(q.get('expires_at')) || (Date.now() / 1000 + Number(q.get('expires_in') || 3600));
+    if (at) localStorage.setItem(SIGNIN_KEY, JSON.stringify({ access_token: at, expires_at: exp }));
+    history.replaceState(null, '', location.pathname + location.search);
+  } catch (_) { /* nothing to take */ }
+})();
 
 // ── helpers ──────────────────────────────────────────────────────────
 function sbHeaders() {
@@ -21,7 +41,27 @@ function sbHeaders() {
     const tok = JSON.parse(localStorage.getItem(`sb-${ref}-auth-token`) || '{}');
     if (tok.access_token) h.authorization = `Bearer ${tok.access_token}`;
   } catch (_) { /* no session */ }
+  if (!h.authorization) { const t = gateSignIn(); if (t) h.authorization = `Bearer ${t}`; }
   return h;
+}
+
+// the gate's own sign-in, while it lasts
+function gateSignIn() {
+  try {
+    const t = JSON.parse(localStorage.getItem(SIGNIN_KEY) || '{}');
+    return t.access_token && Date.now() / 1000 < t.expires_at - 30 ? t.access_token : null;
+  } catch (_) { return null; }
+}
+function signedIn() { return !!sbHeaders().authorization; }
+
+// email the owner a sign-in link back to this page (an existing account only)
+async function emailSignIn(email) {
+  const back = location.origin + location.pathname + location.search;
+  const r = await fetch(`${SB_URL}/auth/v1/otp?redirect_to=${encodeURIComponent(back)}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_ANON },
+    body: JSON.stringify({ email, create_user: false }),
+  });
+  if (!r.ok) throw new Error((await r.text()) || 'Could not send the link');
 }
 
 async function callEdge(fn, body) {
@@ -131,7 +171,7 @@ const PARAMS = [
 ];
 
 // ── overlay DOM ──────────────────────────────────────────────────────
-function buildOverlayUI(figures) {
+function buildOverlayUI(figures, opts = {}) {
   const root = document.createElement('div');
   root.id = 'dev-anatomy-overlay';
   root.style.cssText = [
@@ -142,16 +182,30 @@ function buildOverlayUI(figures) {
     'padding:10px', 'pointer-events:auto', 'user-select:none',
   ].join(';');
 
+  if (opts.top) root.style.top = opts.top;
+  // (compact: a strip across the top of a phone, the sliders two to a row,
+  // so the figures stay in view below it)
+  if (opts.compact) Object.assign(root.style, { left: '12px', right: '12px', width: 'auto', maxWidth: '520px', margin: '0 auto', padding: '8px 10px', fontSize: '10px', background: 'rgba(0,0,0,0.78)' });
+  // (the title folds the panel away, so a phone can see the figures)
   const title = document.createElement('div');
-  title.textContent = '🔧 Anatomy Dev';
-  title.style.cssText = 'font-size:13px;font-weight:bold;margin-bottom:8px;color:#fff;';
+  title.textContent = '🔧 Anatomy Dev ▾';
+  title.style.cssText = 'font-size:13px;font-weight:bold;margin-bottom:8px;color:#fff;cursor:pointer;';
   root.appendChild(title);
+  const body = document.createElement('div');
+  if (opts.compact) body.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;column-gap:12px;';
+  root.appendChild(body);
+  title.addEventListener('click', () => {
+    const open = body.style.display === 'none';
+    body.style.display = open ? '' : 'none';
+    title.textContent = '🔧 Anatomy Dev ' + (open ? '▾' : '▸');
+    title.style.marginBottom = open ? '8px' : '0';
+  });
 
   const current = getAnatomy();
 
   PARAMS.forEach(p => {
     const row = document.createElement('div');
-    row.style.cssText = 'margin-bottom:6px;';
+    row.style.cssText = opts.compact ? 'margin-bottom:2px;' : 'margin-bottom:6px;';
 
     const lbl = document.createElement('label');
     lbl.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;';
@@ -169,20 +223,22 @@ function buildOverlayUI(figures) {
     slider.max = p.max;
     slider.step = p.step;
     slider.value = current[p.key];
-    slider.style.cssText = 'width:100%;accent-color:#4af;';
+    slider.style.cssText = 'width:100%;accent-color:#4af;' + (opts.compact ? 'margin:0;height:18px;' : '');
 
     slider.addEventListener('input', () => {
       const v = parseFloat(slider.value);
       val.textContent = p.step >= 1 ? String(v) : v.toFixed(2);
       const patch = {};
       patch[p.key] = v;
+      setAnatomy(patch);
       // rebuild every figure in the scene
       figures.forEach(fig => rebuildAnatomy(fig, patch));
+      if (opts.onChange) opts.onChange(patch);
     });
 
     row.appendChild(lbl);
     row.appendChild(slider);
-    root.appendChild(row);
+    body.appendChild(row);
   });
 
   // reset button
@@ -194,7 +250,8 @@ function buildOverlayUI(figures) {
     'font:11px monospace',
   ].join(';');
   reset.addEventListener('click', () => {
-    const defaults = getAnatomy();
+    const defaults = Object.assign({}, DEFAULTS);
+    setAnatomy(defaults);
     root.querySelectorAll('input[type=range]').forEach((sl, i) => {
       const p = PARAMS[i];
       sl.value = defaults[p.key];
@@ -204,8 +261,9 @@ function buildOverlayUI(figures) {
         : null;
     });
     figures.forEach(fig => rebuildAnatomy(fig, defaults));
+    if (opts.onChange) opts.onChange(defaults);
   });
-  root.appendChild(reset);
+  body.appendChild(reset);
 
   // copy-params button
   const copy = document.createElement('button');
@@ -219,7 +277,7 @@ function buildOverlayUI(figures) {
     navigator.clipboard.writeText(JSON.stringify(vals, null, 2))
       .then(() => { copy.textContent = 'Copied ✓'; setTimeout(() => copy.textContent = 'Copy params', 1200); });
   });
-  root.appendChild(copy);
+  body.appendChild(copy);
 
   return root;
 }
@@ -250,6 +308,27 @@ function buildAuthGate(onAuthed) {
     'color:#8cf', 'border-radius:6px', 'cursor:pointer', 'font:13px monospace',
     'margin:4px',
   ].join(';');
+
+  // not signed in on this address (a preview): sign in first, by email link
+  if (!signedIn()) {
+    status.textContent = 'Sign in first: this address has no sign-in yet';
+    const form = document.createElement('form');
+    form.style.cssText = 'margin:0 0 12px;';
+    const email = document.createElement('input');
+    email.type = 'email'; email.required = true; email.placeholder = 'Owner email'; email.autocomplete = 'email';
+    email.style.cssText = 'width:100%;box-sizing:border-box;padding:9px 10px;margin-bottom:6px;border:1px solid #555;border-radius:6px;background:#111;color:#eee;font:13px monospace;';
+    const send = document.createElement('button');
+    send.type = 'submit'; send.textContent = '✉️ Email me a sign-in link';
+    send.style.cssText = btnStyle + ';display:block;width:100%;margin:0;color:#fc8;';
+    form.append(email, send);
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      send.disabled = true; status.style.color = '#aaa'; status.textContent = 'Sending…';
+      try { await emailSignIn(email.value.trim()); status.textContent = 'Check your email, open the link on this device'; status.style.color = '#6a6'; }
+      catch (e) { status.textContent = String(e.message || e).slice(0, 120); status.style.color = '#f66'; send.disabled = false; }
+    });
+    root.appendChild(form);
+  }
 
   const authBtn = document.createElement('button');
   authBtn.textContent = '🔐 Authenticate';
@@ -305,15 +384,18 @@ function buildAuthGate(onAuthed) {
 // ── public entry point ───────────────────────────────────────────────
 // `figures` is the array of THREE.Object3D figure roots from the valley.
 // Each must have userData.pouch set by buildFigure().
-export function initDevOverlay(figures) {
+// opts.top: where the panel sits (the lab moves it under its own bar);
+// opts.onChange(patch): told of every slider move; opts.onAuthed(): told
+// once the gate is passed (or was already). `figures` may be refilled in
+// place - the sliders act on whatever it holds at the time.
+export function initDevOverlay(figures, opts = {}) {
+  const open = () => {
+    document.body.appendChild(buildOverlayUI(figures, opts));
+    if (opts.onAuthed) opts.onAuthed();
+  };
   // already have a valid session?
-  if (hasSession()) {
-    document.body.appendChild(buildOverlayUI(figures));
-    return;
-  }
+  if (hasSession()) { open(); return; }
 
   // show the auth gate
-  document.body.appendChild(buildAuthGate(() => {
-    document.body.appendChild(buildOverlayUI(figures));
-  }));
+  document.body.appendChild(buildAuthGate(open));
 }
