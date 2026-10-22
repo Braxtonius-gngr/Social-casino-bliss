@@ -21,6 +21,20 @@
 //           Main is the take, Lift its remix (brighter, harder), Base Main's
 //           stems without drums or percussion, the kick-locked duck on the
 //           bass and guitar lifted out so it holds steady.
+//   burin  - Burin & Brimstone's Lounge: "Into the Valley", the owner's
+//           near-instrumental take, 98.36 BPM. One level, no layers: a
+//           64-bar arrangement (2:36) of the take's own bars 16-79 with
+//           every stem, and colour lifted from the parts the loop does not
+//           reach laid over its thin stretches - the intro's keys and
+//           woodwinds to open it and again before the loop comes round,
+//           the outro's synth two-thirds through (the harmony is one key
+//           throughout, so a phrase sits on any block).
+//   valley - the valley: "In the Valley", the take with a voice in it,
+//           98.85 BPM, one level the same way: its bars 16-79, the voice
+//           where it sings (3 dB under), keys, synth and the rest lifted
+//           in from the intro and the last bars wherever the bed thins.
+// A piece with a single `full` file plays at one level: layer() and lift()
+// do nothing for it.
 // Files: assets/intro3d/rare/music/<piece>-{base,main,lift}.mp3 - fetched
 // the first time the home is taken and kept by the service worker from then
 // on, like the rare tiers' extras (so an install does not carry them).
@@ -39,7 +53,7 @@
 // play - one made after an await, away from the tap, would be held silent.
 //
 // createMusic(opts) -> api
-//   opts.piece  - 'card' (default) | 'study' | 'wtgf'
+//   opts.piece  - 'card' (default) | 'study' | 'wtgf' | 'burin' | 'valley'
 //   opts.base   - URL base the file names are resolved against
 //   opts.gain   - master level (0..1); the loops sit at about -16 dBFS RMS,
 //                 so this is kept low to live under the UI
@@ -76,6 +90,18 @@ export const PIECES = {
     files: { base: 'rare/music/wtgf-base.mp3', main: 'rare/music/wtgf-main.mp3', lift: 'rare/music/wtgf-lift.mp3' },
     bpm: 75, loopSamples: 2457600,             // 51.200 s, 16 bars
     trim: { base: 1.0, main: 1.0, lift: 1.0 }     // (levelled as cut: Base 4 dB under Main and Lift)
+  },
+  // (the two Burin & Brimstone pieces are one take, "ChampChant", cut on
+  // the same 96 bars: the take drifts ~141 -> ~143.5 BPM, so bpm is the mean)
+  burin: {
+    files: { full: 'rare/music/champ-lounge.mp3' },
+    bpm: 142.401, loopSamples: 7766234,        // 161.797 s, 96 bars
+    trim: { full: 0.9 }                         // (as cut: -18.8 dBFS RMS)
+  },
+  valley: {
+    files: { full: 'rare/music/champ-valley.mp3' },
+    bpm: 142.401, loopSamples: 7766234,        // 161.797 s, 96 bars
+    trim: { full: 0.75 }                        // (as cut: -15.5 dBFS RMS)
   }
 };
 // (the card table's, for anything that reads the tempo)
@@ -120,6 +146,7 @@ export function createMusic(opts = {}) {
   const o = Object.assign({ piece: 'card', base: './assets/intro3d/', gain: 0.42, fadeIn: 0, onState: null }, opts);
   const piece = PIECES[o.piece] || PIECES.card;
   const FILES = piece.files, TRIM = piece.trim;
+  const SINGLE = !!FILES.full;   // (one level: the arrangement plays as it is)
   const BEAT = 60 / piece.bpm, BAR = BEAT * 4, LOOP_SECONDS = piece.loopSamples / 48000;
   const AC = window.AudioContext || window.webkitAudioContext;
   let ctx = null, master = null, fader = null, onCtxState = null;
@@ -195,7 +222,7 @@ export function createMusic(opts = {}) {
       L.src = src; L.gain = g;
     });
     // (the layer asked for while loading)
-    const first = current || want;
+    const first = SINGLE ? 'full' : (current || want);
     current = null;
     set(first, true);
     if (o.fadeIn > 0) fadeGain(ctx, fader.gain, 1, when, o.fadeIn);
@@ -248,13 +275,13 @@ export function createMusic(opts = {}) {
       return loading;
     },
     layer(name) {
-      if (name !== 'base' && name !== 'main') return;
+      if (SINGLE || (name !== 'base' && name !== 'main')) return;
       want = name;
       if (lifting) return;        // (after the Lift)
       if (started) set(name); else current = name;
     },
     lift(bars) {
-      if (!started) return;
+      if (!started || SINGLE) return;
       if (lifting) clearTimeout(lifting);
       set('lift');
       const hold = ((bars || 4) + FADE_BARS) * BAR * 1000;
