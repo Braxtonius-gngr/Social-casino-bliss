@@ -121,9 +121,10 @@ const ringAngle = k => (RING.step * Math.ceil(k / 2) + (k >= 5 ? RING.end : 0)) 
 const ringAt = (th, r = RING.r) => [RING.c[0] + Math.sin(th) * r, RING.c[1] + Math.cos(th) * r];
 // (the taller torments a little further off, so each fills its frame alike)
 const RING_DR = [0, 0, 0, 0, 40, 34, 22];
-// (and the dragging on a low mound: what it drags lies on the ground, which
-// the broadside would otherwise cover)
-const RING_UP = [0, 0, 0, 30, 0, 0, 0];
+// (every torment on a low mound, so its feet and its pool stand clear of
+// the broadside's top edge at the seat; the dragging on a higher one: what
+// it drags lies on the ground)
+const RING_UP = [24, 24, 24, 40, 24, 24, 24];
 // The shelf: flat round your feet and the table, falling to the floor of the
 // ring beyond its lip; the river's trough between, the hills behind.
 const SHELF = 205;
@@ -726,7 +727,7 @@ function vGallows(kit, rnd) {
   });
   // Death the drummer: the drum slung at his hip, a stick in each hand
   const death = buildDeath(kit, rnd); g.add(death); restSkeleton(death);
-  death.position.set(4, 0, -26); death.rotation.y = -0.3;   // (before the two of them, toward you, the drum at his side in sight)
+  death.position.set(70, 0, -34); death.rotation.y = 0.45;   // (out past the near post, clear of the two of them, turned in to them and toward you, the drum at his side in sight)
   const dd = death.userData;
   const drum = G(dd.hips, 12, -6, -12);
   const dm = mesh(new THREE.CylinderGeometry(9, 9, 14, 16), kit.cloth, drum, 1.6); dm.rotation.x = HALF; dm.rotation.z = 0.3;
@@ -736,7 +737,7 @@ function vGallows(kit, rnd) {
   // band at the head's height printed as a red hood; the pool is made and
   // left out so the dressing's draws after it fall as before)
   pool(kit, rnd, 14);
-  [-1, 1].forEach(s => shade(g, s * W / 2, 0, 9, 7, 30)); shade(g, 4, -26, 22, 12); shade(g, -30, 0, 14, 9, 150); shade(g, 30, 0, 14, 9, 150);
+  [-1, 1].forEach(s => shade(g, s * W / 2, 0, 9, 7, 30)); shade(g, 70, -34, 22, 12); shade(g, -30, 0, 14, 9, 150); shade(g, 30, 0, 14, 9, 150);
   const act = (tt, dt, w, still) => {
     const wv = still ? 0 : tt * 3.2;
     stepSkeleton(death, wv, 1.6);   // (bigger dance amplitude)
@@ -856,11 +857,14 @@ function vDragging(kit, rnd) {
   // you, the man dragged after him back into the depth - and set back so
   // Death stands where he did: the whole length of him, head and trailed
   // arms too, stays inside the window instead of running off its edge)
-  const dg = G(g, 26, 0, 37); dg.rotation.y = 1.1;
+  // (the owner's staging: side-on, the drag running across your view, Death
+  // leant into a taut rope he has round the man's ankle - turned back into
+  // the depth, the dragger walked at you and his load hid behind him)
+  const dg = G(g, 4, 0, 30); dg.rotation.y = 0.78;
   const death = buildDeath(kit, rnd); dg.add(death); restSkeleton(death);
-  death.position.set(72, 0, 14); death.rotation.y = -HALF + 0.3;   // (facing +x, your left, a little toward you)
+  death.position.set(82, 0, 10); death.rotation.y = -HALF + 0.12;   // (facing +x, the way he hauls, side-on to you)
   const dd = death.userData;
-  const BEND = -0.2; dd.spine.rotation.x = BEND;   // (leant into the pull: a joint's -x bows forward)
+  const BEND = -0.34; dd.spine.rotation.x = BEND;   // (leant into the pull: a joint's -x bows forward)
   // (striding away: the near leg out in front and bent, the far one long
   // behind on its toes, the hips down with the stride so the front foot stands)
   const SL = 0.55;
@@ -897,7 +901,11 @@ function vDragging(kit, rnd) {
   // above the foot
   const ank = dg.worldToLocal(d.legs.r.foot.getWorldPosition(V(0, 0, 0)));
   const shin = dg.worldToLocal(d.legs.r.kn.getWorldPosition(V(0, 0, 0))).sub(ank).normalize();
-  const tgt = ank.clone().addScaledVector(shin, 5).toArray();
+  // (his fist on the rope's end over his shoulder-height pull, the rope
+  // running back taut and down to the ankle: a fist on the ankle itself
+  // was lost behind his own pelvis from the seat)
+  const ANK = ank.clone().addScaledVector(shin, 5);
+  const tgt = ANK.clone().add(V(24, 28, 4)).toArray();
   const tries = [[-1.0, 0, -0.25, 0.2], [-0.6, 0.4, -0.6, 0.5], [-1.4, -0.3, 0.1, 0.1]].map(st0 => { const an = reach(dd.arms.r, tgt, death, 12, { start: st0 }); return { an, miss: dd.arms.r.miss }; });
   const best = tries.reduce((x, y2) => y2.miss < x.miss ? y2 : x);
   setArm(dd.arms.r, best.an); dd.arms.r.miss = best.miss;
@@ -912,6 +920,15 @@ function vDragging(kit, rnd) {
   // (the hand's grip point, for the body to follow it on each heave)
   const gripAt = () => { g.updateMatrixWorld(true); return dg.worldToLocal(dd.arms.r.hand.localToWorld(V(...GRIP))); };
   const grip0 = gripAt();
+  // the rope: a cord from the fist to a turn round the ankle, re-laid each
+  // frame between the two so it never slacks or passes through either
+  const rope = mesh(new THREE.CylinderGeometry(1.0, 1.0, 1, 6), kit.rope, dg, 1.0);
+  mesh(new THREE.TorusGeometry(4.2, 1.0, 6, 12), kit.rope, d.legs.r.foot, 0.9).rotation.x = HALF;
+  const layRope = () => {
+    const a = gripAt(), b2 = dg.worldToLocal(d.legs.r.foot.getWorldPosition(V(0, 0, 0))).addScaledVector(shin, 3);
+    rope.position.copy(a).add(b2).multiplyScalar(0.5); rope.scale.y = a.distanceTo(b2);
+    rope.quaternion.setFromUnitVectors(V(0, 1, 0), b2.sub(a).normalize());
+  };
   const act = (tt, dt, w, still) => {
     const wv = still ? 0 : tt * 2.2;
     // (the haul: each heave he leans hard into the pull, sinks on the front
@@ -934,6 +951,7 @@ function vDragging(kit, rnd) {
     man.position.set(MAN0.x + (gp.x - grip0.x), MAN0.y, MAN0.z + (gp.z - grip0.z));
     d.neck.rotation.x = 0.35 + (still ? 0 : Math.sin(wv - 0.6) * 0.15);
     d.arms.l.sh.rotation.z = 0.62 + (still ? 0 : Math.sin(wv + 1) * 0.12);
+    man.updateMatrixWorld(true); layRope();
   };
   return { g, death, act, bands, drips: [], crows: [[-100, 2, 62]], width: 150, victims: [man], freed: { pose: 'peace', at: [14, 0, -22], beside: [-52, -6] } };
 }
@@ -947,7 +965,7 @@ export const VIGNETTE_NAMES = ['sawyer', 'flaying', 'wheel', 'dragging', 'gallow
 // figures and its posts, in front of them, and drawn in within 44 of the
 // middle so the next stations' frames never see it; the sawyer's set low
 // to the side of the head that hangs over the pool)
-const SPOTS = [[0, 0, -36, 56, -40], [0, 0, -36, 56, -40], [0, 0, 40, 96, -40], [0, 0, 44, 88, -40], [0, 0, -32, 56, -30], [0, 0, -44, 64, -40], [0, 0, 40, 104, -40]];
+const SPOTS = [[0, 0, -36, 56, -40], [0, 0, -36, 56, -40], [0, 0, 40, 96, -40], [0, 0, -60, 128, 46], [0, 0, -32, 56, -30], [0, 0, -44, 64, -40], [0, 0, 40, 104, -40]];
 
 // Your hands (you are the dealer): two of Death's forearms reaching in from
 // under the frame, the right on the hourglass's cap, the left over the skull
