@@ -573,9 +573,20 @@ function buildHead(kit, o = {}) {
 let ANATOMY = {
   sizePouch: 1.0, sizeLobe: 1.0, length: 50, girth: 50, depth: 33.3,
   fullnessL: 65, fullnessR: 60,
-  hangL: 45, hangR: 55,
-  gorge: 0, sway: 1.0
+  hangL: 55, hangR: 45,          // (the left a little lower, as most men's)
+  gorge: 0, sway: 1.0,
+  cut: 0,                        // (0 uncut, 1 cut)
+  // the shaft's own cut, each 0-100 (a roll scatters them):
+  curve: 40,                     //   how it bows: 0 straight, 100 a clear bend down its length
+  taper: 45,                     //   how it narrows from root to end: 0 even, 100 a strong taper
+  headSize: 50,                  //   the end's width against the shaft: 0 narrower, 100 wider
+  headShape: 50,                 //   the end's form: 0 blunt and round, 100 long and tapered
+  rim: 50,                       //   how far the end's rim stands proud (cut), or the close's length (uncut)
+  humanLimits: false             // (a lab checkbox: each Size held to recorded human extremes)
 };
+// the recorded extremes each Size is held to with humanLimits on (the
+// sliders still reach 3 for stress tests with it off)
+const HUMAN = { pouch: [0.6, 1.5], lobe: [0.6, 1.6] };
 // (a set from before the parts were split - one Size, length and girth as
 // scales, depth as a scale - read as the same man)
 function migrateAnatomy(o) {
@@ -587,6 +598,16 @@ function migrateAnatomy(o) {
   if (out.size != null && out.depth != null && out.depth <= 3) out.depth = (out.depth - 0.3) / 2.7 * 100;
   delete out.size;
   return out;
+}
+// a roll: no two men alike - every attribute drawn within human ranges,
+// weighted toward the middle (two draws averaged)
+export function rollAnatomy(rnd = Math.random) {
+  const mid = () => (rnd() + rnd()) / 2;
+  const span = (lo, hi) => lo + (hi - lo) * mid();
+  const cut = rnd() < 0.5 ? 1 : 0;
+  return { sizePouch: +span(0.7, 1.4).toFixed(2), sizeLobe: +span(0.7, 1.45).toFixed(2), length: Math.round(span(15, 85)), girth: Math.round(span(15, 85)), depth: Math.round(span(10, 70)),
+    fullnessL: Math.round(span(30, 90)), fullnessR: Math.round(span(30, 90)), hangL: Math.round(span(35, 80)), hangR: Math.round(span(20, 65)), cut,
+    curve: Math.round(span(5, 90)), taper: Math.round(span(10, 90)), headSize: Math.round(span(15, 85)), headShape: Math.round(span(10, 90)), rim: Math.round(span(15, 85)) };
 }
 export function setAnatomy(o) { ANATOMY = Object.assign({}, ANATOMY, migrateAnatomy(o)); }
 export function getAnatomy() { return Object.assign({}, ANATOMY); }
@@ -661,25 +682,30 @@ function buildAnatomy(pouch, m, a) {
   // (the owner's rule: a man not in the lab - the valley's - is always at
   // rest; any state but rest is the lab's alone, whatever the base holds)
   if (!pouch.userData.live) a = Object.assign({}, a, { gorge: 0 });
-  const amp = gorgeAmp(a), sL = a.sizeLobe * amp, sP = a.sizePouch * amp;
-  const kL = (0.5 + 1.5 * a.length / 100) * amp, kG = (0.5 + 1.5 * a.girth / 100) * amp;
+  const lim = (v, r) => a.humanLimits ? Math.max(r[0], Math.min(r[1], v)) : v;
+  const amp = gorgeAmp(a), sL = lim(a.sizeLobe, HUMAN.lobe) * amp, sP = lim(a.sizePouch, HUMAN.pouch) * amp;
+  // (Length 0-100 is 0.6x-1.6x of its Size's base length, Girth 0.75x-1.35x
+  // of its base thickness; thickness grows with Size at a third of the rate
+  // length does, so a large Size is long, not a log)
+  const kL = (0.6 + 1.0 * a.length / 100) * amp, kG = (0.75 + 0.6 * a.girth / 100) * amp;
+  const sG = 1 + (sP - 1) / 3;
   const g = new THREE.Group(); pouch.add(g);
 
-  // the two lobes, each with its own fullness and hang
-  // fullness 0–100: 0 slack/empty, 100 round/full
-  // hang 0–100: 0 tight to the body, 100 as low as the sac loft allows
+  // the two lobes, each with its own fullness and hang - each one meaning:
+  // fullness 0-100 is the lobe's fill, its shape (slack: smaller and hanging
+  // long; full: rounder and tighter), with only a little sag when slack;
+  // hang 0-100 is how far down it sits from the body (its top), alone
   const fL = a.fullnessL / 100, fR = a.fullnessR / 100;
   const hL = a.hangL / 100, hR = a.hangR / 100;
-  // lobe radius grows with fullness; drop grows with hang and inversely
-  // with fullness (a full lobe sits higher, an empty one sags)
-  const lobeR = f => (1.6 + f * 0.45) * sL;
-  const lobeDrop = (f, h) => (4.2 + (1 - f) * 1.8 + h * 2.6) * sL;
-  const lobeSquash = f => 1.12 + (1 - f) * 0.2;
+  const lobeR = f => (1.45 + 0.6 * f) * sL;
+  const lobeLong = f => 1.45 - 0.35 * f;
+  const lobeTop = h => (0.6 + 3.6 * h) * sL;
+  const lobeDrop = (f, h, lr) => lobeTop(h) + lr * lobeLong(f) + (1 - f) * 0.4 * sL;
   const lrL = lobeR(fL), lrR = lobeR(fR);
-  const dropL = lobeDrop(fL, hL), dropR = lobeDrop(fR, hR);
+  const dropL = lobeDrop(fL, hL, lrL), dropR = lobeDrop(fR, hR, lrR);
   const lobes = [
-    { sx: -1, lr: lrL, drop: dropL, full: fL, squash: lobeSquash(fL) },
-    { sx:  1, lr: lrR, drop: dropR, full: fR, squash: lobeSquash(fR) }
+    { sx: -1, lr: lrL, drop: dropL, full: fL, squash: lobeLong(fL) },
+    { sx:  1, lr: lrR, drop: dropR, full: fR, squash: lobeLong(fR) }
   ].map(({ sx, lr, drop, full, squash }) => {
     const lobe = facet(knob(lr, 1.0, squash, 1.0, 2), m, g, 0);
     lobe.position.set(sx * (lr * 0.62), -drop, -0.6 * sL);
@@ -688,10 +714,12 @@ function buildAnatomy(pouch, m, a) {
     return lobe;
   });
 
-  // the sac loft wrapping both lobes: its profile follows whichever lobe
-  // hangs lower (fruit in a mesh bag — the bag stretches to hold them)
-  const avgLR = (lrL + lrR) / 2;
-  const sacLow = -Math.max(dropL, dropR) - 0.45 * sL;
+  // the sac: a bag from a root ring fixed on the body (it never climbs with
+  // the lobes' size) down round whichever lobe hangs lower (fruit in a mesh
+  // bag - the bag stretches to hold them)
+  const avgLR = (lrL + lrR) / 2, kR = Math.sqrt(sL);
+  const sacLow = -Math.max(dropL + lrL * lobeLong(fL), dropR + lrR * lobeLong(fR)) + avgLR * 0.95 - 0.45 * sL;
+  const neckY = -Math.min(2.0 * sL, 2.4);
   // (a build's man - pouch.userData.live: the sac is skin stretched over
   // the lobes where they are now, joined up into the body at its root, and
   // reshaped each frame the lobes move: loose enough that each moves on its
@@ -701,23 +729,23 @@ function buildAnatomy(pouch, m, a) {
     const spread0 = Math.abs(lobes[1].position.x - lobes[0].position.x) / 2 || 1;
     const secs = () => {
       const L = lobes[0].position, R = lobes[1].position, cx = (L.x + R.x) / 2, zc = (L.z + R.z) / 2 + 0.4 * sL, spread = Math.abs(R.x - L.x) / 2;
-      const low = Math.min(L.y, R.y) - 0.45 * sL, wide = avgLR * 1.55 * Math.max(0.85, spread / spread0);
+      const low = Math.min(L.y - lrL * (lobeLong(fL) - 1), R.y - lrR * (lobeLong(fR) - 1)) - 0.45 * sL, wide = avgLR * 1.55 * Math.max(0.85, spread / spread0);
       return [
-        { y: 3.0 * sL, rx: 2.4 * sL, rz: 2.0 * sL },
-        { y: 1.0 * sL, rx: 2.0 * sL, rz: 1.6 * sL },
-        { y: -2.0 * sL, rx: avgLR * 1.15, rz: avgLR * 0.9, x: cx * 0.3, z: zc * 0.3 },
+        { y: 3.0, rx: 2.4 * kR, rz: 2.0 * kR },
+        { y: 1.0, rx: 2.0 * kR, rz: 1.6 * kR },
+        { y: neckY, rx: avgLR * 1.15, rz: avgLR * 0.9, x: cx * 0.3, z: zc * 0.3 },
         { y: low + avgLR * 0.3, rx: wide, rz: avgLR * 0.95, x: cx, z: zc },
         { y: low - avgLR * 0.55, rx: avgLR * 1.25, rz: avgLR * 0.8, x: cx, z: zc },
         { y: low - avgLR * 0.95, rx: 0.3 * sL, rz: 0.3 * sL, x: cx, z: zc }
       ];
     };
-    const geo = loft(secs(), { n: 14, metric: UVM.linen }); geo.computeVertexNormals();
+    const geo = loft(secs(), { n: 18, metric: UVM.linen }); geo.computeVertexNormals();
     sac = new THREE.Mesh(geo, m); sac.position.z = -0.4 * sL; sac.frustumCulled = false; g.add(sac);
-    updateSac = () => { const ng = loft(secs(), { n: 14, metric: UVM.linen }); geo.attributes.position.array.set(ng.attributes.position.array); geo.attributes.position.needsUpdate = true; geo.computeVertexNormals(); ng.dispose(); };
+    updateSac = () => { const ng = loft(secs(), { n: 18, metric: UVM.linen }); geo.attributes.position.array.set(ng.attributes.position.array); geo.attributes.position.needsUpdate = true; geo.computeVertexNormals(); ng.dispose(); };
   } else {
     sac = facet(loft([
-      { y: 1.0 * sL, rx: 2.0 * sL, rz: 1.6 * sL },
-      { y: -2.0 * sL, rx: avgLR * 1.15, rz: avgLR * 0.9 },
+      { y: 1.0, rx: 2.0 * kR, rz: 1.6 * kR },
+      { y: neckY, rx: avgLR * 1.15, rz: avgLR * 0.9 },
       { y: sacLow + avgLR * 0.3, rx: avgLR * 1.55, rz: avgLR * 0.95 },
       { y: sacLow - avgLR * 0.55, rx: avgLR * 1.25, rz: avgLR * 0.8 },
       { y: sacLow - avgLR * 0.95, rx: 0.3 * sL, rz: 0.3 * sL }
@@ -726,35 +754,68 @@ function buildAnatomy(pouch, m, a) {
   }
   sac.userData.sac = true;
 
-  // the shaft: attached at the root above the lobes, it falls forward
-  // over their top and lies down the front of them, pushed out by them
-  const L = 6.4 * kL * sP;
-  const r = 1.2 * kG * sP;
-  const avgDrop = (dropL + dropR) / 2;
-  // (depth: on a build's man, how far forward the lobes present it - the
-  // fuller, bigger and higher they sit, the more; the valley's men keep the
-  // one fixed push they were made with)
-  const dk = pouch.userData.live
-    ? (a.depth / 100) * 3.2 * (0.35 + 0.65 * (fL + fR) / 2) * (1 - 0.6 * (hL + hR) / 2) - 0.25
-    : (0.3 + 2.7 * a.depth / 100 - 1) * 1.2;
-  const front = -0.6 * sL - avgLR - r * 0.75 - dk * sL;
+  // the shaft: rooted at a fixed ring on the body, its own length down from
+  // there (never stretched by the lobes), lying down the front of them; a
+  // round, slightly tapering tube with a rounded end
+  const L = 7.27 * kL * sP;
+  const r = 1.43 * kG * sG;
+  // (depth - a build's man: tilted forward off the body from its root, more
+  // with fuller, bigger, higher lobes; the valley's men keep the one fixed
+  // push they were made with)
+  const live = pouch.userData.live;
+  const dk = live ? 0 : (0.3 + 2.7 * a.depth / 100 - 1) * 1.2;
+  const tilt = live ? (a.depth / 100) * 0.6 * (0.35 + 0.65 * (fL + fR) / 2) * (1 - 0.5 * (hL + hR) / 2) * Math.min(1.4, Math.sqrt(sL)) : 0;
+  const front = -0.6 * sL - avgLR * 0.9 - r * 0.75 - dk * sL;
+  const R0 = new THREE.Vector3(0, 0.6, -1.4), c = Math.cos(tilt), sn = Math.sin(tilt);
+  const turn = ([x, y, z]) => { const dy = y - R0.y, dz = z - R0.z; return [x, R0.y + dy * c - dz * sn, R0.z + dy * sn + dz * c]; };
+  // its own cut (the roll scatters these): the bow along its length, the
+  // taper root to end, the end's width, form and rim
+  const P = k => (a[k] == null ? 50 : a[k]) / 100;
+  const bow = P('curve') * 0.55, tp = 1 - P('taper') * 0.3, hs = 0.85 + P('headSize') * 0.35, hl = 0.4 + P('headShape') * 0.5, rimK = P('rim');
+  const bend = u => bow * r * Math.sin(Math.PI * u);   // (bowed back toward the body in the middle: a hang's curve)
   const pts = [
-    [0, 0.6 * sL, -1.4 * sL],
-    [0, -1.6 * sL, front * 0.62],
-    [0, -avgDrop + avgLR * 0.55, front],
-    [0, -avgDrop - avgLR * 0.2, front - 0.15 * sL],
-    [0, -2.0 * sL - L, front + 0.5 * sL]
-  ];
-  const sh = facet(sweep(pts, [r * 1.08, r, r * 0.98, r * 1.02, r * 0.55], 14, UVM.linen), m, g, 0);
+    [0, R0.y, R0.z],
+    [0, R0.y - 0.22 * L, front * 0.62 + bend(0.22)],
+    [0, R0.y - 0.5 * L, front + bend(0.5)],
+    [0, R0.y - 0.78 * L, front - 0.1 + bend(0.78)],
+    [0, R0.y - L, front + 0.35],
+    [0, R0.y - L - r * hl * 0.6, front + 0.45]
+  ].map(turn);
+  // (cut: the rim stands proud and the end rounds off; uncut: the end
+  // carries on past, narrowing to a soft close)
+  const rT = r * tp;
+  const radii = a.cut ? [r * 1.1, r, r * (0.5 + 0.5 * tp), rT, rT * hs * (1 + 0.12 * rimK), rT * hs * 0.45]
+                      : [r * 1.1, r, r * (0.5 + 0.5 * tp), rT, rT * hs * 0.95, rT * hs * 0.3];
+  if (!a.cut) { pts.push(turn([0, R0.y - L - r * hl * (0.6 + 0.5 * rimK), front + 0.5])); radii.push(rT * 0.12); }
+  const sh = facet(sweep(pts, radii, 18, UVM.linen), m, g, 0);
   sh.userData.pouch = true; sh.userData.shaft = true;
+  // (the root: a low flared skirt into the pubis, so the shaft grows out of
+  // the body and never butts against it as a capped tube)
+  const skirt = facet(knob(r * 1.5, 1.15, 0.5, 1.0, 1), m, g, 0); skirt.position.set(0, R0.y + 0.2, R0.z + 0.2); skirt.rotation.x = -0.35 + tilt; skirt.userData.pouch = true;
   // (for a physics pass - the lab's: where the mass sits, where the shaft
   // roots and ends, their radii; all in this group's own units; kl, the
   // lobes' scale, for their jiggle)
   lobes.forEach(l => { l.userData.p0 = l.position.clone(); });
+  const avgDrop = (dropL + dropR) / 2;
   g.userData = { lobes, sac, shaft: sh, sway: a.sway, params: a, mass: [0, -avgDrop, -0.6 * sL], shaftRoot: pts[0], shaftTip: pts[pts.length - 1], lobeR: avgLR, shaftR: r, kl: sL, updateSac };
   return g;
 }
 
+// the lobes' own rest: the lab's second rest setting - the lobes (and the
+// sac over them) turned forward about the root by `deg`, apart from the
+// shaft's; `off` is each lobe's jiggle offset (the physics'), or nothing
+export function placeLobes(g, deg, off) {
+  const d = g && g.userData; if (!d || !d.lobes) return;
+  const th = (deg || 0) * Math.PI / 180, c = Math.cos(th), sn = Math.sin(th);
+  d.lobes.forEach((lb, i) => {
+    const p = lb.userData.p0; if (!p) return;
+    const y = p.y - 0.6, z = p.z + 1.4;   // (about the root ring)
+    lb.position.set(p.x, 0.6 + y * c - z * sn, -1.4 + y * sn + z * c);
+    if (off && off[i]) lb.position.add(off[i]);
+    lb.rotation.x = -th;
+  });
+  if (d.updateSac) d.updateSac();
+}
 // rebuild in place: tear down the old mesh and build with new params,
 // keeping the pouch group's position and orientation (for the dev overlay)
 export function rebuildAnatomy(fig, newParams) {
@@ -899,13 +960,23 @@ function dsMat(m, key) { const d = m.clone(); d.side = THREE.DoubleSide; d.userD
 // the loose ones (boxers, loincloth, a shirt) hang as they always did. The
 // cloth never stiffens, damps or carries the anatomy (the owner's rollback):
 // it only lies over it.
+// how a snug garment meets the anatomy (the lab's pick; the owner decides):
+//   free   the cloth follows wherever the anatomy hangs (its own rest)
+//   raise  the anatomy rests carried higher, so it sits inside the garment,
+//          but nothing holds it - it can still swing out
+//   hold   the garment holds it: lifted up against the body and kept within
+//          the garment's swing cone, the cloth kept inside the garment's own
+//          edge - the cloth still only reads the real meshes under it
+let CONTAIN = 'free';   // (the owner's pick: free)
+export function setContain(m) { CONTAIN = m; }
+export function getContain() { return CONTAIN; }
 export const FABRIC = {
-  compression: { name: 'Compression', support: 10, lift: 0.62, ease: -0.4, cling: 0.95, stiff: 0.15, thick: 0.3, panel: true },
-  brief:       { name: 'Brief',       support: 16, lift: 0.62, ease: 0,    cling: 0.85, stiff: 0.30, thick: 0.6, panel: true },
-  hose:        { name: 'Hose',        support: 22, lift: 0.62, ease: 0.2,  cling: 0.98, stiff: 0.05, thick: 0.2, panel: true },
-  boxerBriefs: { name: 'Boxer briefs', support: 28, lift: 0.48, ease: 0.3, cling: 0.80, stiff: 0.35, thick: 0.7, panel: true },
-  longJohns:   { name: 'Long johns',  support: 36, lift: 0.40, ease: 0.5,  cling: 0.85, stiff: 0.40, thick: 0.9, panel: true },
-  boxers:      { name: 'Boxers',      support: 50, lift: 0.22, slip: true, ease: 2.0, cling: 0.45, stiff: 0.60, thick: 1.1 },
+  compression: { name: 'Compression', support: 10, lift: 0.62, hold: 0.9, ease: -0.4, cling: 0.95, stiff: 0.15, thick: 0.3, panel: true },
+  brief:       { name: 'Brief',       support: 16, lift: 0.62, hold: 0.8, ease: 0,    cling: 0.85, stiff: 0.30, thick: 0.6, panel: true },
+  hose:        { name: 'Hose',        support: 22, lift: 0.62, hold: 0.78,  ease: 0.2,  cling: 0.98, stiff: 0.05, thick: 0.2, panel: true },
+  boxerBriefs: { name: 'Boxer briefs', support: 28, lift: 0.48, hold: 0.72, ease: 0.3, cling: 0.80, stiff: 0.35, thick: 0.7, panel: true },
+  longJohns:   { name: 'Long johns',  support: 36, lift: 0.40, hold: 0.66,  ease: 0.5,  cling: 0.85, stiff: 0.40, thick: 0.9, panel: true },
+  boxers:      { name: 'Boxers',      support: 50, lift: 0.22, slip: true, ease: 2.0, cling: 0.45, stiff: 0.60, thick: 1.1, panel: true, front: true },
   loin:        { name: 'Loincloth',   support: 60, lift: 0.4, slip: true, ease: 0, cling: 0.15, stiff: 0.90, thick: 1.5 },
   shirt:       { name: 'Shirt (nothing under)', support: 75, lift: 0, slip: true, cling: 0.35, stiff: 0.75, thick: 1.2 },
   none:        { name: 'None',        support: 180, lift: 0 }
@@ -946,19 +1017,26 @@ function dress(kit, o, T, hips, arms, legs, pouch, x, sleeves) {
   // thickness - a ring can't follow two round masses off the middle)
   // (a shirt alone has nothing under it: no seat, no cup)
   let briefMesh = null;
-  if (!shirtOnly) { wrapOver(briefGeo, x.glutes, Math.max(0.5, 0.9 + E)); briefMesh = facet(briefGeo, cloth, hips, 1.2); }
+  // (and over the tops of the thighs at its leg openings - the thigh's own
+  // hull, so the skin never shows through the cloth)
+  const thighSolids = ['l', 'r'].map(k => { const hp = legs[k].hip.position; return { c: new THREE.Vector3(hp.x, hp.y - 8, hp.z + 0.6), r: [9.4 * x.kT, 12.5, 10.0 * x.kT] }; });
+  if (!shirtOnly) { wrapOver(briefGeo, [...(x.glutes || []), ...thighSolids], Math.max(0.5, 0.9 + E)); briefMesh = facet(briefGeo, cloth, hips, 1.2); }
   // the cup: fitted round the anatomy where it rests, a finger's room in it
   let cup = null;
   // (a brief holds the anatomy up and forward against him: it rests turned
   // that far, and the cup is fitted to it there; a loincloth's wrap less so)
-  const lift = F.lift, R = 0.9;
+  const lift = F.hold != null && CONTAIN !== 'free' ? (CONTAIN === 'hold' ? F.hold : F.hold * 0.85) : F.lift, R = 0.9;
   // a snug fabric's front: the live panel (cloth.mjs), fitted each frame to
   // the anatomy, the thighs and the brief under it - no cup, no shape of its own
   let panel = null;
   const shortLegs = [];
   if (pouch && F.panel && !shirtOnly) {
     const O = pouch.position.clone();
-    const ey = new THREE.Vector3(0, -Math.cos(lift), -Math.sin(lift)), ez = new THREE.Vector3(0, Math.sin(lift), -Math.cos(lift)), ex = new THREE.Vector3(1, 0, 0);
+    // (the panel lies on the garment's front, which slopes in under the
+    // belly: its normal is the front's, whatever the anatomy's rest - the
+    // anatomy is what the panel reads, not what it is laid along)
+    const PHI = 0.25;
+    const ey = new THREE.Vector3(0, -Math.cos(PHI), -Math.sin(PHI)), ez = new THREE.Vector3(0, Math.sin(PHI), -Math.cos(PHI)), ex = new THREE.Vector3(1, 0, 0);
     const waist = new THREE.Vector3(0, 3.0, frontAt(T, 3.0)), gusset = new THREE.Vector3(0, -14.6, 3.0);
     // (the window: across the fork and the anatomy's width, from the
     // waistband down past the anatomy's reach - measured from its meshes as
@@ -978,16 +1056,20 @@ function dress(kit, o, T, hips, arms, legs, pouch, x, sleeves) {
         }
       });
       pouch.quaternion.copy(q0); pouch.position.copy(p0); pouch.updateMatrixWorld(true);
-      const hw = Math.max(9, Math.max(-x0, x1) + 4);
+      const hw = Math.max(9, Math.max(-x0, x1) + 4), yTop = waist.clone().sub(O).dot(ey);
       // (what a shirt falls out over, and how low a loincloth's flap must reach)
       x.cupFront = O.z + ez.z * (z1 + F.thick); x.cupBot = yLow - 1;
-      return { O, ex, ey, ez, x0: -hw, x1: hw, y0: waist.clone().sub(O).dot(ey), y1: Math.max(y1 + 4, gusset.clone().sub(O).dot(ey) + 1) };
+      return { O, ex, ey, ez, x0: -hw, x1: hw, y0: yTop, y1: Math.max(y1 + 4, gusset.clone().sub(O).dot(ey) + 1) };
     };
     const fq = 1.3 / (UVM.linen[2] || 1.3);
     const hipSleeves = (sleeves || []).filter(sl => sl.pa === hips && (sl.pb === legs.l.hip || sl.pb === legs.r.hip)).map(sl => sl.mesh);
     panel = makePanel({
       hips, pouch, mat: cloth, outline: 1.1,
-      fabric: { cling: F.cling, stiff: F.stiff, thick: F.thick },
+      // (hold: the cloth is kept inside the garment's own edge, hemmed to it;
+      // front: a loose garment's whole front hangs over the fork, bridged)
+      fabric: { cling: F.cling, stiff: F.stiff, thick: F.thick, hem: CONTAIN === 'hold' || !!F.front, front: !!F.front,
+        // (held: the elastic presses soft tissue flatter and broader against the body)
+        press: CONTAIN === 'hold' && !F.front ? 0.75 : undefined, flatten: CONTAIN === 'hold' && !F.front ? 0.55 : undefined },
       metric: [DENS * fq / UVM.linen[0], DENS * fq / UVM.linen[1]],
       frame,
       bodies: () => [legs.l.thigh, legs.r.thigh, ...hipSleeves].filter(Boolean),
@@ -1085,7 +1167,9 @@ function dress(kit, o, T, hips, arms, legs, pouch, x, sleeves) {
       addSleeve(L.hip.parent.parent, sleeves, lin, UVM.linen, { pa: L.hip, a: [0, -33, 0], pb: L.kn, b: [0, -9, 0], ra: [6.1 * kT + 0.6 + d, 6.6 * kT + 0.6 + d], rb: [5.45 * kS + 0.6 + d, 6.1 * kS + 0.6 + d], bulge: 0.5, len: 18 });
     });
   }
-  return { cup, cloth: panel, flap: x.flap || null, support: F.support, lift, fabric: fab, hold: F };
+  // (free or raise: a snug garment does not hold it - the swing is the tissue's own)
+  const support = F.panel && CONTAIN !== 'hold' ? Math.max(F.support, 65) : F.support;
+  return { cup, cloth: panel, flap: x.flap || null, support, lift, fabric: fab, hold: F };
 }
 
 // ------------------------------------------------------------ a build
@@ -1352,6 +1436,9 @@ export function buildFigure(kit, rnd, o = {}) {
   if (B && !flayed && o.nude) worn = { cup: null, support: 180, lift: 0, fabric: 'none', hold: FABRIC.none };
   else if (B && !flayed) { root.updateMatrixWorld(true); worn = dress(kit, o, T, hips, arms, legs, pouch, { gb, kA, kT, kS, fx, glutes }, sleeves); }
   if (B && B.height !== 1) root.scale.setScalar(B.height);
+  // (a garment over the hips covers the hip joints' sleeves: not drawn, or
+  // they show through the cloth; they still shape the cloth over them)
+  if (worn && worn.fabric && worn.fabric !== 'shirt' && worn.fabric !== 'none') sleeves.forEach(sl => { if (sl.pa === hips && (sl.pb === legs.l.hip || sl.pb === legs.r.hip)) sl.mesh.visible = false; });
   // (under a live panel the anatomy is not drawn: the panel is its shape,
   // fitted to it each frame - it still moves, and the panel reads it)
   if (worn && worn.cloth && pouch) pouch.visible = false;
