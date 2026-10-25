@@ -658,6 +658,9 @@ function buildAnatomy(pouch, m, a) {
   // (each part at its own scale: sL the lobes, the sac and the root they
   // hang from; sP the shaft's length and thickness - so one can change
   // without the other. Laid out in the pouch's own units, the group unscaled.)
+  // (the owner's rule: a man not in the lab - the valley's - is always at
+  // rest; any state but rest is the lab's alone, whatever the base holds)
+  if (!pouch.userData.live) a = Object.assign({}, a, { gorge: 0 });
   const amp = gorgeAmp(a), sL = a.sizeLobe * amp, sP = a.sizePouch * amp;
   const kL = (0.5 + 1.5 * a.length / 100) * amp, kG = (0.5 + 1.5 * a.girth / 100) * amp;
   const g = new THREE.Group(); pouch.add(g);
