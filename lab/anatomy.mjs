@@ -449,7 +449,7 @@ function pose(dt, fresh) {
     if (s.sim.step(fresh ? 0 : dt)) awake = 0.6;
   });
   // the cloth over each man, fitted to where his body and anatomy are now
-  active().forEach(s => { const c = s.man && s.man.userData.cloth; if (c) c.update(); });
+  active().forEach(s => { const u = s.man && s.man.userData; if (!u) return; if (u.fitBrief) u.fitBrief(); if (u.cloth) u.cloth.update(); });
   dirty = true;
 }
 

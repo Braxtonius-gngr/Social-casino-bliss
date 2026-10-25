@@ -220,7 +220,7 @@ export function makePanel(spec) {
           const ii = i + di, jj = j + dj; if (ii < 0 || jj < 0 || ii >= W || jj >= H) { edge = 1; break; }
           const qq = jj * W + ii; if (!covered[qq] || !onLayer[qq]) { edge = Math.max(edge, 1 - Math.max(Math.abs(di), Math.abs(dj)) / 3); break; }
         }
-        if (edge > 0) { const onG = layer[q] + LAYER_GAP; h[q] = h[q] + (Math.max(onG, Math.min(h[q], onG + thick)) - h[q]) * edge; }
+        if (edge > 0) { const onG = layer[q] + LAYER_GAP * (1 - edge); h[q] = h[q] + (Math.max(onG, Math.min(h[q], onG + thick)) - h[q]) * edge; }
       }
     }
     // laid along the frame: hips-local O + X ex + Y ey + h ez
@@ -233,6 +233,21 @@ export function makePanel(spec) {
     // only the cells that show: a cell is drawn when a corner of it is over
     // the anatomy - the rest is tucked under the brief or into the thigh, or
     // fallen back, and drawing it would show a sheet's edge where none is
+    // (one cell's grace round the covered region, so the edge is a soft
+    // falloff rather than a staircase of cells; and one smoothing pass over
+    // the heights, so facets don't read)
+    tmp.set(covered);
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+      const q = j * W + i; if (tmp[q]) continue;
+      let near = 0; for (let dj = -1; dj <= 1 && !near; dj++) for (let di = -1; di <= 1; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < W && jj < H && tmp[jj * W + ii]) { near = 1; break; } }
+      if (near && (!fab.hem || onLayer[q])) { covered[q] = 1; h[q] = lower[q] > NONE / 2 ? Math.max(lower[q], h[q]) : (onLayer[q] ? layer[q] + (fab.hem ? 0 : LAYER_GAP) : h[q]); }
+    }
+    for (let j = 1; j < H - 1; j++) for (let i = 1; i < W - 1; i++) {
+      const q = j * W + i; if (!covered[q]) continue;
+      const avg = (h[q - 1] + h[q + 1] + h[q - W] + h[q + W]) * 0.25;
+      soft[q] = Math.max(lower[q], h[q] * 0.5 + avg * 0.5);
+    }
+    for (let j = 1; j < H - 1; j++) for (let i = 1; i < W - 1; i++) { const q = j * W + i; if (covered[q]) h[q] = soft[q]; }
     const ia = P.mesh.geometry.index, ix = ia.array; let k = 0;
     for (let j = 0; j < P.ny; j++) for (let i = 0; i < P.nx; i++) {
       const a = j * W + i, b = a + 1, c = a + W, d = c + 1;

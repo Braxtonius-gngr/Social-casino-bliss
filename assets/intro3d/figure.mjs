@@ -687,7 +687,7 @@ function buildAnatomy(pouch, m, a) {
   // (Length 0-100 is 0.6x-1.6x of its Size's base length, Girth 0.75x-1.35x
   // of its base thickness; thickness grows with Size at a third of the rate
   // length does, so a large Size is long, not a log)
-  const kL = (0.6 + 1.0 * a.length / 100) * amp, kG = (0.75 + 0.6 * a.girth / 100) * amp;
+  const kL = (0.45 + 1.15 * a.length / 100) * amp, kG = (0.65 + 0.8 * a.girth / 100) * amp;
   const sG = 1 + (sP - 1) / 3;
   const g = new THREE.Group(); pouch.add(g);
 
@@ -766,7 +766,7 @@ function buildAnatomy(pouch, m, a) {
   const dk = live ? 0 : (0.3 + 2.7 * a.depth / 100 - 1) * 1.2;
   const tilt = live ? (a.depth / 100) * 0.6 * (0.35 + 0.65 * (fL + fR) / 2) * (1 - 0.5 * (hL + hR) / 2) * Math.min(1.4, Math.sqrt(sL)) : 0;
   const front = -0.6 * sL - avgLR * 0.9 - r * 0.75 - dk * sL;
-  const R0 = new THREE.Vector3(0, 0.6, -1.4), c = Math.cos(tilt), sn = Math.sin(tilt);
+  const R0 = new THREE.Vector3(0, 1.2, 0.2), c = Math.cos(tilt), sn = Math.sin(tilt);
   const turn = ([x, y, z]) => { const dy = y - R0.y, dz = z - R0.z; return [x, R0.y + dy * c - dz * sn, R0.z + dy * sn + dz * c]; };
   // its own cut (the roll scatters these): the bow along its length, the
   // taper root to end, the end's width, form and rim
@@ -784,14 +784,15 @@ function buildAnatomy(pouch, m, a) {
   // (cut: the rim stands proud and the end rounds off; uncut: the end
   // carries on past, narrowing to a soft close)
   const rT = r * tp;
-  const radii = a.cut ? [r * 1.1, r, r * (0.5 + 0.5 * tp), rT, rT * hs * (1 + 0.12 * rimK), rT * hs * 0.45]
-                      : [r * 1.1, r, r * (0.5 + 0.5 * tp), rT, rT * hs * 0.95, rT * hs * 0.3];
-  if (!a.cut) { pts.push(turn([0, R0.y - L - r * hl * (0.6 + 0.5 * rimK), front + 0.5])); radii.push(rT * 0.12); }
+  const radii = a.cut ? [r, r, r * (0.5 + 0.5 * tp), rT, rT * hs * (1 + 0.12 * rimK), rT * hs * 0.5]
+                      : [r, r, r * (0.5 + 0.5 * tp), rT, rT * hs * 0.95, rT * hs * 0.55];
+  if (!a.cut) { pts.push(turn([0, R0.y - L - r * hl * (0.6 + 0.35 * rimK), front + 0.5])); radii.push(rT * 0.3); }
   const sh = facet(sweep(pts, radii, 18, UVM.linen), m, g, 0);
   sh.userData.pouch = true; sh.userData.shaft = true;
   // (the root: a low flared skirt into the pubis, so the shaft grows out of
   // the body and never butts against it as a capped tube)
-  const skirt = facet(knob(r * 1.5, 1.15, 0.5, 1.0, 1), m, g, 0); skirt.position.set(0, R0.y + 0.2, R0.z + 0.2); skirt.rotation.x = -0.35 + tilt; skirt.userData.pouch = true;
+  // (no skirt: the root ring sits a little inside the pelvis' skin, so the
+  // tube grows out of the body with no cap and no flare)
   // (for a physics pass - the lab's: where the mass sits, where the shaft
   // roots and ends, their radii; all in this group's own units; kl, the
   // lobes' scale, for their jiggle)
@@ -809,8 +810,8 @@ export function placeLobes(g, deg, off) {
   const th = (deg || 0) * Math.PI / 180, c = Math.cos(th), sn = Math.sin(th);
   d.lobes.forEach((lb, i) => {
     const p = lb.userData.p0; if (!p) return;
-    const y = p.y - 0.6, z = p.z + 1.4;   // (about the root ring)
-    lb.position.set(p.x, 0.6 + y * c - z * sn, -1.4 + y * sn + z * c);
+    const y = p.y - 1.2, z = p.z - 0.2;   // (about the root ring)
+    lb.position.set(p.x, 1.2 + y * c - z * sn, 0.2 + y * sn + z * c);
     if (off && off[i]) lb.position.add(off[i]);
     lb.rotation.x = -th;
   });
@@ -1020,7 +1021,26 @@ function dress(kit, o, T, hips, arms, legs, pouch, x, sleeves) {
   // (and over the tops of the thighs at its leg openings - the thigh's own
   // hull, so the skin never shows through the cloth)
   const thighSolids = ['l', 'r'].map(k => { const hp = legs[k].hip.position; return { c: new THREE.Vector3(hp.x, hp.y - 8, hp.z + 0.6), r: [9.4 * x.kT, 12.5, 10.0 * x.kT] }; });
-  if (!shirtOnly) { wrapOver(briefGeo, [...(x.glutes || []), ...thighSolids], Math.max(0.5, 0.9 + E)); briefMesh = facet(briefGeo, cloth, hips, 1.2); }
+  if (!shirtOnly) {
+    wrapOver(briefGeo, [...(x.glutes || []), ...thighSolids], Math.max(0.5, 0.9 + E)); briefMesh = facet(briefGeo, cloth, hips, 1.2);
+    // (and each pose: the thighs as they stand now push the leg openings out
+    // over them, so a swung thigh never comes through the cloth - the base
+    // positions kept, both the facets and the outline's smooth copy pushed)
+    const geos = [briefMesh.geometry, ...briefMesh.children.filter(c => c.userData.outline).map(c => c.geometry)];
+    const base = geos.map(gm => gm.attributes.position.array.slice());
+    const pad = Math.max(0.5, 0.9 + E), cw = new THREE.Vector3();
+    x.fitBrief = () => {
+      hips.updateMatrixWorld(true);
+      const solids = ['l', 'r'].map(k => {
+        const hp = legs[k].hip; hp.updateMatrixWorld(true);
+        cw.set(0, -8, 0.6); hp.localToWorld(cw); hips.worldToLocal(cw);
+        // (an upright hull at the thigh's top, where it stands now: the swing
+        // moves it, the hull itself stays the hip's)
+        return { c: cw.clone(), r: [9.4 * x.kT, 12.5, 10.0 * x.kT] };
+      });
+      geos.forEach((gm, i) => { gm.attributes.position.array.set(base[i]); wrapOver(gm, solids, pad); gm.attributes.position.needsUpdate = true; });
+    };
+  }
   // the cup: fitted round the anatomy where it rests, a finger's room in it
   let cup = null;
   // (a brief holds the anatomy up and forward against him: it rests turned
@@ -1069,7 +1089,7 @@ function dress(kit, o, T, hips, arms, legs, pouch, x, sleeves) {
       // front: a loose garment's whole front hangs over the fork, bridged)
       fabric: { cling: F.cling, stiff: F.stiff, thick: F.thick, hem: CONTAIN === 'hold' || !!F.front, front: !!F.front,
         // (held: the elastic presses soft tissue flatter and broader against the body)
-        press: CONTAIN === 'hold' && !F.front ? 0.75 : undefined, flatten: CONTAIN === 'hold' && !F.front ? 0.55 : undefined },
+        press: CONTAIN === 'hold' && !F.front ? 0.75 : (F.front ? 0.5 : undefined), flatten: CONTAIN === 'hold' && !F.front ? 0.55 : (F.front ? 0.4 : undefined) },
       metric: [DENS * fq / UVM.linen[0], DENS * fq / UVM.linen[1]],
       frame,
       bodies: () => [legs.l.thigh, legs.r.thigh, ...hipSleeves].filter(Boolean),
@@ -1168,8 +1188,10 @@ function dress(kit, o, T, hips, arms, legs, pouch, x, sleeves) {
     });
   }
   // (free or raise: a snug garment does not hold it - the swing is the tissue's own)
-  const support = F.panel && CONTAIN !== 'hold' ? Math.max(F.support, 65) : F.support;
-  return { cup, cloth: panel, flap: x.flap || null, support, lift, fabric: fab, hold: F };
+  // (free or raise: a snug garment does not hold it at all - the tissue's own
+  // upright cone, and hung head down it falls where gravity takes it)
+  const support = F.panel && CONTAIN !== 'hold' ? 0 : F.support;
+  return { cup, cloth: panel, fitBrief: x.fitBrief || null, flap: x.flap || null, support, lift, fabric: fab, hold: F };
 }
 
 // ------------------------------------------------------------ a build
@@ -1442,7 +1464,7 @@ export function buildFigure(kit, rnd, o = {}) {
   // (under a live panel the anatomy is not drawn: the panel is its shape,
   // fitted to it each frame - it still moves, and the panel reads it)
   if (worn && worn.cloth && pouch) pouch.visible = false;
-  root.userData = { cup: worn && worn.cup, cloth: worn && worn.cloth, flap: worn && worn.flap, support: worn && worn.support, lift: (worn && worn.lift) || 0, fabric: worn && worn.fabric, hold: worn && worn.hold, hips, torso, neck, head, arms, legs, pouch, mouth: hd.userData.mouth, setFace: hd.userData.setFace || null, phase: rnd() * 6.28, build: B, sleeves,
+  root.userData = { cup: worn && worn.cup, cloth: worn && worn.cloth, fitBrief: worn && worn.fitBrief, flap: worn && worn.flap, support: worn && worn.support, lift: (worn && worn.lift) || 0, fabric: worn && worn.fabric, hold: worn && worn.hold, hips, torso, neck, head, arms, legs, pouch, mouth: hd.userData.mouth, setFace: hd.userData.setFace || null, phase: rnd() * 6.28, build: B, sleeves,
     // (what the anatomy's physics collides with, in the man's own units: the thighs' radius, the belly's front)
     colliders: B ? { thighR: 8.0 * kT, bellyR: -frontAt(T, 12), bellyZ: 0 } : null };
   if (sleeves.length) updateSleeves(root);
