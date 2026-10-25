@@ -5,7 +5,7 @@
 // Usage: import and call `initDevOverlay(scene)` from the valley module
 // when `?lab` is in the URL.  The overlay floats over the WebGL canvas.
 
-import { getAnatomy, setAnatomy, rebuildAnatomy, migrateAnatomy } from './figure.mjs';
+import { getAnatomy, setAnatomy, rebuildAnatomy, migrateAnatomy, rollAnatomy } from './figure.mjs';
 
 // the creation values, kept for "Reset defaults" (the sliders move the live
 // base with setAnatomy, so men built after a change - the lab rebuilds a
@@ -167,6 +167,13 @@ const PARTS = [
     { key: 'depth',     label: 'Depth',      min: 0,   max: 100, step: 1 },
     { key: 'gorge',     label: 'Gorge',      min: 0,   max: 100, step: 1 },
     { key: 'sway',      label: 'Sway',       min: 0,   max: 3,   step: 0.1 },
+    { key: 'curve',     label: 'Curve',      min: 0,   max: 100, step: 1 },
+    { key: 'taper',     label: 'Taper',      min: 0,   max: 100, step: 1 },
+    { key: 'headSize',  label: 'Head size',  min: 0,   max: 100, step: 1 },
+    { key: 'headShape', label: 'Head shape', min: 0,   max: 100, step: 1 },
+    { key: 'rim',       label: 'Rim',        min: 0,   max: 100, step: 1 },
+    { key: 'cut',       label: 'Cut',        check: true },
+    { key: 'humanLimits', label: 'Human limits', check: true },
   ] },
   { id: 'lobes', label: 'Lobes', params: [
     { key: 'sizeLobe',  label: 'Size lobe',  min: 0.5, max: 3,   step: 0.05 },
@@ -252,6 +259,16 @@ function buildOverlayUI(figures, opts = {}) {
     head.addEventListener('click', () => { const open = box.style.display === 'none'; setOpen(open); writeFold(foldKey(part.id), open); if (opts.onFold) opts.onFold(); });
     sec.append(head, box);
     part.params.forEach(p => {
+      if (p.check) {
+        const row = document.createElement('label');
+        row.style.cssText = 'display:flex;align-items:center;gap:6px;margin:3px 0;';
+        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.dataset.key = p.key; cb.checked = !!live[p.key];
+        cb.setAttribute('aria-label', `${T.label}: ${p.label}`);
+        cb.addEventListener('change', () => apply({ [p.key]: cb.checked ? 1 : 0 }));
+        row.append(cb, document.createTextNode(p.label));
+        box.appendChild(row);
+        return;
+      }
       const row = document.createElement('div');
       row.style.cssText = 'margin-bottom:3px;' + (p.key.startsWith('size') ? 'grid-column:1/-1;' : '');
       const lbl = document.createElement('label');
@@ -274,6 +291,7 @@ function buildOverlayUI(figures, opts = {}) {
 
   // ── whole-panel moves: baseline, the floor, the ceiling, saved states ──
   const sliders = () => [...body.querySelectorAll('input[type=range][data-key]')];
+  const checks = () => [...body.querySelectorAll('input[type=checkbox][data-key]')];
   // set every slider at once and rebuild the men a single time
   function setAll(vals) {
     vals = migrateAnatomy(vals) || {};
@@ -284,10 +302,11 @@ function buildOverlayUI(figures, opts = {}) {
       const v = Math.min(p.max, Math.max(p.min, +vals[p.key]));
       sl.value = v; sl._val.textContent = fmt(p, v); patch[p.key] = v;
     });
+    checks().forEach(cb => { if (vals[cb.dataset.key] != null) { cb.checked = !!vals[cb.dataset.key]; patch[cb.dataset.key] = cb.checked ? 1 : 0; } });
     apply(patch);
   }
-  const current = () => { const o = {}; sliders().forEach(sl => { o[sl.dataset.key] = parseFloat(sl.value); }); return o; };
-  const extreme = side => { const o = {}; PARAMS.forEach(p => { o[p.key] = p[side]; }); return o; };
+  const current = () => { const o = {}; sliders().forEach(sl => { o[sl.dataset.key] = parseFloat(sl.value); }); checks().forEach(cb => { o[cb.dataset.key] = cb.checked ? 1 : 0; }); return o; };
+  const extreme = side => { const o = {}; PARAMS.forEach(p => { if (!p.check) o[p.key] = p[side]; }); return o; };
 
   const tools = document.createElement('div');
   tools.style.cssText = 'margin-top:6px;border-top:1px solid #333;padding-top:4px;';
@@ -301,9 +320,10 @@ function buildOverlayUI(figures, opts = {}) {
 
   // three across: back to the creation values, everything to its minimum, to its maximum
   const trio = document.createElement('div');
-  trio.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;';
+  trio.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;';
   trio.append(
     mkBtn('Baseline', () => setAll(Object.assign({}, DEFAULTS))),
+    mkBtn('Roll', () => setAll(rollAnatomy())),   // (a man of his own: every attribute drawn within human ranges)
     mkBtn('All min', () => setAll(extreme('min'))),
     mkBtn('All max', () => setAll(extreme('max'))),
   );

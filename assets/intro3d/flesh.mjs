@@ -15,6 +15,7 @@
 // higher is looser. Rest bias: an angle forward off the body's down that
 // the tissue prefers (the lab's Rest angle).
 import * as THREE from '../vendor/three/three.module.js';
+import { placeLobes } from './figure.mjs';
 
 const GRAV = 980;                  // cm/s^2, down
 const STEP = 1 / 240;              // the simulation's step
@@ -49,6 +50,7 @@ export class FleshSim {
     this.anchor = new THREE.Vector3(); this.anchorPrev = new THREE.Vector3(); this.anchorV = new THREE.Vector3();
     this.lobe = [{ o: new THREE.Vector3(), v: new THREE.Vector3() }, { o: new THREE.Vector3(), v: new THREE.Vector3() }];
     this.rest = 0;              // rest bias, radians forward
+    this.restLobes = 0;         // the lobes' own rest, degrees forward about the root (the lab's)
     this.capsules = [];         // [{a, b, r}] in world, rebuilt each step
     this.boxes = [];            // extra solids: [{min, max}] in world (a seat), tops only
     this.floor = 0;
@@ -204,8 +206,7 @@ export class FleshSim {
       sh.quaternion.copy(_q);
       sh.position.copy(r0).sub(r0.clone().applyQuaternion(_q));
     }
-    u.lobes.forEach((lb, i) => { if (lb.userData.p0) lb.position.copy(lb.userData.p0).add(this.lobe[i].o); });
-    // (the skin over them follows where they went)
-    if (u.updateSac) u.updateSac();
+    // (the lobes at their own rest, plus their jiggle; the skin over them follows)
+    placeLobes(g, this.restLobes || 0, this.lobe.map(l => l.o));
   }
 }

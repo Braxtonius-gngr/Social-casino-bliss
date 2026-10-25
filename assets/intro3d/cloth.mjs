@@ -53,7 +53,7 @@ const _m = new THREE.Matrix4(), _inv = new THREE.Matrix4(), _v = new THREE.Vecto
 //   bodies: () => [mesh], layers: () => [mesh], outline }
 export function makePanel(spec) {
   const P = { spec, mesh: null, nx: 0, ny: 0 };
-  let F = null, h = null, lower = null, target = null, anat = null, body = null, layer = null, soft = null, tmp = null, covered = null;
+  let F = null, h = null, lower = null, target = null, anat = null, body = null, layer = null, soft = null, tmp = null, covered = null, onLayer = null;
 
   function alloc() {
     F = spec.frame();
@@ -73,7 +73,7 @@ export function makePanel(spec) {
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
     geo.setIndex(new THREE.BufferAttribute(new Uint32Array(P.nx * P.ny * 6), 1));
     geo.setDrawRange(0, 0);
-    covered = new Uint8Array(n);
+    covered = new Uint8Array(n); onLayer = new Uint8Array(n);
     if (P.mesh) { P.mesh.geometry.dispose(); P.mesh.geometry = geo; P.mesh.children.forEach(c => { if (c.userData.outline) c.geometry = geo; }); }
     else {
       P.mesh = new THREE.Mesh(geo, spec.mat); P.mesh.frustumCulled = false; P.mesh.userData.clothPanel = true;
@@ -84,7 +84,7 @@ export function makePanel(spec) {
   }
 
   // draw a mesh's triangles into a channel (max forward depth per cell)
-  function raster(mesh, ch, tissueCh) {
+  function raster(mesh, ch, tissueCh, frontOnly) {
     const g = mesh.geometry, pa = g.attributes.position; if (!pa) return;
     _m.multiplyMatrices(_inv, mesh.matrixWorld);
     const e = _m.elements, ix = g.index ? g.index.array : null, count = ix ? ix.length : pa.count;
@@ -103,6 +103,15 @@ export function makePanel(spec) {
       if (i1 < 0 || j1 < 0 || i0 > nx || j0 > ny) continue;
       i0 = Math.max(0, i0); j0 = Math.max(0, j0); i1 = Math.min(nx, i1); j1 = Math.min(ny, j1);
       const d = (Y[1] - Y[2]) * (X[0] - X[2]) + (X[2] - X[1]) * (Y[0] - Y[2]); if (Math.abs(d) < 1e-9) continue;
+      // (a garment's back, seen through it from the front, is not the garment
+      // the cloth lies on: only its faces turned to the panel count)
+      if (frontOnly) {
+        // (and only faces turned well toward the panel - the garment's front,
+        // not its gusset's underside: projected area over true area)
+        const ax = (X[1] - X[0]) * CELL, ay = (Y[1] - Y[0]) * CELL, az = Z[1] - Z[0], bx = (X[2] - X[0]) * CELL, by = (Y[2] - Y[0]) * CELL, bz = Z[2] - Z[0];
+        const nz = ax * by - ay * bx, nx = ay * bz - az * by, ny = az * bx - ax * bz;
+        if (nz <= 0 || nz < 0.45 * Math.sqrt(nx * nx + ny * ny + nz * nz)) continue;
+      }
       for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
         const a = ((Y[1] - Y[2]) * (i - X[2]) + (X[2] - X[1]) * (j - Y[2])) / d;
         const b = ((Y[2] - Y[0]) * (i - X[2]) + (X[0] - X[2]) * (j - Y[2])) / d, c = 1 - a - b;
@@ -137,11 +146,11 @@ export function makePanel(spec) {
     spec.pouch.updateMatrixWorld(true);
     spec.pouch.traverse(o => { if (o.isMesh && !o.userData.outline && o.userData.wire !== true) raster(o, anat, soft); });
     spec.bodies().forEach(m => raster(m, body, null));
-    spec.layers().forEach(m => raster(m, layer, null));
+    spec.layers().forEach(m => raster(m, layer, null, true));
     const W = P.nx + 1, n = h.length, thick = fab.thick;
     // soft tissue under the cloth's pressure: flatter, its volume spread round
     // it (the Gaussian keeps the sum); rigid stays crisp
-    const press = Math.max(0, Math.min(0.6, fab.cling * (1 - fab.stiff) * 0.55));
+    const press = fab.press != null ? fab.press : Math.max(0, Math.min(0.6, fab.cling * (1 - fab.stiff) * 0.55));
     if (press > 0) {
       blur(anat, tmp); blur(tmp, target);
       for (let q = 0; q < n; q++) {
@@ -150,6 +159,9 @@ export function makePanel(spec) {
         if (a <= NONE / 2 && spread < 0.05) continue;
         const base = a > NONE / 2 ? a : 0;
         anat[q] = base + (spread - base) * press;
+        // (held: the garment's elastic flattens the mound - soft tissue no
+        // higher off the garment than its flatten share allows)
+        if (fab.flatten != null && layer[q] > NONE / 2) { const over = anat[q] - layer[q]; if (over > 0) anat[q] = layer[q] + over * fab.flatten; }
       }
     }
     // the floor under the cloth, and where it is pulled
@@ -160,7 +172,8 @@ export function makePanel(spec) {
       if (a > NONE / 2) lo = Math.max(lo, a + thick);
       if (b > NONE / 2) lo = Math.max(lo, b + thick);
       if (l > NONE / 2) lo = Math.max(lo, l + LAYER_GAP);
-      covered[q] = a > NONE / 2 ? 1 : 0;
+      onLayer[q] = l > NONE / 2 ? 1 : 0;
+      covered[q] = (a > NONE / 2 || (fab.front && l > NONE / 2)) ? 1 : 0;
       if (a > NONE / 2) { lower[q] = lo; target[q] = lo; }                   // over the anatomy: never inside it, or the thigh, or the brief
       else if (l > NONE / 2) { lower[q] = NONE; target[q] = l - TUCK; }     // only the brief: tuck under it
       else if (b > NONE / 2) { lower[q] = NONE; target[q] = b - TUCK * 2; } // only a thigh: in under its skin (the leg opening)
@@ -181,6 +194,35 @@ export function makePanel(spec) {
         h[q] = Math.max(lower[q], (sw * avg + cw * target[q]) / (sw + cw));
       }
     }
+    // the edge, free: where the drawn region ends in the air (no garment
+    // under it to hem to) the cloth draws tight to what it covers, so its
+    // edge is the fabric closing round the form, never a lip standing off it
+    if (!fab.hem) {
+      for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+        const q = j * W + i; if (!covered[q] || lower[q] <= NONE / 2) continue;
+        let edge = 0;
+        for (let dj = -2; dj <= 2 && edge < 1; dj++) for (let di = -2; di <= 2; di++) {
+          const ii = i + di, jj = j + dj;
+          const out = ii < 0 || jj < 0 || ii >= W || jj >= H || !covered[jj * W + ii];
+          if (out) { edge = Math.max(edge, 1 - (Math.max(Math.abs(di), Math.abs(dj)) - 1) / 2); }
+        }
+        if (edge > 0) h[q] = h[q] + (lower[q] - h[q]) * edge;
+      }
+    }
+    // the hem: at the drawn region's edge the cloth comes down onto the
+    // garment under it (a band two cells wide), so the edge is a fold on
+    // the garment, never a free lip
+    if (fab.hem) {
+      for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+        const q = j * W + i; if (!covered[q] || layer[q] <= NONE / 2) continue;
+        let edge = 0;
+        for (let dj = -2; dj <= 2 && !edge; dj++) for (let di = -2; di <= 2; di++) {
+          const ii = i + di, jj = j + dj; if (ii < 0 || jj < 0 || ii >= W || jj >= H) { edge = 1; break; }
+          const qq = jj * W + ii; if (!covered[qq] || !onLayer[qq]) { edge = Math.max(edge, 1 - Math.max(Math.abs(di), Math.abs(dj)) / 3); break; }
+        }
+        if (edge > 0) { const onG = layer[q] + LAYER_GAP * (1 - edge); h[q] = h[q] + (Math.max(onG, Math.min(h[q], onG + thick)) - h[q]) * edge; }
+      }
+    }
     // laid along the frame: hips-local O + X ex + Y ey + h ez
     const pos = P.mesh.geometry.attributes.position, O = F.O, ex = F.ex, ey = F.ey, ez = F.ez;
     for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
@@ -191,10 +233,28 @@ export function makePanel(spec) {
     // only the cells that show: a cell is drawn when a corner of it is over
     // the anatomy - the rest is tucked under the brief or into the thigh, or
     // fallen back, and drawing it would show a sheet's edge where none is
+    // (one cell's grace round the covered region, so the edge is a soft
+    // falloff rather than a staircase of cells; and one smoothing pass over
+    // the heights, so facets don't read)
+    tmp.set(covered);
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+      const q = j * W + i; if (tmp[q]) continue;
+      let near = 0; for (let dj = -1; dj <= 1 && !near; dj++) for (let di = -1; di <= 1; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < W && jj < H && tmp[jj * W + ii]) { near = 1; break; } }
+      if (near && (!fab.hem || onLayer[q])) { covered[q] = 1; h[q] = lower[q] > NONE / 2 ? Math.max(lower[q], h[q]) : (onLayer[q] ? layer[q] + (fab.hem ? 0 : LAYER_GAP) : h[q]); }
+    }
+    for (let j = 1; j < H - 1; j++) for (let i = 1; i < W - 1; i++) {
+      const q = j * W + i; if (!covered[q]) continue;
+      const avg = (h[q - 1] + h[q + 1] + h[q - W] + h[q + W]) * 0.25;
+      soft[q] = Math.max(lower[q], h[q] * 0.5 + avg * 0.5);
+    }
+    for (let j = 1; j < H - 1; j++) for (let i = 1; i < W - 1; i++) { const q = j * W + i; if (covered[q]) h[q] = soft[q]; }
     const ia = P.mesh.geometry.index, ix = ia.array; let k = 0;
     for (let j = 0; j < P.ny; j++) for (let i = 0; i < P.nx; i++) {
       const a = j * W + i, b = a + 1, c = a + W, d = c + 1;
       if (!(covered[a] | covered[b] | covered[c] | covered[d])) continue;
+      // (hemmed: never past the garment's own edge - a cell with no garment
+      // under any corner is off it; a loose front hangs wherever the garment is)
+      if (fab.hem && !(onLayer[a] && onLayer[b] && onLayer[c] && onLayer[d])) continue;
       ix[k++] = a; ix[k++] = b; ix[k++] = c; ix[k++] = b; ix[k++] = d; ix[k++] = c;   // (wound to face out along ez)
     }
     ix.fill(0, k);   // (the rest degenerate, so the normals read only what is drawn)

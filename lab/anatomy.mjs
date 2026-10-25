@@ -26,7 +26,7 @@
 //   - every panel and the settings dock fold away for a clear view
 import * as THREE from '../assets/vendor/three/three.module.js';
 import { valleyKit } from '../assets/intro3d/valley.mjs';
-import { buildFigure, BODY_HIPS, getAnatomy, updateSleeves, FACE_VARIANTS } from '../assets/intro3d/figure.mjs';
+import { buildFigure, BODY_HIPS, getAnatomy, updateSleeves, FACE_VARIANTS, placeLobes, setContain } from '../assets/intro3d/figure.mjs';
 import { FleshSim } from '../assets/intro3d/flesh.mjs';
 import { burinTick, engravingMaterial, paperMaterial, BONE } from '../assets/intro3d/burin.mjs';
 import { initDevOverlay } from '../assets/intro3d/dev-overlay.mjs';
@@ -62,6 +62,8 @@ const VARS = Object.keys(FACE_VARIANTS);
 const state = {
   look: 'ink', pose: 'stand', outfit: 'loin', face: 'auto', focus: -1, frame: 'all', physics: true,
   rest: Object.assign({}, REST), restFixed: Object.assign({}, REST_FIXED), hungMode: 'physics', paused: false,
+  // (the lobes' own rest, degrees forward about the root - the second of the two rest settings)
+  restLobes: 0,
   // (None's paint: 'orange' see-through, 'split' lobes blue/red and the
   // pouch orange, 'brown' opaque - nothing bare in a physics test)
   paint: 'orange',
@@ -271,8 +273,7 @@ function stillFlesh(u) {
   const g = u.pouch && u.pouch.children[0]; if (!g) return;
   const d = g.userData;
   if (d.shaft) { d.shaft.quaternion.identity(); d.shaft.position.set(0, 0, 0); }
-  (d.lobes || []).forEach(l => { if (l.userData.p0) l.position.copy(l.userData.p0); });
-  if (d.updateSac) d.updateSac();
+  placeLobes(g, state.restLobes, null);
   if (u.cup) u.cup.quaternion.identity();
 }
 // (age carries the head forward and eases the knees; the face is lifted
@@ -416,7 +417,7 @@ function poseMan(s, t) {
     const valley = P === 'hung' && state.hungMode === 'valley';
     if (valley) { stillFlesh(u); u.pouch.rotation.set(0.14, 0, PI); u.pouch.position.set(0, -13.0, -11.0); }
     else if (!state.physics) { stillFlesh(u); const lift = u.lift || 0; if (P !== 'walk') u.pouch.rotation.x = restA + lift; else u.pouch.rotation.x += restA + lift; }
-    else if (s.sim) s.sim.rest = restA;
+    else if (s.sim) { s.sim.rest = restA; s.sim.restLobes = state.restLobes; }
   }
   updateSleeves(man);
 }
@@ -448,7 +449,7 @@ function pose(dt, fresh) {
     if (s.sim.step(fresh ? 0 : dt)) awake = 0.6;
   });
   // the cloth over each man, fitted to where his body and anatomy are now
-  active().forEach(s => { const c = s.man && s.man.userData.cloth; if (c) c.update(); });
+  active().forEach(s => { const u = s.man && s.man.userData; if (!u) return; if (u.fitBrief) u.fitBrief(); if (u.cloth) u.cloth.update(); });
   dirty = true;
 }
 
@@ -567,13 +568,15 @@ const ui = {
     add(`<button type="button" class="chip ${state.physics ? 'on' : ''}" id="phys">Physics ${state.physics ? 'on' : 'off'}</button>`);
     if (p === 'hung') add(`<span class="seg"><button type="button" data-hm="physics" class="${state.hungMode === 'physics' ? 'on' : ''}">Falls</button><button type="button" data-hm="valley" class="${state.hungMode === 'valley' ? 'on' : ''}">Valley flip</button></span>`);
     const live = !(p === 'hung' && state.hungMode === 'valley'), R = restOf();
-    if (live) add(`<label>${state.physics ? 'Rest bias' : 'Rest angle'} <input type="range" id="restA" min="0" max="180" step="1" value="${R[p]}"><output id="restO">${R[p]}°</output></label>`);
+    if (live) add(`<label>${state.physics ? 'Rest bias' : 'Rest angle'} · weight <input type="range" id="restA" min="0" max="180" step="1" value="${R[p]}"><output id="restO">${R[p]}°</output></label>`);
+    if (live) add(`<label>${state.physics ? 'Rest bias' : 'Rest angle'} · lobes <input type="range" id="restL" min="-30" max="90" step="1" value="${state.restLobes}"><output id="restLO">${state.restLobes}°</output></label>`);
     add(`<span class="lbl" id="hold" style="text-transform:none;letter-spacing:0;flex:1 1 100%"></span>`);
     box.classList.toggle('hidden', !box.children.length);
     const pz = $('#pause'); if (pz) pz.onclick = () => { state.paused = !state.paused; ui.tools(); };
     const ph = $('#phys'); if (ph) ph.onclick = () => { state.physics = !state.physics; ui.tools(); pose(0, true); };
     box.querySelectorAll('[data-hm]').forEach(b => { b.onclick = () => { state.hungMode = b.dataset.hm; ui.tools(); pose(0, true); }; });
     const ra = $('#restA'); if (ra) ra.oninput = () => { restOf()[p] = +ra.value; $('#restO').textContent = ra.value + '°'; awake = 1; pose(0); };
+    const rl = $('#restL'); if (rl) rl.oninput = () => { state.restLobes = +rl.value; $('#restLO').textContent = rl.value + '°'; awake = 1; pose(0); };
   }
 };
 document.querySelectorAll('[data-look]').forEach(b => b.addEventListener('click', () => {
@@ -600,6 +603,10 @@ document.querySelectorAll('[data-frame]').forEach(b => b.addEventListener('click
 $('#prev').addEventListener('click', () => goTo(state.frame === 'all' ? 'full' : state.frame, state.focus <= 0 ? active().length - 1 : state.focus - 1));
 $('#next').addEventListener('click', () => goTo(state.frame === 'all' ? 'full' : state.frame, state.focus < 0 || state.focus >= active().length - 1 ? 0 : state.focus + 1));
 
+// how a snug garment meets the anatomy: free (the owner's pick), raise, hold
+document.querySelectorAll('[data-contain]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-contain]').forEach(x => x.classList.toggle('on', x === b)); setContain(b.dataset.contain); buildAll();
+}));
 // None's paint
 document.querySelectorAll('[data-paint]').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('[data-paint]').forEach(x => x.classList.toggle('on', x === b)); setPaint(b.dataset.paint);
@@ -734,4 +741,6 @@ initDevOverlay(figures, {
   onChange() { active().forEach(s => { if (bare()) proxy(s.man); applyLook(s.man); }); awake = 1; pose(0); }
 });
 // the lab's own hook for the visual checks (scripts in a headless browser)
-window.__lab = { state, setLook, pose: (f) => pose(0, f), step: dt => pose(dt), redraw: () => { dirty = true; }, goTo, buildAll, slots, cmpSlots, active, setCompare, setPaint, layoutPanels, ui, view, camera, framing };
+// (look: the camera put straight at a target - no tween - for frame-exact checks)
+const look = (x, y, z, dist, yaw, pitch) => { tween = null; view.target.set(x, y, z); view.dist = dist; view.yaw = yaw; view.pitch = pitch; dirty = true; };
+window.__lab = { state, setLook, pose: (f) => pose(0, f), step: dt => pose(dt), redraw: () => { dirty = true; }, goTo, look, buildAll, slots, cmpSlots, active, setCompare, setPaint, layoutPanels, ui, view, camera, framing };
