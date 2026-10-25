@@ -194,6 +194,21 @@ export function makePanel(spec) {
         h[q] = Math.max(lower[q], (sw * avg + cw * target[q]) / (sw + cw));
       }
     }
+    // the edge, free: where the drawn region ends in the air (no garment
+    // under it to hem to) the cloth draws tight to what it covers, so its
+    // edge is the fabric closing round the form, never a lip standing off it
+    if (!fab.hem) {
+      for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+        const q = j * W + i; if (!covered[q] || lower[q] <= NONE / 2) continue;
+        let edge = 0;
+        for (let dj = -2; dj <= 2 && edge < 1; dj++) for (let di = -2; di <= 2; di++) {
+          const ii = i + di, jj = j + dj;
+          const out = ii < 0 || jj < 0 || ii >= W || jj >= H || !covered[jj * W + ii];
+          if (out) { edge = Math.max(edge, 1 - (Math.max(Math.abs(di), Math.abs(dj)) - 1) / 2); }
+        }
+        if (edge > 0) h[q] = h[q] + (lower[q] - h[q]) * edge;
+      }
+    }
     // the hem: at the drawn region's edge the cloth comes down onto the
     // garment under it (a band two cells wide), so the edge is a fold on
     // the garment, never a free lip

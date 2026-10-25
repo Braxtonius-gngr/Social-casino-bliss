@@ -719,7 +719,7 @@ function buildAnatomy(pouch, m, a) {
   // bag - the bag stretches to hold them)
   const avgLR = (lrL + lrR) / 2, kR = Math.sqrt(sL);
   const sacLow = -Math.max(dropL + lrL * lobeLong(fL), dropR + lrR * lobeLong(fR)) + avgLR * 0.95 - 0.45 * sL;
-  const neckY = -Math.min(2.0 * sL, 2.4);
+  const neckY = -2.0 * sL;
   // (a build's man - pouch.userData.live: the sac is skin stretched over
   // the lobes where they are now, joined up into the body at its root, and
   // reshaped each frame the lobes move: loose enough that each moves on its
@@ -731,8 +731,8 @@ function buildAnatomy(pouch, m, a) {
       const L = lobes[0].position, R = lobes[1].position, cx = (L.x + R.x) / 2, zc = (L.z + R.z) / 2 + 0.4 * sL, spread = Math.abs(R.x - L.x) / 2;
       const low = Math.min(L.y - lrL * (lobeLong(fL) - 1), R.y - lrR * (lobeLong(fR) - 1)) - 0.45 * sL, wide = avgLR * 1.55 * Math.max(0.85, spread / spread0);
       return [
-        { y: 3.0, rx: 2.4 * kR, rz: 2.0 * kR },
-        { y: 1.0, rx: 2.0 * kR, rz: 1.6 * kR },
+        { y: 3.0, rx: 2.4, rz: 2.0 },
+        { y: 1.0, rx: 2.0 + 0.3 * (kR - 1), rz: 1.6 + 0.2 * (kR - 1) },
         { y: neckY, rx: avgLR * 1.15, rz: avgLR * 0.9, x: cx * 0.3, z: zc * 0.3 },
         { y: low + avgLR * 0.3, rx: wide, rz: avgLR * 0.95, x: cx, z: zc },
         { y: low - avgLR * 0.55, rx: avgLR * 1.25, rz: avgLR * 0.8, x: cx, z: zc },
@@ -744,7 +744,7 @@ function buildAnatomy(pouch, m, a) {
     updateSac = () => { const ng = loft(secs(), { n: 18, metric: UVM.linen }); geo.attributes.position.array.set(ng.attributes.position.array); geo.attributes.position.needsUpdate = true; geo.computeVertexNormals(); ng.dispose(); };
   } else {
     sac = facet(loft([
-      { y: 1.0, rx: 2.0 * kR, rz: 1.6 * kR },
+      { y: 1.0, rx: 2.0 + 0.3 * (kR - 1), rz: 1.6 + 0.2 * (kR - 1) },
       { y: neckY, rx: avgLR * 1.15, rz: avgLR * 0.9 },
       { y: sacLow + avgLR * 0.3, rx: avgLR * 1.55, rz: avgLR * 0.95 },
       { y: sacLow - avgLR * 0.55, rx: avgLR * 1.25, rz: avgLR * 0.8 },
