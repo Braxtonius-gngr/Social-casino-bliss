@@ -1410,6 +1410,9 @@ export function valleyKit() {
     shadow: mat({ tone: 0.02, keyI: 0, sky: 0, angle: -0.55, freq: 0.7, wobble: 0.5, steps: 0, axis: [1, 0, 0.7] }),
     ink: new THREE.MeshBasicMaterial({ color: INK })
   };
+  // (each plate knows its name, and a copy keeps it: the ink panel finds
+  // every copy of a plate in the scene by it)
+  Object.keys(kit).forEach(k => { if (kit[k].userData) kit[k].userData.plate = k; });
   return kit;
 }
 
@@ -2137,7 +2140,7 @@ export async function prepareTable(opts) {
       const allFigs = [];
       vigs.forEach(v => { if (v.victims) v.victims.forEach(f => { if (f.userData && f.userData.pouch) allFigs.push(f); }); });
       freedFigs.forEach(f => { if (f.userData && f.userData.pouch) allFigs.push(f); });
-      if (allFigs.length) init(allFigs);
+      if (allFigs.length) init(allFigs, { ink: { root: scene, top: '64px' } });   // (under the seat's pill)
     });
 
     return {
