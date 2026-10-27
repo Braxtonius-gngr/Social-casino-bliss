@@ -764,6 +764,16 @@ function buildHead(kit, o = {}) {
 //     seatJiggle 0-100: how far the soft tissue moves with a step (0 to 2x)
 //     seatFirm   0-100: how firm it is - quick and tight (over 50) or slow
 //                and loose (its spring 0.5x to 2x)
+//   the belly and the chest (a build's man; 50 as it was on each):
+//     bellySize  0-100: the belly's push out of the trunk's front, +-6 cm at
+//                the full (flatter under 50), with a little breadth
+//     bellyLift  0-100: carried high (over 50) or low on the trunk, +-4 cm
+//     bellyJiggle, bellyFirm  its soft tissue's amplitude (0-2x) and spring
+//                (0.5-2x), as the seat's
+//     chestSize  0-100: the pectorals' depth, 0.4x to 1.6x
+//     chestSpread 0-100: set wide (over 50) or close, +-15%
+//     chestLift  0-100: carried high or low, +-3 cm
+//     chestJiggle, chestFirm  as the seat's
 //   the material (50 as it was on each):
 //     modulus    0-100: the stiffness gradient - how far down the shaft its
 //                stiff root reaches before it bends (25% to 51% of its run;
@@ -789,7 +799,9 @@ let ANATOMY = {
   taper: 50, elevation: 50, pitch: 50, twist: 50, lobeLag: 50, density: 50,
   hood: 0, ring: 40, tether: 40, glide: 60, retract: 50, folds: 50,
   modulus: 50, damping: 50, resist: 50, adhesion: 50,
-  seatSize: 1, seatFullL: 50, seatFullR: 50, seatLift: 50, seatSpread: 50, seatJiggle: 50, seatFirm: 50
+  seatSize: 1, seatFullL: 50, seatFullR: 50, seatLift: 50, seatSpread: 50, seatJiggle: 50, seatFirm: 50,
+  bellySize: 50, bellyLift: 50, bellyJiggle: 50, bellyFirm: 50,
+  chestSize: 50, chestSpread: 50, chestLift: 50, chestJiggle: 50, chestFirm: 50
 };
 // (a set from before the parts were split - one Size, length and girth as
 // scales, depth as a scale - read as the same man)
@@ -827,6 +839,8 @@ function anatomyFor(rnd) {
     // (the finer cut as the base has it - no draws of their own, so every
     // man is drawn as before)
     taper: ANATOMY.taper, elevation: ANATOMY.elevation, pitch: ANATOMY.pitch, twist: ANATOMY.twist, lobeLag: ANATOMY.lobeLag, density: ANATOMY.density,
+    bellySize: ANATOMY.bellySize, bellyLift: ANATOMY.bellyLift, bellyJiggle: ANATOMY.bellyJiggle, bellyFirm: ANATOMY.bellyFirm,
+    chestSize: ANATOMY.chestSize, chestSpread: ANATOMY.chestSpread, chestLift: ANATOMY.chestLift, chestJiggle: ANATOMY.chestJiggle, chestFirm: ANATOMY.chestFirm,
     seatSize: ANATOMY.seatSize, seatFullL: ANATOMY.seatFullL, seatFullR: ANATOMY.seatFullR, seatLift: ANATOMY.seatLift, seatSpread: ANATOMY.seatSpread, seatJiggle: ANATOMY.seatJiggle, seatFirm: ANATOMY.seatFirm,
     hood: ANATOMY.hood, ring: ANATOMY.ring, tether: ANATOMY.tether, glide: ANATOMY.glide, retract: ANATOMY.retract, folds: ANATOMY.folds,
     modulus: ANATOMY.modulus, damping: ANATOMY.damping, resist: ANATOMY.resist, adhesion: ANATOMY.adhesion
@@ -1660,27 +1674,30 @@ function dress(kit, o, T, hips, arms, legs, pouch, x, sleeves) {
 // (the anatomy is counter-scaled against height, so the dev sliders read
 // the same on every man in the line)
 const bump = (y, c, w) => { const d = (y - c) / w; return Math.exp(-d * d); };
-function shapeTrunk(T0, b) {
+function shapeTrunk(T0, b, an = {}) {
   const m = b.mass, u = b.muscle, a = b.age;
+  // (the owner's belly and chest over the build's own: see the anatomy notes)
+  const c = k => ((an[k] ?? 50) - 50) / 50, bS = c('bellySize'), bY = 10 + 4 * c('bellyLift');
+  const cS = 1 + 0.6 * c('chestSize'), cX = 1 + 0.15 * c('chestSpread'), cY = 38.5 + 3 * c('chestLift');
   // (more rings through the chest, so the pectorals have a shape: laid
   // between the trunk's own, every number eased)
   const T = [];
   T0.forEach((s, j) => { T.push(s); const n = T0[j + 1]; if (n && s.y >= 30 && n.y <= 47.5) [1 / 3, 2 / 3].forEach(t => { const r = {}; Object.keys(s).forEach(k => { r[k] = s[k] + ((n[k] || 0) - s[k]) * t; }); r.y = s.y + (n.y - s.y) * t; T.push(r); }); });
   // the pectorals: their depth by height - full across the chest, the lower
   // edge a short, defined fall, the top easing into the collarbones
-  const P = Math.max(0.4, 1.5 + 1.5 * Math.max(0, u) + 0.7 * Math.max(0, m) - 0.6 * Math.max(0, a));
-  const pec = y => { const d = y >= 38.5 ? (y - 38.5) / 7.5 : (y - 38.5) / 3.2; return P * Math.exp(-d * d); };
+  const P = Math.max(0.4, 1.5 + 1.5 * Math.max(0, u) + 0.7 * Math.max(0, m) - 0.6 * Math.max(0, a)) * cS;
+  const pec = y => { const d = y >= cY ? (y - cY) / 7.5 : (y - cY) / 3.2; return P * Math.exp(-d * d); };
   return T.map(s => {
     if (s.rx < 0.5) return s;   // (the points the hull closes to stay points)
-    const y = s.y, wb = bump(y, 10, 12), wc = bump(y, 38, 8), wh = bump(y, -2, 7), ws = bump(y, 47, 5), ww = bump(y, 18, 6), wn = bump(y, 54, 3);
+    const y = s.y, wb = bump(y, bY, 12), wc = bump(y, 38, 8), wh = bump(y, -2, 7), ws = bump(y, 47, 5), ww = bump(y, 18, 6), wn = bump(y, 54, 3);
     const up = Math.max(0, Math.min(1, (y - 24) / 32));
     return Object.assign({}, s, {
-      rx: Math.max(0.6, s.rx + m * (4.2 * wb + 3.0 * wh + 2.4 * wc + 1.4 * wn) + u * (3.2 * ws + 1.4 * wc - 1.6 * ww + 1.2 * wn) + a * (1.2 * wb - 1.4 * ws)),
+      rx: Math.max(0.6, s.rx + 1.5 * bS * wb + m * (4.2 * wb + 3.0 * wh + 2.4 * wc + 1.4 * wn) + u * (3.2 * ws + 1.4 * wc - 1.6 * ww + 1.2 * wn) + a * (1.2 * wb - 1.4 * ws)),
       rz: Math.max(0.6, s.rz + m * (2.6 * wb + 1.8 * wc + 1.8 * wh + 1.0 * wn) + u * (1.4 * wc + 0.8 * wn)),
-      front: (s.front || 0) + m * (8.5 * wb + 1.4 * wc) + u * 0.9 * wc + a * (2.4 * wb - 0.8 * wc),
+      front: Math.max(0, (s.front || 0) + m * (8.5 * wb + 1.4 * wc) + 6 * bS * wb) + u * 0.9 * wc + a * (2.4 * wb - 0.8 * wc),
       back: (s.back || 0) + m * 1.8 * wh + a * 3.0 * up * up,
       z: (s.z || 0) - a * 5.0 * up * up,
-      lobes: pec(y) > 0.05 ? [-1, 1].map(sx => ({ x: sx * (7.6 + 0.6 * Math.max(0, u + m)), w: 6.4 + 0.8 * Math.max(0, u + m), d: pec(y) - 1.2 * Math.max(0, a) * Math.max(0, 36 - y) / 6 })) : undefined
+      lobes: pec(y) > 0.05 ? [-1, 1].map(sx => ({ x: sx * (7.6 + 0.6 * Math.max(0, u + m)) * cX, w: 6.4 + 0.8 * Math.max(0, u + m), d: pec(y) - 1.2 * Math.max(0, a) * Math.max(0, 36 - y) / 6 })) : undefined
     });
   });
 }
@@ -1758,7 +1775,7 @@ export function buildFigure(kit, rnd, o = {}) {
   ];
   // (the anatomy set - the seat's parameters are in it too)
   const SA = Object.assign({}, ANATOMY, migrateAnatomy(o.anatomy) || {});
-  const T = B ? seatTrunk(shapeTrunk(T0, B), B, SA) : T0;
+  const T = B ? seatTrunk(shapeTrunk(T0, B, SA), B, SA) : T0;
   // (how far the build has moved the front of the trunk at y: features laid
   // on it move with it)
   const dF = y => B ? frontAt(T, y) - frontAt(T0, y) : 0;
@@ -2029,8 +2046,11 @@ export function buildFigure(kit, rnd, o = {}) {
     const uvAt = (x, y, z) => ({ u: Math.atan2(x, -(z - 1.0)) * 14, v: y });
     const mass = Math.max(0, B.mass), px = 1 + 0.08 * (B.mass + B.muscle), py = -2.4 * B.age - 1.2 * mass;
     const sites = [], gains = [];
-    sites.push(Object.assign(uvAt(0, 11, frontAt(T, 11)), { radius: 9 + 3 * mass, amp: 0.5 + 0.9 * mass })); gains.push({ g: 1.1 + 0.5 * mass, gy: 1, gz: 0.5 });
-    [-1, 1].forEach(sx => { const nx = sx * 8.6 * px, ny = 37.4 + py * 0.6; sites.push(Object.assign(uvAt(nx, ny, frontZAt(T, ny, nx)), { radius: 6.5, amp: 0.35 + 0.3 * mass + 0.15 * Math.max(0, B.muscle) })); gains.push({ g: 0.9 + 0.35 * mass, gy: 0.6, gz: 1 }); });
+    // (the owner's belly and chest: where they sit, how far they move, how firm)
+    const ac = k => ((SA[k] ?? 50) - 50) / 50, jig = k => 2 * (SA[k] ?? 50) / 100, firm = k => Math.pow(2, ac(k));
+    const by = Math.round(11 + 4 * ac('bellyLift')), cy = 37.4 + 3 * ac('chestLift'), cx = 1 + 0.15 * ac('chestSpread');
+    sites.push(Object.assign(uvAt(0, by, frontAt(T, by) ?? frontAt(T, 11)), { radius: 9 + 3 * mass + 2 * Math.max(0, ac('bellySize')), amp: (0.5 + 0.9 * mass + 0.4 * Math.max(0, ac('bellySize'))) * jig('bellyJiggle') })); gains.push({ g: 1.1 + 0.5 * mass, gy: 1, gz: 0.5, k: firm('bellyFirm') });
+    [-1, 1].forEach(sx => { const nx = sx * 8.6 * px * cx, ny = cy + py * 0.6; sites.push(Object.assign(uvAt(nx, ny, frontZAt(T, ny, nx)), { radius: 6.5, amp: (0.35 + 0.3 * mass + 0.15 * Math.max(0, B.muscle)) * (1 + 0.6 * ac('chestSize')) * jig('chestJiggle') })); gains.push({ g: 0.9 + 0.35 * mass, gy: 0.6, gz: 1, k: firm('chestFirm') }); });
     // (the seat's own jiggle and firmness: its amplitude, and its spring)
     const sj = 2 * (SA.seatJiggle ?? 50) / 100, sf = Math.pow(2, ((SA.seatFirm ?? 50) - 50) / 50);
     glutes.forEach(gl => { sites.push(Object.assign(uvAt(gl.c.x, gl.c.y, gl.c.z), { radius: 7.5 * Math.sqrt(SA.seatSize ?? 1), amp: 0.45 * gk * sj * (gl.r[2] / (SEAT(B, SA).d + 0.6)) })); gains.push({ g: 1.0 + 0.35 * mass, gy: 1, gz: -0.4, k: sf }); });

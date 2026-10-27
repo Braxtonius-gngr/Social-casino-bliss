@@ -206,6 +206,19 @@ const PARTS = [
     { key: 'seatJiggle', label: 'Jiggle',     min: 0,   max: 100, step: 1 },
     { key: 'seatFirm',   label: 'Firm',       min: 0,   max: 100, step: 1 },
   ] },
+  { id: 'belly', label: 'Belly', params: [
+    { key: 'bellySize',   label: 'Size belly', min: 0, max: 100, step: 1 },
+    { key: 'bellyLift',   label: 'Lift',       min: 0, max: 100, step: 1 },
+    { key: 'bellyJiggle', label: 'Jiggle',     min: 0, max: 100, step: 1 },
+    { key: 'bellyFirm',   label: 'Firm',       min: 0, max: 100, step: 1 },
+  ] },
+  { id: 'chest', label: 'Chest', params: [
+    { key: 'chestSize',   label: 'Size chest', min: 0, max: 100, step: 1 },
+    { key: 'chestSpread', label: 'Spread',     min: 0, max: 100, step: 1 },
+    { key: 'chestLift',   label: 'Lift',       min: 0, max: 100, step: 1 },
+    { key: 'chestJiggle', label: 'Jiggle',     min: 0, max: 100, step: 1 },
+    { key: 'chestFirm',   label: 'Firm',       min: 0, max: 100, step: 1 },
+  ] },
   { id: 'envelope', label: 'Envelope', params: [
     { key: 'hood',      label: 'Hood',       min: 0,   max: 100, step: 1 },
     { key: 'ring',      label: 'Ring',       min: 0,   max: 100, step: 1 },
@@ -246,6 +259,8 @@ const REALISM = {
   // (the seat: its size by the build's own variety too; the sides drawn
   // together, a little uneven)
   seatSize: { sd: 0.12 }, seatFullL: { sd: 10 }, seatFullR: { sd: 10, corr: ['seatFullL', 0.75] }, seatLift: { sd: 10 }, seatSpread: { sd: 8 }, seatJiggle: { sd: 12 }, seatFirm: { sd: 12 },
+  bellySize: { sd: 12 }, bellyLift: { sd: 10 }, bellyJiggle: { sd: 12 }, bellyFirm: { sd: 12 },
+  chestSize: { sd: 12 }, chestSpread: { sd: 8 }, chestLift: { sd: 10 }, chestJiggle: { sd: 12 }, chestFirm: { sd: 12 },
 };
 
 // a length for the owner's eye: inches first, the centimetres beside them
@@ -372,7 +387,7 @@ function buildOverlayUI(figures, opts = {}) {
   // (the base set's measures, in cm - each man of the line varies a little about them)
   const cmLine = document.createElement('div');
   cmLine.style.cssText = 'margin-top:4px;color:#9fd29f;font:10px/1.4 monospace;';
-  const showCm = vals => { const c = anatomyCm(vals); const st = seatCm(vals); cmLine.textContent = `≈ length ${inCm(c.length)} · girth ${inCm(c.girth)} · depth ${inCm(c.depth)} · seat out ${inCm(st.depth)} wide ${inCm(st.width)}${clampOn() ? ' · clamp on' : ''}`; };
+  const showCm = vals => { const c = anatomyCm(vals); const st = seatCm(vals); cmLine.textContent = `≈ length ${inCm(c.length)} · girth ${inCm(c.girth)} · depth ${inCm(c.depth)} · seat out ${inCm(st.depth)} wide ${inCm(st.width)} · belly ${vals.bellySize >= 50 ? '+' : '−'}${inCm(Math.abs(6 * ((vals.bellySize ?? 50) - 50) / 50))} · chest ${Math.round(100 * (1 + 0.6 * ((vals.chestSize ?? 50) - 50) / 50))}%${clampOn() ? ' · clamp on' : ''}`; };
   const apply = patch => {
     if (own) Object.assign(T.params, patch); else setAnatomy(patch);
     showCm(own ? T.params : getAnatomy());
