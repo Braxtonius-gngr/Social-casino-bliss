@@ -115,8 +115,10 @@ export class FleshSim {
     const P = this.pouch, g = this.inner; if (!P || !g) return false;
     const u = g.userData, s = g.scale.x, sc = this.fig.getWorldScale(_w).x * P.scale.x * s;
     const loose = Math.max(0.2, u.sway || 1), press = Math.max(0, Math.min(1, this.fig.userData.press || 0));
-    const k = K / loose * (1 + 3 * press), c = C / Math.sqrt(loose) * (1 + 4 * press);
-    const lobeMax = LOBE.max * (u.kl || 1) * (1 - 0.5 * press), lobeK = LOBE.k * (1 + press), lobeC = LOBE.c * (1 + 2 * press);
+    // (the material: figure.mjs's damping, resist and adhesion, 50 as they were)
+    const mp = u.params || {}, damp = 0.4 + 1.2 * (mp.damping ?? 50) / 100, res = (mp.resist ?? 50) / 50, adh = (mp.adhesion ?? 50) / 50;
+    const k = K / loose * (1 + 3 * res * press), c = C / Math.sqrt(loose) * damp * (1 + 4 * adh * press);
+    const lobeMax = LOBE.max * (u.kl || 1) * (1 - 0.5 * press), lobeK = LOBE.k * (1 + press), lobeC = LOBE.c * damp * (1 + 2 * adh * press);
     // (the right lobe's lag on the left, and the lobes' sag toward the
     // ground: figure.mjs's lobeLag and density, 50 as they were)
     const ap = u.params || {}, lagR = 1 + 0.24 * (ap.lobeLag ?? 50) / 100, sag = (((ap.density ?? 50) - 50) / 50) * 0.5 * (u.kl || 1);

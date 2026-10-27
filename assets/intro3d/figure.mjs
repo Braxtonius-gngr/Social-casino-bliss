@@ -750,6 +750,15 @@ function buildHead(kit, o = {}) {
 //     glide      0-100: how freely it slides on the shaft under motion
 //     retract    0-100: how hard it springs back to where it rests
 //     folds      0-100: how finely it bunches when drawn back (3 to 10 folds)
+////   the material (50 as it was on each):
+//     modulus    0-100: the stiffness gradient - how far down the shaft its
+//                stiff root reaches before it bends (25% to 51% of its run;
+//                50: 38%) - the tip stays the flexible part
+//     damping    0-100: how fast the tissue soaks up a move (0.4x to 1.6x)
+//                - settles slower or sooner after a skip or a climb
+//     resist     0-100: how hard it pushes back on a snug garment's hold
+//                (0 to 2x the Cloth push's compression)
+//     adhesion   0-100: how much a garment's inside drags it along (0 to 2x)
 //
 // Gravity comes from the pose: the `pouch` group's orientation is set by
 // valley.mjs per figure (the sawyer hung head-down turns it end for end).
@@ -764,7 +773,8 @@ let ANATOMY = {
   hangL: 45, hangR: 55,
   gorge: 0, sway: 1.0,
   taper: 50, elevation: 50, pitch: 50, twist: 50, lobeLag: 50, density: 50,
-  hood: 0, ring: 40, tether: 40, glide: 60, retract: 50, folds: 50
+  hood: 0, ring: 40, tether: 40, glide: 60, retract: 50, folds: 50,
+  modulus: 50, damping: 50, resist: 50, adhesion: 50
 };
 // (a set from before the parts were split - one Size, length and girth as
 // scales, depth as a scale - read as the same man)
@@ -802,8 +812,24 @@ function anatomyFor(rnd) {
     // (the finer cut as the base has it - no draws of their own, so every
     // man is drawn as before)
     taper: ANATOMY.taper, elevation: ANATOMY.elevation, pitch: ANATOMY.pitch, twist: ANATOMY.twist, lobeLag: ANATOMY.lobeLag, density: ANATOMY.density,
-    hood: ANATOMY.hood, ring: ANATOMY.ring, tether: ANATOMY.tether, glide: ANATOMY.glide, retract: ANATOMY.retract, folds: ANATOMY.folds
+    hood: ANATOMY.hood, ring: ANATOMY.ring, tether: ANATOMY.tether, glide: ANATOMY.glide, retract: ANATOMY.retract, folds: ANATOMY.folds,
+    modulus: ANATOMY.modulus, damping: ANATOMY.damping, resist: ANATOMY.resist, adhesion: ANATOMY.adhesion
   };
+}
+
+// a set's measures in centimetres, worked as buildAnatomy lays a build's
+// man out (its units are cm): the shaft's run from its root to its tip, its
+// girth round, and depth - how far its front stands out from the root
+// (the realism clamp reads them; the overlay shows them)
+export function anatomyCm(a) {
+  a = Object.assign({}, ANATOMY, migrateAnatomy(a));
+  const amp = gorgeAmp(a), sL = a.sizeLobe * amp, sP = a.sizePouch * amp;
+  const kL = (0.5 + 1.5 * a.length / 100) * amp, kG = (0.5 + 1.5 * a.girth / 100) * amp;
+  const L = 6.4 * kL * sP, r = 1.2 * kG * sP;
+  const fL = a.fullnessL / 100, fR = a.fullnessR / 100, hL = a.hangL / 100, hR = a.hangR / 100;
+  const avgLR = ((1.6 + fL * 0.45) + (1.6 + fR * 0.45)) / 2 * sL, dd = a.depth / 100;
+  const dk = (0.35 + 0.65 * (fL + fR) / 2) * (1 - 0.6 * (hL + hR) / 2) * dd * (1.311 + 1.417 * dd);
+  return { length: L + 2.6 * sL, girth: 2 * PI * r, depth: 0.6 * sL + avgLR + 0.75 * r + dk * sL + r };
 }
 
 // a tube swept along points with a radius at each (rings of n), closed at
@@ -1035,7 +1061,7 @@ export function buildAnatomy(pouch, m, a) {
     // exponential taper over the first ROOT of its length - no flat end, no
     // open funnel at the base - and it bends out of that root rather than
     // turning on a pin: see bendShaft)
-    const ROOT = 0.15, TAU = 0.035, BEND = 0.38;
+    const ROOT = 0.15, TAU = 0.035, BEND = 0.25 + 0.13 * (a.modulus ?? 50) / 50;
     const bury = [0, pts[0][1] + 1.2 * sL, pts[0][2] + 2.6 * sL];
     const taper = t => t >= ROOT ? 1 : (1 - Math.exp(-t / TAU)) / (1 - Math.exp(-ROOT / TAU));
     const geo = sweep([bury, ...pts], tapered([r * 0.9, r * 1.12, r, r * 0.98, r * 1.02, r * 0.55]), 14, UVM.linen, taper);
