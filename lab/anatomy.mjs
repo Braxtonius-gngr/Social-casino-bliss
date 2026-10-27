@@ -864,10 +864,10 @@ const ui = {
     }
     // (a snug fabric: the cloth's hydrostatic state over the fork)
     const snug = active().some(s => s.man && s.man.userData.cloth && s.man.userData.cloth.covers);
-    if (snug || state.firmLink) {
-      add(`<button type="button" class="chip ${state.firmLink ? 'on' : ''}" id="firmLink" title="Linked: Firm and the anatomy's Gorge move together - the body's own state, shown with or without a garment. Unlinked: Firm is the garment's alone">${state.firmLink ? '🔗 Firm = Gorge' : '⛓ Firm alone'}</button>`);
-      add(`<label>${state.firmLink ? 'State' : 'Firm'} <input type="range" id="firmA" min="0" max="1" step="0.01" value="${state.firm}"><output id="firmO">${state.firm.toFixed(2)}</output></label>`);
-    }
+    // (the link chip always shows - unclothed is where the body's own state
+    // is seen; Firm's slider with a snug garment or the link on)
+    add(`<button type="button" class="chip ${state.firmLink ? 'on' : ''}" id="firmLink" title="Linked: Firm and the anatomy's Gorge move together - the body's own state, shown with or without a garment. Unlinked: Firm is the garment's alone">${state.firmLink ? '🔗 Firm = Gorge' : '⛓ Firm alone'}</button>`);
+    if (snug || state.firmLink) add(`<label>${state.firmLink ? 'State' : 'Firm'} <input type="range" id="firmA" min="0" max="1" step="0.01" value="${state.firm}"><output id="firmO">${state.firm.toFixed(2)}</output></label>`);
     add(`<span class="lbl" id="hold" style="text-transform:none;letter-spacing:0;flex:1 1 100%"></span>`);
     add(`<span class="lbl" id="push" style="text-transform:none;letter-spacing:0;flex:1 1 100%"></span>`);
     add(`<span class="lbl" id="rawcmp" style="text-transform:none;letter-spacing:0;flex:1 1 100%"></span>`);
