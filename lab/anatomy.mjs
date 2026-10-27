@@ -104,6 +104,39 @@ const glReport = (() => {
   };
   return { add, limits, el };
 })();
+// (?probe: the skin's shader built again with one piece of the cloth taken
+// out at a time, on a real man's skin - which piece a device chokes on, in
+// one screenshot: its table lands in the red panel)
+let shaderFails = 0;
+{ const was = renderer.debug.onShaderError; renderer.debug.onShaderError = (...a) => { shaderFails++; was(...a); }; }
+const PROBES = [
+  ['as is', v => v],
+  ['no mask', v => v.replace(/#define UC_CUSTOM_MASK\n/, '').replace(/#define UC_MASK \w+\n/, '')],
+  ['no sites', v => v.replace('+ ucSites(p)', '')],
+  ['sites, no break', v => v.replace('if (float(i) >= u_siteCount) break;', '').replace('h += site.w', 'h += step(float(i) + 0.5, u_siteCount) * site.w')],
+  ['no skin matrix', v => v.replace(/mat4 ucSkin = [^;]*;/, 'mat4 ucSkin = mat4(1.0);')],
+  ['no mask, no sites', v => v.replace(/#define UC_CUSTOM_MASK\n/, '').replace(/#define UC_MASK \w+\n/, '').replace('+ ucSites(p)', '')],
+  ['no cloth at all', null],
+];
+function runProbe() {
+  let skin = null; active()[0].man.traverse(o => { if (!skin && o.userData.skin && o.isSkinnedMesh) skin = o; });
+  if (!skin) { glReport.add('probe: no skin mesh found'); return; }
+  const base = skin.material, culled = skin.frustumCulled, rows = [];
+  skin.frustumCulled = false;
+  PROBES.forEach(([name, edit], k) => {
+    let m;
+    if (edit) {
+      m = base.clone(); const prev = m.onBeforeCompile, key = m.customProgramCacheKey.bind(m);
+      m.onBeforeCompile = (sh, r) => { prev.call(m, sh, r); sh.vertexShader = edit(sh.vertexShader); };
+      m.customProgramCacheKey = () => key() + '|probe' + k;
+    } else m = new THREE.MeshStandardMaterial({ color: 0xb8a28c });
+    const before = shaderFails;
+    skin.material = m; renderer.render(scene, camera);
+    rows.push(`${shaderFails > before ? 'FAIL' : ' ok '}  ${name}`);
+  });
+  skin.material = base; skin.frustumCulled = culled; dirty = true;
+  glReport.add('PROBE (' + (base.type || '') + ')\n' + rows.join('\n'));
+}
 // (?gl shows the device's limits even when nothing failed)
 try { if (new URLSearchParams(location.search).has('gl')) setTimeout(() => glReport.add(glReport.limits()), 2000); } catch (e) { /* fine */ }
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -507,7 +540,7 @@ function band() {
     else if (r.height > 60 && d === 'left') left = Math.max(left, r.right);
     else if (r.height > 60 && d === 'right') right = Math.min(right, r.left);
   });
-  const bottom = dock && !dock.classList.contains('hidden') ? dock.getBoundingClientRect().top : H;
+  const bottom = dock && !dock.classList.contains('hidden') && !document.body.classList.contains('clear') ? dock.getBoundingClientRect().top : H;
   const t = Math.min(top + 8, H * 0.6), b = Math.max(bottom - 8, t + H * 0.25);
   const l = Math.min(left + 8, Wd * 0.4), rr = Math.max(right - 8, l + Wd * 0.3);
   return { H, W: Wd, cy: (t + b) / 2, frac: (b - t) / H, cx: (l + rr) / 2, fw: (rr - l) / Wd };
@@ -559,28 +592,40 @@ function placeCamera() {
   camera.lookAt(target);
 }
 
-// drag to look round, pinch (or the wheel) to come closer, tap a man to go to him
+// drag to look round, pinch (or the wheel) to come closer, two fingers
+// together (or a right- or shift-drag) to slide the view, tap a man to go to him
 const pts = new Map(); let gesture = null;
+const midPt = () => { const [a, b] = [...pts.values()]; return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; };
+const PAN_R = new THREE.Vector3(), PAN_U = new THREE.Vector3();
+function pan(dx, dy) {
+  const k = 2 * view.dist * Math.tan(camera.fov * DEG / 2) / Math.max(1, canvas.clientHeight);
+  PAN_R.setFromMatrixColumn(camera.matrixWorld, 0); PAN_U.setFromMatrixColumn(camera.matrixWorld, 1);
+  view.target.addScaledVector(PAN_R, -dx * k).addScaledVector(PAN_U, dy * k);
+}
+canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('pointerdown', e => {
   canvas.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  gesture = { moved: 0, t0: performance.now(), pinch: pts.size === 2 ? pinchDist() : 0, dist: view.dist };
+  gesture = { moved: 0, t0: performance.now(), pinch: pts.size === 2 ? pinchDist() : 0, dist: view.dist, mid: pts.size === 2 ? midPt() : null, pan: e.button === 2 || e.shiftKey };
 });
 canvas.addEventListener('pointermove', e => {
   const p = pts.get(e.pointerId); if (!p || !gesture) return;
   const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
   gesture.moved += Math.abs(dx) + Math.abs(dy);
   tween = null;
-  if (pts.size === 2) { if (gesture.pinch) view.dist = Math.min(4200, Math.max(40, gesture.dist * gesture.pinch / pinchDist())); }
-  else { view.yaw -= dx * 0.006; view.pitch = Math.min(1.2, Math.max(-0.4, view.pitch + dy * 0.005)); }
+  if (pts.size === 2) {
+    if (gesture.pinch) view.dist = Math.min(4200, Math.max(15, gesture.dist * gesture.pinch / pinchDist()));
+    const m = midPt(); if (gesture.mid) pan(m.x - gesture.mid.x, m.y - gesture.mid.y); gesture.mid = m;
+  } else if (gesture.pan) pan(dx, dy);
+  else { view.yaw -= dx * 0.006; view.pitch = Math.min(1.45, Math.max(-1.2, view.pitch + dy * 0.005)); }
   dirty = true;
 });
 const end = e => {
   pts.delete(e.pointerId);
   if (gesture && pts.size === 0 && gesture.moved < 8 && performance.now() - gesture.t0 < 350) tapAt(e.clientX, e.clientY);
-  if (pts.size === 0) gesture = null; else if (gesture) { gesture.pinch = 0; }
+  if (pts.size === 0) gesture = null; else if (gesture) { gesture.pinch = 0; gesture.mid = null; }
 };
 canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
-canvas.addEventListener('wheel', e => { e.preventDefault(); tween = null; view.dist = Math.min(4200, Math.max(40, view.dist * Math.exp(e.deltaY * 0.001))); dirty = true; }, { passive: false });
+canvas.addEventListener('wheel', e => { e.preventDefault(); tween = null; view.dist = Math.min(4200, Math.max(15, view.dist * Math.exp(e.deltaY * 0.001))); dirty = true; }, { passive: false });
 function pinchDist() { const [a, b] = [...pts.values()]; return Math.hypot(a.x - b.x, a.y - b.y) || 1; }
 const ray = new THREE.Raycaster();
 function tapAt(x, y) {
@@ -617,6 +662,12 @@ const ui = {
     const fa = $('#firmA'); if (fa) fa.oninput = () => { state.firm = +fa.value; $('#firmO').textContent = state.firm.toFixed(2); active().forEach(s => { const c = s.man && s.man.userData.cloth; if (c && c.setState) c.setState(state.firm); }); dirty = true; };
   }
 };
+// (every panel away for a clear view, and back)
+$('#clear').addEventListener('click', () => {
+  const on = document.body.classList.toggle('clear');
+  $('#clear').textContent = on ? '◳ Show' : '◱ Hide'; $('#clear').classList.toggle('on', on);
+  aimIntoBand(); if (state.focus < 0) Object.assign(view, framing('all', -1)); dirty = true;
+});
 document.querySelectorAll('[data-look]').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('[data-look]').forEach(x => x.classList.toggle('on', x === b)); setLook(b.dataset.look);
 }));
@@ -765,6 +816,7 @@ function open() {
   // (the panel folding or the tools row changing moves the strip: redraw)
   if (window.ResizeObserver) { const ro = new ResizeObserver(() => { aimIntoBand(); dirty = true; }); ro.observe($('#dock')); }
   requestAnimationFrame(loop);
+  try { if (new URLSearchParams(location.search).has('probe')) setTimeout(runProbe, 2500); } catch (e) { /* fine */ }
 }
 // (the build and the cloth's mode, so a phone's screenshot says which it was)
 let STAMP = `uc:${UC_MODE}`;
