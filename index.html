@@ -5592,6 +5592,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       // shot whatever level or motion setting the phone has saved: a still
       // has nothing to read)
       const perf = q.has('perf');
+      // (?dest= naming a home is an ask for that home: a skin at Lounge, the
+      // still take of a visualized one, is not a reason to stay on the page)
+      const forced = !!ROLL_DESTS[q.get('dest')];
       const motionOff = () => !perf && document.documentElement.getAttribute('data-motion') === 'off';
       const direct = !!mode.direct;
       let api = null, fellBack = false, done = false, timer = null;
@@ -5852,7 +5855,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
           // (a muted skin, or motion off: the finished frame is all that
           // shows, and the shot is built for that frame alone - unless it is
           // the seat taken directly, whose fly-in starts from the shot's end)
-          still: !direct && (motionOff() || (themeMuted() && !perf)),
+          still: !direct && (motionOff() || (themeMuted() && !perf && !forced)),
           // (the dealer's colours from Settings, for the blackjack's machine)
           robot: rollTableHooks().robot(),
           // (the felt picked in Settings - the table's, so a skin without
@@ -5918,7 +5921,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       }
       // Motion off - or a muted skin, the still take of a visualized one
       // (see THEMES): the finished frame, held, and no shot.
-      if (motionOff() || themeMuted()) { dropSeal(); api.finish(); end(); return; }
+      if (motionOff() || (themeMuted() && !forced && !perf)) { dropSeal(); api.finish(); end(); return; }
       // The gate: the seal stays up, now reading TAP TO ROLL, and the shot
       // waits for that tap (or Enter / Space). It is the tap that lets the
       // page sound - the dice, and the table's music under them.
@@ -9407,7 +9410,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so l
-    const APP_BUILD = 'almanac-v205';
+    const APP_BUILD = 'almanac-v206';
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
     // waits. A slim "Updating" bar fills while the service worker downloads
