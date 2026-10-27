@@ -84,11 +84,23 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 // (a shader this device cannot build shows its own words on screen: a phone
 // cannot open a console, and a program that fails is simply not drawn)
 const glReport = (() => {
-  const el = document.createElement('pre');
+  // (it stays, folded to its title with a tap - the fold kept for next time)
+  const FOLD = 'lab_glreport_folded';
+  const el = document.createElement('div');
   el.id = 'glReport';
-  el.style.cssText = 'position:fixed;left:6px;right:6px;bottom:6px;z-index:100000;max-height:42vh;overflow:auto;margin:0;padding:8px;background:rgba(40,0,0,.92);color:#ffd9c8;font:10px/1.35 monospace;white-space:pre-wrap;display:none;border-radius:6px;';
+  el.style.cssText = 'position:fixed;left:6px;bottom:6px;z-index:100000;max-width:calc(100vw - 12px);background:rgba(40,0,0,.92);color:#ffd9c8;font:10px/1.35 monospace;display:none;border-radius:6px;';
+  const head = document.createElement('button');
+  head.type = 'button';
+  head.style.cssText = 'all:unset;display:block;cursor:pointer;padding:5px 8px;font:bold 10px monospace;color:#ffb3a0;';
+  const body = document.createElement('pre');
+  body.style.cssText = 'margin:0;padding:0 8px 8px;max-height:42vh;overflow:auto;white-space:pre-wrap;';
+  el.append(head, body);
+  let folded = false; try { folded = localStorage.getItem(FOLD) === '1'; } catch (e) { /* storage blocked */ }
+  let count = 0;
+  const show = () => { head.textContent = `${folded ? '▸' : '▾'} GL report (${count})`; body.style.display = folded ? 'none' : ''; el.style.right = folded ? '' : '6px'; };
+  head.addEventListener('click', () => { folded = !folded; try { localStorage.setItem(FOLD, folded ? '1' : '0'); } catch (e) { /* storage blocked */ } show(); });
   const seen = new Set();
-  const add = t => { if (seen.has(t)) return; seen.add(t); el.textContent += t + '\n'; el.style.display = ''; if (!el.isConnected) document.body.appendChild(el); };
+  const add = t => { if (seen.has(t)) return; seen.add(t); count++; body.textContent += t + '\n'; el.style.display = ''; show(); if (!el.isConnected) document.body.appendChild(el); };
   const gl = renderer.getContext();
   const limits = () => {
     const ext = gl.getExtension('WEBGL_debug_renderer_info');

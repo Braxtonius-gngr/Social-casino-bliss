@@ -37,8 +37,8 @@
     .panels > .dev-anatomy-panel { position: relative !important; width: auto !important; max-height: 38vh; }
     /* (the settings folded: only their own toggle row stays) */
     .dock.folded > .row:not(#topRow), .dock.folded > .panels { display: none !important; }
-    /* (the bar's Hide: every panel away, the view the whole screen) */
-    body.clear .dock, body.clear .dev-anatomy-panel, body.clear #glReport { display: none !important; }
+    /* (the bar's Hide: every panel away, the view the whole screen - the GL report stays, folded with its own tap) */
+    body.clear .dock, body.clear .dev-anatomy-panel { display: none !important; }
     button.out { font: inherit; font-size: 12px; cursor: pointer; }
     button.out.on { background: var(--on); color: #1a0f0c; }
   </style>
