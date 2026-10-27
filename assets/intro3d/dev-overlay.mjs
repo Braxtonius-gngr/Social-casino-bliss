@@ -197,6 +197,14 @@ const PARTS = [
     { key: 'lobeLag',   label: 'Lag R',      min: 0,   max: 100, step: 1 },
     { key: 'density',   label: 'Density',    min: 0,   max: 100, step: 1 },
   ] },
+  { id: 'envelope', label: 'Envelope', params: [
+    { key: 'hood',      label: 'Hood',       min: 0,   max: 100, step: 1 },
+    { key: 'ring',      label: 'Ring',       min: 0,   max: 100, step: 1 },
+    { key: 'tether',    label: 'Tether',     min: 0,   max: 100, step: 1 },
+    { key: 'glide',     label: 'Glide',      min: 0,   max: 100, step: 1 },
+    { key: 'retract',   label: 'Retract',    min: 0,   max: 100, step: 1 },
+    { key: 'folds',     label: 'Folds',      min: 0,   max: 100, step: 1 },
+  ] },
 ];
 const PARAMS = PARTS.flatMap(p => p.params);
 
@@ -216,6 +224,9 @@ const REALISM = {
   hangL: { sd: 10 }, hangR: { sd: 10, corr: ['hangL', 0.6] },
   taper: { sd: 10 }, elevation: { sd: 10 }, pitch: { sd: 10 }, twist: { sd: 12 },
   lobeLag: { sd: 12 }, density: { sd: 12 },
+  // (the envelope: none on about half of draws - then the rest of its cut
+  // is drawn all the same, for when it is turned up)
+  hood: { sd: 15, mean: 55, none: 0.5, floor: 5 }, ring: { sd: 15 }, tether: { sd: 12 }, glide: { sd: 12 }, retract: { sd: 12 }, folds: { sd: 15 },
 };
 // a standard normal (Box-Muller), and one truncated at +-t
 export function gauss(rnd = Math.random) { let u = 0; while (!u) u = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rnd()); }
@@ -229,8 +240,9 @@ export function realismDraw(base = DEFAULTS, rnd = Math.random) {
     let zi = gaussT(2.2, rnd);
     if (R.corr && z[R.corr[0]] != null) { const r = R.corr[1]; zi = Math.max(-2.2, Math.min(2.2, r * z[R.corr[0]] + Math.sqrt(1 - r * r) * zi)); }
     z[p.key] = zi;
-    let v = (base[p.key] ?? (p.min + p.max) / 2) + zi * R.sd;
+    let v = (R.mean ?? base[p.key] ?? (p.min + p.max) / 2) + zi * R.sd;
     if (R.floor != null) v = Math.max(R.floor, Math.abs(v - R.floor) + R.floor);
+    if (R.none && rnd() < R.none) v = 0;
     out[p.key] = Math.min(p.max, Math.max(p.min, Math.round(v / p.step) * p.step));
   });
   return out;
