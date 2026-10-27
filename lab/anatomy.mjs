@@ -68,6 +68,10 @@ const state = {
   // the rest bias of the pouch (the shaft) on its own, when it is unlinked
   // from the lobes' (Link off): each its own slider and its own target in
   // the physics; linked, the pouch takes the lobes' value
+  // where his hands go standing: 'behind' (clasped at the small of his back,
+  // out of a close-up's way - the default), 'folded' (across his chest) or
+  // 'sides' (slack, as they were - in front of the fork from three-quarters)
+  hands: 'behind',
   restLink: true, restShaft: Object.assign({}, REST), restShaftFixed: Object.assign({}, REST_FIXED), hungMode: 'physics', paused: false,
   // the GPU cloth's hydrostatic state over the fork, 0 slack to 1 firm (the Firm slider)
   firm: 0.4,
@@ -476,6 +480,14 @@ function stillFlesh(u) {
   // (no swing: the cloth hangs at its rest)
   u.swing = null;
 }
+// the standing man's hands, by the Hands chip ([sh x, y, z, elbow] for his
+// left; the right mirrored - see state.hands)
+const HANDS = { behind: [-0.42, 1.25, 0.08, 1.5], folded: [0.0, 1.35, 0.55, 1.9] };
+function standHands(u, tilt) {
+  const a = HANDS[state.hands]; if (!a) return;
+  u.arms.l.sh.rotation.set(a[0], a[1], a[2] - tilt); u.arms.r.sh.rotation.set(a[0], -a[1], -a[2] - tilt);
+  u.arms.l.el.rotation.x = a[3]; u.arms.r.el.rotation.x = a[3];
+}
 // (age carries the head forward and eases the knees; the face is lifted
 // back to look ahead)
 function posture(u, kneeToo) {
@@ -509,6 +521,7 @@ function poseMan(s, t) {
     u.hips.position.y = BODY_HIPS - 1.8; u.hips.rotation.z = tilt;
     u.arms.l.sh.rotation.set(0.06, 0, 0.1 - tilt); u.arms.r.sh.rotation.set(0.1, 0, -0.12 - tilt);
     u.arms.l.el.rotation.x = 0.28; u.arms.r.el.rotation.x = 0.35;
+    standHands(u, tilt);
     u.legs.l.hip.rotation.set(0.24, 0, 0.05 - tilt); u.legs.l.kn.rotation.x = KNEE_BACK * 0.45; u.legs.l.foot.rotation.x = -0.28;
     u.legs.r.hip.rotation.set(-0.03, 0, -0.03 - tilt);
     posture(u, true);
@@ -817,6 +830,7 @@ const ui = {
     const add = html => { const d = document.createElement('div'); d.innerHTML = html; while (d.firstChild) box.appendChild(d.firstChild); };
     if (ANIMATED[p]) add(`<button type="button" class="chip" id="pause">${state.paused ? '▶ Play' : '❚❚ Pause'}</button>`);
     add(`<button type="button" class="chip ${state.physics ? 'on' : ''}" id="phys">Physics ${state.physics ? 'on' : 'off'}</button>`);
+    if (p === 'stand') add(`<button type="button" class="chip" id="handsB" title="Where his hands go standing: behind his back (out of a close-up's way), folded across his chest, or at his sides">Hands: ${{ behind: 'behind', folded: 'folded', sides: 'at sides' }[state.hands]}</button>`);
     add(`<button type="button" class="chip ${state.clothPush ? 'on' : ''}" id="clothPush" title="The garment pushes back on the anatomy: compression and adhesion, by the fabric's cling">Cloth push ${state.clothPush ? 'on' : 'off'}</button>`);
     add(`<button type="button" class="chip ${state.compareRaw ? 'on' : ''}" id="rawCmp" title="The same anatomy in no garment, simulated beside his own, as a pink ghost">Compare raw</button>`);
     if (p === 'hung') add(`<span class="seg"><button type="button" data-hm="physics" class="${state.hungMode === 'physics' ? 'on' : ''}">Falls</button><button type="button" data-hm="valley" class="${state.hungMode === 'valley' ? 'on' : ''}">Valley flip</button></span>`);
@@ -835,6 +849,7 @@ const ui = {
     box.classList.toggle('hidden', !box.children.length);
     const pz = $('#pause'); if (pz) pz.onclick = () => { state.paused = !state.paused; ui.tools(); };
     const ph = $('#phys'); if (ph) ph.onclick = () => { state.physics = !state.physics; ui.tools(); pose(0, true); };
+    const hb = $('#handsB'); if (hb) hb.onclick = () => { const o = ['behind', 'folded', 'sides']; state.hands = o[(o.indexOf(state.hands) + 1) % o.length]; ui.tools(); pose(0); };
     const cp = $('#clothPush'); if (cp) cp.onclick = () => setClothPush(!state.clothPush);
     const rc = $('#rawCmp'); if (rc) rc.onclick = () => setCompareRaw(!state.compareRaw);
     box.querySelectorAll('[data-hm]').forEach(b => { b.onclick = () => { state.hungMode = b.dataset.hm; ui.tools(); pose(0, true); }; });
