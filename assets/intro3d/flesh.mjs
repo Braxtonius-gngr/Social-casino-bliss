@@ -59,6 +59,7 @@ export class FleshSim {
     this.anchor = new THREE.Vector3(); this.anchorPrev = new THREE.Vector3(); this.anchorV = new THREE.Vector3();
     this.lobe = [{ o: new THREE.Vector3(), v: new THREE.Vector3() }, { o: new THREE.Vector3(), v: new THREE.Vector3() }];
     this.rest = 0;              // rest bias, radians forward
+    this.restShaft = null;      // the shaft's own, when set apart from the lobes' (null: the same)
     this.capsules = [];         // [{a, b, r}] in world, rebuilt each step
     this.boxes = [];            // extra solids: [{min, max}] in world (a seat), tops only
     this.floor = 0;
@@ -72,11 +73,17 @@ export class FleshSim {
   // where each particle rests on the body right now (world), with the rest bias
   targets(out0, out1, root) {
     const P = this.pouch, g = this.inner, u = g.userData, s = g.scale.x;
+    // (the tip's rest first, at the shaft's own bias if it has one; then the
+    // mass's at the lobes', which the group is left turned to)
+    if (this.restShaft != null) {
+      P.quaternion.setFromAxisAngle(_x, this.restShaft + (this.fig.userData.lift || 0)); P.updateMatrixWorld(true);
+      out1.set(u.shaftTip[0] * s, u.shaftTip[1] * s, u.shaftTip[2] * s); P.localToWorld(out1);
+    }
     _restQ.setFromAxisAngle(_x, this.restAll());
     P.quaternion.copy(_restQ); P.updateMatrixWorld(true);
     P.getWorldPosition(this.anchor);
     out0.set(u.mass[0] * s, u.mass[1] * s, u.mass[2] * s); P.localToWorld(out0);
-    out1.set(u.shaftTip[0] * s, u.shaftTip[1] * s, u.shaftTip[2] * s); P.localToWorld(out1);
+    if (this.restShaft == null) { out1.set(u.shaftTip[0] * s, u.shaftTip[1] * s, u.shaftTip[2] * s); P.localToWorld(out1); }
     if (root) { root.set(u.shaftRoot[0] * s, u.shaftRoot[1] * s, u.shaftRoot[2] * s); P.localToWorld(root); }
   }
 
