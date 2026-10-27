@@ -717,8 +717,10 @@ function buildHead(kit, o = {}) {
 //                the body rather than hanging straight down - on a build's
 //                man the more the lobes are full, big and high, the more of
 //                it shows (high Fullness and Size Lobe, low Hang: the most)
-//     gorge      0-100: as before (scales the sizes, length and girth
-//                toward 1.6x); left as it was
+//     gorge      0-100: engorgement - the shaft alone: longer (to 1.6x),
+//                thicker (to 1.3x), firmer (its sway to 0.4x, its stiff
+//                root reaching further down) and lifted (up to 40 degrees
+//                forward about its root); the lobes as they are
 //     sway       physics response amplitude (how freely it answers motion)
 //   the lobes:
 //     sizeLobe   their scale, and the sac's (0.5-3; 1 = an average man's)
@@ -823,8 +825,8 @@ function anatomyFor(rnd) {
 // (the realism clamp reads them; the overlay shows them)
 export function anatomyCm(a) {
   a = Object.assign({}, ANATOMY, migrateAnatomy(a));
-  const amp = gorgeAmp(a), sL = a.sizeLobe * amp, sP = a.sizePouch * amp;
-  const kL = (0.5 + 1.5 * a.length / 100) * amp, kG = (0.5 + 1.5 * a.girth / 100) * amp;
+  const en = engorge(a), sL = a.sizeLobe, sP = a.sizePouch;
+  const kL = (0.5 + 1.5 * a.length / 100) * en.len, kG = (0.5 + 1.5 * a.girth / 100) * en.girth;
   const L = 6.4 * kL * sP, r = 1.2 * kG * sP;
   const fL = a.fullnessL / 100, fR = a.fullnessR / 100, hL = a.hangL / 100, hR = a.hangR / 100;
   const avgLR = ((1.6 + fL * 0.45) + (1.6 + fR * 0.45)) / 2 * sL, dd = a.depth / 100;
@@ -871,9 +873,12 @@ function sweep(pts, radii, n = 12, metric, shape = null) {
   return g;
 }
 
-// gorge, as it was: at 0% the params are natural, at 100% each size, the
-// length and the girth reach 1.6x
-const gorgeAmp = a => 1 + Math.max(0, Math.min(100, a.gorge || 0)) / 100 * 0.6;
+// gorge, the engorgement, 0-1: what it does to the shaft alone - its length
+// and girth scales, how loose it hangs, how far its stiff root reaches, how
+// far it lifts (it once scaled every size and the length and girth again
+// besides, so the lobes swelled and the shaft reached 2.56x)
+const gorgeOf = a => Math.max(0, Math.min(100, a.gorge || 0)) / 100;
+const engorge = a => { const e = gorgeOf(a); return { e, len: 1 + 0.6 * e, girth: 1 + 0.3 * e, sway: 1 - 0.6 * e, bend: 0.15 * e, lift: 40 * e * PI / 180 }; };
 
 // the envelope: a sleeve of skin over the far part of the shaft's curve
 // (`path`, the live shaft's own points), running on past its tip and
@@ -955,11 +960,11 @@ export function buildAnatomy(pouch, m, a) {
   // (each part at its own scale: sL the lobes, the sac and the root they
   // hang from; sP the shaft's length and thickness - so one can change
   // without the other. Laid out in the pouch's own units, the group unscaled.)
-  const amp = gorgeAmp(a), sL = a.sizeLobe * amp, sP = a.sizePouch * amp;
-  const kL = (0.5 + 1.5 * a.length / 100) * amp, kG = (0.5 + 1.5 * a.girth / 100) * amp;
+  const en = engorge(a), sL = a.sizeLobe, sP = a.sizePouch;
+  const kL = (0.5 + 1.5 * a.length / 100) * en.len, kG = (0.5 + 1.5 * a.girth / 100) * en.girth;
   // (the finer cut, each 50 at the old shape: see the notes above)
   const cut = k => ((a[k] ?? 50) - 50) / 50;
-  const tp = cut('taper'), el = cut('elevation') * 1.5 * sL, pitch = cut('pitch') * 25 * PI / 180, twist = cut('twist') * 15 * PI / 180;
+  const tp = cut('taper'), el = cut('elevation') * 1.5 * sL, pitch = cut('pitch') * 25 * PI / 180 + en.lift, twist = cut('twist') * 15 * PI / 180;
   const g = new THREE.Group(); pouch.add(g);
 
   // the two lobes, each with its own fullness and hang
@@ -1061,7 +1066,7 @@ export function buildAnatomy(pouch, m, a) {
     // exponential taper over the first ROOT of its length - no flat end, no
     // open funnel at the base - and it bends out of that root rather than
     // turning on a pin: see bendShaft)
-    const ROOT = 0.15, TAU = 0.035, BEND = 0.25 + 0.13 * (a.modulus ?? 50) / 50;
+    const ROOT = 0.15, TAU = 0.035, BEND = 0.25 + 0.13 * (a.modulus ?? 50) / 50 + en.bend;
     const bury = [0, pts[0][1] + 1.2 * sL, pts[0][2] + 2.6 * sL];
     const taper = t => t >= ROOT ? 1 : (1 - Math.exp(-t / TAU)) / (1 - Math.exp(-ROOT / TAU));
     const geo = sweep([bury, ...pts], tapered([r * 0.9, r * 1.12, r, r * 0.98, r * 1.02, r * 0.55]), 14, UVM.linen, taper);
@@ -1091,7 +1096,7 @@ export function buildAnatomy(pouch, m, a) {
   // roots and ends, their radii; all in this group's own units; kl, the
   // lobes' scale, for their jiggle)
   lobes.forEach(l => { l.userData.p0 = l.position.clone(); });
-  g.userData = { lobes, sac, shaft: sh, sleeve, sway: a.sway, params: a, mass: [0, -avgDrop + el, -0.6 * sL], shaftRoot: pts[0], shaftTip: pts[pts.length - 1], lobeR: avgLR, shaftR: r, kl: sL, updateSac, bendShaft };
+  g.userData = { lobes, sac, shaft: sh, sleeve, sway: a.sway * en.sway, params: a, mass: [0, -avgDrop + el, -0.6 * sL], shaftRoot: pts[0], shaftTip: pts[pts.length - 1], lobeR: avgLR, shaftR: r, kl: sL, updateSac, bendShaft };
   return g;
 }
 

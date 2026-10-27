@@ -245,7 +245,7 @@ const REALISM = {
 // slider runs its whole range, for exploring the extremes.
 const CLAMP = {
   cm: { length: [8, 16], girth: [7, 14], depth: [3, 7.5] },
-  units: { sizePouch: [0.5, 1.5], sizeLobe: [0.6, 1.5], fullnessL: [50, 80], fullnessR: [50, 80], hangL: [15, 85], hangR: [15, 85], gorge: [0, 40], sway: [0.4, 1.8] },
+  units: { sizePouch: [0.5, 1.5], sizeLobe: [0.6, 1.5], fullnessL: [50, 80], fullnessR: [50, 80], hangL: [15, 85], hangR: [15, 85], gorge: [0, 100], sway: [0.4, 1.8] },
   asym: 10,   // fullness L and R at most this far apart (the natural few percent)
   via: { length: 'sizePouch', girth: 'sizePouch', depth: 'sizeLobe' },   // the size eased when a slider alone can't reach
 };
