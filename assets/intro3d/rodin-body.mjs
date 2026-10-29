@@ -470,5 +470,18 @@ export function attachRodin(man, srcGeo, opts = {}) {
   // (the mesh kept off the enumerable fields: three.js copies userData as JSON)
   u.rodin = { meas: fit.meas, flat: opts.flat !== false, verts: fit.geo.attributes.position.count, tris: fit.tris, perBone: Object.fromEntries(BONES.map((b, i) => [b, fit.counts[i]])), height: fit.top };
   Object.defineProperty(u.rodin, 'mesh', { value: mesh, enumerable: false });
+  // optional shirt fitted to this body's own torso sections: pass opts.shirt = {}
+  // (or { ease, hem, sleeves }) to enable; the mesh is added to hips, so it
+  // deforms with the same skeleton as the skin and adds no physics objects
+  if (opts.shirt && u.torsoSections) {
+    import('./garment-fit.mjs').then(({ fitShirt }) => {
+      fitShirt(u.torsoSections, opts.kit, u.hips, u.arms, u.rig,
+        typeof opts.shirt === 'object' ? opts.shirt : {}).then(shirtMesh => {
+        u.hips.add(shirtMesh);
+        if (!u.garmentMeshes) u.garmentMeshes = [];
+        u.garmentMeshes.push(shirtMesh);
+      });
+    });
+  }
   return mesh;
 }
