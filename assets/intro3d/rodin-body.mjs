@@ -470,17 +470,30 @@ export function attachRodin(man, srcGeo, opts = {}) {
   // (the mesh kept off the enumerable fields: three.js copies userData as JSON)
   u.rodin = { meas: fit.meas, flat: opts.flat !== false, verts: fit.geo.attributes.position.count, tris: fit.tris, perBone: Object.fromEntries(BONES.map((b, i) => [b, fit.counts[i]])), height: fit.top };
   Object.defineProperty(u.rodin, 'mesh', { value: mesh, enumerable: false });
-  // optional shirt fitted to this body's own torso sections: pass opts.shirt = {}
-  // (or { ease, hem, sleeves }) to enable; the mesh is added to hips, so it
-  // deforms with the same skeleton as the skin and adds no physics objects
-  if (opts.shirt && u.torsoSections) {
-    import('./garment-fit.mjs').then(({ fitShirt }) => {
-      fitShirt(u.torsoSections, opts.kit, u.hips, u.arms, u.rig,
-        typeof opts.shirt === 'object' ? opts.shirt : {}).then(shirtMesh => {
-        u.hips.add(shirtMesh);
-        if (!u.garmentMeshes) u.garmentMeshes = [];
-        u.garmentMeshes.push(shirtMesh);
-      });
+  // optional garments fitted to this body's skeleton; each is skinned to the
+  // existing bones and adds no physics objects
+  if ((opts.shirt && u.torsoSections) || opts.compressionShort) {
+    import('./garment-fit.mjs').then(({ fitShirt, fitCompressionShort }) => {
+      if (!u.garmentMeshes) u.garmentMeshes = [];
+      // shirt (loose or fitted top)
+      if (opts.shirt && u.torsoSections) {
+        fitShirt(u.torsoSections, opts.kit, u.hips, u.arms, u.rig,
+          typeof opts.shirt === 'object' ? opts.shirt : {}).then(m => {
+          u.hips.add(m); u.garmentMeshes.push(m);
+        });
+      }
+      // compression short: one mesh per leg, added to each leg's hip group
+      if (opts.compressionShort) {
+        const so = typeof opts.compressionShort === 'object' ? Object.assign({}, opts.compressionShort) : {};
+        // pass the build's thigh scale if available
+        if (u.build && so.kT == null) so.kT = 1 + 0.32 * (u.build.mass || 0) + 0.20 * (u.build.muscle || 0) - 0.10 * (u.build.age || 0);
+        const shortKit = opts.kit || u.kit;
+        if (shortKit) {
+          fitCompressionShort(shortKit, u.hips, u.legs, u.rig, so).then(meshes => {
+            meshes.forEach(m => u.garmentMeshes.push(m));   // already parented to leg hip groups by fitCompressionShort
+          });
+        }
+      }
     });
   }
   return mesh;
