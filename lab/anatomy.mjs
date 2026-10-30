@@ -40,14 +40,26 @@ const KNEE_BACK = -1;
 const SPACING = 96;   // between the men, cm
 
 // ---------- the line ----------
+// ── base body presets ─────────────────────────────────────────────────────────
+// Five named physique baselines; all age-neutral (age ≈ 0) so they read as
+// pure body-type references rather than character studies.  The compression
+// short and every other outfit scales automatically to each one's build.
+const BASE_BODIES = [
+  { name: 'Lean',      build: { height: 1.00, mass: -0.40, muscle: -0.10, age: 0    } },
+  { name: 'Athletic',  build: { height: 1.02, mass: -0.10, muscle:  0.85, age: 0    } },
+  { name: 'Muscular',  build: { height: 1.01, mass:  0.10, muscle:  1.00, age: 0    } },
+  { name: 'Stocky',    build: { height: 1.00, mass:  0.50, muscle:  0.30, age: 0.10 } },
+  { name: 'Heavy',     build: { height: 1.00, mass:  1.00, muscle:  0.15, age: 0.20 } },
+];
 const MEN = [
+  ...BASE_BODIES,
   { name: '18, slight', build: { height: 0.97, mass: -0.35, muscle: -0.2, age: -0.3 } },
   { name: '30s, fit', build: { height: 1.02, mass: -0.15, muscle: 0.9, age: 0 } },
   { name: '30s, average', build: { height: 1.0, mass: 0.25, muscle: 0.15, age: 0.05 }, beard: true },
   { name: 'Middle age', build: { height: 0.99, mass: 0.55, muscle: 0.1, age: 0.45 }, beard: true, recede: 0.4 },
   { name: 'Elderly', build: { height: 0.95, mass: 0.15, muscle: -0.4, age: 1 }, grey: true, recede: 0.9, beard: true },
   { name: 'Big & tall', build: { height: 1.1, mass: 0.45, muscle: 0.85, age: 0.2 } },
-  { name: 'Heavy', build: { height: 1.0, mass: 1, muscle: 0.2, age: 0.3 }, beard: true },
+  { name: 'Heavy (aged)', build: { height: 1.0, mass: 1, muscle: 0.2, age: 0.3 }, beard: true },
   { name: 'Small', build: { height: 0.88, mass: 0.05, muscle: 0.1, age: 0.1 } },
   // (a body made in Rodin, on this man's skeleton: his poses, his anatomy and
   // its physics on its mesh - see rodin-body.mjs; garments are not yet fitted to it)
