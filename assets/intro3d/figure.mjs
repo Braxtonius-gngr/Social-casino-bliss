@@ -1416,7 +1416,7 @@ function thighAt(k) {
   };
 }
 // which fabric holds him: the snuggest thing he has on over the fork
-function fabricOf(o) { return o.nude ? 'none' : o.under || (o.hose ? 'hose' : o.brief ? 'brief' : o.shirt ? 'shirt' : 'loin'); }
+function fabricOf(o) { return o.nude ? 'none' : o.under || (o.compressionShort ? 'compression' : o.hose ? 'hose' : o.brief ? 'brief' : o.shirt ? 'shirt' : 'loin'); }
 // a short's leg: thigh cloth from the hip down to y `to`, standing `pad` off
 // (out to pad + flare at the hem), folded toward it
 const THIGH = [[4.0, 8.0, 8.4], [0, 9.6, 10.2, 0, 1.3], [-10, 9.4, 9.8, 1.1], [-22, 8.2, 8.6, 0.9], [-30, 7.2, 7.6], [-36, 6.6, 7.0]];
@@ -1563,7 +1563,8 @@ function dress(kit, o, T, hips, arms, legs, pouch, x, sleeves) {
   }
   // the shorts' legs: compression to above the knee, skin-tight; boxer briefs
   // to mid-thigh, snug; boxers short, loose and flared, folded
-  const SHORTS = { compression: { to: -28, pad: -0.4, folds: 0.008 }, boxerBriefs: { to: -18, pad: 0.3, folds: 0.015 }, boxers: { to: -24, pad: 1.4, flare: 3.0, folds: 0.06 } }[fab];
+  // compressionShort: upper-thigh hem (y=-10), −0.4 cm ease, no folds — sits on the skin
+  const SHORTS = { compression: { to: -10, pad: -0.4, folds: 0 }, boxerBriefs: { to: -18, pad: 0.3, folds: 0.015 }, boxers: { to: -24, pad: 1.4, flare: 3.0, folds: 0.06 } }[fab];
   // (the garments on the legs and the shirt are skinned: a short's or a
   // hose's thigh goes with the hips above the joint and the thigh below,
   // eased between; a hose's shin partly with the thigh at its top; the
@@ -1636,6 +1637,8 @@ function dress(kit, o, T, hips, arms, legs, pouch, x, sleeves) {
       facet(loft(secs, { n: 16, metric: UVM.linen, cap: false }), dsMat(lin, 'linen'), A.sh, 1.4);
     });
   }
+  // mark the short's leg meshes as garments so the lab's garment-view toggle finds them
+  if (o.compressionShort) shortLegs.forEach(m => { m.userData.garment = true; });
   if (o.hose || fab === 'longJohns') {
     // each leg its own cloth, a little off the skin, wrinkled at the knee and
     // gathered at the ankle; the knee its own sleeve (long johns: the same,
@@ -2111,7 +2114,7 @@ export function buildFigure(kit, rnd, o = {}) {
   // (under a fitted brief the anatomy is not drawn: the brief is its shape,
   // fitted to it each frame - it still moves, and the brief reads it)
   if (worn && worn.cloth && worn.cloth.covers && pouch) pouch.visible = false;
-  root.userData = { cup: worn && worn.cup, cloth: worn && worn.cloth, flap: worn && worn.flap, support: worn && worn.support, lift: (worn && worn.lift) || 0, fabric: worn && worn.fabric, hold: worn && worn.hold, hips, torso, neck, head, arms, legs, pouch, mouth: hd.userData.mouth, setFace: hd.userData.setFace || null, phase: rnd() * 6.28, build: B, sleeves, rig, soft, torsoSections: T,
+  root.userData = { cup: worn && worn.cup, cloth: worn && worn.cloth, flap: worn && worn.flap, support: worn && worn.support, lift: (worn && worn.lift) || 0, fabric: worn && worn.fabric, hold: worn && worn.hold, hips, torso, neck, head, arms, legs, pouch, mouth: hd.userData.mouth, setFace: hd.userData.setFace || null, phase: rnd() * 6.28, build: B, sleeves, rig, soft, torsoSections: T, kit,
     // (what the anatomy's physics collides with, in the man's own units: the thighs' radius, the belly's front)
     colliders: B ? { thighR: 8.0 * kT, bellyR: -frontAt(T, 12), bellyZ: 0 } : null };
   if (sleeves.length) updateSleeves(root);

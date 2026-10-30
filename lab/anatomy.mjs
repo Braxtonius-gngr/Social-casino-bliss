@@ -55,7 +55,7 @@ const MEN = [
 ];
 let rodinGeo = null;   // (the Rodin body's mesh, once loaded)
 // (tightest hold to loosest; see FABRIC in figure.mjs)
-const OUTFITS = { compression: { under: 'compression' }, minimal: { brief: true }, hose: { hose: true }, both: { shirt: true, hose: true }, boxerBriefs: { under: 'boxerBriefs' }, longJohns: { under: 'longJohns' }, boxers: { under: 'boxers' }, loin: {}, shirt: { shirt: true }, none: { nude: true } };
+const OUTFITS = { compression: { compressionShort: true }, minimal: { brief: true }, hose: { hose: true }, both: { shirt: true, hose: true }, boxerBriefs: { under: 'boxerBriefs' }, longJohns: { under: 'longJohns' }, boxers: { under: 'boxers' }, loin: {}, shirt: { shirt: true }, none: { nude: true } };
 // (with no fabric at all - None - the anatomy is drawn as the physics proxy,
 // never as a body; in a cloth it can slip out of, it is painted brown)
 const bare = () => state.outfit === 'none';
