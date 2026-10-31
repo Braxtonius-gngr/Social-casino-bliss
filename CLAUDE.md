@@ -1,4 +1,4 @@
-> **Body engine moved:** the anatomy/flesh/cloth engine and the `lab/` pages are now developed in **THE_LAB** (github.com/Braxtonius-gngr/THE_LAB). The engine modules in `assets/intro3d/` are a pinned snapshot for the valley; see `assets/intro3d/ENGINE_PINNED.md`.
+> **Body engine moved:** the anatomy/flesh/cloth engine and the `lab/` pages are now developed in **THE_LAB** (github.com/Braxtonius-gngr/THE_LAB). The engine modules in `assets/intro3d/` are a pinned snapshot for the valley; see `ENGINE_PINNED.md`.
 
 # CLAUDE.md
 

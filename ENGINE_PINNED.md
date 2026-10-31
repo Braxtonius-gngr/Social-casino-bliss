@@ -1,6 +1,6 @@
 # Body engine: pinned snapshot
 
-The body engine (`figure.mjs`, `flesh.mjs`, `cloth.mjs`, `universal-cloth-material.mjs`, `dev-overlay.mjs`, `rodin-body.mjs`)
+The body engine in `assets/intro3d/` (`figure.mjs`, `flesh.mjs`, `cloth.mjs`, `universal-cloth-material.mjs`, `dev-overlay.mjs`, `rodin-body.mjs`)
 now lives in its own repository, **THE_LAB** (github.com/Braxtonius-gngr/THE_LAB), split out with full history on 2026-10-31.
 
 The copies here are a **frozen snapshot** the valley scene runs on. Don't develop the engine in this repo:
