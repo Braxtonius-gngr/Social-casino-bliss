@@ -1,0 +1,41 @@
+[
+  {
+    "name": "cube",
+    "prompt": "fixture",
+    "model": "fal-ai/hyper3d/rodin",
+    "source": "fixture",
+    "seed": null,
+    "triangles": 12,
+    "textures": [
+      {
+        "slot": "baseColorTexture",
+        "size": 64
+      }
+    ],
+    "bytes": 2524,
+    "budget": {
+      "tris": 12000,
+      "tex": 1024,
+      "bytes": 1000000
+    },
+    "height": 0.2,
+    "kept": "2026-11-08"
+  },
+  {
+    "name": "ghost",
+    "prompt": "fixture",
+    "model": "fal-ai/hyper3d/rodin",
+    "source": "fixture",
+    "seed": null,
+    "triangles": 12,
+    "textures": [],
+    "bytes": 123,
+    "budget": {
+      "tris": 12000,
+      "tex": 1024,
+      "bytes": 1000000
+    },
+    "height": 0.2,
+    "kept": "2026-11-08"
+  }
+]

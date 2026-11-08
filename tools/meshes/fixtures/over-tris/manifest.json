@@ -1,0 +1,19 @@
+[
+  {
+    "name": "sheet",
+    "prompt": "fixture",
+    "model": "fal-ai/hyper3d/rodin",
+    "source": "fixture",
+    "seed": null,
+    "triangles": 14112,
+    "textures": [],
+    "bytes": 172152,
+    "budget": {
+      "tris": 12000,
+      "tex": 1024,
+      "bytes": 1000000
+    },
+    "height": 0.2,
+    "kept": "2026-11-08"
+  }
+]
