@@ -8,7 +8,8 @@
  * budget and the 3 MB ceiling. The rows are written by tools/meshes/keep.mjs.
  *
  * No dependencies: the GLB container, the glTF JSON and the WebP headers are
- * small enough to read by hand. `node scripts/check-meshes.js [dir]`.
+ * small enough to read by hand. `node scripts/check-meshes.js [dir] [--dressing file]`;
+ * the dressing list (assets/intro3d/dressing.json) is validated too.
  */
 
 const fs = require('fs');
@@ -105,12 +106,45 @@ function checkFile(file, row, problems) {
   }
 }
 
-function checkDir(dir) {
+// The homes' dressing list (assets/intro3d/dressing.json, read by
+// assets/intro3d/dressing.mjs and the lab): each home an array of rows; a
+// row with a mesh must name one that is kept.
+const NAME_RE = /^[a-z0-9-]+$/;
+function checkDressing(file, rows) {
   const problems = [];
+  let homes;
+  try { homes = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (err) { return [`dressing.json: ${err.message}`]; }
+  if (!homes || typeof homes !== 'object' || Array.isArray(homes)) return ['dressing.json: not an object of homes'];
+  const kept = new Set((rows || []).map(r => r.name));
+  for (const [home, list] of Object.entries(homes)) {
+    if (!Array.isArray(list)) { problems.push(`dressing.json: ${home} is not an array`); continue; }
+    list.forEach((row, i) => {
+      const where = `dressing.json: ${home}[${i}]${row && row.name ? ` (${row.name})` : ''}`;
+      if (!row || typeof row !== 'object') { problems.push(`${where}: not a row`); return; }
+      const bad = [];
+      if (typeof row.name !== 'string' || !NAME_RE.test(row.name)) bad.push('name must be lowercase letters, digits and dashes');
+      if (!(row.mesh === null || row.mesh === row.name)) bad.push('mesh must be null (wanted) or equal to name (kept)');
+      if (!Array.isArray(row.at) || row.at.length !== 3 || !row.at.every(Number.isFinite)) bad.push('at must be three finite numbers');
+      if (!Number.isFinite(row.yaw)) bad.push('yaw must be a finite number');
+      if (!(Number.isFinite(row.height) && row.height > 0)) bad.push('height must be a positive number');
+      if (typeof row.prompt !== 'string' || !row.prompt.trim() || row.prompt.length > 200) bad.push('prompt must be 1 to 200 characters');
+      if (row.hides !== undefined && typeof row.hides !== 'string') bad.push('hides must be a tag');
+      if (row.shadow !== undefined && typeof row.shadow !== 'boolean') bad.push('shadow must be true or false');
+      if (bad.length) problems.push(`${where}: ${bad.join('; ')}`);
+      else if (row.mesh && !kept.has(row.mesh)) problems.push(`${where}: mesh ${row.mesh} is not kept (no manifest row)`);
+    });
+  }
+  return problems;
+}
+
+function checkDir(dir, opts = {}) {
+  const problems = [];
+  const dressingFile = opts.dressing || null;
   const manifestFile = path.join(dir, 'manifest.json');
   const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.glb')) : [];
   if (!fs.existsSync(manifestFile)) {
     if (files.length) problems.push(`${dir}: ${files.length} .glb file(s) but no manifest.json`);
+    if (dressingFile && fs.existsSync(dressingFile)) problems.push(...checkDressing(dressingFile, []));
     return { problems, checked: 0 };
   }
   let rows;
@@ -128,12 +162,18 @@ function checkDir(dir) {
     checkFile(file, row, problems);
     checked += 1;
   }
+  if (dressingFile && fs.existsSync(dressingFile)) problems.push(...checkDressing(dressingFile, rows));
   return { problems, checked };
 }
 
+const DEFAULT_DRESSING = path.join(ROOT, 'assets', 'intro3d', 'dressing.json');
+
 if (require.main === module) {
-  const dir = process.argv[2] ? path.resolve(process.argv[2]) : DEFAULT_DIR;
-  const { problems, checked } = checkDir(dir);
+  const args = process.argv.slice(2);
+  const di = args.indexOf('--dressing');
+  const dressing = di >= 0 ? path.resolve(args.splice(di, 2)[1]) : DEFAULT_DRESSING;
+  const dir = args[0] ? path.resolve(args[0]) : DEFAULT_DIR;
+  const { problems, checked } = checkDir(dir, { dressing });
   if (problems.length) {
     console.log(`FAIL  ${problems.length} problem(s) in ${path.relative(ROOT, dir) || dir}:`);
     for (const p of problems) console.log(`  - ${p}`);
@@ -142,4 +182,4 @@ if (require.main === module) {
   console.log(checked ? `OK    ${checked} kept mesh(es) within budget in ${path.relative(ROOT, dir)}` : 'OK    no meshes kept yet');
 }
 
-module.exports = { readGlb, triangleCount, webpSize, imageSizes, checkDir, CEILING_BYTES, FORBIDDEN };
+module.exports = { readGlb, triangleCount, webpSize, imageSizes, checkDir, checkDressing, CEILING_BYTES, FORBIDDEN };

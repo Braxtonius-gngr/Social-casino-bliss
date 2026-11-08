@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v238';
+const CACHE_NAME = 'almanac-v239';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -47,7 +47,7 @@ const PRECACHE_URLS = [
   // Showroom home - where it stands on the desk)
   './assets/intro3d/orrery.mjs', './assets/intro3d/study.mjs',
   // kept meshes' loader (the meshes themselves are rare/ extras, fetched on demand)
-  './assets/intro3d/props.mjs',
+  './assets/intro3d/props.mjs', './assets/intro3d/dressing.json',
   './assets/intro3d/felt-normal.jpg', './assets/intro3d/rubber-normal.jpg', './assets/intro3d/leather-normal.jpg',
   './assets/intro3d/walnut.jpg', './assets/intro3d/gunmetal.jpg', './assets/intro3d/badge.png',
   './assets/intro3d/gold-trim-color.jpg', './assets/intro3d/gold-trim-alpha.png', './assets/intro3d/gold-trim-normal.jpg',
