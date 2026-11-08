@@ -46,6 +46,8 @@ const PRECACHE_URLS = [
   // Obsidian Ledger: the orrery (its Lounge payout, and the study - its
   // Showroom home - where it stands on the desk)
   './assets/intro3d/orrery.mjs', './assets/intro3d/study.mjs',
+  // kept meshes' loader (the meshes themselves are rare/ extras, fetched on demand)
+  './assets/intro3d/props.mjs',
   './assets/intro3d/felt-normal.jpg', './assets/intro3d/rubber-normal.jpg', './assets/intro3d/leather-normal.jpg',
   './assets/intro3d/walnut.jpg', './assets/intro3d/gunmetal.jpg', './assets/intro3d/badge.png',
   './assets/intro3d/gold-trim-color.jpg', './assets/intro3d/gold-trim-alpha.png', './assets/intro3d/gold-trim-normal.jpg',
