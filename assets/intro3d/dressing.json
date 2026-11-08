@@ -11,46 +11,33 @@
       "yaw": 20,
       "height": 12,
       "prompt": "Georgian brass and cut-glass double inkstand on a rectangular tray with a pen rest and a small bell, aged brass, single object, game-ready prop",
-      "note": "left back corner of the desk, by the shelves"
+      "note": "left back corner of the desk, by the shelves (in frame on a wide screen)"
     },
     {
       "name": "study-letter-tray",
       "mesh": null,
       "at": [
-        50,
+        40,
         0,
-        22
+        24
       ],
       "yaw": -8,
       "height": 7,
       "prompt": "Victorian oak and brass letter tray holding a few folded cream letters and a red wax seal, single object, game-ready prop",
-      "note": "left front of the desk, beside the ledger"
+      "note": "left front of the desk, beside the ledger (in frame on a wide screen; a phone held upright frames the ledger and the orrery alone)"
     },
     {
       "name": "study-carriage-clock",
       "mesh": null,
       "at": [
-        -58,
+        -46,
         0,
-        20
+        30
       ],
       "yaw": 15,
       "height": 14,
       "prompt": "Antique brass carriage clock with a white enamel dial, bevelled glass panels and a folding top handle, polished brass, single object, game-ready prop",
-      "note": "right front of the desk, under the lamp's reach"
-    },
-    {
-      "name": "study-globe",
-      "mesh": null,
-      "at": [
-        135,
-        -82,
-        95
-      ],
-      "yaw": -30,
-      "height": 110,
-      "prompt": "Antique terrestrial globe on a turned walnut floor stand with a brass meridian ring, aged paper map, single object, game-ready prop",
-      "note": "on the floor to the left of the shelves"
+      "note": "right front of the desk, in the lamp’s spill (in frame on a wide screen)"
     },
     {
       "name": "study-books-1",

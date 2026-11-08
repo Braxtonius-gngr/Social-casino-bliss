@@ -49,4 +49,6 @@ the Meshes page, then run the keep command: it files the mesh under the
 row's name and fills the row's `mesh` in (`--no-dress` leaves it), and the
 home dresses itself with it after the fly-in. The service worker serves
 `rare/` stale-while-revalidate, so after a `--force` re-keep the lab shows
-the old mesh for one load.
+the old mesh for one load. `dressing.json` is a shipped, precached file, so a
+keep that fills a row in wants `CACHE_NAME` and `APP_BUILD` bumped together,
+as AGENTS.md says of every shipped change.

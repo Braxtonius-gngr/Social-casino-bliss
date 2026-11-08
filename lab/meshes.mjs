@@ -199,7 +199,7 @@ function renderWanted(homes) {
     const note = document.createElement('div'); note.className = 'note'; note.textContent = `${r.note ? r.note + ' · ' : ''}${r.height} cm tall`;
     const prompt = document.createElement('button'); prompt.type = 'button'; prompt.className = 'prompt'; prompt.textContent = r.prompt; prompt.title = 'Copy the prompt';
     prompt.addEventListener('click', () => { if (navigator.clipboard) navigator.clipboard.writeText(r.prompt).then(() => say('Prompt copied'), () => {}); });
-    const cmd = document.createElement('code'); cmd.textContent = `node tools/meshes/keep.mjs "${r.prompt}" --as ${r.name} --height ${metres}`;
+    const cmd = document.createElement('code'); cmd.textContent = `node tools/meshes/keep.mjs '${r.prompt.replace(/'/g, "'\\''")}' --as ${r.name} --height ${metres}`;
     card.append(b, note, prompt, cmd);
     list.appendChild(card);
   }

@@ -128,6 +128,7 @@ function checkDressing(file, rows) {
       if (!Number.isFinite(row.yaw)) bad.push('yaw must be a finite number');
       if (!(Number.isFinite(row.height) && row.height > 0)) bad.push('height must be a positive number');
       if (typeof row.prompt !== 'string' || !row.prompt.trim() || row.prompt.length > 200) bad.push('prompt must be 1 to 200 characters');
+      else if (/["$`\\]/.test(row.prompt)) bad.push('prompt must not contain ", $, ` or \\ (it is pasted into a shell command)');
       if (row.hides !== undefined && typeof row.hides !== 'string') bad.push('hides must be a tag');
       if (row.shadow !== undefined && typeof row.shadow !== 'boolean') bad.push('shadow must be true or false');
       if (bad.length) problems.push(`${where}: ${bad.join('; ')}`);

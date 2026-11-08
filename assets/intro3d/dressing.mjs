@@ -20,7 +20,10 @@ let listPromise = null;
 
 export function loadDressing(fetchImpl = fetch) {
   if (!listPromise) {
-    listPromise = fetchImpl(LIST_URL).then(r => (r.ok ? r.json() : {})).catch(() => ({}));
+    // (a failed fetch answers {} this time and is asked again next time)
+    listPromise = fetchImpl(LIST_URL)
+      .then(r => { if (!r.ok) throw new Error(`dressing.json ${r.status}`); return r.json(); })
+      .catch(() => { listPromise = null; return {}; });
   }
   return listPromise;
 }
@@ -44,23 +47,32 @@ function switchedOff() {
   return false;
 }
 
+// opts.onChange is called after each prop lands and after a stand-in is
+// hidden: a home whose render loop rests between inputs repaints on it, or
+// a prop that arrives late would not show until the next touch.
 export function dress(seat, home, opts = {}) {
   let dead = false;
   const placed = [];
   const hidden = [];
+  const changed = () => { if (!dead && typeof opts.onChange === 'function') opts.onChange(); };
   if (switchedOff()) return { ready: Promise.resolve(), dispose() {} };
 
   const ready = loadDressing(opts.fetchImpl).then(list => {
-    const rows = (list && Array.isArray(list[home])) ? list[home].filter(r => r && r.mesh) : [];
+    if (dead) return;
+    const all = (list && Array.isArray(list[home])) ? list[home].filter(r => r && r.name) : [];
+    const rows = all.filter(r => r.mesh);
     if (!rows.length) return;
-    // a tag is done when every row that carries it has landed (or failed)
-    const want = new Map();
-    rows.forEach(r => { if (r.hides) want.set(r.hides, (want.get(r.hides) || 0) + 1); });
-    const tagDone = (tag) => {
+    // A tag's stand-in goes only when every row carrying the tag - wanted
+    // rows included - has landed; a wanted or failed row keeps it. (Half a
+    // bookcase of kept runs must not empty the other half.)
+    const total = new Map(), landed = new Map();
+    all.forEach(r => { if (r.hides) total.set(r.hides, (total.get(r.hides) || 0) + 1); });
+    const tagLanded = (tag) => {
       if (!tag || dead) return;
-      want.set(tag, want.get(tag) - 1);
-      if (want.get(tag) > 0) return;
+      landed.set(tag, (landed.get(tag) || 0) + 1);
+      if (landed.get(tag) < total.get(tag)) return;
       seat.traverse(o => { if (o.userData && o.userData.dressTag === tag && o.visible) { o.visible = false; hidden.push(o); } });
+      changed();
     };
     return Promise.allSettled(rows.map(row => loadProp(row.mesh).then(group => {
       if (dead) return;
@@ -72,10 +84,10 @@ export function dress(seat, home, opts = {}) {
       group.userData.dressing = row.name;
       seat.add(group);
       placed.push(group);
-      tagDone(row.hides);
+      changed();
+      tagLanded(row.hides);
     }).catch(err => {
       console.warn(`dressing: ${home} ${row.name} did not load: ${err && err.message ? err.message : err}`);
-      tagDone(row.hides);
     }))).then(() => {});
   });
 

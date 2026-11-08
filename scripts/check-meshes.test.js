@@ -83,3 +83,10 @@ test('dressing: the real file validates against the real manifest', () => {
   const r = checkDir(path.join(ROOT, 'assets', 'intro3d', 'rare', 'meshes'), { dressing: path.join(ROOT, 'assets', 'intro3d', 'dressing.json') });
   assert.deepEqual(r.problems, []);
 });
+
+test('dressing: a prompt with shell-hostile characters is refused', () => {
+  const dir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'dress-'));
+  const file = path.join(dir, 'd.json');
+  fs.writeFileSync(file, JSON.stringify({ study: [{ name: 'q', mesh: null, at: [0, 0, 0], yaw: 0, height: 1, prompt: 'a "quoted" $thing' }] }));
+  assert.match(checkDressing(file, []).join('\n'), /prompt/);
+});

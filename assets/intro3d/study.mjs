@@ -793,7 +793,7 @@ export async function prepareTable(opts) {
       const uiK = clamp01((tt - FLY + 0.1) / UI_IN);
       css.domElement.style.setProperty('--r3t-in', uiK.toFixed(3));
       css.domElement.classList.toggle('r3t-hide', uiK <= 0);
-      if (!arrived && tt >= FLY) { arrived = true; if (!dressing) dressing = dress(seat, 'study'); if (fo.onArrive) fo.onArrive(css.domElement); }
+      if (!arrived && tt >= FLY) { arrived = true; if (!dressing) dressing = dress(seat, 'study', { onChange: () => { if (!disposed) show(); } }); if (fo.onArrive) fo.onArrive(css.domElement); }
     };
     const draw = () => { world.paint(); css.render(cssScene, camera); };
     const show = () => { if (running) draw(); else world.rest(draw); };
