@@ -6,9 +6,9 @@
 // it and makes the call); anyone else, and any failure, gets the room as it
 // is. ?fake3d skips the network and loads the bundled Rodin body instead,
 // so the load, fit and crossfade can be looked at for free.
-import * as THREE from '../assets/vendor/three/three.module.js';
 import { GLTFLoader } from '../assets/vendor/three/three.addons.js';
 import { callEdge, signedIn } from '../assets/intro3d/dev-overlay.mjs';
+import { seatOnBase } from '../assets/intro3d/props.mjs';
 
 const POLL_FAST_MS = 3000;
 const POLL_SLOW_MS = 5000;
@@ -18,23 +18,7 @@ const FAKE_GLB = new URL('../assets/intro3d/rare/bodies/rodin-lean.glb', import.
 
 const wait = ms => new Promise(res => setTimeout(res, ms));
 
-// A generated mesh arrives centred on its own origin; the room's models
-// stand on the table at y = 0, centred in x and z. The offset goes on the
-// mesh inside a fresh group, so when fitTo() scales the group (a position
-// is not scaled by its own object's scale) the base stays on the table.
-export function seatOnBase(object) {
-  object.updateMatrixWorld(true);
-  const b = new THREE.Box3().setFromObject(object);
-  const group = new THREE.Group();
-  group.add(object);
-  if (Number.isFinite(b.min.y)) {
-    object.position.x -= (b.min.x + b.max.x) / 2;
-    object.position.y -= b.min.y;
-    object.position.z -= (b.min.z + b.max.z) / 2;
-  }
-  return group;
-}
-
+// (seated by props.mjs's rule, the same one every kept prop gets)
 async function loadStanding(url) {
   const gltf = await new GLTFLoader().loadAsync(url);
   return seatOnBase(gltf.scene);

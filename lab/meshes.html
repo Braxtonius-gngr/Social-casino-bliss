@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Meshes (lab)</title>
+  <style>
+    :root { --ink: #f3ead8; --muted: #b9ad98; --glass: rgba(18, 14, 22, 0.78); --line: rgba(201, 164, 90, 0.4); --accent: #b48cff; --gold: #e2b84a; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: #0d0b10; color: var(--ink); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
+    #meshCanvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+    .top { position: fixed; top: max(14px, env(safe-area-inset-top)); left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; pointer-events: none; }
+    .title { font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; font-size: 13px; color: var(--gold); }
+    .title small { display: block; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--muted); font-size: 13px; margin-top: 2px; }
+    .title a { color: var(--muted); }
+    .status { pointer-events: none; background: var(--glass); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 13px; min-height: 30px; opacity: 0; transition: opacity 0.25s; white-space: nowrap; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; }
+    .status.on { opacity: 1; }
+    .dock { position: fixed; left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); max-width: 620px; margin: 0 auto; }
+    .list { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+    .list::-webkit-scrollbar { display: none; }
+    .list button { flex: none; background: var(--glass); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 7px 12px; font: inherit; font-size: 13px; cursor: pointer; text-align: left; }
+    .list button.on { border-color: var(--gold); }
+    .list button small { display: block; color: var(--muted); font-size: 12px; }
+    .list .empty { color: var(--muted); font-size: 13px; padding: 7px 4px; }
+    .bar { display: flex; gap: 8px; background: var(--glass); border: 1px solid var(--line); border-radius: 16px; padding: 8px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .bar input { flex: 1; min-width: 0; background: transparent; border: 0; color: var(--ink); font: inherit; font-size: 16px; padding: 8px 6px; outline: none; }
+    .bar input::placeholder { color: var(--muted); }
+    .btn { flex: none; border: 0; border-radius: 12px; font: inherit; font-weight: 600; padding: 0 14px; min-height: 44px; min-width: 44px; cursor: pointer; }
+    .btn.go { background: linear-gradient(135deg, var(--accent), #ff7fb6); color: #160f1c; }
+    .btn:focus-visible, .list button:focus-visible, .bar input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .hint { text-align: center; color: var(--muted); font-size: 12px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <canvas id="meshCanvas" aria-label="A turntable under the Wish Room's lights"></canvas>
+
+  <div class="top">
+    <div class="title">Meshes<small>Kept meshes, and bucket drafts before they are kept &middot; <a href="./wish.html">Wish Room</a> &middot; <a href="./anatomy.html">Lab</a></small></div>
+    <div class="status" id="meshStatus" role="status" aria-live="polite"></div>
+  </div>
+
+  <div class="dock">
+    <div class="list" id="meshList" aria-label="Kept meshes"></div>
+    <form class="bar" id="draftForm">
+      <input id="draftInput" type="text" enterkeyhint="go" placeholder="Preview a draft: a wish's words, or a GLB url" />
+      <button class="btn go" type="submit">Preview</button>
+    </form>
+    <div class="hint">Drag to turn &middot; pinch or scroll to zoom &middot; a kept mesh shows its budget numbers</div>
+  </div>
+
+  <script type="module" src="./meshes.mjs"></script>
+</body>
+</html>
