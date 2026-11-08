@@ -59,3 +59,34 @@ test('keep writes the file and the manifest row, and refuses a second keep witho
   assert.equal(JSON.parse(await readFile(join(root, 'assets/intro3d/rare/meshes/manifest.json'), 'utf8')).length, 1);
   await assert.rejects(keep({ source: src, name: 'Bad Name', root }), /name/);
 });
+
+test('--height scales a two-node source as one piece, nodes and all', async () => {
+  const { makeTwoNodes } = await import('./testlib.mjs');
+  const { document, stats } = await optimise(makeTwoNodes(), { budget: DEFAULT_BUDGET, height: 1 });
+  const b = bounds(document);
+  assert.ok(Math.abs(b.min[1]) < 1e-5, `base ${b.min[1]}`);
+  assert.ok(Math.abs((b.max[1] - b.min[1]) - 1) < 1e-5, `height ${b.max[1] - b.min[1]}`);
+  assert.equal(stats.height, 1);
+  const nodes = document.getRoot().listNodes().filter(n => n.getMesh());
+  assert.equal(nodes.length, 2);
+  const ys = nodes.map(n => n.getWorldTranslation()[1]).sort((p, q) => p - q);
+  assert.ok(Math.abs(ys[1] - ys[0] - 0.5) < 1e-5, `the gap between the parts scaled too: ${ys}`);
+});
+
+test('triangle strips are counted and triangulated', async () => {
+  const { makeStrip } = await import('./testlib.mjs');
+  const { document, stats } = await optimise(makeStrip(10), { budget: DEFAULT_BUDGET });
+  assert.equal(stats.trianglesBefore, 10);
+  assert.equal(stats.triangles, 10);
+  for (const m of document.getRoot().listMeshes()) for (const p of m.listPrimitives()) assert.equal(p.getMode(), 4);
+});
+
+test('keep records the simplify error and refuses a mesh still over its triangle budget', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'meshes-'));
+  const src = join(root, 'src.glb');
+  const { NodeIO } = await import('@gltf-transform/core');
+  await new NodeIO().write(src, await makeTexturedCube({ texPx: 64 }));
+  const row = await keep({ source: src, name: 'cube', root });
+  assert.equal(row.simplifyError, null);
+  await assert.rejects(keep({ source: src, name: 'tiny', root, budget: { tris: 1 } }), /--tris/);
+});

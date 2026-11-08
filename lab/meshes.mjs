@@ -105,8 +105,21 @@ function fitForTable(group) {
   if (k < 1) group.scale.setScalar(k);
   return k;
 }
+// a draft's geometry, materials and textures are the lab's own to free; a
+// kept prop's are shared with props.mjs's cache and are left alone
+function disposeOwned(group) {
+  if (!group.userData.owned) return;
+  group.traverse(o => {
+    if (!o.isMesh) return;
+    o.geometry?.dispose?.();
+    for (const m of [].concat(o.material || [])) {
+      for (const k of Object.keys(m)) { const v = m[k]; if (v && v.isTexture) v.dispose(); }
+      m.dispose?.();
+    }
+  });
+}
 function place(group, name) {
-  if (current) { holder.remove(current); current.traverse(o => { if (o.isMesh) { o.geometry.dispose?.(); } }); }
+  if (current) { holder.remove(current); disposeOwned(current); }
   group.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   const k = fitForTable(group);
   holder.add(group); holder.rotation.y = 0;
@@ -155,7 +168,8 @@ async function preview(src) {
     const buf = await r.arrayBuffer();
     const gltf = await new GLTFLoader().parseAsync(buf, url.slice(0, url.lastIndexOf('/') + 1));
     let tris = 0; gltf.scene.traverse(o => { if (o.isMesh && o.geometry) tris += Math.floor((o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3); });
-    const k = place(seatOnBase(gltf.scene), 'draft');
+    const draft = seatOnBase(gltf.scene); draft.userData.owned = true;
+    const k = place(draft, 'draft');
     renderList();
     say(`Draft: ${fmtInt(tris)} triangles, ${fmtBytes(buf.byteLength)} raw${k < 1 ? ` (shown at ${Math.round(k * 100)}%)` : ''}`, true);
   } catch (err) {

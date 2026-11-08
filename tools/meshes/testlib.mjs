@@ -79,3 +79,33 @@ export function makeManyTriangles(n) {
 export function bounds(document) {
   return getBounds(document.getRoot().getDefaultScene() || document.getRoot().listScenes()[0]);
 }
+
+// Two one-metre cubes on two nodes, one above the other: a multi-node source.
+export function makeTwoNodes() {
+  const doc = new Document();
+  const buffer = doc.createBuffer();
+  const scene = doc.createScene('scene');
+  for (const [name, y] of [['low', 0], ['high', 1]]) {
+    const { pos, idx } = cubeArrays(1);
+    const prim = doc.createPrimitive()
+      .setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(pos).setBuffer(buffer))
+      .setIndices(doc.createAccessor().setType('SCALAR').setArray(idx).setBuffer(buffer))
+      .setMaterial(doc.createMaterial(name));
+    scene.addChild(doc.createNode(name).setMesh(doc.createMesh(name).addPrimitive(prim)).setTranslation([0, y + 0.5, 0]));
+  }
+  return doc;
+}
+
+// A triangle strip of `tris` triangles (tris + 2 vertices), the mode a check
+// or a simplifier can overlook.
+export function makeStrip(tris) {
+  const doc = new Document();
+  const buffer = doc.createBuffer();
+  const pos = [];
+  for (let i = 0; i < tris + 2; i++) pos.push(i * 0.1, (i % 2) * 0.1, 0);
+  const prim = doc.createPrimitive().setMode(5)
+    .setAttribute('POSITION', doc.createAccessor().setType('VEC3').setArray(new Float32Array(pos)).setBuffer(buffer))
+    .setMaterial(doc.createMaterial('plain'));
+  doc.createScene('scene').addChild(doc.createNode('strip').setMesh(doc.createMesh('strip').addPrimitive(prim)));
+  return doc;
+}

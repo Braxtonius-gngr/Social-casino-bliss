@@ -3,7 +3,7 @@
 // budget and written under assets/intro3d/rare/meshes/ with its manifest
 // row. See README.md. From the repo root:
 //   node tools/meshes/keep.mjs <source> --as <name> [--tris N] [--tex PX]
-//        [--bytes N] [--height M] [--model ID] [--force]
+//        [--bytes N] [--height M] [--model ID] [--seed N] [--force]
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,7 +16,11 @@ export const MESHES_DIR = 'assets/intro3d/rare/meshes';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 async function readManifest(file) {
-  try { return JSON.parse(await readFile(file, 'utf8')); } catch (_) { return []; }
+  let text;
+  try { text = await readFile(file, 'utf8'); } catch (err) { if (err.code === 'ENOENT') return []; throw err; }
+  const rows = JSON.parse(text); // a corrupt or conflicted manifest is an error, never silently replaced
+  if (!Array.isArray(rows)) throw new Error(`${file} is not an array`);
+  return rows;
 }
 
 export async function keep({ source, name, budget = {}, height, model = DEFAULT_MODEL, force = false, root = REPO_ROOT, seed = null, log = () => {} }) {
@@ -42,6 +46,7 @@ export async function keep({ source, name, budget = {}, height, model = DEFAULT_
   }
 
   const { document: outDoc, stats } = await optimise(document, { budget: b, height });
+  if (stats.triangles > b.tris) throw new Error(`${name} is still ${stats.triangles} triangles after simplifying, over its ${b.tris} budget; raise --tris or start from a lighter draft.`);
   const bytes = await io.writeBinary(outDoc);
   if (bytes.byteLength > b.bytes) throw new Error(`${name} comes out at ${bytes.byteLength} bytes, over its ${b.bytes} budget; raise --bytes (up to ${CEILING_BYTES}) or lower --tris / --tex.`);
   await mkdir(dir, { recursive: true });
@@ -56,12 +61,13 @@ export async function keep({ source, name, budget = {}, height, model = DEFAULT_
     textures: stats.textures,
     bytes: bytes.byteLength,
     budget: b,
+    simplifyError: stats.simplifyError,
     height: stats.height,
     kept: new Date().toISOString().slice(0, 10),
   };
   const rows = manifest.filter(r => r.name !== name).concat([row]).sort((x, y) => x.name.localeCompare(y.name));
   await writeFile(manifestFile, JSON.stringify(rows, null, 2) + '\n');
-  log(`${name}: ${stats.trianglesBefore} -> ${stats.triangles} triangles, ${stats.textures.map(t => `${t.slot} ${t.size}px`).join(', ') || 'no textures'}, ${bytes.byteLength} bytes (budget ${b.tris} tris / ${b.tex}px / ${b.bytes} bytes), ${stats.height} m tall`);
+  log(`${name}: ${stats.trianglesBefore} -> ${stats.triangles} triangles${stats.simplifyError !== null ? ` (simplify error ${stats.simplifyError})` : ''}, ${stats.textures.map(t => `${t.slot} ${t.size}px`).join(', ') || 'no textures'}, ${bytes.byteLength} bytes (budget ${b.tris} tris / ${b.tex}px / ${b.bytes} bytes), ${stats.height} m tall`);
   return row;
 }
 
@@ -88,7 +94,7 @@ function parseArgs(argv) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const o = parseArgs(process.argv.slice(2));
   if (!o.source || !o.name) {
-    console.error('usage: node tools/meshes/keep.mjs <prompt|url|file> --as <name> [--tris N] [--tex PX] [--bytes N] [--height M] [--model ID] [--force]');
+    console.error('usage: node tools/meshes/keep.mjs <prompt|url|file> --as <name> [--tris N] [--tex PX] [--bytes N] [--height M] [--model ID] [--seed N] [--force]');
     process.exit(2);
   }
   keep({ ...o, log: console.log }).then(() => process.exit(0), err => { console.error(err.message || err); process.exit(1); });

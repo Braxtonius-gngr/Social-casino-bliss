@@ -39,9 +39,11 @@ function triangleCount(json) {
   let n = 0;
   for (const mesh of json.meshes || []) {
     for (const prim of mesh.primitives || []) {
-      if (prim.mode !== undefined && prim.mode !== 4) continue;
+      const mode = prim.mode === undefined ? 4 : prim.mode;
       const acc = prim.indices !== undefined ? json.accessors[prim.indices] : json.accessors[(prim.attributes || {}).POSITION];
-      if (acc) n += Math.floor(acc.count / 3);
+      if (!acc) continue;
+      if (mode === 4) n += Math.floor(acc.count / 3);
+      else if (mode === 5 || mode === 6) n += Math.max(0, acc.count - 2); // strips and fans
     }
   }
   return n;

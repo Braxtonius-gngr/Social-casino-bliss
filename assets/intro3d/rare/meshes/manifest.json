@@ -12,12 +12,13 @@
         "size": 1024
       }
     ],
-    "bytes": 335088,
+    "bytes": 335092,
     "budget": {
       "tris": 12000,
       "tex": 1024,
       "bytes": 1000000
     },
+    "simplifyError": 0.001,
     "height": 1.8,
     "kept": "2026-11-08"
   }

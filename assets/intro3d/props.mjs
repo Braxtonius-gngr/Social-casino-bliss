@@ -5,6 +5,9 @@
 // place the same prop twice and scale it with fitTo-style code without the
 // base leaving the table. Nothing here reads the manifest: that is a dev-time
 // record. rare/ is not precached, so the first load of a prop is a fetch.
+// The clone shares geometry, materials and textures with the cached template
+// (never dispose them from a scene), and it is a plain clone: a skinned or
+// animated asset would want SkeletonUtils when one is kept.
 import * as THREE from '../vendor/three/three.module.js';
 import { GLTFLoader } from '../vendor/three/three.addons.js';
 
@@ -34,7 +37,9 @@ let loader = null;
 export function loadProp(name) {
   if (!parsed.has(name)) {
     loader = loader || new GLTFLoader();
-    parsed.set(name, loader.loadAsync(propUrl(name)).then(gltf => gltf.scene));
+    const p = loader.loadAsync(propUrl(name)).then(gltf => gltf.scene);
+    p.catch(() => parsed.delete(name)); // a failed fetch is tried again next time, not remembered
+    parsed.set(name, p);
   }
   return parsed.get(name).then(template => seatOnBase(template.clone(true)));
 }

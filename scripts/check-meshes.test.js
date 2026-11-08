@@ -52,3 +52,8 @@ test('webpSize reads VP8, VP8L and VP8X headers, and the glb helpers agree with 
   }
   assert.equal(webpSize(new Uint8Array(10)), null);
 });
+
+test('triangleCount counts strips and fans as count minus two', () => {
+  const json = { accessors: [{ count: 30002 }, { count: 7 }, { count: 300 }], meshes: [{ primitives: [{ mode: 5, indices: 0 }, { mode: 6, attributes: { POSITION: 1 } }, { indices: 2 }, { mode: 1, indices: 2 }] }] };
+  assert.equal(triangleCount(json), 30000 + 5 + 100);
+});
