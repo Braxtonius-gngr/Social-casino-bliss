@@ -3,7 +3,7 @@
 // budget and written under assets/intro3d/rare/meshes/ with its manifest
 // row. See README.md. From the repo root:
 //   node tools/meshes/keep.mjs <source> --as <name> [--tris N] [--tex PX]
-//        [--bytes N] [--height M] [--model ID] [--seed N] [--force]
+//        [--bytes N] [--height M] [--model ID] [--seed N] [--force] [--no-dress]
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,7 +23,24 @@ async function readManifest(file) {
   return rows;
 }
 
-export async function keep({ source, name, budget = {}, height, model = DEFAULT_MODEL, force = false, root = REPO_ROOT, seed = null, log = () => {} }) {
+// After a keep: if assets/intro3d/dressing.json has a wanted row of this
+// name (mesh null), it is now kept - fill the mesh in. Returns whether a row
+// changed; a missing file is simply no rows.
+export async function fillDressing(root, name) {
+  const file = join(root, 'assets', 'intro3d', 'dressing.json');
+  let text;
+  try { text = await readFile(file, 'utf8'); } catch (err) { if (err.code === 'ENOENT') return false; throw err; }
+  const homes = JSON.parse(text);
+  let changed = false;
+  for (const rows of Object.values(homes)) {
+    if (!Array.isArray(rows)) continue;
+    for (const row of rows) if (row && row.name === name && row.mesh === null) { row.mesh = name; changed = true; }
+  }
+  if (changed) await writeFile(file, JSON.stringify(homes, null, 2) + '\n');
+  return changed;
+}
+
+export async function keep({ source, name, budget = {}, height, model = DEFAULT_MODEL, force = false, root = REPO_ROOT, seed = null, noDress = false, log = () => {} }) {
   if (!/^[a-z0-9-]+$/.test(name || '')) throw new Error(`A mesh name is lowercase letters, digits and dashes, not "${name}".`);
   const b = { ...DEFAULT_BUDGET, ...budget };
   if (b.bytes > CEILING_BYTES) throw new Error(`--bytes ${b.bytes} is over the ${CEILING_BYTES} ceiling, which is never raised.`);
@@ -67,6 +84,7 @@ export async function keep({ source, name, budget = {}, height, model = DEFAULT_
   };
   const rows = manifest.filter(r => r.name !== name).concat([row]).sort((x, y) => x.name.localeCompare(y.name));
   await writeFile(manifestFile, JSON.stringify(rows, null, 2) + '\n');
+  if (!noDress && await fillDressing(root, name)) log(`dressing.json: ${name} was wanted; its row is now kept`);
   log(`${name}: ${stats.trianglesBefore} -> ${stats.triangles} triangles${stats.simplifyError !== null ? ` (simplify error ${stats.simplifyError})` : ''}, ${stats.textures.map(t => `${t.slot} ${t.size}px`).join(', ') || 'no textures'}, ${bytes.byteLength} bytes (budget ${b.tris} tris / ${b.tex}px / ${b.bytes} bytes), ${stats.height} m tall`);
   return row;
 }
@@ -85,6 +103,7 @@ function parseArgs(argv) {
     else if (a === '--model') o.model = next();
     else if (a === '--seed') o.seed = Number(next());
     else if (a === '--force') o.force = true;
+    else if (a === '--no-dress') o.noDress = true;
     else rest.push(a);
   }
   o.source = rest.join(' ');
@@ -94,7 +113,7 @@ function parseArgs(argv) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const o = parseArgs(process.argv.slice(2));
   if (!o.source || !o.name) {
-    console.error('usage: node tools/meshes/keep.mjs <prompt|url|file> --as <name> [--tris N] [--tex PX] [--bytes N] [--height M] [--model ID] [--seed N] [--force]');
+    console.error('usage: node tools/meshes/keep.mjs <prompt|url|file> --as <name> [--tris N] [--tex PX] [--bytes N] [--height M] [--model ID] [--seed N] [--force] [--no-dress]');
     process.exit(2);
   }
   keep({ ...o, log: console.log }).then(() => process.exit(0), err => { console.error(err.message || err); process.exit(1); });
