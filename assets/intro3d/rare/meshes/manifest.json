@@ -1,1 +1,24 @@
-[]
+[
+  {
+    "name": "sample-body",
+    "prompt": "local file assets/intro3d/rare/bodies/rodin-lean.glb",
+    "model": "fal-ai/hyper3d/rodin",
+    "source": "assets/intro3d/rare/bodies/rodin-lean.glb",
+    "seed": null,
+    "triangles": 12000,
+    "textures": [
+      {
+        "slot": "emissiveTexture",
+        "size": 1024
+      }
+    ],
+    "bytes": 335088,
+    "budget": {
+      "tris": 12000,
+      "tex": 1024,
+      "bytes": 1000000
+    },
+    "height": 1.8,
+    "kept": "2026-11-08"
+  }
+]
