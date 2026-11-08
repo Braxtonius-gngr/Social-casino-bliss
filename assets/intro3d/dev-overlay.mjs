@@ -51,7 +51,7 @@ function gateSignIn() {
     return t.access_token && Date.now() / 1000 < t.expires_at - 30 ? t.access_token : null;
   } catch (_) { return null; }
 }
-function signedIn() { const t = appSession(); return !!(sbHeaders().authorization || (t && t.refresh_token)); }
+export function signedIn() { const t = appSession(); return !!(sbHeaders().authorization || (t && t.refresh_token)); }
 
 // the app's sign-in lasts an hour and only the app's own page renews it -
 // this page runs no supabase-js, so a stale token came back "Unauthorized".
@@ -79,7 +79,7 @@ async function emailSignIn(email) {
   if (!r.ok) throw new Error((await r.text()) || 'Could not send the link');
 }
 
-async function callEdge(fn, body) {
+export async function callEdge(fn, body) {
   await renewAppSession();
   const r = await fetch(`${SB_URL}/functions/v1/${fn}`, {
     method: 'POST', headers: sbHeaders(), body: JSON.stringify(body),
