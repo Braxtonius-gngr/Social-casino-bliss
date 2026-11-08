@@ -1,0 +1,39 @@
+{
+  "study": [
+    {
+      "name": "no-height",
+      "mesh": null,
+      "at": [
+        0,
+        0,
+        0
+      ],
+      "yaw": 0,
+      "prompt": "missing its height"
+    },
+    {
+      "name": "long-prompt",
+      "mesh": null,
+      "at": [
+        0,
+        0,
+        0
+      ],
+      "yaw": 0,
+      "height": 5,
+      "prompt": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+      "name": "cube",
+      "mesh": "other",
+      "at": [
+        0,
+        0,
+        0
+      ],
+      "yaw": 0,
+      "height": 5,
+      "prompt": "mesh does not match name"
+    }
+  ]
+}

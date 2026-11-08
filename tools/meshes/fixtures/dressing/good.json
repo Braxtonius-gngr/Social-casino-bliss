@@ -1,0 +1,29 @@
+{
+  "study": [
+    {
+      "name": "wanted-thing",
+      "mesh": null,
+      "at": [
+        1,
+        0,
+        2
+      ],
+      "yaw": 0,
+      "height": 10,
+      "prompt": "a thing",
+      "note": "somewhere"
+    },
+    {
+      "name": "cube",
+      "mesh": "cube",
+      "at": [
+        0,
+        0,
+        0
+      ],
+      "yaw": 45,
+      "height": 20,
+      "prompt": "a cube"
+    }
+  ]
+}

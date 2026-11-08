@@ -57,3 +57,36 @@ test('triangleCount counts strips and fans as count minus two', () => {
   const json = { accessors: [{ count: 30002 }, { count: 7 }, { count: 300 }], meshes: [{ primitives: [{ mode: 5, indices: 0 }, { mode: 6, attributes: { POSITION: 1 } }, { indices: 2 }, { mode: 1, indices: 2 }] }] };
   assert.equal(triangleCount(json), 30000 + 5 + 100);
 });
+
+const { checkDressing } = require('./check-meshes.js');
+const ROOT = path.resolve(__dirname, '..');
+const fx = (p) => path.join(FIX, p);
+const goodRows = JSON.parse(fs.readFileSync(path.join(FIX, 'good', 'manifest.json'), 'utf8'));
+
+test('dressing: good passes against the good manifest', () => {
+  assert.deepEqual(checkDressing(fx('dressing/good.json'), goodRows), []);
+});
+
+test('dressing: a kept mesh that is not in the manifest is reported', () => {
+  assert.match(checkDressing(fx('dressing/unknown-mesh.json'), goodRows).join('\n'), /ghost.*not kept/);
+});
+
+test('dressing: bad rows name their field', () => {
+  const p = checkDressing(fx('dressing/bad-rows.json'), goodRows);
+  assert.equal(p.length, 3, p.join('\n'));
+  assert.match(p.join('\n'), /height/);
+  assert.match(p.join('\n'), /prompt/);
+  assert.match(p.join('\n'), /mesh/);
+});
+
+test('dressing: the real file validates against the real manifest', () => {
+  const r = checkDir(path.join(ROOT, 'assets', 'intro3d', 'rare', 'meshes'), { dressing: path.join(ROOT, 'assets', 'intro3d', 'dressing.json') });
+  assert.deepEqual(r.problems, []);
+});
+
+test('dressing: a prompt with shell-hostile characters is refused', () => {
+  const dir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'dress-'));
+  const file = path.join(dir, 'd.json');
+  fs.writeFileSync(file, JSON.stringify({ study: [{ name: 'q', mesh: null, at: [0, 0, 0], yaw: 0, height: 1, prompt: 'a "quoted" $thing' }] }));
+  assert.match(checkDressing(file, []).join('\n'), /prompt/);
+});

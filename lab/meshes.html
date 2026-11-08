@@ -23,6 +23,13 @@
     .list button.on { border-color: var(--gold); }
     .list button small { display: block; color: var(--muted); font-size: 12px; }
     .list .empty { color: var(--muted); font-size: 13px; padding: 7px 4px; }
+    .wanted { margin-bottom: 10px; }
+    .wanted .label { color: var(--gold); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 6px 2px; }
+    .wanted .card { flex: none; width: min(78vw, 360px); background: var(--glass); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; font-size: 12px; }
+    .wanted .card b { display: block; font-size: 13px; color: var(--ink); }
+    .wanted .card .note { color: var(--muted); }
+    .wanted .card .prompt { display: block; width: 100%; text-align: left; background: rgba(255,255,255,0.05); color: var(--ink); border: 1px dashed var(--line); border-radius: 8px; padding: 6px 8px; margin: 6px 0; font: inherit; font-size: 12px; cursor: pointer; white-space: normal; }
+    .wanted .card code { display: block; color: var(--muted); font-size: 11px; word-break: break-all; }
     .bar { display: flex; gap: 8px; background: var(--glass); border: 1px solid var(--line); border-radius: 16px; padding: 8px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
     .bar input { flex: 1; min-width: 0; background: transparent; border: 0; color: var(--ink); font: inherit; font-size: 16px; padding: 8px 6px; outline: none; }
     .bar input::placeholder { color: var(--muted); }
@@ -41,6 +48,10 @@
   </div>
 
   <div class="dock">
+    <div class="wanted" id="wanted" hidden>
+      <div class="label">Wanted: wish it, preview it here, then keep it</div>
+      <div class="list" id="wantedList" aria-label="Wanted props"></div>
+    </div>
     <div class="list" id="meshList" aria-label="Kept meshes"></div>
     <form class="bar" id="draftForm">
       <input id="draftInput" type="text" enterkeyhint="go" placeholder="Preview a draft: a wish's words, or a GLB url" />

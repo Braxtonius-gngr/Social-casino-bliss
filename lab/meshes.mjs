@@ -9,6 +9,7 @@ import { GLTFLoader } from '../assets/vendor/three/three.addons.js';
 import { loadProp, seatOnBase } from '../assets/intro3d/props.mjs';
 
 const MANIFEST_URL = new URL('../assets/intro3d/rare/meshes/manifest.json', import.meta.url).href;
+const DRESSING_URL = new URL('../assets/intro3d/dressing.json', import.meta.url).href;
 const BUCKET_BASE = 'https://ewfvyrhlsanzkmozrmhs.supabase.co/storage/v1/object/public/wish-models/';
 const DEFAULT_MODEL = 'fal-ai/hyper3d/rodin';
 const TABLE_Y = 0.62;
@@ -183,7 +184,30 @@ document.getElementById('draftForm').addEventListener('submit', e => {
   if (v) preview(v);
 });
 
+// The wanted props (dressing.json rows with no mesh yet): the prompt to wish
+// for, and the keep command that files the draft under the row's name.
+function renderWanted(homes) {
+  const wrap = document.getElementById('wanted'), list = document.getElementById('wantedList');
+  list.textContent = '';
+  const rows = [];
+  for (const [home, hr] of Object.entries(homes || {})) if (Array.isArray(hr)) hr.forEach(r => { if (r && r.mesh === null) rows.push({ home, ...r }); });
+  wrap.hidden = !rows.length;
+  for (const r of rows) {
+    const metres = +(r.height / 100).toFixed(3);
+    const card = document.createElement('div'); card.className = 'card'; card.dataset.name = r.name;
+    const b = document.createElement('b'); b.textContent = `${r.name} · ${r.home}`;
+    const note = document.createElement('div'); note.className = 'note'; note.textContent = `${r.note ? r.note + ' · ' : ''}${r.height} cm tall`;
+    const prompt = document.createElement('button'); prompt.type = 'button'; prompt.className = 'prompt'; prompt.textContent = r.prompt; prompt.title = 'Copy the prompt';
+    prompt.addEventListener('click', () => { if (navigator.clipboard) navigator.clipboard.writeText(r.prompt).then(() => say('Prompt copied'), () => {}); });
+    const cmd = document.createElement('code'); cmd.textContent = `node tools/meshes/keep.mjs '${r.prompt.replace(/'/g, "'\\''")}' --as ${r.name} --height ${metres}`;
+    card.append(b, note, prompt, cmd);
+    list.appendChild(card);
+  }
+}
+
 window.__meshes = { current, currentName, show, preview, manifest: () => manifest };
+
+fetch(DRESSING_URL).then(r => r.ok ? r.json() : {}).catch(() => ({})).then(renderWanted);
 
 fetch(MANIFEST_URL).then(r => r.ok ? r.json() : []).catch(() => []).then(rows => {
   manifest = Array.isArray(rows) ? rows : [];

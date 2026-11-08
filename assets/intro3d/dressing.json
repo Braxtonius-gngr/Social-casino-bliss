@@ -1,0 +1,127 @@
+{
+  "study": [
+    {
+      "name": "study-inkstand",
+      "mesh": null,
+      "at": [
+        52,
+        0,
+        58
+      ],
+      "yaw": 20,
+      "height": 12,
+      "prompt": "Georgian brass and cut-glass double inkstand on a rectangular tray with a pen rest and a small bell, aged brass, single object, game-ready prop",
+      "note": "left back corner of the desk, by the shelves (in frame on a wide screen)"
+    },
+    {
+      "name": "study-letter-tray",
+      "mesh": null,
+      "at": [
+        40,
+        0,
+        24
+      ],
+      "yaw": -8,
+      "height": 7,
+      "prompt": "Victorian oak and brass letter tray holding a few folded cream letters and a red wax seal, single object, game-ready prop",
+      "note": "left front of the desk, beside the ledger (in frame on a wide screen; a phone held upright frames the ledger and the orrery alone)"
+    },
+    {
+      "name": "study-carriage-clock",
+      "mesh": null,
+      "at": [
+        -46,
+        0,
+        30
+      ],
+      "yaw": 15,
+      "height": 14,
+      "prompt": "Antique brass carriage clock with a white enamel dial, bevelled glass panels and a folding top handle, polished brass, single object, game-ready prop",
+      "note": "right front of the desk, in the lamp’s spill (in frame on a wide screen)"
+    },
+    {
+      "name": "study-books-1",
+      "mesh": null,
+      "at": [
+        0,
+        -79.6,
+        108
+      ],
+      "yaw": 0,
+      "height": 32,
+      "prompt": "A row of twenty antique leather-bound books with gilt-tooled spines in oxblood, bottle green and brown, standing upright as one run, single object, game-ready prop",
+      "note": "shelf 1 of 6, counted from the floor; hides the instanced books when every run is kept",
+      "hides": "books"
+    },
+    {
+      "name": "study-books-2",
+      "mesh": null,
+      "at": [
+        0,
+        -40.93,
+        108
+      ],
+      "yaw": 0,
+      "height": 32,
+      "prompt": "A row of twenty antique leather-bound books with gilt-tooled spines in oxblood, bottle green and brown, standing upright as one run, single object, game-ready prop",
+      "note": "shelf 2 of 6, counted from the floor; hides the instanced books when every run is kept",
+      "hides": "books"
+    },
+    {
+      "name": "study-books-3",
+      "mesh": null,
+      "at": [
+        0,
+        -2.27,
+        108
+      ],
+      "yaw": 0,
+      "height": 32,
+      "prompt": "A row of twenty antique leather-bound books with gilt-tooled spines in oxblood, bottle green and brown, standing upright as one run, single object, game-ready prop",
+      "note": "shelf 3 of 6, counted from the floor; hides the instanced books when every run is kept",
+      "hides": "books"
+    },
+    {
+      "name": "study-books-4",
+      "mesh": null,
+      "at": [
+        0,
+        36.4,
+        108
+      ],
+      "yaw": 0,
+      "height": 32,
+      "prompt": "A row of twenty antique leather-bound books with gilt-tooled spines in oxblood, bottle green and brown, standing upright as one run, single object, game-ready prop",
+      "note": "shelf 4 of 6, counted from the floor; hides the instanced books when every run is kept",
+      "hides": "books"
+    },
+    {
+      "name": "study-books-5",
+      "mesh": null,
+      "at": [
+        0,
+        75.07,
+        108
+      ],
+      "yaw": 0,
+      "height": 32,
+      "prompt": "A row of twenty antique leather-bound books with gilt-tooled spines in oxblood, bottle green and brown, standing upright as one run, single object, game-ready prop",
+      "note": "shelf 5 of 6, counted from the floor; hides the instanced books when every run is kept",
+      "hides": "books"
+    },
+    {
+      "name": "study-books-6",
+      "mesh": null,
+      "at": [
+        0,
+        113.73,
+        108
+      ],
+      "yaw": 0,
+      "height": 32,
+      "prompt": "A row of twenty antique leather-bound books with gilt-tooled spines in oxblood, bottle green and brown, standing upright as one run, single object, game-ready prop",
+      "note": "shelf 6 of 6, counted from the floor; hides the instanced books when every run is kept",
+      "hides": "books"
+    }
+  ]
+}

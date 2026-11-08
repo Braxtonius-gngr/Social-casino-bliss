@@ -1,0 +1,16 @@
+{
+  "study": [
+    {
+      "name": "ghost",
+      "mesh": "ghost",
+      "at": [
+        0,
+        0,
+        0
+      ],
+      "yaw": 0,
+      "height": 5,
+      "prompt": "a ghost"
+    }
+  ]
+}

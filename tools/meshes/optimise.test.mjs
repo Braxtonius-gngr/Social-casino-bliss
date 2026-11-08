@@ -90,3 +90,25 @@ test('keep records the simplify error and refuses a mesh still over its triangle
   assert.equal(row.simplifyError, null);
   await assert.rejects(keep({ source: src, name: 'tiny', root, budget: { tris: 1 } }), /--tris/);
 });
+
+test('keep fills in a wanted dressing row and leaves the rest alone', async () => {
+  const { mkdir, writeFile } = await import('node:fs/promises');
+  const { fillDressing } = await import('./keep.mjs');
+  const root = await mkdtemp(join(tmpdir(), 'meshes-'));
+  const src = join(root, 'src.glb');
+  const { NodeIO } = await import('@gltf-transform/core');
+  await new NodeIO().write(src, await makeTexturedCube({ texPx: 64 }));
+  await mkdir(join(root, 'assets/intro3d'), { recursive: true });
+  const file = join(root, 'assets/intro3d/dressing.json');
+  await writeFile(file, JSON.stringify({ study: [
+    { name: 'cube', mesh: null, at: [0, 0, 0], yaw: 0, height: 10, prompt: 'a cube' },
+    { name: 'other', mesh: 'other', at: [0, 0, 0], yaw: 0, height: 10, prompt: 'kept already' },
+  ] }));
+  await keep({ source: src, name: 'cube', root });
+  const after = JSON.parse(await readFile(file, 'utf8'));
+  assert.equal(after.study[0].mesh, 'cube');
+  assert.equal(after.study[1].mesh, 'other');
+  assert.equal(await fillDressing(root, 'nobody'), false);
+  const bare = await mkdtemp(join(tmpdir(), 'meshes-'));
+  await keep({ source: src, name: 'cube', root: bare }); // no dressing file: fine
+});
