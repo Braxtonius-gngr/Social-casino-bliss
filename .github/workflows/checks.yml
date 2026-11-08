@@ -36,6 +36,6 @@ jobs:
       # it, so a merge once left it declaring its Claude client twice and
       # CI stayed green. DENO_NO_PACKAGE_JSON stops Deno resolving its npm:
       # import against the site's own package.json and node_modules.
-      - run: deno check supabase/functions/read-drop/index.ts supabase/functions/bug-report/index.ts
+      - run: deno check supabase/functions/read-drop/index.ts supabase/functions/bug-report/index.ts supabase/functions/wish-3d/index.ts
         env:
           DENO_NO_PACKAGE_JSON: "1"
