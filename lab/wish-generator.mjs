@@ -6,6 +6,7 @@
 // it and makes the call); anyone else, and any failure, gets the room as it
 // is. ?fake3d skips the network and loads the bundled Rodin body instead,
 // so the load, fit and crossfade can be looked at for free.
+import * as THREE from '../assets/vendor/three/three.module.js';
 import { GLTFLoader } from '../assets/vendor/three/three.addons.js';
 import { callEdge, signedIn } from '../assets/intro3d/dev-overlay.mjs';
 
@@ -18,31 +19,25 @@ const FAKE_GLB = new URL('../assets/intro3d/rare/bodies/rodin-lean.glb', import.
 const wait = ms => new Promise(res => setTimeout(res, ms));
 
 // A generated mesh arrives centred on its own origin; the room's models
-// stand on the table at y = 0, centred in x and z. fitTo() then scales it.
+// stand on the table at y = 0, centred in x and z. The offset goes on the
+// mesh inside a fresh group, so when fitTo() scales the group (a position
+// is not scaled by its own object's scale) the base stays on the table.
+export function seatOnBase(object) {
+  object.updateMatrixWorld(true);
+  const b = new THREE.Box3().setFromObject(object);
+  const group = new THREE.Group();
+  group.add(object);
+  if (Number.isFinite(b.min.y)) {
+    object.position.x -= (b.min.x + b.max.x) / 2;
+    object.position.y -= b.min.y;
+    object.position.z -= (b.min.z + b.max.z) / 2;
+  }
+  return group;
+}
+
 async function loadStanding(url) {
   const gltf = await new GLTFLoader().loadAsync(url);
-  const object = gltf.scene;
-  object.updateMatrixWorld(true);
-  const b = { min: [Infinity, Infinity, Infinity], max: [-Infinity, -Infinity, -Infinity] };
-  object.traverse(o => {
-    if (!o.isMesh || !o.geometry) return;
-    o.geometry.computeBoundingBox();
-    const bb = o.geometry.boundingBox;
-    const corners = [[bb.min.x, bb.min.y, bb.min.z], [bb.max.x, bb.min.y, bb.min.z], [bb.min.x, bb.max.y, bb.min.z], [bb.max.x, bb.max.y, bb.min.z],
-      [bb.min.x, bb.min.y, bb.max.z], [bb.max.x, bb.min.y, bb.max.z], [bb.min.x, bb.max.y, bb.max.z], [bb.max.x, bb.max.y, bb.max.z]];
-    for (const [x, y, z] of corners) {
-      const e = o.matrixWorld.elements;
-      const wx = e[0] * x + e[4] * y + e[8] * z + e[12], wy = e[1] * x + e[5] * y + e[9] * z + e[13], wz = e[2] * x + e[6] * y + e[10] * z + e[14];
-      b.min[0] = Math.min(b.min[0], wx); b.min[1] = Math.min(b.min[1], wy); b.min[2] = Math.min(b.min[2], wz);
-      b.max[0] = Math.max(b.max[0], wx); b.max[1] = Math.max(b.max[1], wy); b.max[2] = Math.max(b.max[2], wz);
-    }
-  });
-  if (Number.isFinite(b.min[1])) {
-    object.position.x -= (b.min[0] + b.max[0]) / 2;
-    object.position.y -= b.min[1];
-    object.position.z -= (b.min[2] + b.max[2]) / 2;
-  }
-  return object;
+  return seatOnBase(gltf.scene);
 }
 
 export function installWishGenerator({ onStatus = () => {} } = {}) {
@@ -73,6 +68,7 @@ export function installWishGenerator({ onStatus = () => {} } = {}) {
         onStatus(String(err.message || err).slice(0, 160));
         throw err;
       }
+      const id = r.id; // only the submit answer carries it
       const started = Date.now();
       while (r.state !== 'done') {
         if (r.state === 'failed') {
@@ -88,7 +84,7 @@ export function installWishGenerator({ onStatus = () => {} } = {}) {
           ? `Queued${typeof r.position === 'number' ? `, ${r.position} ahead` : ''}…`
           : `Sculpting… ${Math.round(elapsed / 1000)}s`);
         await wait(elapsed < FAST_FOR_MS ? POLL_FAST_MS : POLL_SLOW_MS);
-        r = await callEdge('wish-3d', { action: 'status', id: r.id, prompt: text });
+        r = await callEdge('wish-3d', { action: 'status', id, prompt: text });
       }
       onStatus(r.cached ? 'Ready (remembered)' : 'Ready (fresh)');
       const object = await loadStanding(r.url);

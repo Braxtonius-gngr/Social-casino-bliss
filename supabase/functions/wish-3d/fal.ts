@@ -120,3 +120,14 @@ export async function objectPath(model: string, key: string): Promise<string> {
   const hex = [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
   return `${model.replace(/\//g, "-")}/${hex}.glb`;
 }
+
+// A fetch that cannot reach fal (DNS, reset, timeout) throws; the proxy
+// answers 502 with a message rather than letting the exception escape as a
+// bare 500 with no CORS headers.
+export async function tryFetch(run: () => Promise<Response>): Promise<Response | { error: string }> {
+  try {
+    return await run();
+  } catch (err) {
+    return { error: `Could not reach fal: ${err instanceof Error ? err.message : String(err)}` };
+  }
+}

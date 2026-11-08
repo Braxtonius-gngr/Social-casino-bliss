@@ -48,3 +48,11 @@ Deno.test("objectPath is the model slug over the key's sha256", async () => {
   const hex = [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
   assertEquals(await objectPath(DEFAULT_MODEL, key), `fal-ai-hyper3d-rodin/${hex}.glb`);
 });
+
+Deno.test("tryFetch turns a thrown network error into a 502-shaped failure", async () => {
+  const { tryFetch } = await import("./fal.ts");
+  const ok = await tryFetch(() => Promise.resolve(new Response("{}", { status: 200 })));
+  assertEquals(ok instanceof Response, true);
+  const bad = await tryFetch(() => Promise.reject(new TypeError("error sending request")));
+  assertEquals(bad, { error: "Could not reach fal: error sending request" });
+});

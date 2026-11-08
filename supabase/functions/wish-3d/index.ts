@@ -10,6 +10,7 @@ import {
   objectPath,
   resultFrom,
   statusFrom,
+  tryFetch,
   urlsFor,
 } from "./fal.ts";
 
@@ -105,12 +106,8 @@ serve(async (req) => {
     const { data: hit } = await supabase.from("wish_models").select("url").eq("key", key).maybeSingle();
     if (hit && typeof hit.url === "string") return jsonResponse({ state: "done", url: hit.url, cached: true }, 200, cors);
 
-    let r: Response;
-    try {
-      r = await fetch(urlsFor(model).submit, { method: "POST", headers: falHeaders, body: JSON.stringify(bodyFor(model, prompt)) });
-    } catch (err) {
-      return jsonResponse({ error: `Could not reach fal: ${err instanceof Error ? err.message : String(err)}` }, 502, cors);
-    }
+    const r = await tryFetch(() => fetch(urlsFor(model).submit, { method: "POST", headers: falHeaders, body: JSON.stringify(bodyFor(model, prompt)) }));
+    if (!(r instanceof Response)) return jsonResponse(r, 502, cors);
     const json = await readJson(r);
     if (r.status === 401) return jsonResponse({ error: "fal refused the key." }, 502, cors);
     if (!r.ok) return jsonResponse({ error: failedMessage(json, `fal submit ${r.status}`) }, 502, cors);
@@ -123,21 +120,19 @@ serve(async (req) => {
     if (!isUuid(id)) return jsonResponse({ error: "A job id is a UUID." }, 400, cors);
     const urls = urlsFor(model, id);
 
-    let s: Response;
-    try {
-      s = await fetch(urls.status, { headers: falHeaders });
-    } catch (err) {
-      return jsonResponse({ error: `Could not reach fal: ${err instanceof Error ? err.message : String(err)}` }, 502, cors);
-    }
+    const s = await tryFetch(() => fetch(urls.status, { headers: falHeaders }));
+    if (!(s instanceof Response)) return jsonResponse(s, 502, cors);
     const status = statusFrom(s.status, await readJson(s));
     if (status.state !== "completed") return jsonResponse(status, 200, cors);
 
-    const res = await fetch(urls.result, { headers: falHeaders });
+    const res = await tryFetch(() => fetch(urls.result, { headers: falHeaders }));
+    if (!(res instanceof Response)) return jsonResponse(res, 502, cors);
     const result = resultFrom(res.status, await readJson(res));
     if (result.state !== "done") return jsonResponse(result, 200, cors);
 
     // Keep it: fal holds the file for an hour at most.
-    const mesh = await fetch(result.url);
+    const mesh = await tryFetch(() => fetch(result.url));
+    if (!(mesh instanceof Response)) return jsonResponse(mesh, 502, cors);
     if (!mesh.ok) return jsonResponse({ state: "failed", message: "could not fetch the mesh from fal" }, 200, cors);
     const bytes = new Uint8Array(await mesh.arrayBuffer());
     const path = await objectPath(model, key);
