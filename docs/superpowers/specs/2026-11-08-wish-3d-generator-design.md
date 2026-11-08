@@ -172,3 +172,17 @@ owner types wish -> wish.mjs grantWish -> placeholder lands
 - Deploy with the Supabase MCP `deploy_edge_function`, `verify_jwt: false`.
 - Cost control: owner-only, cache, one job in flight per page, quality
   `medium`, no HighPack add-on (it triples the bill).
+
+## Amendments after the branch review
+
+- The bucket's `storage.objects` select policy is dropped again
+  (`20261108130000_wish_models_no_listing.sql`): a public bucket serves its
+  objects by URL with no policy, and the policy only let anyone with the anon
+  key list the bucket.
+- "During the clay stage" is not literally true: `grantWish` awaits the
+  generator before the wire stage, so a fresh wish shows the emoji
+  placeholder, with the second status line counting queue position and
+  seconds, for the one to three minutes the model takes, and then the
+  stages play. Accepted for posture one.
+- The generator seats a loaded mesh inside a group (`seatOnBase`) so that
+  `fitTo`'s scaling keeps the base on the table.
