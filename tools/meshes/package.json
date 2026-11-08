@@ -1,0 +1,16 @@
+{
+  "name": "meshes",
+  "private": true,
+  "description": "Dev-only: keeps a generated or local GLB as a budgeted asset under assets/intro3d/rare/meshes/. Not part of the shipped site.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
+    "meshoptimizer": "^0.22.0",
+    "sharp": "^0.33.5"
+  }
+}
