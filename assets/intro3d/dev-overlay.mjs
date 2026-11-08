@@ -36,9 +36,22 @@ const SIGNIN_KEY = 'dev_overlay_signin_v1';
 // ── helpers ──────────────────────────────────────────────────────────
 const APP_TOKEN_KEY = `sb-${new URL(SB_URL).hostname.split('.')[0]}-auth-token`;
 function appSession() { try { return JSON.parse(localStorage.getItem(APP_TOKEN_KEY) || 'null'); } catch (_) { return null; } }
+// The app signs every device in anonymously on first load (cloud sync is on
+// by default), so on a preview the app's session is usually nobody's. Only
+// a session that is not anonymous counts as the owner's here; the gate's
+// own emailed sign-in is the owner's by construction.
+function jwtPayload(token) {
+  try { return JSON.parse(atob(String(token).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch (_) { return null; }
+}
+function ownerAppSession() {
+  const t = appSession();
+  if (!t || !t.access_token) return null;
+  const p = jwtPayload(t.access_token);
+  return p && p.is_anonymous ? null : t;
+}
 function sbHeaders() {
   const h = { 'Content-Type': 'application/json', apikey: SB_ANON };
-  const tok = appSession();
+  const tok = ownerAppSession();
   if (tok && tok.access_token && !(tok.expires_at && Date.now() / 1000 > tok.expires_at - 30)) h.authorization = `Bearer ${tok.access_token}`;
   if (!h.authorization) { const t = gateSignIn(); if (t) h.authorization = `Bearer ${t}`; }
   return h;
@@ -51,7 +64,7 @@ function gateSignIn() {
     return t.access_token && Date.now() / 1000 < t.expires_at - 30 ? t.access_token : null;
   } catch (_) { return null; }
 }
-export function signedIn() { const t = appSession(); return !!(sbHeaders().authorization || (t && t.refresh_token)); }
+export function signedIn() { const t = ownerAppSession(); return !!(sbHeaders().authorization || (t && t.refresh_token)); }
 
 // the app's sign-in lasts an hour and only the app's own page renews it -
 // this page runs no supabase-js, so a stale token came back "Unauthorized".
@@ -84,7 +97,13 @@ export async function callEdge(fn, body) {
   const r = await fetch(`${SB_URL}/functions/v1/${fn}`, {
     method: 'POST', headers: sbHeaders(), body: JSON.stringify(body),
   });
-  if (!r.ok) throw new Error(await r.text());
+  if (!r.ok) {
+    // the functions answer { error } as JSON; show the words, not the braces
+    const text = await r.text();
+    let msg = text;
+    try { const j = JSON.parse(text); if (j && typeof j.error === 'string') msg = j.error; } catch (_) { /* not JSON */ }
+    throw new Error(msg || `${fn}: ${r.status}`);
+  }
   return r.json();
 }
 
