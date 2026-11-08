@@ -34,6 +34,7 @@ import * as THREE from '../vendor/three/three.module.js';
 import { CSS3DRenderer, CSS3DObject } from '../vendor/three/three.addons.js';
 import { tableKit as K } from './table.mjs';
 import { buildOrrery } from './orrery.mjs';
+import { dress } from './dressing.mjs';
 
 export const DESTS = ['study'];
 
@@ -241,6 +242,8 @@ function buildShelves(set) {
     inst.setMatrixAt(i, m4);
     inst.setColorAt(i, col.set(b.c));
   });
+  // (a stand-in: kept book runs from dressing.json hide these when every run has landed)
+  inst.userData.dressTag = 'books';
   g.add(inst);
   // the gilt bands on the spines, toward the room
   const bandMat = new THREE.MeshStandardMaterial({ color: 0xb8924f, metalness: 1, roughness: 0.4 });
@@ -251,6 +254,7 @@ function buildShelves(set) {
       bands.setMatrixAt(i * 2 + j, m4);
     });
   });
+  bands.userData.dressTag = 'books';
   g.add(bands);
   return g;
 }
@@ -381,6 +385,8 @@ export async function prepareTable(opts) {
   seat.rotation.y = STUDY.yaw * DEG;
   seat.visible = false;
   scene.add(seat);
+  // the kept props (dressing.json), put in once the fly-in has landed
+  let dressing = null;
 
   seat.add(buildDesk(set));
   const lamp = buildLamp(set);
@@ -787,7 +793,7 @@ export async function prepareTable(opts) {
       const uiK = clamp01((tt - FLY + 0.1) / UI_IN);
       css.domElement.style.setProperty('--r3t-in', uiK.toFixed(3));
       css.domElement.classList.toggle('r3t-hide', uiK <= 0);
-      if (!arrived && tt >= FLY) { arrived = true; if (fo.onArrive) fo.onArrive(css.domElement); }
+      if (!arrived && tt >= FLY) { arrived = true; if (!dressing) dressing = dress(seat, 'study'); if (fo.onArrive) fo.onArrive(css.domElement); }
     };
     const draw = () => { world.paint(); css.render(cssScene, camera); };
     const show = () => { if (running) draw(); else world.rest(draw); };
@@ -986,7 +992,7 @@ export async function prepareTable(opts) {
   return {
     dest: 'study',
     fly,
-    dispose() { scene.remove(seat); orr.dispose(); K.freeTree(seat, scene.userData.set); }
+    dispose() { if (dressing) { dressing.dispose(); dressing = null; } scene.remove(seat); orr.dispose(); K.freeTree(seat, scene.userData.set); }
   };
 }
 
