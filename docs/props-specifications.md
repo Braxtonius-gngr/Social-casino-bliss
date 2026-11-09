@@ -10,10 +10,11 @@ and the cache rules in `sw.js` / AGENTS.md.
 
 **The Wish Room.** Thirteen wishes have a procedural model (`LIBRARY`): donut,
 pizza, cake, coffee, burger, dice, plant, trophy, ball, lamp, gift, ice cream,
-apple. Thirty-six more are recognised but land as an emoji token only
-(`EMOJI_GUESS`, "things the library cannot build yet"). One of those, the
-cookie, is offered as a chip on the page itself. These 36 are the missing
-generations. Section 3 lists each with its box.
+apple. Thirty-five more are recognised but land as an emoji token only. One of
+those, the cookie, is offered as a chip on the page itself. These 35 are the
+missing generations; each is a row of `GENERATED` in `lab/wish.mjs` with its
+box from section 3, so the room already knows its size and its file name and
+shows the token until the file exists.
 
 **The scenes.** No scene prop expects a generated mesh today. The card table,
 study, seance room, slaughter floor and arcade props are all built in code,
@@ -35,7 +36,7 @@ for a phone PWA with up to eight props on the table at once.
 |---|---|---|
 | Format | glTF 2.0 binary (`.glb`), no animations, lights, cameras or rig | *code*: `GLTFLoader` is vendored in `assets/vendor/three/three.addons.js`; lights inside a model are hidden until the final stage |
 | Units | metres, +y up | *code*: the room, table (`TABLE_Y` 0.62) and every `size` are in metres |
-| Origin | centre of the footprint, resting plane at y = 0 | *code*: the model is added at the holder's origin, which sits on the table top; the body file rests on y 0 the same way |
+| Origin | centre of the footprint, resting plane at y = 0 | *code*: the model is added at the holder's origin, which sits on the table top; the body file rests on y 0 the same way. The loader re-seats what it gets (base to y 0, footprint centred), so a file a little off still lands, but author it right so its own tools agree with the room |
 | Facing | front toward +z | *code*: the holder is turned so its +z faces the camera |
 | Size | exactly the `size` box `[w, h, d]`; a bounding box off by more than 20 % is rescaled uniformly | *code*: `fitTo()` scales when the fit factor is below 0.8 or above 1.25 |
 | Footprint | width and depth at most 0.5 m; height at most 0.5 m | *recommended*: table slots (`SLOTS`) are as close as 0.63 m apart; the default unknown box is 0.26 × 0.36 × 0.26 |
@@ -47,12 +48,12 @@ for a phone PWA with up to eight props on the table at once.
 | Textures | one PNG, 1024² (2048² only for the slot machine) | *recommended*: the body's one PNG makes most of its 3.5 MB |
 | File size | at most 1 MB per prop | *recommended* |
 | Vertex attributes | `POSITION`, `NORMAL`, `TEXCOORD_0` | *code*: what the working body carries; `TANGENT` optional |
-| Shadows | the loader wrapper sets `castShadow` and `receiveShadow` on each mesh | *code*: `mesh()` does this for procedural models; a loaded GLB arrives with both off |
-| Plural vs single | a wish for "cookies" gets the full box; "a cookie" gets `single()` in a 0.33 × 0.12 × 0.33 box | *code*: `readWish()` sets `plural`; an entry without `single` uses `build` for both |
-| Location | `assets/intro3d/rare/wish/<first word>.glb` | *recommended*: `rare/` is fetched on first use and skipped by the update download; the lab is not precached, so nothing is added to `PRECACHE_URLS` until a prop ships in the app proper |
-| Registration | a `LIBRARY` row `{ words, emoji, size, build, single? }` whose `build` loads the file and returns an `Object3D`; or `window.WISH_GENERATOR(text, { THREE })` resolving to `{ object }` | *code*: `finalModel()` tries the generator first, then the library, then the emoji token |
+| Shadows | nothing to do: the loader sets `castShadow` and `receiveShadow` on each mesh and gives each copy its own materials | *code*: `loadGlbSource()` and `loadWish()`; a loaded GLB arrives with both off and would otherwise share one material between two copies on the table |
+| Plural vs single | a wish for "cookies" gets the full box and `<file>.glb`; "a cookie" gets `<file>-one.glb` in the row's `single` box | *code*: `readWish()` sets `plural`; a row without `single` uses the one file for both; a procedural entry's single falls back to a 0.33 × 0.12 × 0.33 box |
+| Location | `assets/intro3d/rare/wish/<file>.glb`, the `file` of its `GENERATED` row (the first word); a wish that can be one or many has a second file, `<file>-one.glb`, for the single | *code*: `loadGlbSource()` builds the URL from the row; `rare/` is fetched on first use and skipped by the update download, and the lab is not precached, so nothing is added to `PRECACHE_URLS` until a prop ships in the app proper |
+| Registration | none for the 35 below: drop the file in and the wish picks it up. A new prop is a `GENERATED` row `{ file, words, emoji, size, single? }`; a procedural one is a `LIBRARY` row with a `build`; or `window.WISH_GENERATOR(text, { THREE })` resolving to `{ object }` | *code*: `finalModel()` tries the generator first, then the library (generated rows included), then the emoji token; a file missing or broken falls back to the token with a console warning |
 
-## 3. The 36 missing generations
+## 3. The 35 missing generations
 
 Sizes are `[w, h, d]` in metres, chosen to read from the room's camera the way
 the existing library does (an apple at 0.22, a burger at 0.33: toy scale, about
@@ -140,5 +141,5 @@ PNG, 3.5 MB, re-exported through Blender's glTF I/O).
 Open items that look like missing props but are code work: the Rodin body's
 head and face on its own bone, hands' grip and feet's ankle, garments fitted to
 it, its anatomy; and `WISH_GENERATOR` itself (the text-to-visual generator the
-Wish Room is written to call), which is the pipeline that would produce the 36
+Wish Room is written to call), which is the pipeline that would produce the 35
 above.
