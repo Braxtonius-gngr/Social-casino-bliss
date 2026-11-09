@@ -20,6 +20,11 @@
  * them fail too. --dir=<path> checks another folder (a drop folder before
  * the files are moved in).
  *
+ * Each file also gets its tessellation metric (scripts/lib/glb-metrics.js):
+ * the share of triangles doing no visual work, and the verdict a prop over
+ * budget gets from it - decimate, or leave because every triangle is
+ * working. scripts/generate-wish-prop.js acts on that verdict.
+ *
  * No dependencies: the GLB container and the glTF JSON are read by hand,
  * bounds come from the POSITION accessors' min/max through each node's
  * transform, image sizes from the PNG / JPEG headers.
@@ -28,6 +33,7 @@
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
+const metrics = require('./lib/glb-metrics.js');
 
 const ROOT = path.resolve(__dirname, '..');
 const args = process.argv.slice(2);
@@ -45,47 +51,7 @@ const BUDGET = {
   shape: 1.5            // how far the per-axis fit ratios may differ before a warning
 };
 const DECODER_EXTS = ['KHR_draco_mesh_compression', 'EXT_meshopt_compression'];
-
-// ---------- the container ----------
-
-function readGlb(buf) {
-  if (buf.length < 20 || buf.toString('ascii', 0, 4) !== 'glTF') throw new Error('not a GLB (no glTF magic)');
-  const version = buf.readUInt32LE(4);
-  if (version !== 2) throw new Error(`glTF version ${version}; the loader reads 2`);
-  const total = buf.readUInt32LE(8);
-  if (total !== buf.length) throw new Error(`header says ${total} bytes, the file has ${buf.length}`);
-  let off = 12, json = null, bin = null;
-  while (off + 8 <= buf.length) {
-    const len = buf.readUInt32LE(off), type = buf.readUInt32LE(off + 4);
-    const chunk = buf.subarray(off + 8, off + 8 + len);
-    if (type === 0x4E4F534A) json = JSON.parse(chunk.toString('utf8'));
-    else if (type === 0x004E4942) bin = chunk;
-    off += 8 + len;
-  }
-  if (!json) throw new Error('no JSON chunk');
-  return { json, bin };
-}
-
-// ---------- transforms (column-major 4x4, as glTF stores them) ----------
-
-function compose(t = [0, 0, 0], [x, y, z, w] = [0, 0, 0, 1], s = [1, 1, 1]) {
-  const x2 = x + x, y2 = y + y, z2 = z + z;
-  const xx = x * x2, xy = x * y2, xz = x * z2, yy = y * y2, yz = y * z2, zz = z * z2, wx = w * x2, wy = w * y2, wz = w * z2;
-  return [
-    (1 - (yy + zz)) * s[0], (xy + wz) * s[0], (xz - wy) * s[0], 0,
-    (xy - wz) * s[1], (1 - (xx + zz)) * s[1], (yz + wx) * s[1], 0,
-    (xz + wy) * s[2], (yz - wx) * s[2], (1 - (xx + yy)) * s[2], 0,
-    t[0], t[1], t[2], 1
-  ];
-}
-function mul(a, b) {
-  const r = new Array(16);
-  for (let c = 0; c < 4; c++) for (let i = 0; i < 4; i++) { let v = 0; for (let k = 0; k < 4; k++) v += a[k * 4 + i] * b[c * 4 + k]; r[c * 4 + i] = v; }
-  return r;
-}
-const IDENTITY = compose();
-const xform = (m, [x, y, z]) => [m[0] * x + m[4] * y + m[8] * z + m[12], m[1] * x + m[5] * y + m[9] * z + m[13], m[2] * x + m[6] * y + m[10] * z + m[14]];
-const nodeMatrix = n => (n.matrix ? n.matrix.slice() : compose(n.translation, n.rotation, n.scale));
+const triangleBudget = single => (single ? BUDGET.trisOne : BUDGET.tris);
 
 // ---------- images ----------
 
@@ -106,11 +72,12 @@ function imageSize(bytes, mime) {
 
 // ---------- one file ----------
 
+// -> { errors, warnings, tris, metric, verdict }
 function checkFile(file, row, single, bytes) {
   const errors = [], warnings = [];
   const err = m => errors.push(m), warn = m => warnings.push(m);
   let parsed;
-  try { parsed = readGlb(bytes); } catch (e) { err(e.message); return { errors, warnings }; }
+  try { parsed = metrics.readGlb(bytes); } catch (e) { err(e.message); return { errors, warnings }; }
   const { json, bin } = parsed;
   const box = single ? row.single : row.size;
 
@@ -124,45 +91,41 @@ function checkFile(file, row, single, bytes) {
   if (used.includes('KHR_materials_unlit')) err('KHR_materials_unlit: the prop would ignore the room\'s light - use a lit PBR material');
 
   // the scene's bounds and triangles
-  const acc = json.accessors || [], meshes = json.meshes || [], nodes = json.nodes || [], mats = json.materials || [];
+  const acc = json.accessors || [], meshes = json.meshes || [], mats = json.materials || [];
   const scene = json.scenes && json.scenes[json.scene || 0];
   if (!scene || !scene.nodes || !scene.nodes.length) { err('no scene with nodes'); return { errors, warnings }; }
   const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
   let tris = 0, prims = 0;
   const usedMats = new Set();
-  const visit = (ni, parent) => {
-    const n = nodes[ni]; if (!n) return;
-    const m = mul(parent, nodeMatrix(n));
-    if (n.mesh != null && meshes[n.mesh]) {
-      for (const p of meshes[n.mesh].primitives || []) {
-        prims++;
-        const mode = p.mode == null ? 4 : p.mode;
-        const pos = acc[p.attributes && p.attributes.POSITION];
-        if (!pos) { err('a primitive without POSITION'); continue; }
-        if (!pos.min || !pos.max) err('a POSITION accessor without min/max (required by glTF; the bounds cannot be checked)');
-        else for (let c = 0; c < 8; c++) {
-          const w = xform(m, [c & 1 ? pos.max[0] : pos.min[0], c & 2 ? pos.max[1] : pos.min[1], c & 4 ? pos.max[2] : pos.min[2]]);
-          for (let k = 0; k < 3; k++) { mn[k] = Math.min(mn[k], w[k]); mx[k] = Math.max(mx[k], w[k]); }
-        }
-        const count = p.indices != null && acc[p.indices] ? acc[p.indices].count : pos.count;
-        if (mode === 4) tris += count / 3;
-        else if (mode === 5 || mode === 6) tris += Math.max(0, count - 2);
-        else err(`a primitive drawn as ${['points', 'lines', 'line loop', 'line strip'][mode] || 'mode ' + mode}: props are triangles`);
-        if (!p.attributes.NORMAL) warn('a primitive without NORMAL: the loader shades it flat');
-        if (p.material != null) {
-          usedMats.add(p.material);
-          const mat = mats[p.material] || {};
-          const pbr = mat.pbrMetallicRoughness || {};
-          const textured = Boolean(pbr.baseColorTexture || pbr.metallicRoughnessTexture || mat.normalTexture || mat.emissiveTexture || mat.occlusionTexture);
-          if (textured && !p.attributes.TEXCOORD_0) err(`a textured primitive without TEXCOORD_0 (material "${mat.name || p.material}")`);
-        } else warn('a primitive with no material: it renders in glTF\'s default white');
+  metrics.eachNode(json, (n, m) => {
+    if (n.mesh == null || !meshes[n.mesh]) return;
+    for (const p of meshes[n.mesh].primitives || []) {
+      prims++;
+      const mode = p.mode == null ? 4 : p.mode;
+      const pos = acc[p.attributes && p.attributes.POSITION];
+      if (!pos) { err('a primitive without POSITION'); continue; }
+      if (!pos.min || !pos.max) err('a POSITION accessor without min/max (required by glTF; the bounds cannot be checked)');
+      else for (let c = 0; c < 8; c++) {
+        const w = metrics.xform(m, [c & 1 ? pos.max[0] : pos.min[0], c & 2 ? pos.max[1] : pos.min[1], c & 4 ? pos.max[2] : pos.min[2]]);
+        for (let k = 0; k < 3; k++) { mn[k] = Math.min(mn[k], w[k]); mx[k] = Math.max(mx[k], w[k]); }
       }
+      const count = p.indices != null && acc[p.indices] ? acc[p.indices].count : pos.count;
+      if (mode === 4) tris += count / 3;
+      else if (mode === 5 || mode === 6) tris += Math.max(0, count - 2);
+      else err(`a primitive drawn as ${['points', 'lines', 'line loop', 'line strip'][mode] || 'mode ' + mode}: props are triangles`);
+      if (!p.attributes.NORMAL) warn('a primitive without NORMAL: the loader shades it flat');
+      if (p.material != null) {
+        usedMats.add(p.material);
+        const mat = mats[p.material] || {};
+        const pbr = mat.pbrMetallicRoughness || {};
+        const textured = Boolean(pbr.baseColorTexture || pbr.metallicRoughnessTexture || mat.normalTexture || mat.emissiveTexture || mat.occlusionTexture);
+        if (textured && !p.attributes.TEXCOORD_0) err(`a textured primitive without TEXCOORD_0 (material "${mat.name || p.material}")`);
+      } else warn('a primitive with no material: it renders in glTF\'s default white');
     }
-    (n.children || []).forEach(c => visit(c, m));
-  };
-  scene.nodes.forEach(ni => visit(ni, IDENTITY));
+  });
   if (!prims) err('no mesh in the scene');
 
+  let metric = null, decision = null;
   if (prims && Number.isFinite(mn[0])) {
     const size = [mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]];
     const fmt = v => v.map(x => x.toFixed(3)).join(' x ');
@@ -177,8 +140,15 @@ function checkFile(file, row, single, bytes) {
     if (Math.abs(mn[1]) > BUDGET.seat) warn(`base at y ${mn[1].toFixed(3)} m, not resting on y 0 (the loader re-seats it)`);
     const cx = (mn[0] + mx[0]) / 2, cz = (mn[2] + mx[2]) / 2;
     if (Math.abs(cx) > BUDGET.seat || Math.abs(cz) > BUDGET.seat) warn(`footprint centred at x ${cx.toFixed(3)}, z ${cz.toFixed(3)} m, not on the origin (the loader re-centres it)`);
-    const budget = single ? BUDGET.trisOne : BUDGET.tris;
+    const budget = triangleBudget(single);
     if (tris > budget) warn(`${Math.round(tris).toLocaleString()} triangles, over the ${budget.toLocaleString()} budget`);
+    // (the tessellation metric: what a prop over budget should get)
+    try {
+      metric = metrics.tessellationWaste(json, bin);
+      decision = metrics.verdict(metric, budget);
+      if (decision.action === 'decimate') warn(`${metrics.describe(metric)}: ${decision.reason} (npm run gen:prop -- ${file}${single ? '-one' : ''} --from=<this file>)`);
+      else if (decision.action === 'efficient') warn(`${metrics.describe(metric)}: ${decision.reason}`);
+    } catch (e) { warn(`tessellation metric could not be read: ${e.message}`); }
   }
 
   // materials
@@ -220,15 +190,29 @@ function checkFile(file, row, single, bytes) {
   });
   if (bytes.length > BUDGET.bytes) warn(`${(bytes.length / 1048576).toFixed(2)} MB, over the 1 MB budget`);
 
-  return { errors, warnings, tris: Math.round(tris) };
+  return { errors, warnings, tris: Math.round(tris), metric, verdict: decision };
+}
+
+// The table the room uses, as the linter and the pipeline read it.
+async function loadRows() {
+  const { GENERATED, WISH_GLB_DIR } = await import(pathToFileURL(path.join(ROOT, 'lab', 'wish-props.mjs')).href);
+  return { GENERATED, WISH_GLB_DIR, rows: new Map(GENERATED.map(r => [r.file, r])) };
+}
+
+// A file name -> its row and whether it is the single ({ file, row, single }), or null.
+function rowFor(rows, name) {
+  const stem = name.endsWith('.glb') ? name.slice(0, -4) : name;
+  const single = stem.endsWith('-one');
+  const file = single ? stem.slice(0, -4) : stem;
+  const row = rows.get(file);
+  return row ? { file, row, single, stem } : null;
 }
 
 // ---------- the folder ----------
 
 async function main() {
-  const { GENERATED, WISH_GLB_DIR } = await import(pathToFileURL(path.join(ROOT, 'lab', 'wish-props.mjs')).href);
+  const { GENERATED, WISH_GLB_DIR, rows } = await loadRows();
   const dir = DIR_ARG ? path.resolve(ROOT, DIR_ARG) : path.join(ROOT, WISH_GLB_DIR);
-  const rows = new Map(GENERATED.map(r => [r.file, r]));
   const present = new Set();
   let errorCount = 0, warningCount = 0, checked = 0;
 
@@ -237,18 +221,15 @@ async function main() {
     const full = path.join(dir, name);
     if (!fs.statSync(full).isFile()) continue;
     if (!name.endsWith('.glb')) { console.log(`WARN  ${name}: not a .glb, the room ignores it`); warningCount++; continue; }
-    const stem = name.slice(0, -4);
-    const single = stem.endsWith('-one');
-    const file = single ? stem.slice(0, -4) : stem;
-    const row = rows.get(file);
+    const hit = rowFor(rows, name);
     let result;
-    if (!row) result = { errors: [`no wish knows this file: name it after a row of lab/wish-props.mjs (${[...rows.keys()].slice(0, 6).join(', ')}, ...)`], warnings: [] };
-    else if (single && !row.single) result = { errors: [`"${file}" is one thing, not one or many: it has no -one file`], warnings: [] };
-    else { result = checkFile(file, row, single, fs.readFileSync(full)); present.add(stem); }
+    if (!hit) result = { errors: [`no wish knows this file: name it after a row of lab/wish-props.mjs (${[...rows.keys()].slice(0, 6).join(', ')}, ...)`], warnings: [] };
+    else if (hit.single && !hit.row.single) result = { errors: [`"${hit.file}" is one thing, not one or many: it has no -one file`], warnings: [] };
+    else { result = checkFile(hit.file, hit.row, hit.single, fs.readFileSync(full)); present.add(hit.stem); }
     checked++;
     errorCount += result.errors.length; warningCount += result.warnings.length;
     const status = result.errors.length ? 'FAIL' : result.warnings.length ? 'WARN' : 'OK  ';
-    const tris = result.tris != null ? ` (${result.tris.toLocaleString()} tris)` : '';
+    const tris = result.tris != null ? ` (${result.tris.toLocaleString()} tris${result.metric ? ', ' + metrics.describe(result.metric) : ''})` : '';
     console.log(`${status}  ${name}${tris}`);
     result.errors.forEach(m => console.log(`        error: ${m}`));
     result.warnings.forEach(m => console.log(`        warn:  ${m}`));
@@ -270,4 +251,6 @@ async function main() {
   console.log(`Wish prop check passed: ${errorCount} error(s), ${warningCount} warning(s).`);
 }
 
-main().catch(e => { console.error(`Wish prop check could not run: ${e.message}`); process.exit(1); });
+module.exports = { BUDGET, checkFile, loadRows, rowFor, triangleBudget };
+
+if (require.main === module) main().catch(e => { console.error(`Wish prop check could not run: ${e.message}`); process.exit(1); });

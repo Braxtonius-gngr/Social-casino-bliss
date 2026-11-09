@@ -32,6 +32,7 @@ npm run check:syntax
 npm run check:refs
 npm run check:catalog
 npm run check:glb                  # the Wish Room's generated props against their rows and the sheet
+npm run gen:prop -- cookie         # make one (fal.ai Rodin, FAL_KEY), decimate by the metric, lint, --install
 npm run test:smoke                 # browser flows against a fake Supabase
 npm ci && npm run build:site && SMOKE_ROOT=dist npm run test:smoke
 ```

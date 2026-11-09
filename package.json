@@ -9,6 +9,7 @@
     "check:catalog": "node scripts/validate-catalog.js",
     "check:seo": "node scripts/generate-seo-pages.js --check",
     "check:glb": "node scripts/check-wish-glb.js",
+    "gen:prop": "node scripts/generate-wish-prop.js",
     "sweep:batch": "node scripts/sweep-batch.js",
     "publish:catalog": "node scripts/publish-catalog.js",
     "test:smoke": "node scripts/smoke-test.js",

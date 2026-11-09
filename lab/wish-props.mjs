@@ -16,12 +16,19 @@
 //   glow     emissive allowed (a thing that gives light)
 //   glass    alphaMode BLEND allowed (a thing seen through)
 //   texture  a bigger map allowed than the 1024 default, in px
+//   prompt   what to ask the generator for (promptOne for the single); the
+//            box's proportions go with it, so say the arrangement, not the size
+//   seed     the generator's seed, for a repeatable result (the single's is seed + 1)
 
 export const WISH_GLB_DIR = 'assets/intro3d/rare/wish/';
 
 export const GENERATED = [
   // food and drink
-  { file: 'cookie', words: ['cookie', 'biscuit'], emoji: '🍪', size: [0.36, 0.08, 0.36], single: [0.18, 0.03, 0.18] },
+  {
+    file: 'cookie', words: ['cookie', 'biscuit'], emoji: '🍪', size: [0.36, 0.08, 0.36], single: [0.18, 0.03, 0.18], seed: 808,
+    prompt: 'A round white ceramic plate with a thin rim holding five chocolate chip cookies arranged in a loose ring, one slightly overlapping another, golden brown baked cookies with cracked tops and chocolate chips standing out in relief, lying flat on the plate, realistic bakery style, clean studio lighting',
+    promptOne: 'A single chocolate chip cookie lying flat, golden brown baked dough with a cracked top surface, chocolate chips standing out in relief, slightly uneven round edge, realistic, clean studio lighting'
+  },
   { file: 'taco', words: ['taco'], emoji: '🌮', size: [0.32, 0.18, 0.14] },
   { file: 'fries', words: ['fries', 'french fries'], emoji: '🍟', size: [0.24, 0.32, 0.16] },
   { file: 'hotdog', words: ['hotdog', 'hot dog'], emoji: '🌭', size: [0.38, 0.12, 0.14] },

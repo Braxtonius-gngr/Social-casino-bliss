@@ -67,6 +67,52 @@ sided or metallic-by-default materials, and glass or glow on a row that does
 not expect them; `--strict` fails on those too. `--dir=<folder>` checks a drop
 folder before the files are moved in.
 
+### Making a file
+
+`npm run gen:prop -- <file>` (`scripts/generate-wish-prop.js`) makes one prop
+end to end: it submits the row's `prompt` (`promptOne` for `<file>-one`) to
+fal.ai's hosted Rodin with the box's proportions as `bbox_condition`, polls
+the queue, downloads the GLB, measures it, decimates it only if the measure
+says so, lints it, and with `--install` copies a clean result into
+`assets/intro3d/rare/wish/`. `--from=<glb>` skips the generation and runs the
+rest on a file in hand. It needs `FAL_KEY` (a fal.ai API key) and runs
+gltf-transform through npx, pinned, so nothing is added to the app.
+
+### Triangles: the waste metric and when to decimate
+
+A generator's triangle count says nothing about whether the triangles are
+needed, so the budget alone would decimate a detailed prop that earned its
+count and leave a smooth one that did not. The tools measure **waste**
+instead (`scripts/lib/glb-metrics.js`): the share of triangles doing no
+visual work in the room. A triangle is wasted when every one of its edges is
+flat, or when it is sub-pixel.
+
+- **Flat edge.** The two faces meeting at the edge turn so little that the
+  turn cannot be seen at the room's closest zoom: under 3 degrees, or with a
+  sagitta (edge length x turn / 4, how far the surface bends off a straight
+  run) under half a pixel. The pixel is 1 mm: a 42 degree camera no nearer
+  than 2.2 m on a phone 1600 device pixels tall. A 2 cm edge turning 2
+  degrees and a 1 cm edge turning 10 are both flat; a 5 cm edge turning 5 is
+  not. A boundary or non-manifold edge is never flat: it is a silhouette or a
+  seam. Seam-split vertices are merged by position first, so a UV seam counts
+  as the one edge it is.
+- **Sub-pixel.** The longest edge is under 1 mm.
+
+The verdict against the row's budget (12k a prop, 2k a single):
+
+| Count | Waste | Verdict |
+|---|---|---|
+| at or under budget | any | **keep**: never touched |
+| over budget | 25 % or more | **decimate**: to the budget, or as far as the waste reaches |
+| over budget | under 25 % | **efficient**: left as it is and reported; regenerate at a lower quality or raise the row's budget |
+
+`check:glb` prints the metric and the verdict for every file. `gen:prop`
+acts on it: `--decimate=auto` (the default) follows the verdict, `always`
+takes a file over budget down to the budget whatever its waste, `never`
+leaves every file as generated. Decimation is gltf-transform's `weld` then
+`simplify` (meshoptimizer), with the error bound at 0.2 % of the mesh's
+extent, so it stops short of the target rather than change the look.
+
 ## 3. The 35 missing generations
 
 Sizes are `[w, h, d]` in metres, chosen to read from the room's camera the way
