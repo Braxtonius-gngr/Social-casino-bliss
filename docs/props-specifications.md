@@ -12,7 +12,7 @@ and the cache rules in `sw.js` / AGENTS.md.
 pizza, cake, coffee, burger, dice, plant, trophy, ball, lamp, gift, ice cream,
 apple. Thirty-five more are recognised but land as an emoji token only. One of
 those, the cookie, is offered as a chip on the page itself. These 35 are the
-missing generations; each is a row of `GENERATED` in `lab/wish.mjs` with its
+missing generations; each is a row of `lab/wish-props.mjs` with its
 box from section 3, so the room already knows its size and its file name and
 shows the token until the file exists.
 
@@ -50,8 +50,22 @@ for a phone PWA with up to eight props on the table at once.
 | Vertex attributes | `POSITION`, `NORMAL`, `TEXCOORD_0` | *code*: what the working body carries; `TANGENT` optional |
 | Shadows | nothing to do: the loader sets `castShadow` and `receiveShadow` on each mesh and gives each copy its own materials | *code*: `loadGlbSource()` and `loadWish()`; a loaded GLB arrives with both off and would otherwise share one material between two copies on the table |
 | Plural vs single | a wish for "cookies" gets the full box and `<file>.glb`; "a cookie" gets `<file>-one.glb` in the row's `single` box | *code*: `readWish()` sets `plural`; a row without `single` uses the one file for both; a procedural entry's single falls back to a 0.33 × 0.12 × 0.33 box |
-| Location | `assets/intro3d/rare/wish/<file>.glb`, the `file` of its `GENERATED` row (the first word); a wish that can be one or many has a second file, `<file>-one.glb`, for the single | *code*: `loadGlbSource()` builds the URL from the row; `rare/` is fetched on first use and skipped by the update download, and the lab is not precached, so nothing is added to `PRECACHE_URLS` until a prop ships in the app proper |
-| Registration | none for the 35 below: drop the file in and the wish picks it up. A new prop is a `GENERATED` row `{ file, words, emoji, size, single? }`; a procedural one is a `LIBRARY` row with a `build`; or `window.WISH_GENERATOR(text, { THREE })` resolving to `{ object }` | *code*: `finalModel()` tries the generator first, then the library (generated rows included), then the emoji token; a file missing or broken falls back to the token with a console warning |
+| Location | `assets/intro3d/rare/wish/<file>.glb`, the `file` of its row in `lab/wish-props.mjs` (the first word); a wish that can be one or many has a second file, `<file>-one.glb`, for the single | *code*: `loadGlbSource()` builds the URL from the row; `rare/` is fetched on first use and skipped by the update download, and the lab is not precached, so nothing is added to `PRECACHE_URLS` until a prop ships in the app proper |
+| Registration | none for the 35 below: drop the file in and the wish picks it up. A new prop is a row of `lab/wish-props.mjs` `{ file, words, emoji, size, single?, glow?, glass?, texture? }`; a procedural one is a `LIBRARY` row in `lab/wish.mjs` with a `build`; or `window.WISH_GENERATOR(text, { THREE })` resolving to `{ object }` | *code*: `finalModel()` tries the generator first, then the library (generated rows included), then the emoji token; a file missing or broken falls back to the token with a console warning |
+
+### Checking a file
+
+`npm run check:glb` (part of `npm run check`) holds every file in
+`assets/intro3d/rare/wish/` to its row and to this sheet, and lists what is
+still to make. It fails on what the room cannot take or would silently paper
+over: a file no row knows, a broken container, a rig, animation, camera or
+light, Draco or meshopt compression, a size outside the fit tolerance (the
+room would rescale it, which hides a centimetre export), the emissive bake
+over a black base, an unlit material, a texture not embedded. It warns on the
+budgets, a base off y 0 or off centre, proportions far from the box, double
+sided or metallic-by-default materials, and glass or glow on a row that does
+not expect them; `--strict` fails on those too. `--dir=<folder>` checks a drop
+folder before the files are moved in.
 
 ## 3. The 35 missing generations
 
