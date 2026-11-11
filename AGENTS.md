@@ -104,6 +104,6 @@ The authoritative script definitions are in [package.json](package.json), and CI
 - Keep `index.html` syntax-valid; an inline-script error breaks the shipped app.
 - Run reference checks after renaming or adding local files.
 - Bump `CACHE_NAME` in [sw.js](sw.js) and `APP_BUILD` in [index.html](index.html) together whenever a shipped file changes (`npm run check:refs` fails if they differ). A new build downloads every file except the rare tiers' extras and the card table's music (`assets/intro3d/rare/`, kept on first use) while the landing shows its "Updating" bar, and the intro waits for that download and a refresh (`appWhenCached()`). A new asset must be added to `PRECACHE_URLS`; `check:refs` fails if one is missing.
-- After a catalogue edit, run `npm run build:seo` (the pages and history are generated from the file); merging to `main` publishes the catalogue.
+- After a catalogue edit, run `npm run build:seo` (the pages and history are generated from the file); merging to `main` publishes the catalogue. The history step needs every commit: in a shallow clone run `git fetch --unshallow origin` first, or it keeps the old `data/catalog-history.json` and the pages that render it fall behind.
 - Keep editor-local `.vscode/` settings and personal Git/Copilot overrides out of the repository.
 - Avoid reformatting unrelated sections.
