@@ -2002,6 +2002,24 @@
   ],
   "Luckybits Vegas": [
     {
+      "date": "2026-11-12",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "F",
+        "dailySC": 0.1,
+        "cashFloor": 100,
+        "daysToRedeem": 1000
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.1,
+        "cashFloor": 95,
+        "daysToRedeem": 950
+      }
+    },
+    {
       "date": "2026-09-26",
       "changed": [
         "dailySC"
@@ -2140,6 +2158,24 @@
     }
   ],
   "Lunaland Casino": [
+    {
+      "date": "2026-11-12",
+      "changed": [
+        "cashFloor"
+      ],
+      "from": {
+        "tier": "F",
+        "dailySC": 0.16,
+        "cashFloor": 80,
+        "daysToRedeem": 500
+      },
+      "to": {
+        "tier": "F",
+        "dailySC": 0.16,
+        "cashFloor": 50,
+        "daysToRedeem": 313
+      }
+    },
     {
       "date": "2026-09-22",
       "changed": [
