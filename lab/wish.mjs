@@ -2,9 +2,14 @@
 // A placeholder block with the thing's emoji lands at once, then the object
 // refines in front of you: block -> wire sketch -> clay -> finished.
 // The finished model comes from WISH_GENERATOR when one is plugged in
-// (Braxtonius's text-to-visual generator), otherwise from the small
-// procedural library below. See claude/wish-room-3d.md in the project.
+// (Braxtonius's text-to-visual generator), otherwise from a generated GLB
+// under assets/intro3d/rare/wish/ (GENERATED, below: the props still to be
+// made, each to the box in docs/props-specifications.md), otherwise from
+// the small procedural library below. See claude/wish-room-3d.md in the
+// project.
 import * as THREE from '../assets/vendor/three/three.module.js';
+import { GLTFLoader } from '../assets/vendor/three/three.addons.js';
+import { GENERATED, WISH_GLB_DIR } from './wish-props.mjs';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -404,7 +409,54 @@ const LIBRARY = [
   { words: ['apple'], emoji: '🍎', size: [0.22, 0.21, 0.22], build: buildApple }
 ];
 
-// Emoji guesses for things the library cannot build yet.
+// ---------- the generated library ----------
+// The props made outside the code, as GLB files: the rows of lab/wish-props.mjs
+// (the file names, words and boxes - the contract is docs/props-specifications.md).
+// Each row becomes a LIBRARY entry whose build loads the file, so the
+// placeholder is already the right size; a file not made yet falls back to
+// the emoji token in finalModel, so the room never breaks on a prop still to
+// come. The loader seats what it gets (base to y 0, centred) and lights it
+// for shadows, so a file a little off its origin still lands on the table.
+const WISH_GLB = new URL('../' + WISH_GLB_DIR, import.meta.url);
+export { GENERATED };
+
+let gltfLoader = null;
+const glbSources = new Map();   // file -> Promise<Group>, the seated original, loaded once
+// Load one generated prop and seat it: the file's scene wrapped in a group
+// so its base sits on y 0 and its footprint is centred (a scale applied to
+// the wrapper by fitTo then keeps it there), every mesh casting and taking
+// shadows as the procedural models do.
+function loadGlbSource(file) {
+  if (!glbSources.has(file)) {
+    gltfLoader = gltfLoader || new GLTFLoader();
+    glbSources.set(file, gltfLoader.loadAsync(new URL(`${file}.glb`, WISH_GLB).href).then(gltf => {
+      const inner = gltf.scene;
+      inner.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      const b = new THREE.Box3().setFromObject(inner);
+      const c = b.getCenter(new THREE.Vector3());
+      inner.position.sub(new THREE.Vector3(c.x, b.min.y, c.z));
+      const g = new THREE.Group();
+      g.add(inner);
+      return g;
+    }));
+  }
+  return glbSources.get(file);
+}
+// A fresh copy for the table: geometry shared, materials its own, so one
+// prop's reveal (setLook, setOpacity) never fades another copy of it.
+async function loadWish(file) {
+  const src = await loadGlbSource(file);
+  const copy = src.clone();
+  eachMesh(copy, m => { m.material = Array.isArray(m.material) ? m.material.map(x => x.clone()) : m.material.clone(); });
+  return copy;
+}
+GENERATED.forEach(p => {
+  const row = { words: p.words, emoji: p.emoji, size: p.size, build: () => loadWish(p.file), generated: p.file };
+  if (p.single) { row.single = () => loadWish(`${p.file}-one`); row.singleSize = p.single; }
+  LIBRARY.push(row);
+});
+
+// Emoji guesses for things with no entry above.
 const EMOJI_GUESS = {
   cookie: '🍪', cookies: '🍪', taco: '🌮', fries: '🍟', hotdog: '🌭', sushi: '🍣', beer: '🍺', wine: '🍷', cocktail: '🍸',
   money: '💰', cash: '💵', coin: '🪙', diamond: '💎', crown: '👑', rocket: '🚀', guitar: '🎸', cat: '🐈', dog: '🐕',
@@ -511,6 +563,7 @@ function emojiToken(emoji) {
   sprite.position.y = 0.22;
   sprite.userData.bob = true;
   g.add(stand, sprite);
+  g.userData.token = true;   // (never fitted to a prop's box: a flat box would shrink it to a dot)
   return g;
 }
 
@@ -586,15 +639,26 @@ async function finalModel(wish) {
     }
   }
   if (wish.item) {
-    if (!wish.plural && wish.item.single) return wish.item.single();
-    return wish.item.build();
+    // (a generated prop's build loads its file; one not made yet, or a bad
+    // file, falls back to the token rather than breaking the wish)
+    try {
+      if (!wish.plural && wish.item.single) return await wish.item.single();
+      return await wish.item.build();
+    } catch (err) {
+      console.warn(`wish: the model for "${wish.label}" could not be built, using the token`, err);
+      return emojiToken(wish.item.emoji);
+    }
   }
   return emojiToken(wish.emoji);
 }
 
+// (for a harness: what is on the table, each with its finished model once
+// its reveal has placed it)
+export const spawnedWishes = () => spawned.map(s => ({ label: s.label, slot: s.slot, model: s.model || null }));
+
 export async function grantWish(text, onStage = () => {}) {
   const wish = readWish(text);
-  const size = wish.item ? (wish.plural || !wish.item.single ? wish.item.size : [0.33, 0.12, 0.33]) : [0.26, 0.36, 0.26];
+  const size = wish.item ? (wish.plural || !wish.item.single ? wish.item.size : wish.item.singleSize || [0.33, 0.12, 0.33]) : [0.26, 0.36, 0.26];
   const emoji = wish.item ? wish.item.emoji : wish.emoji;
   const [sx, sz] = SLOTS[slotIndex++ % SLOTS.length];
   const holder = new THREE.Group();
@@ -615,7 +679,7 @@ export async function grantWish(text, onStage = () => {}) {
   // build the real thing while the block sits there
   const model = await finalModel(wish);
   rememberMaterials(model);
-  fitTo(model, size);
+  if (!model.userData.token) fitTo(model, size);
   model.visible = false;
   holder.add(model);
   await wait(350);
