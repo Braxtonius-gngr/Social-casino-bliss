@@ -44,7 +44,7 @@
         const { chromium } = require('playwright');
         const launchOptions = {
             headless: false, // Headful with warm persistent profile minimizes Cloudflare Turnstile friction
-            proxy: session.proxy.includes('provider.net') ? undefined : { server: session.proxy },
+            proxy: (!session.proxy || session.proxy.includes('provider.net')) ? undefined : { server: session.proxy },
             userAgent: session.userAgent,
             viewport: session.viewport,
             locale: 'en-US',

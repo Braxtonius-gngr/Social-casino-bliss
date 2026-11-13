@@ -1,11 +1,11 @@
-﻿const crypto = require('crypto');
+const crypto = require('crypto');
 const path = require('path');
 const http = require('http');
 
 class CSPSecurity {
     constructor(config = {}) {
         const envProxies = process.env.PROXY_POOL ? process.env.PROXY_POOL.split(',').map(p => p.trim()) : null;
-        this.proxyPool = config.proxies || envProxies || ['http://res-node-us-tx.provider.net:8080'];
+        this.proxyPool = config.proxies || envProxies || [];
         this.userAgents = [
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'
@@ -16,7 +16,7 @@ class CSPSecurity {
     async createSession(accountId, casinoId = 'default') {
         const proxy = this.assignStickyProxy(`${accountId}_${casinoId}`);
 
-        const isTunnelHealthy = await this.verifyProxyTunnel(proxy);
+        const isTunnelHealthy = proxy ? await this.verifyProxyTunnel(proxy) : true;
         if (!isTunnelHealthy) {
             throw new Error(`[CSPSecurity] Proxy tunnel health check failed for ${proxy}. Aborting session to prevent IP leak.`);
         }
@@ -98,6 +98,10 @@ class CSPSecurity {
     }
 
     assignStickyProxy(seedKey) {
+        if (!this.proxyPool || this.proxyPool.length === 0) return null;
+        if (!this.proxyPool || this.proxyPool.length === 0) {
+            return null;
+        }
         const hash = crypto.createHash('md5').update(String(seedKey)).digest('hex');
         const index = parseInt(hash.substring(0, 4), 16) % this.proxyPool.length;
         return this.proxyPool[index];
