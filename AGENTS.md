@@ -9,6 +9,7 @@
 - [assets/accessibility.js](assets/accessibility.js) owns keyboard and ARIA behavior for dynamic strategy rows.
 - [data/catalog.json](data/catalog.json) is the catalogue's source of truth, published to the database when it merges to `main` (the Publish catalogue workflow, `publish_catalog_with_key`) or from the admin page (`publish_catalog`); the app reads it through `get_catalog()` and the file is never deployed. [data/catalog.js](data/catalog.js) only restores the browser's saved copy into `CATALOG_DATA` before the first refresh. Referral links never reach the browser: `launchUrlFor()` sends OPEN through the `go` edge function for platforms flagged `hasReferral`. A Pro account's own link (the edit sheet's referral field, mirrored to `member_links`) comes first; a platform imported from a friend's shared list carries its `shareCode` and adds `&via=<launch token>` so the database can serve the sharer's link when both hold Pro (see README, *Pro referrals and shared lists*).
 - [sw.js](sw.js) owns offline caching and same-origin network behavior.
+- [tools/design-system/](tools/design-system/README.md) builds the design system artifact (tokens from `THEMES`, component CSS lifted from `app.css`); dev-only, synced daily. When a component's base rule in `app.css` changes, update its copy in `tools/design-system/content/components/bundle.css`.
 
 ## Working Rules
 

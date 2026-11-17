@@ -17,7 +17,8 @@
     "post:weekly": "node scripts/weekly-post.js",
     "post:social": "node scripts/social-post.js",
     "setup:push": "node scripts/setup-web-push.js",
-    "build:site": "node scripts/build-site.js"
+    "build:site": "node scripts/build-site.js",
+    "build:design-system": "node tools/design-system/build.mjs"
   },
   "devDependencies": {
     "terser": "^5.51.2"
