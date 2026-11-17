@@ -1,4 +1,4 @@
-/* Daily Roll Over - service worker
+﻿/* Daily Roll Over - service worker
  *
  * Strategy: NETWORK FIRST for same-origin requests, cache only as an offline
  * fallback. This matters because the app is updated by pasting a new
@@ -11,7 +11,7 @@
  * To force every client onto a fresh cache, bump CACHE_NAME below.
  */
 
-const CACHE_NAME = 'almanac-v236';
+const CACHE_NAME = 'almanac-v237';
 
 // Relative paths only. This app is hosted on GitHub Pages at a SUBPATH
 // (/Social-casino-bliss/), so a leading "/" would resolve to the domain root
@@ -29,7 +29,8 @@ const CACHE_NAME = 'almanac-v236';
 // regex-scans it for quoted strings and would read one as a broken path.
 const PRECACHE_URLS = [
   // the shell
-  './', './index.html', './manifest.json', './apple-touch-icon.png', './assets/icon-192.webp', './assets/icon-512.webp',
+  './', './index.html', './manifest.json', './apple-touch-icon.png', './assets/icon-192.webp',
+  './assets/runner-hud.js', './assets/icon-512.webp',
   './assets/app.css', './assets/accessibility.css', './assets/accessibility.js', './assets/storage.js', './assets/show.js',
   // each skin room past the default one (see show.js)
   './assets/rooms/obsidian.js', './assets/rooms/neon.js', './assets/rooms/glitch.js', './assets/rooms/western.js', './assets/rooms/burin.js', './assets/intro3d/bleed.mjs', './assets/intro3d/burin.mjs', './assets/intro3d/valley.mjs', './assets/intro3d/figure.mjs', './assets/intro3d/dev-overlay.mjs', './assets/intro3d/flesh.mjs', './assets/intro3d/rodin-body.mjs', './assets/intro3d/cloth.mjs', './assets/intro3d/universal-cloth-material.mjs', './assets/intro3d/inferno.mjs', './assets/intro3d/slaughter.mjs', './assets/rooms/spirit.mjs', './assets/rooms/seance.mjs', './assets/intro3d/moonrise.mjs', './assets/intro3d/arcade.mjs', './assets/intro3d/seance-room.mjs',
@@ -402,7 +403,7 @@ function dropNotificationBody(drop) {
   if (drop.expires_at) {
     parts.push(`ends ${new Date(drop.expires_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`);
   }
-  return parts.join(' · ');
+  return parts.join(' Â· ');
 }
 
 // At most three notifications per push: past that, the last one sums up
