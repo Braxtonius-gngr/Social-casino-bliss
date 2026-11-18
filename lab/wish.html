@@ -38,6 +38,7 @@
   <div class="top">
     <div class="title">Wish Room<small>Prototype: say what you wish for</small></div>
     <div class="status" id="wishStatus" role="status" aria-live="polite"></div>
+    <div class="status" id="genStatus" role="status" aria-live="polite"></div>
   </div>
 
   <div class="dock">
@@ -66,12 +67,17 @@
 
   <script type="module">
     import { grantWish, clearWishes, STAGES } from './wish.mjs';
+    import { installWishGenerator } from './wish-generator.mjs';
 
     const form = document.getElementById('wishForm');
     const input = document.getElementById('wishInput');
     const status = document.getElementById('wishStatus');
     const mic = document.getElementById('wishMic');
     let hideTimer = 0;
+
+    // the real generator, when the lab gate's token is here (or ?fake3d)
+    const gen = document.getElementById('genStatus');
+    installWishGenerator({ onStatus(t) { gen.textContent = t; gen.classList.toggle('on', !!t); } });
 
     function showStage(i, wish, emoji) {
       clearTimeout(hideTimer);
