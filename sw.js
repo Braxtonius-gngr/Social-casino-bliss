@@ -1,4 +1,4 @@
-﻿/* Daily Roll Over - service worker
+/* Daily Roll Over - service worker
  *
  * Strategy: NETWORK FIRST for same-origin requests, cache only as an offline
  * fallback. This matters because the app is updated by pasting a new
@@ -403,7 +403,7 @@ function dropNotificationBody(drop) {
   if (drop.expires_at) {
     parts.push(`ends ${new Date(drop.expires_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`);
   }
-  return parts.join(' Â· ');
+  return parts.join(' · ');
 }
 
 // At most three notifications per push: past that, the last one sums up
