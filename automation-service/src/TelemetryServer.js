@@ -104,33 +104,26 @@ class TelemetryServer {
                 level: logLevel,
                 message: logMessage
             });
-            if (this.snapshot.logs.length > 25) {
-                this.snapshot.logs.length = 25;
+if (this.stateStore && this.stateStore.supabase) {
+            const { error } = await this.stateStore.supabase.from('automation_telemetry').upsert({
+                id: 'primary_runner',
+                status: this.snapshot.status,
+                current_site: this.snapshot.currentSite,
+                current_tier: this.snapshot.currentTier,
+                step: this.snapshot.step,
+                completed_count: this.snapshot.completedCount,
+                total_count: this.snapshot.totalCount,
+                next_action_at: this.snapshot.nextActionAt ? new Date(this.snapshot.nextActionAt).toISOString() : null,
+                recent_logs: this.snapshot.logs.slice(0, 10),
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'id' });
+
+            if (error) {
+                console.error('[Telemetry] Supabase upsert failed:', error.message);
             }
+        } else {
+            console.warn('[Telemetry] Supabase client not initialized in StateStore — check automation-service/.env');
         }
-
-        const payload = `data: ${JSON.stringify(this.snapshot)}\n\n`;
-        for (const client of this.clients) {
-            try { client.write(payload); } catch (_) {}
-        }
-
-        if (this.stateStore && this.stateStore.supabase) {
-            try {
-                await this.stateStore.supabase.from('automation_telemetry').upsert({
-                    id: 'primary_runner',
-                    status: this.snapshot.status,
-                    current_site: this.snapshot.currentSite,
-                    current_tier: this.snapshot.currentTier,
-                    step: this.snapshot.step,
-                    completed_count: this.snapshot.completedCount,
-                    total_count: this.snapshot.totalCount,
-                    next_action_at: this.snapshot.nextActionAt ? new Date(this.snapshot.nextActionAt).toISOString() : null,
-                    recent_logs: this.snapshot.logs.slice(0, 10),
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'id' });
-            } catch (_) {}
-        }
-    }
 
     async stop(delayMs = 2500) {
         await new Promise(r => setTimeout(r, delayMs));
