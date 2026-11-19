@@ -175,7 +175,22 @@ export type Drop = {
   is_account_tied: boolean;
   confidence: "high" | "medium" | "low";
   evidence: string;
+  // What looked wrong, for the reviewer and the publish gate (gate.ts). An
+  // empty list means nothing was caught, not that the drop is verified.
+  issues: DropIssue[];
 };
+
+export type DropIssue =
+  | "bucket_unknown"      // Claude's bucket wasn't one of the three; treated as a claim
+  | "code_missing"        // a code drop with no code
+  | "code_invalid"        // spaces, too short, or a word like CLAIM / FREE
+  | "code_too_long"       // over 40 characters; cut, so probably misread
+  | "code_on_claim"       // a claim-link drop that also carries a code: which is it?
+  | "domain_mismatch"     // Claude's domain differs from where the link really goes
+  | "referral_link"       // the link carries someone's referral/affiliate code
+  | "redirect_link"       // a shortener or tracking redirect, not the casino itself
+  | "expired"             // ends before the reference time
+  | "expiry_far";         // ends over 60 days out: likely a misread date
 
 function text(value: unknown, max: number): string | null {
   if (typeof value !== "string") return null;
@@ -223,7 +238,49 @@ export function hasAccountParams(url: URL): boolean {
   return false;
 }
 
-function rootDomain(value: string | null): string | null {
+// Query parameters that pay someone else for the signup or visit. A link
+// carrying one sends players through a stranger's referral.
+const REFERRAL_PARAMS = new Set([
+  "ref", "referral", "referrer", "refcode", "ref_code", "referralcode", "r", "aff", "affid", "aff_id",
+  "affiliate", "affiliate_id", "invite", "invitecode", "invite_code", "inviter", "_sc", "btag", "clickid",
+  "click_id", "partner", "partnerid", "sub_id", "subid",
+]);
+const REFERRAL_PATHS = /\/(?:ref|refer|referral|invite|aff|affiliate|r)\/[^/]+/i;
+
+// Link shorteners and tracking redirectors: the real destination is hidden.
+const REDIRECT_HOSTS = new Set([
+  "bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "rb.gy", "cutt.ly", "is.gd", "buff.ly",
+  "shorturl.at", "linktr.ee", "lnk.to", "d10xl.com", "rebrand.ly", "tiny.cc", "short.io",
+]);
+
+export function hasReferralParams(url: URL): boolean {
+  for (const key of url.searchParams.keys()) {
+    if (REFERRAL_PARAMS.has(key.toLowerCase())) return true;
+  }
+  return REFERRAL_PATHS.test(url.pathname);
+}
+
+export function isRedirectHost(url: URL): boolean {
+  const host = url.hostname.toLowerCase().replace(/^www\./, "");
+  return REDIRECT_HOSTS.has(host) || /\/go\//i.test(url.pathname);
+}
+
+// Words that turn up in the code slot when a screenshot has no real code.
+const NOT_A_CODE = new Set([
+  "claim", "code", "codes", "free", "none", "na", "n/a", "null", "bonus", "sc", "gc", "promo", "promocode",
+  "here", "link", "click", "spins", "freespins", "daily", "reward", "redeem",
+]);
+
+export function codeProblem(code: string | null): "code_invalid" | null {
+  if (!code) return null;
+  if (/\s/.test(code)) return "code_invalid";
+  if (code.length < 3) return "code_invalid";
+  if (!/^[A-Za-z0-9][A-Za-z0-9_\-.!]*$/.test(code)) return "code_invalid";
+  if (NOT_A_CODE.has(code.toLowerCase())) return "code_invalid";
+  return null;
+}
+
+export function rootDomain(value: string | null): string | null {
   if (!value) return null;
   let host = value.toLowerCase().replace(/^https?:\/\//, "").replace(/[/?#].*$/, "");
   host = host.replace(/^(www|m|play|app)\./, "");
@@ -240,7 +297,12 @@ function rootDomain(value: string | null): string | null {
 // The structured answer is schema-valid already; this makes it safe to drop
 // into the admin form: lengths capped, links and dates checked, a catalog
 // match kept only when it really is one of the names sent.
-export function cleanDrops(raw: unknown, platforms: string[]): { drops: Drop[]; unreadable: string | null } {
+export function cleanDrops(
+  raw: unknown,
+  platforms: string[],
+  reference: string | number = Date.now(),
+): { drops: Drop[]; unreadable: string | null } {
+  const refMs = typeof reference === "number" ? reference : (Date.parse(reference) || Date.now());
   const known = new Set(platforms);
   const answer = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const list = Array.isArray(answer.drops) ? answer.drops : [];
@@ -250,6 +312,7 @@ export function cleanDrops(raw: unknown, platforms: string[]): { drops: Drop[]; 
     const d = item as Record<string, unknown>;
     const platform = freeText(d.platform_name, 80);
     if (!platform) continue;
+    const issues: DropIssue[] = [];
     let accountTied = d.is_account_tied === true;
     // A link that only works for the account it was sent to is personal:
     // it never leaves this function, whether Claude flagged it or its own
@@ -263,28 +326,59 @@ export function cleanDrops(raw: unknown, platforms: string[]): { drops: Drop[]; 
         else {
           claimRoot = rootDomain(url.hostname);
           if (hasAccountParams(url)) accountTied = true;
+          if (hasReferralParams(url)) issues.push("referral_link");
+          if (isRedirectHost(url)) issues.push("redirect_link");
         }
       } catch {
         claimUrl = null;
       }
     }
     if (accountTied) claimUrl = null;
+    if (accountTied) {
+      // The personal link is dropped, so its referral/redirect flags go with it.
+      issues.splice(0, issues.length);
+    }
     let expiresAt = text(d.expires_at, 40);
     if (expiresAt && Number.isNaN(Date.parse(expiresAt))) expiresAt = null;
+    if (expiresAt) {
+      const endMs = Date.parse(expiresAt);
+      if (endMs <= refMs) issues.push("expired");
+      else if (endMs - refMs > 60 * 24 * 3600 * 1000) issues.push("expiry_far");
+    }
     const match = text(d.catalog_match, 80);
+
+    const knownBucket = d.bucket === "A_code" || d.bucket === "B_claim" || d.bucket === "C_purchase";
+    if (!knownBucket) issues.push("bucket_unknown");
+    const bucket: Drop["bucket"] = d.bucket === "A_code" || d.bucket === "C_purchase" ? d.bucket : "B_claim";
+
+    const rawCode = typeof d.code === "string" ? d.code.trim() : "";
+    if (rawCode.length > 40) issues.push("code_too_long");
+    const code = text(d.code, 40);
+    const badCode = codeProblem(code);
+    if (badCode) issues.push(badCode);
+    if (bucket === "A_code" && !code) issues.push("code_missing");
+    if (bucket === "B_claim" && code && !badCode) issues.push("code_on_claim");
+
+    // Where the link really goes beats the domain Claude named.
+    const namedRoot = rootDomain(text(d.root_domain, 120));
+    if (claimRoot && namedRoot && claimRoot !== namedRoot && !issues.includes("redirect_link")) {
+      issues.push("domain_mismatch");
+    }
+
     drops.push({
       platform_name: platform,
       catalog_match: match && known.has(match) ? match : null,
-      bucket: d.bucket === "A_code" || d.bucket === "C_purchase" ? d.bucket : "B_claim",
-      code: text(d.code, 40),
+      bucket,
+      code,
       claim_url: claimUrl,
-      root_domain: rootDomain(text(d.root_domain, 120)) ?? claimRoot,
+      root_domain: claimRoot && !issues.includes("redirect_link") ? claimRoot : namedRoot ?? claimRoot,
       reward: freeText(d.reward, 120),
       expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
       terms: freeText(d.terms, 240),
       is_account_tied: accountTied,
       confidence: d.confidence === "high" || d.confidence === "medium" ? d.confidence : "low",
       evidence: freeText(d.evidence, 200) ?? "",
+      issues,
     });
   }
   return { drops, unreadable: freeText(answer.unreadable, 300) };
