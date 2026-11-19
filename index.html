@@ -599,6 +599,10 @@
         <div id="catalogAccessList"><div class="drops-note">Loading...</div></div>
         <h3 style="margin:18px 0 5px;">Platform links followed <span class="ledger-meta">last 7 days</span></h3>
         <div id="linkHitsList"><div class="drops-note">Loading...</div></div>
+        <h3 style="margin:18px 0 5px;">Automation runner <span class="ledger-meta" id="runnerUpdated"></span></h3>
+        <p class="drops-note" style="margin:0 0 10px;">Your collector (automation-service). When it stops at a security check, finish the check in its browser window, then clear it here or from the panel on that computer.</p>
+        <div id="runnerStatus" class="drops-note">Loading...</div>
+        <button type="button" class="btn-primary" id="btnClearRunnerCheckpoint" style="display:none; margin-top:8px;" onclick="clearRunnerCheckpoint()">CLEAR CHECKPOINT</button>
         <h3 style="margin:18px 0 5px;">Read drop screenshots <span class="ledger-meta">up to 4 at a time</span></h3>
         <p class="drops-note" style="margin:0 0 10px;">Choose screenshots from this device or paste Discord image links. Claude reads each offer into a draft; a draft opens in the admin page for checking and saving. Nothing is published from here.</p>
         <input type="file" id="ownerShotFiles" aria-label="Screenshots to read" accept="image/png,image/jpeg,image/webp,image/gif" multiple style="width:100%; color:var(--text-muted); font-size:0.8rem; margin-bottom:8px;" />
@@ -9410,7 +9414,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so l
-    const APP_BUILD = 'almanac-v237';
+    const APP_BUILD = 'almanac-v238';
     window.APP_BUILD_ID = APP_BUILD;   // (read by the valley's ?perf readout)
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
@@ -10587,12 +10591,32 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return allowed;
     }
 
+    // The automation runner's live panel (assets/runner-hud.js): owner only,
+    // loaded after the server-side is_owner check passes. It shows itself only
+    // while a runner is up on this device (its feed is on 127.0.0.1), so no one
+    // else ever loads it or gets a local-network prompt.
+    function loadRunnerHud() {
+      if (window.droRunnerHud || document.getElementById('runnerHudScript')) return;
+      const script = document.createElement('script');
+      script.id = 'runnerHudScript';
+      script.src = 'assets/runner-hud.js';
+      document.body.appendChild(script);
+    }
+
+    function unloadRunnerHud() {
+      if (window.droRunnerHud) window.droRunnerHud.stop();
+      const script = document.getElementById('runnerHudScript');
+      if (script) script.remove();
+    }
+
     function hideOwnerTools() {
       isOwnerAccount = false;
+      unloadRunnerHud();
       renderedModerators = [];
       const panel = document.getElementById('ownerPanel');
       if (panel) panel.style.display = 'none';
-      ['moderatorList', 'catalogAccessList', 'linkHitsList', 'ownerShotStatus'].forEach(id => {
+      stopRunnerStatusPolling();
+      ['moderatorList', 'catalogAccessList', 'linkHitsList', 'ownerShotStatus', 'runnerStatus'].forEach(id => {
         const list = document.getElementById(id);
         if (list) list.innerHTML = '';
       });
@@ -10623,10 +10647,103 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (owner) {
         loadModerators(gen);
         loadOwnerReports(gen);
+        loadRunnerHud();
+        loadRunnerStatus(gen);
+        startRunnerStatusPolling();
       } else {
         hideOwnerTools();
       }
       return owner;
+    }
+
+    // --- Owner tools: the automation runner ---
+    // Its row (automation_runner) is reachable only through the owner-only
+    // runner_status() / runner_clear_checkpoint() functions. Polled every
+    // 20s, only while the owner has this tab open and the page is visible.
+    const RUNNER_POLL_MS = 20000;
+    const RUNNER_STALE_MS = 10 * 60 * 1000;
+    const RUNNER_STATUS_TEXT = {
+      IDLE: 'Idle', RUNNING: 'Running', WAITING_JITTER: 'Pausing between sites',
+      HITL_PAUSED: 'Paused at a security check', COMPLETED: 'Sweep finished', ERROR: 'Stopped on an error'
+    };
+    let runnerPollTimer = null;
+
+    function startRunnerStatusPolling() {
+      if (runnerPollTimer) return;
+      runnerPollTimer = setInterval(() => {
+        if (!isOwnerAccount || document.hidden || currentTab !== 'moderation') return;
+        loadRunnerStatus();
+      }, RUNNER_POLL_MS);
+    }
+
+    function stopRunnerStatusPolling() {
+      clearInterval(runnerPollTimer);
+      runnerPollTimer = null;
+      const btn = document.getElementById('btnClearRunnerCheckpoint');
+      if (btn) btn.style.display = 'none';
+      const updated = document.getElementById('runnerUpdated');
+      if (updated) updated.textContent = '';
+    }
+
+    async function loadRunnerStatus(gen = accessCheckGen) {
+      const client = getSupabaseClient();
+      const box = document.getElementById('runnerStatus');
+      if (!client || !box) return;
+      const { data, error } = await client.rpc('runner_status');
+      if (gen !== accessCheckGen || !isOwnerAccount) return;
+      if (error) {
+        box.textContent = 'Could not load the runner status.';
+        return;
+      }
+      renderRunnerStatus(Array.isArray(data) ? data[0] : data);
+    }
+
+    function renderRunnerStatus(row) {
+      const box = document.getElementById('runnerStatus');
+      const btn = document.getElementById('btnClearRunnerCheckpoint');
+      const updated = document.getElementById('runnerUpdated');
+      if (!box || !btn) return;
+      if (!row) {
+        box.textContent = 'No runner has reported yet.';
+        btn.style.display = 'none';
+        if (updated) updated.textContent = '';
+        return;
+      }
+      const updatedMs = new Date(row.updated_at).getTime();
+      const stale = Date.now() - updatedMs > RUNNER_STALE_MS && !['COMPLETED', 'IDLE'].includes(row.status);
+      if (updated) updated.textContent = `updated ${new Date(updatedMs).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+      const statusText = RUNNER_STATUS_TEXT[row.status] || row.status;
+      const lines = [
+        `<strong>${escHtml(statusText)}</strong>${row.total_count ? ` &middot; ${Number(row.completed_count) || 0} / ${Number(row.total_count) || 0}` : ''}${row.current_site ? ` &middot; ${escHtml(row.current_site)}` : ''}`
+      ];
+      if (row.step) lines.push(escHtml(row.step));
+      const cleared = row.clear_requested_at && row.intervention_at && new Date(row.clear_requested_at) > new Date(row.intervention_at);
+      const waiting = row.needs_intervention && !cleared;
+      if (waiting) {
+        lines.push(`<span style="color:var(--accent-orange); font-weight:700;">Needs you: ${escHtml(row.intervention_reason || 'security check')} on ${escHtml(row.intervention_site || 'a site')}</span>`);
+      } else if (row.needs_intervention && cleared) {
+        lines.push('Cleared; the runner picks it up within a few seconds.');
+      }
+      if (stale) lines.push('<span style="color:var(--text-dim);">No update for over 10 minutes; the runner may have stopped.</span>');
+      box.innerHTML = lines.join('<br>');
+      btn.style.display = waiting ? '' : 'none';
+    }
+
+    async function clearRunnerCheckpoint() {
+      const client = getSupabaseClient();
+      const btn = document.getElementById('btnClearRunnerCheckpoint');
+      if (!client || !btn) return;
+      btn.disabled = true;
+      try {
+        const { data, error } = await client.rpc('runner_clear_checkpoint');
+        if (error) throw error;
+        showToast(data ? 'Checkpoint cleared' : 'Nothing to clear', null);
+      } catch (err) {
+        showToast('Could not clear the checkpoint. Try again.', null);
+      } finally {
+        btn.disabled = false;
+        loadRunnerStatus();
+      }
     }
 
     // The owner's scrape watch: catalogue downloads per account and link
@@ -11386,10 +11503,23 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // not a duplicate.
     function replayRemoteEvents(rows) {
       let changed = false;
+      let timersMoved = false;
       rows.forEach((row) => {
         const idx = collectionHistory.findIndex((h) => h.id === row.id);
         if (row.deleted) {
-          if (idx >= 0) { collectionHistory.splice(idx, 1); changed = true; }
+          if (idx >= 0) {
+            const [removed] = collectionHistory.splice(idx, 1);
+            changed = true;
+            // An undo on another device: if this card's timer came from the
+            // collection just undone, fall back to its newest remaining one
+            // (the same rule as deleting a history entry here).
+            const game = trackedGames.find(g => g.name === removed.platformName);
+            if (game && game.lastCollected === removed.collectedAt) {
+              const remaining = collectionHistory.filter(h => h.platformName === removed.platformName);
+              game.lastCollected = remaining.length ? Math.max(...remaining.map(h => h.collectedAt)) : 0;
+              timersMoved = true;
+            }
+          }
           return;
         }
         const collectedAt = new Date(row.collected_at).getTime();
@@ -11409,8 +11539,39 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       try { localStorage.setItem('the_casino_almanac_history_v1', JSON.stringify(collectionHistory)); } catch (e) {}
       saveIndexedState('the_casino_almanac_history_v1', collectionHistory);
       if (document.getElementById('statsModal').classList.contains('open')) renderStats();
-      renderGames();
-      updateHeroStats();
+      // A collection logged elsewhere (another device, or the automation
+      // runner) starts that card's timer here too. persist() saves the deck
+      // and re-renders; otherwise just re-render.
+      if (reconcileTimersFromHistory() || timersMoved) {
+        persist();
+      } else {
+        renderGames();
+        updateHeroStats();
+      }
+    }
+
+    // Moves each card's lastCollected forward to its newest collection in
+    // history - never back. Collections sync as an event log but the deck
+    // syncs as a whole snapshot, so a collection made elsewhere (or a deck
+    // pushed by a device that hadn't seen it) can leave a card's timer
+    // behind its own history. Matches by name, as logCollection() records.
+    // Returns how many cards moved.
+    function reconcileTimersFromHistory() {
+      const newest = new Map();
+      collectionHistory.forEach((h) => {
+        if (!h || typeof h.collectedAt !== 'number') return;
+        if (h.collectedAt > (newest.get(h.platformName) || 0)) newest.set(h.platformName, h.collectedAt);
+      });
+      let moved = 0;
+      trackedGames.forEach((game) => {
+        const latest = newest.get(game.name);
+        if (latest && latest > (game.lastCollected || 0)) {
+          game.lastCollected = latest;
+          delete game.snoozedUntil;
+          moved++;
+        }
+      });
+      return moved;
     }
 
     // Queues every pre-existing local entry that isn't already in the
@@ -11473,6 +11634,9 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (Array.isArray(data.games) && (!cursor || new Date(data.updated_at) > new Date(cursor))) {
         trackedGames = data.games;
         trackedGames.forEach(normalizeTimerFields);
+        // The snapshot may predate collections this device already has
+        // (last-write-wins deck); don't let it wind a timer back.
+        if (reconcileTimersFromHistory()) markDeckDirty();
         try { localStorage.setItem('the_casino_almanac_v7', JSON.stringify(trackedGames)); } catch (e) {}
         saveIndexedState('the_casino_almanac_v7', trackedGames);
         renderGames();

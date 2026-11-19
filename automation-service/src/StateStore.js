@@ -1,13 +1,38 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
+// Where the runner keeps its state, and how it syncs with dailyrollover.com.
+//
+// Two places:
+// - A local ledger (data/tandem-state.json): the runner's own claims, its
+//   checkpoint backoff ("friction") and checkpoint flags. Always written.
+// - Your Supabase project, when SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and
+//   DRO_OWNER_USER_ID are set. It uses the SAME tables the site does:
+//     * tracked_games_snapshot  read:  your deck - each platform's reset rule
+//                                      (resetHour / resetTZ / cooldownHours)
+//                                      and lastCollected
+//     * collection_events       read:  your newest collection per platform,
+//                                      so a claim you made by hand counts
+//                               write: one row per real claim, exactly like
+//                                      a tap in the app (device_id
+//                                      'automation-runner'), so your cards'
+//                                      timers, history and streaks follow
+//     * automation_runner       write: status, recent logs, checkpoints;
+//                               read:  "clear checkpoint" from the owner panel
+//   The service-role key bypasses row security, so every query here is pinned
+//   to DRO_OWNER_USER_ID. Keep that key in .env only.
 class StateStore {
     constructor(config = {}) {
         this.dataDir = config.dataDir || path.join(__dirname, '../data');
         this.stateFile = path.join(this.dataDir, 'tandem-state.json');
         this.supabaseUrl = process.env.SUPABASE_URL || config.supabaseUrl || '';
         this.supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || config.supabaseKey || '';
+        this.ownerUserId = process.env.DRO_OWNER_USER_ID || config.ownerUserId || '';
+        this.deviceId = process.env.DRO_DEVICE_ID || config.deviceId || 'automation-runner';
         this.supabase = null;
+        // Deck rules and newest collections by platform name, from the last pull.
+        this.remote = { deck: new Map(), lastCollected: new Map(), pulledAt: 0 };
 
         if (!fs.existsSync(this.dataDir)) {
             fs.mkdirSync(this.dataDir, { recursive: true });
@@ -19,140 +44,215 @@ class StateStore {
 
     initSupabase() {
         if (!this.supabaseUrl || !this.supabaseKey) {
-            console.log('[StateStore] Running in local-ledger mode (add SUPABASE_URL & SUPABASE_SERVICE_ROLE_KEY in .env for cloud sync).');
+            console.log('[StateStore] Local-ledger mode: set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and DRO_OWNER_USER_ID in .env to sync with dailyrollover.com.');
+            return;
+        }
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(this.ownerUserId)) {
+            console.warn('[StateStore] DRO_OWNER_USER_ID is missing or not a user id; staying in local-ledger mode so nothing is written to the wrong account.');
             return;
         }
         try {
             const { createClient } = require('@supabase/supabase-js');
-            this.supabase = createClient(this.supabaseUrl, this.supabaseKey);
-            console.log('[StateStore] Connected to Supabase for two-way dailyrollover.com sync.');
+            this.supabase = createClient(this.supabaseUrl, this.supabaseKey, {
+                auth: { persistSession: false, autoRefreshToken: false }
+            });
+            console.log('[StateStore] Connected to Supabase; syncing with your dailyrollover.com deck.');
         } catch (err) {
-            console.warn('[StateStore] Supabase client unavailable, falling back to local disk ledger:', err.message);
+            console.warn('[StateStore] Supabase client unavailable, using the local ledger only:', err.message);
         }
     }
 
+    get synced() {
+        return Boolean(this.supabase);
+    }
+
     loadLocalState() {
+        const empty = { timers: {}, friction: {}, interventions: {} };
         try {
             if (fs.existsSync(this.stateFile)) {
-                return JSON.parse(fs.readFileSync(this.stateFile, 'utf8'));
+                return { ...empty, ...JSON.parse(fs.readFileSync(this.stateFile, 'utf8')) };
             }
         } catch (err) {
             console.warn('[StateStore] Failed reading local state file, starting fresh:', err.message);
         }
-        return { timers: {}, friction: {}, interventions: {} };
+        return empty;
     }
 
     saveLocalState() {
         fs.writeFileSync(this.stateFile, JSON.stringify(this.state, null, 2), 'utf8');
     }
 
-    async pullRemoteTimers() {
-        if (!this.supabase) return this.state.timers;
+    // --- Reading the deck -------------------------------------------------
+
+    // Pulls your deck's reset rules and your newest collection per platform.
+    // Returns false (and keeps the previous pull) if Supabase is off or fails,
+    // so a network blip never makes a claimed site look ready.
+    async pullDeck() {
+        if (!this.supabase) return false;
         try {
-            const { data, error } = await this.supabase
-                .from('casino_timers')
-                .select('casino_id, last_claimed_at, next_claim_at, sc_tier, reset_type, interval_hours');
+            const { data: snapshot, error: deckError } = await this.supabase
+                .from('tracked_games_snapshot')
+                .select('games')
+                .eq('user_id', this.ownerUserId)
+                .maybeSingle();
+            if (deckError) throw deckError;
 
-            if (error) throw error;
-            if (Array.isArray(data)) {
-                for (const row of data) {
-                    this.state.timers[row.casino_id] = {
-                        lastClaimedAt: row.last_claimed_at ? new Date(row.last_claimed_at).getTime() : 0,
-                        nextClaimAt: row.next_claim_at ? new Date(row.next_claim_at).getTime() : 0,
-                        scTier: row.sc_tier || 'B',
-                        resetType: row.reset_type || 'fixed',
-                        intervalHours: row.interval_hours || 24
-                    };
-                }
-                this.saveLocalState();
+            const deck = new Map();
+            for (const game of (snapshot && Array.isArray(snapshot.games) ? snapshot.games : [])) {
+                if (game && typeof game.name === 'string') deck.set(game.name, game);
             }
+
+            const names = [...deck.keys()];
+            const lastCollected = new Map();
+            if (names.length) {
+                const { data: rows, error: eventsError } = await this.supabase
+                    .from('collection_events')
+                    .select('platform_name, collected_at')
+                    .eq('user_id', this.ownerUserId)
+                    .eq('deleted', false)
+                    .in('platform_name', names)
+                    .order('collected_at', { ascending: false })
+                    .limit(1000);
+                if (eventsError) throw eventsError;
+                for (const row of rows || []) {
+                    if (!lastCollected.has(row.platform_name)) {
+                        lastCollected.set(row.platform_name, new Date(row.collected_at).getTime());
+                    }
+                }
+            }
+
+            this.remote = { deck, lastCollected, pulledAt: Date.now() };
+            return true;
         } catch (err) {
-            console.warn('[StateStore] Remote timer pull skipped:', err.message);
+            console.warn('[StateStore] Deck pull failed; using the last known timers:', err.message);
+            return false;
         }
-        return this.state.timers;
     }
 
-    getTimer(casinoId) {
-        return this.state.timers[casinoId] || null;
+    // The deck entry for a platform name, or null.
+    getDeckGame(platformName) {
+        return (platformName && this.remote.deck.get(platformName)) || null;
     }
 
-    async recordClaim(casinoId, { claimedAt, nextClaimAt, rewardAvailable, source = 'automation' }) {
-        this.state.timers[casinoId] = {
-            ...(this.state.timers[casinoId] || {}),
+    // Newest known collection of a platform, from any source: the deck, the
+    // collection log (manual claims on any device), and this runner's own.
+    getLastCollected(site) {
+        const game = this.getDeckGame(site.name);
+        const local = this.state.timers[site.id];
+        return Math.max(
+            (game && Number(game.lastCollected)) || 0,
+            this.remote.lastCollected.get(site.name) || 0,
+            (local && local.lastClaimedAt) || 0
+        );
+    }
+
+    getTimer(siteId) {
+        return this.state.timers[siteId] || null;
+    }
+
+    // --- Recording a claim ------------------------------------------------
+
+    // Call only after the claim button was actually clicked.
+    async recordClaim(site, { claimedAt, nextClaimAt, notBefore }) {
+        this.state.timers[site.id] = {
+            ...(this.state.timers[site.id] || {}),
             lastClaimedAt: claimedAt,
             nextClaimAt,
-            rewardAvailable,
-            updatedBy: source
+            notBefore,
+            updatedBy: 'automation'
         };
         this.saveLocalState();
 
-        if (this.supabase) {
-            try {
-                await this.supabase.from('casino_timers').upsert({
-                    casino_id: casinoId,
-                    last_claimed_at: new Date(claimedAt).toISOString(),
-                    next_claim_at: new Date(nextClaimAt).toISOString(),
-                    needs_intervention: false,
-                    updated_by: source
-                }, { onConflict: 'casino_id' });
-            } catch (err) {
-                console.warn(`[StateStore] Supabase claim sync failed for ${casinoId}:`, err.message);
-            }
+        if (!this.supabase) return;
+        if (!site.name) {
+            console.warn(`[StateStore] ${site.id} has no "name" matching a platform in your deck; claim kept locally only.`);
+            return;
+        }
+        try {
+            const { error } = await this.supabase.from('collection_events').insert({
+                id: crypto.randomUUID(),
+                user_id: this.ownerUserId,
+                device_id: this.deviceId,
+                platform_name: site.name,
+                collected_at: new Date(claimedAt).toISOString(),
+                deleted: false
+            });
+            if (error) throw error;
+            this.remote.lastCollected.set(site.name, claimedAt);
+        } catch (err) {
+            console.warn(`[StateStore] Logging the ${site.name} collection to your deck failed (kept locally):`, err.message);
         }
     }
 
-    getFriction(casinoId) {
-        return this.state.friction[casinoId] || null;
+    // --- Checkpoint backoff (local only) -----------------------------------
+
+    getFriction(siteId) {
+        return this.state.friction[siteId] || null;
     }
 
-    async saveFriction(casinoId, record) {
-        this.state.friction[casinoId] = record;
+    saveFriction(siteId, record) {
+        this.state.friction[siteId] = record;
         this.saveLocalState();
-
-        if (this.supabase) {
-            try {
-                await this.supabase.from('site_friction').upsert({
-                    casino_id: casinoId,
-                    challenge_count: record.challengeCount,
-                    cooldown_multiplier: record.cooldownMultiplier,
-                    tier: record.tier,
-                    last_challenged_at: new Date(record.lastChallenged).toISOString()
-                }, { onConflict: 'casino_id' });
-            } catch (_) {}
-        }
     }
 
-    async setInterventionFlag(casinoId, active, reason = '') {
-        this.state.interventions[casinoId] = { active, reason, updatedAt: Date.now() };
+    clearFriction(siteId) {
+        if (!this.state.friction[siteId]) return;
+        delete this.state.friction[siteId];
         this.saveLocalState();
+    }
 
-        if (this.supabase) {
-            try {
-                await this.supabase.from('casino_timers').upsert({
-                    casino_id: casinoId,
-                    needs_intervention: active,
-                    intervention_reason: reason
-                }, { onConflict: 'casino_id' });
-            } catch (_) {}
+    // --- Checkpoints (paused for a person) ----------------------------------
+
+    async setIntervention(siteId, active, reason = '') {
+        const at = Date.now();
+        this.state.interventions[siteId] = { active, reason, updatedAt: at };
+        this.saveLocalState();
+        await this.upsertRunner(active
+            ? { needs_intervention: true, intervention_site: siteId, intervention_reason: reason, intervention_at: new Date(at).toISOString() }
+            : { needs_intervention: false, intervention_site: null, intervention_reason: null });
+        return at;
+    }
+
+    // Cleared on this computer (the panel, or Enter) or from the owner panel
+    // on the site after the checkpoint started.
+    async isInterventionCleared(siteId, since) {
+        const local = this.state.interventions[siteId];
+        if (local && local.active === false && local.updatedAt >= since) return true;
+        if (!this.supabase) return false;
+        try {
+            const { data, error } = await this.supabase
+                .from('automation_runner')
+                .select('clear_requested_at')
+                .eq('user_id', this.ownerUserId)
+                .maybeSingle();
+            if (error) throw error;
+            return Boolean(data && data.clear_requested_at && new Date(data.clear_requested_at).getTime() >= since);
+        } catch (err) {
+            console.warn('[StateStore] Checking for a remote clear failed:', err.message);
+            return false;
         }
     }
 
-    async isInterventionCleared(casinoId) {
-        if (this.supabase) {
-            try {
-                const { data } = await this.supabase
-                    .from('casino_timers')
-                    .select('needs_intervention')
-                    .eq('casino_id', casinoId)
-                    .single();
-                if (data && data.needs_intervention === false) {
-                    this.state.interventions[casinoId] = { active: false, updatedAt: Date.now() };
-                    this.saveLocalState();
-                    return true;
-                }
-            } catch (_) {}
+    // Marks the checkpoint cleared locally (the HUD button, or Enter).
+    clearInterventionLocally(siteId) {
+        this.state.interventions[siteId] = { active: false, reason: '', updatedAt: Date.now() };
+        this.saveLocalState();
+    }
+
+    // --- Runner status --------------------------------------------------------
+
+    async upsertRunner(fields) {
+        if (!this.supabase) return;
+        try {
+            const { error } = await this.supabase.from('automation_runner').upsert({
+                user_id: this.ownerUserId,
+                ...fields,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+            if (error) throw error;
+        } catch (err) {
+            console.warn('[StateStore] Runner status sync failed:', err.message);
         }
-        return this.state.interventions[casinoId]?.active === false;
     }
 }
 

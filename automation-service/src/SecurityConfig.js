@@ -93,15 +93,18 @@ class CSPSecurity {
         });
     }
 
+    // False when the pool is empty or holds only the .env.example placeholder,
+    // i.e. visits go out from this computer's own connection.
+    hasRealProxy() {
+        return this.proxyPool.some(p => p && !p.includes('provider.net') && !p.includes('.local'));
+    }
+
     getRandomUserAgent() {
         return this.userAgents[Math.floor(Math.random() * this.userAgents.length)];
     }
 
     assignStickyProxy(seedKey) {
         if (!this.proxyPool || this.proxyPool.length === 0) return null;
-        if (!this.proxyPool || this.proxyPool.length === 0) {
-            return null;
-        }
         const hash = crypto.createHash('md5').update(String(seedKey)).digest('hex');
         const index = parseInt(hash.substring(0, 4), 16) % this.proxyPool.length;
         return this.proxyPool[index];

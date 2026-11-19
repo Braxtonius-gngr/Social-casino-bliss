@@ -1,4 +1,8 @@
-﻿(() => {
+// Live panel for the automation-service runner. index.html loads this only for
+// the signed-in owner (checkOwnerAccess); the panel stays hidden until the
+// runner's local feed answers, and hides again when the runner stops.
+(() => {
+    if (window.droRunnerHud) return;
     const LOCAL_SSE_URL = 'http://127.0.0.1:4789/events';
     const LOCAL_CLEAR_URL = 'http://127.0.0.1:4789/clear-hitl';
 
@@ -126,6 +130,7 @@
 
     const root = document.createElement('div');
     root.id = 'dro-runner-hud';
+    root.hidden = true;
     root.innerHTML = `
         <div id="dro-hud-drawer">
             <div class="dro-drawer-head">
@@ -157,6 +162,11 @@
     const logsEl = document.getElementById('dro-hud-logs');
 
     let latestState = null;
+
+    // Log lines can carry page text (error messages), so never insert them as HTML.
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
 
     pill.addEventListener('click', () => drawer.classList.toggle('open'));
 
@@ -192,13 +202,13 @@
         dot.className = 'dro-dot';
         if (data.status === 'RUNNING') {
             dot.classList.add('running');
-            label.textContent = `LIVE • ${data.completedCount}/${data.totalCount}${data.currentSite ? ` (${data.currentSite})` : ''}`;
+            label.textContent = `LIVE \u2022 ${data.completedCount}/${data.totalCount}${data.currentSite ? ` (${data.currentSite})` : ''}`;
         } else if (data.status === 'WAITING_JITTER') {
             dot.classList.add('jitter');
-            label.textContent = `PACING • ${data.completedCount}/${data.totalCount}`;
+            label.textContent = `PACING \u2022 ${data.completedCount}/${data.totalCount}`;
         } else if (data.status === 'HITL_PAUSED') {
             dot.classList.add('hitl');
-            label.textContent = `ACTION NEEDED • ${data.currentSite || 'Check'}`;
+            label.textContent = `ACTION NEEDED \u2022 ${data.currentSite || 'Check'}`;
             drawer.classList.add('open');
             if (prevStatus !== 'HITL_PAUSED') playChime(440);
         } else if (data.status === 'COMPLETED') {
@@ -219,21 +229,48 @@
         if (Array.isArray(data.logs)) {
             logsEl.innerHTML = data.logs.map(entry => {
                 const time = new Date(entry.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                return `<div class="dro-log-item ${entry.level || ''}">[${time}] ${entry.message}</div>`;
+                return `<div class="dro-log-item ${escapeHtml(entry.level)}">[${time}] ${escapeHtml(entry.message)}</div>`;
             }).join('');
         }
     }
 
+    // Retry quietly while no runner is up: 6s, doubling to at most a minute.
+    const RETRY_MIN_MS = 6000;
+    const RETRY_MAX_MS = 60000;
+    let es = null;
+    let retryTimer = null;
+    let retryMs = RETRY_MIN_MS;
+    let stopped = false;
+
     function connectSSE() {
-        const es = new EventSource(LOCAL_SSE_URL);
+        if (stopped) return;
+        es = new EventSource(LOCAL_SSE_URL);
         es.onmessage = (evt) => {
+            retryMs = RETRY_MIN_MS;
+            root.hidden = false;
             try { render(JSON.parse(evt.data)); } catch (_) {}
         };
         es.onerror = () => {
             es.close();
-            setTimeout(connectSSE, 6000);
+            es = null;
+            root.hidden = true;
+            drawer.classList.remove('open');
+            if (stopped) return;
+            retryTimer = setTimeout(connectSSE, retryMs);
+            retryMs = Math.min(retryMs * 2, RETRY_MAX_MS);
         };
     }
 
+    // Called by index.html when the owner signs out or the owner check fails.
+    function stop() {
+        stopped = true;
+        clearTimeout(retryTimer);
+        if (es) es.close();
+        root.remove();
+        style.remove();
+        delete window.droRunnerHud;
+    }
+
+    window.droRunnerHud = { stop };
     connectSSE();
 })();
