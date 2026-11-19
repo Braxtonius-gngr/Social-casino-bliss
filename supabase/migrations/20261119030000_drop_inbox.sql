@@ -184,6 +184,15 @@ BEGIN
   END IF;
   UPDATE public.public_freebies SET active = false, updated_at = now() WHERE id = p_freebie_id AND active;
   GET DIAGNOSTICS changed = ROW_COUNT;
+  -- Mark it in the inbox entry it came from, so the panel shows it was taken down.
+  UPDATE public.drop_inbox AS i
+     SET drafts = (
+           SELECT jsonb_agg(CASE WHEN x ->> 'freebie_id' = p_freebie_id::text
+                                 THEN x || jsonb_build_object('outcome', 'unpublished') ELSE x END
+                            ORDER BY n)
+             FROM jsonb_array_elements(i.drafts) WITH ORDINALITY AS t(x, n)),
+         updated_at = now()
+   WHERE i.drafts @> jsonb_build_array(jsonb_build_object('freebie_id', p_freebie_id::text));
   RETURN changed > 0;
 END;
 $$;

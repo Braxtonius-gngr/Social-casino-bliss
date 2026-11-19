@@ -116,7 +116,7 @@
         </div>
         <div class="form-group span2">
           <label>Source Note</label>
-          <input type="text" id="fSourceNote" placeholder="optional, e.g. Discord #freebies 9/15" />
+          <input type="text" id="fSourceNote" placeholder="optional, private: only you see this" />
         </div>
         <div class="form-group span2">
           <div class="toggle-row" style="border-bottom:none; padding-bottom:0;">
@@ -217,7 +217,21 @@
       .order('created_at', { ascending: false });
     if (error) { showStatus('Could not load entries: ' + error.message, true); return; }
     entries = data || [];
+    // Source notes are private (freebie_notes, admin only): merged in here
+    // for the edit form, never written to the public table.
+    const { data: notes } = await client.from('freebie_notes').select('freebie_id, note');
+    const noteById = new Map((notes || []).map((n) => [n.freebie_id, n.note]));
+    entries.forEach((r) => { r.source_note = noteById.get(r.id) || ''; });
     renderEntries();
+  }
+
+  // Saves (or clears) an entry's private note.
+  async function saveNote(freebieId, note) {
+    if (!freebieId) return;
+    const result = note
+      ? await client.from('freebie_notes').upsert({ freebie_id: freebieId, note, source: 'manual', updated_at: new Date().toISOString() }, { onConflict: 'freebie_id' })
+      : await client.from('freebie_notes').delete().eq('freebie_id', freebieId);
+    if (result.error) throw result.error;
   }
 
   function renderEntries() {
@@ -306,15 +320,20 @@
   async function submitEntry() {
     const row = readForm();
     if (!row.platform_name) { showStatus('Platform name is required.', true); return; }
+    // The note is private: it goes to freebie_notes, never to the public row.
+    const note = row.source_note;
+    delete row.source_note;
     try {
       if (editingId) {
         const { error } = await client.from('public_freebies').update(row).eq('id', editingId);
         if (error) throw error;
+        await saveNote(editingId, note);
         showStatus('Saved.');
       } else {
         const notify = document.getElementById('fNotify').checked && row.active;
         const { data, error } = await client.from('public_freebies').insert(row).select('*').single();
         if (error) throw error;
+        await saveNote(data && data.id, note);
         showStatus('Added.');
         if (notify && data) {
           // Announced from the inserted row itself, so a failed list
