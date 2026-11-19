@@ -9410,7 +9410,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so l
-    const APP_BUILD = 'almanac-v237';
+    const APP_BUILD = 'almanac-v238';
     window.APP_BUILD_ID = APP_BUILD;   // (read by the valley's ?perf readout)
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
@@ -10587,8 +10587,27 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       return allowed;
     }
 
+    // The automation runner's live panel (assets/runner-hud.js): owner only,
+    // loaded after the server-side is_owner check passes. It shows itself only
+    // while a runner is up on this device (its feed is on 127.0.0.1), so no one
+    // else ever loads it or gets a local-network prompt.
+    function loadRunnerHud() {
+      if (window.droRunnerHud || document.getElementById('runnerHudScript')) return;
+      const script = document.createElement('script');
+      script.id = 'runnerHudScript';
+      script.src = 'assets/runner-hud.js';
+      document.body.appendChild(script);
+    }
+
+    function unloadRunnerHud() {
+      if (window.droRunnerHud) window.droRunnerHud.stop();
+      const script = document.getElementById('runnerHudScript');
+      if (script) script.remove();
+    }
+
     function hideOwnerTools() {
       isOwnerAccount = false;
+      unloadRunnerHud();
       renderedModerators = [];
       const panel = document.getElementById('ownerPanel');
       if (panel) panel.style.display = 'none';
@@ -10623,6 +10642,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       if (owner) {
         loadModerators(gen);
         loadOwnerReports(gen);
+        loadRunnerHud();
       } else {
         hideOwnerTools();
       }
