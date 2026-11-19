@@ -28,14 +28,17 @@ class CSPExecutor {
             return { accountId: accountConfig.id, casinoId, status: 'aborted', reason: 'PROXY_TUNNEL_FAILURE' };
         }
 
+        // Dry run: no browser, nothing claimed, nothing recorded.
         if (!this.liveBrowser) {
             await this.security.humanDelay(400, 900);
             return {
                 accountId: accountConfig.id,
                 casinoId,
                 targetUrl,
-                status: 'success',
-                rewardAvailable: true,
+                status: 'dry_run',
+                rewardAvailable: false,
+                claimed: false,
+                challenged: false,
                 visitDurationMs: Date.now() - startTime,
                 timestamp: new Date().toISOString()
             };
@@ -69,18 +72,21 @@ class CSPExecutor {
             await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
             await this.security.humanDelay(1800, 3500);
 
-            const clearToProceed = await this.captchaSolver.startInteractiveCheck(page, casinoId);
-            if (!clearToProceed) {
+            const check = await this.captchaSolver.startInteractiveCheck(page, casinoId);
+            if (!check.proceed) {
                 await browserContext.close();
-                return { accountId: accountConfig.id, casinoId, status: 'quarantined', reason: 'HITL_TIMEOUT' };
+                return { accountId: accountConfig.id, casinoId, status: 'quarantined', reason: 'HITL_TIMEOUT', challenged: true, claimed: false };
             }
 
             const claimLocator = await this.findResilientElement(page, this.claimSelectorFallbacks);
             const rewardAvailable = claimLocator !== null;
 
+            // A claim counts only when the button was there AND clicked.
+            let claimed = false;
             if (rewardAvailable && accountConfig.autoClick) {
                 await this.security.humanDelay(600, 1400);
                 await claimLocator.click();
+                claimed = true;
                 await this.security.humanDelay(1200, 2200);
             }
 
@@ -92,6 +98,8 @@ class CSPExecutor {
                 targetUrl,
                 status: 'success',
                 rewardAvailable,
+                claimed,
+                challenged: check.challenged,
                 visitDurationMs: Date.now() - startTime,
                 timestamp: new Date().toISOString()
             };

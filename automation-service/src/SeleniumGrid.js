@@ -69,13 +69,13 @@ class SeleniumGridCaptchaSolver {
         const severity = reason.includes('2FA') ? 'Tier3' : 'Tier2';
         console.warn(`\n[ALERT] ${reason} encountered on [${casinoId}] (${severity})`);
 
-        await this.scheduler.recordFrictionEvent(casinoId, severity);
-        if (this.stateStore) {
-            await this.stateStore.setInterventionFlag(casinoId, true, reason);
-        }
+        this.scheduler.recordFrictionEvent(casinoId, severity);
+        // Anything cleared from now on counts for this checkpoint.
+        const since = this.stateStore ? await this.stateStore.setIntervention(casinoId, true, reason) : Date.now();
         await this.sendDiscordAlert(casinoId, reason);
 
-        // Poll for clearance (either via Supabase dashboard toggle or Enter key in terminal) for up to 3 minutes
+        // Wait up to 3 minutes for a clear: Enter in this terminal, the panel on
+        // this computer, or CLEAR CHECKPOINT in the owner panel on the site.
         const maxWaitMs = 180000;
         const pollIntervalMs = 5000;
         const start = Date.now();
@@ -94,8 +94,9 @@ class SeleniumGridCaptchaSolver {
                 // or keep the process alive after the sweep ends.
                 process.stdin.removeListener('data', onEnter);
                 process.stdin.pause();
-                if (this.stateStore && cleared) {
-                    await this.stateStore.setInterventionFlag(casinoId, false, '');
+                if (this.stateStore) {
+                    // Either way the runner moves on, so the site stops showing it as waiting.
+                    await this.stateStore.setIntervention(casinoId, false);
                 }
                 resolve(cleared);
             };
@@ -103,8 +104,8 @@ class SeleniumGridCaptchaSolver {
             process.stdin.once('data', onEnter);
 
             const poller = setInterval(async () => {
-                if (this.stateStore && await this.stateStore.isInterventionCleared(casinoId)) {
-                    console.log(`[HITL] Remote clearance received from dailyrollover.com for [${casinoId}].`);
+                if (this.stateStore && await this.stateStore.isInterventionCleared(casinoId, since)) {
+                    console.log(`[HITL] Clearance received for [${casinoId}].`);
                     await finish(true);
                 } else if (Date.now() - start >= maxWaitMs) {
                     console.log(`[HITL] Intervention window timed out for [${casinoId}]. Leaving in quarantine.`);
@@ -114,13 +115,16 @@ class SeleniumGridCaptchaSolver {
         });
     }
 
+    // { proceed, challenged }: whether to carry on with the visit, and whether
+    // a checkpoint came up at all (a clean visit ends the site's backoff).
     async startInteractiveCheck(pageInstance, casinoId) {
         const reason = await this.detectChallenge(pageInstance);
         if (reason) {
-            return await this.requestHumanIntervention(casinoId, reason);
+            const proceed = await this.requestHumanIntervention(casinoId, reason);
+            return { proceed, challenged: true };
         }
-        console.log(`[CAPTCHASolver] Clean session on [${casinoId}]. No friction detected.`);
-        return true;
+        console.log(`[CAPTCHASolver] Clean session on [${casinoId}]. No checkpoint.`);
+        return { proceed: true, challenged: false };
     }
 }
 

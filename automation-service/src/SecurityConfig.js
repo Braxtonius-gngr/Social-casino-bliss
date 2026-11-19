@@ -93,6 +93,12 @@ class CSPSecurity {
         });
     }
 
+    // False when the pool is empty or holds only the .env.example placeholder,
+    // i.e. visits go out from this computer's own connection.
+    hasRealProxy() {
+        return this.proxyPool.some(p => p && !p.includes('provider.net') && !p.includes('.local'));
+    }
+
     getRandomUserAgent() {
         return this.userAgents[Math.floor(Math.random() * this.userAgents.length)];
     }

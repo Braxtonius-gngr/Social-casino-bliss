@@ -18,10 +18,10 @@ class DailyRolloverCollector {
         });
 
         this.scheduler = new CSPScheduler({
-            activeCSPs: config.allowedCSPs || [],
+            // Domains the runner may visit; a catalog site on any other is skipped.
+            allowedDomains: config.allowedDomains || config.allowedCSPs || [],
             stateStore: this.stateStore,
-            rateLimit: 60,
-            concurrency: 1
+            defaultTZ: process.env.BOT_TZ || config.defaultTZ
         });
 
         this.security = new CSPSecurity(config);
@@ -32,19 +32,17 @@ class DailyRolloverCollector {
 
     async runAccountCheck(accountConfig, siteConfig) {
         const casinoId = siteConfig.id;
-        if (!this.scheduler.isReadyToClaim(siteConfig)) {
-            await this.telemetry.emit({
-                logMessage: `Skipped ${casinoId} (already claimed or quarantined)`,
-                logLevel: 'muted'
-            });
-            return { casinoId, status: 'skipped_not_ready' };
+        const skip = this.scheduler.skipReason(siteConfig);
+        if (skip) {
+            await this.telemetry.emit({ logMessage: `Skipped ${casinoId}: ${skip}`, logLevel: 'muted' });
+            return { casinoId, status: 'skipped', reason: skip };
         }
 
         await this.telemetry.emit({
             status: 'RUNNING',
             currentSite: casinoId,
             currentTier: siteConfig.scTier || 'B',
-            step: `Opening stealth session for ${casinoId}...`,
+            step: `Opening session for ${casinoId}...`,
             nextActionAt: null,
             logMessage: `Checking ${casinoId} [Tier ${siteConfig.scTier || 'B'}]`,
             logLevel: 'info'
@@ -52,28 +50,41 @@ class DailyRolloverCollector {
 
         const result = await this.executor.visitTarget(accountConfig, siteConfig.url, casinoId);
 
-        if (result.status === 'success') {
-            const isValid = await this.scheduler.validateData(result);
-            if (isValid) {
-                const nextClaimAt = this.scheduler.calculateNextExecution(siteConfig);
-                await this.stateStore.recordClaim(casinoId, {
-                    claimedAt: Date.now(),
-                    nextClaimAt,
-                    rewardAvailable: result.rewardAvailable,
-                    source: 'automation'
-                });
+        if (result.status === 'dry_run') {
+            await this.telemetry.emit({
+                step: `Dry run: visited ${casinoId} (nothing claimed or recorded)`,
+                logMessage: `Dry run ${casinoId}: no browser, nothing recorded`,
+                logLevel: 'muted'
+            });
+        } else if (result.status === 'success') {
+            if (!result.challenged) this.scheduler.recordCleanVisit(casinoId);
+
+            if (result.claimed) {
+                const claimedAt = Date.now();
+                const { nextClaimAt, notBefore } = this.scheduler.nextAfterClaim(siteConfig, claimedAt);
+                await this.stateStore.recordClaim(siteConfig, { claimedAt, nextClaimAt, notBefore });
                 result.nextClaimAt = new Date(nextClaimAt).toISOString();
                 await this.telemetry.emit({
-                    step: `Synced ${casinoId} (${result.visitDurationMs}ms)`,
-                    logMessage: `Synced ${casinoId} -> Next reset ${new Date(nextClaimAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+                    step: `Claimed ${casinoId} (${result.visitDurationMs}ms)`,
+                    logMessage: `Claimed ${casinoId} -> ready again ${new Date(nextClaimAt).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })}`,
                     logLevel: 'success'
+                });
+            } else {
+                // Not recorded: the site stays due, so the next sweep tries again.
+                const why = !result.rewardAvailable
+                    ? 'no claim button found (signed out, already claimed, or the page changed)'
+                    : 'autoClick is off';
+                await this.telemetry.emit({
+                    step: `Nothing claimed on ${casinoId}: ${why}`,
+                    logMessage: `Not claimed ${casinoId}: ${why}`,
+                    logLevel: 'warn'
                 });
             }
         } else if (result.status === 'quarantined') {
             await this.telemetry.emit({
-                status: 'HITL_PAUSED',
-                step: `Quarantined ${casinoId} (${result.reason})`,
-                logMessage: `Checkpoint timeout on ${casinoId} — quarantined safely`,
+                status: 'RUNNING',
+                step: `Backing off ${casinoId} (${result.reason})`,
+                logMessage: `Checkpoint on ${casinoId} not cleared in time; backing off`,
                 logLevel: 'warn'
             });
         } else {
@@ -90,6 +101,12 @@ class DailyRolloverCollector {
     async runTandemSweep(accountConfig, siteCatalog) {
         await this.telemetry.start();
         await this.scheduler.start();
+
+        if (!this.executor.liveBrowser) {
+            console.log('[Collector] DRY RUN (LIVE_BROWSER is not "true"): no browser opens and nothing is claimed or recorded.');
+        } else if (!this.security.hasRealProxy()) {
+            console.warn('\n[Collector] *** NO PROXY: every visit goes out from THIS computer\'s own internet connection (your home IP). ***\n');
+        }
 
         const queue = this.scheduler.buildPriorityQueue(siteCatalog);
         await this.telemetry.emit({

@@ -21,7 +21,6 @@ class TelemetryServer {
             ? process.env.HUD_ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
             : [];
         this.allowedOrigins = new Set([...DEFAULT_ALLOWED_ORIGINS, ...(config.allowedOrigins || []), ...envOrigins]);
-        this.warnedNoSupabase = false;
 
         this.snapshot = {
             status: 'IDLE', // IDLE | RUNNING | WAITING_JITTER | HITL_PAUSED | COMPLETED | ERROR
@@ -86,7 +85,7 @@ class TelemetryServer {
                         try {
                             const { casinoId } = JSON.parse(body || '{}');
                             if (casinoId && this.stateStore) {
-                                await this.stateStore.setInterventionFlag(casinoId, false, '');
+                                this.stateStore.clearInterventionLocally(casinoId);
                             }
                             this.emit({
                                 status: 'RUNNING',
@@ -141,33 +140,17 @@ class TelemetryServer {
             try { client.write(payload); } catch (_) {}
         }
 
-        // Cloud copy for dailyrollover.com. supabase-js returns errors rather than
-        // throwing, so check `error`; the try/catch covers network failures.
-        if (this.stateStore && this.stateStore.supabase) {
-            try {
-                const { error } = await this.stateStore.supabase.from('automation_telemetry').upsert({
-                    id: 'primary_runner',
-                    status: this.snapshot.status,
-                    current_site: this.snapshot.currentSite,
-                    current_tier: this.snapshot.currentTier,
-                    step: this.snapshot.step,
-                    completed_count: this.snapshot.completedCount,
-                    total_count: this.snapshot.totalCount,
-                    next_action_at: this.snapshot.nextActionAt ? new Date(this.snapshot.nextActionAt).toISOString() : null,
-                    recent_logs: this.snapshot.logs.slice(0, 10),
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'id' });
-
-                if (error) {
-                    console.error('[Telemetry] Supabase upsert failed:', error.message);
-                }
-            } catch (err) {
-                console.error('[Telemetry] Supabase upsert failed:', err.message);
-            }
-        } else if (!this.warnedNoSupabase) {
-            // Local-ledger mode is valid; say so once, not on every update.
-            this.warnedNoSupabase = true;
-            console.warn('[Telemetry] Supabase client not initialized in StateStore — check automation-service/.env (feed stays local).');
+        // Cloud copy for the owner panel on dailyrollover.com (automation_runner).
+        if (this.stateStore && this.stateStore.synced) {
+            await this.stateStore.upsertRunner({
+                status: this.snapshot.status,
+                current_site: this.snapshot.currentSite,
+                step: this.snapshot.step,
+                completed_count: this.snapshot.completedCount,
+                total_count: this.snapshot.totalCount,
+                next_action_at: this.snapshot.nextActionAt ? new Date(this.snapshot.nextActionAt).toISOString() : null,
+                recent_logs: this.snapshot.logs.slice(0, 10)
+            });
         }
     }
 
