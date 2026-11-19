@@ -542,7 +542,7 @@
 </section>
 
     <section id="viewFreebies" style="display: none;">
-      <div class="drops-note" style="margin-bottom:10px;">Codes and claim links pulled from Discord/email sweeps and verified before posting. Account-tied links only work for whoever originally received them &mdash; those show which platform to check directly instead of a dead link.</div>
+      <div class="drops-note" style="margin-bottom:10px;">Codes and claim links, checked before posting. Account-tied links only work for whoever originally received them &mdash; those show which platform to check directly instead of a dead link.</div>
       <div id="freebiesList"><div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:18px;">Loading...</div></div>
     </section>
 
@@ -603,6 +603,10 @@
         <p class="drops-note" style="margin:0 0 10px;">Your collector (automation-service). When it stops at a security check, finish the check in its browser window, then clear it here or from the panel on that computer.</p>
         <div id="runnerStatus" class="drops-note">Loading...</div>
         <button type="button" class="btn-primary" id="btnClearRunnerCheckpoint" style="display:none; margin-top:8px;" onclick="clearRunnerCheckpoint()">CLEAR CHECKPOINT</button>
+        <h3 style="margin:18px 0 5px;">Drop inbox <span class="ledger-meta" id="dropInboxCount"></span></h3>
+        <p class="drops-note" style="margin:0 0 10px;">Drops read from your Discord channels. Ones that pass every check went live on their own; the rest wait here with the reasons. Links are shown as text only, so reviewing never claims anything.</p>
+        <div id="dropInboxList"><div class="drops-note">Loading...</div></div>
+        <button type="button" class="btn-dock" style="margin-top:8px; max-width:none;" onclick="loadDropInbox()">REFRESH INBOX</button>
         <h3 style="margin:18px 0 5px;">Read drop screenshots <span class="ledger-meta">up to 4 at a time</span></h3>
         <p class="drops-note" style="margin:0 0 10px;">Choose screenshots from this device or paste Discord image links. Claude reads each offer into a draft; a draft opens in the admin page for checking and saving. Nothing is published from here.</p>
         <input type="file" id="ownerShotFiles" aria-label="Screenshots to read" accept="image/png,image/jpeg,image/webp,image/gif" multiple style="width:100%; color:var(--text-muted); font-size:0.8rem; margin-bottom:8px;" />
@@ -9414,7 +9418,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
     // --- The build and its download ---
     // This page's build: the service worker's CACHE_NAME for the files it
     // shipped with. npm run check:refs keeps the two equal, so l
-    const APP_BUILD = 'almanac-v238';
+    const APP_BUILD = 'almanac-v239';
     window.APP_BUILD_ID = APP_BUILD;   // (read by the valley's ?perf readout)
     // The intro plays from the cache. When this build's files are not all
     // there yet (a first visit, or an update that has just shipped), it
@@ -10616,7 +10620,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
       const panel = document.getElementById('ownerPanel');
       if (panel) panel.style.display = 'none';
       stopRunnerStatusPolling();
-      ['moderatorList', 'catalogAccessList', 'linkHitsList', 'ownerShotStatus', 'runnerStatus'].forEach(id => {
+      ['moderatorList', 'catalogAccessList', 'linkHitsList', 'ownerShotStatus', 'runnerStatus', 'dropInboxList'].forEach(id => {
         const list = document.getElementById(id);
         if (list) list.innerHTML = '';
       });
@@ -10650,6 +10654,7 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         loadRunnerHud();
         loadRunnerStatus(gen);
         startRunnerStatusPolling();
+        loadDropInbox(gen);
       } else {
         hideOwnerTools();
       }
@@ -10744,6 +10749,107 @@ Zumo,-,-,Hot Fire Fruits,Hi-Lo,-`;
         btn.disabled = false;
         loadRunnerStatus();
       }
+    }
+
+    // --- Owner tools: the drop inbox ---
+    // What pull-drops read from the owner's Discord channels (drop_inbox),
+    // through owner-only functions. Held drops can be published or rejected,
+    // auto-published ones taken down. Claim links are printed as text, never
+    // as links, so reviewing can't claim anything by accident.
+    const DROP_BUCKET_TEXT = { A_code: 'CODE', B_claim: 'CLAIM', C_purchase: 'PURCHASE' };
+    let dropInboxRows = [];
+
+    async function loadDropInbox(gen = accessCheckGen) {
+      const client = getSupabaseClient();
+      const box = document.getElementById('dropInboxList');
+      if (!client || !box) return;
+      const { data, error } = await client.rpc('drop_inbox_list', { p_limit: 40 });
+      if (gen !== accessCheckGen || !isOwnerAccount) return;
+      if (error) {
+        box.innerHTML = '<div class="drops-note">Could not load the drop inbox.</div>';
+        return;
+      }
+      dropInboxRows = Array.isArray(data) ? data : [];
+      renderDropInbox();
+    }
+
+    function renderDropInbox() {
+      const box = document.getElementById('dropInboxList');
+      const count = document.getElementById('dropInboxCount');
+      if (!box) return;
+      const waiting = dropInboxRows.reduce((n, row) => n + (row.drafts || []).filter(d => d.outcome === 'held').length, 0);
+      if (count) count.textContent = waiting ? `${waiting} waiting` : '';
+      if (!dropInboxRows.length) {
+        box.innerHTML = '<div class="drops-note">Nothing pulled yet.</div>';
+        return;
+      }
+      box.innerHTML = dropInboxRows.map((row, r) => {
+        const when = new Date(row.posted_at || row.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        const drafts = (row.drafts || []).map((draft, i) => {
+          const d = draft.drop || {};
+          const name = escHtml(d.catalog_match || d.platform_name || 'Unknown');
+          const facts = [
+            DROP_BUCKET_TEXT[d.bucket] || escHtml(d.bucket || ''),
+            d.reward ? escHtml(d.reward) : '',
+            d.code ? `code <code>${escHtml(d.code)}</code>` : '',
+            d.claim_url ? `link <span style="word-break:break-all; color:var(--text-muted);">${escHtml(d.claim_url)}</span>` : '',
+            d.expires_at ? `ends ${escHtml(new Date(d.expires_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }))}` : ''
+          ].filter(Boolean).join(' &middot; ');
+          let actions = '';
+          let state = '';
+          if (draft.outcome === 'held') {
+            state = `<div style="color:var(--accent-orange); margin-top:4px;">Held: ${(draft.reasons || []).map(escHtml).join('; ')}</div>`;
+            actions = `<button type="button" class="btn-dock" onclick="rejectInboxDrop(${r}, ${i})">REJECT</button>
+              <button type="button" class="btn-primary" onclick="publishInboxDrop(${r}, ${i})">PUBLISH</button>`;
+          } else if (draft.outcome === 'published') {
+            state = '<div style="color:var(--accent-green); margin-top:4px;">Live on Freebies</div>';
+            if (draft.freebie_id) actions = `<button type="button" class="btn-dock" onclick="unpublishInboxDrop(${r}, ${i})">UNPUBLISH</button>`;
+          } else if (draft.outcome === 'rejected') {
+            state = '<div style="color:var(--text-dim); margin-top:4px;">Rejected</div>';
+          } else if (draft.outcome === 'unpublished') {
+            state = '<div style="color:var(--text-dim); margin-top:4px;">Taken down</div>';
+          }
+          return `<div style="border-top:1px solid var(--glass-border); padding-top:8px; margin-top:8px;">
+            <strong>${name}</strong> <span class="ledger-meta">${facts}</span>
+            ${state}
+            ${actions ? `<div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">${actions}</div>` : ''}
+          </div>`;
+        }).join('');
+        const note = row.error ? `<div class="drops-note" style="color:var(--accent-orange);">${escHtml(row.error)}</div>`
+          : (!drafts && row.unreadable ? `<div class="drops-note">${escHtml(row.unreadable)}</div>` : '');
+        return `<div class="ledger-row" style="display:block; margin-bottom:10px;">
+          <div class="ledger-meta">${escHtml(when)}${row.image_count ? ` &middot; ${Number(row.image_count)} picture${row.image_count > 1 ? 's' : ''}` : ''}</div>
+          <div class="drops-note" style="white-space:pre-wrap; word-break:break-word; margin-top:4px;">${escHtml(row.excerpt || '')}</div>
+          ${note}${drafts || (row.status === 'skipped' ? '<div class="drops-note">No offer in this post.</div>' : '')}
+        </div>`;
+      }).join('');
+    }
+
+    async function inboxAction(fn, args, done) {
+      const client = getSupabaseClient();
+      if (!client) return;
+      const { error } = await client.rpc(fn, args);
+      if (error) {
+        showToast(/NOT_HELD/.test(error.message) ? 'That drop was already handled.' : 'That did not go through. Try again.', null);
+      } else if (done) {
+        showToast(done, null);
+      }
+      loadDropInbox();
+    }
+
+    function publishInboxDrop(r, i) {
+      const row = dropInboxRows[r];
+      if (row) inboxAction('drop_inbox_publish', { p_id: row.id, p_index: i }, 'Published to Freebies');
+    }
+
+    function rejectInboxDrop(r, i) {
+      const row = dropInboxRows[r];
+      if (row) inboxAction('drop_inbox_reject', { p_id: row.id, p_index: i }, 'Rejected');
+    }
+
+    function unpublishInboxDrop(r, i) {
+      const draft = dropInboxRows[r] && (dropInboxRows[r].drafts || [])[i];
+      if (draft && draft.freebie_id) inboxAction('drop_inbox_unpublish', { p_freebie_id: draft.freebie_id }, 'Taken off Freebies');
     }
 
     // The owner's scrape watch: catalogue downloads per account and link

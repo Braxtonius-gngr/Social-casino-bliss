@@ -251,7 +251,7 @@ serve(async (req) => {
   }
   if (!parsed) return jsonResponse({ error: "Claude's answer couldn't be read. Try again.", usage }, 502, cors);
 
-  const { drops, unreadable } = cleanDrops(parsed, platforms);
+  const { drops, unreadable } = cleanDrops(parsed, platforms, reference);
   console.log("read-drop", { images: loaded.length, drops: drops.length, model: response.model, ...usage });
   return jsonResponse({ drops, unreadable, usage, model: response.model }, 200, cors);
 });
