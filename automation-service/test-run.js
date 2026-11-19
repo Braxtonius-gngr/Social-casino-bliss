@@ -1,4 +1,4 @@
-﻿const DailyRolloverCollector = require('./src/main');
+const DailyRolloverCollector = require('./src/main');
 
 const collector = new DailyRolloverCollector('https://dailyrollover.com', {
     allowedCSPs: ['chumbacasino.com', 'wowvegas.com', 'rolla.app', 'stake.us']

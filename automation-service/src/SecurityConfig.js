@@ -99,9 +99,6 @@ class CSPSecurity {
 
     assignStickyProxy(seedKey) {
         if (!this.proxyPool || this.proxyPool.length === 0) return null;
-        if (!this.proxyPool || this.proxyPool.length === 0) {
-            return null;
-        }
         const hash = crypto.createHash('md5').update(String(seedKey)).digest('hex');
         const index = parseInt(hash.substring(0, 4), 16) % this.proxyPool.length;
         return this.proxyPool[index];

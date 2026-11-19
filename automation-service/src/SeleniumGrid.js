@@ -1,4 +1,4 @@
-﻿const https = require('https');
+const https = require('https');
 
 class SeleniumGridCaptchaSolver {
     constructor(scheduler, stateStore, config = {}) {
@@ -82,20 +82,25 @@ class SeleniumGridCaptchaSolver {
 
         return new Promise((resolve) => {
             let resolved = false;
+            const onEnter = () => {
+                console.log(`[HITL] Terminal clearance received for [${casinoId}].`);
+                finish(true);
+            };
             const finish = async (cleared) => {
                 if (resolved) return;
                 resolved = true;
                 clearInterval(poller);
+                // Drop the Enter-key listener so it doesn't pile up per checkpoint
+                // or keep the process alive after the sweep ends.
+                process.stdin.removeListener('data', onEnter);
+                process.stdin.pause();
                 if (this.stateStore && cleared) {
                     await this.stateStore.setInterventionFlag(casinoId, false, '');
                 }
                 resolve(cleared);
             };
 
-            process.stdin.once('data', () => {
-                console.log(`[HITL] Terminal clearance received for [${casinoId}].`);
-                finish(true);
-            });
+            process.stdin.once('data', onEnter);
 
             const poller = setInterval(async () => {
                 if (this.stateStore && await this.stateStore.isInterventionCleared(casinoId)) {

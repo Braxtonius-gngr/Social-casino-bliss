@@ -1,4 +1,4 @@
-﻿class CSPExecutor {
+class CSPExecutor {
     constructor(baseUrl, securityManager, captchaSolver) {
         this.baseUrl = baseUrl;
         this.security = securityManager;

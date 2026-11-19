@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const path = require('path');
 
 class StateStore {
@@ -88,13 +88,14 @@ class StateStore {
 
         if (this.supabase) {
             try {
-                await this.supabase.from('casino_timers').upsert({
+                const { error } = await this.supabase.from('casino_timers').upsert({
                     casino_id: casinoId,
                     last_claimed_at: new Date(claimedAt).toISOString(),
                     next_claim_at: new Date(nextClaimAt).toISOString(),
                     needs_intervention: false,
                     updated_by: source
                 }, { onConflict: 'casino_id' });
+                if (error) throw error;
             } catch (err) {
                 console.warn(`[StateStore] Supabase claim sync failed for ${casinoId}:`, err.message);
             }
@@ -111,14 +112,17 @@ class StateStore {
 
         if (this.supabase) {
             try {
-                await this.supabase.from('site_friction').upsert({
+                const { error } = await this.supabase.from('site_friction').upsert({
                     casino_id: casinoId,
                     challenge_count: record.challengeCount,
                     cooldown_multiplier: record.cooldownMultiplier,
                     tier: record.tier,
                     last_challenged_at: new Date(record.lastChallenged).toISOString()
                 }, { onConflict: 'casino_id' });
-            } catch (_) {}
+                if (error) throw error;
+            } catch (err) {
+                console.warn(`[StateStore] Supabase friction sync failed for ${casinoId}:`, err.message);
+            }
         }
     }
 
@@ -128,12 +132,15 @@ class StateStore {
 
         if (this.supabase) {
             try {
-                await this.supabase.from('casino_timers').upsert({
+                const { error } = await this.supabase.from('casino_timers').upsert({
                     casino_id: casinoId,
                     needs_intervention: active,
                     intervention_reason: reason
                 }, { onConflict: 'casino_id' });
-            } catch (_) {}
+                if (error) throw error;
+            } catch (err) {
+                console.warn(`[StateStore] Supabase checkpoint sync failed for ${casinoId}:`, err.message);
+            }
         }
     }
 

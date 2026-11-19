@@ -1,4 +1,4 @@
-﻿const TIER_WEIGHTS = { S: 1, A: 2, B: 3, C: 4, D: 5 };
+const TIER_WEIGHTS = { S: 1, A: 2, B: 3, C: 4, D: 5 };
 
 class CSPScheduler {
     constructor({ activeCSPs, stateStore, rateLimit, concurrency }) {

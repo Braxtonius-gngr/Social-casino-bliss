@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
     const LOCAL_SSE_URL = 'http://127.0.0.1:4789/events';
     const LOCAL_CLEAR_URL = 'http://127.0.0.1:4789/clear-hitl';
 
@@ -158,6 +158,11 @@
 
     let latestState = null;
 
+    // Log lines can carry page text (error messages), so never insert them as HTML.
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+
     pill.addEventListener('click', () => drawer.classList.toggle('open'));
 
     hitlBtn.addEventListener('click', async () => {
@@ -219,7 +224,7 @@
         if (Array.isArray(data.logs)) {
             logsEl.innerHTML = data.logs.map(entry => {
                 const time = new Date(entry.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                return `<div class="dro-log-item ${entry.level || ''}">[${time}] ${entry.message}</div>`;
+                return `<div class="dro-log-item ${escapeHtml(entry.level)}">[${time}] ${escapeHtml(entry.message)}</div>`;
             }).join('');
         }
     }
