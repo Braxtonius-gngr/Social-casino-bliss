@@ -5,6 +5,11 @@ class SeleniumGridCaptchaSolver {
         this.scheduler = scheduler;
         this.stateStore = stateStore;
         this.discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL || config.discordWebhookUrl || '';
+        // Under pm2, systemd or Docker there is no terminal, so Enter never arrives.
+        this.hasTTY = Boolean(process.stdin.isTTY);
+        if (!this.hasTTY && process.env.LIVE_BROWSER === 'true') {
+            console.warn('[security] No TTY: Enter-key clearance is unavailable. Clear checkpoints from the live panel or CLEAR CHECKPOINT on the site.');
+        }
     }
 
     async detectChallenge(pageInstance) {
@@ -50,17 +55,23 @@ class SeleniumGridCaptchaSolver {
                         'Content-Length': Buffer.byteLength(payload)
                     }
                 }, (res) => {
-                    res.on('data', () => {});
-                    res.on('end', resolve);
+                    res.resume();
+                    res.on('end', () => {
+                        // A 429 or 5xx is an alert that never arrived; say so, but
+                        // never let an alert failure stop the runner.
+                        const ok = res.statusCode >= 200 && res.statusCode < 300;
+                        if (!ok) console.warn(`[HITL] Discord webhook answered ${res.statusCode}; alert not delivered.`);
+                        resolve({ ok, status: res.statusCode });
+                    });
                 });
                 req.on('error', (err) => {
                     console.warn('[HITL] Discord webhook failed:', err.message);
-                    resolve();
+                    resolve({ ok: false });
                 });
                 req.write(payload);
                 req.end();
             } catch (_) {
-                resolve();
+                resolve({ ok: false });
             }
         });
     }
@@ -92,8 +103,12 @@ class SeleniumGridCaptchaSolver {
                 clearInterval(poller);
                 // Drop the Enter-key listener so it doesn't pile up per checkpoint
                 // or keep the process alive after the sweep ends.
-                process.stdin.removeListener('data', onEnter);
-                process.stdin.pause();
+                if (this.hasTTY) {
+                    process.stdin.removeListener('data', onEnter);
+                    process.stdin.pause();
+                }
+                // Cleared in the window: no backoff. Uncleared: the site backs off.
+                if (!cleared) this.scheduler.recordUnclearedCheckpoint(casinoId, severity);
                 if (this.stateStore) {
                     // Either way the runner moves on, so the site stops showing it as waiting.
                     await this.stateStore.setIntervention(casinoId, false);
@@ -101,7 +116,7 @@ class SeleniumGridCaptchaSolver {
                 resolve(cleared);
             };
 
-            process.stdin.once('data', onEnter);
+            if (this.hasTTY) process.stdin.once('data', onEnter);
 
             const poller = setInterval(async () => {
                 if (this.stateStore && await this.stateStore.isInterventionCleared(casinoId, since)) {

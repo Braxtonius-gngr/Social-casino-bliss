@@ -69,6 +69,16 @@
       <div id="shotResults"></div>
     </div>
 
+    <div class="glass-panel admin-panel" id="pullDrafts">
+      <h2 style="font-size:0.85rem; color:var(--accent-cyan); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">Pull Drafts</h2>
+      <p class="backup-helper" style="margin-bottom:10px;">What the Discord poller (<code>automation-service/discord-pull.js</code>) had Claude read, one read per batch of posts. Nothing here publishes itself: load a draft into the form, check it against the post, then SAVE (and tick NOTIFY if it should alert). SKIP sets a batch aside.</p>
+      <div class="modal-actions">
+        <button id="pullRefreshBtn" class="btn-primary" onclick="refreshPullDrafts()">Refresh Pull Drafts</button>
+      </div>
+      <div id="pullStatus" style="min-height:16px; font-size:0.75rem; margin-top:8px; color:var(--text-muted);"></div>
+      <div id="pullResults"></div>
+    </div>
+
     <div class="glass-panel admin-panel">
       <h2 style="font-size:0.85rem; color:var(--accent-cyan); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">Paste &amp; Classify</h2>
       <p class="backup-helper" style="margin-bottom:10px;">Paste the same Discord/email text you'd drop into the app's Drop Inbox. This runs it through the same classifier and lists what it finds - review each draft and click "Load into form" to prefill the entry below, then check the platform name and save.</p>
@@ -226,10 +236,10 @@
   }
 
   // Saves (or clears) an entry's private note.
-  async function saveNote(freebieId, note) {
+  async function saveNote(freebieId, note, source, sourceRef) {
     if (!freebieId) return;
     const result = note
-      ? await client.from('freebie_notes').upsert({ freebie_id: freebieId, note, source: 'manual', updated_at: new Date().toISOString() }, { onConflict: 'freebie_id' })
+      ? await client.from('freebie_notes').upsert({ freebie_id: freebieId, note, source: source || 'manual', source_ref: sourceRef || null, updated_at: new Date().toISOString() }, { onConflict: 'freebie_id' })
       : await client.from('freebie_notes').delete().eq('freebie_id', freebieId);
     if (result.error) throw result.error;
   }
@@ -296,6 +306,7 @@
 
   function resetForm() {
     editingId = null;
+    pullLoaded = null;
     fillForm({ bucket: 'A_code', active: true });
     document.getElementById('fNotify').checked = false;
     document.getElementById('notifyRow').style.display = '';
@@ -308,6 +319,7 @@
     const r = entries.find((e) => e.id === id);
     if (!r) return;
     editingId = id;
+    pullLoaded = null;
     fillForm(r);
     // Alerts go out once, from NOTIFY in the list, for an entry already saved.
     document.getElementById('fNotify').checked = false;
@@ -333,7 +345,9 @@
         const notify = document.getElementById('fNotify').checked && row.active;
         const { data, error } = await client.from('public_freebies').insert(row).select('*').single();
         if (error) throw error;
-        await saveNote(data && data.id, note);
+        const pulled = pullLoaded;
+        await saveNote(data && data.id, note, pulled ? 'discord' : 'manual', pulled ? pulled.sourceRef : null);
+        if (pulled) await markPullSaved(pulled);
         showStatus('Added.');
         if (notify && data) {
           // Announced from the inserted row itself, so a failed list
@@ -593,6 +607,12 @@
   function loadShotIntoForm(i) {
     const d = shotDrops[i];
     if (!d) return;
+    fillFromDrop(d, `Discord screenshot, read ${new Date().toLocaleDateString()}`, 'screenshot');
+  }
+
+  // Puts a drop read by read-drop into the form. The note says where it came
+  // from; the caller sets pullLoaded after, when it came from a pull draft.
+  function fillFromDrop(d, note, from) {
     let claimUrl = d.is_account_tied ? '' : (d.claim_url || '');
     if (claimUrl) {
       try { claimUrl = cleanDropUrl(claimUrl); } catch (e) { /* keep as read */ }
@@ -607,18 +627,148 @@
       is_account_tied: !!d.is_account_tied,
       terms: [d.reward, d.terms].filter(Boolean).join(' · '),
       expires_at: d.expires_at,
-      source_note: `Discord screenshot, read ${new Date().toLocaleDateString()}`,
+      source_note: note,
       active: true
     });
+    pullLoaded = null;
     // Alerting stays a deliberate tick, never a side effect of loading a draft.
     document.getElementById('notifyRow').style.display = '';
     document.getElementById('fNotify').checked = false;
     document.getElementById('formHeading').textContent = d.catalog_match
-      ? 'New Entry (from screenshot - check it)'
-      : 'New Entry (from screenshot - platform not in the catalog, check the name)';
+      ? `New Entry (from ${from} - check it)`
+      : `New Entry (from ${from} - platform not in the catalog, check the name)`;
     document.getElementById('cancelEditBtn').style.display = 'none';
-    showStatus('Check every field against the screenshot, then SAVE.');
+    showStatus(`Check every field against the ${from}, then SAVE.`);
     document.getElementById('formHeading').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // --- Pull Drafts (drop_drafts, filed by ingest-drop for discord-pull.js) ---
+  // Read and moved by the owner only (RLS). Loading a draft marks its batch
+  // 'loaded'; saving it from the form marks it 'published' once every draft
+  // in the batch is saved; SKIP marks it 'skipped'. Nothing is published here.
+  let pullRows = [];
+  let pullLoaded = null;
+  const pullSaved = new Map();
+
+  function setPullStatus(msg, isError) {
+    const el = document.getElementById('pullStatus');
+    el.textContent = msg || '';
+    el.style.color = isError ? 'var(--accent-pink)' : 'var(--text-muted)';
+  }
+
+  function readCents(usage) {
+    // Opus 5 list prices: $5 per million input tokens, $25 per million output.
+    return usage && usage.input_tokens != null
+      ? ((usage.input_tokens * 5 + usage.output_tokens * 25) / 1e6) * 100
+      : null;
+  }
+
+  async function refreshPullDrafts() {
+    const btn = document.getElementById('pullRefreshBtn');
+    btn.disabled = true;
+    try {
+      const { data, error } = await client.from('drop_drafts')
+        .select('id, source, source_ref, created_at, text, drops, unreadable, usage, status')
+        .in('status', ['pending', 'loaded'])
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) { setPullStatus('Could not load pull drafts: ' + error.message, true); return; }
+      pullRows = data || [];
+      const count = pullRows.reduce((n, r) => n + (Array.isArray(r.drops) ? r.drops.length : 0), 0);
+      setPullStatus(pullRows.length ? `${count} draft${count === 1 ? '' : 's'} in ${pullRows.length} batch${pullRows.length === 1 ? '' : 'es'}.` : 'No pull drafts waiting.');
+      renderPullDrafts();
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function renderPullDrafts() {
+    const box = document.getElementById('pullResults');
+    if (!pullRows.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">' + pullRows.map((row, r) => {
+      const cents = readCents(row.usage);
+      const saved = pullSaved.get(row.id) || new Set();
+      const head = `${escHtml(new Date(row.created_at).toLocaleString())}${row.status === 'loaded' ? ' &bull; loaded' : ''}${cents !== null ? ` &bull; read cost about ${cents.toFixed(1)}\u00a2` : ''}`;
+      const drafts = (Array.isArray(row.drops) ? row.drops : []).map((d, i) => {
+        const name = d.catalog_match || d.platform_name;
+        const bits = [BUCKET_LABEL[d.bucket] || escHtml(d.bucket)];
+        if (d.code) bits.push(escHtml(d.code));
+        if (d.reward) bits.push(escHtml(d.reward));
+        if (d.expires_at) bits.push('ends ' + escHtml(new Date(d.expires_at).toLocaleString()));
+        if (d.is_account_tied) bits.push('account-tied');
+        const unmatched = d.catalog_match ? '' : ' <span class="drop-tag unknown">NOT IN CATALOG</span>';
+        const done = saved.has(i) ? ' <span class="drop-tag">SAVED</span>' : '';
+        return `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div>
+            <div class="drop-name">${escHtml(name)}${unmatched}${done}<span class="shot-conf ${d.confidence === 'low' ? 'low' : ''}">${escHtml(d.confidence)}</span></div>
+            <div class="drop-url">${bits.join(' &bull; ')}</div>
+            ${d.terms ? `<div class="shot-meta">${escHtml(d.terms)}</div>` : ''}
+            ${d.evidence ? `<div class="shot-meta">&ldquo;${escHtml(d.evidence)}&rdquo;</div>` : ''}
+          </div>
+          <button class="btn-open" style="padding:5px 10px; font-size:0.68rem; flex-shrink:0;" onclick="loadPullDraft(${r}, ${i})">LOAD INTO FORM</button>
+        </div>`;
+      }).join('');
+      return `
+      <div class="drop-row" style="flex-direction:column; align-items:stretch; gap:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div class="shot-meta">${head}</div>
+          <button class="btn-cancel" style="flex:none; padding:5px 10px; font-size:0.68rem;" onclick="skipPullRow(${r})">SKIP</button>
+        </div>
+        ${row.text ? `<div class="shot-meta">${escHtml(row.text.slice(0, 300))}</div>` : ''}
+        ${row.unreadable ? `<div class="shot-meta">${escHtml(row.unreadable)}</div>` : ''}
+        ${drafts}
+      </div>`;
+    }).join('') + '</div>';
+  }
+
+  async function setPullRowStatus(id, status) {
+    const now = new Date().toISOString();
+    const patch = { status, updated_at: now };
+    if (status === 'loaded') patch.loaded_at = now;
+    if (status === 'published') patch.published_at = now;
+    const { error } = await client.from('drop_drafts').update(patch).eq('id', id);
+    if (error) setPullStatus('Could not update the batch: ' + error.message, true);
+    return !error;
+  }
+
+  function loadPullDraft(r, i) {
+    const row = pullRows[r];
+    const d = row && Array.isArray(row.drops) ? row.drops[i] : null;
+    if (!d) return;
+    fillFromDrop(d, `Discord pull, read ${new Date(row.created_at).toLocaleDateString()}`, 'Discord post');
+    pullLoaded = { id: row.id, index: i, sourceRef: row.source_ref || null, total: row.drops.length };
+    // Status only; the check and the SAVE stay with the owner.
+    if (row.status === 'pending') {
+      row.status = 'loaded';
+      setPullRowStatus(row.id, 'loaded').then(renderPullDrafts);
+    }
+  }
+
+  // Called after a pull draft is saved from the form as a new entry.
+  async function markPullSaved(loaded) {
+    const saved = pullSaved.get(loaded.id) || new Set();
+    saved.add(loaded.index);
+    pullSaved.set(loaded.id, saved);
+    if (saved.size >= loaded.total && await setPullRowStatus(loaded.id, 'published')) {
+      pullRows = pullRows.filter((row) => row.id !== loaded.id);
+    }
+    renderPullDrafts();
+  }
+
+  async function skipPullRow(r) {
+    const row = pullRows[r];
+    if (!row || !confirmSkip(row)) return;
+    if (await setPullRowStatus(row.id, 'skipped')) {
+      pullRows = pullRows.filter((x) => x.id !== row.id);
+      renderPullDrafts();
+      setPullStatus('Batch set aside.');
+    }
+  }
+
+  function confirmSkip(row) {
+    const left = (Array.isArray(row.drops) ? row.drops.length : 0) - (pullSaved.get(row.id) || new Set()).size;
+    return left <= 0 || window.confirm(`Set aside this batch? ${left} draft${left === 1 ? ' has' : 's have'} not been saved.`);
   }
 
   // --- Paste & Classify ---
@@ -661,6 +811,7 @@
     const o = pasteDrafts[i];
     if (!o) return;
     editingId = null;
+    pullLoaded = null;
     fillForm({
       platform_name: o.link ? suggestPlatformName(o.link.root) : '',
       bucket: o.bucket,
@@ -716,6 +867,7 @@
         adminReady = true;
         resetForm();
         takeShotHandoff();
+        refreshPullDrafts();
       }
       loadEntries();
     } else if (adminReady) {

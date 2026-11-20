@@ -22,6 +22,16 @@ const crypto = require('crypto');
 //                               read:  "clear checkpoint" from the owner panel
 //   The service-role key bypasses row security, so every query here is pinned
 //   to DRO_OWNER_USER_ID. Keep that key in .env only.
+// A time as epoch ms: the deck keeps lastCollected as a number, but an ISO
+// string must not read as NaN (and so 0, which makes the platform look due).
+function toMs(value) {
+    if (value === null || value === undefined || value === '') return 0;
+    const n = Number(value);
+    if (Number.isFinite(n)) return n;
+    const t = Date.parse(String(value));
+    return Number.isFinite(t) ? t : 0;
+}
+
 class StateStore {
     constructor(config = {}) {
         this.dataDir = config.dataDir || path.join(__dirname, '../data');
@@ -140,7 +150,7 @@ class StateStore {
         const game = this.getDeckGame(site.name);
         const local = this.state.timers[site.id];
         return Math.max(
-            (game && Number(game.lastCollected)) || 0,
+            (game && toMs(game.lastCollected)) || 0,
             this.remote.lastCollected.get(site.name) || 0,
             (local && local.lastClaimedAt) || 0
         );

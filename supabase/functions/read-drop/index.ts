@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 import Anthropic from "npm:@anthropic-ai/sdk@0.128.0";
+import { timingSafeEqual } from "../web-push/vapid.ts";
 import {
   apiErrorMessage,
   claudeErrorReply,
@@ -21,7 +22,8 @@ import {
 //   -> { drops, unreadable, usage }
 // Reads drop screenshots (Discord image links, or photos the admin page
 // uploads) with Claude and returns draft public_freebies rows for review.
-// Admin only: nothing is published from here.
+// Admin only (or ingest-drop with x-ingest-token = INGEST_TOKEN): nothing is
+// published from here.
 const allowedOrigins = new Set([
   "https://casino-almanac.app",
   "https://dailyrollover.com",
@@ -153,8 +155,13 @@ serve(async (req) => {
   );
   const token = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
   const { data: { user } } = token ? await supabase.auth.getUser(token) : { data: { user: null } };
-  if (!user) return jsonResponse({ error: "Not authenticated." }, 401, cors);
-  if (user.is_anonymous || (user.email ?? "").toLowerCase() !== ADMIN_EMAIL) {
+  // Machine callers (ingest-drop, on the Discord poller's behalf) present
+  // x-ingest-token; the admin page keeps presenting its JWT. Both are checked
+  // before the API key is read, so a bad token can never spend a read.
+  const ingestToken = Deno.env.get("INGEST_TOKEN") ?? "";
+  const isMachine = ingestToken !== "" && timingSafeEqual(req.headers.get("x-ingest-token") ?? "", ingestToken);
+  if (!user && !isMachine) return jsonResponse({ error: "Not authenticated." }, 401, cors);
+  if (user && (user.is_anonymous || (user.email ?? "").toLowerCase() !== ADMIN_EMAIL)) {
     return jsonResponse({ error: "Only the admin can read drops." }, 403, cors);
   }
 

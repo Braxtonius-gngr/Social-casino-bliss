@@ -335,6 +335,7 @@ Setup, once:
 supabase db push                                  # drop_alerts, owner_tier, least_privilege, catalog_service, rollup_view_and_link_rate
 supabase secrets set ANTHROPIC_API_KEY="sk-ant-..."
 supabase functions deploy read-drop --no-verify-jwt
+supabase functions deploy ingest-drop --no-verify-jwt  # Discord pull drafts (automation-service/discord-pull.js)
 supabase functions deploy web-push --no-verify-jwt
 supabase functions deploy go --no-verify-jwt      # referral redirects
 ```
@@ -349,7 +350,8 @@ When the key is missing, rejected, out of credit or lacks model access,
 the read fails with a message that says which, rather than "try again".
 
 Every function checks its own caller (the admin email, the cron secret,
-the signed-in user), and `go` is public by design: browsers follow it
+the signed-in user, the `INGEST_TOKEN` shared by `ingest-drop`, `read-drop`
+and the owner's Discord poller), and `go` is public by design: browsers follow it
 without a token. Deploy them with `--no-verify-jwt`, or the gateway
 answers 401 before the function runs.
 

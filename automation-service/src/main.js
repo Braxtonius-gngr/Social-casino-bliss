@@ -14,7 +14,9 @@ class DailyRolloverCollector {
         this.stateStore = new StateStore(config);
         this.telemetry = new TelemetryServer({
             port: config.telemetryPort || 4789,
-            stateStore: this.stateStore
+            // A dry run keeps its status to the local feed: the owner panel's
+            // automation_runner row is written only by a live run.
+            stateStore: process.env.LIVE_BROWSER === 'true' ? this.stateStore : null
         });
 
         this.scheduler = new CSPScheduler({

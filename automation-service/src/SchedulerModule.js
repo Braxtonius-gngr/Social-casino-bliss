@@ -38,6 +38,9 @@ class CSPScheduler {
 
     // --- Checkpoint backoff ---------------------------------------------------
 
+    // Every checkpoint is counted. A checkpoint cleared in its window costs
+    // nothing more; only one left uncleared starts a backoff
+    // (recordUnclearedCheckpoint), as the README says.
     recordFrictionEvent(siteId, severity = 'Tier2') {
         const existing = (this.stateStore && this.stateStore.getFriction(siteId)) || {
             challengeCount: 0,
@@ -46,12 +49,31 @@ class CSPScheduler {
         };
 
         existing.challengeCount += 1;
-        existing.lastChallenged = Date.now();
-        existing.cooldownMultiplier = Math.min(existing.cooldownMultiplier * 2, 16);
+        existing.lastSeen = Date.now();
         existing.tier = severity;
 
         if (this.stateStore) this.stateStore.saveFriction(siteId, existing);
-        console.warn(`[CSPScheduler] Checkpoint logged for [${siteId}]. Severity: ${severity}, backoff: ${existing.cooldownMultiplier}x`);
+        console.warn(`[CSPScheduler] Checkpoint logged for [${siteId}]. Severity: ${severity} (checkpoint #${existing.challengeCount})`);
+    }
+
+    // The checkpoint's window closed with nobody clearing it: back off 4h (24h
+    // for 2FA), doubling per uncleared repeat up to 16x, until a clean visit.
+    recordUnclearedCheckpoint(siteId, severity = 'Tier2') {
+        const existing = (this.stateStore && this.stateStore.getFriction(siteId)) || {
+            challengeCount: 1,
+            cooldownMultiplier: 1,
+            tier: severity
+        };
+
+        existing.cooldownMultiplier = existing.uncleared
+            ? Math.min((existing.cooldownMultiplier || 1) * 2, 16)
+            : (existing.cooldownMultiplier || 1);
+        existing.uncleared = (existing.uncleared || 0) + 1;
+        existing.lastChallenged = Date.now();
+        existing.tier = severity;
+
+        if (this.stateStore) this.stateStore.saveFriction(siteId, existing);
+        console.warn(`[CSPScheduler] Checkpoint on [${siteId}] went uncleared. Backing off ${existing.cooldownMultiplier}x.`);
     }
 
     // A visit with no checkpoint ends the backoff.

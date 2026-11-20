@@ -20,15 +20,8 @@ class CSPExecutor {
         const startTime = Date.now();
         console.log(`[CSPExecutor] Preparing ${this.liveBrowser ? 'LIVE' : 'DRY-RUN'} stealth visit for [${casinoId}] -> ${targetUrl}`);
 
-        let session;
-        try {
-            session = await this.security.createSession(accountConfig.id, casinoId);
-        } catch (err) {
-            console.error(err.message);
-            return { accountId: accountConfig.id, casinoId, status: 'aborted', reason: 'PROXY_TUNNEL_FAILURE' };
-        }
-
-        // Dry run: no browser, nothing claimed, nothing recorded.
+        // Dry run: no browser, nothing claimed, nothing recorded, and no
+        // network either (createSession probes the proxy tunnel).
         if (!this.liveBrowser) {
             await this.security.humanDelay(400, 900);
             return {
@@ -42,6 +35,14 @@ class CSPExecutor {
                 visitDurationMs: Date.now() - startTime,
                 timestamp: new Date().toISOString()
             };
+        }
+
+        let session;
+        try {
+            session = await this.security.createSession(accountConfig.id, casinoId);
+        } catch (err) {
+            console.error(err.message);
+            return { accountId: accountConfig.id, casinoId, status: 'aborted', reason: 'PROXY_TUNNEL_FAILURE' };
         }
 
         const { chromium } = require('playwright');
