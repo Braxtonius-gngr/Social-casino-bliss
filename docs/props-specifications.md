@@ -10,10 +10,11 @@ and the cache rules in `sw.js` / AGENTS.md.
 
 **The Wish Room.** Thirteen wishes have a procedural model (`LIBRARY`): donut,
 pizza, cake, coffee, burger, dice, plant, trophy, ball, lamp, gift, ice cream,
-apple. Thirty-six more are recognised but land as an emoji token only
-(`EMOJI_GUESS`, "things the library cannot build yet"). One of those, the
-cookie, is offered as a chip on the page itself. These 36 are the missing
-generations. Section 3 lists each with its box.
+apple. Thirty-five more are recognised but land as an emoji token only. One of
+those, the cookie, is offered as a chip on the page itself. These 35 are the
+missing generations; each is a row of `lab/wish-props.mjs` with its
+box from section 3, so the room already knows its size and its file name and
+shows the token until the file exists.
 
 **The scenes.** No scene prop expects a generated mesh today. The card table,
 study, seance room, slaughter floor and arcade props are all built in code,
@@ -35,7 +36,7 @@ for a phone PWA with up to eight props on the table at once.
 |---|---|---|
 | Format | glTF 2.0 binary (`.glb`), no animations, lights, cameras or rig | *code*: `GLTFLoader` is vendored in `assets/vendor/three/three.addons.js`; lights inside a model are hidden until the final stage |
 | Units | metres, +y up | *code*: the room, table (`TABLE_Y` 0.62) and every `size` are in metres |
-| Origin | centre of the footprint, resting plane at y = 0 | *code*: the model is added at the holder's origin, which sits on the table top; the body file rests on y 0 the same way |
+| Origin | centre of the footprint, resting plane at y = 0 | *code*: the model is added at the holder's origin, which sits on the table top; the body file rests on y 0 the same way. The loader re-seats what it gets (base to y 0, footprint centred), so a file a little off still lands, but author it right so its own tools agree with the room |
 | Facing | front toward +z | *code*: the holder is turned so its +z faces the camera |
 | Size | exactly the `size` box `[w, h, d]`; a bounding box off by more than 20 % is rescaled uniformly | *code*: `fitTo()` scales when the fit factor is below 0.8 or above 1.25 |
 | Footprint | width and depth at most 0.5 m; height at most 0.5 m | *recommended*: table slots (`SLOTS`) are as close as 0.63 m apart; the default unknown box is 0.26 × 0.36 × 0.26 |
@@ -47,12 +48,72 @@ for a phone PWA with up to eight props on the table at once.
 | Textures | one PNG, 1024² (2048² only for the slot machine) | *recommended*: the body's one PNG makes most of its 3.5 MB |
 | File size | at most 1 MB per prop | *recommended* |
 | Vertex attributes | `POSITION`, `NORMAL`, `TEXCOORD_0` | *code*: what the working body carries; `TANGENT` optional |
-| Shadows | the loader wrapper sets `castShadow` and `receiveShadow` on each mesh | *code*: `mesh()` does this for procedural models; a loaded GLB arrives with both off |
-| Plural vs single | a wish for "cookies" gets the full box; "a cookie" gets `single()` in a 0.33 × 0.12 × 0.33 box | *code*: `readWish()` sets `plural`; an entry without `single` uses `build` for both |
-| Location | `assets/intro3d/rare/wish/<first word>.glb` | *recommended*: `rare/` is fetched on first use and skipped by the update download; the lab is not precached, so nothing is added to `PRECACHE_URLS` until a prop ships in the app proper |
-| Registration | a `LIBRARY` row `{ words, emoji, size, build, single? }` whose `build` loads the file and returns an `Object3D`; or `window.WISH_GENERATOR(text, { THREE })` resolving to `{ object }` | *code*: `finalModel()` tries the generator first, then the library, then the emoji token |
+| Shadows | nothing to do: the loader sets `castShadow` and `receiveShadow` on each mesh and gives each copy its own materials | *code*: `loadGlbSource()` and `loadWish()`; a loaded GLB arrives with both off and would otherwise share one material between two copies on the table |
+| Plural vs single | a wish for "cookies" gets the full box and `<file>.glb`; "a cookie" gets `<file>-one.glb` in the row's `single` box | *code*: `readWish()` sets `plural`; a row without `single` uses the one file for both; a procedural entry's single falls back to a 0.33 × 0.12 × 0.33 box |
+| Location | `assets/intro3d/rare/wish/<file>.glb`, the `file` of its row in `lab/wish-props.mjs` (the first word); a wish that can be one or many has a second file, `<file>-one.glb`, for the single | *code*: `loadGlbSource()` builds the URL from the row; `rare/` is fetched on first use and skipped by the update download, and the lab is not precached, so nothing is added to `PRECACHE_URLS` until a prop ships in the app proper |
+| Registration | none for the 35 below: drop the file in and the wish picks it up. A new prop is a row of `lab/wish-props.mjs` `{ file, words, emoji, size, single?, glow?, glass?, texture? }`; a procedural one is a `LIBRARY` row in `lab/wish.mjs` with a `build`; or `window.WISH_GENERATOR(text, { THREE })` resolving to `{ object }` | *code*: `finalModel()` tries the generator first, then the library (generated rows included), then the emoji token; a file missing or broken falls back to the token with a console warning |
 
-## 3. The 36 missing generations
+### Checking a file
+
+`npm run check:glb` (part of `npm run check`) holds every file in
+`assets/intro3d/rare/wish/` to its row and to this sheet, and lists what is
+still to make. It fails on what the room cannot take or would silently paper
+over: a file no row knows, a broken container, a rig, animation, camera or
+light, Draco or meshopt compression, a size outside the fit tolerance (the
+room would rescale it, which hides a centimetre export), the emissive bake
+over a black base, an unlit material, a texture not embedded. It warns on the
+budgets, a base off y 0 or off centre, proportions far from the box, double
+sided or metallic-by-default materials, and glass or glow on a row that does
+not expect them; `--strict` fails on those too. `--dir=<folder>` checks a drop
+folder before the files are moved in.
+
+### Making a file
+
+`npm run gen:prop -- <file>` (`scripts/generate-wish-prop.js`) makes one prop
+end to end: it submits the row's `prompt` (`promptOne` for `<file>-one`) to
+fal.ai's hosted Rodin with the box's proportions as `bbox_condition`, polls
+the queue, downloads the GLB, measures it, decimates it only if the measure
+says so, lints it, and with `--install` copies a clean result into
+`assets/intro3d/rare/wish/`. `--from=<glb>` skips the generation and runs the
+rest on a file in hand. It needs `FAL_KEY` (a fal.ai API key) and runs
+gltf-transform through npx, pinned, so nothing is added to the app.
+
+### Triangles: the waste metric and when to decimate
+
+A generator's triangle count says nothing about whether the triangles are
+needed, so the budget alone would decimate a detailed prop that earned its
+count and leave a smooth one that did not. The tools measure **waste**
+instead (`scripts/lib/glb-metrics.js`): the share of triangles doing no
+visual work in the room. A triangle is wasted when every one of its edges is
+flat, or when it is sub-pixel.
+
+- **Flat edge.** The two faces meeting at the edge turn so little that the
+  turn cannot be seen at the room's closest zoom: under 3 degrees, or with a
+  sagitta (edge length x turn / 4, how far the surface bends off a straight
+  run) under half a pixel. The pixel is 1 mm: a 42 degree camera no nearer
+  than 2.2 m on a phone 1600 device pixels tall. A 2 cm edge turning 2
+  degrees and a 1 cm edge turning 10 are both flat; a 5 cm edge turning 5 is
+  not. A boundary or non-manifold edge is never flat: it is a silhouette or a
+  seam. Seam-split vertices are merged by position first, so a UV seam counts
+  as the one edge it is.
+- **Sub-pixel.** The longest edge is under 1 mm.
+
+The verdict against the row's budget (12k a prop, 2k a single):
+
+| Count | Waste | Verdict |
+|---|---|---|
+| at or under budget | any | **keep**: never touched |
+| over budget | 25 % or more | **decimate**: to the budget, or as far as the waste reaches |
+| over budget | under 25 % | **efficient**: left as it is and reported; regenerate at a lower quality or raise the row's budget |
+
+`check:glb` prints the metric and the verdict for every file. `gen:prop`
+acts on it: `--decimate=auto` (the default) follows the verdict, `always`
+takes a file over budget down to the budget whatever its waste, `never`
+leaves every file as generated. Decimation is gltf-transform's `weld` then
+`simplify` (meshoptimizer), with the error bound at 0.2 % of the mesh's
+extent, so it stops short of the target rather than change the look.
+
+## 3. The 35 missing generations
 
 Sizes are `[w, h, d]` in metres, chosen to read from the room's camera the way
 the existing library does (an apple at 0.22, a burger at 0.33: toy scale, about
@@ -140,5 +201,5 @@ PNG, 3.5 MB, re-exported through Blender's glTF I/O).
 Open items that look like missing props but are code work: the Rodin body's
 head and face on its own bone, hands' grip and feet's ankle, garments fitted to
 it, its anatomy; and `WISH_GENERATOR` itself (the text-to-visual generator the
-Wish Room is written to call), which is the pipeline that would produce the 36
+Wish Room is written to call), which is the pipeline that would produce the 35
 above.
