@@ -220,6 +220,14 @@ async function main() {
     ['SUPABASE_URL', SUPABASE_URL], ['INGEST_TOKEN', INGEST_TOKEN]
   ].filter(([, v]) => !v).map(([k]) => k);
   if (missing.length) throw new Error(`missing in .env: ${missing.join(', ')}`);
+  // A channel id is 17-20 digits. Anything else (a pasted token, say) stops
+  // here, before it could go into a request URL or a log line.
+  if (!/^\d{17,20}$/.test(CHANNEL_ID)) {
+    throw new Error('DISCORD_PULL_CHANNEL_ID must be the channel\'s numeric id (17-20 digits); check that the token and the channel id are on the right lines in .env');
+  }
+  if (/^\d+$/.test(TOKEN) || /\s/.test(TOKEN)) {
+    throw new Error('DISCORD_BOT_TOKEN does not look like a bot token (Bot page > Reset Token); check that the token and the channel id are on the right lines in .env');
+  }
 
   let ledger = loadLedger();
   if (ledger.channel_id && ledger.channel_id !== CHANNEL_ID) {
