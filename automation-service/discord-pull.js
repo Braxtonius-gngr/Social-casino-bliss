@@ -20,14 +20,20 @@ const path = require('path');
 try { require('dotenv').config({ path: path.join(__dirname, '.env') }); } catch (_) {}
 
 const API = 'https://discord.com/api/v10';
-const LEDGER_PATH = path.join(__dirname, 'data', 'discord-pull.json');
+// One ledger per channel: data/discord-pull-<channel id>.json
+const ledgerPathFor = (channelId) => path.join(__dirname, 'data', `discord-pull-${channelId}.json`);
+let LEDGER_PATH = '';
 // Mirrors supabase/functions/read-drop/extract.ts (MAX_IMAGES, MAX_IMAGE_BYTES).
 const MAX_IMAGES = 4;
 const MAX_IMAGE_BYTES = 3700000;
 const FETCH_LIMIT = 25;
 
 const TOKEN = process.env.DISCORD_BOT_TOKEN || '';
-const CHANNEL_ID = (process.env.DISCORD_PULL_CHANNEL_ID || '').trim();
+// One or more source channels, comma-separated; polled one after another.
+const CHANNEL_IDS = (process.env.DISCORD_PULL_CHANNEL_IDS || process.env.DISCORD_PULL_CHANNEL_ID || '')
+  .split(/[\s,]+/).filter(Boolean);
+let CHANNEL_ID = '';   // the channel being worked on right now
+function useChannel(id) { CHANNEL_ID = id; LEDGER_PATH = ledgerPathFor(id); }
 const OWNER_USER_ID = (process.env.DISCORD_PULL_OWNER_USER_ID || process.env.INGEST_USER_ID || process.env.DRO_OWNER_USER_ID || '').trim();
 const BACKFILL = Math.max(0, Number(process.env.DISCORD_PULL_BACKFILL || 0) || 0);
 const INTERVAL_SEC = Math.max(15, Number(process.env.DISCORD_PULL_INTERVAL_SEC || 60) || 60);
@@ -213,61 +219,81 @@ async function tick(ledger, page, budget) {
   return { ledger, reads, more: page.length >= FETCH_LIMIT };
 }
 
+// First run for a channel: bookmark its newest post so history is never read
+// by accident. DISCORD_PULL_BACKFILL=n spends at most n reads on the newest
+// history. Returns the channel's ledger, or null when there is nothing to poll.
+async function seedChannel() {
+  let ledger = loadLedger();
+  if (ledger.last_message_id) return ledger;
+  const [top] = await discord(`/channels/${CHANNEL_ID}/messages?limit=1`);
+  if (!top) { log(CHANNEL_ID, 'is empty; nothing to seed'); return null; }
+  if (BACKFILL > 0 && !DRY) {
+    const hist = await discord(`/channels/${CHANNEL_ID}/messages?limit=${FETCH_LIMIT}`);
+    const oldest = [...hist].sort(byIdAsc)[0];
+    ledger = { last_message_id: String(BigInt(oldest.id) - 1n) };
+    const r = await tick(ledger, hist, BACKFILL);
+    log(CHANNEL_ID, `backfill spent ${r.reads} read(s); older history passed over`);
+    return r.ledger;
+  }
+  ledger = { last_message_id: top.id, seeded_at: new Date().toISOString() };
+  saveLedger(ledger);
+  log(CHANNEL_ID, 'ledger seeded at newest post', top.id, DRY ? '(dry run: no reads spent)' : '');
+  return ledger;
+}
+
+// Reads everything new in the current channel, a page at a time.
+async function pollChannel(ledger) {
+  let more = true;
+  while (more) {
+    const page = await discord(`/channels/${CHANNEL_ID}/messages?limit=${FETCH_LIMIT}&after=${ledger.last_message_id}`);
+    const r = await tick(ledger, page, Infinity);
+    ledger = r.ledger;
+    more = r.more && !DRY;
+  }
+  return ledger;
+}
+
 async function main() {
   const missing = [
-    ['DISCORD_BOT_TOKEN', TOKEN], ['DISCORD_PULL_CHANNEL_ID', CHANNEL_ID],
+    ['DISCORD_BOT_TOKEN', TOKEN], ['DISCORD_PULL_CHANNEL_IDS', CHANNEL_IDS.join('')],
     ['DISCORD_PULL_OWNER_USER_ID (or INGEST_USER_ID, or DRO_OWNER_USER_ID)', OWNER_USER_ID],
     ['SUPABASE_URL', SUPABASE_URL], ['INGEST_TOKEN', INGEST_TOKEN]
   ].filter(([, v]) => !v).map(([k]) => k);
   if (missing.length) throw new Error(`missing in .env: ${missing.join(', ')}`);
   // A channel id is 17-20 digits. Anything else (a pasted token, say) stops
   // here, before it could go into a request URL or a log line.
-  if (!/^\d{17,20}$/.test(CHANNEL_ID)) {
-    throw new Error('DISCORD_PULL_CHANNEL_ID must be the channel\'s numeric id (17-20 digits); check that the token and the channel id are on the right lines in .env');
+  if (!CHANNEL_IDS.every((id) => /^\d{17,20}$/.test(id))) {
+    throw new Error('DISCORD_PULL_CHANNEL_IDS must be numeric channel ids (17-20 digits, comma-separated); check that the token and the channel ids are on the right lines in .env');
   }
   if (/^\d+$/.test(TOKEN) || /\s/.test(TOKEN)) {
-    throw new Error('DISCORD_BOT_TOKEN does not look like a bot token (Bot page > Reset Token); check that the token and the channel id are on the right lines in .env');
+    throw new Error('DISCORD_BOT_TOKEN does not look like a bot token (Bot page > Reset Token); check that the token and the channel ids are on the right lines in .env');
   }
 
-  let ledger = loadLedger();
-  if (ledger.channel_id && ledger.channel_id !== CHANNEL_ID) {
-    log('ledger was for channel', ledger.channel_id, '- starting over for', CHANNEL_ID);
-    ledger = {};
-  }
-
-  // First run: bookmark the newest post so history is never read by accident.
-  // DISCORD_PULL_BACKFILL=n spends at most n reads on the newest history.
-  if (!ledger.last_message_id) {
-    const [top] = await discord(`/channels/${CHANNEL_ID}/messages?limit=1`);
-    if (!top) { log('channel is empty; nothing to seed'); return; }
-    if (BACKFILL > 0 && !DRY) {
-      const hist = await discord(`/channels/${CHANNEL_ID}/messages?limit=${FETCH_LIMIT}`);
-      const oldest = [...hist].sort(byIdAsc)[0];
-      ledger = { last_message_id: String(BigInt(oldest.id) - 1n) };
-      const r = await tick(ledger, hist, BACKFILL);
-      ledger = r.ledger;
-      log(`backfill spent ${r.reads} read(s); older history passed over`);
-    } else {
-      ledger = { last_message_id: top.id, seeded_at: new Date().toISOString() };
-      saveLedger(ledger);
-      log('ledger seeded at newest post', top.id, DRY ? '(dry run: no reads spent)' : '');
-      if (DRY) return;
+  const ledgers = new Map();
+  for (const id of CHANNEL_IDS) {
+    useChannel(id);
+    try {
+      const ledger = await seedChannel();
+      if (ledger) ledgers.set(id, ledger);
+    } catch (err) {
+      const hint = / 401 /.test(err.message)
+        ? '- Discord rejected the bot token: paste the current one (Bot page > Reset Token) into DISCORD_BOT_TOKEN'
+        : '- check the bot is in that server and can see this channel (View Channel + Read Message History)';
+      log(id, 'could not be read:', err.message, hint);
+      if (ONCE || DRY) process.exitCode = 1;
     }
-    if (ONCE) return;
   }
+  if (DRY && ledgers.size && [...ledgers.values()].every((l) => l.seeded_at)) return;
 
   for (;;) {
-    try {
-      let more = true;
-      while (more) {
-        const page = await discord(`/channels/${CHANNEL_ID}/messages?limit=${FETCH_LIMIT}&after=${ledger.last_message_id}`);
-        const r = await tick(ledger, page, Infinity);
-        ledger = r.ledger;
-        more = r.more && !DRY;
+    for (const [id, ledger] of ledgers) {
+      useChannel(id);
+      try {
+        ledgers.set(id, await pollChannel(ledger));
+      } catch (err) {
+        log(id, 'tick failed:', err.message);
+        if (ONCE || DRY) process.exitCode = 1;
       }
-    } catch (err) {
-      log('tick failed:', err.message);
-      if (ONCE || DRY) process.exitCode = 1;
     }
     if (ONCE || DRY) return;
     await sleep(INTERVAL_SEC * 1000);
