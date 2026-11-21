@@ -71,7 +71,7 @@
 
     <div class="glass-panel admin-panel" id="pullDrafts">
       <h2 style="font-size:0.85rem; color:var(--accent-cyan); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">Pull Drafts</h2>
-      <p class="backup-helper" style="margin-bottom:10px;">What the Discord poller (<code>automation-service/discord-pull.js</code>) had Claude read, one read per batch of posts. Nothing here publishes itself: load a draft into the form, check it against the post, then SAVE (and tick NOTIFY if it should alert). SKIP sets a batch aside.</p>
+      <p class="backup-helper" style="margin-bottom:10px;">What the Discord pull had Claude read, one read per batch of posts. Drops that passed every check were published and announced on their own (marked AUTO-PUBLISHED; undo them in the list below). The rest wait here with the reason they were held: load one into the form, check it against the post, then SAVE (tick NOTIFY to alert). SKIP sets a batch aside.</p>
       <div class="modal-actions">
         <button id="pullRefreshBtn" class="btn-primary" onclick="refreshPullDrafts()">Refresh Pull Drafts</button>
       </div>
@@ -688,6 +688,9 @@
     box.innerHTML = '<div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">' + pullRows.map((row, r) => {
       const cents = readCents(row.usage);
       const saved = pullSaved.get(row.id) || new Set();
+      // Drops the cloud pull already published count as saved.
+      (Array.isArray(row.drops) ? row.drops : []).forEach((d, i) => { if (d.outcome === 'published') saved.add(i); });
+      pullSaved.set(row.id, saved);
       const head = `${escHtml(new Date(row.created_at).toLocaleString())}${row.status === 'loaded' ? ' &bull; loaded' : ''}${cents !== null ? ` &bull; read cost about ${cents.toFixed(1)}\u00a2` : ''}`;
       const drafts = (Array.isArray(row.drops) ? row.drops : []).map((d, i) => {
         const name = d.catalog_match || d.platform_name;
@@ -697,7 +700,8 @@
         if (d.expires_at) bits.push('ends ' + escHtml(new Date(d.expires_at).toLocaleString()));
         if (d.is_account_tied) bits.push('account-tied');
         const unmatched = d.catalog_match ? '' : ' <span class="drop-tag unknown">NOT IN CATALOG</span>';
-        const done = saved.has(i) ? ' <span class="drop-tag">SAVED</span>' : '';
+        const auto = d.outcome === 'published';
+        const done = auto ? ' <span class="drop-tag">AUTO-PUBLISHED</span>' : saved.has(i) ? ' <span class="drop-tag">SAVED</span>' : '';
         return `
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
           <div>
@@ -705,8 +709,9 @@
             <div class="drop-url">${bits.join(' &bull; ')}</div>
             ${d.terms ? `<div class="shot-meta">${escHtml(d.terms)}</div>` : ''}
             ${d.evidence ? `<div class="shot-meta">&ldquo;${escHtml(d.evidence)}&rdquo;</div>` : ''}
+            ${Array.isArray(d.held_reasons) && d.held_reasons.length ? `<div class="shot-meta">Held: ${escHtml(d.held_reasons.join('; '))}</div>` : ''}
           </div>
-          <button class="btn-open" style="padding:5px 10px; font-size:0.68rem; flex-shrink:0;" onclick="loadPullDraft(${r}, ${i})">LOAD INTO FORM</button>
+          ${auto ? '' : `<button class="btn-open" style="padding:5px 10px; font-size:0.68rem; flex-shrink:0;" onclick="loadPullDraft(${r}, ${i})">LOAD INTO FORM</button>`}
         </div>`;
       }).join('');
       return `

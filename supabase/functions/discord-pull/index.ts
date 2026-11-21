@@ -5,6 +5,9 @@ import { timingSafeEqual } from "../web-push/vapid.ts";
 import { MAX_IMAGE_BYTES } from "../read-drop/extract.ts";
 import { byIdAscending, type DiscordMessage } from "./discord.ts";
 import { type Batch, batchRef, buildBatches, type Held } from "./batches.ts";
+import { type Drop } from "../read-drop/extract.ts";
+import { type CatalogPlatform, type LiveFreebie } from "../read-drop/gate.ts";
+import { loadCatalog, loadLive, type Outcome, ping, settleDrafts } from "./publish.ts";
 
 // The Discord pull, in the cloud. pg_cron POSTs here every few minutes
 // (x-cron-secret = PUSH_CRON_SECRET); the owner can also run it by hand with
@@ -12,14 +15,17 @@ import { type Batch, batchRef, buildBatches, type Held } from "./batches.ts";
 // posts with the bot (REST only: no gateway, no privileged intent), groups
 // them into batches (no picture, no read; at most 4 pictures each) and hands
 // each batch to ingest-drop, which reads it once and files a drop_drafts row.
-// Nothing is published: the owner checks each draft on the admin page.
+// Drops that pass every check in read-drop/gate.ts are then published and
+// announced (publish.ts); the rest wait on the admin page, and the owner is
+// pinged in Discord (DISCORD_REVIEW_WEBHOOK_URL) about both.
 //
 // Where each channel was read up to lives in drop_pull_state (last_message_id,
 // plus text-only posts waiting for a picture in `held`). A channel's first run
 // only bookmarks its newest post, so old posts are never read.
 //
 // Settings (Supabase secrets): DISCORD_BOT_TOKEN, DISCORD_PULL_CHANNEL_IDS
-// (comma-separated), OWNER_USER_ID, INGEST_TOKEN, PUSH_CRON_SECRET.
+// (comma-separated), OWNER_USER_ID, INGEST_TOKEN, PUSH_CRON_SECRET, and
+// optionally DISCORD_REVIEW_WEBHOOK_URL (the private channel for pings).
 // Deploy with JWT verification off; the secrets above are the gate.
 
 const DISCORD_API = "https://discord.com/api/v10";
@@ -70,7 +76,9 @@ async function toBase64(url: string): Promise<{ data: string } | null> {
 }
 
 // One read. True once ingest-drop has filed the batch (or had it already).
-async function ingest(channelId: string, b: Batch): Promise<{ ok: boolean; note: string }> {
+type Ctx = { supa: Supa; catalog: CatalogPlatform[] | null; live: LiveFreebie[] | null };
+
+async function ingest(channelId: string, b: Batch, ctx: Ctx): Promise<{ ok: boolean; note: string }> {
   const images = (await Promise.all(b.images.map(toBase64))).filter((i): i is { data: string } => !!i);
   if (!images.length) return { ok: true, note: "pictures unreadable or too large; passed over" };
   const res = await fetch(`${env("SUPABASE_URL")}/functions/v1/ingest-drop`, {
@@ -93,11 +101,25 @@ async function ingest(channelId: string, b: Batch): Promise<{ ok: boolean; note:
   if (!res) return { ok: false, note: "ingest-drop unreachable" };
   const out = await res.json().catch(() => ({})) as Record<string, unknown>;
   if (!res.ok) return { ok: false, note: `ingest-drop ${res.status}: ${String(out.error ?? "")}`.slice(0, 200) };
-  const drafts = Array.isArray(out.drops) ? out.drops.length : 0;
-  return { ok: true, note: out.deduped ? "already filed" : out.skipped ? "filed as skipped" : `${drafts} draft(s)` };
+  const drops = Array.isArray(out.drops) ? out.drops as Drop[] : [];
+  if (out.deduped || out.skipped || !drops.length || typeof out.id !== "number") {
+    return { ok: true, note: out.deduped ? "already filed" : out.skipped ? "filed as skipped" : "no drops in it" };
+  }
+  // Publish what passes the gate; ping the owner about everything.
+  try {
+    ctx.catalog ??= await loadCatalog(ctx.supa);
+    ctx.live ??= await loadLive(ctx.supa);
+    const outcomes: Outcome[] = await settleDrafts(ctx.supa, out.id, drops, batchRef(channelId, b), { catalog: ctx.catalog, live: ctx.live });
+    await ping(outcomes);
+    const pub = outcomes.filter((o) => o.published).length;
+    return { ok: true, note: `${drops.length} draft(s): ${pub} published, ${drops.length - pub} held` };
+  } catch (err) {
+    // The draft is filed either way; a failure here leaves it for the owner.
+    return { ok: true, note: `${drops.length} draft(s) filed; auto-publish step failed: ${String(err).slice(0, 120)}` };
+  }
 }
 
-async function pullChannel(supa: Supa, token: string, channelId: string, budget: { reads: number; started: number }) {
+async function pullChannel(supa: Supa, token: string, channelId: string, budget: { reads: number; started: number }, ctx: Ctx) {
   const report: Record<string, unknown> = { channel: channelId, reads: 0, notes: [] as string[] };
   const notes = report.notes as string[];
   const { data: st } = await supa.from("drop_pull_state").select("last_message_id, held").eq("channel_id", channelId).single();
@@ -128,7 +150,7 @@ async function pullChannel(supa: Supa, token: string, channelId: string, budget:
         notes.push("read limit for this run reached; the rest wait for the next run");
         break;
       }
-      const r = await ingest(channelId, b);
+      const r = await ingest(channelId, b, ctx);
       notes.push(`${batchRef(channelId, b)}: ${r.note}`);
       if (!r.ok) {
         stopAt = b;
@@ -174,6 +196,7 @@ serve(async (req) => {
 
   const supa = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), { auth: { persistSession: false } });
   const budget = { reads: 0, started: Date.now() };
+  const ctx: Ctx = { supa, catalog: null, live: null };
   const results: Record<string, unknown>[] = [];
   for (const channelId of channels) {
     // One run per channel at a time, even if cron fires while a run is busy.
@@ -187,7 +210,7 @@ serve(async (req) => {
       continue;
     }
     try {
-      results.push(await pullChannel(supa, token, channelId, budget));
+      results.push(await pullChannel(supa, token, channelId, budget, ctx));
     } catch (err) {
       results.push({ channel: channelId, error: String(err).slice(0, 200) });
     } finally {

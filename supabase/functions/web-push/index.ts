@@ -185,6 +185,17 @@ serve(async (req) => {
 
   const cronSecret = Deno.env.get("PUSH_CRON_SECRET") ?? "";
   const cronHeader = req.headers.get("x-cron-secret");
+  // The Discord pull (discord-pull) announcing a drop it auto-published:
+  // x-ingest-token = INGEST_TOKEN, a first announce only (no resend).
+  const ingestHeader = req.headers.get("x-ingest-token");
+  if (ingestHeader !== null && cronHeader === null) {
+    const ingestToken = Deno.env.get("INGEST_TOKEN") ?? "";
+    if (!ingestToken || !timingSafeEqual(ingestHeader, ingestToken)) return jsonResponse({ error: "Not authenticated." }, 401, cors);
+    let body: Record<string, unknown> = {};
+    try { body = await req.json(); } catch { body = {}; }
+    if (!body || body.announce === undefined) return jsonResponse({ error: "Only announce is allowed here." }, 400, cors);
+    return await announceDrop(String(body.announce), false, null);
+  }
   if (cronHeader === null) {
     // A signed-in user testing their own devices: pushes only to the
     // caller's subscriptions and reports what each push service answered.
